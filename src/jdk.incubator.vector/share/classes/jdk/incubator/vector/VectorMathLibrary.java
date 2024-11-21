@@ -133,45 +133,13 @@ import static jdk.incubator.vector.VectorOperators.*;
     @DontInline
     private static
     <E, V extends Vector<E>, T>
-    @SuppressWarnings({"unchecked"})
     Entry<T> constructEntry(Operator op, int opc, VectorSpecies<E> vspecies, IntFunction<T> implSupplier) {
         String symbol = SLEEF.symbolName(op, vspecies); // FIXME
         MemorySegment addr = LOOKUP.find(symbol).orElse(MemorySegment.NULL); // FIXME
         if (DEBUG) {
             System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
         }
-        T impl;
-        if (addr != MemorySegment.NULL) {
-            @SuppressWarnings({"unchecked"})
-            Class<V> vt = (Class<V>)vspecies.vectorType();
-            if (op instanceof Unary) {
-                var defaultImpl = (VectorSupport.UnaryOperation<V, ?>) implSupplier.apply(opc);
-
-                impl = (T)(VectorSupport.UnaryOperation<V,?>) (v0, m) -> {
-                    assert m == null;
-                    return VectorSupport.libraryUnaryOp(
-                            addr.address(), vt, vspecies.elementType(), vspecies.length(),
-                            v0,
-                            defaultImpl, // FIXME: should call the same native function
-                            symbol);
-                };
-            } else if (op instanceof Binary) {
-                var defaultImpl = (VectorSupport.BinaryOperation<V, ?>) implSupplier.apply(opc);
-
-                impl = (T)(VectorSupport.BinaryOperation<V,?> ) (v0, v1, m) -> {
-                    assert m == null;
-                    return VectorSupport.libraryBinaryOp(
-                            addr.address(), vt, vspecies.elementType(), vspecies.length(),
-                            v0, v1,
-                            defaultImpl, // FIXME: should call the same native function
-                            symbol);
-                };
-            } else {
-                throw new InternalError("operation not supported: " + op);
-            }
-        } else {
-            impl = implSupplier.apply(opc); // use default implementation
-        }
+        T impl = implSupplier.apply(opc); // FIXME: should call into the same native impl
         return new Entry<>(symbol, addr, impl);
     }
 
@@ -180,9 +148,21 @@ import static jdk.incubator.vector.VectorOperators.*;
     <E, V extends Vector<E>>
     V unaryMathOp(VectorOperators.Unary op, int opc, VectorSpecies<E> vspecies,
                   IntFunction<VectorSupport.UnaryOperation<V,?>> implSupplier,
-                  V v1) {
-        var impl = lookup(op, opc, vspecies, implSupplier).impl;
-        return impl.apply(v1, null);
+                  V v) {
+        var entry = lookup(op, opc, vspecies, implSupplier);
+
+        long entryAddress = entry.entry.address();
+        if (entryAddress != 0) {
+            @SuppressWarnings({"unchecked"})
+            Class<V> vt = (Class<V>)vspecies.vectorType();
+            return VectorSupport.libraryUnaryOp(
+                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(),
+                    v,
+                    entry.impl,
+                    entry.name);
+        } else {
+            return entry.impl.apply(v, null);
+        }
     }
 
     @ForceInline
@@ -191,7 +171,19 @@ import static jdk.incubator.vector.VectorOperators.*;
     V binaryMathOp(VectorOperators.Binary op, int opc, VectorSpecies<E> vspecies,
                    IntFunction<VectorSupport.BinaryOperation<V,?>> implSupplier,
                    V v1, V v2) {
-        var impl = lookup(op, opc, vspecies, implSupplier).impl;
-        return impl.apply(v1, v2, null);
+        var entry = lookup(op, opc, vspecies, implSupplier);
+
+        long entryAddress = entry.entry.address();
+        if (entryAddress != 0) {
+            @SuppressWarnings({"unchecked"})
+            Class<V> vt = (Class<V>)vspecies.vectorType();
+            return VectorSupport.libraryBinaryOp(
+                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(),
+                    v1, v2,
+                    entry.impl,
+                    entry.name);
+        } else {
+            return entry.impl.apply(v1, v2, null);
+        }
     }
 }
