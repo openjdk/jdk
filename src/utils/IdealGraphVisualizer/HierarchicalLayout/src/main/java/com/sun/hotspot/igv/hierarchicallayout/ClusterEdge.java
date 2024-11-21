@@ -30,7 +30,6 @@ import java.awt.Point;
 import java.util.List;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class ClusterEdge implements Link {
@@ -62,12 +61,12 @@ public class ClusterEdge implements Link {
         return to.getCluster();
     }
 
-    public void setControlPoints(List<Point> p) {
-        this.points = p;
-    }
-
     public List<Point> getControlPoints() {
         return points;
+    }
+
+    public void setControlPoints(List<Point> p) {
+        this.points = p;
     }
 
     @Override

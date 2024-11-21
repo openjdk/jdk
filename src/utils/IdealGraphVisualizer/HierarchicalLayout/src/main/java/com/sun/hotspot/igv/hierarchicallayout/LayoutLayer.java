@@ -41,6 +41,29 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
     private int y = 0;
 
     /**
+     * Counts the number of edge crossings between the neighbors of two nodes.
+     * <p>
+     * This method compares the positions of adjacent nodes for the given neighbor type
+     * (predecessors or successors) to determine the number of crossing edges between them.
+     *
+     * @param node1        the first layout node
+     * @param node2        the second layout node
+     * @param neighborType the type of neighbors to consider (predecessors or successors)
+     * @return the number of crossings between the neighbors of the two nodes
+     */
+    public static int calculateEdgeCrossings(LayoutNode node1, LayoutNode node2, LayoutNode.NeighborType neighborType) {
+        int crossings = 0;
+        for (int neighborX1 : node1.getAdjacentX(neighborType)) {
+            for (int neighborX2 : node2.getAdjacentX(neighborType)) {
+                if (neighborX1 > neighborX2) {
+                    crossings++;
+                }
+            }
+        }
+        return crossings;
+    }
+
+    /**
      * Adds all LayoutNodes from the specified collection to this layer.
      * Updates the layer's height based on the nodes added.
      *
@@ -126,15 +149,6 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
     }
 
     /**
-     * Sets the top Y-coordinate of this layer.
-     *
-     * @param top The Y-coordinate representing the top of the layer.
-     */
-    public void setTop(int top) {
-        y = top;
-    }
-
-    /**
      * Shifts the top Y-coordinate of this layer by the specified amount.
      * Useful for moving the entire layer up or down.
      *
@@ -151,6 +165,15 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
      */
     public int getTop() {
         return y;
+    }
+
+    /**
+     * Sets the top Y-coordinate of this layer.
+     *
+     * @param top The Y-coordinate representing the top of the layer.
+     */
+    public void setTop(int top) {
+        y = top;
     }
 
     public int getCenter() {
@@ -313,8 +336,8 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
     /**
      * Swaps two nodes
      *
-     * @param i     index of the first node
-     * @param j     index of the second node
+     * @param i index of the first node
+     * @param j index of the second node
      */
     public void swapNodes(int i, int j) {
         LayoutNode temp = get(i);
@@ -355,30 +378,6 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
                 }
             }
         }
-    }
-
-
-    /**
-     * Counts the number of edge crossings between the neighbors of two nodes.
-     * <p>
-     * This method compares the positions of adjacent nodes for the given neighbor type
-     * (predecessors or successors) to determine the number of crossing edges between them.
-     *
-     * @param node1        the first layout node
-     * @param node2        the second layout node
-     * @param neighborType the type of neighbors to consider (predecessors or successors)
-     * @return the number of crossings between the neighbors of the two nodes
-     */
-    public static int calculateEdgeCrossings(LayoutNode node1, LayoutNode node2, LayoutNode.NeighborType neighborType) {
-        int crossings = 0;
-        for (int neighborX1 : node1.getAdjacentX(neighborType)) {
-            for (int neighborX2 : node2.getAdjacentX(neighborType)) {
-                if (neighborX1 > neighborX2) {
-                    crossings++;
-                }
-            }
-        }
-        return crossings;
     }
 
     /**

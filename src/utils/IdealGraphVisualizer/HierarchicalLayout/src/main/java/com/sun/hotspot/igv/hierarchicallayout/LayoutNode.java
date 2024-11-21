@@ -23,13 +23,12 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.NODE_OFFSET;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.util.*;
-
-import static com.sun.hotspot.igv.hierarchicallayout.LayoutManager.NODE_OFFSET;
 
 /**
  * Represents a node in a hierarchical graph layout.
@@ -50,7 +49,11 @@ public class LayoutNode {
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
-
+    private final Vertex vertex; // Associated graph vertex; null for dummy nodes
+    private final List<LayoutEdge> preds = new ArrayList<>(); // Incoming edges
+    private final List<LayoutEdge> succs = new ArrayList<>(); // Outgoing edges
+    private final HashMap<Link, List<Point>> reversedLinkStartPoints = new HashMap<>(); // Start points of reversed edges
+    private final HashMap<Link, List<Point>> reversedLinkEndPoints = new HashMap<>();   // End points of reversed edges
     // Layout properties
     private int layer = -1;
     private int optimal_x;
@@ -62,13 +65,6 @@ public class LayoutNode {
     private int bottomMargin;
     private int rightMargin;
     private int leftMargin;
-
-    private final Vertex vertex; // Associated graph vertex; null for dummy nodes
-
-    private final List<LayoutEdge> preds = new ArrayList<>(); // Incoming edges
-    private final List<LayoutEdge> succs = new ArrayList<>(); // Outgoing edges
-    private final HashMap<Link, List<Point>> reversedLinkStartPoints = new HashMap<>(); // Start points of reversed edges
-    private final HashMap<Link, List<Point>> reversedLinkEndPoints = new HashMap<>();   // End points of reversed edges
     private int pos = -1; // Position within its layer
 
 
@@ -244,15 +240,6 @@ public class LayoutNode {
     }
 
     /**
-     * Enum to specify the type of neighbors to consider when computing the barycenter.
-     */
-    public enum NeighborType {
-        PREDECESSORS,
-        SUCCESSORS,
-        BOTH
-    }
-
-    /**
      * Computes the barycenter (average x-coordinate) of this node based on its neighboring nodes.
      * The calculation can include predecessors, successors, or both, depending on the specified
      * neighbor type. Optionally, the positions can be weighted by the degree (number of connections)
@@ -405,6 +392,10 @@ public class LayoutNode {
         return x;
     }
 
+    public void setX(int x) {
+        this.x = x;
+    }
+
     /**
      * Calculates the absolute difference between the optimal X position and the current X position.
      *
@@ -412,10 +403,6 @@ public class LayoutNode {
      */
     public int getOptimalDifference() {
         return Math.abs(getOptimalX() - getX());
-    }
-
-    public void setX(int x) {
-        this.x = x;
     }
 
     public void shiftX(int shift) {
@@ -511,7 +498,6 @@ public class LayoutNode {
         preds.remove(predecessor);
     }
 
-
     /**
      * Determines if the node has neighbors of the specified type.
      *
@@ -545,7 +531,6 @@ public class LayoutNode {
     public void setPos(int pos) {
         this.pos = pos;
     }
-
 
     /**
      * Groups the successor edges by their relative x-coordinate from the current node.
@@ -652,5 +637,14 @@ public class LayoutNode {
         initSize();
         boolean hasReversedDown = computeReversedEdgeStartPoints();
         computeReversedEdgeEndPoints(hasReversedDown);
+    }
+
+    /**
+     * Enum to specify the type of neighbors to consider when computing the barycenter.
+     */
+    public enum NeighborType {
+        PREDECESSORS,
+        SUCCESSORS,
+        BOTH
     }
 }

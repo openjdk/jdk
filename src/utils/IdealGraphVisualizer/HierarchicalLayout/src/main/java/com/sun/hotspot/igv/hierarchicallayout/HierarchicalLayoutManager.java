@@ -32,13 +32,12 @@ import java.util.*;
 
 public class HierarchicalLayoutManager extends LayoutManager {
 
+    int maxLayerLength;
     private LayoutGraph graph;
 
     public HierarchicalLayoutManager() {
         setCutEdges(false);
     }
-
-    int maxLayerLength;
 
     @Override
     public void setCutEdges(boolean enable) {
@@ -435,7 +434,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
                 optimizeByNeighborhood(graph);
                 shiftToZero(graph);
-
 
 
             }

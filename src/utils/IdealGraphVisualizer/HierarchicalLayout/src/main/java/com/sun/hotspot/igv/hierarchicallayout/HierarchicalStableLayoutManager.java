@@ -25,16 +25,18 @@ package com.sun.hotspot.igv.hierarchicallayout;
 
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
-import java.awt.Point;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
-public class HierarchicalStableLayoutManager extends LayoutManager{
+public class HierarchicalStableLayoutManager extends LayoutManager {
 
     private final HierarchicalLayoutManager manager;
-
+    int maxLayerLength;
     private LayoutGraph graph;
 
-    int maxLayerLength;
+    public HierarchicalStableLayoutManager() {
+        manager = new HierarchicalLayoutManager();
+    }
 
     public void setCutEdges(boolean cutEdges) {
         maxLayerLength = cutEdges ? 10 : -1;
@@ -42,12 +44,8 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     }
 
     @Override
-    public void doLayout(LayoutGraph graph) {}
-
-    public HierarchicalStableLayoutManager() {
-        manager = new HierarchicalLayoutManager();
+    public void doLayout(LayoutGraph graph) {
     }
-
 
     public void updateLayout(Set<? extends Vertex> vertices, Set<? extends Link> links) {
         if (graph == null) {
@@ -66,21 +64,6 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     }
 
     private static class ApplyActionUpdates {
-
-        public void moveVertex(LayoutGraph graph, Vertex movedVertex) {
-            Point newLoc = movedVertex.getPosition();
-            LayoutNode movedNode = graph.getLayoutNode(movedVertex);
-            graph.removeNodeAndEdges(movedNode);
-            graph.removeEmptyLayers();
-
-            int layerNr = 42;
-            layerNr = graph.insertNewLayerIfNeeded(movedNode, layerNr);
-            graph.addNodeToLayer(movedNode, layerNr);
-            movedNode.setX(newLoc.x);
-            graph.getLayer(layerNr).sortNodesByX();
-            graph.removeEmptyLayers();
-            graph.addEdges(movedNode, 10);
-        }
 
         private static boolean canMoveNodeUp(LayoutNode node) {
             if (node.getLayer() == 0) {
@@ -138,7 +121,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             if (reversedLink) {
                 //updateReversedLinkPositions(l);
                 LayoutNode fromNode2 = graph.getLayoutNode(l.getFrom().getVertex());
-                LayoutNode toNode2 =  graph.getLayoutNode(l.getTo().getVertex());
+                LayoutNode toNode2 = graph.getLayoutNode(l.getTo().getVertex());
 
                 // TODO
                 //updateNodeWithReversedEdges(fromNode2);
@@ -219,7 +202,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
          * edge crossings. This is determined by temporarily linking the vertex with its associated
          * edges and evaluating each possible position in the layer.
          *
-         * @param graph the layout graph where the vertex will be inserted
+         * @param graph  the layout graph where the vertex will be inserted
          * @param vertex the vertex to be inserted
          */
         private static void applyAddVertexAction(LayoutGraph graph, Vertex vertex) {

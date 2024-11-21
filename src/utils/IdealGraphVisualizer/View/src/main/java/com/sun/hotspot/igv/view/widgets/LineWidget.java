@@ -67,6 +67,8 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private boolean popupVisible;
     private final boolean isBold;
     private final boolean isDashed;
+    private int fromControlYOffset;
+    private int toControlYOffset;
 
     public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
@@ -166,9 +168,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         this.to= to;
         computeClientArea();
     }
-
-    private int fromControlYOffset;
-    private int toControlYOffset;
 
     public void setFromControlYOffset(int fromControlYOffset) {
         this.fromControlYOffset = fromControlYOffset;

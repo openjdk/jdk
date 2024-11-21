@@ -41,34 +41,14 @@ public class LayoutEdge {
             .comparingInt((LayoutEdge e) -> e.getTo().getLayer()) // Primary: Layer of the target node
             .thenComparingInt(e -> e.getFrom().getLayer())       // Secondary: Layer of the source node
             .thenComparingInt(System::identityHashCode);  // Tertiary: Unique identifier (fallback)
-
-
+    private final Link link;
     private LayoutNode from;
     private LayoutNode to;
     // Horizontal distance relative to the start of 'from' node.
     private int relativeFromX;
     // Horizontal distance relative to the start of 'to' node.
     private int relativeToX;
-    private Link link;
     private boolean isReversed;
-
-    /**
-     * Gets the absolute x-coordinate of the starting point of the edge.
-     *
-     * @return The x-coordinate of the edge's starting point.
-     */
-    public int getStartX() {
-        return relativeFromX + from.getLeft();
-    }
-
-    /**
-     * Gets the absolute x-coordinate of the ending point of the edge.
-     *
-     * @return The x-coordinate of the edge's ending point.
-     */
-    public int getEndX() {
-        return relativeToX + to.getLeft();
-    }
 
     /**
      * Constructs a LayoutEdge between two nodes with the specified link.
@@ -98,6 +78,24 @@ public class LayoutEdge {
         this(from, to, link);
         this.relativeFromX = relativeFromX;
         this.relativeToX = relativeToX;
+    }
+
+    /**
+     * Gets the absolute x-coordinate of the starting point of the edge.
+     *
+     * @return The x-coordinate of the edge's starting point.
+     */
+    public int getStartX() {
+        return relativeFromX + from.getLeft();
+    }
+
+    /**
+     * Gets the absolute x-coordinate of the ending point of the edge.
+     *
+     * @return The x-coordinate of the edge's ending point.
+     */
+    public int getEndX() {
+        return relativeToX + to.getLeft();
     }
 
     /**
@@ -219,14 +217,5 @@ public class LayoutEdge {
      */
     public Link getLink() {
         return link;
-    }
-
-    /**
-     * Sets the Link associated with this edge.
-     *
-     * @param link The Link to set.
-     */
-    public void setLink(Link link) {
-        this.link = link;
     }
 }

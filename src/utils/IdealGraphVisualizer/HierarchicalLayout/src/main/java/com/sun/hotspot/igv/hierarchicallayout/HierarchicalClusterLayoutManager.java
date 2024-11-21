@@ -23,13 +23,15 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.layout.*;
+import com.sun.hotspot.igv.layout.Cluster;
+import com.sun.hotspot.igv.layout.Link;
+import com.sun.hotspot.igv.layout.Port;
+import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.*;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class HierarchicalClusterLayoutManager extends LayoutManager {
@@ -38,13 +40,12 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
     private final LayoutManager manager;
 
     public HierarchicalClusterLayoutManager() {
-        this.manager =  new HierarchicalLayoutManager();
-        this.subManager =  new HierarchicalLayoutManager();
+        this.manager = new HierarchicalLayoutManager();
+        this.subManager = new HierarchicalLayoutManager();
     }
 
     @Override
     public void setCutEdges(boolean enable) {
-        System.out.println("HierarchicalClusterLayoutManager: " + enable);
         subManager.setCutEdges(enable);
         manager.setCutEdges(enable);
     }
@@ -159,7 +160,7 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
             n.updateSize();
         }
 
-        Set<Vertex> roots = new LayoutGraph(interClusterEdges).findRootVertices();
+        Set<Vertex> roots = new LayoutGraph(interClusterEdges, new HashSet<>()).findRootVertices();
         for (Vertex v : roots) {
             assert v instanceof ClusterNode;
             ((ClusterNode) v).setRoot(true);

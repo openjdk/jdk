@@ -31,14 +31,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Thomas Wuerthinger
  */
 public class ClusterIngoingConnection implements Link {
 
-    private List<Point> controlPoints;
     private final Port inputSlot;
     private final Port outputSlot;
+    private List<Point> controlPoints;
 
     public ClusterIngoingConnection(ClusterInputSlotNode inputSlotNode, Link c) {
         this.controlPoints = new ArrayList<>();
@@ -63,11 +62,11 @@ public class ClusterIngoingConnection implements Link {
         return null;
     }
 
-    public void setControlPoints(List<Point> p) {
-        this.controlPoints = p;
-    }
-
     public List<Point> getControlPoints() {
         return controlPoints;
+    }
+
+    public void setControlPoints(List<Point> p) {
+        this.controlPoints = p;
     }
 }

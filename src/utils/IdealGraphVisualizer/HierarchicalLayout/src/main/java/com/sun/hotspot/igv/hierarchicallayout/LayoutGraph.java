@@ -24,13 +24,12 @@
 package com.sun.hotspot.igv.hierarchicallayout;
 
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutEdge.LAYOUT_EDGE_LAYER_COMPARATOR;
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 
 public class LayoutGraph {
 
@@ -53,20 +52,10 @@ public class LayoutGraph {
     private List<LayoutLayer> layers;
 
     /**
-     * Constructs a new LayoutGraph using the provided collection of links.
-     * Initializes the graph layout structure with the given links.
-     *
-     * @param links The collection of links that represent the edges of the graph.
-     */
-    public LayoutGraph(Collection<? extends Link> links) {
-        this(links, new HashSet<>());
-    }
-
-    /**
      * Constructs a new LayoutGraph using the provided collection of links and additional vertices.
      * Initializes the graph layout structure with the given links and includes any additional vertices.
      *
-     * @param links The collection of links that represent the edges of the graph.
+     * @param links              The collection of links that represent the edges of the graph.
      * @param additionalVertices The collection of additional vertices to be included in the graph.
      */
     public LayoutGraph(Collection<? extends Link> links, Collection<? extends Vertex> additionalVertices) {
@@ -200,7 +189,7 @@ public class LayoutGraph {
      * If any neighbor is found in the specified layer, inserts a new layer to avoid conflicts.
      * Returns the adjusted layer number where the node can be safely inserted.
      *
-     * @param node The LayoutNode to check and possibly reposition.
+     * @param node    The LayoutNode to check and possibly reposition.
      * @param layerNr The proposed layer number for the node.
      * @return The layer number where the node can be safely inserted after adjustments.
      */
@@ -232,7 +221,7 @@ public class LayoutGraph {
      * @param layerNr The index at which to insert the new layer.
      */
     private void moveExpandLayerDown(int layerNr) {
-        LayoutLayer newLayer =  createNewLayer(layerNr);
+        LayoutLayer newLayer = createNewLayer(layerNr);
 
         if (layerNr == 0) return;
         LayoutLayer layerAbove = getLayer(layerNr - 1);
@@ -297,7 +286,7 @@ public class LayoutGraph {
     /**
      * Adds a LayoutNode to the specified layer and registers it in the graph.
      *
-     * @param node The LayoutNode to add to the layer.
+     * @param node        The LayoutNode to add to the layer.
      * @param layerNumber The index of the layer to which the node will be added.
      */
     public void addNodeToLayer(LayoutNode node, int layerNumber) {
@@ -562,6 +551,12 @@ public class LayoutGraph {
         return layers.get(layerNr);
     }
 
+    /**
+     * Finds the layer closest to the given y-coordinate.
+     *
+     * @param y the y-coordinate to check
+     * @return the index of the optimal layer, or -1 if no layers are found
+     */
     public int findLayer(int y) {
         int optimalLayer = -1;
         int minDistance = Integer.MAX_VALUE;
@@ -676,7 +671,7 @@ public class LayoutGraph {
      * Ensures no overlap with adjacent nodes and maintains minimum spacing.
      *
      * @param layoutNode The LayoutNode to reposition.
-     * @param newX The new x-coordinate to set for the node.
+     * @param newX       The new x-coordinate to set for the node.
      */
     private void repositionLayoutNodeX(LayoutNode layoutNode, int newX) {
         int currentX = layoutNode.getX();
@@ -764,7 +759,7 @@ public class LayoutGraph {
      * Calculates the optimal horizontal position (index) for the specified node within the given layer,
      * aiming to minimize the number of edge crossings.
      *
-     * @param node The node to position.
+     * @param node    The node to position.
      * @param layerNr The index of the layer in which to position the node.
      * @return The optimal position index within the layer for the node.
      */
@@ -973,7 +968,7 @@ public class LayoutGraph {
      * for edges that span more than one layer.
      * Can limit the maximum length of layers an edge spans using maxLayerLength.
      *
-     * @param layoutNode The node for which to create successor dummy nodes.
+     * @param layoutNode     The node for which to create successor dummy nodes.
      * @param maxLayerLength The maximum number of layers an edge can span without splitting it
      */
     public void createDummiesForNodeSuccessor(LayoutNode layoutNode, int maxLayerLength) {
@@ -1091,7 +1086,7 @@ public class LayoutGraph {
      * Handles edge reversal, dummy node insertion for both predecessors and successors,
      * and updates node positions accordingly.
      *
-     * @param node The LayoutNode to which edges will be added.
+     * @param node           The LayoutNode to which edges will be added.
      * @param maxLayerLength The maximum number of layers an edge can span without splitting it
      */
     public void addEdges(LayoutNode node, int maxLayerLength) {
