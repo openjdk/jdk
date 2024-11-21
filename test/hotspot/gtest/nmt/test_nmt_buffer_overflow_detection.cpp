@@ -63,8 +63,7 @@ static void test_unaliged_block_address() {
 DEFINE_TEST(test_unaliged_block_address, "block address is unaligned");
 
 // realloc is the trickiest of the bunch. Test that realloc works and correctly takes over
-// NMT header and footer to the resized block. We just test that nothing crashes - if the
-// header/footer get corrupted, NMT heap corruption checker will trigger alert on os::free()).
+// NMT header and footer to the resized block. We just test that nothing crashes.
 TEST_VM(NMT, test_realloc) {
   // We test both directions (growing and shrinking) and a small range for each to cover all
   // size alignment variants. Should not matter, but this should be cheap.
