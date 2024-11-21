@@ -968,6 +968,7 @@ class VPointer : public ArenaObj {
   static int cmp_for_sort(const VPointer** p1, const VPointer** p2);
 
   NOT_PRODUCT( void print() const; )
+  NOT_PRODUCT( static void print_con_or_idx(const Node* n); )
 };
 
 
