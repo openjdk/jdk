@@ -1281,27 +1281,27 @@ class StubGenerator: public StubCodeGenerator {
       break;
     case jshort_disjoint_arraycopy_id:
       aligned = false;
-      element_size = 1;
+      element_size = 2;
       break;
     case arrayof_jshort_disjoint_arraycopy_id:
       aligned = true;
-      element_size = 1;
+      element_size = 2;
       break;
     case jint_disjoint_arraycopy_id:
       aligned = false;
-      element_size = 1;
+      element_size = 4;
       break;
     case arrayof_jint_disjoint_arraycopy_id:
       aligned = true;
-      element_size = 1;
+      element_size = 4;
       break;
     case jlong_disjoint_arraycopy_id:
       aligned = false;
-      element_size = 1;
+      element_size = 8;
       break;
     case arrayof_jlong_disjoint_arraycopy_id:
       aligned = true;
-      element_size = 1;
+      element_size = 8;
       break;
     default:
       ShouldNotReachHere();
@@ -1376,32 +1376,32 @@ class StubGenerator: public StubCodeGenerator {
       break;
     case jshort_arraycopy_id:
       aligned = false;
-      element_size = 1;
+      element_size = 2;
       nooverlap_target = StubRoutines::jshort_disjoint_arraycopy();
       break;
     case arrayof_jshort_arraycopy_id:
       aligned = true;
-      element_size = 1;
+      element_size = 2;
       nooverlap_target = StubRoutines::arrayof_jshort_disjoint_arraycopy();
       break;
     case jint_arraycopy_id:
       aligned = false;
-      element_size = 1;
+      element_size = 4;
       nooverlap_target = StubRoutines::jint_disjoint_arraycopy();
       break;
     case arrayof_jint_arraycopy_id:
       aligned = true;
-      element_size = 1;
+      element_size = 4;
       nooverlap_target = StubRoutines::arrayof_jint_disjoint_arraycopy();
       break;
     case jlong_arraycopy_id:
       aligned = false;
-      element_size = 1;
+      element_size = 8;
       nooverlap_target = StubRoutines::jlong_disjoint_arraycopy();
       break;
     case arrayof_jlong_arraycopy_id:
       aligned = true;
-      element_size = 1;
+      element_size = 8;
       nooverlap_target = StubRoutines::arrayof_jlong_disjoint_arraycopy();
       break;
     default:
