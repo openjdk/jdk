@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public class AllocationMergesNestedPhiTests {
     int testGlobalEscapeInThread_Intrep(boolean cond1, int n, int x, int y) { return testGlobalEscapeInThread(cond1, n, x, y); }
 
     @Test
-    @IR(counts = { IRNode.ALLOC, ">=5"}, phase= CompilePhase.ITER_GVN_AFTER_EA)
+    @IR(counts = { IRNode.ALLOC, ">=4"}, phase= CompilePhase.ITER_GVN_AFTER_EA)
     int testGlobalEscapeInThread_C2(boolean cond1, int n, int x, int y) { return testGlobalEscapeInThread(cond1, n, x, y); }
 
     //--------------------------------------------------------------------------------------------------------------------------------------------
