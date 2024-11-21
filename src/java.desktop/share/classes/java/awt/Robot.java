@@ -119,7 +119,7 @@ public class Robot {
     private DirectColorModel screenCapCM = null;
 
     /**
-     * Default step for mouse glide and click in milliseconds.
+     * Default step delay (in milliseconds) for mouse glide and click.
      */
     public static final int DEFAULT_STEP_DELAY = 20;
 
@@ -787,7 +787,7 @@ public class Robot {
      *          extra mouse button that does not exist on the mouse and support for extended
      *          mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled}
      *          by Java
-     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     #mousePress(int)
      * @see     #mouseRelease(int)
      * @see     InputEvent#getMaskForButton(int)
@@ -805,6 +805,7 @@ public class Robot {
     /**
      * A convenience method that clicks mouse button 1.
      *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     #click(int)
      * @since   25
      */
@@ -836,7 +837,6 @@ public class Robot {
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
-     *
      * @see     #glide(int, int, int, int)
      * @since   25
      */
@@ -851,7 +851,6 @@ public class Robot {
      * 2 pixel step-length and a 20-millisecond delay.
      *
      * @param   dest    Destination point
-     *
      * @see     #glide(int, int)
      * @since   25
      */
@@ -868,7 +867,6 @@ public class Robot {
      * @param   fromY   Source point y coordinate
      * @param   toX     Destination point x coordinate
      * @param   toY     Destination point y coordinate
-     *
      * @see     #glide(int, int, int, int, int, int)
      * @since   25
      */
@@ -883,7 +881,6 @@ public class Robot {
      *
      * @param   src     Source point
      * @param   dest    Destination point
-     *
      * @see     #glide(int, int, int, int, int, int)
      * @since   25
      */
@@ -954,7 +951,7 @@ public class Robot {
      * @param   keycode Key to type (e.g. {@code KeyEvent.VK_A})
      * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
-     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     java.awt.Robot#keyPress(int)
      * @see     java.awt.Robot#keyRelease(int)
      * @see     java.awt.event.KeyEvent
@@ -971,7 +968,7 @@ public class Robot {
      * Types given character
      *
      * @param   c   Character to type (e.g. {@code 'a'})
-     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     #type(int)
      * @see     java.awt.event.KeyEvent
      * @since   25
@@ -984,7 +981,7 @@ public class Robot {
      * Types given array of characters one by one
      *
      * @param   symbols Array of characters to type
-     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     #type(char)
      * @since   25
      */
@@ -998,7 +995,7 @@ public class Robot {
      * Types given string
      *
      * @param   s   String to type
-     *
+     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     #type(char[])
      * @since   25
      */
