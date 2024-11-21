@@ -51,6 +51,19 @@ public class VectorMultiplyOpt {
     public static final VectorSpecies<Long> LSP = LongVector.SPECIES_PREFERRED;
     public static final VectorSpecies<Integer> ISP = IntVector.SPECIES_PREFERRED;
 
+    public static final long mask1 = r.nextLong(0xFFFFFFFFL);
+    public static final long mask2 = r.nextLong(0xFFFFFFFFL);
+    public static final long mask3 = r.nextLong(0xFFFFFFFFL);
+    public static final long mask4 = r.nextLong(0xFFFFFFFFL);
+    public static final long mask5 = r.nextLong(0xFFFFFFFFL);
+    public static final long mask6 = r.nextLong(0xFFFFFFFFL);
+
+    public static final int shift1 = r.nextInt(32) + 32;
+    public static final int shift2 = r.nextInt(32) + 32;
+    public static final int shift3 = r.nextInt(32) + 32;
+    public static final int shift4 = r.nextInt(32) + 32;
+    public static final int shift5 = r.nextInt(32) + 32;
+
     public VectorMultiplyOpt() {
         lsrc1 = new long[SIZE];
         lsrc2 = new long[SIZE];
@@ -94,94 +107,99 @@ public class VectorMultiplyOpt {
 
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public static void test_pattern1() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFL)
-                 .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFL))
+            vsrc1.lanewise(VectorOperators.AND, mask1)
+                 .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, mask1))
                  .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] & 0xFFFFFL) * (lsrc2[i] & 0xFFFFFL);
+            res[i] = (lsrc1[i] & mask1) * (lsrc2[i] & mask1);
         }
     }
 
     @Check(test = "test_pattern1")
     public void test_pattern1_validate() {
-        validate("pattern1 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFL) * (l2 & 0xFFFFFL));
+        validate("pattern1 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & mask1) * (l2 & mask1));
     }
 
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.AND_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public static void test_pattern2() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.AND, 0xFFFFFFL)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 31))
+            vsrc1.lanewise(VectorOperators.AND, mask2)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, shift1))
                 .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] & 0xFFFFFFL) * (lsrc2[i] >>> 31);
+            res[i] = (lsrc1[i] & mask2) * (lsrc2[i] >>> shift1);
         }
     }
 
     @Check(test = "test_pattern2")
     public void test_pattern2_validate() {
-        validate("pattern2 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & 0xFFFFFFL) * (l2 >>> 31));
+        validate("pattern2 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 & mask2) * (l2 >>> shift1));
     }
 
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {"vmuludq", " >0 "}, phase = CompilePhase.FINAL_CODE, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public static void test_pattern3() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.LSHR, 32)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, 32))
+            vsrc1.lanewise(VectorOperators.LSHR, shift2)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.LSHR, shift3))
                 .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] >>> 32) * (lsrc2[i] >>> 32);
+            res[i] = (lsrc1[i] >>> shift2) * (lsrc2[i] >>> shift3);
         }
     }
 
     @Check(test = "test_pattern3")
     public void test_pattern3_validate() {
-        validate("pattern3 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> 32) * (l2 >>> 32));
+        validate("pattern3 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> shift2) * (l2 >>> shift3));
     }
 
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.URSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {"vmuludq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
     @Warmup(value = 10000)
     public static void test_pattern4() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.LSHR, 30)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, 0xFFFFFFFL))
+            vsrc1.lanewise(VectorOperators.LSHR, shift4)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.AND, mask4))
                 .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] >>> 30) * (lsrc2[i] & 0xFFFFFFFL);
+            res[i] = (lsrc1[i] >>> shift4) * (lsrc2[i] & mask4);
         }
     }
 
     @Check(test = "test_pattern4")
     public void test_pattern4_validate() {
-        validate("pattern4 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> 30) * (l2 & 0xFFFFFFFL));
+        validate("pattern4 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >>> shift4) * (l2 & mask4));
     }
 
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.VECTOR_CAST_I2L, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
     @Warmup(value = 10000)
     public static void test_pattern5() {
         int i = 0;
@@ -207,24 +225,25 @@ public class VectorMultiplyOpt {
 
     @Test
     @IR(counts = {IRNode.MUL_VL, " >0 ", IRNode.RSHIFT_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {"vmuldq", " >0 "}, applyIfCPUFeature = {"avx", "true"}, phase = CompilePhase.FINAL_CODE)
     @Warmup(value = 10000)
     public static void test_pattern6() {
         int i = 0;
         for (; i < LSP.loopBound(res.length); i += LSP.length()) {
             LongVector vsrc1 = LongVector.fromArray(LSP, lsrc1, i);
             LongVector vsrc2 = LongVector.fromArray(LSP, lsrc2, i);
-            vsrc1.lanewise(VectorOperators.ASHR, 22)
-                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.ASHR, 22))
+            vsrc1.lanewise(VectorOperators.ASHR, shift5)
+                .lanewise(VectorOperators.MUL, vsrc2.lanewise(VectorOperators.ASHR, shift5))
                 .intoArray(res, i);
         }
         for (; i < res.length; i++) {
-            res[i] = (lsrc1[i] >> 22) * (lsrc2[i] >> 22);
+            res[i] = (lsrc1[i] >> shift5) * (lsrc2[i] >> shift5);
         }
     }
 
     @Check(test = "test_pattern6")
     public void test_pattern6_validate() {
-        validate("pattern6 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >> 22) * (l2 >> 22));
+        validate("pattern6 ", res, lsrc1, lsrc2, (l1, l2) -> (l1 >> shift5) * (l2 >> shift5));
     }
 
 }

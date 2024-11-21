@@ -6173,7 +6173,6 @@ instruct vmulI_mem(vec dst, vec src, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-
 // Longs vector mul
 instruct evmulL_reg(vec dst, vec src1, vec src2) %{
   predicate((Matcher::vector_length_in_bytes(n) == 64 &&
