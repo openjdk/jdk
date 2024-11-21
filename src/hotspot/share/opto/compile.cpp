@@ -721,7 +721,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
     initialize_stress_seed(directive);
   }
 
-  Init(/*do_aliasing=*/true);
+  Init(/*do_aliasing=*/ true);
 
   print_compile_messages();
 
@@ -730,10 +730,10 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   // Even if NO memory addresses are used, MergeMem nodes must have at least 1 slice
   assert(num_alias_types() >= AliasIdxRaw, "");
 
-#define MINIMUM_NODE_HASH 1023
+#define MINIMUM_NODE_HASH  1023
 
   // GVN that will be run immediately on new nodes
-  uint estimated_size = method()->code_size() * 4 + 64;
+  uint estimated_size = method()->code_size()*4+64;
   estimated_size = (estimated_size < MINIMUM_NODE_HASH ? MINIMUM_NODE_HASH : estimated_size);
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
@@ -750,8 +750,8 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
     // Set up tf(), start(), and find a CallGenerator.
     CallGenerator* cg = nullptr;
     if (is_osr_compilation()) {
-      const TypeTuple* domain = StartOSRNode::osr_domain();
-      const TypeTuple* range = TypeTuple::make_range(method()->signature());
+      const TypeTuple *domain = StartOSRNode::osr_domain();
+      const TypeTuple *range = TypeTuple::make_range(method()->signature());
       init_tf(TypeFunc::make(domain, range));
       StartNode* s = new StartOSRNode(root(), domain);
       initial_gvn()->set_type_bottom(s);
@@ -777,9 +777,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
         cg = CallGenerator::for_inline(method(), expected_uses);
       }
     }
-    if (failing()) {
-      return;
-    }
+    if (failing())  return;
     if (cg == nullptr) {
       const char* reason = InlineTree::check_can_parse(method());
       assert(reason != nullptr, "expect reason for parse failure");
@@ -820,9 +818,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       inline_string_calls(true);
     }
 
-    if (failing()) {
-      return;
-    }
+    if (failing())  return;
 
     // Remove clutter produced by parsing.
     if (!failing()) {
@@ -832,9 +828,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   // Note:  Large methods are capped off in do_one_bytecode().
-  if (failing()) {
-    return;
-  }
+  if (failing())  return;
 
   // After parsing, node notes are no longer automagic.
   // They must be propagated by register_new_node_with_optimizer(),
@@ -847,17 +841,13 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 #endif
 
-  if (failing()) {
-    return;
-  }
-  NOT_PRODUCT(verify_graph_edges();)
+  if (failing())  return;
+  NOT_PRODUCT( verify_graph_edges(); )
 
   // Now optimize
   Optimize();
-  if (failing()) {
-    return;
-  }
-  NOT_PRODUCT(verify_graph_edges();)
+  if (failing())  return;
+  NOT_PRODUCT( verify_graph_edges(); )
 
 #ifndef PRODUCT
   if (should_print_ideal()) {
@@ -969,7 +959,7 @@ Compile::Compile(ciEnv* ci_env,
   set_has_irreducible_loop(false); // no loops
 
   CompileWrapper cw(this);
-  Init(/*do_aliasing=*/false);
+  Init(/*do_aliasing=*/ false);
   init_tf((*generator)());
 
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
@@ -982,19 +972,20 @@ Compile::Compile(ciEnv* ci_env,
 
   {
     PhaseGVN gvn;
-    set_initial_gvn(&gvn); // not significant, but GraphKit guys use it pervasively
+    set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
     gvn.transform(top());
 
     GraphKit kit;
     kit.gen_stub(stub_function, stub_name, is_fancy_jump, pass_tls, return_pc);
   }
 
-  NOT_PRODUCT(verify_graph_edges();)
+  NOT_PRODUCT( verify_graph_edges(); )
 
   Code_Gen();
 }
 
 Compile::~Compile() {
+  delete _print_inlining_stream;
   delete _first_failure_details;
 };
 

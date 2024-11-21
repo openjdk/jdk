@@ -624,7 +624,6 @@ public:
   bool              do_aliasing() const          { return _do_aliasing; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
-  bool print_inlining() const { return _inline_printer.is_enabled(); }
   bool              print_intrinsics() const     { return _print_intrinsics; }
   void          set_print_intrinsics(bool z)     { _print_intrinsics = z; }
   uint              max_node_limit() const       { return (uint)_max_node_limit; }
@@ -635,6 +634,8 @@ public:
   void          set_has_monitors(bool v)         { _has_monitors = v; }
   bool              has_scoped_access() const    { return _has_scoped_access; }
   void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
+
+  bool print_inlining() const { return _inline_printer.is_enabled(); }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(CompileCommandEnum option) {
