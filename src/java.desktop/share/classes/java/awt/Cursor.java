@@ -28,7 +28,6 @@ package java.awt;
 import java.beans.ConstructorProperties;
 import java.io.InputStream;
 import java.io.Serial;
-import java.security.AccessController;
 import java.util.Hashtable;
 import java.util.Properties;
 import java.util.StringTokenizer;
