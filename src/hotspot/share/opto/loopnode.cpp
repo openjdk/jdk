@@ -1638,7 +1638,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   if (iv_bt == T_INT && cmp->Opcode() == Op_CmpL && incr != nullptr && incr->Opcode() == Op_ConvI2L) {
     Node* ctrl = x->in(LoopNode::EntryControl);
 
-    if (ctrl->is_IfTrue()) {
+    if (ctrl->is_IfTrue() && ctrl->in(0)->is_ParsePredicate()) {
       // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check
       // Check if the long limit is less or equal to jint_max
       Node* cmp_limit_max = new CmpLNode(limit, _igvn.longcon(max_jint));
