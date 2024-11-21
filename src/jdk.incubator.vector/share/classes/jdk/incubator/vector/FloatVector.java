@@ -678,7 +678,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             } else if (opKind(op, VO_MATHLIB)) {
-                return unaryMathOp(op, null, null);
+                return unaryMathOp(op);
             }
         }
         int opc = opCode(op);
@@ -705,7 +705,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             } else if (opKind(op, VO_MATHLIB)) {
-                return unaryMathOp(op, maskClass, m);
+                return blend(unaryMathOp(op), m);
             }
         }
         int opc = opCode(op);
@@ -718,16 +718,15 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     @ForceInline
     final
-    FloatVector unaryMathOp(VectorOperators.Unary op,
-                            Class<? extends VectorMask<Float>> maskClass,
-                            VectorMask<Float> m) {
+    FloatVector unaryMathOp(VectorOperators.Unary op) {
         int opc = opCode(op);
-        MemorySegment addr = VectorMathLibrary.lookup(op, opc, species());
+        VectorMathLibrary.Entry entry = VectorMathLibrary.lookup(op, opc, species());
 
         return VectorSupport.libraryUnaryOp(
-                addr.address(), getClass(), maskClass, float.class, length(), // constants
-                this, m,
-                UN_IMPL.find(op, opc, FloatVector::unaryOperations));
+                entry.entry().address(), getClass(), float.class, length(), // constants
+                this,
+                UN_IMPL.find(op, opc, FloatVector::unaryOperations),
+                entry.name());
     }
 
     private static final
@@ -800,7 +799,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     = this.viewAsIntegralLanes().compare(EQ, (int) 0);
                 return this.blend(that, mask.cast(vspecies()));
             } else if (opKind(op, VO_MATHLIB)) {
-                return binaryMathOp(op, null, that, null);
+                return binaryMathOp(op, that);
             }
         }
 
@@ -836,7 +835,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     = bits.compare(EQ, (int) 0, m.cast(bits.vspecies()));
                 return this.blend(that, mask.cast(vspecies()));
             } else if (opKind(op, VO_MATHLIB)) {
-                return binaryMathOp(op, maskClass, that, m);
+                return this.blend(binaryMathOp(op, that), m);
             }
         }
 
@@ -851,15 +850,15 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final
     FloatVector binaryMathOp(VectorOperators.Binary op,
-                             Class<? extends VectorMask<Float>> maskClass,
-                             FloatVector that, VectorMask<Float> m) {
+                             FloatVector that) {
         int opc = opCode(op);
-        MemorySegment addr = VectorMathLibrary.lookup(op, opc, species());
+        VectorMathLibrary.Entry entry = VectorMathLibrary.lookup(op, opc, species());
 
         return VectorSupport.libraryBinaryOp(
-                addr.address(), getClass(), maskClass, float.class, length(),
-                this, that, m,
-                BIN_IMPL.find(op, opc, FloatVector::binaryOperations));
+                entry.entry().address(), getClass(), float.class, length(),
+                this, that,
+                BIN_IMPL.find(op, opc, FloatVector::binaryOperations),
+                entry.name());
     }
 
     private static final

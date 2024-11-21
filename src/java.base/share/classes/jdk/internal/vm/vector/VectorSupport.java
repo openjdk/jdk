@@ -393,17 +393,15 @@ public class VectorSupport {
 //        V apply(MemorySegment entry, V v, M m);
 //    }
 
-//    @IntrinsicCandidate
+    @IntrinsicCandidate
     public static
-    <V extends Vector<E>,
-     M extends VectorMask<E>,
-     E>
-    V libraryUnaryOp(long addr,
-                     Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass, int length,
-                     V v, M m,
-                     UnaryOperation<V, M> defaultImpl) {
+    <V extends Vector<E>, E>
+    V libraryUnaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length,
+                     V v,
+                     UnaryOperation<V,?> defaultImpl,
+                     String debugName) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.apply(v, m);
+        return defaultImpl.apply(v, null);
     }
 
     /* ============================================================================ */
@@ -434,18 +432,15 @@ public class VectorSupport {
 //        V apply(MemorySegment entry, V v1, V v2, M m);
 //    }
 
-//    @IntrinsicCandidate
+    @IntrinsicCandidate
     public static
-    <V extends VectorPayload,
-     M extends VectorMask<E>,
-     E>
-    V libraryBinaryOp(long addr,
-                       Class<? extends V> vmClass, Class<? extends M> mClass, Class<E> eClass,
-                       int length,
-                       V v1, V v2, M m,
-                       BinaryOperation<V, M> defaultImpl) {
+    <V extends VectorPayload, E>
+    V libraryBinaryOp(long addr, Class<? extends V> vClass, Class<E> eClass, int length,
+                      V v1, V v2,
+                      BinaryOperation<V,?> defaultImpl,
+                      String debugName) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-        return defaultImpl.apply(v1, v2, m);
+        return defaultImpl.apply(v1, v2, null);
     }
 
     /* ============================================================================ */

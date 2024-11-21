@@ -480,6 +480,106 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   return true;
 }
 
+// public static
+// <V extends Vector<E>, E>
+// V unaryOp(long address, Class<? extends V> vClass, Class<E> elementType, int length,
+//           V v,
+//           UnaryOperation<V, ?> defaultImpl)
+//
+// public static
+// <V extends VectorPayload, E>
+// V binaryOp(long address, Class<? extends V> vClass, Class<E> elementType, int length,
+//            V v1, V v2,
+//            BinaryOperation<V, ?> defaultImpl)
+bool LibraryCallKit::inline_vector_call(int arity) {
+  assert(Matcher::supports_vector_calling_convention(), "required");
+
+  const TypeLong*    entry        = gvn().type(argument(0))->isa_long();
+  const TypeInstPtr* vector_klass = gvn().type(argument(2))->isa_instptr();
+  const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
+  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
+
+  if (entry == nullptr || vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+      !entry->is_con() || vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
+    log_if_needed("  ** missing constant: opr=%s vclass=%s etype=%s vlen=%s",
+                  NodeClassNames[argument(0)->Opcode()],
+                  NodeClassNames[argument(2)->Opcode()],
+                  NodeClassNames[argument(3)->Opcode()],
+                  NodeClassNames[argument(4)->Opcode()]);
+    return false; // not enough info for intrinsification
+  }
+
+  if (entry->get_con() == 0) {
+    log_if_needed("  ** missing entry point");
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+    return false; // should be primitive type
+  }
+  if (!is_klass_initialized(vector_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  BasicType elem_bt = elem_type->basic_type();
+  int num_elem = vlen->get_con();
+  if (!Matcher::vector_size_supported(elem_bt, num_elem)) {
+    log_if_needed("  ** vector size (vlen=%d, etype=%s) is not supported",
+                  num_elem, type2name(elem_bt));
+    return false;
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+
+  Node* opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  if (opd1 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s",
+                  NodeClassNames[argument(5)->Opcode()]);
+    return false;
+  }
+
+  Node* opd2 = nullptr;
+  if (arity > 1) {
+    opd2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+    if (opd2 == nullptr) {
+      log_if_needed("  ** unbox failed v2=%s",
+                    NodeClassNames[argument(6)->Opcode()]);
+      return false;
+    }
+  }
+  assert(arity == 1 || arity == 2, "not supported");
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  const TypeFunc* call_type = OptoRuntime::Math_Vector_Vector_Type(arity, vt, vt);
+  address entry_addr = (address)entry->get_con();
+
+  const char* debug_name = "<unknown>";
+  const TypeInstPtr* debug_name_oop = gvn().type(argument(8))->isa_instptr();
+  if (debug_name_oop != nullptr && debug_name_oop->const_oop() && !debug_name_oop->const_oop()->is_null_object()) {
+    size_t buflen = 100;
+    char* buf = NEW_ARENA_ARRAY(C->comp_arena(), char, buflen);
+    debug_name = debug_name_oop->const_oop()->as_instance()->java_lang_String_str(buf, buflen);
+  }
+  Node* vcall = make_runtime_call(RC_VECTOR,
+                                  call_type,
+                                  entry_addr,
+                                  debug_name,
+                                  TypePtr::BOTTOM,
+                                  opd1,
+                                  opd2);
+
+  vcall = gvn().transform(new ProjNode(gvn().transform(vcall), TypeFunc::Parms));
+
+  // Wrap it up in VectorBox to keep object type information.
+  Node* vbox = box_vector(vcall, vbox_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
 // Following routine generates IR corresponding to AbstractShuffle::partiallyWrapIndex method,
 // which partially wraps index by modulo VEC_LENGTH and generates a negative index value if original
 // index is out of valid index range [0, VEC_LENGTH)
