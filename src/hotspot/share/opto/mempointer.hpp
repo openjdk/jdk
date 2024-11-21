@@ -521,7 +521,10 @@ public:
     bool _is_known;
     Node* _base;
 
-    Base(bool is_known, Node* base) : _is_known(is_known), _base(base) {}
+    Base(bool is_known, Node* base) : _is_known(is_known), _base(base) {
+      assert(is_known || base == nullptr, "base is null if not known");
+      assert(!is_known || (base != nullptr && !base->is_top()), "valid known base");
+    }
 
   public:
     Base() : Base(false, nullptr) {}

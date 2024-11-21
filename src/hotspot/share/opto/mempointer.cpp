@@ -304,8 +304,16 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
 }
 
 MemPointerDecomposedForm::Base MemPointerDecomposedForm::Base::from_AddP(Node* pointer) {
+  // Bad form -> unknown.
   AddPNode* adr = pointer->isa_AddP();
-  return (adr == nullptr) ? Base() : Base(true, adr->in(AddPNode::Base));
+  if (adr == nullptr) { return Base(); }
+
+  // Top base -> native.
+  Node* base_adr = adr->in(AddPNode::Base);
+  if (base_adr->is_top()) { return Base(); }
+
+  // Known object base.
+  return Base(true, adr->in(AddPNode::Base));
 }
 
 // Compute the aliasing between two MemPointerDecomposedForm. We use the "MemPointer Lemma" to
