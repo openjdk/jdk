@@ -80,19 +80,20 @@ static const char _default_java_launcher[] = "generic";
 
 #define DEFAULT_JAVA_LAUNCHER _default_java_launcher
 
-char*  Arguments::_jvm_flags_file               = nullptr;
-char** Arguments::_jvm_flags_array              = nullptr;
-int    Arguments::_num_jvm_flags                = 0;
-char** Arguments::_jvm_args_array               = nullptr;
-int    Arguments::_num_jvm_args                 = 0;
-unsigned int Arguments::_addmods_count          = 0;
-char*  Arguments::_java_command                 = nullptr;
-SystemProperty* Arguments::_system_properties   = nullptr;
-size_t Arguments::_conservative_max_heap_alignment = 0;
-Arguments::Mode Arguments::_mode                = _mixed;
-const char*  Arguments::_java_vendor_url_bug    = nullptr;
-const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
-bool   Arguments::_sun_java_launcher_is_altjvm  = false;
+char*  Arguments::_jvm_flags_file                   = nullptr;
+char** Arguments::_jvm_flags_array                  = nullptr;
+int    Arguments::_num_jvm_flags                    = 0;
+char** Arguments::_jvm_args_array                   = nullptr;
+int    Arguments::_num_jvm_args                     = 0;
+unsigned int Arguments::_addmods_count              = 0;
+unsigned int Arguments::_enable_native_access_count = 0;
+char*  Arguments::_java_command                     = nullptr;
+SystemProperty* Arguments::_system_properties       = nullptr;
+size_t Arguments::_conservative_max_heap_alignment  = 0;
+Arguments::Mode Arguments::_mode                    = _mixed;
+const char*  Arguments::_java_vendor_url_bug        = nullptr;
+const char*  Arguments::_sun_java_launcher          = DEFAULT_JAVA_LAUNCHER;
+bool   Arguments::_sun_java_launcher_is_altjvm      = false;
 
 // These parameters are reset in method parse_vm_init_args()
 bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
@@ -125,8 +126,6 @@ PathString *Arguments::_boot_class_path = nullptr;
 bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = nullptr;
-
-unsigned int Arguments::_enable_native_access_count = 0;
 
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
@@ -1777,7 +1776,6 @@ unsigned int addreads_count = 0;
 unsigned int addexports_count = 0;
 unsigned int addopens_count = 0;
 unsigned int patch_mod_count = 0;
-//unsigned int enable_native_access_count = 0;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
