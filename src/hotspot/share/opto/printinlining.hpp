@@ -25,6 +25,9 @@
 #ifndef PRINTINLINING_HPP
 #define PRINTINLINING_HPP
 
+#include "memory/allocation.hpp"
+#include "utilities/ostream.hpp"
+
 class JVMState;
 class ciMethod;
 enum class InliningResult;
