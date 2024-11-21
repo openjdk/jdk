@@ -140,7 +140,12 @@ class SharedRuntime: AllStatic {
 
 
 #ifdef _WIN64
-  // Workaround for fmod issue in the Windows x64 CRT
+  // This used to be a workaround for the fmod issue
+  // in the Windows x64 CRT. Windows x64 now uses its
+  // own custom assembly, but during the review of
+  // 8342769 it was discovered that Windows ARM64
+  // now needs the workaround, so this is now used
+  // for Windows ARM64
   static double fmod_winx64(double x, double y);
 #endif
 
