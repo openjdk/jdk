@@ -122,7 +122,8 @@ import static jdk.incubator.vector.VectorOperators.*;
         @Override
         public String symbolName(Operator op, VectorSpecies<?> vspecies) {
             String suffix = suffix(vspecies);
-            return String.format("__jsvml_%s%s%d_%s", op.operatorName(), vspecies.elementType(), vspecies.length(), suffix);
+            String elemType = (vspecies.elementType() == float.class ? "f" : "");
+            return String.format("__jsvml_%s%s%d_ha_%s", op.operatorName(), elemType, vspecies.length(), suffix);
         }
 
         @Override
@@ -134,6 +135,9 @@ import static jdk.incubator.vector.VectorOperators.*;
             int maxLaneCount = VectorSupport.getMaxLaneCount(vspecies.elementType());
             if (vspecies.length() > maxLaneCount) {
                 return false; // lacking vector support
+            }
+            if (vspecies.vectorBitSize() < 128) {
+                return false; // 64-bit vectors are not supported
             }
             if (op == POW) {
                 return false; // not supported
