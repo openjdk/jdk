@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,116 +502,94 @@ class Metacity implements SynthConstants {
         g.setFont(oldFont);
     }
 
+    private static URL getThemeDir(String arg) {
+        String sep = File.separator;
+        String[] dirs = new String[] {
+            userHome + sep + ".themes",
+            System.getProperty("swing.metacitythemedir"),
+            "/usr/X11R6/share/themes",
+            "/usr/X11R6/share/gnome/themes",
+            "/usr/local/share/themes",
+            "/usr/local/share/gnome/themes",
+            "/usr/share/themes",
+            "/usr/gnome/share/themes",  // Debian/Redhat/Solaris
+            "/opt/gnome2/share/themes"  // SuSE
+        };
 
-
-    private static class ThemeGetter {
-        private static int GET_THEME_DIR  = 0;
-        private static int GET_USER_THEME = 1;
-        private static int GET_IMAGE      = 2;
-
-        public Object getThemeItem(int type, Object arg) {
-            if (type == GET_THEME_DIR) {
-                String sep = File.separator;
-                String[] dirs = new String[] {
-                    userHome + sep + ".themes",
-                    System.getProperty("swing.metacitythemedir"),
-                    "/usr/X11R6/share/themes",
-                    "/usr/X11R6/share/gnome/themes",
-                    "/usr/local/share/themes",
-                    "/usr/local/share/gnome/themes",
-                    "/usr/share/themes",
-                    "/usr/gnome/share/themes",  // Debian/Redhat/Solaris
-                    "/opt/gnome2/share/themes"  // SuSE
-                };
-
-                URL themeDir = null;
-                for (int i = 0; i < dirs.length; i++) {
-                    // System property may not be set so skip null directories.
-                    if (dirs[i] == null) {
-                        continue;
-                    }
-                    File dir =
-                        new File(dirs[i] + sep + arg + sep + "metacity-1");
-                    if (new File(dir, "metacity-theme-1.xml").canRead()) {
-                        try {
-                            themeDir = dir.toURI().toURL();
-                        } catch (MalformedURLException ex) {
-                            themeDir = null;
-                        }
-                        break;
-                    }
-                }
-                if (themeDir == null) {
-                    String filename = "resources/metacity/" + arg +
-                        "/metacity-1/metacity-theme-1.xml";
-                    URL url = getClass().getResource(filename);
-                    if (url != null) {
-                        String str = url.toString();
-                        try {
-                            @SuppressWarnings("deprecation")
-                            var _unused = themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
-                        } catch (MalformedURLException ex) {
-                            themeDir = null;
-                        }
-                    }
-                }
-                return themeDir;
-            } else if (type == GET_USER_THEME) {
+        URL themeDir = null;
+        for (int i = 0; i < dirs.length; i++) {
+            // System property may not be set so skip null directories.
+            if (dirs[i] == null) {
+                continue;
+            }
+            File dir =
+                new File(dirs[i] + sep + arg + sep + "metacity-1");
+            if (new File(dir, "metacity-theme-1.xml").canRead()) {
                 try {
-                    // Set userHome here because we need the privilege
-                    userHome = System.getProperty("user.home");
-
-                    String theme = System.getProperty("swing.metacitythemename");
-                    if (theme != null) {
-                        return theme;
-                    }
-                    // Note: this is a small file (< 1024 bytes) so it's not worth
-                    // starting an XML parser or even to use a buffered reader.
-                    @SuppressWarnings("deprecation")
-                    URL url = new URL(new File(userHome).toURI().toURL(),
-                                      ".gconf/apps/metacity/general/%25gconf.xml");
-                    // Pending: verify character encoding spec for gconf
-                    StringBuilder sb = new StringBuilder();
-                    try (InputStream in = url.openStream();
-                         Reader reader = new InputStreamReader(in, ISO_8859_1))
-                    {
-                        char[] buf = new char[1024];
-                        int n;
-                        while ((n = reader.read(buf)) >= 0) {
-                            sb.append(buf, 0, n);
-                        }
-                    }
-                    String str = sb.toString();
-                    if (str != null) {
-                        String strLowerCase = str.toLowerCase();
-                        int i = strLowerCase.indexOf("<entry name=\"theme\"");
-                        if (i >= 0) {
-                            i = strLowerCase.indexOf("<stringvalue>", i);
-                            if (i > 0) {
-                                i += "<stringvalue>".length();
-                                int i2 = str.indexOf('<', i);
-                                return str.substring(i, i2);
-                            }
-                        }
-                    }
-                } catch (IOException ex) {
-                    // OK to just ignore. We'll use a fallback theme.
+                    themeDir = dir.toURI().toURL();
+                } catch (MalformedURLException ex) {
+                    themeDir = null;
                 }
-                return null;
-            } else if (type == GET_IMAGE) {
-                return new ImageIcon((URL)arg).getImage();
-            } else {
-                return null;
+                break;
             }
         }
-    }
-
-    private static URL getThemeDir(String themeName) {
-        return (URL)new ThemeGetter().getThemeItem(ThemeGetter.GET_THEME_DIR, themeName);
+        if (themeDir == null) {
+            String filename = "resources/metacity/" + arg +
+                "/metacity-1/metacity-theme-1.xml";
+            URL url = Metacity.class.getResource(filename);
+            if (url != null) {
+                String str = url.toString();
+                try {
+                    @SuppressWarnings("deprecation")
+                    var _unused = themeDir = new URL(str.substring(0, str.lastIndexOf('/'))+"/");
+                } catch (MalformedURLException ex) {
+                    themeDir = null;
+                }
+            }
+        }
+        return themeDir;
     }
 
     private static String getUserTheme() {
-        return (String)new ThemeGetter().getThemeItem(ThemeGetter.GET_USER_THEME, null);
+        try {
+            // Set userHome here
+            userHome = System.getProperty("user.home");
+
+            String theme = System.getProperty("swing.metacitythemename");
+            if (theme != null) {
+                return theme;
+            }
+            // Note: this is a small file (< 1024 bytes) so it's not worth
+            // starting an XML parser or even to use a buffered reader.
+            @SuppressWarnings("deprecation")
+            URL url = new URL(new File(userHome).toURI().toURL(),
+                              ".gconf/apps/metacity/general/%25gconf.xml");
+            // Pending: verify character encoding spec for gconf
+            StringBuilder sb = new StringBuilder();
+            try (InputStream in = url.openStream();
+                 Reader reader = new InputStreamReader(in, ISO_8859_1))
+            {
+                char[] buf = new char[1024];
+                int n;
+                while ((n = reader.read(buf)) >= 0) {
+                    sb.append(buf, 0, n);
+                }
+            }
+            String str = sb.toString();
+            String strLowerCase = str.toLowerCase();
+            int i = strLowerCase.indexOf("<entry name=\"theme\"");
+            if (i >= 0) {
+                i = strLowerCase.indexOf("<stringvalue>", i);
+                if (i > 0) {
+                    i += "<stringvalue>".length();
+                    int i2 = str.indexOf('<', i);
+                    return str.substring(i, i2);
+                }
+            }
+        } catch (IOException ex) {
+            // OK to just ignore. We'll use a fallback theme.
+        }
+        return null;
     }
 
     protected void tileImage(Graphics g, Image image, int x0, int y0, int w, int h, float[] alphas) {
@@ -662,7 +640,7 @@ class Metacity implements SynthConstants {
                 try {
                     @SuppressWarnings("deprecation")
                     URL url = new URL(themeDir, key);
-                    image = (Image)new ThemeGetter().getThemeItem(ThemeGetter.GET_IMAGE, url);
+                    image = new ImageIcon(url).getImage();
                 } catch (MalformedURLException ex) {
                     //log("Bad image url: "+ themeDir + "/" + key);
                 }
