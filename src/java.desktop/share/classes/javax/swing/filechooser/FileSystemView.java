@@ -934,7 +934,6 @@ class WindowsFileSystemView extends FileSystemView {
         return super.createFileObject(path);
     }
 
-    @SuppressWarnings("serial") // anonymous class
     protected File createFileSystemRoot(File f) {
         // Problem: Removable drives on Windows return false on f.exists()
         // Workaround: Override exists() to always return true.

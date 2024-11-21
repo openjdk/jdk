@@ -1930,7 +1930,6 @@
   declare_toplevel_type(jbyte*)                                           \
   declare_toplevel_type(jbyte**)                                          \
   declare_toplevel_type(jint*)                                            \
-  declare_toplevel_type(jniIdMapBase*)                                    \
   declare_unsigned_integer_type(juint)                                    \
   declare_unsigned_integer_type(julong)                                   \
   declare_toplevel_type(JNIHandleBlock*)                                  \
