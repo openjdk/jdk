@@ -954,20 +954,13 @@ private:
   // the product flag UseIncDec value.
 
   void decl(Register dst);
-  void edecl(Register dst, Register src, bool no_flags);
   void decl(Address dst);
-  void edecl(Register dst, Address src, bool no_flags);
   void decq(Address dst);
-  void edecq(Register dst, Address src, bool no_flags);
 
   void incl(Register dst);
-  void eincl(Register dst, Register src, bool no_flags);
   void incl(Address dst);
-  void eincl(Register dst, Address src, bool no_flags);
   void incq(Register dst);
-  void eincq(Register dst, Register src, bool no_flags);
   void incq(Address dst);
-  void eincq(Register dst, Address src, bool no_flags);
 
   // New cpus require use of movsd and movss to avoid partial register stall
   // when loading from memory. But for old Opteron use movlpd instead of movsd.
@@ -1116,6 +1109,14 @@ private:
   void eaddq(Register dst, Register src1, Address src2, bool no_flags);
   void addq(Register dst, Register src);
   void eaddq(Register dst, Register src1, Register src2, bool no_flags);
+
+  void edecl(Register dst, Register src, bool no_flags);
+  void edecl(Register dst, Address src, bool no_flags);
+  void edecq(Register dst, Address src, bool no_flags);
+  void eincl(Register dst, Register src, bool no_flags);
+  void eincl(Register dst, Address src, bool no_flags);
+  void eincq(Register dst, Register src, bool no_flags);
+  void eincq(Register dst, Address src, bool no_flags);
 
 #ifdef _LP64
  //Add Unsigned Integers with Carry Flag
