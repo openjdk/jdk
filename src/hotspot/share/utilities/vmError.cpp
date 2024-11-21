@@ -133,7 +133,7 @@ static const char* env_list[] = {
   // defined on Windows
   "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR", "TMP", "TEMP",
 
-  (const char *)0
+  nullptr                       // End marker.
 };
 
 // A simple parser for -XX:OnError, usage:
