@@ -59,7 +59,7 @@ public:
 
   void work(uint worker_id) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahParallelWorkerSession worker_session(worker_id);
+    ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::ParallelMark, worker_id, true);
     ShenandoahSuspendibleThreadSetJoiner stsj;
     // Do not use active_generation() : we must use the gc_generation() set by
