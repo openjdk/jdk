@@ -1,5 +1,6 @@
 package jdk.incubator.vector;
 
+import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
@@ -16,6 +17,67 @@ import static jdk.incubator.vector.VectorOperators.*;
 
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
+    interface Library {
+        String symbolName(Operator op, VectorSpecies<?> vspecies);
+        boolean isSupported(Operator op, VectorSpecies<?> vspecies);
+
+        String SVML  = "svml";
+        String SLEEF = "sleef";
+        String JAVA  = "java";
+
+        static Library getInstance() {
+            String libraryName = System.getProperty("jdk.incubator.vector.VectorMathLib", getDefaultName());
+            try {
+                switch (libraryName) {
+                    case SVML:  return new SVML();
+                    case SLEEF: return new SLEEF();
+                    case JAVA:  return new Java();
+
+                    default: return new Java();
+                }
+            } catch (ExceptionInInitializerError e) {
+                if (DEBUG) {
+                    System.out.printf("DEBUG: VectorMathLibrary: Error during initialization of %s library: %s\n",
+                                      libraryName, e);
+                    e.printStackTrace(System.out);
+                }
+                return new Java(); // fallback
+            }
+        }
+
+        static String getDefaultName() {
+            switch (StaticProperty.osArch()) {
+                case "amd64":
+                case "x86_64":
+                    return SVML;
+                case "aarch64":
+                    return SLEEF;
+                default:
+                    return JAVA;
+            }
+        }
+    }
+
+    private static final Library LIBRARY = Library.getInstance();
+
+    static {
+        if (DEBUG) {
+            System.out.printf("DEBUG: VectorMathLibrary: %s is used\n", LIBRARY.getClass().getSimpleName());
+        }
+    }
+
+    private static class Java implements Library {
+        @Override
+        public String symbolName(Operator op, VectorSpecies<?> vspecies) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isSupported(Operator op, VectorSpecies<?> vspecies) {
+            return false; // always use default implementation
+        }
+    }
+
     // SVML method naming convention
     //   All the methods are named as __jsvml_<op><T><N>_ha_<VV>
     //   Where:
@@ -30,7 +92,7 @@ import static jdk.incubator.vector.VectorOperators.*;
     //              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
     //      e.g. __jsvml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
     //           __jsvml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
-    private static class SVML {
+    private static class SVML implements Library {
         static {
             loadNativeLibrary();
         }
@@ -40,34 +102,45 @@ import static jdk.incubator.vector.VectorOperators.*;
             System.loadLibrary("jsvml");
         }
 
-        static int AVX = 0;
-        static String suffix(VectorShape vshape) {
+        static int AVX = 0; // FIXME
+        private static String suffix(VectorShape vshape) {
             String avx_sse_str = (AVX >= 2) ? "l9" : ((AVX == 1) ? "e9" : "ex");
-            return switch (vshape) {
-                case S_64_BIT  -> avx_sse_str;
-                case S_128_BIT -> avx_sse_str;
-                case S_256_BIT -> avx_sse_str;
-                case S_512_BIT -> "z0";
-                case S_Max_BIT -> throw new InternalError("NYI");
+            return switch (vshape.vectorBitSize()) {
+                case 64  -> avx_sse_str; // ex
+                case 128 -> avx_sse_str; // l2 / e9 / ex
+                case 256 -> avx_sse_str; // l9 / e9
+                case 512 -> "z0";
+                default -> throw new InternalError("not supported: " + vshape);
             };
         }
 
-        static String symbolName(Operator op, VectorSpecies<?> vspecies) {
+        @Override
+        public String symbolName(Operator op, VectorSpecies<?> vspecies) {
             String suffix = suffix(vspecies.vectorShape());
             return String.format("__jsvml_%s%s%d_%s", op.operatorName(), vspecies.elementType(), vspecies.length(), suffix);
         }
 
-        // VectorSupport::VEC_SIZE_512:
-        // if ((!VM_Version::supports_avx512dq()) &&
-        //     (vop == VectorSupport::VECTOR_OP_LOG || vop == VectorSupport::VECTOR_OP_LOG10 || vop == VectorSupport::VECTOR_OP_POW)) {
-        //    continue;
-        // }
-        // if (vop == VectorSupport::VECTOR_OP_POW) {
-        //   continue;
-        // }
+        @Override
+        public boolean isSupported(Operator op, VectorSpecies<?> vspecies) {
+            Class<?> etype = vspecies.elementType();
+            if (etype != float.class && etype != double.class) {
+                return false; // only FP types are supported
+            }
+            int maxLaneCount = VectorSupport.getMaxLaneCount(vspecies.elementType());
+            if (vspecies.length() > maxLaneCount) {
+                return false; // lacking vector support
+            }
+            if (op == POW) {
+                return false; // not supported
+            }
+            if (vspecies.vectorBitSize() == 512 && (op == LOG || op == LOG10)) {
+                return false; // FIXME: requires VM_Version::supports_avx512dq())
+            }
+            return true;
+        }
     }
 
-    private static class SLEEF {
+    private static class SLEEF implements Library {
         static {
             loadNativeLibrary();
         }
@@ -77,11 +150,11 @@ import static jdk.incubator.vector.VectorOperators.*;
             System.loadLibrary("sleef");
         }
 
-        static String suffix(VectorShape vshape) {
-            return "advsimd"; // FIXME
+        private static String suffix(VectorShape vshape) {
+            return (vshape.vectorBitSize() > 128 ? "sve" : "advsimd");
         }
 
-        static String precisionLevel(Operator op) {
+        private static String precisionLevel(Operator op) {
             return (op == HYPOT ? "u05" : "u10");
         }
 
@@ -101,12 +174,32 @@ import static jdk.incubator.vector.VectorOperators.*;
         //              "sve/advsimd" for sve/neon implementations
         //     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
         //          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
-        static String symbolName(Operator op, VectorSpecies<?> vspecies) {
+        @Override
+        public String symbolName(Operator op, VectorSpecies<?> vspecies) {
             return String.format("%s%s%d_%s%s", op.operatorName(),
                                  (vspecies.elementType() == float.class ? "f" : "d"),
                                  vspecies.length(),
                                  precisionLevel(op),
                                  suffix(vspecies.vectorShape()));
+        }
+
+        @Override
+        public boolean isSupported(Operator op, VectorSpecies<?> vspecies) {
+            Class<?> etype = vspecies.elementType();
+            if (etype != float.class && etype != double.class) {
+                return false; // only FP element types are supported
+            }
+            int maxLaneCount = VectorSupport.getMaxLaneCount(vspecies.elementType());
+            if (vspecies.length() > maxLaneCount) {
+                return false; // lacking vector support
+            }
+            if (vspecies.vectorBitSize() < 128) {
+                return false; // 64-bit vectors are not supported
+            }
+            if (op == TANH) {
+                return false; // skip due to performance considerations
+            }
+            return true;
         }
     }
 
@@ -114,7 +207,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 
     private record Entry<T> (String name, MemorySegment entry, T impl) {}
 
-    private static final @Stable Entry<?>[][][] LIBRARY = new Entry<?>[SIZE][LaneType.SK_LIMIT][VectorShape.SK_LIMIT]; // OP x SHAPE x TYPE
+    private static final @Stable Entry<?>[][][] LIBRARY_ENTRIES = new Entry<?>[SIZE][LaneType.SK_LIMIT][VectorShape.SK_LIMIT]; // OP x SHAPE x TYPE
 
     @ForceInline
     private static <T> Entry<T> lookup(Operator op, int opc, VectorSpecies<?> vspecies, IntFunction<T> implSupplier) {
@@ -122,10 +215,10 @@ import static jdk.incubator.vector.VectorOperators.*;
         int elem_idx = ((AbstractSpecies<?>)vspecies).laneType.switchKey;
         int shape_idx = vspecies.vectorShape().switchKey;
         @SuppressWarnings({"unchecked"})
-        Entry<T> entry = (Entry<T>)LIBRARY[idx][elem_idx][shape_idx];
+        Entry<T> entry = (Entry<T>)LIBRARY_ENTRIES[idx][elem_idx][shape_idx];
         if (entry == null) {
             entry = constructEntry(op, opc, vspecies, implSupplier);
-            LIBRARY[idx][elem_idx][shape_idx] = entry; // FIXME: CAS
+            LIBRARY_ENTRIES[idx][elem_idx][shape_idx] = entry; // FIXME: CAS
         }
         return entry;
     }
@@ -134,19 +227,22 @@ import static jdk.incubator.vector.VectorOperators.*;
     private static
     <E, V extends Vector<E>, T>
     Entry<T> constructEntry(Operator op, int opc, VectorSpecies<E> vspecies, IntFunction<T> implSupplier) {
-        String symbol = SLEEF.symbolName(op, vspecies); // FIXME
-        MemorySegment addr = LOOKUP.find(symbol).orElse(MemorySegment.NULL); // FIXME
-        if (DEBUG) {
-            System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
+        String symbol = LIBRARY.symbolName(op, vspecies);
+        MemorySegment addr = MemorySegment.NULL;
+        if (LIBRARY.isSupported(op, vspecies)) {
+            addr = LOOKUP.find(symbol).orElseThrow(() -> new InternalError("not supported: " + op + " " + vspecies + " " + symbol));
+            if (DEBUG) {
+                System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
+            }
         }
-        T impl = implSupplier.apply(opc); // FIXME: should call into the same native impl
+        T impl = implSupplier.apply(opc); // FIXME: should call the very same native impl
         return new Entry<>(symbol, addr, impl);
     }
 
     @ForceInline
     /*package-private*/ static
     <E, V extends Vector<E>>
-    V unaryMathOp(VectorOperators.Unary op, int opc, VectorSpecies<E> vspecies,
+    V unaryMathOp(Unary op, int opc, VectorSpecies<E> vspecies,
                   IntFunction<VectorSupport.UnaryOperation<V,?>> implSupplier,
                   V v) {
         var entry = lookup(op, opc, vspecies, implSupplier);
@@ -168,7 +264,7 @@ import static jdk.incubator.vector.VectorOperators.*;
     @ForceInline
     /*package-private*/ static
     <E, V extends Vector<E>>
-    V binaryMathOp(VectorOperators.Binary op, int opc, VectorSpecies<E> vspecies,
+    V binaryMathOp(Binary op, int opc, VectorSpecies<E> vspecies,
                    IntFunction<VectorSupport.BinaryOperation<V,?>> implSupplier,
                    V v1, V v2) {
         var entry = lookup(op, opc, vspecies, implSupplier);
