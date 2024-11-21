@@ -118,8 +118,15 @@ public class Robot {
 
     private DirectColorModel screenCapCM = null;
 
-    public final static int DEFAULT_STEP_DELAY = 20;       // Speed for mouse glide and click
-    public final static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
+    /**
+     * Default step for mouse glide and click in milliseconds.
+     */
+    public static final int DEFAULT_STEP_DELAY = 20;
+
+    /**
+     * Default step length (in pixels) for mouse glide.
+     */
+    public static final int DEFAULT_STEP_LENGTH = 2;
 
     /**
      * Constructs a Robot object in the coordinate system of the primary screen.
