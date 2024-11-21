@@ -53,21 +53,21 @@ TEST_VM(PlaceholderTable, supername) {
     PlaceholderTable::classloadAction define_action = PlaceholderTable::DEFINE_CLASS;
 
     // DefineClass A and D
-    PlaceholderTable::find_and_add(A, loader_data, define_action, nullptr, THREAD);
-    PlaceholderTable::find_and_add(D, loader_data, define_action, nullptr, T2);
+    PlaceholderTable::find_and_add(A, loader_data, define_action, nullptr, false, THREAD);
+    PlaceholderTable::find_and_add(D, loader_data, define_action, nullptr, false, T2);
 
     // Load interfaces first to get supername replaced
-    PlaceholderTable::find_and_add(A, loader_data, super_action, interf, THREAD);
+    PlaceholderTable::find_and_add(A, loader_data, super_action, interf, false, THREAD);
     PlaceholderTable::find_and_remove(A, loader_data, super_action, THREAD);
 
-    PlaceholderTable::find_and_add(D, loader_data, super_action, interf, T2);
+    PlaceholderTable::find_and_add(D, loader_data, super_action, interf, false, T2);
     PlaceholderTable::find_and_remove(D, loader_data, super_action, T2);
 
     ASSERT_EQ(interf->refcount(), 1) << "supername is replaced with null";
 
     // Add placeholder to the table for loading A and super, and D also loading super
-    PlaceholderTable::find_and_add(A, loader_data, super_action, super, THREAD);
-    PlaceholderTable::find_and_add(D, loader_data, super_action, super, T2);
+    PlaceholderTable::find_and_add(A, loader_data, super_action, super, true, THREAD);
+    PlaceholderTable::find_and_add(D, loader_data, super_action, super, true, T2);
 
     // Another thread comes in and finds A loading Super
     PlaceholderEntry* placeholder = PlaceholderTable::get_entry(A, loader_data);
@@ -81,7 +81,7 @@ TEST_VM(PlaceholderTable, supername) {
     super->decrement_refcount();
 
     // handle_parallel_super_load (same thread doesn't assert)
-    PlaceholderTable::find_and_add(A, loader_data, super_action, supername, T2);
+    PlaceholderTable::find_and_add(A, loader_data, super_action, supername, true, T2);
 
     // Refcount should be 3: one in table for class A, one in table for class D
     // and one locally with SymbolHandle keeping it alive

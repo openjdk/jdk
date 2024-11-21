@@ -188,10 +188,11 @@ bool PlaceholderEntry::remove_seen_thread(JavaThread* thread, PlaceholderTable::
 }
 
 
-void PlaceholderEntry::set_next_klass_name(Symbol* next_klass_name) {
+void PlaceholderEntry::set_next_klass_name(Symbol* next_klass_name, bool is_superclass) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(_next_klass_name == nullptr || _next_klass_name->refcount() > 1, "must be referenced also by the loader");
   _next_klass_name = next_klass_name;
+  _is_superclass = is_superclass;
 }
 
 // Placeholder objects represent classes currently being loaded.
@@ -199,12 +200,12 @@ void PlaceholderEntry::set_next_klass_name(Symbol* next_klass_name) {
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
 static PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
-                                   Symbol* next_klass_name){
+                                   Symbol* next_klass_name, bool is_superclass) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != nullptr, "adding nullptr obj");
 
   PlaceholderEntry entry;
-  entry.set_next_klass_name(next_klass_name);
+  entry.set_next_klass_name(next_klass_name, is_superclass);
   PlaceholderKey key(class_name, loader_data);
   bool created;
   PlaceholderEntry* table_copy = _placeholders->put_if_absent(key, entry, &created);
@@ -255,16 +256,17 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
                                                  ClassLoaderData* loader_data,
                                                  classloadAction action,
                                                  Symbol* next_klass_name,
+                                                 bool is_superclass,
                                                  JavaThread* thread) {
   assert(action != DETECT_CIRCULARITY || next_klass_name != nullptr,
          "must have a class name for the next step in the class resolution recursion");
   PlaceholderEntry* probe = get_entry(name, loader_data);
   if (probe == nullptr) {
     // Nothing found, add place holder
-    probe = add_entry(name, loader_data, next_klass_name);
+    probe = add_entry(name, loader_data, next_klass_name, is_superclass);
   } else {
     if (action == DETECT_CIRCULARITY) {
-      probe->set_next_klass_name(next_klass_name);
+      probe->set_next_klass_name(next_klass_name, is_superclass);
     }
   }
   probe->add_seen_thread(thread, action);
@@ -297,7 +299,7 @@ void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_dat
   log(name, probe, "find_and_remove", action);
   probe->remove_seen_thread(thread, action);
   if (probe->circularityThreadQ() == nullptr) {
-    probe->set_next_klass_name(nullptr);
+    probe->set_next_klass_name(nullptr, false);
   }
   // If no other threads using this entry, and this thread is not using this entry for other states
   if ((probe->circularityThreadQ() == nullptr) && (probe->loadInstanceThreadQ() == nullptr)

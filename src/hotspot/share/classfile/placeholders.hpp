@@ -60,6 +60,7 @@ class PlaceholderTable : public AllStatic {
   // If entry exists, reuse entry and push SeenThread for classloadAction
   static PlaceholderEntry* find_and_add(Symbol* name, ClassLoaderData* loader_data,
                                         classloadAction action, Symbol* supername,
+                                        bool is_superclass,
                                         JavaThread* thread);
 
   // find_and_remove first removes SeenThread for classloadAction
@@ -93,6 +94,7 @@ class PlaceholderEntry {
                                     // including _definer
                                     // _definer owns token
                                     // queue waits for and returns results from _definer
+  bool              _is_superclass; // entered for super class, not interface
 
   SeenThread* actionToQueue(PlaceholderTable::classloadAction action);
   void set_threadQ(SeenThread* seenthread, PlaceholderTable::classloadAction action);
@@ -110,10 +112,10 @@ class PlaceholderEntry {
  public:
   PlaceholderEntry() :
      _definer(nullptr), _instanceKlass(nullptr),
-     _circularityThreadQ(nullptr), _loadInstanceThreadQ(nullptr), _defineThreadQ(nullptr) { }
+     _circularityThreadQ(nullptr), _loadInstanceThreadQ(nullptr), _defineThreadQ(nullptr), _is_superclass(false) { }
 
   Symbol*            next_klass_name()     const { return _next_klass_name; }
-  void               set_next_klass_name(Symbol* next_klass_name);
+  void               set_next_klass_name(Symbol* next_klass_name, bool is_superclass);
 
   JavaThread*        definer()             const {return _definer; }
   void               set_definer(JavaThread* definer) { _definer = definer; }
@@ -132,6 +134,8 @@ class PlaceholderEntry {
   bool define_class_in_progress() {
     return (_defineThreadQ != nullptr);
   }
+
+  bool is_superclass() const { return _is_superclass; }
 
   // Used for ClassCircularityError checking
   bool check_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);

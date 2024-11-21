@@ -470,7 +470,7 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
       PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(class_name,
                                                                   loader_data,
                                                                   PlaceholderTable::DETECT_CIRCULARITY,
-                                                                  next_name, THREAD);
+                                                                  next_name, is_superclass, THREAD);
     }
   }
 
@@ -508,16 +508,15 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
 // detection for parallelCapable class loaders that lock on a per-class lock.
 static void handle_parallel_super_load(Symbol* name,
                                        Symbol* superclassname,
+                                       bool is_superclass,
                                        Handle class_loader,
                                        TRAPS) {
 
   // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
-  // This passes true to is_superclass even though it might not be the super class in order to perform the
-  // optimization anyway.
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
-                                                                       true,
+                                                                       is_superclass,
                                                                        CHECK);
 }
 
@@ -614,6 +613,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   bool circularity_detection_in_progress  = false;
   InstanceKlass* loaded_class = nullptr;
   SymbolHandle superclassname; // Keep alive while loading in parallel thread.
+  bool is_superclass = false;
 
   guarantee(THREAD->can_call_java(),
          "can not load classes with compiler thread: class=%s, classloader=%s",
@@ -633,6 +633,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
          circularity_detection_in_progress = true;
          superclassname = placeholder->next_klass_name();
          assert(superclassname != nullptr, "superclass has to have a name");
+         is_superclass = placeholder->is_superclass();
       }
     }
   }
@@ -640,7 +641,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // If the class is in the placeholder table with super_class set,
   // handle superclass loading in progress.
   if (circularity_detection_in_progress) {
-    handle_parallel_super_load(name, superclassname,
+    handle_parallel_super_load(name, superclassname, is_superclass,
                                class_loader,
                                CHECK_NULL);
   }
@@ -681,7 +682,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
           // Add the LOAD_INSTANCE token. Threads will wait on loading to complete for this thread.
           PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(name, loader_data,
                                                                       PlaceholderTable::LOAD_INSTANCE,
-                                                                      nullptr,
+                                                                      nullptr, false,
                                                                       THREAD);
           load_placeholder_added = true;
         }
@@ -1464,7 +1465,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
 
     // Acquire define token for this class/classloader
     PlaceholderEntry* probe = PlaceholderTable::find_and_add(name_h, loader_data,
-                                                             PlaceholderTable::DEFINE_CLASS, nullptr, THREAD);
+                                                             PlaceholderTable::DEFINE_CLASS, nullptr, false, THREAD);
     // Wait if another thread defining in parallel
     // All threads wait - even those that will throw duplicate class: otherwise
     // caller is surprised by LinkageError: duplicate, but findLoadedClass fails
