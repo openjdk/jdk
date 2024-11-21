@@ -32,9 +32,6 @@
                                       do_arch_entry,                    \
                                       do_arch_entry_init)               \
   do_arch_blob(initial, 10000)                                          \
-  do_arch_entry(riscv, initial, get_previous_sp,                        \
-                get_previous_sp_entry,                                  \
-                get_previous_sp_entry)                                  \
 
 
 #define STUBGEN_CONTINUATION_BLOBS_ARCH_DO(do_stub,                     \

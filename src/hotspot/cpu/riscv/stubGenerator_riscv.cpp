@@ -1096,10 +1096,11 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Arguments:
-  //   aligned - true => Input and output aligned on a HeapWord == 8-byte boundary
-  //             ignored
-  //   is_oop  - true => oop array, so generate store check code
-  //   name    - stub name string
+  //   stub_id - is used to name the stub and identify all details of
+  //             how to perform the copy.
+  //
+  //   entry - is assigned to the stub's post push entry point unless
+  //           it is null
   //
   // Inputs:
   //   c_rarg0   - source array address
@@ -1110,9 +1111,9 @@ class StubGenerator: public StubCodeGenerator {
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomically.
   //
-  // Side Effects:
-  //   disjoint_int_copy_entry is set to the no-overlap entry point
-  //   used by generate_conjoint_int_oop_copy().
+  // Side Effects: entry is set to the (post push) entry point so it
+  //               can be used by the corresponding conjoint copy
+  //               method
   //
   address generate_disjoint_copy(StubGenStubId stub_id, address* entry) {
     size_t size;
@@ -1248,10 +1249,15 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Arguments:
-  //   aligned - true => Input and output aligned on a HeapWord == 8-byte boundary
-  //             ignored
-  //   is_oop  - true => oop array, so generate store check code
-  //   name    - stub name string
+  //   stub_id - is used to name the stub and identify all details of
+  //             how to perform the copy.
+  //
+  //   nooverlap_target - identifes the (post push) entry for the
+  //             corresponding disjoint copy routine which can be
+  //             jumped to if the ranges do not actually overlap
+  //
+  //   entry - is assigned to the stub's post push entry point unless
+  //           it is null
   //
   // Inputs:
   //   c_rarg0   - source array address
@@ -1261,6 +1267,10 @@ class StubGenerator: public StubCodeGenerator {
   // If 'from' and/or 'to' are aligned on 4-byte boundaries, we let
   // the hardware handle it.  The two dwords within qwords that span
   // cache line boundaries will still be loaded and stored atomically.
+  //
+  // Side Effects:
+  //   entry is set to the no-overlap entry point so it can be used by
+  //   some other conjoint copy method
   //
   address generate_conjoint_copy(StubGenStubId stub_id, address nooverlap_target, address *entry) {
     const Register s = c_rarg0, d = c_rarg1, count = c_rarg2;
