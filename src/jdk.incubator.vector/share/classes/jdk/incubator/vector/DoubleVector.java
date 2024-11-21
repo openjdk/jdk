@@ -677,7 +677,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         if (opKind(op, VO_SPECIAL)) {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
-            } else if (opKind(op, VO_MATHLIB)) {
+            }
+            else if (opKind(op, VO_MATHLIB)) {
                 return unaryMathOp(op);
             }
         }
@@ -704,7 +705,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         if (opKind(op, VO_SPECIAL)) {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
-            } else if (opKind(op, VO_MATHLIB)) {
+            }
+            else if (opKind(op, VO_MATHLIB)) {
                 return blend(unaryMathOp(op), m);
             }
         }
@@ -714,7 +716,6 @@ public abstract class DoubleVector extends AbstractVector<Double> {
             this, m,
             UN_IMPL.find(op, opc, DoubleVector::unaryOperations));
     }
-
 
     @ForceInline
     final
@@ -792,7 +793,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 VectorMask<Long> mask
                     = this.viewAsIntegralLanes().compare(EQ, (long) 0);
                 return this.blend(that, mask.cast(vspecies()));
-            } else if (opKind(op, VO_MATHLIB)) {
+            }
+            else if (opKind(op, VO_MATHLIB)) {
                 return binaryMathOp(op, that);
             }
         }
@@ -828,9 +830,11 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                 VectorMask<Long> mask
                     = bits.compare(EQ, (long) 0, m.cast(bits.vspecies()));
                 return this.blend(that, mask.cast(vspecies()));
-            } else if (opKind(op, VO_MATHLIB)) {
+            }
+            else if (opKind(op, VO_MATHLIB)) {
                 return this.blend(binaryMathOp(op, that), m);
             }
+
         }
 
         int opc = opCode(op);

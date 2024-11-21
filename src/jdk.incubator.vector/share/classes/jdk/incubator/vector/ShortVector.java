@@ -689,7 +689,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -717,7 +717,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -727,6 +727,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             this, m,
             UN_IMPL.find(op, opc, ShortVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<ShortVector, VectorMask<Short>>>
@@ -824,6 +825,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     = this.compare(EQ, (short) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -849,6 +851,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             this, that, m,
             BIN_IMPL.find(op, opc, ShortVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<ShortVector, VectorMask<Short>>>
