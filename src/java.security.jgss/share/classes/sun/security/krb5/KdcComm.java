@@ -346,7 +346,7 @@ public final class KdcComm {
             if (DEBUG != null) {
                 DEBUG.println(">>> KDCCommunication: kdc=" + kdc
                         + " " + proto + ":"
-                        +  port +  ", timeout="
+                        + port + ", timeout="
                         + timeout
                         + ",Attempt =" + i
                         + ", #bytes=" + obuf.length);

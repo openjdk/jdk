@@ -112,7 +112,7 @@ public final class SunNativeProvider extends Provider {
                      debug("Loaded GSS library: " + libName);
                  }
                  Oid[] mechs = GSSLibStub.indicateMechs();
-                 HashMap<String,String> map = new HashMap<>();
+                 HashMap<String, String> map = new HashMap<>();
                  for (int i = 0; i < mechs.length; i++) {
                      if (DEBUG) {
                          debug("Native MF for " + mechs[i]);
