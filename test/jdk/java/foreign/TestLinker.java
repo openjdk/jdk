@@ -203,12 +203,43 @@ public class TestLinker extends NativeTestHelper {
     }
 
     @Test
-    public void paddingUnion() {
+    public void paddingUnionByteSize3() {
         Linker linker = Linker.nativeLinker();
         var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(3), ValueLayout.JAVA_INT);
         var fd = FunctionDescriptor.of(union, union, union);
         var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
         assertEquals(e.getMessage(), "Superfluous padding x3 in [x3|i4]");
+    }
+
+    @Test
+    public void paddingUnionByteSize4() {
+        Linker linker = Linker.nativeLinker();
+        var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(4), ValueLayout.JAVA_INT);
+        var fd = FunctionDescriptor.of(union, union, union);
+        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals(e.getMessage(), "Superfluous padding x4 in [x4|i4]");
+    }
+
+    @Test
+    public void paddingUnionByteSize5() {
+        Linker linker = Linker.nativeLinker();
+        var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(5), ValueLayout.JAVA_INT);
+        var fd = FunctionDescriptor.of(union, union, union);
+        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals(e.getMessage(), "Layout '[x5|i4]' has unexpected size: 5 != 4");
+    }
+
+    @Test
+    public void paddingUnionSeveral() {
+        Linker linker = Linker.nativeLinker();
+        var union = MemoryLayout.unionLayout(
+                MemoryLayout.sequenceLayout(3, ValueLayout.JAVA_INT),
+                ValueLayout.JAVA_LONG,
+                MemoryLayout.paddingLayout(16),
+                MemoryLayout.paddingLayout(16));
+        var fd = FunctionDescriptor.of(union, union, union);
+        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals(e.getMessage(), "More than one padding in [[3:i4]|j8|x16|x16]");
     }
 
     @Test
