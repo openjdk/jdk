@@ -1633,7 +1633,7 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   Node* limit = nullptr;
   Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
 
-  if (iv_bt != T_INT || cmp == nullptr || cmp->Opcode() != Op_CmpL || incr == nullptr || incr->Opcode() == Op_ConvI2L) {
+  if (iv_bt != T_INT || cmp == nullptr || cmp->Opcode() != Op_CmpL || incr == nullptr || incr->Opcode() != Op_ConvI2L) {
     return false;
   }
 
@@ -1645,7 +1645,8 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   set_early_ctrl(new_limit, ctrl);
 
   Node* new_cmp = _igvn.register_new_node_with_optimizer(
-      cmp->in(0) == incr ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr),
+      // cmp->in(0) == incr ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr),
+      new CmpINode(new_incr, new_limit),
       cmp);
   set_early_ctrl(new_cmp, ctrl);
 
