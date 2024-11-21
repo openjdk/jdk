@@ -39,18 +39,16 @@ public class LayoutGraph {
                     .thenComparingInt(l -> l.getFrom().getRelativePosition().x)
                     .thenComparingInt(l -> l.getTo().getRelativePosition().x);
 
-    // The registered Links and Vertices
-    private final Set<? extends Link> links;
+    // Registered Graph Components: Links, Vertices, and Port Mappings
+    private final Set<Link> links;
     private final SortedSet<Vertex> vertices;
     private final LinkedHashMap<Vertex, List<Port>> inputPorts;
     private final LinkedHashMap<Vertex, List<Port>> outputPorts;
     private final LinkedHashMap<Port, List<Link>> portLinks;
-    // for each
-    private final LinkedHashMap<Vertex, LayoutNode> vertexToLayoutNode;
 
+    // Layout Management: LayoutNodes and LayoutLayers
+    private final LinkedHashMap<Vertex, LayoutNode> layoutNodes;
     private final List<LayoutNode> dummyNodes;
-    private final List<LayoutNode> layoutNodes;
-
     private List<LayoutLayer> layers;
 
     /**
@@ -86,24 +84,152 @@ public class LayoutGraph {
         }
 
         // cleanup
-        vertexToLayoutNode = new LinkedHashMap<>();
+        layoutNodes = new LinkedHashMap<>();
         dummyNodes = new ArrayList<>();
-        layoutNodes = new ArrayList<>();
 
         // Set up nodes
-        for (Vertex v : getVertices()) {
-            LayoutNode node = new LayoutNode(v);
-            layoutNodes.add(node);
-            vertexToLayoutNode.put(v, node);
+        for (Vertex vertex : getVertices()) {
+            createLayoutNode(vertex); // TODO: move out
         }
 
         // Set up edges
         List<Link> sortedLinks = new ArrayList<>(links);
-        sortedLinks.sort(LINK_COMPARATOR);
+        sortedLinks.sort(LINK_COMPARATOR); // needed for reproducibility
         for (Link link : sortedLinks) {
-            createLayoutEdge(link);
+            createLayoutEdge(link); // // TODO: move out
         }
     }
+
+    /**
+     * Adds a new link to the graph between existing vertices.
+     *
+     * @param link The Link to be added.
+     */
+    public void addLink(Link link) {
+        assert !links.contains(link) : "Link already exists in the graph";
+
+        Port fromPort = link.getFrom();
+        Port toPort = link.getTo();
+        Vertex fromVertex = fromPort.getVertex();
+        Vertex toVertex = toPort.getVertex();
+
+        // Ensure vertices exist
+        assert vertices.contains(fromVertex) && !vertices.contains(toVertex) : "Both vertices must exist in the graph to add a link.";
+
+        // Add to links set
+        links.add(link);
+
+        // Update portLinks
+        portLinks.computeIfAbsent(fromPort, k -> new ArrayList<>()).add(link);
+        portLinks.computeIfAbsent(toPort, k -> new ArrayList<>()).add(link);
+
+        // Update inputPorts and outputPorts
+        outputPorts.computeIfAbsent(fromVertex, k -> new ArrayList<>()).add(fromPort);
+        inputPorts.computeIfAbsent(toVertex, k -> new ArrayList<>()).add(toPort);
+    }
+
+    /**
+     * Removes a link from the graph.
+     *
+     * @param link The Link to be removed.
+     */
+    public void removeLink(Link link) {
+        assert  links.contains(link) : "Link does not exist in the graph";
+
+        Port fromPort = link.getFrom();
+        Port toPort = link.getTo();
+        Vertex fromVertex = fromPort.getVertex();
+        Vertex toVertex = toPort.getVertex();
+
+        // Remove from links set
+        links.remove(link);
+
+        // Update portLinks
+        List<Link> fromPortLinks = portLinks.get(fromPort);
+        if (fromPortLinks != null) {
+            fromPortLinks.remove(link);
+            if (fromPortLinks.isEmpty()) {
+                portLinks.remove(fromPort);
+            }
+        }
+
+        List<Link> toPortLinks = portLinks.get(toPort);
+        if (toPortLinks != null) {
+            toPortLinks.remove(link);
+            if (toPortLinks.isEmpty()) {
+                portLinks.remove(toPort);
+            }
+        }
+
+        // Update inputPorts and outputPorts
+        List<Port> fromVertexOutputPorts = outputPorts.get(fromVertex);
+        if (fromVertexOutputPorts != null) {
+            fromVertexOutputPorts.remove(fromPort);
+            if (fromVertexOutputPorts.isEmpty()) {
+                outputPorts.remove(fromVertex);
+            }
+        }
+
+        List<Port> toVertexInputPorts = inputPorts.get(toVertex);
+        if (toVertexInputPorts != null) {
+            toVertexInputPorts.remove(toPort);
+            if (toVertexInputPorts.isEmpty()) {
+                inputPorts.remove(toVertex);
+            }
+        }
+
+        // Remove corresponding LayoutEdge
+        removeEdge(link);
+    }
+
+    /**
+     * Adds a new vertex to the graph, creates a LayoutNode
+     *
+     * @param vertex The Vertex to be added.
+     */
+    public void addVertex(Vertex vertex) {
+        assert !vertices.contains(vertex) : "Vertex already exists in the graph";
+
+        // Add to vertices set
+        vertices.add(vertex);
+
+        // Initialize ports
+        inputPorts.put(vertex, new ArrayList<>());
+        outputPorts.put(vertex, new ArrayList<>());
+    }
+
+    /**
+     * Removes a vertex and all associated links from the graph.
+     *
+     * @param vertex The Vertex to be removed.
+     * @throws IllegalArgumentException if the vertex does not exist in the graph.
+     */
+    public void removeVertex(Vertex vertex) {
+        assert vertices.contains(vertex) : "Vertex does not exist in the graph";
+
+        // Remove all associated links
+        List<Link> associatedLinks = getAllLinks(vertex);
+        for (Link link : associatedLinks) {
+            removeEdge(link);
+        }
+
+        // Remove from vertices set
+        vertices.remove(vertex);
+
+        // Remove from inputPorts and outputPorts
+        inputPorts.remove(vertex);
+        outputPorts.remove(vertex);
+
+        // Remove LayoutNode
+        LayoutNode node = layoutNodes.get(vertex);
+        if (node != null) {
+            removeNodeAndEdges(node);
+        }
+
+        updatePositions();
+    }
+
+
 
     /**
      * Initializes the layers of the graph with the specified number of empty layers.
@@ -131,8 +257,8 @@ public class LayoutGraph {
      *
      * @return A collection containing all LayoutNodes.
      */
-    public List<LayoutNode> getLayoutNodes() {
-        return Collections.unmodifiableList(layoutNodes);
+    public Collection<LayoutNode> getLayoutNodes() {
+        return Collections.unmodifiableCollection(layoutNodes.values());
     }
 
     /**
@@ -143,7 +269,7 @@ public class LayoutGraph {
      */
     public List<LayoutNode> getAllNodes() {
         List<LayoutNode> allNodes = new ArrayList<>();
-        allNodes.addAll(layoutNodes);
+        allNodes.addAll(layoutNodes.values());
         allNodes.addAll(dummyNodes);
         return Collections.unmodifiableList(allNodes);
     }
@@ -282,7 +408,7 @@ public class LayoutGraph {
      * @return The LayoutNode corresponding to the given vertex, or null if not found.
      */
     public LayoutNode getLayoutNode(Vertex vertex) {
-        return vertexToLayoutNode.get(vertex);
+        return layoutNodes.get(vertex);
     }
 
     /**
@@ -295,8 +421,7 @@ public class LayoutGraph {
         assert !node.isDummy();
         node.setLayer(layerNumber);
         getLayer(layerNumber).add(node);
-        vertexToLayoutNode.put(node.getVertex(), node);
-        layoutNodes.add(node);
+        layoutNodes.put(node.getVertex(), node);
     }
 
     /**
@@ -335,6 +460,16 @@ public class LayoutGraph {
         }
     }
 
+    // Create and register LayoutNode
+    public LayoutNode createLayoutNode(Vertex vertex) {
+        if (!vertices.contains(vertex)) {
+            throw new IllegalArgumentException("Vertex does not exist in the graph: " + vertex);
+        }
+        LayoutNode node = new LayoutNode(vertex);
+        layoutNodes.put(vertex, node);
+        return node;
+    }
+
     /**
      * Creates a LayoutEdge based on the given Link and connects it to the corresponding LayoutNodes.
      *
@@ -343,8 +478,8 @@ public class LayoutGraph {
      */
     public LayoutEdge createLayoutEdge(Link link) {
         LayoutEdge edge = new LayoutEdge(
-                vertexToLayoutNode.get(link.getFrom().getVertex()),
-                vertexToLayoutNode.get(link.getTo().getVertex()),
+                layoutNodes.get(link.getFrom().getVertex()),
+                layoutNodes.get(link.getTo().getVertex()),
                 link.getFrom().getRelativePosition().x,
                 link.getTo().getRelativePosition().x,
                 link);
@@ -445,8 +580,7 @@ public class LayoutGraph {
         int layer = node.getLayer();
         layers.get(layer).remove(node);
         layers.get(layer).updateNodeIndices();
-        vertexToLayoutNode.remove(node.getVertex());
-        layoutNodes.remove(node);
+        layoutNodes.remove(node.getVertex());
     }
 
 
