@@ -533,6 +533,7 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
   }
 }
 #endif // ASSERT
+
 // Print all mutexes/monitors that are currently owned by a thread; called
 // by fatal error handler.
 void Mutex::print_owned_locks_on_error(outputStream* st) {
