@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,6 @@ import sun.java2d.SunGraphics2D;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.pipe.Region;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingAccessor;
 import sun.util.logging.PlatformLogger;
 
@@ -7415,7 +7414,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
     final Set<AWTKeyStroke> getFocusTraversalKeys_NoIDCheck(int id) {
         // Okay to return Set directly because it is an unmodifiable view
-        @SuppressWarnings("unchecked")
         Set<AWTKeyStroke> keystrokes = (focusTraversalKeys != null)
             ? focusTraversalKeys[id]
             : null;
@@ -8362,7 +8360,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see       #add(PopupMenu)
      * @since     1.1
      */
-    @SuppressWarnings("unchecked")
     public void remove(MenuComponent popup) {
         synchronized (getTreeLock()) {
             if (popups == null) {
