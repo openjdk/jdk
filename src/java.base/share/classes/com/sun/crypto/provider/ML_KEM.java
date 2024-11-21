@@ -1089,14 +1089,10 @@ public final class ML_KEM {
     private short[] mlKemVectorScalarMult(short[][] a, short[][] b) {
         short[] result = new short[ML_KEM_N];
         short[] product = new short[ML_KEM_N];
-        short[] ntta;
-        short[] nttb;
 
         int j;
         for (j = 0; j < mlKem_k; j++) {
-            ntta = a[j];
-            nttb = b[j];
-            nttMult(product, ntta, nttb);
+            nttMult(product, a[j], b[j]);
             mlKemAddPoly(result, product);
         }
         mlKemBarrettReduce(result);
