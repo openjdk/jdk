@@ -72,8 +72,9 @@ class ArchiveHeapWriter : AllStatic {
   // - "source objects" are regular Java objects allocated during the execution
   //   of "java -Xshare:dump". They can be used as regular oops.
   //
-  //   HeapShared::archive_objects() recursively searches for the oops that need to be
-  //   stored into the CDS archive. These are entered into HeapShared::archived_object_cache().
+  //   Between HeapShared::start_scanning_for_oops() and HeapShared::end_scanning_for_oops(),
+  //   we recursively search for the oops that need to be stored into the CDS archive.
+  //   These are entered into HeapShared::archived_object_cache().
   //
   // - "buffered objects" are copies of the "source objects", and are stored in into
   //   ArchiveHeapWriter::_buffer, which is a GrowableArray that sits outside of

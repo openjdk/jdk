@@ -377,7 +377,7 @@ private:
   }
 
   static int archive_exception_instance(oop exception);
-  static void archive_objects(ArchiveHeapInfo* heap_info);
+  static void write_heap(ArchiveHeapInfo* heap_info);
   static void copy_objects();
 
   static bool archive_reachable_objects_from(int level,

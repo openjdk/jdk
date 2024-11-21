@@ -682,8 +682,6 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
       }
       return check_for_exclusion(ik, p);
     } else {
-      // FIXME -- assert has already finished checking all classes
-
       // No need to check for is_linked() as all eligible classes should have
       // already been linked in MetaspaceShared::link_class_for_cds().
       // Can't take the lock as we are in safepoint.

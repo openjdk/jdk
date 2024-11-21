@@ -54,9 +54,11 @@ void AOTArtifactFinder::dispose() {
   delete _classes;
   delete _seen_classes;
   delete _aot_inited_classes;
+  delete _pending_aot_inited_classes;
   _classes = nullptr;
   _seen_classes = nullptr;
   _aot_inited_classes = nullptr;
+  _pending_aot_inited_classes = nullptr;
 }
 
 void AOTArtifactFinder::find_artifacts() {

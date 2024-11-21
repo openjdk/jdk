@@ -659,9 +659,12 @@ void HeapShared::end_scanning_for_oops() {
   delete_seen_objects_table();
 }
 
-void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) { // FIXME - rename
+void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
   StringTable::write_shared_table(_dumped_interned_strings);
   ArchiveHeapWriter::write(_pending_roots, heap_info);
+
+  ArchiveBuilder::OtherROAllocMark mark;
+  write_subgraph_info_table();
 }
 
 void HeapShared::scan_java_mirror(oop orig_mirror) {
@@ -795,12 +798,6 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
       // to the sub-graph object class list.
       return;
     }
-#if 0
-    if (buffered_k->has_aot_initialized_mirror()) { // FIXME -- remove when writing into archive
-      // No need to add to the runtime-init list.
-      return;
-    }
-#endif
     check_allowed_klass(InstanceKlass::cast(orig_k));
   } else if (orig_k->is_objArray_klass()) {
     Klass* abk = ObjArrayKlass::cast(orig_k)->bottom_klass();
@@ -916,15 +913,28 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
     }
   }
 
-  // the Klasses of the objects in the sub-graphs
-  GrowableArray<Klass*>* subgraph_object_klasses = info->subgraph_object_klasses();
-  if (subgraph_object_klasses != nullptr) {
-    int num_subgraphs_klasses = subgraph_object_klasses->length();
-    _subgraph_object_klasses =
-      ArchiveBuilder::new_ro_array<Klass*>(num_subgraphs_klasses);
+  // <recorded_klasses> has the Klasses of all the objects that are referenced by this subgraph.
+  // Copy those that need to be explicitly initialized into <_subgraph_object_klasses>.
+  GrowableArray<Klass*>* recorded_klasses = info->subgraph_object_klasses();
+  if (recorded_klasses != nullptr) {
+    // AOT-inited classes are automatically marked as "initialized" during bootstrap. When
+    // programmatically loading a subgraph, we only need to explicitly initialize the classes
+    // that are not aot-inited.
+    int num_to_copy = 0;
+    for (int i = 0; i < recorded_klasses->length(); i++) {
+      Klass* subgraph_k = ArchiveBuilder::get_buffered_klass(recorded_klasses->at(i));
+      if (!subgraph_k->has_aot_initialized_mirror()) {
+        num_to_copy ++;
+      }
+    }
+
+    _subgraph_object_klasses = ArchiveBuilder::new_ro_array<Klass*>(num_to_copy);
     bool is_special = (_k == ArchiveBuilder::get_buffered_klass(vmClasses::Object_klass()));
-    for (int i = 0; i < num_subgraphs_klasses; i++) {
-      Klass* subgraph_k = ArchiveBuilder::get_buffered_klass(subgraph_object_klasses->at(i));
+    for (int i = 0, n = 0; i < recorded_klasses->length(); i++) {
+      Klass* subgraph_k = ArchiveBuilder::get_buffered_klass(recorded_klasses->at(i));
+      if (subgraph_k->has_aot_initialized_mirror()) {
+        continue;
+      }
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm;
         const char* owner_name =  is_special ? "<special>" : _k->external_name();
@@ -933,10 +943,11 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
         }
         log_info(cds, heap)(
           "Archived object klass %s (%2d) => %s",
-          owner_name, i, subgraph_k->external_name());
+          owner_name, n, subgraph_k->external_name());
       }
-      _subgraph_object_klasses->at_put(i, subgraph_k);
-      ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(i));
+      _subgraph_object_klasses->at_put(n, subgraph_k);
+      ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(n));
+      n++;
     }
   }
 

@@ -122,7 +122,7 @@ bool MetaspaceShared::_use_optimized_module_handling = true;
 // [5] SymbolTable, StringTable, SystemDictionary, and a few other read-only data
 //     are copied into the ro region as read-only tables.
 //
-// The heap region is populated by HeapShared::archive_objects.
+// The heap region is written by HeapShared::write_heap().
 //
 // The bitmap region is used to relocate the ro/rw/hp regions.
 
@@ -1017,9 +1017,7 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
     return;
   }
 
-  HeapShared::archive_objects(&_heap_info);
-  ArchiveBuilder::OtherROAllocMark mark;
-  HeapShared::write_subgraph_info_table();
+  HeapShared::write_heap(&_heap_info);
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 

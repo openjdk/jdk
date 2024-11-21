@@ -38,7 +38,6 @@ class AOTArtifactFinder : AllStatic {
 
   static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _pending_aot_inited_classes;
 
-
   static void start_scanning_for_oops();
   static void end_scanning_for_oops();
   static void scan_oops_in_instance_class(InstanceKlass* ik);
@@ -51,7 +50,6 @@ public:
   static void add_aot_inited_class(InstanceKlass* ik);
   static void add_class(InstanceKlass* ik);
   static void dispose();
-
 };
 
 #endif // SHARE_CDS_AOTARTIFACTFINDER_HPP
