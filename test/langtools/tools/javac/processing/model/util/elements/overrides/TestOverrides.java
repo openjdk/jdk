@@ -46,7 +46,7 @@ public class TestOverrides extends JavacTestingAbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment round) {
         if (!round.processingOver()) {
             var sm = mIn(elements.getTypeElement("S"));
-            for (var subtypeName : new String[]{"T1", "T2", "T3"}) {
+            for (var subtypeName : new String[]{"T1", "T2", "T3", "T4", "T5"}) {
                 var t = elements.getTypeElement(subtypeName);
                 var tm = mIn(t);
                 if (!elements.overrides(tm, sm, t))

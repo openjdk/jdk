@@ -33,10 +33,20 @@ class T1 extends S {
 
 class T2 extends S {
 
-    public int m() { return 0; }
+    void m() { }
 }
 
 class T3 extends S {
+
+    private void m() { }
+}
+
+class T4 extends S {
+
+    public int m() { return 0; }
+}
+
+class T5 extends S {
 
     public void m() throws Exception { }
 }
