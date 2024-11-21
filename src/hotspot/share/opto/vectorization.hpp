@@ -686,17 +686,21 @@ private:
 //   pointer = SUM(summands) + con
 //
 // We define invar_summands as all summands, except those where the variable is
-// the base of the memory object or the loop iv. We can thus write:
+// the base or the loop iv. We can thus write:
 //
 //   pointer = base + SUM(invar_summands) + iv_scale * iv + con
 //
-// We check that all variables in invar_summands are pre-loop invariant. This is
-// important when we need to memory align a pointer using the pre-loop limit.
-// For heap objects the base is the memory object base, and for off-heap/native
-// memory we set base to nullptr. If we find a summand where the variable is the
-// iv, we set iv_scale to the corresponding scale. If there is no such summand,
-// then we know that the pointer does not depend on the iv, since otherwise there
-// would have to be a summand where its variable it main-loop variant.
+// We have the following components:
+//   - base:
+//       on-heap (object base) or off-heap (native base address)
+//   - invar_summands:
+//       pre-loop invariant. This is important when we need to memory align a
+//       pointer using the pre-loop limit.
+//   - iv and iv_scale:
+//       If we find a summand where the variable is the iv, we set iv_scale to the
+//       corresponding scale. If there is no such summand, then we know that the
+//       pointer does not depend on the iv, since otherwise there would have to be
+//       a summand where its variable it main-loop variant.
 //
 class XPointer : public ArenaObj {
 private:
@@ -707,7 +711,6 @@ private:
 
   // Derived, for quicker use.
   const jint  _iv_scale;
-  const jint  _con_value;
 
   const bool _is_valid; // TODO any accessor should assert if not valid!
 
@@ -717,7 +720,6 @@ public:
     _decomposed_form(),
     _size(0),
     _iv_scale(0),
-    _con_value(0),
     _is_valid(false) {}
 
   template<typename Callback>
@@ -725,7 +727,6 @@ public:
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
     _iv_scale(init_iv_scale(_decomposed_form, vloop)),
-    _con_value(init_con_value(_decomposed_form)),
     _is_valid(init_is_valid(_decomposed_form, vloop))
   {
 #ifndef PRODUCT
@@ -743,7 +744,7 @@ public:
   const MemPointerDecomposedForm& decomposed_form() const { assert(_is_valid, ""); return _decomposed_form; }
   jint size()                                       const { assert(_is_valid, ""); return _size; }
   jint iv_scale()                                   const { assert(_is_valid, ""); return _iv_scale; }
-  jint con_value()                                  const { assert(_is_valid, ""); return _con_value; }
+  jint con()                                        const { return decomposed_form().con().value(); }
   // TODO for each in invar_summands - maybe make it static so we can use it during init?
 
   // Aliasing
@@ -771,10 +772,6 @@ private:
     }
     // No summand with variable == iv.
     return 0;
-  }
-
-  static jint init_con_value(const MemPointerDecomposedForm& decomposed_form) {
-    return decomposed_form.con().value(); // TODO can this fail - else simplify.
   }
 
   // Check that all variables are either the iv, or else invariants.

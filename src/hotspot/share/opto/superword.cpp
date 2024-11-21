@@ -631,9 +631,9 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
       // Check for correct distance.
       assert(data_size(mem1) == element_size, "all nodes in group must have the same element size");
       assert(data_size(mem2) == element_size, "all nodes in group must have the same element size");
-      assert(p1.con_value() <= p2.con_value(), "must be sorted by offset");
-      if (p1.con_value() + element_size > p2.con_value()) { continue; }
-      if (p1.con_value() + element_size < p2.con_value()) { break; }
+      assert(p1.con() <= p2.con(), "must be sorted by offset");
+      if (p1.con() + element_size > p2.con()) { continue; }
+      if (p1.con() + element_size < p2.con()) { break; }
 
       // Only allow nodes from same origin idx to be packed (see CompileCommand Option Vectorize)
       if (_do_vector_loop && !same_origin_idx(mem1, mem2)) { continue; }
