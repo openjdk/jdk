@@ -29,9 +29,8 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @summary Test verifies that jstack --mixed print information about VM locks
+ * @summary Test verifies that jstack --mixed prints information about VM locks
  * @requires vm.hasSA
- * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -47,8 +46,7 @@ public class TestJhsdbJstackPrintVMLocks {
         LingeredApp theApp = null;
         try {
             theApp = new LingeredAppWithLockInVM();
-            String classPath = System.getProperty("test.class.path");
-            LingeredApp.startAppExactJvmOpts(theApp,
+            LingeredApp.startApp(theApp,
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+WhiteBoxAPI",
                     "-Xbootclasspath/a:.");
@@ -73,7 +71,7 @@ public class TestJhsdbJstackPrintVMLocks {
                 System.out.println(out.getStdout());
                 System.err.println(out.getStderr());
 
-                if (out.contains("Mutex Compile_lock is owned by LockerThread")) {
+                if (out.contains("Mutex VMStatistic_lock is owned by LockerThread")) {
                     System.out.println("Test PASSED");
                     return;
                 }

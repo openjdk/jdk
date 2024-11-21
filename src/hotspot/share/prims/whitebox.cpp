@@ -189,7 +189,8 @@ WB_END
 
 WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
   JavaThread* self = JavaThread::current();
-  MutexLocker mu(Compile_lock);
+  // VMStatistic_lock is used to minimize interference with VM locking
+  MutexLocker mu(VMStatistic_lock);
   VM_HangInSafepoint force_safepoint_stuck_op;
   VMThread::execute(&force_safepoint_stuck_op);
   ShouldNotReachHere();
