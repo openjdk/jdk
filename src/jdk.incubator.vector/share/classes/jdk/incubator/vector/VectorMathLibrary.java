@@ -109,22 +109,25 @@ import static jdk.incubator.vector.VectorOperators.*;
 
     static final int SIZE = VectorSupport.VECTOR_OP_MATHLIB_LAST - VectorSupport.VECTOR_OP_MATHLIB_FIRST + 1;
 
-    static final @Stable MemorySegment[][][] LIBRARY = new MemorySegment[SIZE][LaneType.SK_LIMIT][VectorShape.SK_LIMIT]; // OP x SHAPE x TYPE
+    record Entry (String name, MemorySegment entry) {}
 
-    static MemorySegment lookup(Operator op, int opc, VectorSpecies<?> vspecies) {
+    static final @Stable Entry[][][] LIBRARY = new Entry[SIZE][LaneType.SK_LIMIT][VectorShape.SK_LIMIT]; // OP x SHAPE x TYPE
+
+    static Entry lookup(Operator op, int opc, VectorSpecies<?> vspecies) {
         int idx = opc - VectorSupport.VECTOR_OP_MATHLIB_FIRST;
         int elem_idx = ((AbstractSpecies<?>)vspecies).laneType.switchKey;
         int shape_idx = vspecies.vectorShape().switchKey;
-        MemorySegment s = LIBRARY[idx][elem_idx][shape_idx];
-        if (s == null) {
+        Entry entry = LIBRARY[idx][elem_idx][shape_idx];
+        if (entry == null) {
             String symbol = SLEEF.symbolName(op, vspecies); // FIXME
-            s = LOOKUP.find(symbol).orElse(MemorySegment.NULL); // FIXME
+            MemorySegment addr = LOOKUP.find(symbol).orElse(MemorySegment.NULL); // FIXME
             if (DEBUG) {
-                System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, s.address());
+                System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
             }
-            LIBRARY[idx][elem_idx][shape_idx] = s;
+            entry = new Entry(symbol, addr);
+            LIBRARY[idx][elem_idx][shape_idx] = entry;
         }
-        return s;
+        return entry;
     }
 
 }
