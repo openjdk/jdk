@@ -829,9 +829,15 @@ oop ConstantPoolCache::appendix_if_resolved(ResolvedMethodEntry* method_entry) c
 void ConstantPoolCache::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
-  print_resolved_field_entries(st);
-  print_resolved_method_entries(st);
-  print_resolved_indy_entries(st);
+  if (_resolved_field_entries != nullptr) {
+    print_resolved_field_entries(st);
+  }
+  if (_resolved_method_entries != nullptr) {
+    print_resolved_method_entries(st);
+  }
+  if (_resolved_indy_entries != nullptr) {
+    print_resolved_indy_entries(st);
+  }
 }
 
 void ConstantPoolCache::print_resolved_field_entries(outputStream* st) const {
