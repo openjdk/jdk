@@ -70,7 +70,6 @@ import sun.awt.DebugSettings;
 import sun.awt.SunToolkit;
 import sun.awt.util.IdentityArrayList;
 import sun.java2d.pipe.Region;
-import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
 /**
