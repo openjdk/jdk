@@ -781,7 +781,8 @@ private:
   static bool init_is_valid(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
     if (!decomposed_form.base().is_known()) {
       // XPointer needs to know if it is native (off-heap) or object (on-heap).
-      assert(false, "TODO find me!");
+      // We may for example have failed to fully decompose the MemPointer, possibly
+      // because such a decomposition is not considered safe.
       return false;
     }
 
