@@ -55,13 +55,6 @@ public class VirtualThreadSchedulerImpls {
     private abstract static class BaseVirtualThreadSchedulerImpl
             implements VirtualThreadSchedulerMXBean {
 
-        abstract void implSetParallelism(int size);
-
-        @Override
-        public final void setParallelism(int size) {
-            implSetParallelism(size);
-        }
-
         @Override
         public final ObjectName getObjectName() {
             return Util.newObjectName("jdk.management:type=VirtualThreadScheduler");
@@ -113,7 +106,7 @@ public class VirtualThreadSchedulerImpls {
         }
 
         @Override
-        void implSetParallelism(int size) {
+        public void setParallelism(int size) {
             if (Scheduler.instance() instanceof ForkJoinPool pool) {
                 pool.setParallelism(size);
                 if (pool.getPoolSize() < size) {
@@ -162,7 +155,7 @@ public class VirtualThreadSchedulerImpls {
         }
 
         @Override
-        void implSetParallelism(int size) {
+        public void setParallelism(int size) {
             throw new UnsupportedOperationException();
         }
 
