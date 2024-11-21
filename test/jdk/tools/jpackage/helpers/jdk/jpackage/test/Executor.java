@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class Executor extends CommandArguments<Executor> {
 
@@ -53,7 +53,7 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor() {
         saveOutputType = new HashSet<>(Set.of(SaveOutputType.NONE));
-        removePath = false;
+        removePathEnvVar = false;
         winEnglishOutput = false;
     }
 
@@ -86,8 +86,8 @@ public final class Executor extends CommandArguments<Executor> {
         return setExecutable(v.getPath());
     }
 
-    public Executor setRemovePath(boolean value) {
-        removePath = value;
+    public Executor setRemovePathEnvVar(boolean value) {
+        removePathEnvVar = value;
         return this;
     }
 
@@ -372,7 +372,7 @@ public final class Executor extends CommandArguments<Executor> {
             builder.directory(directory.toFile());
             sb.append(String.format("; in directory [%s]", directory));
         }
-        if (removePath) {
+        if (removePathEnvVar) {
             // run this with cleared Path in Environment
             TKit.trace("Clearing PATH in environment");
             builder.environment().remove("PATH");
@@ -504,7 +504,7 @@ public final class Executor extends CommandArguments<Executor> {
     private Path executable;
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
-    private boolean removePath;
+    private boolean removePathEnvVar;
     private boolean winEnglishOutput;
     private String winTmpDir = null;
 
