@@ -45,48 +45,48 @@ public class MultiReleaseJars {
     static final int MAJOR_VERSION = Runtime.version().major();
     static final String MAJOR_VERSION_STRING = String.valueOf(MAJOR_VERSION);
 
-    static String[] getMain() {
-        String[] sts = {
-            "public class Main {",
-            "    public static void main(String[] args) throws Exception {",
-            "        System.out.println(Class.forName(\"Foo\"));",
-            "        System.out.println(Class.forName(\"Bar\"));",
-            "    }",
-            "}"
-        };
+    static String getMain() {
+        String sts = """
+            public class Main {
+                public static void main(String[] args) throws Exception {
+                    System.out.println(Class.forName(\"Foo\"));
+                    System.out.println(Class.forName(\"Bar\"));
+                }
+            }
+            """;
         return sts;
     }
 
-    static String[] getFoo() {
-        String[] sts = {
-            "class Foo {",
-            "    static {",
-            "        System.out.println(\"Hello from Foo old version \");",
-            "    }",
-            "}",
-        };
+    static String getFoo() {
+        String sts = """
+            class Foo {
+                static {
+                    System.out.println("Hello from Foo old version");
+                }
+            }
+        """;
         return sts;
     }
 
-    static String[] getFooNewVersion() {
-        String[] sts = {
-            "class Foo {",
-            "    static {",
-            "        System.out.println(\"Hello from Foo new version \");",
-            "    }",
-            "}",
-        };
+    static String getFooNewVersion() {
+        String sts = """
+            class Foo {
+                static {
+                    System.out.println("Hello from Foo new version");
+                }
+            }
+        """;
         return sts;
     }
 
-    static String[] getBar() {
-        String[] sts = {
-            "class Bar {",
-            "    static {",
-            "        System.out.println(\"Hello from Bar\");",
-            "    }",
-            "}",
-        };
+    static String getBar() {
+        String sts = """
+            class Bar {
+                static {
+                    System.out.println("Hello from Bar");
+                }
+            }
+        """;
         return sts;
     }
 

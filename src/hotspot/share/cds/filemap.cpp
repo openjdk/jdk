@@ -2705,30 +2705,20 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
   JavaCalls::call_virtual(&result,
                           class_loader,
                           vmClasses::ClassLoader_klass(),
-                          vmSymbols::getResourceAsStream_name(),
-                          vmSymbols::getResourceAsStream_signature(),
+                          vmSymbols::getResourceAsByteArray_name(),
+                          vmSymbols::getResourceAsByteArray_signature(),
                           ext_class_name,
                           CHECK_NULL);
   assert(result.get_type() == T_OBJECT, "just checking");
   oop obj = result.get_oop();
-  assert(obj != nullptr, "ClassLoader::getResourceAsStream should not return null");
+  assert(obj != nullptr, "ClassLoader.getResourceAsStream should not return null");
 
-  Handle input_stream = Handle(THREAD, obj);
-  JavaValue res(T_OBJECT);
-  // byte[] InputStream.readAllBytes()
-  JavaCalls::call_virtual(&res,
-                          input_stream,
-                          vmClasses::InputStream_klass(),
-                          vmSymbols::readAllBytes(),
-                          vmSymbols::void_byte_array_signature(),
-                          CHECK_NULL);
   // The result should be a [B
-  oop res_oop = res.get_oop();
-  assert(res_oop->is_typeArray(), "just checking");
-  assert(TypeArrayKlass::cast(res_oop->klass())->element_type() == T_BYTE, "just checking");
+  assert(obj->is_typeArray(), "just checking");
+  assert(TypeArrayKlass::cast(obj->klass())->element_type() == T_BYTE, "just checking");
 
   // copy from byte[] to a buffer
-  typeArrayOop ba = typeArrayOop(res_oop);
+  typeArrayOop ba = typeArrayOop(obj);
   jint len = ba->length();
   u1* buffer = NEW_RESOURCE_ARRAY(u1, len);
   ArrayAccess<>::arraycopy_to_native<>(ba, typeArrayOopDesc::element_offset<jbyte>(0), buffer, len);

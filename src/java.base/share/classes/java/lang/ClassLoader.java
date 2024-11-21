@@ -1686,6 +1686,19 @@ public abstract class ClassLoader {
     }
 
     /**
+     * Called by VM for constructing a ClassFileStream.
+     */
+    private byte[] getResourceAsByteArray(String name) {
+        Objects.requireNonNull(name);
+        InputStream is = getResourceAsStream(name);
+        try {
+            return is != null ? is.readAllBytes() : null;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
      * Open for reading, a resource of the specified name from the search path
      * used to load classes.  This method locates the resource through the
      * system class loader (see {@link #getSystemClassLoader()}).

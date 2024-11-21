@@ -127,7 +127,6 @@ class SerializeClosure;
   template(java_net_URLClassLoader,                   "java/net/URLClassLoader")                  \
   template(java_util_jar_Manifest,                    "java/util/jar/Manifest")                   \
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
-  template(java_io_InputStream,                       "java/io/InputStream")                      \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
   template(java_nio_Buffer,                           "java/nio/Buffer")                          \
   template(java_util_Arrays,                          "java/util/Arrays")                         \
@@ -724,8 +723,8 @@ class SerializeClosure;
   template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
   template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
-  template(getResourceAsStream_name,                        "getResourceAsStream")                                \
-  template(getResourceAsStream_signature,                   "(Ljava/lang/String;)Ljava/io/InputStream;")          \
+  template(getResourceAsByteArray_name,                     "getResourceAsByteArray")                             \
+  template(getResourceAsByteArray_signature,                "(Ljava/lang/String;)[B")          \
   template(java_lang_Enum,                                  "java/lang/Enum")                                     \
   template(java_lang_invoke_Invokers_Holder,                "java/lang/invoke/Invokers$Holder")                   \
   template(java_lang_invoke_DirectMethodHandle_Holder,      "java/lang/invoke/DirectMethodHandle$Holder")         \
@@ -735,7 +734,6 @@ class SerializeClosure;
   template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
   template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
   template(java_util_ArrayList,                             "java/util/ArrayList")                                \
-  template(readAllBytes,                                    "readAllBytes")                                       \
   template(runtimeSetup,                                    "runtimeSetup")                                       \
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
