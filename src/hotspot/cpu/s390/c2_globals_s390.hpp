@@ -61,6 +61,7 @@ define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoScheduling,               false);
 define_pd_global(bool, OptoRegScheduling,            false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
+define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 // On s390x, we can clear the array with a single instruction,
 // so don't idealize it.
 define_pd_global(bool, IdealizeClearArrayNode,       false);

@@ -37,7 +37,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.TestInstance.TestDesc;
 
 class MethodCall implements ThrowingConsumer {

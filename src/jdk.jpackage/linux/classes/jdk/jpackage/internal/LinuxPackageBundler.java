@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
 import static jdk.jpackage.internal.StandardBundlerParam.INSTALL_DIR;
+import jdk.jpackage.internal.util.FileUtils;
 
 abstract class LinuxPackageBundler extends AbstractBundler {
 
@@ -144,7 +145,7 @@ abstract class LinuxPackageBundler extends AbstractBundler {
                     // Application image is a newly created directory tree.
                     // Move it.
                     srcAppLayout.move(thePackage.sourceApplicationLayout());
-                    IOUtils.deleteRecursive(srcAppImageRoot);
+                    FileUtils.deleteRecursive(srcAppImageRoot);
                 }
             }
 

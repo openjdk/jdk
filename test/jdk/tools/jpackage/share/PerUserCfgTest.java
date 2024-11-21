@@ -29,7 +29,7 @@ import java.util.Optional;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.LinuxHelper;

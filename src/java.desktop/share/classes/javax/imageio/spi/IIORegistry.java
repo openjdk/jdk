@@ -25,8 +25,6 @@
 
 package javax.imageio.spi;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.util.Iterator;
 import com.sun.imageio.spi.FileImageInputStreamSpi;
 import com.sun.imageio.spi.FileImageOutputStreamSpi;
@@ -197,30 +195,14 @@ public final class IIORegistry extends ServiceRegistry {
         }
     }
 
-    @SuppressWarnings("removal")
     private void registerInstalledProviders() {
-        /*
-          We need to load installed providers
-          in the privileged mode in order to
-          be able read corresponding jar files even if
-          file read capability is restricted (like the
-          applet context case).
-         */
-        PrivilegedAction<Object> doRegistration =
-            new PrivilegedAction<Object>() {
-                public Object run() {
-                    Iterator<Class<?>> categories = getCategories();
-                    while (categories.hasNext()) {
-                        @SuppressWarnings("unchecked")
-                        Class<IIOServiceProvider> c = (Class<IIOServiceProvider>)categories.next();
-                        for (IIOServiceProvider p : ServiceLoader.loadInstalled(c)) {
-                            registerServiceProvider(p);
-                        }
-                    }
-                    return this;
-                }
-            };
-
-        AccessController.doPrivileged(doRegistration);
+        Iterator<Class<?>> categories = getCategories();
+        while (categories.hasNext()) {
+            @SuppressWarnings("unchecked")
+            Class<IIOServiceProvider> c = (Class<IIOServiceProvider>)categories.next();
+            for (IIOServiceProvider p : ServiceLoader.loadInstalled(c)) {
+                registerServiceProvider(p);
+            }
+        }
     }
 }
