@@ -248,7 +248,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             }
 
             for (Link link : removedLinks) {
-                graph.removeLink(link);
+                graph.removeEdge(link);
             }
 
             for (Vertex vertex : addedVertices) {

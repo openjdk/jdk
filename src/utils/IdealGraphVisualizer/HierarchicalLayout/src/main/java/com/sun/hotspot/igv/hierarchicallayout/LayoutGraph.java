@@ -39,15 +39,17 @@ public class LayoutGraph {
                     .thenComparingInt(l -> l.getFrom().getRelativePosition().x)
                     .thenComparingInt(l -> l.getTo().getRelativePosition().x);
 
+    // The registered Links and Vertices
     private final Set<? extends Link> links;
     private final SortedSet<Vertex> vertices;
     private final LinkedHashMap<Vertex, List<Port>> inputPorts;
     private final LinkedHashMap<Vertex, List<Port>> outputPorts;
     private final LinkedHashMap<Port, List<Link>> portLinks;
+    // for each
+    private final LinkedHashMap<Vertex, LayoutNode> vertexToLayoutNode;
 
     private final List<LayoutNode> dummyNodes;
     private final List<LayoutNode> layoutNodes;
-    private final LinkedHashMap<Vertex, LayoutNode> vertexToLayoutNode;
 
     private List<LayoutLayer> layers;
 
@@ -294,7 +296,7 @@ public class LayoutGraph {
         node.setLayer(layerNumber);
         getLayer(layerNumber).add(node);
         vertexToLayoutNode.put(node.getVertex(), node);
-
+        layoutNodes.add(node);
     }
 
     /**
@@ -308,28 +310,6 @@ public class LayoutGraph {
         node.setLayer(layerNumber);
         getLayer(layerNumber).add(node);
         dummyNodes.add(node);
-    }
-
-    /**
-     * Removes a LayoutNode from its layer and unregisters it from the graph.
-     * Updates the positions of nodes in the layer after removal.
-     *
-     * @param node The LayoutNode to remove.
-     */
-    public void removeNode(LayoutNode node) {
-        assert !node.isDummy();
-        int layer = node.getLayer();
-        layers.get(layer).remove(node);
-        layers.get(layer).updateNodeIndices();
-        vertexToLayoutNode.remove(node.getVertex());
-    }
-
-    public void removeDummy(LayoutNode node) {
-        assert node.isDummy();
-        int layer = node.getLayer();
-        layers.get(layer).remove(node);
-        layers.get(layer).updateNodeIndices();
-        dummyNodes.remove(node);
     }
 
     /**
@@ -454,7 +434,37 @@ public class LayoutGraph {
         return allLinks;
     }
 
-    public void removeLink(Link link) {
+    /**
+     * Removes the specified LayoutNode and all its connected edges from the graph.
+     *
+     * @param node The LayoutNode to remove along with its edges.
+     */
+    public void removeNodeAndEdges(LayoutNode node) {
+        assert !node.isDummy();
+        removeEdges(node); // a node can only removed together with its edges
+        int layer = node.getLayer();
+        layers.get(layer).remove(node);
+        layers.get(layer).updateNodeIndices();
+        vertexToLayoutNode.remove(node.getVertex());
+        layoutNodes.remove(node);
+    }
+
+
+    /**
+     * Removes all edges connected to the specified LayoutNode.
+     * Handles the removal of associated dummy nodes if they are no longer needed.
+     * Updates the graph structure accordingly after node movement.
+     *
+     * @param node The LayoutNode whose connected edges are to be removed.
+     */
+    public void removeEdges(LayoutNode node) {
+        assert !node.isDummy();
+        for (Link link : getAllLinks(node.getVertex())) {
+            removeEdge(link);
+        }
+    }
+
+    public void removeEdge(Link link) {
         Vertex from = link.getFrom().getVertex();
         Vertex to = link.getTo().getVertex();
         LayoutNode toNode = getLayoutNode(to);
@@ -493,7 +503,11 @@ public class LayoutGraph {
 
                     if (predNode.getSuccessors().size() <= 1 && predNode.getPredecessors().size() <= 1) {
                         // Dummy node used only for this link, remove if not already removed
-                        removeDummy(predNode);
+                        assert predNode.isDummy();
+                        int layer = predNode.getLayer();
+                        layers.get(layer).remove(predNode);
+                        layers.get(layer).updateNodeIndices();
+                        dummyNodes.remove(predNode);
                     } else {
                         // anchor node, should not be removed
                         break;
@@ -520,31 +534,6 @@ public class LayoutGraph {
         if (toNode.getReversedLinkStartPoints().containsKey(link)) {
             toNode.computeReversedLinkPoints();
         }
-    }
-
-    /**
-     * Removes all edges connected to the specified LayoutNode.
-     * Handles the removal of associated dummy nodes if they are no longer needed.
-     * Updates the graph structure accordingly after node movement.
-     *
-     * @param node The LayoutNode whose connected edges are to be removed.
-     */
-    public void removeEdges(LayoutNode node) {
-        assert !node.isDummy();
-        for (Link link : getAllLinks(node.getVertex())) {
-            removeLink(link);
-        }
-    }
-
-    /**
-     * Removes the specified LayoutNode and all its connected edges from the graph.
-     *
-     * @param node The LayoutNode to remove along with its edges.
-     */
-    public void removeNodeAndEdges(LayoutNode node) {
-        assert !node.isDummy();
-        removeEdges(node);
-        removeNode(node);
     }
 
     /**
