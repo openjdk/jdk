@@ -165,10 +165,8 @@ public final class ImageIO {
      * Returns the default temporary (cache) directory as defined by the
      * java.io.tmpdir system property.
      */
-    @SuppressWarnings("removal")
     private static String getTempDir() {
-        GetPropertyAction a = new GetPropertyAction("java.io.tmpdir");
-        return AccessController.doPrivileged(a);
+        return System.getProperty("java.io.tmpdir");
     }
 
     /**

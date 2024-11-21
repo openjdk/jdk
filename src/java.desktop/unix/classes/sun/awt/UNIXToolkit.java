@@ -105,9 +105,7 @@ public abstract class UNIXToolkit extends SunToolkit
     private BufferedImage tmpImage = null;
 
     public static int getDatatransferTimeout() {
-        @SuppressWarnings("removal")
-        Integer dt = AccessController.doPrivileged(
-                new GetIntegerAction("sun.awt.datatransfer.timeout"));
+        Integer dt = Integer.getInteger("sun.awt.datatransfer.timeout");
         if (dt == null || dt <= 0) {
             return DEFAULT_DATATRANSFER_TIMEOUT;
         } else {
@@ -118,18 +116,12 @@ public abstract class UNIXToolkit extends SunToolkit
     @Override
     public String getDesktop() {
         String gnome = "gnome";
-        @SuppressWarnings("removal")
-        String gsi = AccessController.doPrivileged(
-                        (PrivilegedAction<String>) ()
-                                -> System.getenv("GNOME_DESKTOP_SESSION_ID"));
+        String gsi = System.getenv("GNOME_DESKTOP_SESSION_ID");
         if (gsi != null) {
             return gnome;
         }
 
-        @SuppressWarnings("removal")
-        String desktop = AccessController.doPrivileged(
-                (PrivilegedAction<String>) ()
-                        -> System.getenv("XDG_CURRENT_DESKTOP"));
+        String desktop = System.getenv("XDG_CURRENT_DESKTOP");
         return (desktop != null && desktop.toLowerCase().contains(gnome))
                 ? gnome : null;
     }
@@ -252,11 +244,7 @@ public abstract class UNIXToolkit extends SunToolkit
                 result = shouldDisableSystemTray;
                 if (result == null) {
                     if ("gnome".equals(getDesktop())) {
-                        @SuppressWarnings("removal")
-                        Integer gnomeShellMajorVersion =
-                                AccessController
-                                        .doPrivileged((PrivilegedAction<Integer>)
-                                                this::getGnomeShellMajorVersion);
+                        Integer gnomeShellMajorVersion = getGnomeShellMajorVersion();
 
                         if (gnomeShellMajorVersion == null
                                 || gnomeShellMajorVersion < 45) {
@@ -486,9 +474,7 @@ public abstract class UNIXToolkit extends SunToolkit
     }
 
     public static GtkVersions getEnabledGtkVersion() {
-        @SuppressWarnings("removal")
-        String version = AccessController.doPrivileged(
-                new GetPropertyAction("jdk.gtk.version"));
+        String version = System.getProperty("jdk.gtk.version");
         if ("3".equals(version)) {
             return GtkVersions.GTK3;
         }
@@ -499,32 +485,22 @@ public abstract class UNIXToolkit extends SunToolkit
         return GtkVersions.getVersion(get_gtk_version());
     }
 
-    @SuppressWarnings("removal")
     public static boolean isGtkVerbose() {
-        return AccessController.doPrivileged((PrivilegedAction<Boolean>)()
-                -> Boolean.getBoolean("jdk.gtk.verbose"));
+        return Boolean.getBoolean("jdk.gtk.verbose");
     }
 
     private static volatile Boolean isOnWayland = null;
 
-    @SuppressWarnings("removal")
     public static boolean isOnWayland() {
         Boolean result = isOnWayland;
         if (result == null) {
             synchronized (GTK_LOCK) {
                 result = isOnWayland;
                 if (result == null) {
+                    final String display = System.getenv("WAYLAND_DISPLAY");
                     isOnWayland
                             = result
-                            = AccessController.doPrivileged(
-                            (PrivilegedAction<Boolean>) () -> {
-                                final String display =
-                                        System.getenv("WAYLAND_DISPLAY");
-
-                                return display != null
-                                        && !display.trim().isEmpty();
-                            }
-                    );
+                            = (display != null && !display.trim().isEmpty());
                 }
             }
         }
