@@ -25,8 +25,6 @@
 
 package java.lang.ref;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -118,22 +116,17 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
      */
     @SuppressWarnings("removal")
     private static void forkSecondaryFinalizer(final Runnable proc) {
-        AccessController.doPrivileged(
-            new PrivilegedAction<>() {
-                public Void run() {
-                    ThreadGroup tg = Thread.currentThread().getThreadGroup();
-                    for (ThreadGroup tgn = tg;
-                         tgn != null;
-                         tg = tgn, tgn = tg.getParent());
-                    Thread sft = new Thread(tg, proc, "Secondary finalizer", 0, false);
-                    sft.start();
-                    try {
-                        sft.join();
-                    } catch (InterruptedException x) {
-                        Thread.currentThread().interrupt();
-                    }
-                    return null;
-                }});
+        ThreadGroup tg = Thread.currentThread().getThreadGroup();
+        for (ThreadGroup tgn = tg;
+             tgn != null;
+             tg = tgn, tgn = tg.getParent());
+        Thread sft = new Thread(tg, proc, "Secondary finalizer", 0, false);
+        sft.start();
+        try {
+            sft.join();
+        } catch (InterruptedException x) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /* Called by Runtime.runFinalization() */
