@@ -135,7 +135,6 @@ class Mutex : public CHeapObj<mtSynchronizer> {
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;
 
  public:
-  static void  add_mutex(Mutex* var);
   static const bool _allow_vm_block_flag        = true;
 
   // Locks can be acquired with or without a safepoint check. NonJavaThreads do not follow
@@ -199,16 +198,18 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
   const char *name() const                  { return _name; }
 
+  static void  add_mutex(Mutex* var);
+
   void print_on_error(outputStream* st) const;
+  #ifndef PRODUCT
+    void print_on(outputStream* st) const;
+    void print() const;
+  #endif
 
   // Print all mutexes/monitors that are currently owned by a thread; called
   // by fatal error handler.
   static void print_owned_locks_on_error(outputStream* st);
   static void print_lock_ranks(outputStream* st);
-  #ifndef PRODUCT
-    void print_on(outputStream* st) const;
-    void print() const;
-  #endif
 };
 
 class Monitor : public Mutex {
