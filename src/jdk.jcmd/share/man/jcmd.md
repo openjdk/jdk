@@ -836,7 +836,7 @@ The following commands are available:
     -   `log`: (Optional) Name of log to be printed.
         If omitted, all logs are printed. (STRING, no default value)
     -   `max`: (Optional) Maximum number of events to be printed (newest first).
-        If omitted, all events are printed. (STRING, no default value)
+        If omitted or zero, all events are printed. (INT, 0)
 
 `VM.flags` \[*options*\]
 :   Print the VM flag options and their current values.
