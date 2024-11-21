@@ -33,7 +33,6 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
     private final HierarchicalLayoutManager manager;
 
     private LayoutGraph graph;
-    private LayoutGraph prevGraph;
 
     int maxLayerLength;
 
@@ -51,22 +50,19 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
 
 
     public void updateLayout(Set<? extends Vertex> vertices, Set<? extends Link> links) {
-        graph = new LayoutGraph(links, vertices);
-
-        if (prevGraph == null) {
+        if (graph == null) {
+            graph = new LayoutGraph(links, vertices);
             manager.doLayout(graph);
         } else {
             // Reverse edges, handle back-edges
             HierarchicalLayoutManager.ReverseEdges.apply(graph);
 
             // Apply updates if there are any
-            ApplyActionUpdates.apply(prevGraph, graph);
+            ApplyActionUpdates.apply(graph, vertices, links);
 
             //  Assign Y-Coordinates, Write back to interface
             HierarchicalLayoutManager.WriteResult.apply(graph);
         }
-
-        prevGraph = graph;
     }
 
     private static class ApplyActionUpdates {
@@ -129,6 +125,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
         }
 
         private static void applyAddLinkAction(LayoutGraph graph, Link l) {
+
             Vertex from = l.getFrom().getVertex();
             Vertex to = l.getTo().getVertex();
             LayoutNode fromNode = graph.getLayoutNode(from);
@@ -227,7 +224,14 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
          */
         private static void applyAddVertexAction(LayoutGraph graph, Vertex vertex) {
            // TODO
-            int optimalLayerNr = optimalLayer(graph, vertex);
+            int layerNr = optimalLayer(graph, vertex);
+            LayoutNode node = graph.getLayoutNode(vertex);
+            layerNr = graph.insertNewLayerIfNeeded(node, layerNr);
+            graph.addNodeToLayer(node, layerNr);
+            int x = node.computeBarycenterX(LayoutNode.NeighborType.BOTH, false);
+            node.setX(x);
+            graph.getLayer(layerNr).sortNodesByX();
+            graph.addEdges(node, 10);
         }
 
         private static void applyRemoveVertexAction(LayoutGraph graph, Vertex vertex) {
@@ -236,17 +240,17 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             graph.removeEmptyLayers();
         }
 
-        static void apply(LayoutGraph prevGraph, LayoutGraph graph) {
-            HashSet<Vertex> addedVertices = new HashSet<>(graph.getVertices());
-            addedVertices.removeAll(prevGraph.getVertices());
+        static void apply(LayoutGraph graph, Set<? extends Vertex> vertices, Set<? extends Link> links) {
+            HashSet<Vertex> addedVertices = new HashSet<>(vertices);
+            addedVertices.removeAll(graph.getVertices());
 
-            HashSet<Vertex> removedVertices = new HashSet<>(prevGraph.getVertices());
-            removedVertices.removeAll(graph.getVertices());
+            HashSet<Vertex> removedVertices = new HashSet<>(graph.getVertices());
+            removedVertices.removeAll(vertices);
 
-            HashSet<Link> addedLinks = new HashSet<>(graph.getLinks());
-            HashSet<Link> removedLinks = new HashSet<>(prevGraph.getLinks());
-            for (Link currLink : graph.getLinks()) {
-                for (Link prevLink : prevGraph.getLinks()) {
+            HashSet<Link> addedLinks = new HashSet<>(links);
+            HashSet<Link> removedLinks = new HashSet<>(graph.getLinks());
+            for (Link currLink : links) {
+                for (Link prevLink : graph.getLinks()) {
                     if (currLink.equals(prevLink)) {
                         addedLinks.remove(currLink);
                         removedLinks.remove(prevLink);
@@ -268,7 +272,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
             }
 
             for (Link link : addedLinks) {
-                applyAddLinkAction(graph, link);
+                //applyAddLinkAction(graph, link);
             }
         }
     }

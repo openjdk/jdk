@@ -479,6 +479,14 @@ public class LayoutNode {
         return !succs.isEmpty();
     }
 
+    public void clearSuccessors() {
+        succs.clear();
+    }
+
+    public void clearPredecessors() {
+        preds.clear();
+    }
+
     public List<LayoutEdge> getSuccessors() {
         return Collections.unmodifiableList(succs);
     }

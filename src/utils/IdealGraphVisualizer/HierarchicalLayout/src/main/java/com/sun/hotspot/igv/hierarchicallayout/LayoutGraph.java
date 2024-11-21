@@ -240,7 +240,7 @@ public class LayoutGraph {
         for (LayoutNode fromNode : layerAbove) {
             int fromX = fromNode.getX();
             Map<Integer, List<LayoutEdge>> successorsByX = fromNode.groupSuccessorsByX();
-            fromNode.getSuccessors().clear();
+            fromNode.clearSuccessors();
 
             for (Map.Entry<Integer, List<LayoutEdge>> entry : successorsByX.entrySet()) {
                 Integer relativeFromX = entry.getKey();
@@ -663,8 +663,8 @@ public class LayoutGraph {
                 successorEdge.setFrom(fromNode);
                 fromNode.addSuccessor(successorEdge);
             }
-            dummyNode.getPredecessors().clear();
-            dummyNode.getSuccessors().clear();
+            dummyNode.clearPredecessors();
+            dummyNode.clearSuccessors();
             dummyNodes.remove(dummyNode);
         }
 
