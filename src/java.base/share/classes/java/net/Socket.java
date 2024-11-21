@@ -633,6 +633,7 @@ public class Socket implements java.io.Closeable {
      * @param   timeout  the timeout value to be used in milliseconds.
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
+     * @throws  SocketTimeoutException if timeout expires before connecting
      * @throws  UnknownHostException if the endpoint is an unresolved
      *          {@link InetSocketAddress}
      * @throws  java.nio.channels.IllegalBlockingModeException
