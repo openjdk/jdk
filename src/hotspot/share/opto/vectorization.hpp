@@ -688,7 +688,9 @@ private:
 // We define invar_summands as all summands, except those where the variable is
 // the base or the loop iv. We can thus write:
 //
-//   pointer = base + SUM(invar_summands) + iv_scale * iv + con
+//   pointer = base + invar + iv_scale * iv + con
+//
+//   invar = SUM(invar_summands)
 //
 // We have the following components:
 //   - base:

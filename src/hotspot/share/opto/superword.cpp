@@ -2717,20 +2717,10 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   assert(p.is_valid(), "sanity");
   p.print_on(tty);
 
-  // For the main-loop, we want the address of align_to_ref to be memory aligned
-  // with some alignment width (aw, a power of 2). When we enter the main-loop,
-  // we know that:
-  //   iv = iv_main_loop_enter = limit_pre_loop
-  //
-  // We want to adjust the pre-loop limit by executing some adjust_pre_iter many
-  // extra iterations, and with that acheive alignment of the address.
-  //
-  // The adress has been decomposed by VPointer:
-  //
-  //   pointer = base + SUM(invar_summands) + iv_scale * iv + con
-  //
-
-  // TODO end
+  // TODO rename offset -> con
+  //             scale -> iv_scale
+  //   adr = base + offset + invar + scale * iv                               (1)
+  //   adr = base + invar + iv_scale * iv + con                               (1)
 
   const VPointer& align_to_ref_p = vpointer(align_to_ref);
   assert(align_to_ref_p.valid(), "sanity");
@@ -2741,7 +2731,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // limit by executing adjust_pre_iter many extra iterations, we can change the
   // alignment of the address.
   //
-  //   adr = base + offset + invar + scale * iv                               (1)
+  //   adr = base + invar + iv_scale * iv + con                               (1)
   //   adr % aw = 0                                                           (2)
   //
   // Note, that we are defining the modulo operator "%" such that the remainder is
