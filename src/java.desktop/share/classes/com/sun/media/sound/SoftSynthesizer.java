@@ -797,8 +797,9 @@ public final class SoftSynthesizer implements AudioSynthesizer,
         if (emgSoundbankFile.isFile()) {
             return;
         }
-        FileOutputStream out = new FileOutputStream(emgSoundbankFile);
-        ((SF2Soundbank) defaultSoundBank).save(out);
+        try (FileOutputStream out = new FileOutputStream(emgSoundbankFile)) {
+            ((SF2Soundbank) defaultSoundBank).save(out);
+        }
     }
 
     @Override
