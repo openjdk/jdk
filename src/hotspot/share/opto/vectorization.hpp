@@ -740,10 +740,10 @@ public:
 
   // Accessors
   bool is_valid() const { return _is_valid; }
-  const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
-  jint size() const { return _size; }
-  jint iv_scale() const { return _iv_scale; }
-  jint con_value() const { return _con_value; }
+  const MemPointerDecomposedForm& decomposed_form() const { assert(_is_valid, ""); return _decomposed_form; }
+  jint size()                                       const { assert(_is_valid, ""); return _size; }
+  jint iv_scale()                                   const { assert(_is_valid, ""); return _iv_scale; }
+  jint con_value()                                  const { assert(_is_valid, ""); return _con_value; }
   // TODO for each in invar_summands - maybe make it static so we can use it during init?
 
   // Aliasing
