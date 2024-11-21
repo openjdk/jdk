@@ -248,7 +248,7 @@ public class LayoutGraph {
                 for (LayoutEdge edge : edges) {
                     edge.setFrom(dummyNode);
                 }
-                addNodeToLayer(dummyNode, layerNr);
+                addDummyToLayer(dummyNode, layerNr);
             }
         }
 
@@ -290,24 +290,24 @@ public class LayoutGraph {
      * @param layerNumber The index of the layer to which the node will be added.
      */
     public void addNodeToLayer(LayoutNode node, int layerNumber) {
+        assert !node.isDummy();
         node.setLayer(layerNumber);
         getLayer(layerNumber).add(node);
-        registerNode(node);
+        vertexToLayoutNode.put(node.getVertex(), node);
+
     }
 
     /**
-     * Registers a LayoutNode in the appropriate collection based on its type.
-     * If the node is a dummy node, adds it to the dummyNodes list.
-     * If the node represents a vertex, maps it in vertexToLayoutNode.
+     * Adds a LayoutNode to the specified layer and registers it in the graph.
      *
-     * @param node The LayoutNode to register.
+     * @param node        The LayoutNode to add to the layer.
+     * @param layerNumber The index of the layer to which the node will be added.
      */
-    private void registerNode(LayoutNode node) {
-        if (node.isDummy()) {
-            dummyNodes.add(node);
-        } else {
-            vertexToLayoutNode.put(node.getVertex(), node);
-        }
+    public void addDummyToLayer(LayoutNode node, int layerNumber) {
+        assert node.isDummy();
+        node.setLayer(layerNumber);
+        getLayer(layerNumber).add(node);
+        dummyNodes.add(node);
     }
 
     /**
@@ -317,15 +317,19 @@ public class LayoutGraph {
      * @param node The LayoutNode to remove.
      */
     public void removeNode(LayoutNode node) {
+        assert !node.isDummy();
         int layer = node.getLayer();
         layers.get(layer).remove(node);
         layers.get(layer).updateNodeIndices();
-        // Remove node from graph layout
-        if (node.isDummy()) {
-            dummyNodes.remove(node);
-        } else {
-            vertexToLayoutNode.remove(node.getVertex());
-        }
+        vertexToLayoutNode.remove(node.getVertex());
+    }
+
+    public void removeDummy(LayoutNode node) {
+        assert node.isDummy();
+        int layer = node.getLayer();
+        layers.get(layer).remove(node);
+        layers.get(layer).updateNodeIndices();
+        dummyNodes.remove(node);
     }
 
     /**
@@ -489,7 +493,7 @@ public class LayoutGraph {
 
                     if (predNode.getSuccessors().size() <= 1 && predNode.getPredecessors().size() <= 1) {
                         // Dummy node used only for this link, remove if not already removed
-                        removeNode(predNode);
+                        removeDummy(predNode);
                     } else {
                         // anchor node, should not be removed
                         break;
@@ -523,11 +527,12 @@ public class LayoutGraph {
      * Handles the removal of associated dummy nodes if they are no longer needed.
      * Updates the graph structure accordingly after node movement.
      *
-     * @param movedNode The LayoutNode whose connected edges are to be removed.
+     * @param node The LayoutNode whose connected edges are to be removed.
      */
-    public void removeEdges(LayoutNode movedNode) {
-        for (Link inputLink : getAllLinks(movedNode.getVertex())) {
-            removeLink(inputLink);
+    public void removeEdges(LayoutNode node) {
+        assert !node.isDummy();
+        for (Link link : getAllLinks(node.getVertex())) {
+            removeLink(link);
         }
     }
 
@@ -537,6 +542,7 @@ public class LayoutGraph {
      * @param node The LayoutNode to remove along with its edges.
      */
     public void removeNodeAndEdges(LayoutNode node) {
+        assert !node.isDummy();
         removeEdges(node);
         removeNode(node);
     }
@@ -764,7 +770,6 @@ public class LayoutGraph {
      * @return The optimal position index within the layer for the node.
      */
     private int optimalPosition(LayoutNode node, int layerNr) {
-
         getLayer(layerNr).sort(NODE_POS_COMPARATOR);
         int edgeCrossings = Integer.MAX_VALUE;
         int optimalPos = -1;
@@ -956,7 +961,7 @@ public class LayoutGraph {
                             n.setPos(n.getPos() + 1);
                         }
                     }
-                    addNodeToLayer(dummyNode, l);
+                    addDummyToLayer(dummyNode, l);
                     prevEdge = dummyNode.getPredecessors().get(0);
                 }
             }
@@ -994,7 +999,7 @@ public class LayoutGraph {
                     if (topCutNode == null) {
                         topCutNode = new LayoutNode();
                         topCutNode.setLayer(fromNode.getLayer() + 1);
-                        addNodeToLayer(topCutNode, topCutNode.getLayer());
+                        addDummyToLayer(topCutNode, topCutNode.getLayer());
                         portToTopNode.put(startPort, topCutNode);
                         portToBottomNodeMapping.put(startPort, new LinkedHashMap<>());
                     }
@@ -1008,7 +1013,7 @@ public class LayoutGraph {
                     if (bottomCutNode == null) {
                         bottomCutNode = new LayoutNode();
                         bottomCutNode.setLayer(toNode.getLayer() - 1);
-                        addNodeToLayer(bottomCutNode, bottomCutNode.getLayer());
+                        addDummyToLayer(bottomCutNode, bottomCutNode.getLayer());
                         layerToBottomNode.put(toNode.getLayer(), bottomCutNode);
                     }
                     LayoutEdge bottomEdge = new LayoutEdge(bottomCutNode, toNode, bottomCutNode.getWidth() / 2, succEdge.getRelativeToX(), succEdge.getLink());
@@ -1038,7 +1043,7 @@ public class LayoutGraph {
                         LayoutNode dummyNode = new LayoutNode();
                         dummyNode.setLayer(i);
                         dummyNode.addPredecessor(previousEdge);
-                        addNodeToLayer(dummyNode, dummyNode.getLayer());
+                        addDummyToLayer(dummyNode, dummyNode.getLayer());
                         LayoutEdge dummyEdge = new LayoutEdge(dummyNode, previousEdge.getTo(), dummyNode.getWidth() / 2, previousEdge.getRelativeToX(), singleEdge.getLink());
                         if (previousEdge.isReversed()) dummyEdge.reverse();
                         dummyNode.addSuccessor(dummyEdge);
@@ -1075,7 +1080,7 @@ public class LayoutGraph {
                     layoutNode.removeSuccessor(unprocessedEdge);
                 }
                 for (LayoutNode dummyNode : newDummyNodes) {
-                    addNodeToLayer(dummyNode, dummyNode.getLayer());
+                    addDummyToLayer(dummyNode, dummyNode.getLayer());
                 }
             }
         }
@@ -1090,6 +1095,7 @@ public class LayoutGraph {
      * @param maxLayerLength The maximum number of layers an edge can span without splitting it
      */
     public void addEdges(LayoutNode node, int maxLayerLength) {
+        assert !node.isDummy();
         createAndReverseLayoutEdges(node);
         createDummiesForNodeSuccessor(node, maxLayerLength);
         createDummiesForNodePredecessor(node);

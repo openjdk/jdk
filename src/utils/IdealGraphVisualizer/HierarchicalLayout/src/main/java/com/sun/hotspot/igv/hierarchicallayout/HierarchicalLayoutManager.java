@@ -95,6 +95,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
     public void moveVertex(Vertex movedVertex) {
         Point newLoc = movedVertex.getPosition();
         LayoutNode movedNode = graph.getLayoutNode(movedVertex);
+        assert !movedNode.isDummy();
 
         int layerNr = graph.findLayer(newLoc.y + movedNode.getOuterHeight() / 2);
         if (movedNode.getLayer() == layerNr) { // we move the node in the same layer
