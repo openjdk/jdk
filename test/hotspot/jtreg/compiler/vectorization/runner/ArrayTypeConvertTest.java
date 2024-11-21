@@ -110,6 +110,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public int[] signExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -121,6 +123,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public int[] zeroExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -132,6 +136,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public int[] signExtensionFromByte() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -144,6 +150,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public short[] narrowToSigned() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -155,6 +163,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public char[] narrowToUnsigned() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -166,6 +176,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public byte[] NarrowToByte() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -254,6 +266,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public float[] convertCharToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -265,6 +279,8 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
     // Subword vector casts do not work currently, see JDK-8342095.
+    // Assert the vectorization failure so that we are reminded to update
+    // the test when this limitation is addressed in the future.
     public double[] convertCharToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
