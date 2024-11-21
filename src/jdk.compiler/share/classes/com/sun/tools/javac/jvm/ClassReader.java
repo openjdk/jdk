@@ -898,10 +898,6 @@ public class ClassReader {
             new AttributeReader(names.ConstantValue, V45_3, MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
                     Object v = poolReader.getConstant(nextChar());
-                    // Ignore ConstantValue attribute if field not final.
-                    if ((sym.flags() & FINAL) == 0) {
-                        return;
-                    }
                     VarSymbol var = (VarSymbol) sym;
                     switch (var.type.getTag()) {
                        case BOOLEAN:

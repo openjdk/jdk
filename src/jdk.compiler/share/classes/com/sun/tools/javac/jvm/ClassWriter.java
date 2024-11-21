@@ -984,9 +984,9 @@ public class ClassWriter extends ClassFile {
         databuf.appendChar(poolWriter.putDescriptor(v));
         int acountIdx = beginAttrs();
         int acount = 0;
-        if (v.getConstValue() != null) {
+        if (v.getConstValue(true) != null) {
             int alenIdx = writeAttr(names.ConstantValue);
-            databuf.appendChar(poolWriter.putConstant(v.getConstValue()));
+            databuf.appendChar(poolWriter.putConstant(v.getConstValue(true)));
             endAttr(alenIdx);
             acount++;
         }

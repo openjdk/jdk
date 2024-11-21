@@ -457,7 +457,7 @@ public class Gen extends JCTree.Visitor {
                         initCode.append(init);
                         endPosTable.replaceTree(vdef, init);
                         initTAs.addAll(getAndRemoveNonFieldTAs(sym));
-                    } else if (sym.getConstValue() == null) {
+                    } else if (sym.getConstValue(true) == null) {
                         // Initialize class (static) variables only if
                         // they are not compile-time constants.
                         JCStatement init = make.at(vdef.pos).
@@ -466,7 +466,7 @@ public class Gen extends JCTree.Visitor {
                         endPosTable.replaceTree(vdef, init);
                         clinitTAs.addAll(getAndRemoveNonFieldTAs(sym));
                     } else {
-                        checkStringConstant(vdef.init.pos(), sym.getConstValue());
+                        checkStringConstant(vdef.init.pos(), sym.getConstValue(true));
                         /* if the init contains a reference to an external class, add it to the
                          * constant's pool
                          */
@@ -1056,7 +1056,7 @@ public class Gen extends JCTree.Visitor {
     public void visitVarDef(JCVariableDecl tree) {
         VarSymbol v = tree.sym;
         if (tree.init != null) {
-            checkStringConstant(tree.init.pos(), v.getConstValue());
+            checkStringConstant(tree.init.pos(), v.getConstValue(true));
             if (v.getConstValue() == null || varDebugInfo) {
                 Assert.check(code.isStatementStart());
                 code.newLocal(v);

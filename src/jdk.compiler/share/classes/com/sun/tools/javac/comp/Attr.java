@@ -1304,7 +1304,7 @@ public class Attr extends JCTree.Visitor {
             chk.checkDeprecatedAnnotation(tree.pos(), v);
 
             if (tree.init != null) {
-                if ((v.flags_field & FINAL) == 0 ||
+                if ((!v.isFinal() && ((v.flags_field & STATIC) == 0 || v.owner.kind != TYP)) ||
                     !memberEnter.needsLazyConstValue(tree.init)) {
                     // Not a compile-time constant
                     // Attribute initializer in a new environment
