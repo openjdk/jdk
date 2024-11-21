@@ -413,20 +413,8 @@ writeStaticFieldValue(JNIEnv *env, PacketOutputStream *out, jclass clazz,
                       jfieldID field)
 {
     jvmtiError error;
-    jint modifiers;
     char *signature = NULL;
     jbyte typeKey;
-
-    error = fieldModifiers(clazz, field, &modifiers);
-    if (error != JVMTI_ERROR_NONE) {
-        outStream_setError(out, map2jdwpError(error));
-        return;
-    }
-
-    if (!(modifiers & JVM_ACC_STATIC)) {
-        outStream_setError(out, JDWP_ERROR(INVALID_FIELDID));
-        return;
-    }
 
     error = fieldSignature(clazz, field, NULL, &signature, NULL);
     if (error != JVMTI_ERROR_NONE) {
@@ -501,6 +489,8 @@ sharedGetFieldValues(PacketInputStream *in, PacketOutputStream *out,
     jint length;
     jobject object;
     jclass clazz;
+    jfieldID *fieldIDs = NULL;
+    int i;
 
     object = NULL;
     clazz  = NULL;
@@ -516,13 +506,42 @@ sharedGetFieldValues(PacketInputStream *in, PacketOutputStream *out,
         return;
     }
 
-    WITH_LOCAL_REFS(env, length + 1) { /* +1 for class with instance fields */
+    fieldIDs = jvmtiAllocate(length * (jint)sizeof(*fieldIDs));
+    if (fieldIDs == NULL && length > 0) {
+        outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
+        return;
+    }
 
-        int i;
+    if (!isStatic) {
+        clazz = JNI_FUNC_PTR(env,GetObjectClass)(env, object);
+    }
+
+    // check field access for all requested fields. This must be done before
+    // any writes to prevent extra data from being written.
+    for (i = 0; i < length; i++) {
+        fieldIDs[i] = inStream_readFieldID(in);
+        jint modifiers;
+        jvmtiError error;
+
+        error = fieldModifiers(clazz, fieldIDs[i], &modifiers);
+        if (error != JVMTI_ERROR_NONE) {
+            outStream_setError(out, map2jdwpError(error));
+            jvmtiDeallocate(fieldIDs);
+            return;
+        }
+
+        if (((modifiers & JVM_ACC_STATIC) != 0) != isStatic) {
+            outStream_setError(out, JDWP_ERROR(INVALID_FIELDID));
+            jvmtiDeallocate(fieldIDs);
+            return;
+        }
+    }
+
+    WITH_LOCAL_REFS(env, length + 1) { /* +1 for class with instance fields */
 
         (void)outStream_writeInt(out, length);
         for (i = 0; (i < length) && !outStream_error(out); i++) {
-            jfieldID field = inStream_readFieldID(in);
+            jfieldID field = fieldIDs[i];
 
             if (isStatic) {
                 writeStaticFieldValue(env, out, clazz, field);
@@ -532,6 +551,8 @@ sharedGetFieldValues(PacketInputStream *in, PacketOutputStream *out,
         }
 
     } END_WITH_LOCAL_REFS(env);
+
+    jvmtiDeallocate(fieldIDs);
 }
 
 jboolean

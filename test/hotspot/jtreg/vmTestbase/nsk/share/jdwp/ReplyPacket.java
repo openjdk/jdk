@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,23 @@ public class ReplyPacket extends Packet {
         if (getPacketID() != id) {
             throw new PacketFormatException("Unexpected ID in reply packet header: "
                                             + getPacketID());
+        }
+    }
+
+    /**
+     * Check reply packet header for specified reply ID and error code.
+     *
+     * @throws PacketFormatException if packet header fields have invalid values
+     */
+    public void checkHeader(int id, int error) throws PacketFormatException {
+        if (getPacketID() != id) {
+            throw new PacketFormatException("Unexpected ID in reply packet header: "
+                    + getPacketID());
+        }
+
+        if (getErrorCode() != error) {
+            throw new PacketFormatException("Unexpected error code in reply packet header: "
+                    + getErrorCode());
         }
     }
 
