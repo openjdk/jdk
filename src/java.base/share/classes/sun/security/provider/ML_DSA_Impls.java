@@ -56,7 +56,9 @@ public class ML_DSA_Impls {
         }
     }
 
-    public sealed static class KPG extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
+    public sealed static class KPG extends
+        NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
+
         public KPG() {
             // ML-DSA-65 is default
             super("ML-DSA", "ML-DSA-65", "ML-DSA-44", "ML-DSA-87");
@@ -139,7 +141,8 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        protected byte[] implSign(String name, byte[] skBytes, Object sk2, byte[] msg, SecureRandom sr) {
+        protected byte[] implSign(String name, byte[] skBytes,
+                                  Object sk2, byte[] msg, SecureRandom sr) {
             var size = name2int(name);
             var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
             byte[] rnd = new byte[32];
@@ -157,7 +160,8 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        protected boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes)
+        protected boolean implVerify(String name, byte[] pkBytes,
+                                     Object pk2, byte[] msg, byte[] sigBytes)
                 throws SignatureException {
             var size = name2int(name);
             var mlDsa = new ML_DSA(size);
@@ -172,13 +176,17 @@ public class ML_DSA_Impls {
         }
 
         @Override
-        protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+        protected Object implCheckPublicKey(String name, byte[] pk)
+            throws InvalidKeyException {
+
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             return mlDsa.checkPublicKey(pk);
         }
 
         @Override
-        protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+        protected Object implCheckPrivateKey(String name, byte[] sk)
+            throws InvalidKeyException {
+            
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             return mlDsa.checkPrivateKey(sk);
         }

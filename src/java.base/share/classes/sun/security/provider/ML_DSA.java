@@ -61,7 +61,8 @@ public class ML_DSA {
     private static final int MONT_R_SQUARE_MOD_Q = 2365951;
     private static final int MONT_Q_INV_MOD_R = 58728449;
     private static final int MONT_R_MOD_Q = 4193792;
-    private static final int MONT_DIM_INVERSE = 16382; // toMont((ML_DSA_N)^-1 (mod ML_DSA_Q))
+    // toMont((ML_DSA_N)^-1 (mod ML_DSA_Q))
+    private static final int MONT_DIM_INVERSE = 16382;
 
     // Zeta values for NTT with montgomery factor precomputed
     private static final int[] MONT_ZETAS_FOR_NTT = new int[]{
@@ -230,7 +231,8 @@ public class ML_DSA {
         }
     }
 
-    public record ML_DSA_PrivateKey(byte[] rho, byte[] k, byte[] tr, int[][] s1, int[][] s2, int[][] t0) {
+    public record ML_DSA_PrivateKey(byte[] rho, byte[] k, byte[] tr,
+                                    int[][] s1, int[][] s2, int[][] t0) {
         void destroy() {
             Arrays.fill(k, (byte)0);
             for (var b : s1) {
@@ -248,10 +250,12 @@ public class ML_DSA {
     public record ML_DSA_PublicKey(byte[] rho, int[][] t1) {
     }
 
-    public record ML_DSA_KeyPair(ML_DSA_PrivateKey privateKey, ML_DSA_PublicKey publicKey) {
+    public record ML_DSA_KeyPair(ML_DSA_PrivateKey privateKey,
+                                 ML_DSA_PublicKey publicKey) {
     }
 
-    public record ML_DSA_Signature(byte[] commitmentHash, int[][] response, boolean[][] hint) {
+    public record ML_DSA_Signature(byte[] commitmentHash,
+                                   int[][] response, boolean[][] hint) {
     }
 
     /*
@@ -297,7 +301,8 @@ public class ML_DSA {
         //Sample S1 and S2
         int[][] s1 = new int[mlDsa_l][ML_DSA_N];
         int[][] s2 = new int[mlDsa_k][ML_DSA_N];
-        sampleS1S2(s1, s2, hash, rhoPrime); //hash is reset before being used in sampleS1S2
+        //hash is reset before being used in sampleS1S2
+        sampleS1S2(s1, s2, hash, rhoPrime);
 
         //Compute t and tr
         mlDsaVectorNtt(s1); //s1 now in NTT domain
@@ -396,7 +401,8 @@ public class ML_DSA {
 
             //Update z and h
             kappa += mlDsa_l;
-            if (vectorNormBound(z, gamma1 - beta) || vectorNormBound(w0, gamma2 - beta)) {
+            if (vectorNormBound(z, gamma1 - beta) ||
+                vectorNormBound(w0, gamma2 - beta)) {
                 continue;
             } else {
                 nttConstMultiply(ct0, c, sk.t0());
@@ -473,7 +479,8 @@ public class ML_DSA {
      */
 
     // Bit-pack the t1 and w1 vector into a byte array.
-    // The coefficients of the polynomials in the vector should be nonnegative and less than 2^bitsPerCoeff .
+    // The coefficients of the polynomials in the vector should be
+    // nonnegative and less than 2^bitsPerCoeff .
     public byte[] simpleBitPack(int bitsPerCoeff, int[][] vector) {
         byte[] result = new byte[(mlDsa_k * ML_DSA_N * bitsPerCoeff) / 8];
         int acc = 0;
@@ -519,23 +526,30 @@ public class ML_DSA {
             for (int j = 0; j < ML_DSA_N / 4; j++) {
                 int tOffset = j*4;
                 int vOffset = (i*320) + (j*5);
-                t1[i][tOffset] = (v[vOffset] & 0xFF) + ((v[vOffset+1] << 8) & 0x3FF);
-                t1[i][tOffset+1] = ((v[vOffset+1] >> 2) & 0x3F) + ((v[vOffset+2] << 6) & 0x3FF);
-                t1[i][tOffset+2] = ((v[vOffset+2] >> 4) & 0xF) + ((v[vOffset+3] << 4) & 0x3FF);
-                t1[i][tOffset+3] = ((v[vOffset+3] >> 6) & 0x3) + ((v[vOffset+4] << 2) & 0x3FF);
+                t1[i][tOffset] = (v[vOffset] & 0xFF) +
+                    ((v[vOffset+1] << 8) & 0x3FF);
+                t1[i][tOffset+1] = ((v[vOffset+1] >> 2) & 0x3F) +
+                    ((v[vOffset+2] << 6) & 0x3FF);
+                t1[i][tOffset+2] = ((v[vOffset+2] >> 4) & 0xF) +
+                    ((v[vOffset+3] << 4) & 0x3FF);
+                t1[i][tOffset+3] = ((v[vOffset+3] >> 6) & 0x3) +
+                    ((v[vOffset+4] << 2) & 0x3FF);
             }
         }
         return t1;
     }
 
-    public int[][] bitUnpack(int[][] result, byte[] v, int offset, int dim, int maxValue, int bitsPerCoeff) {
+    public int[][] bitUnpack(int[][] result, byte[] v, int offset, int dim,
+                             int maxValue, int bitsPerCoeff) {
+
         switch (bitsPerCoeff) {
             case 3 -> { bitUnpackGeneral(result, v, offset, dim, maxValue, 3); }
             case 4 -> { bitUnpackGeneral(result, v, offset, dim, maxValue, 4); }
             case 13 -> { bitUnpackGeneral(result, v, offset, dim,  maxValue, 13); }
             case 18 -> { bitUnpack18(result, v, offset, dim, maxValue); }
             case 20 -> { bitUnpack20(result, v, offset, dim, maxValue); }
-            default -> throw new RuntimeException("Wrong bitspercoeffb value in bitUnpack (" + bitsPerCoeff + ").");
+            default -> throw new RuntimeException(
+                "Wrong bitsPerCoeff value in bitUnpack (" + bitsPerCoeff + ").");
         }
         return result;
     }
@@ -562,7 +576,8 @@ public class ML_DSA {
             }
         }
     }
-    public void bitUnpack18(int [][] result, byte[] v, int offset, int dim, int maxValue) {
+    public void bitUnpack18(int [][] result, byte[] v, int offset,
+                            int dim, int maxValue) {
 
         int vIndex = offset;
         for (int i = 0; i < dim; i++) {
@@ -584,7 +599,8 @@ public class ML_DSA {
         }
     }
 
-    public void bitUnpack20(int[][] result, byte[] v, int offset, int dim, int maxValue) {
+    public void bitUnpack20(int[][] result, byte[] v, int offset,
+                            int dim, int maxValue) {
         int vIndex = offset;
 
         for (int i = 0; i < dim; i++) {
@@ -853,7 +869,8 @@ public class ML_DSA {
                 int rawOfs = blockSize;
                 int tmp;
                 while (ofs < ML_DSA_N) {
-                    if (rawOfs == blockSize) {  // works because 3 divides blockSize (=168)
+                    if (rawOfs == blockSize) {
+                        // works because 3 divides blockSize (=168)
                         xof.squeeze(rawAij, 0, blockSize);
                         rawOfs = 0;
                     }
@@ -888,7 +905,8 @@ public class ML_DSA {
                     do {
                         sample = slicer.squeezeBits();
                     } while (sample > 14);
-                    s1[i][j] = eta - sample + (205 * sample >> 10) * 5; // 2 - sample mod 5
+                    // 2 - sample mod 5
+                    s1[i][j] = eta - sample + (205 * sample >> 10) * 5;
                 }
             } else { // eta == 4
                 for (int j = 0; j < ML_DSA_N; j++) {
@@ -962,7 +980,8 @@ public class ML_DSA {
     private void decompose(int[][] input, int[][] lowPart, int[][] highPart) {
         int multiplier = (gamma2 == 95232 ? 22 : 8);
         for (int i = 0; i < mlDsa_k; i++) {
-            ML_DSA.mlDsaDecomposePoly(input[i], lowPart[i], highPart[i], gamma2 * 2, multiplier);
+            ML_DSA.mlDsaDecomposePoly(input[i], lowPart[i],
+                highPart[i], gamma2 * 2, multiplier);
         }
     }
 
@@ -1047,7 +1066,8 @@ public class ML_DSA {
                 for (int j = s; j < s + l; j++) {
                     int tmp = coeffs[j];
                     coeffs[j] = (tmp + coeffs[j + l]);
-                    coeffs[j + l] = montMul(tmp - coeffs[j + l], MONT_ZETAS_FOR_INVERSE_NTT[m]);
+                    coeffs[j + l] = montMul(tmp - coeffs[j + l],
+                        MONT_ZETAS_FOR_INVERSE_NTT[m]);
                 }
                 m++;
             }
@@ -1116,7 +1136,9 @@ public class ML_DSA {
         }
     }
 
-    private void matrixVectorPointwiseMultiply(int[][] res, int[][][] matrix, int[][] vector) {
+    private void matrixVectorPointwiseMultiply(int[][] res, int[][][] matrix,
+                                               int[][] vector) {
+
         int resulti[] = new int[ML_DSA_N];
         int[] product = new int[ML_DSA_N];
         for (int i = 0; i < mlDsa_k; i++) {
@@ -1220,7 +1242,8 @@ public class ML_DSA {
         int aLow = (int) a;
         int m = MONT_Q_INV_MOD_R * aLow; // signed low product
 
-        return (aHigh - (int) (((long)m * MONT_Q) >> MONT_R_BITS));  // subtract signed high product
+        // subtract signed high product
+        return (aHigh - (int) (((long)m * MONT_Q) >> MONT_R_BITS));
     }
 
     static int toMont(int a) {
