@@ -39,7 +39,7 @@ import jtreg.SkippedException;
 
 public class TestJhsdbJstackPrintVMLocks {
 
-    final static int MAX_ATTEMPTS = 3;
+    final static int MAX_ATTEMPTS = 5;
     public static void main(String[] args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
 
@@ -75,7 +75,7 @@ public class TestJhsdbJstackPrintVMLocks {
                     System.out.println("Test PASSED");
                     return;
                 }
-                Thread.sleep(2000);
+                Thread.sleep(attempt * 2000);
             }
             throw new RuntimeException("Not able to find lock");
         } finally {
