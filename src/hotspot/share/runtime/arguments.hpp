@@ -198,6 +198,8 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
+  // number of unique modules specified in the --enable-native-access option
+  static unsigned int _enable_native_access_count;
 
   // Property list
   static SystemProperty* _system_properties;
@@ -464,6 +466,8 @@ class Arguments : AllStatic {
   static bool is_internal_module_property(const char* option);
   static bool is_add_modules_property(const char* key);
   static unsigned int addmods_count() { return  _addmods_count; }
+  static bool is_enable_native_access_property(const char* key);
+  static unsigned int enable_native_access_count() { return _enable_native_access_count; }
   static bool is_module_path_property(const char* key);
 
   // Miscellaneous System property value getter and setters.

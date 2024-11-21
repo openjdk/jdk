@@ -126,6 +126,8 @@ bool Arguments::_has_jimage = false;
 
 char* Arguments::_ext_dirs = nullptr;
 
+unsigned int Arguments::_enable_native_access_count = 0;
+
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
 
@@ -339,6 +341,10 @@ bool Arguments::is_internal_module_property(const char* property) {
 
 bool Arguments::is_add_modules_property(const char* key) {
   return (strcmp(key, MODULE_PROPERTY_PREFIX ADDMODS) == 0);
+}
+
+bool Arguments::is_enable_native_access_property(const char* key) {
+  return (strcmp(key, MODULE_PROPERTY_PREFIX ENABLE_NATIVE_ACCESS) == 0);
 }
 
 // Return true if the key matches the --module-path property name ("jdk.module.path").
@@ -1771,7 +1777,7 @@ unsigned int addreads_count = 0;
 unsigned int addexports_count = 0;
 unsigned int addopens_count = 0;
 unsigned int patch_mod_count = 0;
-unsigned int enable_native_access_count = 0;
+//unsigned int enable_native_access_count = 0;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
@@ -2244,7 +2250,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--enable-native-access=", &tail)) {
-      if (!create_numbered_module_property("jdk.module.enable.native.access", tail, enable_native_access_count++)) {
+      if (!create_numbered_module_property("jdk.module.enable.native.access", tail, _enable_native_access_count++)) {
         return JNI_ENOMEM;
       }
     } else if (match_option(option, "--illegal-native-access=", &tail)) {
