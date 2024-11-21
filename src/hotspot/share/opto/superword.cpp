@@ -2841,7 +2841,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // constrained_limit = MAX(old_limit - adjust_pre_iter, orig_limit)
   //                   = MAX(new_limit,                   orig_limit)         (15a, iv_stride < 0)
   //
-  const int iv_stride = iv_stride();
+  const int iv_stride = this->iv_stride();
   const int iv_scale  = p.iv_scale();
   const int con       = p.con();
   Node* base          = p.decomposed_form().base().object_or_native();
