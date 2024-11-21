@@ -48,6 +48,8 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
     private InetSocketAddress external_address;
     private boolean useV4 = false;
     private Socket cmdsock = null;
+    private InputStream cmdIn = null;
+    private OutputStream cmdOut = null;
 
     SocksSocketImpl(SocketImpl delegate) {
         super(delegate);
@@ -70,6 +72,12 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             return true;
         }
         return DefaultProxySelector.socksProxyVersion() == 4;
+    }
+
+    private synchronized void doConnect(final String host, final int port, final int timeout) throws IOException {
+        delegate.connect(new InetSocketAddress(host, port), timeout);
+        cmdIn = getInputStream();
+        cmdOut = getOutputStream();
     }
 
     private static int remainingMillis(long deadlineMillis) throws IOException {
@@ -285,7 +293,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
 
                 // Connects to the SOCKS server
                 try {
-                    delegate.connect(new InetSocketAddress(server, serverPort), remainingMillis(deadlineMillis));
+                    doConnect(server, serverPort, remainingMillis(deadlineMillis));
                     // Worked, let's get outta here
                     break;
                 } catch (IOException e) {
@@ -309,14 +317,15 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
         } else {
             // Connects to the SOCKS server
             try {
-                delegate.connect(new InetSocketAddress(server, serverPort), remainingMillis(deadlineMillis));
+                doConnect(server, serverPort, remainingMillis(deadlineMillis));
             } catch (IOException e) {
                 throw new SocketException(e.getMessage(), e);
             }
         }
 
-        BufferedOutputStream out = new BufferedOutputStream(getOutputStream(), 512);
-        InputStream in = getInputStream();
+        // `cmdIn` & `cmdOut` were initialized during the `doConnect()` call
+        BufferedOutputStream out = new BufferedOutputStream(cmdOut, 512);
+        InputStream in = cmdIn;
 
         if (useV4) {
             // SOCKS Protocol version 4 doesn't know how to deal with
