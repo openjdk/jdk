@@ -2717,11 +2717,6 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   assert(p.is_valid(), "sanity");
   p.print_on(tty);
 
-  // TODO rename offset -> con
-  //             scale -> iv_scale
-  //   adr = base + offset + invar + scale * iv                               (1)
-  //   adr = base + invar + iv_scale * iv + con                               (1)
-
   const VPointer& align_to_ref_p = vpointer(align_to_ref);
   assert(align_to_ref_p.valid(), "sanity");
 
@@ -2751,52 +2746,52 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //   iv = new_limit = old_limit + adjust_pre_iter                           (3a, stride > 0)
   //   iv = new_limit = old_limit - adjust_pre_iter                           (3b, stride < 0)
   //
-  // We define boi as:
+  // We define bic as:
   //
-  //   boi = base + offset + invar                                            (4)
+  //   bic = base + invar + con                                               (4)
   //
   // And now we can simplify the address using (1), (3), and (4):
   //
-  //   adr = boi + scale * new_limit
-  //   adr = boi + scale * (old_limit + adjust_pre_iter)                      (5a, stride > 0)
-  //   adr = boi + scale * (old_limit - adjust_pre_iter)                      (5b, stride < 0)
+  //   adr = bic + iv_scale * new_limit
+  //   adr = bic + iv_scale * (old_limit + adjust_pre_iter)                   (5a, stride > 0)
+  //   adr = bic + iv_scale * (old_limit - adjust_pre_iter)                   (5b, stride < 0)
   //
   // And hence we can restate (2) with (5), and solve the equation for adjust_pre_iter:
   //
-  //   (boi + scale * (old_limit + adjust_pre_iter) % aw = 0                  (6a, stride > 0)
-  //   (boi + scale * (old_limit - adjust_pre_iter) % aw = 0                  (6b, stride < 0)
+  //   (bic + iv_scale * (old_limit + adjust_pre_iter) % aw = 0               (6a, stride > 0)
+  //   (bic + iv_scale * (old_limit - adjust_pre_iter) % aw = 0               (6b, stride < 0)
   //
-  // In most cases, scale is the element size, for example:
+  // In most cases, iv_scale is the element size, for example:
   //
   //   for (i = 0; i < a.length; i++) { a[i] = ...; }
   //
-  // It is thus reasonable to assume that both abs(scale) and abs(stride) are
+  // It is thus reasonable to assume that both abs(iv_scale) and abs(stride) are
   // strictly positive powers of 2. Further, they can be assumed to be non-zero,
   // otherwise the address does not depend on iv, and the alignment cannot be
   // affected by adjusting the pre-loop limit.
   //
-  // Further, if abs(scale) >= aw, then adjust_pre_iter has no effect on alignment, and
-  // we are not able to affect the alignment at all. Hence, we require abs(scale) < aw.
+  // Further, if abs(iv_scale) >= aw, then adjust_pre_iter has no effect on alignment, and
+  // we are not able to affect the alignment at all. Hence, we require abs(iv_scale) < aw.
   //
-  // Moreover, for alignment to be achievable, boi must be a multiple of scale. If strict
+  // Moreover, for alignment to be achievable, bic must be a multiple of iv_scale. If strict
   // alignment is required (i.e. -XX:+AlignVector), this is guaranteed by the filtering
   // done with the AlignmentSolver / AlignmentSolution. If strict alignment is not
   // required, then alignment is still preferable for performance, but not necessary.
-  // In many cases boi will be a multiple of scale, but if it is not, then the adjustment
+  // In many cases bic will be a multiple of iv_scale, but if it is not, then the adjustment
   // does not guarantee alignment, but the code is still correct.
   //
-  // Hence, in what follows we assume that boi is a multiple of scale, and in fact all
-  // terms in (6) are multiples of scale. Therefore we divide all terms by scale:
+  // Hence, in what follows we assume that bic is a multiple of iv_scale, and in fact all
+  // terms in (6) are multiples of iv_scale. Therefore we divide all terms by iv_scale:
   //
-  //   AW = aw / abs(scale)            (power of 2)                           (7)
-  //   BOI = boi / abs(scale)                                                 (8)
+  //   AW = aw / abs(iv_scale)            (power of 2)                        (7)
+  //   BIC = bic / abs(iv_scale)                                              (8)
   //
-  // and restate (6), using (7) and (8), i.e. we divide (6) by abs(scale):
+  // and restate (6), using (7) and (8), i.e. we divide (6) by abs(iv_scale):
   //
-  //   (BOI + sign(scale) * (old_limit + adjust_pre_iter) % AW = 0           (9a, stride > 0)
-  //   (BOI + sign(scale) * (old_limit - adjust_pre_iter) % AW = 0           (9b, stride < 0)
+  //   (BIC + sign(iv_scale) * (old_limit + adjust_pre_iter) % AW = 0         (9a, stride > 0)
+  //   (BIC + sign(iv_scale) * (old_limit - adjust_pre_iter) % AW = 0         (9b, stride < 0)
   //
-  //   where: sign(scale) = scale / abs(scale) = (scale > 0 ? 1 : -1)
+  //   where: sign(iv_scale) = iv_scale / abs(iv_scale) = (iv_scale > 0 ? 1 : -1)
   //
   // Note, (9) allows for periodic solutions of adjust_pre_iter, with periodicity AW.
   // But we would like to spend as few iterations in the pre-loop as possible,
@@ -2806,40 +2801,40 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // We solve (9) for adjust_pre_iter, in the following 4 cases:
   //
-  // Case A: scale > 0 && stride > 0 (i.e. sign(scale) =  1)
-  //   (BOI + old_limit + adjust_pre_iter) % AW = 0
-  //   adjust_pre_iter = (-BOI - old_limit) % AW                              (11a)
+  // Case A: iv_scale > 0 && stride > 0 (i.e. sign(iv_scale) =  1)
+  //   (BIC + old_limit + adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (-BIC - old_limit) % AW                              (11a)
   //
-  // Case B: scale < 0 && stride > 0 (i.e. sign(scale) = -1)
-  //   (BOI - old_limit - adjust_pre_iter) % AW = 0
-  //   adjust_pre_iter = (BOI - old_limit) % AW                               (11b)
+  // Case B: iv_scale < 0 && stride > 0 (i.e. sign(iv_scale) = -1)
+  //   (BIC - old_limit - adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (BIC - old_limit) % AW                               (11b)
   //
-  // Case C: scale > 0 && stride < 0 (i.e. sign(scale) =  1)
-  //   (BOI + old_limit - adjust_pre_iter) % AW = 0
-  //   adjust_pre_iter = (BOI + old_limit) % AW                               (11c)
+  // Case C: iv_scale > 0 && stride < 0 (i.e. sign(iv_scale) =  1)
+  //   (BIC + old_limit - adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (BIC + old_limit) % AW                               (11c)
   //
-  // Case D: scale < 0 && stride < 0 (i.e. sign(scale) = -1)
-  //   (BOI - old_limit + adjust_pre_iter) % AW = 0
-  //   adjust_pre_iter = (-BOI + old_limit) % AW                              (11d)
+  // Case D: iv_scale < 0 && stride < 0 (i.e. sign(iv_scale) = -1)
+  //   (BIC - old_limit + adjust_pre_iter) % AW = 0
+  //   adjust_pre_iter = (-BIC + old_limit) % AW                              (11d)
   //
   // We now generalize the equations (11*) by using:
   //
-  //   OP:   (stride         > 0) ? SUB   : ADD
-  //   XBOI: (stride * scale > 0) ? -BOI  : BOI
+  //   OP:   (stride            > 0) ? SUB   : ADD
+  //   XBIC: (stride * iv_scale > 0) ? -BIC  : BIC
   //
   // which gives us the final pre-loop limit adjustment:
   //
-  //   adjust_pre_iter = (XBOI OP old_limit) % AW                             (12)
+  //   adjust_pre_iter = (XBIC OP old_limit) % AW                             (12)
   //
-  // We can construct XBOI by additionally defining:
+  // We can construct XBIC by additionally defining:
   //
-  //   xboi = (stride * scale > 0) ? -boi              : boi                  (13)
+  //   xbic = (stride * iv_scale > 0) ? -bic                 : bic            (13)
   //
   // which gives us:
   //
-  //   XBOI = (stride * scale > 0) ? -BOI              : BOI
-  //        = (stride * scale > 0) ? -boi / abs(scale) : boi / abs(scale)
-  //        = xboi / abs(scale)                                               (14)
+  //   XBIC = (stride * iv_scale > 0) ? -BIC                 : BIC
+  //        = (stride * iv_scale > 0) ? -bic / abs(iv_scale) : bic / abs(iv_scale)
+  //        = xbic / abs(iv_scale)                                            (14)
   //
   // When we have computed adjust_pre_iter, we update the pre-loop limit
   // with (3a, b). However, we have to make sure that the adjust_pre_iter
@@ -2852,6 +2847,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // constrained_limit = MAX(old_limit - adjust_pre_iter, orig_limit)
   //                   = MAX(new_limit,                   orig_limit)         (15a, stride < 0)
   //
+  // TODO rename scale -> iv_scale
+  //             offset -> con
   const int stride   = iv_stride();
   const int scale    = align_to_ref_p.scale_in_bytes();
   const int offset   = align_to_ref_p.offset_in_bytes();
@@ -2908,13 +2905,13 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #endif
 
   // 1: Compute (13a, b):
-  //    xboi = -boi = (-base - offset - invar)         (stride * scale > 0)
-  //    xboi = +boi = (+base + offset + invar)         (stride * scale < 0)
+  //    xbic = -bic = (-base - offset - invar)         (stride * scale > 0)
+  //    xbic = +bic = (+base + offset + invar)         (stride * scale < 0)
   const bool is_sub = scale * stride > 0;
 
   // 1.1: offset
-  Node* xboi = igvn().intcon(is_sub ? -offset : offset);
-  TRACE_ALIGN_VECTOR_NODE(xboi);
+  Node* xbic = igvn().intcon(is_sub ? -offset : offset);
+  TRACE_ALIGN_VECTOR_NODE(xbic);
 
   // 1.2: invar (if it exists)
   if (invar != nullptr) {
@@ -2927,12 +2924,12 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       TRACE_ALIGN_VECTOR_NODE(invar);
    }
     if (is_sub) {
-      xboi = new SubINode(xboi, invar);
+      xbic = new SubINode(xbic, invar);
     } else {
-      xboi = new AddINode(xboi, invar);
+      xbic = new AddINode(xbic, invar);
     }
-    phase()->register_new_node(xboi, pre_ctrl);
-    TRACE_ALIGN_VECTOR_NODE(xboi);
+    phase()->register_new_node(xbic, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xbic);
   }
 
   // 1.3: base (unless base is guaranteed aw aligned)
@@ -2949,44 +2946,44 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     TRACE_ALIGN_VECTOR_NODE(xbase);
 #endif
     if (is_sub) {
-      xboi = new SubINode(xboi, xbase);
+      xbic = new SubINode(xbic, xbase);
     } else {
-      xboi = new AddINode(xboi, xbase);
+      xbic = new AddINode(xbic, xbase);
     }
-    phase()->register_new_node(xboi, pre_ctrl);
-    TRACE_ALIGN_VECTOR_NODE(xboi);
+    phase()->register_new_node(xbic, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(xbic);
   }
 
   // 2: Compute (14):
-  //    XBOI = xboi / abs(scale)
+  //    XBIC = xbic / abs(scale)
   //    The division is executed as shift
   Node* log2_abs_scale = igvn().intcon(exact_log2(abs(scale)));
-  Node* XBOI = new URShiftINode(xboi, log2_abs_scale);
-  phase()->register_new_node(XBOI, pre_ctrl);
+  Node* XBIC = new URShiftINode(xbic, log2_abs_scale);
+  phase()->register_new_node(XBIC, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(log2_abs_scale);
-  TRACE_ALIGN_VECTOR_NODE(XBOI);
+  TRACE_ALIGN_VECTOR_NODE(XBIC);
 
   // 3: Compute (12):
-  //    adjust_pre_iter = (XBOI OP old_limit) % AW
+  //    adjust_pre_iter = (XBIC OP old_limit) % AW
   //
-  // 3.1: XBOI_OP_old_limit = XBOI OP old_limit
-  Node* XBOI_OP_old_limit = nullptr;
+  // 3.1: XBIC_OP_old_limit = XBIC OP old_limit
+  Node* XBIC_OP_old_limit = nullptr;
   if (stride > 0) {
-    XBOI_OP_old_limit = new SubINode(XBOI, old_limit);
+    XBIC_OP_old_limit = new SubINode(XBIC, old_limit);
   } else {
-    XBOI_OP_old_limit = new AddINode(XBOI, old_limit);
+    XBIC_OP_old_limit = new AddINode(XBIC, old_limit);
   }
-  phase()->register_new_node(XBOI_OP_old_limit, pre_ctrl);
-  TRACE_ALIGN_VECTOR_NODE(XBOI_OP_old_limit);
+  phase()->register_new_node(XBIC_OP_old_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(XBIC_OP_old_limit);
 
   // 3.2: Compute:
-  //    adjust_pre_iter = (XBOI OP old_limit) % AW
-  //                    = XBOI_OP_old_limit % AW
-  //                    = XBOI_OP_old_limit AND (AW - 1)
+  //    adjust_pre_iter = (XBIC OP old_limit) % AW
+  //                    = XBIC_OP_old_limit % AW
+  //                    = XBIC_OP_old_limit AND (AW - 1)
   //    Since AW is a power of 2, the modulo operation can be replaced with
   //    a bitmask operation.
   Node* mask_AW = igvn().intcon(AW-1);
-  Node* adjust_pre_iter = new AndINode(XBOI_OP_old_limit, mask_AW);
+  Node* adjust_pre_iter = new AndINode(XBIC_OP_old_limit, mask_AW);
   phase()->register_new_node(adjust_pre_iter, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(mask_AW);
   TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
