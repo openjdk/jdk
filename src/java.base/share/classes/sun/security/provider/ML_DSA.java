@@ -838,7 +838,7 @@ public class ML_DSA {
         var xof = new SHAKE128(0);
         byte[] xofSeed = new byte[A_SEED_LEN + 2];
         System.arraycopy(seed, 0, xofSeed, 0, A_SEED_LEN);
-        int[][][] a = new int[mlDsa_k][mlDsa_l][ML_DSA_N];
+        int[][][] a = new int[mlDsa_k][mlDsa_l][];
 
         for (int i = 0; i < mlDsa_k; i++) {
             for (int j = 0; j < mlDsa_l; j++) {
