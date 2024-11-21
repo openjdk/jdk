@@ -78,7 +78,9 @@ public class JavaLexerTest {
 
             new TestTuple(IDENTIFIER,    "abc\\u0005def"),
             new TestTuple(PLUSEQ, "+="),
-            new TestTuple(TRIPLESTAR, "***")
+            new TestTuple(TRIPLESTAR, "***"),
+            new TestTuple(STAR, "*"),
+            new TestTuple(STAREQ, "*=")
     };
 
     static final TestTuple[] FAILING_TESTS = {

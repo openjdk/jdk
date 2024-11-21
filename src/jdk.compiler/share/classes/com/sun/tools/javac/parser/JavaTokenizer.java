@@ -1020,7 +1020,7 @@ public class JavaTokenizer extends UnicodeReader {
                     if (accept("***")) {
                         put("***");
                         tk = TokenKind.TRIPLESTAR;
-                        break;
+                        break loop;
                     }
 
                     // Original logic
