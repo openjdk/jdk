@@ -869,11 +869,11 @@ jint universe_init() {
   // Initialize CPUTimeCounters object, which must be done before creation of the heap.
   CPUTimeCounters::initialize();
 
+  ObjLayout::initialize();
+
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();
 #endif // _LP64
-
-  ObjLayout::initialize();
 
   GCConfig::arguments()->initialize_heap_sizes();
 
