@@ -294,8 +294,16 @@ const julong double_infinity  = CONST64(0x7FF0000000000000);
 #if !defined(X86)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
-  // 64-bit Windows on amd64 returns the wrong values for
-  // infinity operands.
+  // Initially, this was in place because 64-bit Windows
+  // on amd64 returns the wrong values for infinity
+  // operands. 64-bit Windows on AMD64 now uses custom
+  // handwritten assembly, but when 8342769 tried to
+  // delete this workaround, it was discovered in
+  // review that now Windows/ARM64 suffers from the
+  // same bug, so this workaround is now used for
+  // Windows/ARM64. This, along with the implementation
+  // of the workaround in sharedRuntimeRem.cpp, can be
+  // safely deleted once the bug is fixed.
   juint xbits = PrimitiveConversions::cast<juint>(x);
   juint ybits = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
