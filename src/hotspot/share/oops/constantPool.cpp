@@ -374,7 +374,6 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   return rr;
 }
 
-
 void ConstantPool::add_dumped_interned_strings() {
   objArrayOop rr = resolved_references();
   if (rr != nullptr) {

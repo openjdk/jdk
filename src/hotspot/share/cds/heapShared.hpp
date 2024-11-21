@@ -174,6 +174,7 @@ public:
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
+  static bool _ignore_oops_for_heap_verification;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -206,18 +207,25 @@ public:
 
     // One or more fields in this object are pointing to MetaspaceObj
     bool _has_native_pointers;
+
+    // Some objects should not be scanned by CDSHeapVerifier. For example,
+    // the oopArrays used by the string table.
+    bool _ignored_for_heap_verification;
   public:
     CachedOopInfo(oop orig_referrer, bool has_oop_pointers)
       : _orig_referrer(orig_referrer),
         _buffer_offset(0),
         _has_oop_pointers(has_oop_pointers),
-        _has_native_pointers(false) {}
+        _has_native_pointers(false),
+        _ignored_for_heap_verification(false) {}
     oop orig_referrer()             const { return _orig_referrer;   }
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
     bool has_oop_pointers()         const { return _has_oop_pointers; }
     bool has_native_pointers()      const { return _has_native_pointers; }
     void set_has_native_pointers()        { _has_native_pointers = true; }
+    bool ignored_for_heap_verification() const { return _ignored_for_heap_verification; }
+    void set_ignored_for_heap_verification()   { _ignored_for_heap_verification = true; }
   };
 
 private:
@@ -385,6 +393,7 @@ private:
                                              oop orig_obj);
 
   static void add_to_dumped_interned_strings(oop string);
+  static bool is_dumped_interned_string(oop o);
 
   // Scratch objects for archiving Klass::java_mirror()
   static void set_scratch_java_mirror(Klass* k, oop mirror);

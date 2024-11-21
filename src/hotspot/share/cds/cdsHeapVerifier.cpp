@@ -261,6 +261,14 @@ void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol*
 inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value) {
   _archived_objs++;
 
+  if (value.ignored_for_heap_verification()) {
+    return true; /* keep on iterating */
+  }
+
+  if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
+    return true; /* keep on iterating */
+  }
+
   StaticFieldInfo* info = _table.get(orig_obj);
   if (info != nullptr) {
     if (value.orig_referrer() == nullptr && java_lang_String::is_instance(orig_obj)) {

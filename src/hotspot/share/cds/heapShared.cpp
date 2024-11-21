@@ -88,6 +88,7 @@ struct ArchivableStaticFieldInfo {
 };
 
 bool HeapShared::_disable_writing = false;
+bool HeapShared::_ignore_oops_for_heap_verification = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = nullptr;
 
 size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
@@ -310,6 +311,10 @@ bool HeapShared::archive_object(oop obj, KlassSubGraphInfo* subgraph_info) {
     count_allocation(obj->size());
     ArchiveHeapWriter::add_source_obj(obj);
     CachedOopInfo info = make_cached_oop_info(obj);
+    if (_ignore_oops_for_heap_verification) {
+      info.set_ignored_for_heap_verification();
+    }
+
     archived_object_cache()->put_when_absent(obj, info);
     archived_object_cache()->maybe_grow();
     mark_native_pointers(obj);
@@ -588,6 +593,10 @@ static objArrayOop get_archived_resolved_references(InstanceKlass* src_ik) {
 }
 
 void HeapShared::archive_strings() {
+  copy_interned_strings(); // FIXME - rename
+
+  _ignore_oops_for_heap_verification = true;
+
   oop shared_strings_array = StringTable::init_shared_strings_array(_dumped_interned_strings);
   bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, shared_strings_array);
   // We must succeed because:
@@ -595,6 +604,8 @@ void HeapShared::archive_strings() {
   // - StringTable::init_shared_table() doesn't create any large arrays.
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
   StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
+
+  _ignore_oops_for_heap_verification = false;
 }
 
 int HeapShared::archive_exception_instance(oop exception) {
@@ -644,11 +655,6 @@ void HeapShared::start_scanning_for_oops() {
                                         p2i((address)G1CollectedHeap::heap()->reserved().end()));
     }
     copy_objects();
-
-#if 0
-    CDSHeapVerifier::verify(); // FIXME -- move to after all classes are archived
-    check_special_subgraph_classes();
-#endif
   }
 
   init_seen_objects_table();
@@ -660,6 +666,12 @@ void HeapShared::end_scanning_for_oops() {
 }
 
 void HeapShared::write_heap(ArchiveHeapInfo *heap_info) {
+  {
+    NoSafepointVerifier nsv;
+    CDSHeapVerifier::verify();
+    check_special_subgraph_classes();
+  }
+
   StringTable::write_shared_table(_dumped_interned_strings);
   ArchiveHeapWriter::write(_pending_roots, heap_info);
 
@@ -681,22 +693,33 @@ void HeapShared::scan_java_class(Klass* orig_k) {
 
   if (orig_k->is_instance_klass()) {
     InstanceKlass* orig_ik = InstanceKlass::cast(orig_k);
-    orig_ik->constants()->prepare_resolved_references_for_archiving();
     objArrayOop rr = get_archived_resolved_references(orig_ik);
     if (rr != nullptr) {
+      // Archive the array first while it's empty, so none of the entries are archived yet
       bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, rr);
       assert(success, "must be");
-    }
 
-    if (orig_ik->is_linked()) {
-      orig_ik->constants()->add_dumped_interned_strings();
+      // Fill up the array with references that can be archived.
+      orig_ik->constants()->prepare_resolved_references_for_archiving();
+
+      int rr_len = rr->length();
+      for (int i = 0; i < rr_len; i++) {
+        oop p = rr->obj_at(i);
+        if (p != nullptr) {
+          if (java_lang_String::is_instance(p)) {
+            assert(!ArchiveHeapWriter::is_string_too_large_to_archive(p), "must be");
+            HeapShared::add_to_dumped_interned_strings(p);
+          } else {
+            bool success = HeapShared::archive_reachable_objects_from(1, _dump_time_special_subgraph, p);
+            assert(success, "must be");
+          }
+        }
+      }
     }
   }
 }
 
 void HeapShared::copy_interned_strings() {
-  init_seen_objects_table();
-
   auto copier = [&] (oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
     assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "large strings must have been filtered");
@@ -707,8 +730,6 @@ void HeapShared::copy_interned_strings() {
     java_lang_String::set_deduplication_forbidden(s);
   };
   _dumped_interned_strings->iterate_all(copier);
-
-  delete_seen_objects_table();
 }
 
 void HeapShared::copy_objects() {
@@ -2033,6 +2054,10 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
   if (created) {
     _dumped_interned_strings->maybe_grow();
   }
+}
+
+bool HeapShared::is_dumped_interned_string(oop o) {
+  return _dumped_interned_strings->get(o) != nullptr;
 }
 
 void HeapShared::debug_trace() {
