@@ -112,7 +112,7 @@ class FileSystemPreferences extends AbstractPreferences {
     private static void setupUserRoot() {
         userRootDir =
               new File(System.getProperty("java.util.prefs.userRoot",
-              System.getProperty("user.home")), ".java/.userPrefs");
+                      System.getProperty("user.home")), ".java/.userPrefs");
         // Attempt to create root dir if it does not yet exist.
         if (!userRootDir.exists()) {
             if (userRootDir.mkdirs()) {
@@ -130,7 +130,7 @@ class FileSystemPreferences extends AbstractPreferences {
         }
         isUserRootWritable = userRootDir.canWrite();
         String USER_NAME = System.getProperty("user.name");
-        userLockFile = new File (userRootDir,".user.lock." + USER_NAME);
+        userLockFile = new File(userRootDir,".user.lock." + USER_NAME);
         userRootModFile = new File (userRootDir,
                                        ".userRootModFile." + USER_NAME);
         if (!userRootModFile.exists()) {
@@ -174,7 +174,7 @@ class FileSystemPreferences extends AbstractPreferences {
 
     private static void setupSystemRoot() {
         String systemPrefsDirName =
-          System.getProperty("java.util.prefs.systemRoot","/etc/.java");
+          System.getProperty("java.util.prefs.systemRoot", "/etc/.java");
         systemRootDir =
              new File(systemPrefsDirName, ".systemPrefs");
         // Attempt to create root dir if it does not yet exist.
@@ -203,20 +203,21 @@ class FileSystemPreferences extends AbstractPreferences {
         }
         isSystemRootWritable = systemRootDir.canWrite();
         systemLockFile = new File(systemRootDir, ".system.lock");
-        systemRootModFile =
-                       new File (systemRootDir,".systemRootModFile");
-        if (!systemRootModFile.exists() && isSystemRootWritable)
-        try {
-            // create if does not exist.
-            systemRootModFile.createNewFile();
-            int result = chmod(systemRootModFile.getCanonicalPath(),
-                                                  USER_RW_ALL_READ);
-            if (result !=0)
-                getLogger().warning("Chmod failed on " +
-                       systemRootModFile.getCanonicalPath() +
-                      " Unix error code " + result);
-        } catch (IOException e) {
-            getLogger().warning(e.toString());
+        systemRootModFile = new File (systemRootDir, ".systemRootModFile");
+        if (!systemRootModFile.exists() && isSystemRootWritable) {
+            try {
+                // create if does not exist.
+                systemRootModFile.createNewFile();
+                int result = chmod(systemRootModFile.getCanonicalPath(),
+                        USER_RW_ALL_READ);
+                if (result != 0) {
+                    getLogger().warning("Chmod failed on " +
+                            systemRootModFile.getCanonicalPath() +
+                            " Unix error code " + result);
+                }
+            } catch (IOException e) {
+                getLogger().warning(e.toString());
+            }
         }
         systemRootModTime = systemRootModFile.lastModified();
     }
@@ -577,7 +578,7 @@ class FileSystemPreferences extends AbstractPreferences {
         } catch(Exception e) {
             if (e instanceof InvalidPreferencesFormatException) {
                 getLogger().warning("Invalid preferences format in "
-                                            +  prefsFile.getPath());
+                                            + prefsFile.getPath());
                 prefsFile.renameTo( new File(
                                         prefsFile.getParentFile(),
                                       "IncorrectFormatPrefs.xml"));
