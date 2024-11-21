@@ -74,10 +74,9 @@ protected:
                             ciCallProfile& profile,
                             bool& should_delay);
   bool        should_inline(ciMethod* callee_method,
-                            ciMethod* caller_method,
-                            int caller_bci,
-                            bool& should_delay,
-                            ciCallProfile& profile);
+                     ciMethod* caller_method,
+                     JVMState* caller_jvms,
+                     bool& should_delay, ciCallProfile& profile);
   bool        should_not_inline(ciMethod* callee_method,
                                 ciMethod* caller_method,
                                 int caller_bci,
@@ -87,8 +86,7 @@ protected:
                              ciMethod* caller_method,
                              int caller_bci,
                              ciCallProfile& profile);
-  void        print_inlining(ciMethod* callee_method, int caller_bci,
-                             ciMethod* caller_method, bool success) const;
+  void print_inlining(ciMethod* callee_method, JVMState* jvm, bool success) const;
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;

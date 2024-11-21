@@ -611,77 +611,75 @@ void Compile::print_ideal_ir(const char* phase_name) {
 // the continuation bci for on stack replacement.
 
 
-Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
-                  Options options, DirectiveSet* directive)
-                : Phase(Compiler),
-                  _compile_id(ci_env->compile_id()),
-                  _options(options),
-                  _method(target),
-                  _entry_bci(osr_bci),
-                  _ilt(nullptr),
-                  _stub_function(nullptr),
-                  _stub_name(nullptr),
-                  _stub_entry_point(nullptr),
-                  _max_node_limit(MaxNodeLimit),
-                  _post_loop_opts_phase(false),
-                  _allow_macro_nodes(true),
-                  _inlining_progress(false),
-                  _inlining_incrementally(false),
-                  _do_cleanup(false),
-                  _has_reserved_stack_access(target->has_reserved_stack_access()),
+Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
+                 Options options, DirectiveSet* directive)
+    : Phase(Compiler),
+      _compile_id(ci_env->compile_id()),
+      _options(options),
+      _method(target),
+      _entry_bci(osr_bci),
+      _ilt(nullptr),
+      _stub_function(nullptr),
+      _stub_name(nullptr),
+      _stub_entry_point(nullptr),
+      _max_node_limit(MaxNodeLimit),
+      _post_loop_opts_phase(false),
+      _allow_macro_nodes(true),
+      _inlining_progress(false),
+      _inlining_incrementally(false),
+      _do_cleanup(false),
+      _has_reserved_stack_access(target->has_reserved_stack_access()),
 #ifndef PRODUCT
-                  _igv_idx(0),
-                  _trace_opto_output(directive->TraceOptoOutputOption),
+      _igv_idx(0),
+      _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
-                  _has_method_handle_invokes(false),
-                  _clinit_barrier_on_entry(false),
-                  _stress_seed(0),
-                  _comp_arena(mtCompiler),
-                  _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
-                  _env(ci_env),
-                  _directive(directive),
-                  _log(ci_env->log()),
-                  _first_failure_details(nullptr),
-                  _intrinsics        (comp_arena(), 0, 0, nullptr),
-                  _macro_nodes       (comp_arena(), 8, 0, nullptr),
-                  _parse_predicates  (comp_arena(), 8, 0, nullptr),
-                  _template_assertion_predicate_opaqs (comp_arena(), 8, 0, nullptr),
-                  _expensive_nodes   (comp_arena(), 8, 0, nullptr),
-                  _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
-                  _unstable_if_traps (comp_arena(), 8, 0, nullptr),
-                  _coarsened_locks   (comp_arena(), 8, 0, nullptr),
-                  _congraph(nullptr),
-                  NOT_PRODUCT(_igv_printer(nullptr) COMMA)
-                  _unique(0),
-                  _dead_node_count(0),
-                  _dead_node_list(comp_arena()),
-                  _node_arena_one(mtCompiler, Arena::Tag::tag_node),
-                  _node_arena_two(mtCompiler, Arena::Tag::tag_node),
-                  _node_arena(&_node_arena_one),
-                  _mach_constant_base_node(nullptr),
-                  _Compile_types(mtCompiler),
-                  _initial_gvn(nullptr),
-                  _igvn_worklist(nullptr),
-                  _types(nullptr),
-                  _node_hash(nullptr),
-                  _late_inlines(comp_arena(), 2, 0, nullptr),
-                  _string_late_inlines(comp_arena(), 2, 0, nullptr),
-                  _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
-                  _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
-                  _late_inlines_pos(0),
-                  _number_of_mh_late_inlines(0),
-                  _oom(false),
-                  _print_inlining_stream(new (mtCompiler) stringStream()),
-                  _print_inlining_list(nullptr),
-                  _print_inlining_idx(0),
-                  _print_inlining_output(nullptr),
-                  _replay_inline_data(nullptr),
-                  _java_calls(0),
-                  _inner_loops(0),
-                  _interpreter_frame_size(0),
-                  _output(nullptr)
+      _has_method_handle_invokes(false),
+      _clinit_barrier_on_entry(false),
+      _stress_seed(0),
+      _comp_arena(mtCompiler),
+      _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
+      _env(ci_env),
+      _directive(directive),
+      _log(ci_env->log()),
+      _first_failure_details(nullptr),
+      _intrinsics(comp_arena(), 0, 0, nullptr),
+      _macro_nodes(comp_arena(), 8, 0, nullptr),
+      _parse_predicates(comp_arena(), 8, 0, nullptr),
+      _template_assertion_predicate_opaqs(comp_arena(), 8, 0, nullptr),
+      _expensive_nodes(comp_arena(), 8, 0, nullptr),
+      _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
+      _unstable_if_traps(comp_arena(), 8, 0, nullptr),
+      _coarsened_locks(comp_arena(), 8, 0, nullptr),
+      _congraph(nullptr),
+      NOT_PRODUCT(_igv_printer(nullptr) COMMA)
+          _unique(0),
+      _dead_node_count(0),
+      _dead_node_list(comp_arena()),
+      _node_arena_one(mtCompiler, Arena::Tag::tag_node),
+      _node_arena_two(mtCompiler, Arena::Tag::tag_node),
+      _node_arena(&_node_arena_one),
+      _mach_constant_base_node(nullptr),
+      _Compile_types(mtCompiler),
+      _initial_gvn(nullptr),
+      _igvn_worklist(nullptr),
+      _types(nullptr),
+      _node_hash(nullptr),
+      _late_inlines(comp_arena(), 2, 0, nullptr),
+      _string_late_inlines(comp_arena(), 2, 0, nullptr),
+      _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
+      _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
+      _late_inlines_pos(0),
+      _number_of_mh_late_inlines(0),
+      _oom(false),
+      _replay_inline_data(nullptr),
+      _inline_printer(directive->PrintInliningOption || PrintOptoInlining),
+      _java_calls(0),
+      _inner_loops(0),
+      _interpreter_frame_size(0),
+      _output(nullptr)
 #ifndef PRODUCT
-                  , _in_dump_cnt(0)
+      ,
+      _in_dump_cnt(0)
 #endif
 {
   C = this;
@@ -709,7 +707,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (directive->ReplayInlineOption) {
     _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
   }
-  set_print_inlining(directive->PrintInliningOption || PrintOptoInlining);
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
@@ -724,7 +721,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     initialize_stress_seed(directive);
   }
 
-  Init(/*do_aliasing=*/ true);
+  Init(/*do_aliasing=*/true);
 
   print_compile_messages();
 
@@ -733,10 +730,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   // Even if NO memory addresses are used, MergeMem nodes must have at least 1 slice
   assert(num_alias_types() >= AliasIdxRaw, "");
 
-#define MINIMUM_NODE_HASH  1023
+#define MINIMUM_NODE_HASH 1023
 
   // GVN that will be run immediately on new nodes
-  uint estimated_size = method()->code_size()*4+64;
+  uint estimated_size = method()->code_size() * 4 + 64;
   estimated_size = (estimated_size < MINIMUM_NODE_HASH ? MINIMUM_NODE_HASH : estimated_size);
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
@@ -744,7 +741,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
-  print_inlining_init();
   { // Scope for timing the parser
     TracePhase tp("parse", &timers[_t_parser]);
 
@@ -754,8 +750,8 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     // Set up tf(), start(), and find a CallGenerator.
     CallGenerator* cg = nullptr;
     if (is_osr_compilation()) {
-      const TypeTuple *domain = StartOSRNode::osr_domain();
-      const TypeTuple *range = TypeTuple::make_range(method()->signature());
+      const TypeTuple* domain = StartOSRNode::osr_domain();
+      const TypeTuple* range = TypeTuple::make_range(method()->signature());
       init_tf(TypeFunc::make(domain, range));
       StartNode* s = new StartOSRNode(root(), domain);
       initial_gvn()->set_type_bottom(s);
@@ -781,7 +777,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
         cg = CallGenerator::for_inline(method(), expected_uses);
       }
     }
-    if (failing())  return;
+    if (failing()) {
+      return;
+    }
     if (cg == nullptr) {
       const char* reason = InlineTree::check_can_parse(method());
       assert(reason != nullptr, "expect reason for parse failure");
@@ -822,7 +820,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       inline_string_calls(true);
     }
 
-    if (failing())  return;
+    if (failing()) {
+      return;
+    }
 
     // Remove clutter produced by parsing.
     if (!failing()) {
@@ -832,7 +832,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 
   // Note:  Large methods are capped off in do_one_bytecode().
-  if (failing())  return;
+  if (failing()) {
+    return;
+  }
 
   // After parsing, node notes are no longer automagic.
   // They must be propagated by register_new_node_with_optimizer(),
@@ -845,13 +847,17 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   }
 #endif
 
-  if (failing())  return;
-  NOT_PRODUCT( verify_graph_edges(); )
+  if (failing()) {
+    return;
+  }
+  NOT_PRODUCT(verify_graph_edges();)
 
   // Now optimize
   Optimize();
-  if (failing())  return;
-  NOT_PRODUCT( verify_graph_edges(); )
+  if (failing()) {
+    return;
+  }
+  NOT_PRODUCT(verify_graph_edges();)
 
 #ifndef PRODUCT
   if (should_print_ideal()) {
@@ -887,71 +893,68 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
 //------------------------------Compile----------------------------------------
 // Compile a runtime stub
-Compile::Compile( ciEnv* ci_env,
-                  TypeFunc_generator generator,
-                  address stub_function,
-                  const char *stub_name,
-                  int is_fancy_jump,
-                  bool pass_tls,
-                  bool return_pc,
-                  DirectiveSet* directive)
-  : Phase(Compiler),
-    _compile_id(0),
-    _options(Options::for_runtime_stub()),
-    _method(nullptr),
-    _entry_bci(InvocationEntryBci),
-    _stub_function(stub_function),
-    _stub_name(stub_name),
-    _stub_entry_point(nullptr),
-    _max_node_limit(MaxNodeLimit),
-    _post_loop_opts_phase(false),
-    _allow_macro_nodes(true),
-    _inlining_progress(false),
-    _inlining_incrementally(false),
-    _has_reserved_stack_access(false),
+Compile::Compile(ciEnv* ci_env,
+                 TypeFunc_generator generator,
+                 address stub_function,
+                 const char* stub_name,
+                 int is_fancy_jump,
+                 bool pass_tls,
+                 bool return_pc,
+                 DirectiveSet* directive)
+    : Phase(Compiler),
+      _compile_id(0),
+      _options(Options::for_runtime_stub()),
+      _method(nullptr),
+      _entry_bci(InvocationEntryBci),
+      _stub_function(stub_function),
+      _stub_name(stub_name),
+      _stub_entry_point(nullptr),
+      _max_node_limit(MaxNodeLimit),
+      _post_loop_opts_phase(false),
+      _allow_macro_nodes(true),
+      _inlining_progress(false),
+      _inlining_incrementally(false),
+      _has_reserved_stack_access(false),
 #ifndef PRODUCT
-    _igv_idx(0),
-    _trace_opto_output(directive->TraceOptoOutputOption),
+      _igv_idx(0),
+      _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
-    _has_method_handle_invokes(false),
-    _clinit_barrier_on_entry(false),
-    _stress_seed(0),
-    _comp_arena(mtCompiler),
-    _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
-    _env(ci_env),
-    _directive(directive),
-    _log(ci_env->log()),
-    _first_failure_details(nullptr),
-    _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
-    _congraph(nullptr),
-    NOT_PRODUCT(_igv_printer(nullptr) COMMA)
-    _unique(0),
-    _dead_node_count(0),
-    _dead_node_list(comp_arena()),
-    _node_arena_one(mtCompiler),
-    _node_arena_two(mtCompiler),
-    _node_arena(&_node_arena_one),
-    _mach_constant_base_node(nullptr),
-    _Compile_types(mtCompiler),
-    _initial_gvn(nullptr),
-    _igvn_worklist(nullptr),
-    _types(nullptr),
-    _node_hash(nullptr),
-    _number_of_mh_late_inlines(0),
-    _oom(false),
-    _print_inlining_stream(new (mtCompiler) stringStream()),
-    _print_inlining_list(nullptr),
-    _print_inlining_idx(0),
-    _print_inlining_output(nullptr),
-    _replay_inline_data(nullptr),
-    _java_calls(0),
-    _inner_loops(0),
-    _interpreter_frame_size(0),
-    _output(nullptr),
+      _has_method_handle_invokes(false),
+      _clinit_barrier_on_entry(false),
+      _stress_seed(0),
+      _comp_arena(mtCompiler),
+      _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
+      _env(ci_env),
+      _directive(directive),
+      _log(ci_env->log()),
+      _first_failure_details(nullptr),
+      _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
+      _congraph(nullptr),
+      NOT_PRODUCT(_igv_printer(nullptr) COMMA)
+          _unique(0),
+      _dead_node_count(0),
+      _dead_node_list(comp_arena()),
+      _node_arena_one(mtCompiler),
+      _node_arena_two(mtCompiler),
+      _node_arena(&_node_arena_one),
+      _mach_constant_base_node(nullptr),
+      _Compile_types(mtCompiler),
+      _initial_gvn(nullptr),
+      _igvn_worklist(nullptr),
+      _types(nullptr),
+      _node_hash(nullptr),
+      _number_of_mh_late_inlines(0),
+      _oom(false),
+      _replay_inline_data(nullptr),
+      _inline_printer(directive->PrintInliningOption || PrintOptoInlining),
+      _java_calls(0),
+      _inner_loops(0),
+      _interpreter_frame_size(0),
+      _output(nullptr),
 #ifndef PRODUCT
-    _in_dump_cnt(0),
+      _in_dump_cnt(0),
 #endif
-    _allowed_reasons(0) {
+      _allowed_reasons(0) {
   C = this;
 
   TraceTime t1(nullptr, &_t_totalCompilation, CITime, false);
@@ -966,7 +969,7 @@ Compile::Compile( ciEnv* ci_env,
   set_has_irreducible_loop(false); // no loops
 
   CompileWrapper cw(this);
-  Init(/*do_aliasing=*/ false);
+  Init(/*do_aliasing=*/false);
   init_tf((*generator)());
 
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
@@ -979,20 +982,19 @@ Compile::Compile( ciEnv* ci_env,
 
   {
     PhaseGVN gvn;
-    set_initial_gvn(&gvn);    // not significant, but GraphKit guys use it pervasively
+    set_initial_gvn(&gvn); // not significant, but GraphKit guys use it pervasively
     gvn.transform(top());
 
     GraphKit kit;
     kit.gen_stub(stub_function, stub_name, is_fancy_jump, pass_tls, return_pc);
   }
 
-  NOT_PRODUCT( verify_graph_edges(); )
+  NOT_PRODUCT(verify_graph_edges();)
 
   Code_Gen();
 }
 
 Compile::~Compile() {
-  delete _print_inlining_stream;
   delete _first_failure_details;
 };
 
@@ -2109,7 +2111,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
             CallGenerator* cg = _late_inlines.at(i);
             const char* msg = "live nodes > LiveNodeCountInliningCutoff";
             if (do_print_inlining) {
-              print_inlining_append_late(cg, InliningResult::FAILURE, msg);
+              inline_printer()->record(cg->method(), cg->call_node()->jvms(), InliningResult::FAILURE, msg);
             }
             log_late_inline_failure(cg, msg);
           }
@@ -2228,8 +2230,6 @@ void Compile::Optimize() {
 #endif
 
   ResourceMark rm;
-
-  print_inlining_reinit();
 
   NOT_PRODUCT( verify_graph_edges(); )
 
@@ -2480,8 +2480,6 @@ void Compile::Optimize() {
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
  check_no_dead_use();
-
- process_print_inlining();
 
  // We will never use the NodeHash table any more. Clear it so that final_graph_reshaping does not have
  // to remove hashes to unlock nodes for modifications.
@@ -4419,163 +4417,8 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
   return phase->transform(new ConvI2LNode(value, ltype));
 }
 
-// The message about the current inlining is accumulated in
-// _print_inlining_stream and transferred into the _print_inlining_list
-// once we know whether inlining succeeds or not. For regular
-// inlining, messages are appended to the buffer pointed by
-// _print_inlining_idx in the _print_inlining_list. For late inlining,
-// a new buffer is added after _print_inlining_idx in the list. This
-// way we can update the inlining message for late inlining call site
-// when the inlining is attempted again.
-void Compile::print_inlining_init() {
-  if (print_inlining() || print_intrinsics()) {
-    // print_inlining_init is actually called several times.
-    print_inlining_reset();
-    _print_inlining_list = new (comp_arena())GrowableArray<PrintInliningBuffer*>(comp_arena(), 1, 1, new PrintInliningBuffer());
-  }
-}
-
-void Compile::print_inlining_reinit() {
-  if (print_inlining() || print_intrinsics()) {
-    print_inlining_reset();
-  }
-}
-
-void Compile::print_inlining_reset() {
-  _print_inlining_stream->reset();
-}
-
-void Compile::print_inlining_commit() {
-  assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
-  // Transfer the message from _print_inlining_stream to the current
-  // _print_inlining_list buffer and clear _print_inlining_stream.
-  _print_inlining_list->at(_print_inlining_idx)->ss()->write(_print_inlining_stream->base(), _print_inlining_stream->size());
-  print_inlining_reset();
-}
-
-void Compile::print_inlining_append_late(CallGenerator* cg, InliningResult result, const char* msg) {
-  assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
-  C->print_inlining_assert_ready();
-  C->print_inlining_move_to(cg);
-
-  stringStream* old = _print_inlining_list->at(_print_inlining_idx)->ss();
-
-  auto old_size = old->size();
-  bool found_line_break = false;
-  while (!found_line_break && old_size > 0) {
-    if (old->base()[old_size - 1] == '\n') {
-      found_line_break = true;
-    }
-    old_size--;
-  }
-
-  if (old_size == 0) {
-    CallNode* call = cg->call_node();
-    print_inlining(cg->method(), call->jvms()->depth() - 1, call->jvms()->bci(), result, msg);
-    print_inlining_update_delayed(cg);
-  } else {
-    // This is very similar to the previous branch with print_inlining_update_delayed with the difference that
-    // we are copying the old contents without the line break.
-
-    auto buffer = new PrintInliningBuffer();
-    buffer->ss()->write(old->base(), old_size);
-
-    const char* sep = "; ";
-    buffer->ss()->write(sep, strlen(sep));
-
-    // Note that print_inlining_inner_message already added a line break
-    CompileTask::print_inlining_inner_message(buffer->ss(), result, msg);
-
-    _print_inlining_list->at_put(_print_inlining_idx, buffer);
-  }
-}
-
-void Compile::print_inlining_push() {
-  // Add new buffer to the _print_inlining_list at current position
-  _print_inlining_idx++;
-  _print_inlining_list->insert_before(_print_inlining_idx, new PrintInliningBuffer());
-}
-
-Compile::PrintInliningBuffer* Compile::print_inlining_current() {
-  return _print_inlining_list->at(_print_inlining_idx);
-}
-
-void Compile::print_inlining_update(CallGenerator* cg) {
-  if (print_inlining() || print_intrinsics()) {
-    if (cg->is_late_inline()) {
-      if (print_inlining_current()->cg() != cg &&
-          (print_inlining_current()->cg() != nullptr ||
-           print_inlining_current()->ss()->size() != 0)) {
-        print_inlining_push();
-      }
-      print_inlining_commit();
-      print_inlining_current()->set_cg(cg);
-    } else {
-      if (print_inlining_current()->cg() != nullptr) {
-        print_inlining_push();
-      }
-      print_inlining_commit();
-    }
-  }
-}
-
-void Compile::print_inlining_move_to(CallGenerator* cg) {
-  // We resume inlining at a late inlining call site. Locate the
-  // corresponding inlining buffer so that we can update it.
-  if (print_inlining() || print_intrinsics()) {
-    for (int i = 0; i < _print_inlining_list->length(); i++) {
-      if (_print_inlining_list->at(i)->cg() == cg) {
-        _print_inlining_idx = i;
-        return;
-      }
-    }
-    ShouldNotReachHere();
-  }
-}
-
-void Compile::print_inlining_update_delayed(CallGenerator* cg) {
-  if (print_inlining() || print_intrinsics()) {
-    assert(_print_inlining_stream->size() > 0, "missing inlining msg");
-    assert(print_inlining_current()->cg() == cg, "wrong entry");
-    // replace message with new message
-    _print_inlining_list->at_put(_print_inlining_idx, new PrintInliningBuffer());
-    print_inlining_commit();
-    print_inlining_current()->set_cg(cg);
-  }
-}
-
-void Compile::print_inlining_assert_ready() {
-  assert(!_print_inlining || _print_inlining_stream->size() == 0, "losing data");
-}
-
-void Compile::process_print_inlining() {
-  assert(_late_inlines.length() == 0, "not drained yet");
-  if (print_inlining() || print_intrinsics()) {
-    ResourceMark rm;
-    stringStream ss;
-    assert(_print_inlining_list != nullptr, "process_print_inlining should be called only once.");
-    for (int i = 0; i < _print_inlining_list->length(); i++) {
-      PrintInliningBuffer* pib = _print_inlining_list->at(i);
-      ss.print("%s", pib->ss()->freeze());
-      delete pib;
-      DEBUG_ONLY(_print_inlining_list->at_put(i, nullptr));
-    }
-    // Reset _print_inlining_list, it only contains destructed objects.
-    // It is on the arena, so it will be freed when the arena is reset.
-    _print_inlining_list = nullptr;
-    // _print_inlining_stream won't be used anymore, either.
-    print_inlining_reset();
-    size_t end = ss.size();
-    _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
-    strncpy(_print_inlining_output, ss.freeze(), end+1);
-    _print_inlining_output[end] = 0;
-  }
-}
-
 void Compile::dump_print_inlining() {
-  if (_print_inlining_output != nullptr) {
-    tty->print_raw(_print_inlining_output);
-  }
+  inline_printer()->dump(tty);
 }
 
 void Compile::log_late_inline(CallGenerator* cg) {

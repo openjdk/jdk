@@ -218,6 +218,9 @@ public:
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);
 
+  /**
+   * @deprecated Please rely on Compile::inline_printer. Do not directly write inlining information to tty.
+   */
   static void  print_inline_indent(int inline_level, outputStream* st = tty);
 
   void         print_tty();
@@ -235,8 +238,10 @@ public:
 
   bool         check_break_at_flags();
 
+  static void print_inlining_header(outputStream* st, ciMethod* method, int inline_level, int bci);
   static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
   static void print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg);
+
   static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {
     print_inlining_inner(tty, method, inline_level, bci, result, msg);
   }

@@ -50,33 +50,40 @@
 #include "jfr/jfr.hpp"
 #endif
 
-static void print_trace_type_profile(outputStream* out, int depth, ciKlass* prof_klass, int site_count, int receiver_count) {
-  CompileTask::print_inline_indent(depth, out);
+static void print_trace_type_profile(outputStream* out, int depth, ciKlass* prof_klass, int site_count, int receiver_count,
+                                     bool with_deco) {
+  if (with_deco) {
+    CompileTask::print_inline_indent(depth, out);
+  }
   out->print(" \\-> TypeProfile (%d/%d counts) = ", receiver_count, site_count);
   prof_klass->name()->print_symbol_on(out);
-  out->cr();
+  if (with_deco) {
+    out->cr();
+  }
 }
 
-static void trace_type_profile(Compile* C, ciMethod* method, int depth, int bci, ciMethod* prof_method,
-                               ciKlass* prof_klass, int site_count, int receiver_count) {
+static void trace_type_profile(Compile* C, ciMethod* method, JVMState* jvms,
+                               ciMethod* prof_method, ciKlass* prof_klass, int site_count, int receiver_count) {
+  int depth = jvms->depth() - 1;
+  int bci = jvms->bci();
   if (TraceTypeProfile || C->print_inlining()) {
-    outputStream* out = tty;
     if (!C->print_inlining()) {
       if (!PrintOpto && !PrintCompilation) {
         method->print_short_name();
         tty->cr();
       }
       CompileTask::print_inlining_tty(prof_method, depth, bci, InliningResult::SUCCESS);
+      print_trace_type_profile(tty, depth, prof_klass, site_count, receiver_count, true);
     } else {
-      out = C->print_inlining_stream();
+      auto stream = C->inline_printer()->record(method, jvms, InliningResult::SUCCESS);
+      print_trace_type_profile(stream, depth, prof_klass, site_count, receiver_count, false);
     }
-    print_trace_type_profile(out, depth, prof_klass, site_count, receiver_count);
   }
 
   LogTarget(Debug, jit, inlining) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
-    print_trace_type_profile(&ls, depth, prof_klass, site_count, receiver_count);
+    print_trace_type_profile(&ls, depth, prof_klass, site_count, receiver_count, true);
   }
 }
 
@@ -86,10 +93,10 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
                                        bool allow_intrinsics) {
   assert(callee != nullptr, "failed method resolution");
 
-  ciMethod*       caller      = jvms->method();
-  int             bci         = jvms->bci();
-  Bytecodes::Code bytecode    = caller->java_code_at_bci(bci);
-  ciMethod*       orig_callee = caller->get_method_at_bci(bci);
+  ciMethod* caller = jvms->method();
+  int bci = jvms->bci();
+  Bytecodes::Code bytecode = caller->java_code_at_bci(bci);
+  ciMethod* orig_callee = caller->get_method_at_bci(bci);
 
   const bool is_virtual_or_interface = (bytecode == Bytecodes::_invokevirtual) ||
                                        (bytecode == Bytecodes::_invokeinterface) ||
@@ -117,12 +124,16 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
   CompileLog* log = this->log();
   if (log != nullptr) {
-    int rid = (receiver_count >= 0)? log->identify(profile.receiver(0)): -1;
-    int r2id = (rid != -1 && profile.has_receiver(1))? log->identify(profile.receiver(1)):-1;
+    int rid = (receiver_count >= 0) ? log->identify(profile.receiver(0)) : -1;
+    int r2id = (rid != -1 && profile.has_receiver(1)) ? log->identify(profile.receiver(1)) : -1;
     log->begin_elem("call method='%d' count='%d' prof_factor='%f'",
                     log->identify(callee), site_count, prof_factor);
-    if (call_does_dispatch)  log->print(" virtual='1'");
-    if (allow_inline)     log->print(" inline='1'");
+    if (call_does_dispatch) {
+      log->print(" virtual='1'");
+    }
+    if (allow_inline) {
+      log->print(" inline='1'");
+    }
     if (receiver_count >= 0) {
       log->print(" receiver='%d' receiver_count='%d'", rid, receiver_count);
       if (profile.has_receiver(1)) {
@@ -145,7 +156,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       if (cg->is_predicated()) {
         // Code without intrinsic but, hopefully, inlined.
         CallGenerator* inline_cg = this->call_generator(callee,
-              vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
+                                                        vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
         if (inline_cg != nullptr) {
           cg = CallGenerator::for_predicated_intrinsic(cg, inline_cg);
         }
@@ -196,7 +207,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         // interfaces.
         if (cg != nullptr && is_virtual_or_interface && !callee->is_static()) {
           CallGenerator* trap_cg = CallGenerator::for_uncommon_trap(callee,
-              Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
+                                                                    Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
 
           cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);
         }
@@ -222,7 +233,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // Try using the type profile.
     if (call_does_dispatch && site_count > 0 && UseTypeProfile) {
       // The major receiver's count >= TypeProfileMajorReceiverPercent of site_count.
-      bool have_major_receiver = profile.has_receiver(0) && (100.*profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
+      bool have_major_receiver = profile.has_receiver(0) && (100. * profile.receiver_prob(0) >= (float)TypeProfileMajorReceiverPercent);
       ciMethod* receiver_method = nullptr;
 
       int morphism = profile.morphism();
@@ -251,41 +262,40 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         // receiver_method = profile.method();
         // Profiles do not suggest methods now.  Look it up in the major receiver.
         receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                      profile.receiver(0));
+                                                 profile.receiver(0));
       }
       if (receiver_method != nullptr) {
         // The single majority receiver sufficiently outweighs the minority.
         CallGenerator* hit_cg = this->call_generator(receiver_method,
-              vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
+                                                     vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
         if (hit_cg != nullptr) {
           // Look up second receiver.
           CallGenerator* next_hit_cg = nullptr;
           ciMethod* next_receiver_method = nullptr;
           if (morphism == 2 && UseBimorphicInlining) {
             next_receiver_method = callee->resolve_invoke(jvms->method()->holder(),
-                                                               profile.receiver(1));
+                                                          profile.receiver(1));
             if (next_receiver_method != nullptr) {
               next_hit_cg = this->call_generator(next_receiver_method,
-                                  vtable_index, !call_does_dispatch, jvms,
-                                  allow_inline, prof_factor);
+                                                 vtable_index, !call_does_dispatch, jvms,
+                                                 allow_inline, prof_factor);
               if (next_hit_cg != nullptr && !next_hit_cg->is_inline() &&
                   have_major_receiver && UseOnlyInlinedBimorphic) {
-                  // Skip if we can't inline second receiver's method
-                  next_hit_cg = nullptr;
+                // Skip if we can't inline second receiver's method
+                next_hit_cg = nullptr;
               }
             }
           }
           CallGenerator* miss_cg;
           Deoptimization::DeoptReason reason = (morphism == 2
-                                               ? Deoptimization::Reason_bimorphic
-                                               : Deoptimization::reason_class_check(speculative_receiver_type != nullptr));
+                                                    ? Deoptimization::Reason_bimorphic
+                                                    : Deoptimization::reason_class_check(speculative_receiver_type != nullptr));
           if ((morphism == 1 || (morphism == 2 && next_hit_cg != nullptr)) &&
-              !too_many_traps_or_recompiles(caller, bci, reason)
-             ) {
+              !too_many_traps_or_recompiles(caller, bci, reason)) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.
             miss_cg = CallGenerator::for_uncommon_trap(callee, reason,
-                        Deoptimization::Action_maybe_recompile);
+                                                       Deoptimization::Action_maybe_recompile);
           } else {
             // Generate virtual call for class check failure path
             // in case of polymorphic virtual call site.
@@ -295,17 +305,19 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           if (miss_cg != nullptr) {
             if (next_hit_cg != nullptr) {
               assert(speculative_receiver_type == nullptr, "shouldn't end up here if we used speculation");
-              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
+              trace_type_profile(C, jvms->method(), jvms, next_receiver_method, profile.receiver(1), site_count, profile.receiver_count(1));
               // We don't need to record dependency on a receiver here and below.
               // Whenever we inline, the dependency is added by Parse::Parse().
               miss_cg = CallGenerator::for_predicted_call(profile.receiver(1), miss_cg, next_hit_cg, PROB_MAX);
             }
             if (miss_cg != nullptr) {
               ciKlass* k = speculative_receiver_type != nullptr ? speculative_receiver_type : profile.receiver(0);
-              trace_type_profile(C, jvms->method(), jvms->depth() - 1, jvms->bci(), receiver_method, k, site_count, receiver_count);
+              trace_type_profile(C, jvms->method(), jvms, receiver_method, k, site_count, receiver_count);
               float hit_prob = speculative_receiver_type != nullptr ? 1.0 : profile.receiver_prob(0);
               CallGenerator* cg = CallGenerator::for_predicted_call(k, miss_cg, hit_cg, hit_prob);
-              if (cg != nullptr)  return cg;
+              if (cg != nullptr) {
+                return cg;
+              }
             }
           }
         }
@@ -343,11 +355,11 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
 
           // Try to inline the method found by CHA. Inlined method is guarded by the type check.
           CallGenerator* hit_cg = call_generator(cha_monomorphic_target,
-              vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
+                                                 vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
 
           // Deoptimize on type check fail. The interpreter will throw ICCE for us.
           CallGenerator* miss_cg = CallGenerator::for_uncommon_trap(callee,
-              Deoptimization::Reason_class_check, Deoptimization::Action_none);
+                                                                    Deoptimization::Reason_class_check, Deoptimization::Action_none);
 
           ciKlass* constraint = (holder->is_subclass_of(singleton) ? holder : singleton); // avoid upcasts
           CallGenerator* cg = CallGenerator::for_guarded_call(constraint, miss_cg, hit_cg);
@@ -372,9 +384,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   // Use a more generic tactic, like a simple call.
   if (call_does_dispatch) {
     const char* msg = "virtual call";
-    if (C->print_inlining()) {
-      print_inlining(callee, jvms->depth() - 1, jvms->bci(), InliningResult::FAILURE, msg);
-    }
+    C->inline_printer()->record(callee, jvms, InliningResult::FAILURE, msg);
     C->log_inline_failure(msg);
     if (IncrementalInlineVirtual && allow_inline) {
       return CallGenerator::for_late_inline_virtual(callee, vtable_index, prof_factor); // attempt to inline through virtual call later
@@ -388,7 +398,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
     // is a subtype of the method holder.
     if (cg != nullptr && is_virtual_or_interface && !callee->is_static()) {
       CallGenerator* trap_cg = CallGenerator::for_uncommon_trap(callee,
-          Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
+                                                                Deoptimization::Reason_receiver_constraint, Deoptimization::Action_none);
       cg = CallGenerator::for_guarded_call(callee->holder(), trap_cg, cg);
     }
     return cg;
@@ -409,40 +419,40 @@ bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms
     }
 
     switch (call_method->intrinsic_id()) {
-      case vmIntrinsics::_StringBuilder_void:
-      case vmIntrinsics::_StringBuilder_int:
-      case vmIntrinsics::_StringBuilder_String:
-      case vmIntrinsics::_StringBuilder_append_char:
-      case vmIntrinsics::_StringBuilder_append_int:
-      case vmIntrinsics::_StringBuilder_append_String:
-      case vmIntrinsics::_StringBuilder_toString:
-      case vmIntrinsics::_StringBuffer_void:
-      case vmIntrinsics::_StringBuffer_int:
-      case vmIntrinsics::_StringBuffer_String:
-      case vmIntrinsics::_StringBuffer_append_char:
-      case vmIntrinsics::_StringBuffer_append_int:
-      case vmIntrinsics::_StringBuffer_append_String:
-      case vmIntrinsics::_StringBuffer_toString:
-      case vmIntrinsics::_Integer_toString:
-        return true;
+    case vmIntrinsics::_StringBuilder_void:
+    case vmIntrinsics::_StringBuilder_int:
+    case vmIntrinsics::_StringBuilder_String:
+    case vmIntrinsics::_StringBuilder_append_char:
+    case vmIntrinsics::_StringBuilder_append_int:
+    case vmIntrinsics::_StringBuilder_append_String:
+    case vmIntrinsics::_StringBuilder_toString:
+    case vmIntrinsics::_StringBuffer_void:
+    case vmIntrinsics::_StringBuffer_int:
+    case vmIntrinsics::_StringBuffer_String:
+    case vmIntrinsics::_StringBuffer_append_char:
+    case vmIntrinsics::_StringBuffer_append_int:
+    case vmIntrinsics::_StringBuffer_append_String:
+    case vmIntrinsics::_StringBuffer_toString:
+    case vmIntrinsics::_Integer_toString:
+      return true;
 
-      case vmIntrinsics::_String_String:
-        {
-          Node* receiver = jvms->map()->in(jvms->argoff() + 1);
-          if (receiver->is_Proj() && receiver->in(0)->is_CallStaticJava()) {
-            CallStaticJavaNode* csj = receiver->in(0)->as_CallStaticJava();
-            ciMethod* m = csj->method();
-            if (m != nullptr &&
-                (m->intrinsic_id() == vmIntrinsics::_StringBuffer_toString ||
-                 m->intrinsic_id() == vmIntrinsics::_StringBuilder_toString))
-              // Delay String.<init>(new SB())
-              return true;
-          }
-          return false;
+    case vmIntrinsics::_String_String: {
+      Node* receiver = jvms->map()->in(jvms->argoff() + 1);
+      if (receiver->is_Proj() && receiver->in(0)->is_CallStaticJava()) {
+        CallStaticJavaNode* csj = receiver->in(0)->as_CallStaticJava();
+        ciMethod* m = csj->method();
+        if (m != nullptr &&
+            (m->intrinsic_id() == vmIntrinsics::_StringBuffer_toString ||
+             m->intrinsic_id() == vmIntrinsics::_StringBuilder_toString)) {
+          // Delay String.<init>(new SB())
+          return true;
         }
+      }
+      return false;
+    }
 
-      default:
-        return false;
+    default:
+      return false;
     }
   }
   return false;
@@ -465,12 +475,12 @@ bool Compile::should_delay_vector_reboxing_inlining(ciMethod* call_method, JVMSt
 }
 
 // uncommon-trap call-sites where callee is unloaded, uninitialized or will not link
-bool Parse::can_not_compile_call_site(ciMethod *dest_method, ciInstanceKlass* klass) {
+bool Parse::can_not_compile_call_site(ciMethod* dest_method, ciInstanceKlass* klass) {
   // Additional inputs to consider...
   // bc      = bc()
   // caller  = method()
   // iter().get_method_holder_index()
-  assert( dest_method->is_loaded(), "ciTypeFlow should not let us get here" );
+  assert(dest_method->is_loaded(), "ciTypeFlow should not let us get here");
   // Interface classes can be loaded & linked and never get around to
   // being initialized.  Uncommon-trap for not-initialized static or
   // v-calls.  Let interface calls happen.
@@ -496,9 +506,11 @@ static bool check_call_consistency(JVMState* jvms, CallGenerator* cg) {
     tty->print_cr("JVMS:");
     jvms->dump();
     tty->print_cr("Bytecode info:");
-    jvms->method()->get_method_at_bci(jvms->bci())->print(); tty->cr();
+    jvms->method()->get_method_at_bci(jvms->bci())->print();
+    tty->cr();
     tty->print_cr("Resolved method:");
-    cg->method()->print(); tty->cr();
+    cg->method()->print();
+    tty->cr();
     return false;
   }
   return true;
@@ -513,41 +525,41 @@ void Parse::do_call() {
   // our contribution to it is cleaned up right here.
   kill_dead_locals();
 
-  C->print_inlining_assert_ready();
-
   // Set frequently used booleans
   const bool is_virtual = bc() == Bytecodes::_invokevirtual;
   const bool is_virtual_or_interface = is_virtual || bc() == Bytecodes::_invokeinterface;
   const bool has_receiver = Bytecodes::has_receiver(bc());
 
   // Find target being called
-  bool             will_link;
-  ciSignature*     declared_signature = nullptr;
-  ciMethod*        orig_callee  = iter().get_method(will_link, &declared_signature);  // callee in the bytecode
+  bool will_link;
+  ciSignature* declared_signature = nullptr;
+  ciMethod* orig_callee = iter().get_method(will_link, &declared_signature); // callee in the bytecode
   ciInstanceKlass* holder_klass = orig_callee->holder();
-  ciKlass*         holder       = iter().get_declared_method_holder();
+  ciKlass* holder = iter().get_declared_method_holder();
   ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
   assert(declared_signature != nullptr, "cannot be null");
   JFR_ONLY(Jfr::on_resolution(this, holder, orig_callee);)
 
   // Bump max node limit for JSR292 users
   if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
-    C->set_max_node_limit(3*MaxNodeLimit);
+    C->set_max_node_limit(3 * MaxNodeLimit);
   }
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link
   // bailout when too many arguments for register representation
   if (!will_link || can_not_compile_call_site(orig_callee, klass)) {
     if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name(); tty->print_cr(" can not compile call at bci %d to:", bci());
-      orig_callee->print_name(); tty->cr();
+      method()->print_name();
+      tty->print_cr(" can not compile call at bci %d to:", bci());
+      orig_callee->print_name();
+      tty->cr();
     }
     return;
   }
   assert(holder_klass->is_loaded(), "");
-  //assert((bc_callee->is_static() || is_invokedynamic) == !has_receiver , "must match bc");  // XXX invokehandle (cur_bc_raw)
-  // Note: this takes into account invokeinterface of methods declared in java/lang/Object,
-  // which should be invokevirtuals but according to the VM spec may be invokeinterfaces
+  // assert((bc_callee->is_static() || is_invokedynamic) == !has_receiver , "must match bc");  // XXX invokehandle (cur_bc_raw)
+  //  Note: this takes into account invokeinterface of methods declared in java/lang/Object,
+  //  which should be invokevirtuals but according to the VM spec may be invokeinterfaces
   assert(holder_klass->is_interface() || holder_klass->super() == nullptr || (bc() != Bytecodes::_invokeinterface), "must match bc");
   // Note:  In the absence of miranda methods, an abstract class K can perform
   // an invokevirtual directly on an interface method I.m if K implements I.
@@ -573,14 +585,14 @@ void Parse::do_call() {
   // The other path may uncommon_trap, check for another receiver, or do a v-call.
 
   // Try to get the most accurate receiver type
-  ciMethod* callee             = orig_callee;
-  int       vtable_index       = Method::invalid_vtable_index;
-  bool      call_does_dispatch = false;
+  ciMethod* callee = orig_callee;
+  int vtable_index = Method::invalid_vtable_index;
+  bool call_does_dispatch = false;
 
   // Speculative type of the receiver if any
   ciKlass* speculative_receiver_type = nullptr;
   if (is_virtual_or_interface) {
-    Node* receiver_node             = stack(sp() - nargs);
+    Node* receiver_node = stack(sp() - nargs);
     const TypeOopPtr* receiver_type = _gvn.type(receiver_node)->isa_oopptr();
     // call_does_dispatch and vtable_index are out-parameters.  They might be changed.
     // For arrays, klass below is Object. When vtable calls are used,
@@ -591,7 +603,7 @@ void Parse::do_call() {
     // on array types won't be either.
     callee = C->optimize_virtual_call(method(), klass, holder, orig_callee,
                                       receiver_type, is_virtual,
-                                      call_does_dispatch, vtable_index);  // out-parameters
+                                      call_does_dispatch, vtable_index); // out-parameters
     speculative_receiver_type = receiver_type != nullptr ? receiver_type->speculative_type() : nullptr;
   }
 
@@ -631,7 +643,7 @@ void Parse::do_call() {
   bool try_inline = (C->do_inlining() || InlineAccessors);
 
   // ---------------------
-  dec_sp(nargs);              // Temporarily pop args for JVM state of call
+  dec_sp(nargs); // Temporarily pop args for JVM state of call
   JVMState* jvms = sync_jvms();
 
   // ---------------------
@@ -660,7 +672,7 @@ void Parse::do_call() {
 #endif // not PRODUCT
 
   assert(jvms == this->jvms(), "still operating on the right JVMS");
-  assert(jvms_in_sync(),       "jvms must carry full info into CG");
+  assert(jvms_in_sync(), "jvms must carry full info into CG");
 
   // save across call, for a subsequent cast_not_null.
   Node* receiver = has_receiver ? argument(0) : nullptr;
@@ -679,7 +691,9 @@ void Parse::do_call() {
     // impossible to pull back and try again.  Once we call
     // cg->generate(), we are committed.  If it fails, the whole
     // compilation task is compromised.
-    if (failing())  return;
+    if (failing()) {
+      return;
+    }
 
     // This can happen if a library intrinsic is available, but refuses
     // the call site, perhaps because it did not match a pattern the
@@ -730,7 +744,7 @@ void Parse::do_call() {
           // It's OK for a method  to return a value that is discarded.
           // The discarding does not require any special action from the caller.
           // The Java code knows this, at VerifyType.isNullConversion.
-          pop_node(rt);  // whatever it was, pop it
+          pop_node(rt); // whatever it was, pop it
         } else if (rt == T_INT || is_subword_type(rt)) {
           // Nothing.  These cases are handled in lambda form bytecode.
           assert(ct == T_INT || is_subword_type(ct), "must match: rt=%s, ct=%s", type2name(rt), type2name(ct));
@@ -738,7 +752,7 @@ void Parse::do_call() {
           assert(is_reference_type(ct), "rt=%s, ct=%s", type2name(rt), type2name(ct));
           if (ctype->is_loaded()) {
             const TypeOopPtr* arg_type = TypeOopPtr::make_from_klass(rtype->as_klass());
-            const Type*       sig_type = TypeOopPtr::make_from_klass(ctype->as_klass());
+            const Type* sig_type = TypeOopPtr::make_from_klass(ctype->as_klass());
             if (arg_type != nullptr && !arg_type->higher_equal(sig_type)) {
               Node* retnode = pop();
               Node* cast_obj = _gvn.transform(new CheckCastPPNode(control(), retnode, sig_type));
@@ -769,8 +783,10 @@ void Parse::do_call() {
     // value we got is a null.  Otherwise, we need to recompile.
     if (!rtype->is_loaded()) {
       if (PrintOpto && (Verbose || WizardMode)) {
-        method()->print_name(); tty->print_cr(" asserting nullness of result at bci: %d", bci());
-        cg->method()->print_name(); tty->cr();
+        method()->print_name();
+        tty->print_cr(" asserting nullness of result at bci: %d", bci());
+        cg->method()->print_name();
+        tty->cr();
       }
       if (C->log() != nullptr) {
         C->log()->elem("assert_null reason='return' klass='%d'",
@@ -810,9 +826,9 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 
   bool default_handler = false;
   for (; !handlers.is_done(); handlers.next()) {
-    ciExceptionHandler* h       = handlers.handler();
-    int                 h_bci   = h->handler_bci();
-    ciInstanceKlass*    h_klass = h->is_catch_all() ? env()->Throwable_klass() : h->catch_klass();
+    ciExceptionHandler* h = handlers.handler();
+    int h_bci = h->handler_bci();
+    ciInstanceKlass* h_klass = h->is_catch_all() ? env()->Throwable_klass() : h->catch_klass();
     // Do not introduce unloaded exception types into the graph:
     if (!h_klass->is_loaded()) {
       if (saw_unloaded.contains(h_bci)) {
@@ -844,20 +860,22 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
   }
 
   int len = bcis.length();
-  CatchNode *cn = new CatchNode(control(), i_o, len+1);
-  Node *catch_ = _gvn.transform(cn);
+  CatchNode* cn = new CatchNode(control(), i_o, len + 1);
+  Node* catch_ = _gvn.transform(cn);
 
   // now branch with the exception state to each of the (potential)
   // handlers
-  for(int i=0; i < len; i++) {
+  for (int i = 0; i < len; i++) {
     // Setup JVM state to enter the handler.
     PreserveJVMState pjvms(this);
     // Locals are just copied from before the call.
     // Get control from the CatchNode.
     int handler_bci = bcis.at(i);
-    Node* ctrl = _gvn.transform( new CatchProjNode(catch_, i+1,handler_bci));
+    Node* ctrl = _gvn.transform(new CatchProjNode(catch_, i + 1, handler_bci));
     // This handler cannot happen?
-    if (ctrl == top())  continue;
+    if (ctrl == top()) {
+      continue;
+    }
     set_control(ctrl);
 
     // Create exception oop
@@ -872,12 +890,14 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
       // and hot loaded exceptions.  But, watch for it.
       if (PrintOpto && (Verbose || WizardMode) && extype->is_loaded()) {
         tty->print("Warning: Handler @%d takes mixed loaded/unloaded exceptions in ", bci());
-        method()->print_name(); tty->cr();
+        method()->print_name();
+        tty->cr();
       } else if (PrintOpto && (Verbose || WizardMode)) {
         tty->print("Bailing out on unloaded exception type ");
         extype->instance_klass()->print_name();
         tty->print(" at bci:%d in ", bci());
-        method()->print_name(); tty->cr();
+        method()->print_name();
+        tty->cr();
       }
 #endif
       // Emit an uncommon trap instead of processing the block.
@@ -891,19 +911,18 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
     }
 
     // go to the exception handler
-    if (handler_bci < 0) {     // merge with corresponding rethrow node
+    if (handler_bci < 0) { // merge with corresponding rethrow node
       throw_to_exit(make_exception_state(ex_oop));
-    } else {                      // Else jump to corresponding handle
-      push_ex_oop(ex_oop);        // Clear stack and push just the oop.
+    } else {               // Else jump to corresponding handle
+      push_ex_oop(ex_oop); // Clear stack and push just the oop.
       merge_exception(handler_bci);
     }
   }
 
   // The first CatchProj is for the normal return.
   // (Note:  If this is a call to rethrow_Java, this node goes dead.)
-  set_control(_gvn.transform( new CatchProjNode(catch_, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci)));
+  set_control(_gvn.transform(new CatchProjNode(catch_, CatchProjNode::fall_through_index, CatchProjNode::no_handler_bci)));
 }
-
 
 //----------------------------catch_inline_exceptions--------------------------
 // Handle all exceptions thrown by an inlined method or individual bytecode.
@@ -926,9 +945,10 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     return;
   }
   const TypeInstPtr* ex_type = _gvn.type(ex_node)->isa_instptr();
-  NOT_PRODUCT(if (ex_type==nullptr) tty->print_cr("*** Exception not InstPtr"));
-  if (ex_type == nullptr)
+  NOT_PRODUCT(if (ex_type == nullptr) tty->print_cr("*** Exception not InstPtr"));
+  if (ex_type == nullptr) {
     ex_type = TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr();
+  }
 
   // determine potential exception handlers
   ciExceptionHandlerStream handlers(method(), bci(),
@@ -942,7 +962,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   // Get the exception oop klass from its header
   Node* ex_klass_node = nullptr;
   if (has_exception_handler() && !ex_type->klass_is_exact()) {
-    Node* p = basic_plus_adr( ex_node, ex_node, oopDesc::klass_offset_in_bytes());
+    Node* p = basic_plus_adr(ex_node, ex_node, oopDesc::klass_offset_in_bytes());
     ex_klass_node = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
 
     // Compute the exception klass a little more cleverly.
@@ -961,8 +981,8 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
           continue;
         }
         Node* p = basic_plus_adr(ex_in, ex_in, oopDesc::klass_offset_in_bytes());
-        Node* k = _gvn.transform( LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
-        ex_klass_node->init_req( i, k );
+        Node* k = _gvn.transform(LoadKlassNode::make(_gvn, nullptr, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
+        ex_klass_node->init_req(i, k);
       }
       ex_klass_node = _gvn.transform(ex_klass_node);
     }
@@ -977,7 +997,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   int remaining = handlers.count_remaining();
 
   // iterate through all entries sequentially
-  for (;!handlers.is_done(); handlers.next()) {
+  for (; !handlers.is_done(); handlers.next()) {
     ciExceptionHandler* handler = handlers.handler();
 
     if (handler->is_rethrow()) {
@@ -993,30 +1013,31 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     int handler_bci = handler->handler_bci();
 
     if (remaining == 1) {
-      push_ex_oop(ex_node);        // Push exception oop for handler
+      push_ex_oop(ex_node); // Push exception oop for handler
       if (PrintOpto && WizardMode) {
         tty->print_cr("  Catching every inline exception bci:%d -> handler_bci:%d", bci(), handler_bci);
       }
       // If this is a backwards branch in the bytecodes, add safepoint
       maybe_add_safepoint(handler_bci);
       merge_exception(handler_bci); // jump to handler
-      return;                   // No more handling to be done here!
+      return;                       // No more handling to be done here!
     }
 
     // Get the handler's klass
     ciInstanceKlass* klass = handler->catch_klass();
 
-    if (!klass->is_loaded()) {  // klass is not loaded?
+    if (!klass->is_loaded()) { // klass is not loaded?
       // fall through into catch_call_exceptions which will emit a
       // handler with an uncommon trap.
       break;
     }
 
-    if (klass->is_interface())  // should not happen, but...
-      break;                    // bail out
+    if (klass->is_interface()) { // should not happen, but...
+      break;                     // bail out
+    }
 
     // Check the type of the exception against the catch type
-    const TypeKlassPtr *tk = TypeKlassPtr::make(klass);
+    const TypeKlassPtr* tk = TypeKlassPtr::make(klass);
     Node* con = _gvn.makecon(tk);
     Node* not_subtype_ctrl = gen_subtype_check(ex_klass_node, con);
     if (!stopped()) {
@@ -1024,7 +1045,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       const TypeInstPtr* tinst = TypeOopPtr::make_from_klass_unique(klass)->cast_to_ptr_type(TypePtr::NotNull)->is_instptr();
       assert(klass->has_subklass() || tinst->klass_is_exact(), "lost exactness");
       Node* ex_oop = _gvn.transform(new CheckCastPPNode(control(), ex_node, tinst));
-      push_ex_oop(ex_oop);      // Push exception oop for handler
+      push_ex_oop(ex_oop); // Push exception oop for handler
       if (PrintOpto && WizardMode) {
         tty->print("  Catching inline exception bci:%d -> handler_bci:%d -- ", bci(), handler_bci);
         klass->print_name();
@@ -1060,14 +1081,12 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
   catch_call_exceptions(handlers);
 }
 
-
 // (Note:  Moved add_debug_info into GraphKit::add_safepoint_edges.)
-
 
 #ifndef PRODUCT
 void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
-  if( CountCompiledCalls ) {
-    if( at_method_entry ) {
+  if (CountCompiledCalls) {
+    if (at_method_entry) {
       // bump invocation counter if top method (for statistics)
       if (CountCompiledCalls && depth() == 1) {
         const TypePtr* addr_type = TypeMetadataPtr::make(method());
@@ -1077,27 +1096,40 @@ void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
       }
     } else if (is_inline) {
       switch (bc()) {
-      case Bytecodes::_invokevirtual:   increment_counter(SharedRuntime::nof_inlined_calls_addr()); break;
-      case Bytecodes::_invokeinterface: increment_counter(SharedRuntime::nof_inlined_interface_calls_addr()); break;
+      case Bytecodes::_invokevirtual:
+        increment_counter(SharedRuntime::nof_inlined_calls_addr());
+        break;
+      case Bytecodes::_invokeinterface:
+        increment_counter(SharedRuntime::nof_inlined_interface_calls_addr());
+        break;
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
-      case Bytecodes::_invokespecial:   increment_counter(SharedRuntime::nof_inlined_static_calls_addr()); break;
-      default: fatal("unexpected call bytecode");
+      case Bytecodes::_invokespecial:
+        increment_counter(SharedRuntime::nof_inlined_static_calls_addr());
+        break;
+      default:
+        fatal("unexpected call bytecode");
       }
     } else {
       switch (bc()) {
-      case Bytecodes::_invokevirtual:   increment_counter(SharedRuntime::nof_normal_calls_addr()); break;
-      case Bytecodes::_invokeinterface: increment_counter(SharedRuntime::nof_interface_calls_addr()); break;
+      case Bytecodes::_invokevirtual:
+        increment_counter(SharedRuntime::nof_normal_calls_addr());
+        break;
+      case Bytecodes::_invokeinterface:
+        increment_counter(SharedRuntime::nof_interface_calls_addr());
+        break;
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokedynamic:
-      case Bytecodes::_invokespecial:   increment_counter(SharedRuntime::nof_static_calls_addr()); break;
-      default: fatal("unexpected call bytecode");
+      case Bytecodes::_invokespecial:
+        increment_counter(SharedRuntime::nof_static_calls_addr());
+        break;
+      default:
+        fatal("unexpected call bytecode");
       }
     }
   }
 }
-#endif //PRODUCT
-
+#endif // PRODUCT
 
 ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klass,
                                          ciKlass* holder, ciMethod* callee,
@@ -1106,7 +1138,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
                                          bool check_access) {
   // Set default values for out-parameters.
   call_does_dispatch = true;
-  vtable_index       = Method::invalid_vtable_index;
+  vtable_index = Method::invalid_vtable_index;
 
   // Choose call strategy.
   ciMethod* optimized_virtual_method = optimize_inlining(caller, klass, holder, callee,
@@ -1114,7 +1146,7 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
 
   // Have the call been sufficiently improved such that it is no longer a virtual?
   if (optimized_virtual_method != nullptr) {
-    callee             = optimized_virtual_method;
+    callee = optimized_virtual_method;
     call_does_dispatch = false;
   } else if (!UseInlineCaches && is_virtual && callee->is_loaded()) {
     // We can make a vtable call at this site
@@ -1167,7 +1199,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
     actual_receiver_is_exact = receiver_type->klass_is_exact();
   }
 
-  ciInstanceKlass*   calling_klass = caller->holder();
+  ciInstanceKlass* calling_klass = caller->holder();
   ciMethod* cha_monomorphic_target = callee->find_monomorphic_target(calling_klass, klass, actual_receiver, check_access);
 
   if (cha_monomorphic_target != nullptr) {
