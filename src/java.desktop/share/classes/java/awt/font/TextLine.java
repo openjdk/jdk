@@ -1021,7 +1021,7 @@ final class TextLine {
                     factory.createExtended(font, cm, decorator, startPos, startPos + lmCount);
 
                 ++numComponents;
-                if (numComponents >= components.length) {
+                if (numComponents > components.length) {
                     components = expandArray(components);
                 }
 
