@@ -2848,10 +2848,9 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //                   = MAX(new_limit,                   orig_limit)         (15a, stride < 0)
   //
   // TODO rename scale -> iv_scale
-  //             offset -> con
   const int stride   = iv_stride();
   const int scale    = align_to_ref_p.scale_in_bytes();
-  const int offset   = align_to_ref_p.offset_in_bytes();
+  const int con      = align_to_ref_p.offset_in_bytes();
   Node* base         = align_to_ref_p.adr();
   Node* invar        = align_to_ref_p.invar();
 
@@ -2860,10 +2859,12 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
     tty->print("  align_to_ref:");
     align_to_ref->dump();
+    tty->print("  ");
+    p.print_on(tty);
     tty->print_cr("  aw:       %d", aw);
     tty->print_cr("  stride:   %d", stride);
     tty->print_cr("  scale:    %d", scale);
-    tty->print_cr("  offset:   %d", offset);
+    tty->print_cr("  con:      %d", con);
     tty->print("  base:");
     base->dump();
     if (invar == nullptr) {
@@ -2905,12 +2906,12 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #endif
 
   // 1: Compute (13a, b):
-  //    xbic = -bic = (-base - offset - invar)         (stride * scale > 0)
-  //    xbic = +bic = (+base + offset + invar)         (stride * scale < 0)
+  //    xbic = -bic = (-base - invar - con)         (stride * scale > 0)
+  //    xbic = +bic = (+base + invar + con)         (stride * scale < 0)
   const bool is_sub = scale * stride > 0;
 
-  // 1.1: offset
-  Node* xbic = igvn().intcon(is_sub ? -offset : offset);
+  // 1.1: con
+  Node* xbic = igvn().intcon(is_sub ? -con : con);
   TRACE_ALIGN_VECTOR_NODE(xbic);
 
   // 1.2: invar (if it exists)
