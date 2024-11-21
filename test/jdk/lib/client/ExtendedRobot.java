@@ -53,7 +53,7 @@ public class ExtendedRobot extends Robot {
     private static int DEFAULT_SPEED = 20;       // Speed for mouse glide and click
     private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
 
-    private final int syncDelay = DEFAULT_SYNC_DELAY;
+    private final int syncDelay = DEFAULT_SPEED;
 
     //TODO: uncomment three lines below after moving functionality to java.awt.Robot
     //{
