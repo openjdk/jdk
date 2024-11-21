@@ -2038,6 +2038,7 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
                                 valid_new_base, valid_new_end, addr_delta);
 
     if (AOTCacheParallelRelocation) {
+      ArchiveWorkersUseMark mark;
       SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
       ArchiveWorkers::workers()->run_task(&task);
     } else {
