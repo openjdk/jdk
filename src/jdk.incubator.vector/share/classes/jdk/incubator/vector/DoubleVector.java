@@ -719,14 +719,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     final
     DoubleVector unaryMathOp(VectorOperators.Unary op) {
-        int opc = opCode(op);
-        VectorMathLibrary.Entry entry = VectorMathLibrary.lookup(op, opc, species());
-
-        return VectorSupport.libraryUnaryOp(
-                entry.entry().address(), getClass(), double.class, length(), // constants
-                this,
-                UN_IMPL.find(op, opc, DoubleVector::unaryOperations),
-                entry.name());
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), DoubleVector::unaryOperations,
+                                             this);
     }
 
     private static final
@@ -849,14 +843,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     final
     DoubleVector binaryMathOp(VectorOperators.Binary op, DoubleVector that) {
-        int opc = opCode(op);
-        VectorMathLibrary.Entry entry = VectorMathLibrary.lookup(op, opc, species());
-
-        return VectorSupport.libraryBinaryOp(
-                entry.entry().address(), getClass(), double.class, length(),
-                this, that,
-                BIN_IMPL.find(op, opc, DoubleVector::binaryOperations),
-                entry.name());
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), DoubleVector::binaryOperations,
+                                              this, that);
     }
 
     private static final
