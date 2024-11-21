@@ -223,12 +223,13 @@ public class HierarchicalStableLayoutManager extends LayoutManager{
          * @param vertex the vertex to be inserted
          */
         private static void applyAddVertexAction(LayoutGraph graph, Vertex vertex) {
-           // TODO
             int layerNr = optimalLayer(graph, vertex);
             LayoutNode node = graph.getLayoutNode(vertex);
             layerNr = graph.insertNewLayerIfNeeded(node, layerNr);
             graph.addNodeToLayer(node, layerNr);
             int x = node.computeBarycenterX(LayoutNode.NeighborType.BOTH, false);
+            // TODO:  Find the optimal position within the given layer to insert the given node.
+            //        The optimum is given by the least amount of edge crossings.
             node.setX(x);
             graph.getLayer(layerNr).sortNodesByX();
             graph.addEdges(node, 10);
