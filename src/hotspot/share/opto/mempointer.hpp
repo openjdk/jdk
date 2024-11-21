@@ -506,8 +506,9 @@ public:
 //
 //   pointer = SUM(summands) + con
 //
-// Note: if the base is known to be an object reference (base().is_object()), then
-//       the base is in the 0th summand.
+// Node: if the base is known, then it is in the 0th summand. A base can be:
+//       - on-heap  / object: base().object()
+//       - off-heap / native: base().native()
 class MemPointerDecomposedForm : public StackObj {
 public:
   // We limit the number of summands to 10. This is just a best guess, and not at this
