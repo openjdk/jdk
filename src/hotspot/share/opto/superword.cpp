@@ -2849,7 +2849,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // TODO rename scale -> iv_scale
   const int stride   = iv_stride();
-  const int scale    = align_to_ref_p.scale_in_bytes();
+  const int iv_scale = align_to_ref_p.scale_in_bytes();
   const int con      = align_to_ref_p.offset_in_bytes();
   Node* base         = align_to_ref_p.adr();
   Node* invar        = align_to_ref_p.invar();
@@ -2863,7 +2863,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     p.print_on(tty);
     tty->print_cr("  aw:       %d", aw);
     tty->print_cr("  stride:   %d", stride);
-    tty->print_cr("  scale:    %d", scale);
+    tty->print_cr("  iv_scale: %d", iv_scale);
     tty->print_cr("  con:      %d", con);
     tty->print("  base:");
     base->dump();
@@ -2880,35 +2880,35 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
 #endif
 
-  if (stride == 0 || !is_power_of_2(abs(stride)) ||
-      scale  == 0 || !is_power_of_2(abs(scale))  ||
-      abs(scale) >= aw) {
+  if (stride   == 0 || !is_power_of_2(abs(stride))   ||
+      iv_scale == 0 || !is_power_of_2(abs(iv_scale)) || // TODO abs ok?
+      abs(iv_scale) >= aw) {
 #ifdef ASSERT
     if (_trace._align_vector) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
-      tty->print_cr(" stride or scale are not power of 2, or abs(scale) >= aw.");
+      tty->print_cr(" stride or iv_scale are not power of 2, or abs(iv_scale) >= aw.");
     }
 #endif
     // Cannot affect alignment, abort.
     return;
   }
 
-  assert(stride != 0 && is_power_of_2(abs(stride)) &&
-         scale  != 0 && is_power_of_2(abs(scale))  &&
-         abs(scale) < aw, "otherwise we cannot affect alignment with pre-loop");
+  assert(stride   != 0 && is_power_of_2(abs(stride))   &&
+         iv_scale != 0 && is_power_of_2(abs(iv_scale)) &&
+         abs(iv_scale) < aw, "otherwise we cannot affect alignment with pre-loop");
 
-  const int AW = aw / abs(scale);
+  const int AW = aw / abs(iv_scale);
 
 #ifdef ASSERT
   if (_trace._align_vector) {
-    tty->print_cr("  AW = aw(%d) / abs(scale(%d)) = %d", aw, scale, AW);
+    tty->print_cr("  AW = aw(%d) / abs(iv_scale(%d)) = %d", aw, iv_scale, AW);
   }
 #endif
 
   // 1: Compute (13a, b):
-  //    xbic = -bic = (-base - invar - con)         (stride * scale > 0)
-  //    xbic = +bic = (+base + invar + con)         (stride * scale < 0)
-  const bool is_sub = scale * stride > 0;
+  //    xbic = -bic = (-base - invar - con)         (stride * iv_scale > 0)
+  //    xbic = +bic = (+base + invar + con)         (stride * iv_scale < 0)
+  const bool is_sub = iv_scale * stride > 0;
 
   // 1.1: con
   Node* xbic = igvn().intcon(is_sub ? -con : con);
@@ -2956,12 +2956,12 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
 
   // 2: Compute (14):
-  //    XBIC = xbic / abs(scale)
+  //    XBIC = xbic / abs(iv_scale)
   //    The division is executed as shift
-  Node* log2_abs_scale = igvn().intcon(exact_log2(abs(scale)));
-  Node* XBIC = new URShiftINode(xbic, log2_abs_scale);
+  Node* log2_abs_iv_scale = igvn().intcon(exact_log2(abs(iv_scale)));
+  Node* XBIC = new URShiftINode(xbic, log2_abs_iv_scale);
   phase()->register_new_node(XBIC, pre_ctrl);
-  TRACE_ALIGN_VECTOR_NODE(log2_abs_scale);
+  TRACE_ALIGN_VECTOR_NODE(log2_abs_iv_scale);
   TRACE_ALIGN_VECTOR_NODE(XBIC);
 
   // 3: Compute (12):
