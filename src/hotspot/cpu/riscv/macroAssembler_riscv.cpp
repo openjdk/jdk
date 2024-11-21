@@ -3466,6 +3466,17 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
 
+  // NOTE:
+  // Register _result_ may be the same register as _new_val_ or _expected_.
+  // Hence do NOT use _result_ until after 'cas'.
+  //
+  // Register _expected_ may be the same register as _new_val_ and is assumed to be preserved.
+  // Hence do NOT change _expected_ or _new_val_.
+  //
+  // Having _expected_ and _new_val_ being the same register is a very puzzling cas.
+  //
+  // TODO: Address these issues.
+
   if (UseZacas) {
     if (result_as_bool) {
       mv(t0, expected);
@@ -3473,8 +3484,9 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
       xorr(t0, t0, expected);
       seqz(result, t0);
     } else {
-      mv(result, expected);
-      atomic_cas(result, new_val, addr, size, acquire, release);
+      mv(t0, expected);
+      atomic_cas(t0, new_val, addr, size, acquire, release);
+      mv(result, t0);
     }
     return;
   }
@@ -3510,14 +3522,15 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-  if (UseZacas) {
-    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
-    return;
-  }
 
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
+
+  if (UseZacas) {
+    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
+    return;
+  }
 
   Label fail, done;
   load_reserved(t0, addr, size, acquire);
@@ -3581,83 +3594,18 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 
 #undef ATOMIC_XCHGU
 
-#define ATOMIC_CAS(OP, AOP, ACQUIRE, RELEASE)                                        \
-void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) {      \
-  assert(UseZacas, "invariant");                                                     \
-  prev = prev->is_valid() ? prev : zr;                                               \
-  AOP(prev, addr, newv, (Assembler::Aqrl)(ACQUIRE | RELEASE));                       \
-  return;                                                                            \
-}
-
-ATOMIC_CAS(cas, amocas_d, Assembler::relaxed, Assembler::relaxed)
-ATOMIC_CAS(casw, amocas_w, Assembler::relaxed, Assembler::relaxed)
-ATOMIC_CAS(casl, amocas_d, Assembler::relaxed, Assembler::rl)
-ATOMIC_CAS(caslw, amocas_w, Assembler::relaxed, Assembler::rl)
-ATOMIC_CAS(casal, amocas_d, Assembler::aq, Assembler::rl)
-ATOMIC_CAS(casalw, amocas_w, Assembler::aq, Assembler::rl)
-
-#undef ATOMIC_CAS
-
-#define ATOMIC_CASU(OP1, OP2)                                                        \
-void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
-  atomic_##OP2(prev, newv, addr);                                                    \
-  zero_extend(prev, prev, 32);                                                       \
-  return;                                                                            \
-}
-
-ATOMIC_CASU(caswu, casw)
-ATOMIC_CASU(caslwu, caslw)
-ATOMIC_CASU(casalwu, casalw)
-
-#undef ATOMIC_CASU
-
-void MacroAssembler::atomic_cas(
-    Register prev, Register newv, Register addr, enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
+                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_cas(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_casl(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casal(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     case int32:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_casw(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_caslw(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casalw(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     case uint32:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_caswu(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_caslwu(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casalwu(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
+      zero_extend(prev, prev, 32);
       break;
     default:
       ShouldNotReachHere();

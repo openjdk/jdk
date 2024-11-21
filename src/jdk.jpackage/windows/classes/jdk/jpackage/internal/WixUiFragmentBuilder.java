@@ -97,7 +97,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
     }
 
     @Override
-    void configureWixPipeline(WixPipeline wixPipeline) {
+    void configureWixPipeline(WixPipeline.Builder wixPipeline) {
         super.configureWixPipeline(wixPipeline);
 
         if (withShortcutPromptDlg || withInstallDirChooserDlg || withLicenseDlg) {
@@ -518,7 +518,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
                     wxsFileName), wxsFileName);
         }
 
-        void addToWixPipeline(WixPipeline wixPipeline) {
+        void addToWixPipeline(WixPipeline.Builder wixPipeline) {
             wixPipeline.addSource(getConfigRoot().toAbsolutePath().resolve(
                     wxsFileName), wixVariables.getValues());
         }

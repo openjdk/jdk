@@ -45,7 +45,6 @@
 class ConstantPool;
 class DeoptimizationScope;
 class klassItable;
-class Monitor;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -68,7 +67,6 @@ class ClassFileStream;
 class KlassDepChange;
 class DependencyContext;
 class fieldDescriptor;
-class jniIdMapBase;
 class JNIid;
 class JvmtiCachedClassFieldMap;
 class nmethodBucket;
