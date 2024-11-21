@@ -52,6 +52,7 @@ public:
   bool is_NaN() const { return _is_NaN; }
   jint value() const { assert(!is_NaN(), "NaN not allowed"); return _value; }
   bool is_zero() const { return !is_NaN() && value() == 0; }
+  bool is_one() const { return !is_NaN() && value() == 1; }
 
   friend NoOverflowInt operator+(const NoOverflowInt& a, const NoOverflowInt& b) {
     if (a.is_NaN()) { return a; }

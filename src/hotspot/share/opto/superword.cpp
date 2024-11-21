@@ -2715,6 +2715,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   const XPointer& p = xpointer(align_to_ref);
   assert(p.is_valid(), "sanity");
+  p.print_on(tty);
 
   // For the main-loop, we want the address of align_to_ref to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,

@@ -163,7 +163,6 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
       }
       case Op_CastII:
       case Op_CastLL:
-      case Op_CastX2P:
       case Op_ConvI2L:
       // On 32bit systems we can also look through ConvL2I, since the final result will always
       // be truncated back with ConvL2I. On 64bit systems we cannot decompose ConvL2I because
@@ -180,6 +179,10 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
         adr_node_callback.callback(n);
         return;
       }
+      case Op_CastX2P:
+      // In theory, we could parse through this, and further decompose. But this is also a good
+      // candidate for a native-memory "base".
+        break;
       default:
         // All other operations cannot be further decomposed. We just add them to the
         // terminal summands below.
@@ -303,17 +306,42 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
 #endif
 }
 
-MemPointerDecomposedForm::Base MemPointerDecomposedForm::Base::from_AddP(Node* pointer) {
+MemPointerDecomposedForm::Base MemPointerDecomposedForm::Base::make(Node* pointer, const GrowableArray<MemPointerSummand>& summands) {
   // Bad form -> unknown.
   AddPNode* adr = pointer->isa_AddP();
   if (adr == nullptr) { return Base(); }
 
-  // Top base -> native.
-  Node* base_adr = adr->in(AddPNode::Base);
-  if (base_adr->is_top()) { return Base(); }
+  // Non-TOP base -> object.
+  Node* maybe_object_base = adr->in(AddPNode::Base);
+  bool is_object_base = !maybe_object_base->is_top();
 
-  // Known object base.
-  return Base(true, adr->in(AddPNode::Base));
+  Node* base = find_base(is_object_base ? maybe_object_base : nullptr, summands);
+
+  if (base == nullptr) {
+    // Not found -> unknown.
+    return Base();
+  } else if (is_object_base) {
+    assert(base == maybe_object_base, "we confirmed that it is in summands");
+    return Base(Object, base);
+  } else {
+    return Base(Native, base);
+  }
+}
+
+Node* MemPointerDecomposedForm::Base::find_base(Node* object_base, const GrowableArray<MemPointerSummand>& summands) {
+  for (int i = 0; i < summands.length(); i++) {
+    const MemPointerSummand& s = summands.at(i);
+    assert(s.variable() != nullptr, "no empty summands");
+    // Object base.
+    if (object_base != nullptr && s.variable() == object_base && s.scale().is_one()) {
+      return object_base;
+    }
+    // Native base.
+    if (object_base == nullptr && s.variable()->Opcode() == Op_CastX2P && s.scale().is_one()) {
+      return s.variable();
+    }
+  }
+  return nullptr;
 }
 
 // Compute the aliasing between two MemPointerDecomposedForm. We use the "MemPointer Lemma" to
@@ -411,14 +439,14 @@ bool MemPointerDecomposedForm::has_same_summands_as(const MemPointerDecomposedFo
 bool MemPointerDecomposedForm::has_different_base_but_otherwise_same_summands_as(const MemPointerDecomposedForm& other) const {
   if (!base().is_object() ||
       !other.base().is_object() ||
-      base().get() == other.base().get()) {
+      base().object() == other.base().object()) {
     // The base is the same, or we do not know if the base is different.
     return false;
   }
 
 #ifdef ASSERT
-  const MemPointerSummand base1(base().get(),       NoOverflowInt(1));
-  const MemPointerSummand base2(other.base().get(), NoOverflowInt(1));
+  const MemPointerSummand base1(base().object(),       NoOverflowInt(1));
+  const MemPointerSummand base2(other.base().object(), NoOverflowInt(1));
   assert(summands_at(0) == base1 && other.summands_at(0) == base2, "bases in 0th element");
 #endif
 

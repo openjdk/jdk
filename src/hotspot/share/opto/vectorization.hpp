@@ -706,7 +706,6 @@ private:
   const jint _size;
 
   // Derived, for quicker use.
-  Node* _base;
   const jint  _iv_scale;
   const jint  _con_value;
 
@@ -717,7 +716,6 @@ public:
   XPointer() :
     _decomposed_form(),
     _size(0),
-    _base(nullptr),
     _iv_scale(0),
     _con_value(0),
     _is_valid(false) {}
@@ -726,7 +724,6 @@ public:
   XPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
-    _base(init_base(_decomposed_form)),
     _iv_scale(init_iv_scale(_decomposed_form, vloop)),
     _con_value(init_con_value(_decomposed_form)),
     _is_valid(init_is_valid(_decomposed_form, vloop))
@@ -745,7 +742,6 @@ public:
   bool is_valid() const { return _is_valid; }
   const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
   jint size() const { return _size; }
-  Node* base() const { return _base; }
   jint iv_scale() const { return _iv_scale; }
   jint con_value() const { return _con_value; }
   // TODO for each in invar_summands - maybe make it static so we can use it during init?
@@ -763,11 +759,6 @@ private:
     ResourceMark rm;
     MemPointerDecomposedFormParser parser(mem, adr_node_callback);
     return parser.decomposed_form();
-  }
-
-  static Node* init_base(const MemPointerDecomposedForm& decomposed_form) {
-    if (!decomposed_form.base().is_known()) { return nullptr; }
-    return decomposed_form.base().get();
   }
 
   static jint init_iv_scale(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {

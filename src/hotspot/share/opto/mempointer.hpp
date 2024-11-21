@@ -518,35 +518,44 @@ public:
 
   class Base : public StackObj {
   private:
-    bool _is_known;
+    enum Kind { Unknown, Object, Native };
+    Kind _kind;
     Node* _base;
 
-    Base(bool is_known, Node* base) : _is_known(is_known), _base(base) {
-      assert(is_known || base == nullptr, "base is null if not known");
-      assert(!is_known || (base != nullptr && !base->is_top()), "valid known base");
+    Base(Kind kind, Node* base) : _kind(kind), _base(base) {
+      assert((kind == Unknown) == (base == nullptr), "known base");
     }
 
   public:
-    Base() : Base(false, nullptr) {}
+    Base() : Base(Unknown, nullptr) {}
+    static Base make(Node* pointer, const GrowableArray<MemPointerSummand>& summands);
 
-    static Base from_AddP(Node* pointer);
-    bool is_known() const { return _is_known; }
-    Node* get() const { assert(is_known(), "must be"); return _base; }
-    bool is_object() const { return _is_known && _base != nullptr; }
+    bool is_known()  const { return _kind != Unknown; }
+    bool is_object() const { return _kind == Object; }
+    bool is_native() const { return _kind == Native; }
+    Node* object()   const { assert(is_object(),""); return _base; }
+    Node* native()   const { assert(is_native(),""); return _base; }
+    Node* object_or_native_or_null() const { return _base; }
 
 #ifndef PRODUCT
     void print_on(outputStream* st) const {
-      if (_is_known) {
-        if (_base == nullptr) {
-          tty->print("native");
-        } else {
+      switch (_kind) {
+      case Object:
+          tty->print("native ");
           tty->print("%d %s", _base->_idx, _base->Name());
-        }
-      } else {
-        tty->print("unknown");
-      }
+          break;
+      case Native:
+          tty->print("native ");
+          tty->print("%d %s", _base->_idx, _base->Name());
+          break;
+      default:
+          tty->print("native");
+      };
     }
 #endif
+
+  private:
+    static Node* find_base(Node* object_base, const GrowableArray<MemPointerSummand>& summands);
   };
 
 private:
@@ -570,7 +579,7 @@ private:
 
   MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt& con) :
     _con(con),
-    _base(Base::from_AddP(pointer))
+    _base(Base::make(pointer, summands))
   {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
@@ -582,28 +591,21 @@ private:
     }
 #endif
 
-    if (_base.is_object()) {
-      MemPointerSummand b(_base.get(), NoOverflowInt(1));
-      if (summands.contains(b)) {
-        // We have a known base object, move it to the 0th summand.
-        _summands[0] = b;
-        int pos = 1;
-        for (int i = 0; i < summands.length(); i++) {
-          if (summands.at(i) == b) { continue; }
-          _summands[pos++] = summands.at(i);
-        }
-        return;
-      } else {
-        // We did not find the base object, reset to unknown base.
-        assert(false, "we should always find the base");
-        _base = Base();
-      }
+    // Put the base in in the 0th summand.
+    Node* base = _base.object_or_native_or_null();
+    int pos = 0;
+    if (base != nullptr) {
+      MemPointerSummand b(base, NoOverflowInt(1));
+      _summands[0] = b;
+      pos++;
     }
-
+    // Put all other summands afterward.
     for (int i = 0; i < summands.length(); i++) {
       const MemPointerSummand& s = summands.at(i);
-      _summands[i] = s;
+      if (s.variable() == base && s.scale().is_one()) { continue; }
+      _summands[pos++] = summands.at(i);
     }
+    assert(pos == summands.length(), "copied all summands");
   }
 
 public:
