@@ -30,8 +30,6 @@ import java.awt.peer.MenuComponentPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleComponent;
@@ -102,25 +100,6 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @see #dispatchEvent(AWTEvent)
      */
     volatile boolean newEventsOnly;
-
-    /*
-     * The menu's AccessControlContext.
-     */
-    @SuppressWarnings("removal")
-    private transient volatile AccessControlContext acc =
-            AccessController.getContext();
-
-    /*
-     * Returns the acc this menu component was constructed with.
-     */
-    @SuppressWarnings("removal")
-    final AccessControlContext getAccessControlContext() {
-        if (acc == null) {
-            throw new SecurityException(
-                    "MenuComponent is missing AccessControlContext");
-        }
-        return acc;
-    }
 
     /*
      * Internal constants for serialization.
@@ -448,8 +427,6 @@ public abstract class MenuComponent implements java.io.Serializable {
         throws ClassNotFoundException, IOException, HeadlessException
     {
         GraphicsEnvironment.checkHeadless();
-
-        acc = AccessController.getContext();
 
         s.defaultReadObject();
 
