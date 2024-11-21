@@ -84,18 +84,19 @@ public class DebugPropertyValues extends SSLSocketTemplate {
                                 "trigger seeding of SecureRandom",
                                 "supported_versions"),
                         List.of("Plaintext before ENCRYPTION")),
-                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
+                // filtering on record option, with expand
+                Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
                         List.of("\"logger\".*: \"javax.net.ssl\",",
                                 "\"message\".*: \"READ: TLSv1.2 application_data"),
                         List.of("Plaintext before ENCRYPTION",
                                 "\"message\".*: \"Produced ClientHello handshake message:")),
                 // ssl:plaintext isn't valid. "plaintext" is sub-option for "record"
+                // plaintext gets ignored. treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssl:plaintext"),
-                        null,
-                        List.of("Plaintext before ENCRYPTION",
-                                "jdk.tls.keyLimits:",
+                        List.of("adding as trusted certificates",
                                 "trigger seeding of SecureRandom",
-                                "length =")),
+                                "supported_versions"),
+                        List.of("Plaintext before ENCRYPTION")),
                 // "all ssl" mode only true if "ssl" is javax.net.debug value
                 // this test is equivalent to ssl:record mode
                 Arguments.of(List.of("-Djavax.net.debug=ssl,record"),
@@ -105,13 +106,19 @@ public class DebugPropertyValues extends SSLSocketTemplate {
                                 "jdk.tls.keyLimits:",
                                 "matching alias:",
                                 "Plaintext before ENCRYPTION")),
-                // nothing should be printed, typo is invalid
+                // ignore bad sub-option. treat like "ssl"
                 Arguments.of(List.of("-Djavax.net.debug=ssl,typo"),
-                        null,
-                        List.of("trigger seeding of SecureRandom",
-                                "jdk.tls.keyLimits:",
-                                "matching alias:",
-                                "Plaintext before ENCRYPTION")),
+                        List.of("adding as trusted certificates",
+                                "trigger seeding of SecureRandom",
+                                "supported_versions"),
+                        List.of("Plaintext before ENCRYPTION")),
+                // ssltypo contains "ssl". Treat like "ssl"
+                Arguments.of(List.of("-Djavax.net.debug=ssltypo"),
+                        List.of("adding as trusted certificates",
+                                "trigger seeding of SecureRandom",
+                                "supported_versions"),
+                        List.of("Plaintext before ENCRYPTION")),
+                // plaintext is valid for record option
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record:plaintext"),
                         List.of("Plaintext before ENCRYPTION",
                                 "length ="),
@@ -123,12 +130,6 @@ public class DebugPropertyValues extends SSLSocketTemplate {
                 Arguments.of(List.of("-Djavax.net.debug=ssl:sslctx"),
                         List.of("trigger seeding of SecureRandom"),
                         List.of("Plaintext before ENCRYPTION",
-                                "length =")),
-                // ssltypo contains "ssl" but it's an invalid option
-                Arguments.of(List.of("-Djavax.net.debug=ssltypo"),
-                        null,
-                        List.of("Plaintext before ENCRYPTION",
-                                "adding as trusted certificates",
                                 "length =")),
                 // help message test. Should exit without running test
                 Arguments.of(List.of("-Djavax.net.debug=help"),

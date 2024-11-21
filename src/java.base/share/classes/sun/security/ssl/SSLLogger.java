@@ -62,7 +62,7 @@ public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
     public static final boolean isOn;
-    public static final boolean sslOn;
+    static EnumSet<ComponentToken> activeComponents = EnumSet.noneOf(ComponentToken.class);
 
     static {
         String p = GetPropertyAction.privilegedGetProperty("javax.net.debug");
@@ -72,27 +72,38 @@ public final class SSLLogger {
                 logger = System.getLogger("javax.net.ssl");
             } else {
                 property = p.toLowerCase(Locale.ENGLISH);
-                if (property.equals("help")) {
+                if (property.contains("help")) {
                     help();
                 }
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
+                String tmpProperty = property;
+                for (ComponentToken o : ComponentToken.values()) {
+                    if (tmpProperty.contains(o.component)) {
+                        activeComponents.add(o);
+                        // remove the pattern to avoid it being reused
+                        // e.g. "ssl,sslctx" parsing
+                        tmpProperty = tmpProperty.replaceFirst(o.component, "");
+                    }
+                }
+                // some rules to check
+                if ((activeComponents.contains(ComponentToken.PLAINTEXT)
+                        || activeComponents.contains(ComponentToken.PACKET))
+                        && !activeComponents.contains(ComponentToken.RECORD)) {
+                    activeComponents.remove(ComponentToken.PLAINTEXT);
+                    activeComponents.remove(ComponentToken.PACKET);
+                }
+
+                if (activeComponents.contains(ComponentToken.VERBOSE)
+                        && !activeComponents.contains(ComponentToken.HANDSHAKE)) {
+                    activeComponents.remove(ComponentToken.VERBOSE);
+                }
             }
-            isOn = true;
-            // log almost everything for the "ssl" value.
-            // anything else specified with "ssl" value implies
-            // a subset of ssl debugging statements. The separator value
-            // for subset values has never been specified.
-            // Allow the expand operator here also (e.g. ssl:expand)
-            sslOn = property.equals("ssl") ||
-                    (property.startsWith("ssl")
-                            && property.length() == 10
-                            && !Character.isLetterOrDigit(property.charAt(3))
-                            && property.endsWith("expand"));
+            isOn = (property.isEmpty() || property.equals("all"))
+                    || activeComponents.contains(ComponentToken.SSL);
         } else {
             property = null;
             logger = null;
             isOn = false;
-            sslOn = false;
         }
     }
 
@@ -135,18 +146,22 @@ public final class SSLLogger {
      * system property value syntax as per help menu.
      */
     public static boolean isOn(String checkPoints) {
-        if (property == null) {
-            // debugging is turned off
+
+        if (!isOn) {
             return false;
-        } else if (property.isEmpty() || property.equals("all")) {
+        }
+
+        if (property.isEmpty() || property.equals("all")) {
             // System.Logger in use or property = "all"
             return true;
-        } else if (checkPoints.equals("ssl") && !sslOn) {
-            // this helps prevent cases where property might have
-            // been specified as "ssltypo" -- shouldn't log.
-            return false;
-        } else if (sslOn && !containsWidenOption(checkPoints)) {
-            // fast path - in sslOn mode, we always log except for widen options
+        }
+
+        if (checkPoints.equals("ssl")) {
+            return !ComponentToken.isSslFilteringEnabled();
+        }
+
+        if (activeComponents.size() == 1 && !containsWidenOption(checkPoints)) {
+            // in ssl mode, we always log except for widen options
             return true;
         }
 
@@ -163,7 +178,8 @@ public final class SSLLogger {
     private static boolean containsWidenOption(String options) {
         return options.contains("verbose")
                 || options.contains("plaintext")
-                || options.contains("packet");
+                || options.contains("packet")
+                || options.contains("expand");
     }
 
     public static void severe(String msg, Object... params) {
@@ -220,6 +236,39 @@ public final class SSLLogger {
         }
         return false;
     }
+
+    enum ComponentToken {
+        DEFAULTCTX,
+        HANDSHAKE,
+        KEYMANAGER,
+        RECORD,
+        RESPMGR,
+        SESSION,
+        SSLCTX,
+        TRUSTMANAGER,
+        VERBOSE,
+        PLAINTEXT,
+        PACKET,
+        SSL; // define ssl last, helps with sslctx matching later.
+
+        final String component;
+
+        ComponentToken() {
+            this.component = this.toString().toLowerCase(Locale.ROOT);
+        }
+
+        static boolean isSslFilteringEnabled() {
+            return activeComponents.contains(DEFAULTCTX)
+                    || activeComponents.contains(HANDSHAKE)
+                    || activeComponents.contains(KEYMANAGER)
+                    || activeComponents.contains(RECORD)
+                    || activeComponents.contains(RESPMGR)
+                    || activeComponents.contains(SESSION)
+                    || activeComponents.contains(SSLCTX)
+                    || activeComponents.contains(TRUSTMANAGER);
+        }
+    }
+
 
     private static class SSLConsoleLogger implements Logger {
         private final String loggerName;
