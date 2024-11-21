@@ -34,7 +34,7 @@ public:
   /**
    * @param If enabled is false, all method calls are no-ops.
    */
-  InlinePrinter(bool enabled);
+  InlinePrinter(Arena* arena, bool enabled);
 
   /**
    * Saves the result of an inline attempt of `method` at `state`.
@@ -58,23 +58,26 @@ public:
   bool is_enabled() const { return _enabled; }
 
 private:
-  struct IPInlineAttempt : public CHeapObj<mtCompiler> {
+  struct IPInlineAttempt : public ArenaObj {
     IPInlineAttempt(InliningResult result);
     const InliningResult result;
     stringStream msg;
   };
 
-  class IPInlineSite : public CHeapObj<mtCompiler> {
+  class IPInlineSite : public ArenaObj {
   public:
     /**
      * @param The method being called. May be null iff this is the root of the tree.
      */
-    IPInlineSite(ciMethod* method) : _method(method) {}
+    IPInlineSite(ciMethod* method, Arena* arena) : _arena(arena), _method(method),
+                                                   _attempts(arena, 2, 0, nullptr),
+                                                   _children(arena, 2, 0, nullptr) {}
     /**
      * Finds the node for an inline attempt that occurred inside this inline.
      * @param If the method is allowed to create a missing inline site inside this inline, provide
      *        the method which is being inline. If no new inline site should be created, provide
      *        null.
+     * @param arena
      */
     IPInlineSite* at_bci(int bci, ciMethod* create_for);
     InlinePrinter::IPInlineAttempt* add(InliningResult result);
@@ -82,9 +85,10 @@ private:
     void dump(outputStream* tty, int level, int bci);
 
   private:
+    Arena* const _arena;
     ciMethod* const _method;
-    GrowableArrayCHeap<IPInlineAttempt*, mtCompiler> _attempts;
-    GrowableArrayCHeap<IPInlineSite*, mtCompiler> _children;
+    GrowableArray<IPInlineAttempt*> _attempts;
+    GrowableArray<IPInlineSite*> _children;
   };
 
   bool _enabled;

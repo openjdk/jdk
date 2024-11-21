@@ -27,7 +27,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 
-InlinePrinter::InlinePrinter(bool enabled) : _enabled(enabled), _root(new IPInlineSite(nullptr)) {
+InlinePrinter::InlinePrinter(Arena* arena, bool enabled) : _enabled(enabled), _root(new(arena) IPInlineSite(nullptr, arena)) {
 }
 
 InlinePrinter::IPInlineAttempt::IPInlineAttempt(InliningResult result) : result(result) {
@@ -62,20 +62,20 @@ InlinePrinter::IPInlineSite* InlinePrinter::locate_call(JVMState* state, ciMetho
 InlinePrinter::IPInlineSite* InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* create_for) {
   if (_children.length() <= bci) {
     assert(create_for != nullptr, "an inline call is missing in the chain up to the root");
-    auto child = new IPInlineSite(create_for);
+    auto child = new (_arena) IPInlineSite(create_for, _arena);
     _children.at_put_grow(bci, child, nullptr);
     return child;
   }
   if (auto child = _children.at(bci)) {
     return child;
   }
-  auto child = new IPInlineSite(create_for);
+  auto child = new (_arena) IPInlineSite(create_for, _arena);
   _children.at_put(bci, child);
   return child;
 }
 
 InlinePrinter::IPInlineAttempt* InlinePrinter::IPInlineSite::add(InliningResult result) {
-  auto attempt = new IPInlineAttempt(result);
+  auto attempt = new (_arena) IPInlineAttempt(result);
   _attempts.push(attempt);
   return attempt;
 }
