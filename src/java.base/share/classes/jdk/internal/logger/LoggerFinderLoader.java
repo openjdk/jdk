@@ -111,10 +111,8 @@ public final class LoggerFinderLoader {
     }
 
     private static Iterator<System.LoggerFinder> findLoggerFinderProviders() {
-        final Iterator<System.LoggerFinder> iterator =
-                ServiceLoader.load(System.LoggerFinder.class,
+        return ServiceLoader.load(System.LoggerFinder.class,
                         ClassLoader.getSystemClassLoader()).iterator();
-        return iterator;
     }
 
     public static final class TemporaryLoggerFinder extends LoggerFinder {
