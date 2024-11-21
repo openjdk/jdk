@@ -1,17 +1,20 @@
 package jdk.incubator.vector;
 
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.vector.VectorSupport;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.util.function.IntFunction;
 
 import static jdk.incubator.vector.VectorOperators.*;
 
 /*package-private*/ class VectorMathLibrary {
-    static final boolean DEBUG = Boolean.getBoolean("jdk.incubator.vector.VectorMathLibrary.DEBUG");
+    private static final boolean DEBUG = Boolean.getBoolean("jdk.incubator.vector.VectorMathLibrary.DEBUG");
 
-    static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
+    private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     // SVML method naming convention
     //   All the methods are named as __jsvml_<op><T><N>_ha_<VV>
@@ -27,7 +30,7 @@ import static jdk.incubator.vector.VectorOperators.*;
     //              z0 is AVX512, l9 is AVX2, e9 is AVX1 and ex is for SSE2
     //      e.g. __jsvml_expf16_ha_z0 is the method for computing 16 element vector float exp using AVX 512 insns
     //           __jsvml_exp8_ha_z0 is the method for computing 8 element vector double exp using AVX 512 insns
-    static class SVML {
+    private static class SVML {
         static {
             loadNativeLibrary();
         }
@@ -64,7 +67,7 @@ import static jdk.incubator.vector.VectorOperators.*;
         // }
     }
 
-    static class SLEEF {
+    private static class SLEEF {
         static {
             loadNativeLibrary();
         }
@@ -107,27 +110,88 @@ import static jdk.incubator.vector.VectorOperators.*;
         }
     }
 
-    static final int SIZE = VectorSupport.VECTOR_OP_MATHLIB_LAST - VectorSupport.VECTOR_OP_MATHLIB_FIRST + 1;
+    private static final int SIZE = VectorSupport.VECTOR_OP_MATHLIB_LAST - VectorSupport.VECTOR_OP_MATHLIB_FIRST + 1;
 
-    record Entry (String name, MemorySegment entry) {}
+    private record Entry<T> (String name, MemorySegment entry, T impl) {}
 
-    static final @Stable Entry[][][] LIBRARY = new Entry[SIZE][LaneType.SK_LIMIT][VectorShape.SK_LIMIT]; // OP x SHAPE x TYPE
+    private static final @Stable Entry<?>[][][] LIBRARY = new Entry<?>[SIZE][LaneType.SK_LIMIT][VectorShape.SK_LIMIT]; // OP x SHAPE x TYPE
 
-    static Entry lookup(Operator op, int opc, VectorSpecies<?> vspecies) {
+    @ForceInline
+    private static <T> Entry<T> lookup(Operator op, int opc, VectorSpecies<?> vspecies, IntFunction<T> implSupplier) {
         int idx = opc - VectorSupport.VECTOR_OP_MATHLIB_FIRST;
         int elem_idx = ((AbstractSpecies<?>)vspecies).laneType.switchKey;
         int shape_idx = vspecies.vectorShape().switchKey;
-        Entry entry = LIBRARY[idx][elem_idx][shape_idx];
+        @SuppressWarnings({"unchecked"})
+        Entry<T> entry = (Entry<T>)LIBRARY[idx][elem_idx][shape_idx];
         if (entry == null) {
-            String symbol = SLEEF.symbolName(op, vspecies); // FIXME
-            MemorySegment addr = LOOKUP.find(symbol).orElse(MemorySegment.NULL); // FIXME
-            if (DEBUG) {
-                System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
-            }
-            entry = new Entry(symbol, addr);
-            LIBRARY[idx][elem_idx][shape_idx] = entry;
+            entry = constructEntry(op, opc, vspecies, implSupplier);
+            LIBRARY[idx][elem_idx][shape_idx] = entry; // FIXME: CAS
         }
         return entry;
     }
 
+    @DontInline
+    private static
+    <E, V extends Vector<E>, T>
+    @SuppressWarnings({"unchecked"})
+    Entry<T> constructEntry(Operator op, int opc, VectorSpecies<E> vspecies, IntFunction<T> implSupplier) {
+        String symbol = SLEEF.symbolName(op, vspecies); // FIXME
+        MemorySegment addr = LOOKUP.find(symbol).orElse(MemorySegment.NULL); // FIXME
+        if (DEBUG) {
+            System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
+        }
+        T impl;
+        if (addr != MemorySegment.NULL) {
+            @SuppressWarnings({"unchecked"})
+            Class<V> vt = (Class<V>)vspecies.vectorType();
+            if (op instanceof Unary) {
+                var defaultImpl = (VectorSupport.UnaryOperation<V, ?>) implSupplier.apply(opc);
+
+                impl = (T)(VectorSupport.UnaryOperation<V,?>) (v0, m) -> {
+                    assert m == null;
+                    return VectorSupport.libraryUnaryOp(
+                            addr.address(), vt, vspecies.elementType(), vspecies.length(),
+                            v0,
+                            defaultImpl, // FIXME: should call the same native function
+                            symbol);
+                };
+            } else if (op instanceof Binary) {
+                var defaultImpl = (VectorSupport.BinaryOperation<V, ?>) implSupplier.apply(opc);
+
+                impl = (T)(VectorSupport.BinaryOperation<V,?> ) (v0, v1, m) -> {
+                    assert m == null;
+                    return VectorSupport.libraryBinaryOp(
+                            addr.address(), vt, vspecies.elementType(), vspecies.length(),
+                            v0, v1,
+                            defaultImpl, // FIXME: should call the same native function
+                            symbol);
+                };
+            } else {
+                throw new InternalError("operation not supported: " + op);
+            }
+        } else {
+            impl = implSupplier.apply(opc); // use default implementation
+        }
+        return new Entry<>(symbol, addr, impl);
+    }
+
+    @ForceInline
+    /*package-private*/ static
+    <E, V extends Vector<E>>
+    V unaryMathOp(VectorOperators.Unary op, int opc, VectorSpecies<E> vspecies,
+                  IntFunction<VectorSupport.UnaryOperation<V,?>> implSupplier,
+                  V v1) {
+        var impl = lookup(op, opc, vspecies, implSupplier).impl;
+        return impl.apply(v1, null);
+    }
+
+    @ForceInline
+    /*package-private*/ static
+    <E, V extends Vector<E>>
+    V binaryMathOp(VectorOperators.Binary op, int opc, VectorSpecies<E> vspecies,
+                   IntFunction<VectorSupport.BinaryOperation<V,?>> implSupplier,
+                   V v1, V v2) {
+        var impl = lookup(op, opc, vspecies, implSupplier).impl;
+        return impl.apply(v1, v2, null);
+    }
 }

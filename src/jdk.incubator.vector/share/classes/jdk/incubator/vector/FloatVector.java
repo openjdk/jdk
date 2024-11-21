@@ -719,14 +719,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final
     FloatVector unaryMathOp(VectorOperators.Unary op) {
-        int opc = opCode(op);
-        VectorMathLibrary.Entry entry = VectorMathLibrary.lookup(op, opc, species());
-
-        return VectorSupport.libraryUnaryOp(
-                entry.entry().address(), getClass(), float.class, length(), // constants
-                this,
-                UN_IMPL.find(op, opc, FloatVector::unaryOperations),
-                entry.name());
+        return VectorMathLibrary.unaryMathOp(op, opCode(op), species(), FloatVector::unaryOperations, this);
     }
 
     private static final
@@ -851,14 +844,8 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     FloatVector binaryMathOp(VectorOperators.Binary op,
                              FloatVector that) {
-        int opc = opCode(op);
-        VectorMathLibrary.Entry entry = VectorMathLibrary.lookup(op, opc, species());
-
-        return VectorSupport.libraryBinaryOp(
-                entry.entry().address(), getClass(), float.class, length(),
-                this, that,
-                BIN_IMPL.find(op, opc, FloatVector::binaryOperations),
-                entry.name());
+        return VectorMathLibrary.binaryMathOp(op, opCode(op), species(), FloatVector::binaryOperations,
+                                              this, that);
     }
 
     private static final
