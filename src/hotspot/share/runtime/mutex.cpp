@@ -590,7 +590,6 @@ void Mutex::print_lock_ranks(outputStream* st) {
 #endif // ASSERT
 }
 
-
 RecursiveMutex::RecursiveMutex() : _sem(1), _owner(nullptr), _recursions(0) {}
 
 void RecursiveMutex::lock(Thread* current) {
