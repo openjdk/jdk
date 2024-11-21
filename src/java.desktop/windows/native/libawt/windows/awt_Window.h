@@ -251,8 +251,6 @@ public:
             jobject peer);
     virtual void DestroyHWnd();
 
-    static void FocusedWindowChanged(HWND from, HWND to);
-
     inline HWND GetOverriddenHWnd() { return m_overriddenHwnd; }
     inline void OverrideHWnd(HWND hwnd) { m_overriddenHwnd = hwnd; }
 

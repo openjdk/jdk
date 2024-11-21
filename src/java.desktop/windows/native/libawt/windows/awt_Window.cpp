@@ -447,10 +447,6 @@ MsgRouting AwtWindow::WmTimer(UINT_PTR timerID)
     return mrPassAlong;
 }
 
-void AwtWindow::FocusedWindowChanged(HWND from, HWND to)
-{
-}
-
 void AwtWindow::InitType(JNIEnv *env, jobject peer)
 {
     jobject type = env->GetObjectField(peer, windowTypeID);
