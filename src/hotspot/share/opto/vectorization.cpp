@@ -504,6 +504,16 @@ bool XPointer::is_adjacent_to_and_before(const XPointer& other, const VLoop& vlo
 }
 
 bool XPointer::never_overlaps_with(const XPointer& other, const VLoop& vloop) const {
+  if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+    if (vloop.mptrace().is_trace_overlap()) {
+      tty->print_cr("Never Overlap: false, because of invalid XPointer.");
+    }
+#endif
+
+    return false;
+  }
+
   const MemPointerDecomposedForm& s1 = decomposed_form();
   const MemPointerDecomposedForm& s2 = other.decomposed_form();
   const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA vloop.mptrace() ));
