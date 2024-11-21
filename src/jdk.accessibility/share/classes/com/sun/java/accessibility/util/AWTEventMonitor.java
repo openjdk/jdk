@@ -647,8 +647,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -693,8 +691,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 // [PK] CheckboxMenuItem isn't a component but it does
                 // implement Interface ItemSelectable!!
@@ -734,8 +730,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -755,8 +749,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -860,8 +852,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -900,8 +890,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 // [PK] CheckboxMenuItem isn't a component but it does
                 // implement Interface ItemSelectable!!
@@ -934,8 +922,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -952,8 +938,6 @@ public class AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
