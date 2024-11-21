@@ -440,8 +440,6 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
          "only drop references with alive referents");
 #endif
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
   // Unlink and return next in list
   oop next = reference_discovered<T>(reference);
   reference_set_discovered<T>(reference, nullptr);
@@ -449,9 +447,8 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   // the cycle, we need to dirty the card if the reference is old and the referent is young.  Note
   // that if the reference is not dropped, then its pointer to the referent will be nulled before
   // evacuation begins so card does not need to be dirtied.
-  if (heap->mode()->is_generational() && heap->is_in_old(reference) && heap->is_in_young(raw_referent)) {
-    // Note: would be sufficient to mark only the card that holds the start of this Reference object.
-    heap->old_generation()->card_scan()->mark_range_as_dirty(cast_from_oop<HeapWord*>(reference), reference->size());
+  if (ShenandoahCardBarrier) {
+    card_mark_barrier(cast_from_oop<HeapWord*>(reference), cast_to_oop(raw_referent));
   }
   return next;
 }
