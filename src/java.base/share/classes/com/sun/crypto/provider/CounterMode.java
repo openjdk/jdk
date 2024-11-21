@@ -185,7 +185,7 @@ class CounterMode extends FeedbackCipher {
         ArrayUtil.nullAndBoundsCheck(out, outOff, len);
 
         int processed = 0;
-        for (;  len > chunkSize; inOff += chunkSize, outOff += chunkSize, 
+        for (;  len > chunkSize; inOff += chunkSize, outOff += chunkSize,
             len -= chunkSize) {
             processed += implCrypt(in, inOff, chunkSize, out, outOff);
         }
