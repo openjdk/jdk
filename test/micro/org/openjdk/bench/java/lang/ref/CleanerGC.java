@@ -24,7 +24,7 @@ package org.openjdk.bench.java.lang.ref;
 
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
@@ -35,20 +35,21 @@ import org.openjdk.jmh.infra.Blackhole;
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 3, time = 1, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 5, jvmArgs = {"-Xmx512m", "-Xms512m", "-XX:+AlwaysPreTouch"})
+@Fork(value = 3, jvmArgs = {"-Xmx1g", "-Xms1g", "-XX:+AlwaysPreTouch"})
 public class CleanerGC {
 
     @Param({"16384", "65536", "262144", "1048576", "4194304"})
     int count;
 
-    // Deliberately a linked list to avoid exposing external parallelism to GC.
-    Target prev;
+    // Make sure all targets are reachable and available for GC in scalable manner.
+    // This exposes the potential GC problem in Cleaner lists.
+    ArrayList<Target> targets;
 
     @Setup
     public void setup() {
-        Target prev = null;
+        targets = new ArrayList<>();
         for (int c = 0; c < count; c++) {
-            prev = new Target(prev);
+            targets.add(new Target());
         }
     }
 
@@ -59,9 +60,7 @@ public class CleanerGC {
 
     static class Target {
         private static final Cleaner CLEANER = Cleaner.create();
-        private final Target prev;
-        public Target(Target prev) {
-            this.prev = prev;
+        public Target() {
             CLEANER.register(this, () -> {});
         }
     }
