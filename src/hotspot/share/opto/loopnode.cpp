@@ -1650,7 +1650,10 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   set_early_ctrl(new_cmp, ctrl);
 
   // back_control[0] -> iff[1] -> bool[1] -> cmp
-  back_control->in(0)->in(1)->replace_edge(cmp, new_cmp, &_igvn);
+  Node* bol = back_control->in(0)->in(1);
+
+  _igvn.rehash_node_delayed(bol);
+  bol->replace_edge(cmp, new_cmp, &_igvn);
 
   if (do_is_counted_loop(x, loop, iv_bt)) {
     // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check
@@ -1668,7 +1671,8 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   }
 
   // Revert back to the original cmp (and its associated incr and limit) node
-  back_control->in(0)->in(1)->replace_edge(new_cmp, cmp, &_igvn);
+  _igvn.rehash_node_delayed(bol);
+  bol->replace_edge(new_cmp, cmp, &_igvn);
 
   return false;
 }
