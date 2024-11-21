@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "printinlining.hpp"
 #include "opto/callnode.hpp"
 #include "memory/allocation.hpp"
