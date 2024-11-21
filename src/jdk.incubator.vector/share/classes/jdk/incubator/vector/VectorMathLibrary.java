@@ -35,7 +35,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 
                     default: return new Java();
                 }
-            } catch (ExceptionInInitializerError e) {
+            } catch (Throwable e) {
                 if (DEBUG) {
                     System.out.printf("DEBUG: VectorMathLibrary: Error during initialization of %s library: %s\n",
                                       libraryName, e);
@@ -62,7 +62,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 
     static {
         if (DEBUG) {
-            System.out.printf("DEBUG: VectorMathLibrary: %s is used\n", LIBRARY.getClass().getSimpleName());
+            System.out.printf("DEBUG: VectorMathLibrary: %s library is used\n", LIBRARY.getClass().getSimpleName());
         }
     }
 
@@ -102,21 +102,26 @@ import static jdk.incubator.vector.VectorOperators.*;
             System.loadLibrary("jsvml");
         }
 
-        static int AVX = 0; // FIXME
-        private static String suffix(VectorShape vshape) {
-            String avx_sse_str = (AVX >= 2) ? "l9" : ((AVX == 1) ? "e9" : "ex");
-            return switch (vshape.vectorBitSize()) {
-                case 64  -> avx_sse_str; // ex
-                case 128 -> avx_sse_str; // l2 / e9 / ex
-                case 256 -> avx_sse_str; // l9 / e9
-                case 512 -> "z0";
-                default -> throw new InternalError("not supported: " + vshape);
-            };
+        private static String suffix(VectorSpecies<?> vspecies) {
+            assert vspecies.vectorBitSize() <= VectorShape.getMaxVectorBitSize(vspecies.elementType());
+
+            boolean hasAVX2 = VectorShape.getMaxVectorBitSize(byte.class)  >= 256;
+            boolean hasAVX1 = VectorShape.getMaxVectorBitSize(float.class) >= 256;
+
+            if (vspecies.vectorBitSize() == 512) {
+                return "z0";
+            } else if (hasAVX2) {
+                return "l9";
+            } else if (hasAVX1) {
+                return "e9";
+            } else {
+                return "ex";
+            }
         }
 
         @Override
         public String symbolName(Operator op, VectorSpecies<?> vspecies) {
-            String suffix = suffix(vspecies.vectorShape());
+            String suffix = suffix(vspecies);
             return String.format("__jsvml_%s%s%d_%s", op.operatorName(), vspecies.elementType(), vspecies.length(), suffix);
         }
 
@@ -225,18 +230,19 @@ import static jdk.incubator.vector.VectorOperators.*;
 
     @DontInline
     private static
-    <E, V extends Vector<E>, T>
+    <E,T>
     Entry<T> constructEntry(Operator op, int opc, VectorSpecies<E> vspecies, IntFunction<T> implSupplier) {
-        String symbol = LIBRARY.symbolName(op, vspecies);
-        MemorySegment addr = MemorySegment.NULL;
         if (LIBRARY.isSupported(op, vspecies)) {
-            addr = LOOKUP.find(symbol).orElseThrow(() -> new InternalError("not supported: " + op + " " + vspecies + " " + symbol));
+            String symbol = LIBRARY.symbolName(op, vspecies);
+            MemorySegment addr = LOOKUP.find(symbol).orElseThrow(() -> new InternalError("not supported: " + op + " " + vspecies + " " + symbol));
             if (DEBUG) {
                 System.out.printf("DEBUG: VectorMathLibrary: %s %s => 0x%016x\n", op, symbol, addr.address());
             }
+            T impl = implSupplier.apply(opc); // FIXME: should call the very same native impl
+            return new Entry<>(symbol, addr, impl);
+        } else {
+            return new Entry<>(null, MemorySegment.NULL, implSupplier.apply(opc));
         }
-        T impl = implSupplier.apply(opc); // FIXME: should call the very same native impl
-        return new Entry<>(symbol, addr, impl);
     }
 
     @ForceInline
