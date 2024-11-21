@@ -2849,6 +2849,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   bool is_base_native  = p.decomposed_form().base().is_native();
   Node* invar          = nullptr; // TODO
 
+  // TODO: maybe use NoOverflowInt here, and for solver?
+
 #ifdef ASSERT
   if (_trace._align_vector) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
