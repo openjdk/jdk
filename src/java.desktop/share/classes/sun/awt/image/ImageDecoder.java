@@ -159,18 +159,11 @@ public abstract class ImageDecoder {
     public abstract void produceImage() throws IOException,
                                                ImageFormatException;
 
-    @SuppressWarnings("removal")
     public void abort() {
         aborted = true;
         source.doneDecoding(this);
         close();
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
-            public Object run() {
-                feeder.interrupt();
-                return null;
-            }
-        });
+        feeder.interrupt();
     }
 
     public synchronized void close() {

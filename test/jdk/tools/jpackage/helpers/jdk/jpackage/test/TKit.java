@@ -61,10 +61,10 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.test.Functional.ExceptionBox;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ExceptionBox;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class TKit {
 
@@ -946,6 +946,16 @@ public final class TKit {
             return this;
         }
 
+        public TextStreamVerifier andThen(Consumer<? super Stream<String>> anotherVerifier) {
+            this.anotherVerifier = anotherVerifier;
+            return this;
+        }
+
+        public TextStreamVerifier andThen(TextStreamVerifier anotherVerifier) {
+            this.anotherVerifier = anotherVerifier::apply;
+            return this;
+        }
+
         public TextStreamVerifier orElseThrow(RuntimeException v) {
             return orElseThrow(() -> v);
         }
@@ -956,9 +966,22 @@ public final class TKit {
         }
 
         public void apply(Stream<String> lines) {
-            String matchedStr = lines.filter(line -> predicate.test(line, value)).findFirst().orElse(
-                    null);
-            String labelStr = Optional.ofNullable(label).orElse("output");
+            final String matchedStr;
+
+            lines = lines.dropWhile(line -> !predicate.test(line, value));
+            if (anotherVerifier == null) {
+                matchedStr = lines.findFirst().orElse(null);
+            } else {
+                var tail = lines.toList();
+                if (tail.isEmpty()) {
+                    matchedStr = null;
+                } else {
+                    matchedStr = tail.get(0);
+                }
+                lines = tail.stream().skip(1);
+            }
+
+            final String labelStr = Optional.ofNullable(label).orElse("output");
             if (negate) {
                 String msg = String.format(
                         "Check %s doesn't contain [%s] string", labelStr, value);
@@ -982,12 +1005,17 @@ public final class TKit {
                     }
                 }
             }
+
+            if (anotherVerifier != null) {
+                anotherVerifier.accept(lines);
+            }
         }
 
         private BiPredicate<String, String> predicate;
         private String label;
         private boolean negate;
         private Supplier<RuntimeException> createException;
+        private Consumer<? super Stream<String>> anotherVerifier;
         private final String value;
     }
 
