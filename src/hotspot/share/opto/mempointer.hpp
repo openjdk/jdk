@@ -531,11 +531,12 @@ public:
     Base() : Base(Unknown, nullptr) {}
     static Base make(Node* pointer, const GrowableArray<MemPointerSummand>& summands);
 
-    bool is_known()  const { return _kind != Unknown; }
-    bool is_object() const { return _kind == Object; }
-    bool is_native() const { return _kind == Native; }
-    Node* object()   const { assert(is_object(),""); return _base; }
-    Node* native()   const { assert(is_native(),""); return _base; }
+    bool is_known()          const { return _kind != Unknown; }
+    bool is_object()         const { return _kind == Object; }
+    bool is_native()         const { return _kind == Native; }
+    Node* object()           const { assert(is_object(), ""); return _base; }
+    Node* native()           const { assert(is_native(), ""); return _base; }
+    Node* object_or_native() const { assert(is_known(),  ""); return _base; }
     Node* object_or_native_or_null() const { return _base; }
 
 #ifndef PRODUCT

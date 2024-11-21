@@ -2711,15 +2711,10 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  // TODO start
-
   const XPointer& p = xpointer(align_to_ref);
   assert(p.is_valid(), "sanity");
-  p.print_on(tty);
 
-  const VPointer& align_to_ref_p = vpointer(align_to_ref);
-  assert(align_to_ref_p.valid(), "sanity");
-
+  // TODO rename stride -> iv_stride
   // For the main-loop, we want the address of align_to_ref to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
   // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
@@ -2819,7 +2814,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // We now generalize the equations (11*) by using:
   //
-  //   OP:   (stride            > 0) ? SUB   : ADD
+  //   OP:   (stride            > 0) ?  SUB  : ADD
   //   XBIC: (stride * iv_scale > 0) ? -BIC  : BIC
   //
   // which gives us the final pre-loop limit adjustment:
@@ -2847,12 +2842,12 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // constrained_limit = MAX(old_limit - adjust_pre_iter, orig_limit)
   //                   = MAX(new_limit,                   orig_limit)         (15a, stride < 0)
   //
-  // TODO rename scale -> iv_scale
-  const int stride   = iv_stride();
-  const int iv_scale = align_to_ref_p.scale_in_bytes();
-  const int con      = align_to_ref_p.offset_in_bytes();
-  Node* base         = align_to_ref_p.adr();
-  Node* invar        = align_to_ref_p.invar();
+  const int stride     = iv_stride();
+  const int iv_scale   = p.iv_scale();
+  const int con        = p.con();
+  Node* base           = p.decomposed_form().base().object_or_native();
+  bool is_base_native  = p.decomposed_form().base().is_native();
+  Node* invar          = nullptr; // TODO
 
 #ifdef ASSERT
   if (_trace._align_vector) {
@@ -2934,7 +2929,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
 
   // 1.3: base (unless base is guaranteed aw aligned)
-  if (aw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
+  if (aw > ObjectAlignmentInBytes || is_base_native) {
     // The base is only aligned with ObjectAlignmentInBytes with arrays.
     // When the base() is top, we have no alignment guarantee at all.
     // Hence, we must now take the base into account for the calculation.
