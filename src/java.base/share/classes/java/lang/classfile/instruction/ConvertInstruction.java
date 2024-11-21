@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.Util;
  * have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#CONVERT}.
  * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a primitive conversion instruction is a record:
+ * A primitive conversion instruction can be viewed a record:
  * {@snippet lang=text :
  * // @link substring="ConvertInstruction" target="#of(TypeKind, TypeKind)" :
  * ConvertInstruction(

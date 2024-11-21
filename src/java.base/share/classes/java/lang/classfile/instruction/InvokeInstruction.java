@@ -48,7 +48,7 @@ import jdk.internal.classfile.impl.Util;
  * Corresponding opcodes have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#INVOKE}.
  * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * Conceptually, a method invocation instruction is a record:
+ * A method invocation instruction can be viewed as a record:
  * {@snippet lang=text :
  * // @link substring="InvokeInstruction" target="#of(Opcode, MemberRefEntry)" :
  * InvokeInstruction(
