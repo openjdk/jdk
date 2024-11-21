@@ -32,20 +32,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 
 public class PathGroupTest {
@@ -79,8 +77,10 @@ public class PathGroupTest {
 
     @Test
     public void testDuplicatedRoots() {
-        final PathGroup pg = new PathGroup(Map.of("main", PATH_FOO, "another",
-                PATH_FOO, "root", PATH_EMPTY));
+        final PathGroup pg = new PathGroup(Map.of(
+                "main", PATH_FOO,
+                "another", PATH_FOO,
+                "root", PATH_EMPTY));
 
         List<Path> paths = pg.paths();
         paths = paths.stream().sorted().toList();
@@ -97,8 +97,10 @@ public class PathGroupTest {
 
     @Test
     public void testRoots() {
-        final PathGroup pg = new PathGroup(Map.of(1, Path.of("foo"), 2, Path.of(
-                "foo", "bar"), 3, Path.of("foo", "bar", "buz")));
+        final PathGroup pg = new PathGroup(Map.of(
+                1, Path.of("foo"),
+                2, Path.of("foo", "bar"),
+                3, Path.of("foo", "bar", "buz")));
 
         List<Path> paths = pg.paths();
         assertEquals(3, paths.size());
@@ -113,13 +115,15 @@ public class PathGroupTest {
 
     @Test
     public void testResolveAt() {
-        final PathGroup pg = new PathGroup(Map.of(0, PATH_FOO, 1, PATH_BAR, 2,
-                PATH_EMPTY));
+        final PathGroup pg = new PathGroup(Map.of(
+                0, PATH_FOO,
+                1, PATH_BAR,
+                2, PATH_EMPTY));
 
         final Path aPath = Path.of("a");
 
         final PathGroup pg2 = pg.resolveAt(aPath);
-        assertThat(pg, not(equalTo(pg2)));
+        assertNotEquals(pg, pg2);
 
         List<Path> paths = pg.paths();
         assertEquals(3, paths.size());
@@ -136,14 +140,31 @@ public class PathGroupTest {
         assertEquals(aPath, pg2.roots().get(0));
     }
 
-    enum TransformType { Copy, Move, Handler };
+    enum TransformType { COPY, MOVE, HANDLER };
+
+    private static Stream<Object[]> testTransform() {
+        return Stream.of(TransformType.values()).flatMap(transform -> {
+            return Stream.of(true, false).map(withExcludes -> {
+                return new Object[]{withExcludes,transform};
+            });
+        });
+    }
 
     @ParameterizedTest
-    public void testTransform(boolean withExcludes, TransformType transform,
-            @TempDir Path srcDir, @TempDir Path dstDir) throws IOException {
+    @MethodSource("testTransform")
+    public void testTransform(boolean withExcludes, TransformType transform, @TempDir Path tempDir) throws IOException {
 
-        final PathGroup pg = new PathGroup(Map.of(0, PATH_FOO, 1, PATH_BAR, 2,
-                PATH_EMPTY, 3, PATH_BAZ));
+        final Path srcDir = tempDir.resolve("src");
+        Files.createDirectories(srcDir);
+
+        final Path dstDir = tempDir.resolve("dst");
+        Files.createDirectories(dstDir);
+
+        final PathGroup pg = new PathGroup(Map.of(
+                0, PATH_FOO,
+                1, PATH_BAR,
+                2, PATH_EMPTY,
+                3, PATH_BAZ));
 
         Files.createDirectories(srcDir.resolve(PATH_FOO).resolve("a/b/c/d"));
         Files.createFile(srcDir.resolve(PATH_FOO).resolve("a/b/c/file1"));
@@ -163,7 +184,7 @@ public class PathGroupTest {
 
         var srcFilesBeforeTransform = walkFiles(srcDir);
 
-        if (transform == TransformType.Handler) {
+        if (transform == TransformType.HANDLER) {
             List<Map.Entry<Path, Path>> copyFile = new ArrayList<>();
             List<Path> createDirectory = new ArrayList<>();
             src.transform(dst, new PathGroup.TransformHandler() {
@@ -213,9 +234,9 @@ public class PathGroupTest {
             return;
         }
 
-        if (transform == TransformType.Copy) {
+        if (transform == TransformType.COPY) {
             src.copy(dst);
-        } else if (transform == TransformType.Move) {
+        } else if (transform == TransformType.MOVE) {
             src.move(dst);
         }
 
@@ -230,17 +251,16 @@ public class PathGroupTest {
         }
         UnaryOperator<Path[]> removeExcludes = paths -> {
             return Stream.of(paths)
-                    .filter(path -> !excludedPaths.stream().anyMatch(
-                            path::startsWith))
-                    .collect(Collectors.toList()).toArray(Path[]::new);
+                    .filter(path -> !excludedPaths.stream().anyMatch(path::startsWith))
+                    .toArray(Path[]::new);
         };
 
         var dstFiles = walkFiles(dstDir);
         assertArrayEquals(removeExcludes.apply(srcFilesBeforeTransform), dstFiles);
 
-        if (transform == TransformType.Copy) {
+        if (transform == TransformType.COPY) {
             assertArrayEquals(dstFiles, removeExcludes.apply(walkFiles(srcDir)));
-        } else if (transform == TransformType.Move) {
+        } else if (transform == TransformType.MOVE) {
             assertFalse(Files.exists(srcDir));
         }
     }

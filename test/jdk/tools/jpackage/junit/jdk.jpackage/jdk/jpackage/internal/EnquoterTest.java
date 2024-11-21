@@ -32,20 +32,20 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class EnquoterTest {
 
     @ParameterizedTest
-    @MethodSource("shellLiteralsData")
+    @MethodSource
     public void testForShellLiterals(String expected, String input) {
         var actual = Enquoter.forShellLiterals().applyTo(input);
         assertEquals(expected, actual);
     }
 
     @ParameterizedTest
-    @MethodSource("propertyValuesData")
+    @MethodSource
     public void testForPropertyValues(String expected, String input) {
         var actual = Enquoter.forPropertyValues().applyTo(input);
         assertEquals(expected, actual);
     }
 
-    private static Stream<org.junit.jupiter.params.provider.Arguments> shellLiteralsData() {
+    private static Stream<org.junit.jupiter.params.provider.Arguments> testForShellLiterals() {
         return Stream.of(
                 makeArguments("''", ""),
                 makeArguments("'foo'", "foo"),
@@ -55,7 +55,7 @@ public class EnquoterTest {
         );
     }
 
-    private static Stream<org.junit.jupiter.params.provider.Arguments> propertyValuesData() {
+    private static Stream<org.junit.jupiter.params.provider.Arguments> testForPropertyValues() {
         return Stream.of(
                 makeArguments("", ""),
                 makeArguments("foo", "foo"),

@@ -25,9 +25,7 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import jdk.internal.util.OperatingSystem;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.Test;
@@ -72,8 +70,8 @@ public class ToolValidatorTest {
 
     private static void assertValidationFailure(ConfigException v, boolean withCause) {
         assertNotNull(v);
-        assertThat("", is(not(v.getMessage().strip())));
-        assertThat("", is(not(v.advice.strip())));
+        assertNotEquals("", v.getMessage().strip());
+        assertNotEquals("", v.getAdvice().strip());
         if (withCause) {
             assertNotNull(v.getCause());
         } else {
