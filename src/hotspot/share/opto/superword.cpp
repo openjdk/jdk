@@ -2714,7 +2714,6 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const XPointer& p = xpointer(align_to_ref);
   assert(p.is_valid(), "sanity");
 
-  // TODO rename stride -> iv_stride
   // For the main-loop, we want the address of align_to_ref to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
   // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
@@ -2738,8 +2737,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // We want to find adjust_pre_iter, such that the address is aligned when entering
   // the main-loop:
   //
-  //   iv = new_limit = old_limit + adjust_pre_iter                           (3a, stride > 0)
-  //   iv = new_limit = old_limit - adjust_pre_iter                           (3b, stride < 0)
+  //   iv = new_limit = old_limit + adjust_pre_iter                           (3a, iv_stride > 0)
+  //   iv = new_limit = old_limit - adjust_pre_iter                           (3b, iv_stride < 0)
   //
   // We define bic as:
   //
@@ -2748,19 +2747,19 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // And now we can simplify the address using (1), (3), and (4):
   //
   //   adr = bic + iv_scale * new_limit
-  //   adr = bic + iv_scale * (old_limit + adjust_pre_iter)                   (5a, stride > 0)
-  //   adr = bic + iv_scale * (old_limit - adjust_pre_iter)                   (5b, stride < 0)
+  //   adr = bic + iv_scale * (old_limit + adjust_pre_iter)                   (5a, iv_stride > 0)
+  //   adr = bic + iv_scale * (old_limit - adjust_pre_iter)                   (5b, iv_stride < 0)
   //
   // And hence we can restate (2) with (5), and solve the equation for adjust_pre_iter:
   //
-  //   (bic + iv_scale * (old_limit + adjust_pre_iter) % aw = 0               (6a, stride > 0)
-  //   (bic + iv_scale * (old_limit - adjust_pre_iter) % aw = 0               (6b, stride < 0)
+  //   (bic + iv_scale * (old_limit + adjust_pre_iter) % aw = 0               (6a, iv_stride > 0)
+  //   (bic + iv_scale * (old_limit - adjust_pre_iter) % aw = 0               (6b, iv_stride < 0)
   //
   // In most cases, iv_scale is the element size, for example:
   //
   //   for (i = 0; i < a.length; i++) { a[i] = ...; }
   //
-  // It is thus reasonable to assume that both abs(iv_scale) and abs(stride) are
+  // It is thus reasonable to assume that both abs(iv_scale) and abs(iv_stride) are
   // strictly positive powers of 2. Further, they can be assumed to be non-zero,
   // otherwise the address does not depend on iv, and the alignment cannot be
   // affected by adjusting the pre-loop limit.
@@ -2783,8 +2782,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // and restate (6), using (7) and (8), i.e. we divide (6) by abs(iv_scale):
   //
-  //   (BIC + sign(iv_scale) * (old_limit + adjust_pre_iter) % AW = 0         (9a, stride > 0)
-  //   (BIC + sign(iv_scale) * (old_limit - adjust_pre_iter) % AW = 0         (9b, stride < 0)
+  //   (BIC + sign(iv_scale) * (old_limit + adjust_pre_iter) % AW = 0         (9a, iv_stride > 0)
+  //   (BIC + sign(iv_scale) * (old_limit - adjust_pre_iter) % AW = 0         (9b, iv_stride < 0)
   //
   //   where: sign(iv_scale) = iv_scale / abs(iv_scale) = (iv_scale > 0 ? 1 : -1)
   //
@@ -2796,26 +2795,26 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // We solve (9) for adjust_pre_iter, in the following 4 cases:
   //
-  // Case A: iv_scale > 0 && stride > 0 (i.e. sign(iv_scale) =  1)
+  // Case A: iv_scale > 0 && iv_stride > 0 (i.e. sign(iv_scale) =  1)
   //   (BIC + old_limit + adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (-BIC - old_limit) % AW                              (11a)
   //
-  // Case B: iv_scale < 0 && stride > 0 (i.e. sign(iv_scale) = -1)
+  // Case B: iv_scale < 0 && iv_stride > 0 (i.e. sign(iv_scale) = -1)
   //   (BIC - old_limit - adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (BIC - old_limit) % AW                               (11b)
   //
-  // Case C: iv_scale > 0 && stride < 0 (i.e. sign(iv_scale) =  1)
+  // Case C: iv_scale > 0 && iv_stride < 0 (i.e. sign(iv_scale) =  1)
   //   (BIC + old_limit - adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (BIC + old_limit) % AW                               (11c)
   //
-  // Case D: iv_scale < 0 && stride < 0 (i.e. sign(iv_scale) = -1)
+  // Case D: iv_scale < 0 && iv_stride < 0 (i.e. sign(iv_scale) = -1)
   //   (BIC - old_limit + adjust_pre_iter) % AW = 0
   //   adjust_pre_iter = (-BIC + old_limit) % AW                              (11d)
   //
   // We now generalize the equations (11*) by using:
   //
-  //   OP:   (stride            > 0) ?  SUB  : ADD
-  //   XBIC: (stride * iv_scale > 0) ? -BIC  : BIC
+  //   OP:   (iv_stride            > 0) ?  SUB  : ADD
+  //   XBIC: (iv_stride * iv_scale > 0) ? -BIC  : BIC
   //
   // which gives us the final pre-loop limit adjustment:
   //
@@ -2823,12 +2822,12 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // We can construct XBIC by additionally defining:
   //
-  //   xbic = (stride * iv_scale > 0) ? -bic                 : bic            (13)
+  //   xbic = (iv_stride * iv_scale > 0) ? -bic                 : bic         (13)
   //
   // which gives us:
   //
-  //   XBIC = (stride * iv_scale > 0) ? -BIC                 : BIC
-  //        = (stride * iv_scale > 0) ? -bic / abs(iv_scale) : bic / abs(iv_scale)
+  //   XBIC = (iv_stride * iv_scale > 0) ? -BIC                 : BIC
+  //        = (iv_stride * iv_scale > 0) ? -bic / abs(iv_scale) : bic / abs(iv_scale)
   //        = xbic / abs(iv_scale)                                            (14)
   //
   // When we have computed adjust_pre_iter, we update the pre-loop limit
@@ -2838,16 +2837,16 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // the loop. Hence, we must constrain the updated limit as follows:
   //
   // constrained_limit = MIN(old_limit + adjust_pre_iter, orig_limit)
-  //                   = MIN(new_limit,                   orig_limit)         (15a, stride > 0)
+  //                   = MIN(new_limit,                   orig_limit)         (15a, iv_stride > 0)
   // constrained_limit = MAX(old_limit - adjust_pre_iter, orig_limit)
-  //                   = MAX(new_limit,                   orig_limit)         (15a, stride < 0)
+  //                   = MAX(new_limit,                   orig_limit)         (15a, iv_stride < 0)
   //
-  const int stride     = iv_stride();
-  const int iv_scale   = p.iv_scale();
-  const int con        = p.con();
-  Node* base           = p.decomposed_form().base().object_or_native();
-  bool is_base_native  = p.decomposed_form().base().is_native();
-  Node* invar          = nullptr; // TODO
+  const int iv_stride = iv_stride();
+  const int iv_scale  = p.iv_scale();
+  const int con       = p.con();
+  Node* base          = p.decomposed_form().base().object_or_native();
+  bool is_base_native = p.decomposed_form().base().is_native();
+  Node* invar         = nullptr; // TODO
 
   // TODO: maybe use NoOverflowInt here, and for solver?
 
@@ -2858,10 +2857,10 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     align_to_ref->dump();
     tty->print("  ");
     p.print_on(tty);
-    tty->print_cr("  aw:       %d", aw);
-    tty->print_cr("  stride:   %d", stride);
-    tty->print_cr("  iv_scale: %d", iv_scale);
-    tty->print_cr("  con:      %d", con);
+    tty->print_cr("  aw:        %d", aw);
+    tty->print_cr("  iv_stride: %d", iv_stride);
+    tty->print_cr("  iv_scale:  %d", iv_scale);
+    tty->print_cr("  con:       %d", con);
     tty->print("  base:");
     base->dump();
     if (invar == nullptr) {
@@ -2877,21 +2876,21 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
 #endif
 
-  if (stride   == 0 || !is_power_of_2(abs(stride))   ||
-      iv_scale == 0 || !is_power_of_2(abs(iv_scale)) || // TODO abs ok?
+  if (iv_stride == 0 || !is_power_of_2(abs(iv_stride)) ||
+      iv_scale  == 0 || !is_power_of_2(abs(iv_scale))  || // TODO abs ok?
       abs(iv_scale) >= aw) {
 #ifdef ASSERT
     if (_trace._align_vector) {
       tty->print_cr(" Alignment cannot be affected by changing pre-loop limit because");
-      tty->print_cr(" stride or iv_scale are not power of 2, or abs(iv_scale) >= aw.");
+      tty->print_cr(" iv_stride or iv_scale are not power of 2, or abs(iv_scale) >= aw.");
     }
 #endif
     // Cannot affect alignment, abort.
     return;
   }
 
-  assert(stride   != 0 && is_power_of_2(abs(stride))   &&
-         iv_scale != 0 && is_power_of_2(abs(iv_scale)) &&
+  assert(iv_stride != 0 && is_power_of_2(abs(iv_stride)) &&
+         iv_scale  != 0 && is_power_of_2(abs(iv_scale))  &&
          abs(iv_scale) < aw, "otherwise we cannot affect alignment with pre-loop");
 
   const int AW = aw / abs(iv_scale);
@@ -2903,9 +2902,9 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #endif
 
   // 1: Compute (13a, b):
-  //    xbic = -bic = (-base - invar - con)         (stride * iv_scale > 0)
-  //    xbic = +bic = (+base + invar + con)         (stride * iv_scale < 0)
-  const bool is_sub = iv_scale * stride > 0;
+  //    xbic = -bic = (-base - invar - con)         (iv_stride * iv_scale > 0)
+  //    xbic = +bic = (+base + invar + con)         (iv_stride * iv_scale < 0)
+  const bool is_sub = iv_scale * iv_stride > 0;
 
   // 1.1: con
   Node* xbic = igvn().intcon(is_sub ? -con : con);
@@ -2966,7 +2965,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //
   // 3.1: XBIC_OP_old_limit = XBIC OP old_limit
   Node* XBIC_OP_old_limit = nullptr;
-  if (stride > 0) {
+  if (iv_stride > 0) {
     XBIC_OP_old_limit = new SubINode(XBIC, old_limit);
   } else {
     XBIC_OP_old_limit = new AddINode(XBIC, old_limit);
@@ -2994,8 +2993,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //    range, and adjusts the main-loop limit so that we exit the main-loop
   //    before we leave the "safe" range. After RCE, the range of the main-loop
   //    can only be safely narrowed, and should never be widened. Hence, the
-  //    pre-loop limit can only be increased (for stride > 0), but an add
-  //    overflow might decrease it, or decreased (for stride < 0), but a sub
+  //    pre-loop limit can only be increased (for iv_stride > 0), but an add
+  //    overflow might decrease it, or decreased (for iv_stride < 0), but a sub
   //    underflow might increase it. To prevent that, we perform the Sub / Add
   //    and Max / Min with long operations.
   old_limit       = new ConvI2LNode(old_limit);
@@ -3009,11 +3008,11 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
 
   // 5: Compute (3a, b):
-  //    new_limit = old_limit + adjust_pre_iter     (stride > 0)
-  //    new_limit = old_limit - adjust_pre_iter     (stride < 0)
+  //    new_limit = old_limit + adjust_pre_iter     (iv_stride > 0)
+  //    new_limit = old_limit - adjust_pre_iter     (iv_stride < 0)
   //
   Node* new_limit = nullptr;
-  if (stride < 0) {
+  if (iv_stride < 0) {
     new_limit = new SubLNode(old_limit, adjust_pre_iter);
   } else {
     new_limit = new AddLNode(old_limit, adjust_pre_iter);
@@ -3024,8 +3023,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // 6: Compute (15a, b):
   //    Prevent pre-loop from going past the original limit of the loop.
   Node* constrained_limit =
-    (stride > 0) ? (Node*) new MinLNode(phase()->C, new_limit, orig_limit)
-                 : (Node*) new MaxLNode(phase()->C, new_limit, orig_limit);
+    (iv_stride > 0) ? (Node*) new MinLNode(phase()->C, new_limit, orig_limit)
+                    : (Node*) new MaxLNode(phase()->C, new_limit, orig_limit);
   phase()->register_new_node(constrained_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(constrained_limit);
 
