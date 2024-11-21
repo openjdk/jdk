@@ -1616,6 +1616,64 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
 
 //------------------------------is_counted_loop--------------------------------
 bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
+  return do_is_counted_loop(x, loop, iv_bt) || is_counted_loop_with_speculative_long_limit(x, loop, iv_bt);
+}
+
+// When comparing an int incrementor with long limit, check if the limit is within int range. If so, treat it as an int
+// counted loop but deoptimize if the limit is out of int range.
+bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
+  Node* back_control = loop_exit_control(x, loop);
+  if (back_control == nullptr) {
+    return false;
+  }
+
+  BoolTest::mask bt = BoolTest::illegal;
+  float cl_prob = 0;
+  Node* incr = nullptr;
+  Node* limit = nullptr;
+  Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
+
+  if (iv_bt != T_INT || cmp == nullptr || cmp->Opcode() != Op_CmpL || incr == nullptr || incr->Opcode() == Op_ConvI2L) {
+    return false;
+  }
+
+  Node* ctrl = x->in(LoopNode::EntryControl);
+
+  Node* new_incr = incr->in(1);
+
+  Node* new_limit = _igvn.register_new_node_with_optimizer(new ConvL2INode(limit), limit);
+  set_early_ctrl(new_limit, ctrl);
+
+  Node* new_cmp = _igvn.register_new_node_with_optimizer(
+      cmp->in(0) == incr ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr),
+      cmp);
+  set_early_ctrl(new_cmp, ctrl);
+
+  // back_control[0] -> iff[1] -> bool[1] -> cmp
+  back_control->in(0)->in(1)->replace_edge(cmp, new_cmp, &_igvn);
+
+  if (do_is_counted_loop(x, loop, iv_bt)) {
+    // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check
+    // Check if the long limit is less or equal to jint_max
+    Node* cmp_limit_max = new CmpLNode(limit, _igvn.longcon(max_jint));
+    Node* bol_max = new BoolNode(cmp_limit_max, BoolTest::le);
+    insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_max, bol_max);
+
+    // Check if the long limit is greater or equal to jint_min
+    Node* cmp_limit_min = new CmpLNode(limit, _igvn.longcon(min_jint));
+    Node* bol_min = new BoolNode(cmp_limit_min, BoolTest::ge);
+    insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_min, bol_min);
+
+    return true;
+  }
+
+  // Revert back to the original cmp (and its associated incr and limit) node
+  back_control->in(0)->in(1)->replace_edge(new_cmp, cmp, &_igvn);
+
+  return false;
+}
+
+bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
   Node* back_control = loop_exit_control(x, loop);
@@ -1633,34 +1691,33 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     return false;
   }
 
-  // When comparing an int incrementor with long limit, check if the limit is within int range. If so, treat it as an int
-  // counted loop but deoptimize if the limit is out of int range.
-  if (iv_bt == T_INT && cmp->Opcode() == Op_CmpL && incr != nullptr && incr->Opcode() == Op_ConvI2L) {
-    Node* ctrl = x->in(LoopNode::EntryControl);
-
-    if (ctrl->is_IfTrue() && ctrl->in(0)->is_ParsePredicate()) {
-      // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check
-      // Check if the long limit is less or equal to jint_max
-      Node* cmp_limit_max = new CmpLNode(limit, _igvn.longcon(max_jint));
-      Node* bol_max = new BoolNode(cmp_limit_max, BoolTest::le);
-      insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_max, bol_max);
-
-      // Check if the long limit is greater or equal to jint_min
-      Node* cmp_limit_min = new CmpLNode(limit, _igvn.longcon(min_jint));
-      Node* bol_min = new BoolNode(cmp_limit_min, BoolTest::ge);
-      insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_min, bol_min);
-
-      incr = incr->in(1);
-
-      limit = _igvn.register_new_node_with_optimizer(new ConvL2INode(limit), limit);
-      set_early_ctrl(limit, ctrl);
-
-      cmp = _igvn.register_new_node_with_optimizer(new CmpINode(incr, limit), cmp);
-      set_early_ctrl(cmp, ctrl);
-
-      // TODO: do we need to remove these nodes if later found it's not a counted loop?
-    }
-  }
+//  /
+//  if (iv_bt == T_INT && cmp->Opcode() == Op_CmpL && incr != nullptr && incr->Opcode() == Op_ConvI2L) {
+//    Node* ctrl = x->in(LoopNode::EntryControl);
+//
+//    if (ctrl->is_IfTrue() && ctrl->in(0)->is_ParsePredicate()) {
+//      // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check
+//      // Check if the long limit is less or equal to jint_max
+//      Node* cmp_limit_max = new CmpLNode(limit, _igvn.longcon(max_jint));
+//      Node* bol_max = new BoolNode(cmp_limit_max, BoolTest::le);
+//      insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_max, bol_max);
+//
+//      // Check if the long limit is greater or equal to jint_min
+//      Node* cmp_limit_min = new CmpLNode(limit, _igvn.longcon(min_jint));
+//      Node* bol_min = new BoolNode(cmp_limit_min, BoolTest::ge);
+//      insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_min, bol_min);
+//
+//      incr = incr->in(1);
+//
+//      limit = _igvn.register_new_node_with_optimizer(new ConvL2INode(limit), limit);
+//      set_early_ctrl(limit, ctrl);
+//
+//      cmp = _igvn.register_new_node_with_optimizer(new CmpINode(incr, limit), cmp);
+//      set_early_ctrl(cmp, ctrl);
+//
+//      // TODO: do we need to remove these nodes if later found it's not a counted loop?
+//    }
+//  }
 
   if (cmp->Opcode() != Op_Cmp(iv_bt)) {
     return false; // Avoid pointer & float & 64-bit compares

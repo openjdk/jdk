@@ -1228,7 +1228,11 @@ public:
   Node* loop_iv_stride(Node* incr, IdealLoopTree* loop, Node*& xphi);
   PhiNode* loop_iv_phi(Node* xphi, Node* phi_incr, Node* x, IdealLoopTree* loop);
 
-  bool is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt);
+  bool is_counted_loop(Node* x, IdealLoopTree*& loop, BasicType iv_bt);
+  bool is_counted_loop_with_speculative_long_limit(Node* x, IdealLoopTree*& loop, BasicType iv_bt);
+ private:
+  bool do_is_counted_loop(Node* x, IdealLoopTree*& loop, BasicType iv_bt);
+ public:
 
   Node* loop_nest_replace_iv(Node* iv_to_replace, Node* inner_iv, Node* outer_phi, Node* inner_head, BasicType bt);
   bool create_loop_nest(IdealLoopTree* loop, Node_List &old_new);
