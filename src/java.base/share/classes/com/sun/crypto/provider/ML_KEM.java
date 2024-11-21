@@ -40,7 +40,7 @@ public final class ML_KEM {
 
     private static final int ML_KEM_Q = 3329;
     private static final int ML_KEM_N = 256;
-    
+
     private static final int XOF_BLOCK_LEN = 168; // the block length for SHAKE128
     private static final int XOF_PAD = 24;
     private static final int MONT_R_BITS = 20;
@@ -446,7 +446,8 @@ public final class ML_KEM {
             a = x + ((y & 0xF) << 8);
             b = (y >> 4) + (z << 4);
             if ((a >= ML_KEM_Q) || (b >= ML_KEM_Q)) {
-                throw new InvalidKeyException("Coefficients in public key not in specified range");
+                throw new InvalidKeyException(
+                    "Coefficients in public key not in specified range");
             }
         }
         return null;
@@ -489,14 +490,16 @@ public final class ML_KEM {
 
         //Generate K-PKE keys
         var kPkeKeyPair = generateK_PkeKeyPair(kem_d);
-        byte[] encapsKey = kPkeKeyPair.publicKey.keyBytes; //encaps key = kPke encryption key
+        //encaps key = kPke encryption key
+        byte[] encapsKey = kPkeKeyPair.publicKey.keyBytes;
 
         //Derive decapsulation key = kPkePrivatKey || encapsKey || H(encapsKey) || kem_Z
         byte[] kPkePrivateKey = kPkeKeyPair.privateKey.keyBytes;
         byte[] decapsKey = new byte[encapsKey.length + kPkePrivateKey.length + 64];
         System.arraycopy(kPkePrivateKey, 0, decapsKey, 0, kPkePrivateKey.length);
         Arrays.fill(kPkePrivateKey, (byte)0);
-        System.arraycopy(encapsKey, 0, decapsKey, kPkePrivateKey.length, encapsKey.length);
+        System.arraycopy(encapsKey, 0, decapsKey,
+            kPkePrivateKey.length, encapsKey.length);
 
         mlKemH.update(encapsKey);
         try {
@@ -505,7 +508,8 @@ public final class ML_KEM {
             // This should never happen.
             throw new RuntimeException(e);
         }
-        System.arraycopy(kem_z, 0, decapsKey, kPkePrivateKey.length + encapsKey.length + 32, 32);
+        System.arraycopy(kem_z, 0, decapsKey,
+            kPkePrivateKey.length + encapsKey.length + 32, 32);
 
         return new ML_KEM_KeyPair(
             new ML_KEM_EncapsulationKey(encapsKey),
@@ -539,8 +543,8 @@ public final class ML_KEM {
     }
 
     protected byte[] decapsulate(ML_KEM_DecapsulationKey decapsulationKey,
-                              K_PKE_CipherText cipherText)
-            throws DecapsulateException {
+                                 K_PKE_CipherText cipherText)
+        throws DecapsulateException {
 
         //Check ciphertext validity
         if (!isValidCipherText(cipherText)) {
@@ -559,7 +563,9 @@ public final class ML_KEM {
         }
 
         byte[] kPkePrivateKeyBytes = new byte[mlKem_k * encode12PolyLen];
-        System.arraycopy(decapsKeyBytes, 0, kPkePrivateKeyBytes, 0, kPkePrivateKeyBytes.length);
+        System.arraycopy(decapsKeyBytes, 0, kPkePrivateKeyBytes, 0,
+            kPkePrivateKeyBytes.length);
+
         byte[] encapsKeyBytes = new byte[mlKem_k * encode12PolyLen + 32];
         System.arraycopy(decapsKeyBytes, mlKem_k * encode12PolyLen,
                 encapsKeyBytes, 0, encapsKeyBytes.length);
@@ -1103,7 +1109,9 @@ public final class ML_KEM {
         implMlKemNttMultJava(result, ntta, nttb);
     }
 
-    private static void implMlKemNttMultJava(short[] result, short[] ntta, short[] nttb) {
+    private static void implMlKemNttMultJava(short[] result,
+                                             short[] ntta, short[] nttb) {
+
         for (int m = 0; m < ML_KEM_N / 2; m++) {
             int a0 = ntta[2 * m];
             int a1 = ntta[2 * m + 1];
@@ -1162,7 +1170,9 @@ public final class ML_KEM {
         implMlKemAddPolyJava(result, a, b, c);
     }
 
-    private static void implMlKemAddPolyJava(short[] result, short[] a, short[] b, short[] c) {
+    private static void implMlKemAddPolyJava(short[] result, short[] a,
+                                             short[] b, short[] c) {
+
         for (int m = 0; m < ML_KEM_N; m++) {
             int r = a[m] + b[m] + c[m] + 2 * ML_KEM_Q; // This makes r > - ML_KEM_Q
             result[m] = (short) r;
@@ -1298,11 +1308,15 @@ public final class ML_KEM {
         return result;
     }
 
-    private static void implMlKem12To16(byte[] condensed, int index, short[] parsed, int parsedLength) {
+    private static void implMlKem12To16(byte[] condensed, int index,
+                                        short[] parsed, int parsedLength) {
+
         implMlKem12To16Java(condensed, index, parsed, parsedLength);
     }
 
-    private static void implMlKem12To16Java(byte[] condensed, int index, short[] parsed, int parsedLength) {
+    private static void implMlKem12To16Java(byte[] condensed, int index,
+                                            short[] parsed, int parsedLength) {
+
         for (int i = 0; i < parsedLength * 3 / 2; i += 3) {
             parsed[(i / 3) * 2] = (short) ((condensed[i + index] & 0xff) +
                     256 * (condensed[i + index + 1] & 0xf));
@@ -1317,7 +1331,9 @@ public final class ML_KEM {
     // if (i - 1) * 128 < parsedLengths <= i * 128 then
     // parsed.size should be at least i * 128 and
     // condensed.size should be at least index + i * 192
-    private void twelve2Sixteen(byte[] condensed, int index, short[] parsed, int parsedLength) {
+    private void twelve2Sixteen(byte[] condensed, int index,
+                                short[] parsed, int parsedLength) {
+
         implMlKem12To16(condensed, index, parsed, parsedLength);
     }
 
@@ -1484,9 +1500,9 @@ public final class ML_KEM {
         implMlKemBarrettReduce(poly);
     }
 
-    // Precondition: -(2^MONT_R_BITS -1) * MONT_Q <= b * c < (2^MONT_R_BITS - 1) * MONT_Q .
-    // Computes b * c * 2^-MONT_R_BITS mod MONT_Q .
-    // The result is between  -MONT_Q and MONT_Q.
+    // Precondition: -(2^MONT_R_BITS -1) * MONT_Q <= b * c < (2^MONT_R_BITS - 1) * MONT_Q
+    // Computes b * c * 2^-MONT_R_BITS mod MONT_Q
+    // The result is between -MONT_Q and MONT_Q
     private static int montMul(int b, int c) {
         int a = b * c;
         int aHigh = a >> MONT_R_BITS;

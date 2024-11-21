@@ -50,7 +50,9 @@ public final class ML_KEM_Impls {
         }
     }
 
-    public sealed static class KPG extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
+    public sealed static class KPG
+        extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
+
         public KPG() {
             // ML-KEM-768 is the default
             super("ML-KEM", "ML-KEM-768", "ML-KEM-512", "ML-KEM-1024");
@@ -132,7 +134,9 @@ public final class ML_KEM_Impls {
         private static final int SEED_SIZE = 32;
 
         @Override
-        protected byte[][] implEncapsulate(String name, byte[] encapsulationKey, Object ek, SecureRandom secureRandom) {
+        protected byte[][] implEncapsulate(String name, byte[] encapsulationKey,
+                                           Object ek, SecureRandom secureRandom) {
+
             byte[] randomBytes = new byte[SEED_SIZE];
             var r = secureRandom != null ? secureRandom : JCAUtil.getDefSecureRandom();
             r.nextBytes(randomBytes);
@@ -141,7 +145,8 @@ public final class ML_KEM_Impls {
             ML_KEM.ML_KEM_EncapsulateResult mlKemEncapsulateResult = null;
             try {
                 mlKemEncapsulateResult = mlKem.encapsulate(
-                        new ML_KEM.ML_KEM_EncapsulationKey(encapsulationKey), randomBytes);
+                        new ML_KEM.ML_KEM_EncapsulationKey(
+                            encapsulationKey), randomBytes);
             } finally {
                 Arrays.fill(randomBytes, (byte) 0);
             }
@@ -153,15 +158,18 @@ public final class ML_KEM_Impls {
         }
 
         @Override
-        protected byte[] implDecapsulate(String name, byte[] decapsulationKey, Object dk, byte[] cipherText)
-                throws DecapsulateException {
+        protected byte[] implDecapsulate(String name, byte[] decapsulationKey,
+                                         Object dk, byte[] cipherText)
+            throws DecapsulateException {
+
             ML_KEM mlKem = new ML_KEM(name);
             var kpkeCipherText = new ML_KEM.K_PKE_CipherText(cipherText);
 
             byte[] decapsulateResult;
             try {
                 decapsulateResult = mlKem.decapsulate(
-                        new ML_KEM.ML_KEM_DecapsulationKey(decapsulationKey), kpkeCipherText);
+                        new ML_KEM.ML_KEM_DecapsulationKey(
+                            decapsulationKey), kpkeCipherText);
             } catch (DecapsulateException e) {
                 throw new DecapsulateException("Decapsulate error", e) ;
             }
@@ -181,13 +189,17 @@ public final class ML_KEM_Impls {
         }
 
         @Override
-        protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+        protected Object implCheckPublicKey(String name, byte[] pk)
+            throws InvalidKeyException {
+
             ML_KEM mlKem = new ML_KEM(name);
             return mlKem.checkPublicKey(pk);
         }
 
         @Override
-        protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+        protected Object implCheckPrivateKey(String name, byte[] sk)
+            throws InvalidKeyException {
+
             ML_KEM mlKem = new ML_KEM(name);
             return mlKem.checkPrivateKey(sk);
         }
