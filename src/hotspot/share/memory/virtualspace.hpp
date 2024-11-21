@@ -71,7 +71,7 @@ class ReservedSpace {
   ReservedSpace();
   // Initialize the reserved space with the given size. Depending on the size
   // a suitable page size and alignment will be used.
-  explicit ReservedSpace(size_t size, MemTag mem_tag);
+  ReservedSpace(size_t size, MemTag mem_tag);
   // Initialize the reserved space with the given size. The preferred_page_size
   // is used as the minimum page size/alignment. This may waste some space if
   // the given size is not aligned to that value, as the reservation will be
