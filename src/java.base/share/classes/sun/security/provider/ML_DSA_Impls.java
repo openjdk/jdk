@@ -56,8 +56,8 @@ public class ML_DSA_Impls {
         }
     }
 
-    public sealed static class KPG extends
-        NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
+    public sealed static class KPG
+        extends NamedKeyPairGenerator permits KPG2, KPG3, KPG5 {
 
         public KPG() {
             // ML-DSA-65 is default
@@ -186,7 +186,7 @@ public class ML_DSA_Impls {
         @Override
         protected Object implCheckPrivateKey(String name, byte[] sk)
             throws InvalidKeyException {
-            
+
             ML_DSA mlDsa = new ML_DSA(name2int(name));
             return mlDsa.checkPrivateKey(sk);
         }
