@@ -1261,7 +1261,6 @@ public class UIManager implements Serializable
         }
     }
 
-    @SuppressWarnings("removal")
     private static Properties loadSwingProperties()
     {
         /* Don't bother checking for Swing properties if untrusted, as

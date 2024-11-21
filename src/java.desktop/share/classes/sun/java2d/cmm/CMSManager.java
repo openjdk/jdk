@@ -27,9 +27,6 @@ package sun.java2d.cmm;
 
 import java.awt.color.CMMException;
 import java.awt.color.ICC_Profile;
-import java.security.AccessController;
-
-import sun.security.action.GetPropertyAction;
 
 public final class CMSManager {
 
@@ -45,9 +42,7 @@ public final class CMSManager {
             return cmmImpl;
         }
 
-        GetPropertyAction gpa = new GetPropertyAction("sun.java2d.cmm");
-        @SuppressWarnings("removal")
-        String cmmProviderClass = AccessController.doPrivileged(gpa);
+        String cmmProviderClass = System.getProperty("sun.java2d.cmm");
         CMMServiceProvider provider = null;
         if (cmmProviderClass != null) {
             try {
@@ -67,9 +62,7 @@ public final class CMSManager {
                                    "No CM module found");
         }
 
-        gpa = new GetPropertyAction("sun.java2d.cmm.trace");
-        @SuppressWarnings("removal")
-        String cmmTrace = AccessController.doPrivileged(gpa);
+        String cmmTrace = System.getProperty("sun.java2d.cmm.trace");
         if (cmmTrace != null) {
             cmmImpl = new CMMTracer(cmmImpl);
         }

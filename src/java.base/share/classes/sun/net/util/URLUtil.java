@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,12 @@ public class URLUtil {
     /**
      * Returns a string form of the url suitable for use as a key in HashMap/Sets.
      *
-     * The string form should be behave in the same manner as the URL when
+     * The string form should behave in the same manner as the URL when
      * compared for equality in a HashMap/Set, except that no nameservice
      * lookup is done on the hostname (only string comparison), and the fragment
      * is not considered.
      *
-     * @see java.net.URLStreamHandler.sameFile(java.net.URL)
+     * @see java.net.URL#sameFile(java.net.URL)
      */
     public static String urlNoFragString(URL url) {
         StringBuilder strForm = new StringBuilder();
