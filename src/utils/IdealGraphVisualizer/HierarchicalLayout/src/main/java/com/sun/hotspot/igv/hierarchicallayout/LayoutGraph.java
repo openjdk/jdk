@@ -470,8 +470,6 @@ public class LayoutGraph {
         if (toNode.getLayer() < fromNode.getLayer()) {
             // Reversed edge
             toNode = fromNode;
-            toNode.getReversedLinkEndPoints().remove(link);
-            fromNode.getReversedLinkStartPoints().remove(link);
         }
 
         // Remove preds-edges bottom up, starting at "to" node
@@ -522,6 +520,13 @@ public class LayoutGraph {
             }
             break;
         }
+
+        if (fromNode.getReversedLinkStartPoints().containsKey(link)) {
+            fromNode.computeReversedLinkPoints();
+        }
+        if (toNode.getReversedLinkStartPoints().containsKey(link)) {
+            toNode.computeReversedLinkPoints();
+        }
     }
 
     /**
@@ -535,19 +540,6 @@ public class LayoutGraph {
         for (Link inputLink : getAllLinks(movedNode.getVertex())) {
             removeLink(inputLink);
         }
-
-        // remove link connected to movedNode
-        for (Link link : getLinks()) {
-            if (link.getTo().getVertex() == movedNode.getVertex()) {
-                link.setControlPoints(new ArrayList<>());
-                movedNode.getReversedLinkStartPoints().remove(link);
-            } else if (link.getFrom().getVertex() == movedNode.getVertex()) {
-                link.setControlPoints(new ArrayList<>());
-                movedNode.getReversedLinkEndPoints().remove(link);
-            }
-        }
-
-        movedNode.initSize();
     }
 
     /**
@@ -568,6 +560,24 @@ public class LayoutGraph {
      */
     public LayoutLayer getLayer(int layerNr) {
         return layers.get(layerNr);
+    }
+
+    public int findLayer(int y) {
+        int optimalLayer = -1;
+        int minDistance = Integer.MAX_VALUE;
+        for (int l = 0; l < getLayerCount(); l++) {
+            // Check if y is within this layer's bounds
+            if (y >= getLayer(l).getTop() && y <= getLayer(l).getBottom()) {
+                return l;
+            }
+
+            int distance = Math.abs(getLayer(l).getCenter() - y);
+            if (distance < minDistance) {
+                minDistance = distance;
+                optimalLayer = l;
+            }
+        }
+        return optimalLayer;
     }
 
     /**

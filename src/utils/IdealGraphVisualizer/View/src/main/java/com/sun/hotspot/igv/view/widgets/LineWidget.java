@@ -32,10 +32,8 @@ import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
 import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -188,6 +186,14 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
     public Point getTo() {
         return to;
+    }
+
+    public LineWidget getPredecessor() {
+        return predecessor;
+    }
+
+    public List<LineWidget> getSuccessors() {
+        return Collections.unmodifiableList(successors);
     }
 
     private void addSuccessor(LineWidget widget) {

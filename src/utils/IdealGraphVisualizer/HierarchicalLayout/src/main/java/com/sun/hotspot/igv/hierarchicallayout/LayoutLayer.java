@@ -155,6 +155,10 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         return y;
     }
 
+    public int getCenter() {
+        return y + height / 2;
+    }
+
     /**
      * Gets the bottom Y-coordinate of this layer.
      *
