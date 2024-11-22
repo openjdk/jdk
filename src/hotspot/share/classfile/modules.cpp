@@ -572,37 +572,44 @@ void Modules::dump_main_module_name() {
   ArchivePtrMarker::mark_pointer(&_archived_main_module_name);
 }
 
+void Modules::check_archived_flag_consistency(char** archived_flag, const char* runtime_flag, const char* property) {
+  log_info(cds)("%s %s", property,
+    *archived_flag != nullptr ? *archived_flag : "(null)");
+  bool disable = false;
+  if (runtime_flag == nullptr) {
+    if (*archived_flag != nullptr) {
+      log_info(cds)("Module for %s: %s specified during dump time but not during runtime", property, *archived_flag);
+      disable = true;
+    }
+  } else {
+    if (*archived_flag == nullptr) {
+      log_info(cds)("Module for %s: %s specified during runtime but not during dump time", property, runtime_flag);
+      disable = true;
+    } else if (strcmp(runtime_flag, *archived_flag) != 0) {
+      log_info(cds)("Mismatched modules for %s: runtime %s dump time %s", property, runtime_flag, *archived_flag);
+      disable = true;
+    }
+  }
+
+  if (disable) {
+    log_info(cds)("Disabling optimized module handling");
+    CDSConfig::stop_using_optimized_module_handling();
+  }
+  log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+  log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+
+  // Don't hold onto the pointer, in case we might decide to unmap the archive.
+  *archived_flag = nullptr;
+}
+
 void Modules::serialize(SerializeClosure* soc) {
   soc->do_ptr(&_archived_main_module_name);
   if (soc->reading()) {
     const char* runtime_main_module = Arguments::get_property("jdk.module.main");
     log_info(cds)("_archived_main_module_name %s",
       _archived_main_module_name != nullptr ? _archived_main_module_name : "(null)");
-    bool disable = false;
-    if (runtime_main_module == nullptr) {
-      if (_archived_main_module_name != nullptr) {
-        log_info(cds)("Module %s specified during dump time but not during runtime", _archived_main_module_name);
-        disable = true;
-      }
-    } else {
-      if (_archived_main_module_name == nullptr) {
-        log_info(cds)("Module %s specified during runtime but not during dump time", runtime_main_module);
-        disable = true;
-      } else if (strcmp(runtime_main_module, _archived_main_module_name) != 0) {
-        log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_main_module, _archived_main_module_name);
-        disable = true;
-      }
-    }
 
-    if (disable) {
-      log_info(cds)("Disabling optimized module handling");
-      CDSConfig::stop_using_optimized_module_handling();
-    }
-    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
-
-    // Don't hold onto the pointer, in case we might decide to unmap the archive.
-    _archived_main_module_name = nullptr;
+    check_archived_flag_consistency(&_archived_main_module_name, runtime_main_module, "jdk.module.main");
   }
 }
 
@@ -622,36 +629,7 @@ const char* Modules::get_native_access_flags_as_sorted_string() {
 void Modules::serialize_native_access_flags(SerializeClosure* soc) {
   soc->do_ptr(&_archived_native_access_flags);
   if (soc->reading()) {
-    bool disable = false;
-    if (_archived_native_access_flags[0] != '\0') {
-      if (Arguments::enable_native_access_count() == 0) {
-        log_info(cds)("--enable-native-access module name(s) found in archive but not specified during runtime: %s",
-            _archived_native_access_flags);
-        disable = true;
-      } else {
-        const char* native_access_flags = get_native_access_flags_as_sorted_string();
-        if (strcmp((const char*)_archived_native_access_flags, native_access_flags) != 0) {
-          log_info(cds)("Mismatched --enable-native-access module name(s).");
-          log_info(cds)("  dump time: %s runtime: %s", _archived_native_access_flags, native_access_flags);
-          disable = true;
-        }
-      }
-    } else {
-      if (Arguments::enable_native_access_count() > 0) {
-        log_info(cds)("--enable-native-access module name(s) specified during runtime but not found in archive: %s",
-                      get_native_access_flags_as_sorted_string());
-        disable = true;
-      }
-    }
-    if (disable) {
-      log_info(cds)("Disabling optimized module handling");
-      CDSConfig::stop_using_optimized_module_handling();
-    }
-    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
-
-    // Don't hold onto the pointer, in case we might decide to unmap the archive.
-    _archived_native_access_flags = nullptr;
+    check_archived_flag_consistency(&_archived_native_access_flags, get_native_access_flags_as_sorted_string(), "jdk.module.enable.native.access");
   }
 }
 
@@ -671,36 +649,7 @@ const char* Modules::get_addmods_names_as_sorted_string() {
 void Modules::serialize_addmods_names(SerializeClosure* soc) {
   soc->do_ptr(&_archived_addmods_names);
   if (soc->reading()) {
-    bool disable = false;
-    if (_archived_addmods_names[0] != '\0') {
-      if (Arguments::addmods_count() == 0) {
-        log_info(cds)("--add-modules module name(s) found in archive but not specified during runtime: %s",
-            _archived_addmods_names);
-        disable = true;
-      } else {
-        const char* addmods_names = get_addmods_names_as_sorted_string();
-        if (strcmp((const char*)_archived_addmods_names, addmods_names) != 0) {
-          log_info(cds)("Mismatched --add-modules module name(s).");
-          log_info(cds)("  dump time: %s runtime: %s", _archived_addmods_names, addmods_names);
-          disable = true;
-        }
-      }
-    } else {
-      if (Arguments::addmods_count() > 0) {
-        log_info(cds)("--add-modules module name(s) specified during runtime but not found in archive: %s",
-                      get_addmods_names_as_sorted_string());
-        disable = true;
-      }
-    }
-    if (disable) {
-      log_info(cds)("Disabling optimized module handling");
-      CDSConfig::stop_using_optimized_module_handling();
-    }
-    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
-
-    // Don't hold onto the pointer, in case we might decide to unmap the archive.
-    _archived_addmods_names = nullptr;
+    check_archived_flag_consistency(&_archived_addmods_names, get_addmods_names_as_sorted_string(), "jdk.module.addmods");
   }
 }
 
@@ -753,7 +702,8 @@ const char* Modules::get_numbered_property_as_sorted_string(const char* property
     }
   }
 
-  return (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
+  const char* result = (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
+  return strcmp(result, "") != 0 ? result : nullptr;
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {

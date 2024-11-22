@@ -61,6 +61,7 @@ public:
   static void verify_archived_modules() NOT_CDS_JAVA_HEAP_RETURN;
   static void dump_main_module_name() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void check_archived_flag_consistency(char** archived_flag, const char* runtime_flag, const char* property) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void dump_native_access_flag() NOT_CDS_JAVA_HEAP_RETURN;
   static const char* get_native_access_flags_as_sorted_string() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
