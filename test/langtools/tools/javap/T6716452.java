@@ -70,7 +70,7 @@ public class T6716452 {
                 if (!c.isAssignableFrom(mm.attributes().get(index).getClass())) {
                     error(mm + ": unexpected attribute found,"
                             + " expected " + c.getName()
-                            + " found " + mm.attributes().get(index).attributeName());
+                            + " found " + mm.attributes().get(index).attributeName().stringValue());
                 }
             } else {
                 error(mm + ": expected attribute " + attr.name() + " not found");

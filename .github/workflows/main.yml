@@ -284,7 +284,7 @@ jobs:
     with:
       platform: macos-aarch64
       runs-on: 'macos-14'
-      xcode-toolset-version: '14.3.1'
+      xcode-toolset-version: '15.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.macos-aarch64 == 'true'
@@ -354,6 +354,7 @@ jobs:
       platform: macos-x64
       bootjdk-platform: macos-x64
       runs-on: macos-13
+      xcode-toolset-version: '14.3.1'
 
   test-macos-aarch64:
     name: macos-aarch64
@@ -364,6 +365,7 @@ jobs:
       platform: macos-aarch64
       bootjdk-platform: macos-aarch64
       runs-on: macos-14
+      xcode-toolset-version: '15.4'
 
   test-windows-x64:
     name: windows-x64

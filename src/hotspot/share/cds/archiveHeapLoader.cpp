@@ -449,10 +449,6 @@ class PatchNativePointers: public BitMapClosure {
   bool do_bit(size_t offset) {
     Metadata** p = _start + offset;
     *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
-    // Currently we have only Klass pointers in heap objects.
-    // This needs to be relaxed when we support other types of native
-    // pointers such as Method.
-    assert(((Klass*)(*p))->is_klass(), "must be");
     return true;
   }
 };

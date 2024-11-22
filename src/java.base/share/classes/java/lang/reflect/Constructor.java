@@ -169,21 +169,18 @@ public final class Constructor<T> extends Executable {
     /**
      * {@inheritDoc}
      *
-     * <p> A {@code SecurityException} is also thrown if this object is a
+     * <p> A {@code SecurityException} is thrown if this object is a
      * {@code Constructor} object for the class {@code Class} and {@code flag}
      * is true. </p>
      *
      * @param flag {@inheritDoc}
      *
      * @throws InaccessibleObjectException {@inheritDoc}
-     * @throws SecurityException if the request is denied by the security manager
-     *         or this is a constructor for {@code java.lang.Class}
-     *
+     * @throws SecurityException if this is a constructor for {@code java.lang.Class}
      */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
-        AccessibleObject.checkPermission();
         if (flag) {
             checkCanSetAccessible(Reflection.getCallerClass());
         }

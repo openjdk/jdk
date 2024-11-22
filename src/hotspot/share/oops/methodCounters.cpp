@@ -50,12 +50,12 @@ MethodCounters::MethodCounters(const methodHandle& mh) :
 
 MethodCounters* MethodCounters::allocate_no_exception(const methodHandle& mh) {
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  return new(loader_data, method_counters_size(), MetaspaceObj::MethodCountersType) MethodCounters(mh);
+  return new(loader_data, size(), MetaspaceObj::MethodCountersType) MethodCounters(mh);
 }
 
 MethodCounters* MethodCounters::allocate_with_exception(const methodHandle& mh, TRAPS) {
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
-  return new(loader_data, method_counters_size(), MetaspaceObj::MethodCountersType, THREAD) MethodCounters(mh);
+  return new(loader_data, size(), MetaspaceObj::MethodCountersType, THREAD) MethodCounters(mh);
 }
 
 void MethodCounters::clear_counters() {
@@ -70,7 +70,6 @@ void MethodCounters::clear_counters() {
 }
 
 void MethodCounters::print_value_on(outputStream* st) const {
-  assert(is_methodCounters(), "must be methodCounters");
   st->print("method counters");
   print_address_on(st);
 }
