@@ -754,6 +754,18 @@ public:
   bool is_adjacent_to_and_before(const XPointer& other, const VLoop& vloop) const;
   bool never_overlaps_with(const XPointer& other, const VLoop& vloop) const;
 
+  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes, const VLoop& vloop) const {
+    MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
+    for (int i = 0; i < nodes.length(); i++) {
+      MemNode* mem = nodes.at(i)->as_Mem();
+      XPointer mem_p(mem->as_Mem(), vloop, empty_callback);
+      if (!never_overlaps_with(mem_p, vloop)) {
+        return true; // possible overlap
+      }
+    }
+    return false;
+  }
+
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
@@ -930,20 +942,6 @@ class VPointer : public ArenaObj {
     } else {
       return NotComparable;
     }
-  }
-
-  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
-    for (int i = 0; i < nodes.length(); i++) {
-      MemNode* mem = nodes.at(i)->as_Mem();
-      VPointer p_mem(mem, _vloop);
-      // Only if we know that we have Less or Greater can we
-      // be sure that there can never be an overlap between
-      // the two memory regions.
-      if (!not_equal(p_mem)) {
-        return true;
-      }
-    }
-    return false;
   }
 
   bool not_equal(const VPointer& q)  const { return not_equal(cmp(q)); }
