@@ -65,7 +65,7 @@ public class EnableNativeAccessCDS {
             "--enable-native-access", module1,
             "-version");
         oa.shouldHaveExitValue(0)
-        .shouldContain("Mismatched modules for jdk.module.enable.native.access")
+        .shouldContain("Mismatched modules for jdk.module.enable.native.access: runtime jdk.httpserver dump time java.base")
         .shouldContain(disabledOptimizedModule);
 
         // no module specified during runtime
@@ -127,7 +127,7 @@ public class EnableNativeAccessCDS {
             "--enable-native-access", module0,
             "-version");
         oa.shouldHaveExitValue(0)
-            .shouldContain("Mismatched modules for jdk.module.enable.native.access")
+            .shouldContain("Mismatched modules for jdk.module.enable.native.access: runtime java.base dump time java.base,jdk.httpserver")
             .shouldContain(disabledOptimizedModule);
     }
 }
