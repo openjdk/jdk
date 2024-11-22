@@ -889,7 +889,7 @@ public class Deflater implements AutoCloseable {
      * Closes and releases the resources held by this {@code Deflater}
      * and discards any unprocessed input.
      * <p>
-     * If this method is invoked multiple times, the subsequent calls are treated as a no-op.
+     * If this method is invoked multiple times, the second and subsequent calls do nothing.
      * Several other methods defined by this class will throw an {@link IllegalStateException}
      * if invoked on a closed {@code Deflater}.
      *
