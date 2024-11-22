@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,44 +22,16 @@
  */
 package jdk.jpackage.test;
 
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
+import java.nio.file.Path;
 
+public final class PackageFile {
 
-public class Functional {
-
-    public static <T> Supplier<T> identity(Supplier<T> v) {
-        return v;
+    public static Path getPathInAppImage(Path appImageDir) {
+        return ApplicationLayout.platformAppImage()
+                .resolveAt(appImageDir)
+                .appDirectory()
+                .resolve(FILENAME);
     }
 
-    public static <T> Consumer<T> identity(Consumer<T> v) {
-        return v;
-    }
-
-    public static <T, U> BiConsumer<T, U> identity(BiConsumer<T, U> v) {
-        return v;
-    }
-
-    public static Runnable identity(Runnable v) {
-        return v;
-    }
-
-    public static <T, R> Function<T, R> identity(Function<T, R> v) {
-        return v;
-    }
-
-    public static <T, R> Function<T, R> identityFunction(Function<T, R> v) {
-        return v;
-    }
-
-    public static <T> Predicate<T> identity(Predicate<T> v) {
-        return v;
-    }
-
-    public static <T> Predicate<T> identityPredicate(Predicate<T> v) {
-        return v;
-    }
+    private static final String FILENAME = ".package";
 }
