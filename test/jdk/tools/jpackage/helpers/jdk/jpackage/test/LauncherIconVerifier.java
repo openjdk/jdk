@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import javax.imageio.ImageIO;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 
 public final class LauncherIconVerifier {
     public LauncherIconVerifier() {
@@ -176,7 +177,7 @@ public final class LauncherIconVerifier {
                 iconSwapWrapper.setAccessible(true);
             } catch (ClassNotFoundException | NoSuchMethodException
                     | SecurityException ex) {
-                throw Functional.rethrowUnchecked(ex);
+                throw rethrowUnchecked(ex);
             }
         }
 
@@ -254,14 +255,14 @@ public final class LauncherIconVerifier {
                         }
                     }
                 } catch (IllegalAccessException | InvocationTargetException ex) {
-                    throw Functional.rethrowUnchecked(ex);
+                    throw rethrowUnchecked(ex);
                 }
             } finally {
                 launcherPath.toFile().setWritable(false, true);
             }
         }
 
-        final static WinIconVerifier instance = new WinIconVerifier();
+        static final WinIconVerifier instance = new WinIconVerifier();
 
         private final Class executableRebranderClass;
         private final Method lockResource;

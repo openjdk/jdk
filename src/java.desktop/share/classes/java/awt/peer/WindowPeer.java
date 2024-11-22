@@ -115,11 +115,6 @@ public interface WindowPeer extends ContainerPeer {
     void updateWindow();
 
     /**
-     * Instructs the peer to update the position of the security warning.
-     */
-    void repositionSecurityWarning();
-
-    /**
      * Requests a GC that best suits this Window. The returned GC may differ
      * from the requested GC passed as the argument to this method. This method
      * must return a non-null value (given the argument is non-null as well).

@@ -193,6 +193,7 @@ class VectorUnboxNode;
 class VectorSet;
 class VectorReinterpretNode;
 class ShiftVNode;
+class MulVLNode;
 class ExpandVNode;
 class CompressVNode;
 class CompressMNode;
@@ -743,6 +744,7 @@ public:
         DEFINE_CLASS_ID(Reduction, Vector, 7)
         DEFINE_CLASS_ID(NegV, Vector, 8)
         DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
+        DEFINE_CLASS_ID(MulVL, Vector, 10)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 9)
@@ -970,6 +972,7 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(MulVL)
   DEFINE_CLASS_QUERY(Neg)
   DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
