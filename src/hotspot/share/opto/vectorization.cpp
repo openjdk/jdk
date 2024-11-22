@@ -558,8 +558,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   const int C_const =      _vpointer.con() + C_const_init * iv_scale();
 
   // Set C_invar depending on if invar is present
-  const jint invar_factor = _vpointer.compute_invar_factor();
-  const int C_invar = (_invar == nullptr) ? 0 : invar_factor;
+  const int C_invar = _vpointer.compute_invar_factor();
 
   const int C_init = _init_node->is_ConI() ? 0 : iv_scale();
   const int C_pre =  iv_scale() * _pre_stride;
@@ -908,7 +907,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
 
-  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, iv_scale());
+  return new ConstrainedAlignmentSolution(_mem_ref, q, r, nullptr /*TODO*/, iv_scale());
 
   // APPENDIX:
   // We can now verify the success of the solution given by (12):
@@ -1031,7 +1030,7 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
       tty->print_cr("    C_const_init = %d", C_const_init);
       tty->print_cr("    C_init = abs(iv_scale)= %d", C_init);
     }
-    if (_invar != nullptr) {
+    if (C_invar != 0) {
       tty->print_cr("  invariant present:");
       tty->print_cr("    C_invar = invar_factor = %d", C_invar);
     } else {
@@ -1116,7 +1115,7 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
                   C_const, iv_scale(), _pre_stride, q, r);
 
     tty->print_cr("  EQ(14):  pre_iter = m * q(%3d) - r(%d)", q, r);
-    if (_invar != nullptr) {
+    if (C_invar != 0) {
       tty->print_cr("                                 - invar / (iv_scale(%d) * pre_stride(%d))",
                     iv_scale(), _pre_stride);
     }

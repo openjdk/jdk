@@ -752,15 +752,18 @@ public:
 
   // Greatest common factor among the scales of the invar_summands.
   // Out of simplicity, we only factor out positive powers-of-2,
-  // between 1 and ObjectAlignmentInBytes.
+  // between 1 and ObjectAlignmentInBytes. If the invar is empty,
+  // i.e. there is no summand in invar_summands, we return 0.
   jint compute_invar_factor() const {
     jint factor = ObjectAlignmentInBytes;
+    int invar_count = 0;
     for_each_invar_summand([&] (const MemPointerSummand& s) {
+      invar_count++;
       while (!s.scale().is_multiple_of(NoOverflowInt(factor))) {
         factor = factor / 2;
       }
     });
-    return factor;
+    return invar_count > 0 ? factor : 0;
   }
 
   // Aliasing
@@ -1175,7 +1178,6 @@ private:
   // pre_iter:    number of pre-loop iterations (adjustable via pre-loop limit)
   // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
-  const Node*    _invar;
   const Node*    _init_node;      // value of iv before pre-loop
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
@@ -1200,7 +1202,6 @@ public:
       _mem_ref(           mem_ref_not_null(mem_ref)),
       _vector_width(      vector_length * vpointer.size()),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
-      _invar(             nullptr), // TODO
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
