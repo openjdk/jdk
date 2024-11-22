@@ -743,7 +743,15 @@ public:
   jint size()                                       const { assert(_is_valid, ""); return _size; }
   jint iv_scale()                                   const { assert(_is_valid, ""); return _iv_scale; }
   jint con()                                        const { return decomposed_form().con().value(); }
-  // TODO for each in invar_summands - maybe make it static so we can use it during init?
+
+  template<typename Callback>
+  void for_each_invar_summand(Callback callback, const VLoop& vloop) const {
+    decomposed_form().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
+      if (is_invariant(s.variable(), vloop)) {
+        callback(s);
+      }
+    });
+  }
 
   // Aliasing
   // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?

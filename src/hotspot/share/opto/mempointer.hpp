@@ -650,6 +650,16 @@ public:
     return 0;
   }
 
+  template<typename Callback>
+  void for_each_non_empty_summand(Callback callback) const {
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      const MemPointerSummand& s = summands_at(i);
+      if (s.variable() != nullptr) {
+        callback(s);
+      }
+    }
+  }
+
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {
     if (_con.is_NaN()) {

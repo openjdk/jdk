@@ -976,6 +976,11 @@ void AlignmentSolver::trace_start_solve() const {
       tty->print("  invar:");
       _invar->dump();
     }
+    tty->print_cr("invar_summands:");
+    // TODO and check about base / iv
+    // _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
+    //   s.print_on(tty);
+    // }, );
 
     tty->print_cr("  invar_factor = %d", _invar_factor);
 
