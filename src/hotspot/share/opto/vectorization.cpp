@@ -907,7 +907,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
 
-  return new ConstrainedAlignmentSolution(_mem_ref, q, r, nullptr /*TODO*/, iv_scale());
+  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _vpointer /* holds invar and iv_scale */);
 
   // APPENDIX:
   // We can now verify the success of the solution given by (12):

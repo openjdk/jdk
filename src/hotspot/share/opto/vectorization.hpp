@@ -997,19 +997,22 @@ private:
   const MemNode* _mem_ref;
   const int _q;
   const int _r;
+  // Use VPointer for invar and iv_scale
+  const VPointer& _vpointer;
+  // TODO use VPointer for invar and iv_scale
   const Node* _invar;
   const jint _iv_scale;
 public:
   ConstrainedAlignmentSolution(const MemNode* mem_ref,
                                const int q,
                                const int r,
-                               const Node* invar,
-                               const jint iv_scale) :
+                               const VPointer& vpointer) :
       _mem_ref(mem_ref),
       _q(q),
       _r(r),
-      _invar(invar),
-      _iv_scale(iv_scale) {
+      _vpointer(vpointer),
+      _invar(nullptr),
+      _iv_scale(vpointer.iv_scale()) {
     assert(q > 1 && is_power_of_2(q), "q must be power of 2");
     assert(0 <= r && r < q, "r must be in modulo space of q");
     assert(_mem_ref != nullptr, "must have mem_ref");
