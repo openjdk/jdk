@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.Permission;
+import java.security.Permissions;
 import java.security.PermissionCollection;
 import java.security.SecureClassLoader;
 import java.util.Enumeration;
@@ -566,6 +566,18 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                 return next();
             }
         };
+    }
+
+    /**
+     * {@return an {@linkplain PermissionCollection empty Permission collection}}
+     *
+     * @param codesource the CodeSource
+     * @throws NullPointerException if {@code codesource} is {@code null}.
+     */
+    @Override
+    protected PermissionCollection getPermissions(CodeSource codesource) {
+        Objects.requireNonNull(codesource);
+        return new Permissions();
     }
 
     /**
