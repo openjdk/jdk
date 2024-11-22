@@ -571,7 +571,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     /**
      * {@return an {@linkplain PermissionCollection empty Permission collection}}
      *
-     * @param codesource the CodeSource
+     * @param codesource the {@code CodeSource}
      * @throws NullPointerException if {@code codesource} is {@code null}.
      */
     @Override
