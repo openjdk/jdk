@@ -278,16 +278,14 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
 
-  if (c > 0 && c < max_jint) {
-    if (is_power_of_2(c - 1)) {
-      __ shift_left(left, exact_log2(c - 1), tmp);
-      __ add(tmp, left, result);
-      return true;
-    } else if (is_power_of_2(c + 1)) {
-      __ shift_left(left, exact_log2(c + 1), tmp);
-      __ sub(tmp, left, result);
-      return true;
-    }
+  if (is_power_of_2((juint)c - 1)) {
+    __ shift_left(left, exact_log2((juint)c - 1), tmp);
+    __ add(tmp, left, result);
+    return true;
+  } else if (is_power_of_2((juint)c + 1)) {
+    __ shift_left(left, exact_log2((juint)c + 1), tmp);
+    __ sub(tmp, left, result);
+    return true;
   } else if (c == -1) {
     __ negate(left, result);
     return true;
