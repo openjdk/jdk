@@ -177,11 +177,11 @@ class PartialArrayStateManager : public CHeapObj<mtGC> {
 
   // Integral type large enough to encode a pair of allocator counters as a
   // single unit for atomic manipulation.
-  using CounterState = uintptr_t;
+  using CounterState = uintx;
 
   // Encodes 2 values, in an atomic unit.
-  // - high half: allocators created
-  // - low half: active allocators (created - deleted)
+  // - low half: allocators constructed
+  // - high half: allocators destructed (debug only)
   volatile CounterState _counters;
 
   static const uint CounterStateBits = sizeof(CounterState) * BitsPerByte;
@@ -189,29 +189,26 @@ class PartialArrayStateManager : public CHeapObj<mtGC> {
   static const CounterState ZeroState = 0;
   static const CounterState OneState = 1;
 
-  // Counter fields are in the high/low half, excluding the high bit of that
-  // half, to allow space for over/underflow detection.  A counter must fit
-  // in a uint.
+  // Counter fields are in the high/low half.  A counter must fit in a uint.
   static_assert((CounterStateBits & 1) == 0, "must be even");
-  static const uint CounterBits = MIN2((uint)BitsPerInt, (CounterStateBits / 2)) - 1;
+  static const uint CounterBits = MIN2((uint)BitsPerInt, (CounterStateBits / 2));
   static const CounterState CounterMask = (OneState << CounterBits) - OneState;
 
-  static const uint UsedShift = CounterStateBits / 2;
-  static const uint ActiveShift = 0;
+  static uint counter(CounterState state, uint pos);
 
-  static CounterState counter(CounterState state, uint pos);
+  static const uint ConstructedShift = 0;
+  static const CounterState IncrementConstructed = OneState << ConstructedShift;
+  static uint constructed_count(CounterState state);
 
-  // When creating a new allocator, increment both active and used together.
-  static const CounterState Increment = (OneState << UsedShift) | (OneState << ActiveShift);
-  // When releasing an allocator, decrement only active, leaving used at high
-  // water value.
-  static const CounterState Decrement = (OneState << ActiveShift);
-
-  DEBUG_ONLY(static bool is_allocating_phase(CounterState state);)
+#ifdef ASSERT
+  static const uint DestructedShift = CounterStateBits / 2;
+  static const CounterState IncrementDestructed = OneState << DestructedShift;
+  static uint destructed_count(CounterState state);
+#endif // ASSERT
 
   // These are all for sole use of the befriended allocator class.
   Arena* register_allocator();
-  void release_allocator();
+  void release_allocator() NOT_DEBUG_RETURN;
 
 public:
   explicit PartialArrayStateManager(uint num_allocators);

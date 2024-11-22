@@ -116,40 +116,42 @@ PartialArrayStateManager::~PartialArrayStateManager() {
   FREE_C_HEAP_ARRAY(Arena, _arenas);
 }
 
-auto PartialArrayStateManager::counter(CounterState state, uint pos)
-  -> CounterState
-{
-  static_assert(CounterBits <= BitsPerInt, "must be");
-  return (state >> pos) & CounterMask;
+uint PartialArrayStateManager::counter(CounterState state, uint pos) {
+  static_assert(CounterMask <= UINT_MAX, "must be");
+  return static_cast<uint>((state >> pos) & CounterMask);
+}
+
+uint PartialArrayStateManager::constructed_count(CounterState state) {
+  return counter(state, ConstructedShift);
 }
 
 #ifdef ASSERT
-bool PartialArrayStateManager::is_allocating_phase(CounterState state) {
-  // Allocating if active == used.  Releasing if active < used.
-  return counter(state, UsedShift) == counter(state, ActiveShift);
+uint PartialArrayStateManager::destructed_count(CounterState state) {
+  return counter(state, DestructedShift);
 }
 #endif // ASSERT
 
 Arena* PartialArrayStateManager::register_allocator() {
-  CounterState state = Atomic::fetch_then_add(&_counters, Increment, memory_order_relaxed);
-  assert(is_allocating_phase(state), "not in allocating phase");
-  assert(counter(state, ActiveShift) <= _num_allocators,
+  CounterState state = Atomic::fetch_then_add(&_counters, IncrementConstructed, memory_order_relaxed);
+  assert(destructed_count(state) == 0, "not in allocating phase");
+  assert(constructed_count(state) < _num_allocators,
          "exceeded configured number of allocators");
-  CounterState id = counter(state, ActiveShift);
+  uint id = constructed_count(state);
   return ::new (&_arenas[id]) Arena(mtGC);
 }
 
+#ifdef ASSERT
 void PartialArrayStateManager::release_allocator() {
-  CounterState state = Atomic::sub(&_counters, Decrement, memory_order_relaxed);
-  // Don't have fetch_then_sub, so can't check for zero old value directly.
-  // counter value == CounterMask after sub => underflow.
-  assert(counter(state, ActiveShift) < CounterMask, "too many releases");
+  CounterState state = Atomic::fetch_then_add(&_counters, IncrementDestructed, memory_order_relaxed);
+  assert(destructed_count(state) < constructed_count(state), "too many releases");
 }
+#endif // ASSERT
 
 void PartialArrayStateManager::reset() {
   CounterState state = Atomic::load(&_counters);
-  assert(counter(state, ActiveShift) == 0, "some allocators still active");
-  uint count = checked_cast<uint>(counter(state, UsedShift));
+  assert(constructed_count(state) == destructed_count(state),
+         "some allocators still active");
+  uint count = constructed_count(state);
   for (uint i = 0; i < count; ++i) {
     _arenas[i].~Arena();
   }
