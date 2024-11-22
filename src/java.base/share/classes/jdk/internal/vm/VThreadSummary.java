@@ -64,10 +64,6 @@ public class VThreadSummary {
             sb.append(System.lineSeparator());
         }
 
-        // print thread groupings/containers
-        printThreadContainers(sb);
-        sb.append(System.lineSeparator());
-
         return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
