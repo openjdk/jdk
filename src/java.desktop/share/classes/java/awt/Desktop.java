@@ -42,8 +42,6 @@ import java.io.FilePermission;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Objects;
 
 import javax.swing.JMenuBar;
@@ -936,11 +934,7 @@ public class Desktop {
             sm.checkDelete(file.getPath());
         }
         checkActionSupport(Action.MOVE_TO_TRASH);
-        final File finalFile = file;
-        AccessController.doPrivileged((PrivilegedAction<?>) () -> {
-            checkFileValidation(finalFile);
-            return null;
-        });
+        checkFileValidation(file);
         return peer.moveToTrash(file);
     }
 }

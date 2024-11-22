@@ -24,7 +24,8 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.javac.PreviewFeature;
+import java.lang.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
  * Models a non-standard attribute of a classfile.  Clients should extend
@@ -33,9 +34,8 @@ import jdk.internal.javac.PreviewFeature;
  * format and the {@linkplain CustomAttribute} representation.
  * @param <T> the custom attribute type
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
         implements Attribute<T>, CodeElement, ClassElement, MethodElement, FieldElement {
 
@@ -55,8 +55,8 @@ public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
     }
 
     @Override
-    public final String attributeName() {
-        return mapper.name();
+    public Utf8Entry attributeName() {
+        return TemporaryConstantPool.INSTANCE.utf8Entry(mapper.name());
     }
 
     @Override
