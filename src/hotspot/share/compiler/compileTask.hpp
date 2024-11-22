@@ -240,6 +240,7 @@ public:
 
   static void print_inlining_header(outputStream* st, ciMethod* method, int inline_level, int bci);
   static void print_inlining_inner(outputStream* st, ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr);
+  static void print_inline_inner_method_info(outputStream* st, ciMethod* method);
   static void print_inlining_inner_message(outputStream* st, InliningResult result, const char* msg);
 
   static void print_inlining_tty(ciMethod* method, int inline_level, int bci, InliningResult result, const char* msg = nullptr) {

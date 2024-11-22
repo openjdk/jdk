@@ -28,8 +28,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 
-InlinePrinter::InlinePrinter(Arena* arena, bool enabled) : _enabled(enabled), _root(new(arena) IPInlineSite(nullptr, arena, 0)) {
-}
+InlinePrinter::InlinePrinter(Arena* arena, bool enabled) : _enabled(enabled), _root(new(arena) IPInlineSite(nullptr, arena, 0)) {}
 
 InlinePrinter::IPInlineAttempt::IPInlineAttempt(InliningResult result) : result(result) {}
 
@@ -68,7 +67,12 @@ InlinePrinter::IPInlineSite* InlinePrinter::IPInlineSite::at_bci(int bci, ciMeth
     _children.at_put_grow(index, child, nullptr);
     return child;
   }
-  if (auto child = _children.at(index)) {
+  if (IPInlineSite* child = _children.at(index)) {
+    if (callee != nullptr && callee != child->_method) {
+      IPInlineAttempt* attempt = child->add(InliningResult::SUCCESS);
+      attempt->msg.print("callee changed to ");
+      CompileTask::print_inline_inner_method_info(&attempt->msg, callee);
+    }
     return child;
   }
   auto child = new (_arena) IPInlineSite(callee, _arena, bci);

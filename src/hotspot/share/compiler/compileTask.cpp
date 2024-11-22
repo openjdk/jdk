@@ -431,6 +431,10 @@ void CompileTask::print_inlining_header(outputStream* st, ciMethod* method, int 
   }
 
   st->print("@ %d  ", bci); // print bci
+  print_inline_inner_method_info(st, method);
+}
+
+void CompileTask::print_inline_inner_method_info(outputStream* st, ciMethod* method) {
   method->print_short_name(st);
   if (method->is_loaded()) {
     st->print(" (%d bytes)", method->code_size());
