@@ -2701,7 +2701,7 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
   TempNewSymbol class_name_sym = SymbolTable::new_symbol(file_name);
   Handle ext_class_name = java_lang_String::externalize_classname(class_name_sym, CHECK_NULL);
 
-  // InputStream ClassLoader.getResourceAsStream(String name)
+  // byte[] ClassLoader.getResourceAsByteArray(String name)
   JavaCalls::call_virtual(&result,
                           class_loader,
                           vmClasses::ClassLoader_klass(),
@@ -2711,7 +2711,7 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
                           CHECK_NULL);
   assert(result.get_type() == T_OBJECT, "just checking");
   oop obj = result.get_oop();
-  assert(obj != nullptr, "ClassLoader.getResourceAsStream should not return null");
+  assert(obj != nullptr, "ClassLoader.getResourceAsByteArray should not return null");
 
   // The result should be a [B
   assert(obj->is_typeArray(), "just checking");

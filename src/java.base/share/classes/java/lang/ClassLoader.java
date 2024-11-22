@@ -1686,7 +1686,7 @@ public abstract class ClassLoader {
     }
 
     /**
-     * Called by VM for constructing a ClassFileStream.
+     * Called by VM for reading class bytes.
      */
     private byte[] getResourceAsByteArray(String name) {
         Objects.requireNonNull(name);
