@@ -677,10 +677,10 @@ public class LayoutGraph {
         }
 
         if (fromNode.getReversedLinkStartPoints().containsKey(link)) {
-            fromNode.computeReversedLinkPoints();
+            fromNode.computeReversedLinkPoints(false);
         }
         if (toNode.getReversedLinkStartPoints().containsKey(link)) {
-            toNode.computeReversedLinkPoints();
+            toNode.computeReversedLinkPoints(false);
         }
     }
 
@@ -744,8 +744,7 @@ public class LayoutGraph {
      */
     public void optimizeBackEdgeCrossings() {
         for (LayoutNode node : getLayoutNodes()) {
-            if (node.getReversedLinkStartPoints().isEmpty() && node.getReversedLinkEndPoints().isEmpty()) continue;
-            node.computeReversedLinkPoints();
+            node.optimizeBackEdgeCrossing();
         }
     }
 
@@ -1011,7 +1010,7 @@ public class LayoutGraph {
 
         // ReverseEdges
         for (LayoutNode layoutNode : reversedLayoutNodes) {
-            layoutNode.computeReversedLinkPoints();
+            layoutNode.computeReversedLinkPoints(false);
         }
     }
 

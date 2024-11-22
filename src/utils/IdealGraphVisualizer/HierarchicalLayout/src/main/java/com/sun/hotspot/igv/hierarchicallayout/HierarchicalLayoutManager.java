@@ -127,7 +127,7 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
             depthFirstSearch(graph);
 
             for (LayoutNode node : graph.getLayoutNodes()) {
-                node.computeReversedLinkPoints();
+                node.computeReversedLinkPoints(false);
             }
         }
 
