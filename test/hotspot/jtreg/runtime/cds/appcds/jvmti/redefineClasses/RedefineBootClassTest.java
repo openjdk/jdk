@@ -29,12 +29,12 @@
  * @library /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- *          /test/hotspot/jtreg/runtime/cds/appcds/jvmti
+ * @requires vm.cds
  * @requires vm.jvmti
+ * @run driver RedefineClassHelper
  * @build RedefineBootClassTest
  *        RedefineBootClassApp
  *        BootSuper BootChild
- * @run driver RedefineClassHelper
  * @run driver RedefineBootClassTest
  */
 

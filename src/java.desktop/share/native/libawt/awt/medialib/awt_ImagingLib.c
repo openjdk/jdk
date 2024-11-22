@@ -2017,7 +2017,7 @@ cvtCustomToDefault(JNIEnv *env, BufImageS_t *imageP, int component,
                                  g_BImgGetRGBMID, 0, y,
                                  w, numLines,
                                  jpixels, 0, w);
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->DeleteLocalRef(env, jpixels);
             return -1;
         }
@@ -2093,7 +2093,7 @@ cvtDefaultToCustom(JNIEnv *env, BufImageS_t *imageP, int component,
        (*env)->CallVoidMethod(env, imageP->jimage, g_BImgSetRGBMID, 0, y,
                                 w, numLines, jpixels,
                                 0, w);
-       if ((*env)->ExceptionOccurred(env)) {
+       if ((*env)->ExceptionCheck(env)) {
            (*env)->DeleteLocalRef(env, jpixels);
            return -1;
        }

@@ -33,8 +33,6 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -56,10 +54,7 @@ import java.lang.classfile.TypeKind;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.module.Modules;
-import jdk.internal.reflect.CallerSensitive;
-import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
-import sun.reflect.misc.ReflectUtil;
 
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -159,7 +154,6 @@ public class MethodHandleProxies {
      *         be converted to the type required by the requested interface
      */
     @SuppressWarnings("doclint:reference") // cross-module links
-    @CallerSensitive
     public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
             throw newIllegalArgumentException("not a public interface", intfc.getName());
@@ -168,17 +162,7 @@ public class MethodHandleProxies {
         if (intfc.isHidden())
             throw newIllegalArgumentException("a hidden interface", intfc.getName());
         Objects.requireNonNull(target);
-        final MethodHandle mh;
-        @SuppressWarnings("removal")
-        var sm = System.getSecurityManager();
-        if (sm != null) {
-            final Class<?> caller = Reflection.getCallerClass();
-            final ClassLoader ccl = caller != null ? caller.getClassLoader() : null;
-            ReflectUtil.checkProxyPackageAccess(ccl, intfc);
-            mh = ccl != null ? bindCaller(target, caller) : target;
-        } else {
-            mh = target;
-        }
+        final MethodHandle mh = target;
 
         // Define one hidden class for each interface.  Create an instance of
         // the hidden class for a given target method handle which will be
@@ -283,17 +267,7 @@ public class MethodHandleProxies {
         // define the dynamic module to the class loader of the interface
         var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, DUMPER);
 
-        @SuppressWarnings("removal")
-        var sm = System.getSecurityManager();
-        Lookup lookup;
-        if (sm != null) {
-            @SuppressWarnings("removal")
-            var l = AccessController.doPrivileged((PrivilegedAction<Lookup>) () ->
-                    definer.defineClassAsLookup(true));
-            lookup = l;
-        } else {
-            lookup = definer.defineClassAsLookup(true);
-        }
+        Lookup lookup = definer.defineClassAsLookup(true);
         // cache the wrapper type
         var ret = lookup.lookupClass();
         WRAPPER_TYPES.add(ret);
