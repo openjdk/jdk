@@ -94,7 +94,7 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <div class="type-signature"><span class="modifiers">class </span><span class="el\
                     ement-name type-name-label">TwoBounds&lt;K extends <a href="ClassParamA.html" ti\
-                    tle="annotation interface in typeannos">@ClassParamA</a> java.lang.String,<wbr>V\
+                    tle="annotation interface in typeannos">@ClassParamA</a> java.lang.String, V\
                      extends <a href="ClassParamB.html" title="annotation interface in typeannos">@C\
                     lassParamB</a> java.lang.String&gt;</span>""");
 
@@ -226,7 +226,7 @@ public class TestTypeAnnotations extends JavadocTester {
                     ass="element-name">methodExtends</span>()</div>""",
 
                 """
-                    <div class="member-signature"><span class="type-parameters-long">&lt;K extends <\
+                    <div class="member-signature"><span class="type-parameters">&lt;K extends <\
                     a href="MTyParamA.html" title="annotation interface in typeannos">@MTyParamA</a>\
                      <a href="MtdTyParameterized.html" title="class in typeannos">MtdTyParameterized\
                     </a>&lt;<a href="MTyParamB.html" title="annotation interface in typeannos">@MTyP\
@@ -242,8 +242,8 @@ public class TestTypeAnnotations extends JavadocTester {
 
                 """
                     <div class="member-signature"><span class="modifiers">public final</span>&nbsp;<\
-                    span class="type-parameters-long">&lt;K extends <a href="MTyParamA.html" title="\
-                    annotation interface in typeannos">@MTyParamA</a> java.lang.String,<wbr>
+                    span class="type-parameters">&lt;K extends <a href="MTyParamA.html" title="\
+                    annotation interface in typeannos">@MTyParamA</a> java.lang.String, \
                     V extends <a href="MTyParamA.html" title="annotation interface in typeannos">@MT\
                     yParamA</a> <a href="MtdTyParameterized.html" title="class in typeannos">MtdTyPa\
                     rameterized</a>&lt;<a href="MTyParamB.html" title="annotation interface in typea\
@@ -339,7 +339,7 @@ public class TestTypeAnnotations extends JavadocTester {
         // Test for type annotations on type parameters (TypeParameters.java).
         checkOutput("typeannos/TestMethods.html", true,
                 """
-                    <div class="member-signature"><span class="type-parameters">&lt;K,<wbr>
+                    <div class="member-signature"><span class="type-parameters">&lt;K, \
                     <a href="TyParaA.html" title="annotation interface in typeannos">@TyParaA</a> V \
                     extends <a href="TyParaA.html" title="annotation interface in typeannos">@TyPara\
                     A</a> java.lang.String&gt;</span>

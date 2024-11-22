@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,8 +100,8 @@ public class TestInheritance extends JavadocTester {
                      <div class="inheritance">pkg.C&lt;Q&gt;</div>""");
         checkOrder("pkg/D.html", """
                      <div class="inheritance" title="Inheritance Tree">java.lang.Object
-                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;S, <a href="B.html" title="class in pkg">B</a>&gt;
-                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;S, <a href="B.html" title="class in pkg">B</a>&gt;
+                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;S,<wbr><a href="B.html" title="class in pkg">B</a>&gt;
+                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;S,<wbr><a href="B.html" title="class in pkg">B</a>&gt;
                      <div class="inheritance">pkg.D&lt;R,<wbr>S&gt;</div>""");
     }
 }
