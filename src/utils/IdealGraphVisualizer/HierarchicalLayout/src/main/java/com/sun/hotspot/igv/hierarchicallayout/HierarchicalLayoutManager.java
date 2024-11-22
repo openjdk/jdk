@@ -30,7 +30,7 @@ import java.awt.Point;
 import java.util.*;
 
 
-public class HierarchicalLayoutManager extends LayoutManager {
+public class HierarchicalLayoutManager extends LayoutManager implements LayoutMover {
 
     int maxLayerLength;
     private LayoutGraph graph;
@@ -64,6 +64,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         WriteResult.apply(layoutGraph);
     }
 
+    @Override
     public void moveLink(Point linkPos, int shiftX) {
         int layerNr = graph.findLayer(linkPos.y);
         for (LayoutNode node : graph.getLayer(layerNr)) {
@@ -79,6 +80,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         writeBack();
     }
 
+    @Override
     public void moveVertices(Set<? extends Vertex> movedVertices) {
         for (Vertex vertex : movedVertices) {
             moveVertex(vertex);
@@ -92,6 +94,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
         WriteResult.apply(graph);
     }
 
+    @Override
     public void moveVertex(Vertex movedVertex) {
         Point newLoc = movedVertex.getPosition();
         LayoutNode movedNode = graph.getLayoutNode(movedVertex);

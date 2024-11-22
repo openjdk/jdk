@@ -88,6 +88,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private boolean rebuilding;
     private final HierarchicalStableLayoutManager hierarchicalStableLayoutManager;
     private HierarchicalLayoutManager seaLayoutManager;
+    private LayoutMover layoutMover;
 
 
     /**
@@ -632,7 +633,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public void movementStarted(Widget widget) {
-                if (!getModel().getShowSea() && !getModel().getShowStableSea()) return;
+                if (layoutMover == null) return; // Do nothing if layoutMover is not available
+
                 widget.bringToFront();
                 startLayerY = widget.getLocation().y;
                 Set<Figure> selectedFigures = model.getSelectedFigures();
@@ -645,7 +647,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public void movementFinished(Widget widget) {
-                if (!getModel().getShowSea() && !getModel().getShowStableSea()) return;
+                if (layoutMover == null) return; // Do nothing if layoutMover is not available
+
                 rebuilding = true;
 
                 Set<Figure> movedFigures = new HashSet<>(model.getSelectedFigures());
@@ -654,7 +657,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     figure.setPosition(new Point(fw.getLocation().x, fw.getLocation().y));
                 }
 
-                seaLayoutManager.moveVertices(movedFigures);
+                layoutMover.moveVertices(movedFigures);
                 rebuildConnectionLayer();
 
                 for (FigureWidget fw : getVisibleFigureWidgets()) {
@@ -684,16 +687,15 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public Point getOriginalLocation(Widget widget) {
+                if (layoutMover == null) return widget.getLocation(); // default behavior
                 return ActionFactory.createDefaultMoveProvider().getOriginalLocation(widget);
             }
 
             @Override
             public void setNewLocation(Widget widget, Point location) {
-                if (!getModel().getShowSea() && !getModel().getShowStableSea()) return;
-
+                if (layoutMover == null) return; // Do nothing if layoutMover is not available
                 int shiftX = location.x - widget.getLocation().x;
-                int shiftY;
-                shiftY = magnetToStartLayerY(widget, location);
+                int shiftY = magnetToStartLayerY(widget, location);
 
                 List<Figure> selectedFigures = new ArrayList<>( model.getSelectedFigures());
                 selectedFigures.sort(Comparator.comparingInt(f -> f.getPosition().x));
@@ -742,7 +744,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     Point newLocation = new Point(fw.getLocation().x + shiftX -3, fw.getLocation().y + shiftY);
                     ActionFactory.createDefaultMoveProvider().setNewLocation(pointerWidget, newLocation);
                 }
-
             }
         };
     }
@@ -889,23 +890,27 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private void doStableSeaLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
+        layoutMover = null;
         hierarchicalStableLayoutManager.setCutEdges(model.getCutEdges());
         hierarchicalStableLayoutManager.updateLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
     private void doSeaLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
         seaLayoutManager = new HierarchicalLayoutManager();
+        layoutMover = seaLayoutManager;
         seaLayoutManager.setCutEdges(model.getCutEdges());
         seaLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
     private void doClusteredLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
+        layoutMover = null;
         HierarchicalClusterLayoutManager clusterLayoutManager = new HierarchicalClusterLayoutManager();
         clusterLayoutManager.setCutEdges(model.getCutEdges());
         clusterLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
     private void doCFGLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
+        layoutMover = null;
         HierarchicalCFGLayoutManager cfgLayoutManager = new HierarchicalCFGLayoutManager(getVisibleBlockConnections(), getVisibleBlocks());
         cfgLayoutManager.setCutEdges(model.getCutEdges());
         cfgLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
@@ -932,6 +937,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public void movementStarted(Widget widget) {
+                if (layoutMover == null) return; // Do nothing if layoutMover is not available
                 LineWidget lw = (LineWidget) widget;
                 startLocation = lw.getClientAreaLocation();
                 originalPosition = lw.getFrom();
@@ -939,8 +945,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public void movementFinished(Widget widget) {
-                if (!getModel().getShowSea() && !getModel().getShowStableSea()) return;
-
+                if (layoutMover == null) return; // Do nothing if layoutMover is not available
                 LineWidget lineWidget = (LineWidget) widget;
                 if (lineWidget.getPredecessor() == null) return;
                 if (lineWidget.getSuccessors().isEmpty()) return;
@@ -950,7 +955,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 if (shiftX == 0) return;
 
                 rebuilding = true;
-                seaLayoutManager.moveLink(originalPosition, shiftX);
+                layoutMover.moveLink(originalPosition, shiftX);
                 rebuildConnectionLayer();
                 for (FigureWidget fw : getVisibleFigureWidgets()) {
                     fw.updatePosition();
@@ -962,14 +967,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public Point getOriginalLocation(Widget widget) {
+                if (layoutMover == null) return widget.getLocation(); // default behavior
                 LineWidget lineWidget = (LineWidget) widget;
                 return lineWidget.getClientAreaLocation();
             }
 
             @Override
             public void setNewLocation(Widget widget, Point location) {
-                if (!getModel().getShowSea() && !getModel().getShowStableSea()) return;
-
+                if (layoutMover == null) return; // Do nothing if layoutMover is not available
                 LineWidget lineWidget = (LineWidget) widget;
                 if (lineWidget.getPredecessor() == null) return;
                 if (lineWidget.getSuccessors().isEmpty()) return;
