@@ -51,7 +51,6 @@ class NewInstance {
      *
      * Package private so this code is not exposed at the API level.
      */
-    @SuppressWarnings("removal")
     static <T> T newInstance (Class<T> type, ClassLoader loader, String clsName)
         throws ClassNotFoundException, IllegalAccessException,
             InstantiationException
@@ -65,15 +64,8 @@ class NewInstance {
         }
 
         // make sure we have access to restricted packages
-        boolean internal = false;
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                internal = true;
-            }
-        }
-
         Class<?> driverClass;
-        if (classLoader == null || internal) {
+        if (classLoader == null) {
             driverClass = Class.forName(className);
         } else {
             driverClass = classLoader.loadClass(className);

@@ -29,8 +29,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
@@ -236,21 +234,18 @@ final public class XMLReaderFactory
      *
      * @return instance of provider class if found or null
      */
-    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type, final ClassLoader loader)
             throws SAXException {
         ClassLoader cl = Objects.requireNonNull(loader);
         try {
-            return AccessController.doPrivileged((PrivilegedAction<T>) () -> {
-                final ServiceLoader<T> serviceLoader;
-                serviceLoader = ServiceLoader.load(type, cl);
-                final Iterator<T> iterator = serviceLoader.iterator();
-                if (iterator.hasNext()) {
-                    return iterator.next();
-                } else {
-                    return null;
-                }
-            });
+            final ServiceLoader<T> serviceLoader;
+            serviceLoader = ServiceLoader.load(type, cl);
+            final Iterator<T> iterator = serviceLoader.iterator();
+            if (iterator.hasNext()) {
+                return iterator.next();
+            } else {
+                return null;
+            }
         } catch(ServiceConfigurationError e) {
             final RuntimeException x = new RuntimeException(
                     "Provider for " + type + " cannot be created", e);

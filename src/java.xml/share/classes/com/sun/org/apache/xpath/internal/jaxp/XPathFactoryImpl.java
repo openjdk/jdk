@@ -78,12 +78,7 @@ public  class XPathFactoryImpl extends XPathFactory {
         /**
          * javax.xml.xpath.XPathFactory implementation.
          */
-        @SuppressWarnings("removal")
         public XPathFactoryImpl() {
-            if (System.getSecurityManager() != null) {
-                _isSecureMode = true;
-                _isNotSecureProcessing = false;
-            }
             _featureManager = new JdkXmlFeatures(!_isNotSecureProcessing);
             _xmlSecMgr = new XMLSecurityManager(true);
         }

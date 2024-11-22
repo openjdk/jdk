@@ -32,11 +32,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Paths;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -83,11 +79,8 @@ public class SecuritySupport {
      * @param propName the name of the property
      * @return the value of the property
      */
-    @SuppressWarnings("removal")
     public static String getSystemProperty(final String propName) {
-        return
-        AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> System.getProperty(propName));
+        return System.getProperty(propName);
     }
 
     /**
@@ -249,10 +242,8 @@ public class SecuritySupport {
      * @param f the file to be tested
      * @return true if it is a directory, false otherwise
      */
-    @SuppressWarnings("removal")
     public static boolean isDirectory(final File f) {
-        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
-                -> f.isDirectory()));
+        return f.isDirectory();
     }
 
     /**
@@ -261,10 +252,8 @@ public class SecuritySupport {
      * @param f the file to be tested
      * @return true if the file exists, false otherwise
      */
-    @SuppressWarnings("removal")
     public static boolean isFileExists(final File f) {
-        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
-                -> f.exists()));
+        return f.exists();
     }
 
     /**
@@ -273,10 +262,8 @@ public class SecuritySupport {
      * @param f the file to be tested
      * @return true if the input is file, false otherwise
      */
-    @SuppressWarnings("removal")
     public static boolean isFile(final File f) {
-        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
-                -> f.isFile()));
+        return f.isFile();
     }
 
     /**
@@ -285,15 +272,9 @@ public class SecuritySupport {
      * @return the FileInputStream
      * @throws FileNotFoundException if the file is not found
      */
-    @SuppressWarnings("removal")
     public static FileInputStream getFileInputStream(final File file)
             throws FileNotFoundException {
-        try {
-            return AccessController.doPrivileged((PrivilegedExceptionAction<FileInputStream>) ()
-                    -> new FileInputStream(file));
-        } catch (PrivilegedActionException e) {
-            throw (FileNotFoundException) e.getException();
-        }
+        return new FileInputStream(file);
     }
 
     /**
@@ -302,15 +283,9 @@ public class SecuritySupport {
      * @return the InputStream
      * @throws IOException if an I/O error occurs while creating the input stream
      */
-    @SuppressWarnings("removal")
     public static InputStream getInputStream(final URLConnection uc)
             throws IOException {
-        try {
-            return AccessController.doPrivileged((PrivilegedExceptionAction<InputStream>) ()
-                    -> uc.getInputStream());
-        } catch (PrivilegedActionException e) {
-            throw (IOException) e.getException();
-        }
+        return uc.getInputStream();
     }
 
     /**
@@ -318,10 +293,8 @@ public class SecuritySupport {
      * @param name the resource name
      * @return the resource stream
      */
-    @SuppressWarnings("removal")
     public static InputStream getResourceAsStream(final String name) {
-        return AccessController.doPrivileged((PrivilegedAction<InputStream>) () ->
-                SecuritySupport.class.getResourceAsStream("/"+name));
+        return SecuritySupport.class.getResourceAsStream("/"+name);
     }
 
     /**
@@ -329,10 +302,8 @@ public class SecuritySupport {
      * @param name the resource name
      * @return the resource
      */
-    @SuppressWarnings("removal")
     public static URL getResource(final String name) {
-        return AccessController.doPrivileged((PrivilegedAction<URL>) () ->
-                SecuritySupport.class.getResource(name));
+        return SecuritySupport.class.getResource(name);
     }
 
     /**
@@ -350,20 +321,17 @@ public class SecuritySupport {
      * @param locale the locale for which a resource bundle is desired
      * @return a resource bundle for the given base name and locale
      */
-    @SuppressWarnings("removal")
     public static ResourceBundle getResourceBundle(final String bundle, final Locale locale) {
-        return AccessController.doPrivileged((PrivilegedAction<ResourceBundle>) () -> {
+        try {
+            return ResourceBundle.getBundle(bundle, locale);
+        } catch (MissingResourceException e) {
             try {
-                return ResourceBundle.getBundle(bundle, locale);
-            } catch (MissingResourceException e) {
-                try {
-                    return ResourceBundle.getBundle(bundle, Locale.US);
-                } catch (MissingResourceException e2) {
-                    throw new MissingResourceException(
-                            "Could not load any resource bundle by " + bundle, bundle, "");
-                }
+                return ResourceBundle.getBundle(bundle, Locale.US);
+            } catch (MissingResourceException e2) {
+                throw new MissingResourceException(
+                        "Could not load any resource bundle by " + bundle, bundle, "");
             }
-        });
+        }
     }
 
     /**
@@ -371,9 +339,8 @@ public class SecuritySupport {
      * @param f the specified file
      * @return true if the file exists, false otherwise
      */
-    @SuppressWarnings("removal")
     public static boolean doesFileExist(final File f) {
-        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> f.exists()));
+        return f.exists();
     }
 
     /**
@@ -381,9 +348,8 @@ public class SecuritySupport {
      * @param f the specified file
      * @return the LastModified attribute
      */
-    @SuppressWarnings("removal")
     static long getLastModified(final File f) {
-        return (AccessController.doPrivileged((PrivilegedAction<Long>) () -> f.lastModified()));
+        return f.lastModified();
     }
 
     /**
@@ -465,57 +431,35 @@ public class SecuritySupport {
          return false;
      }
 
-    @SuppressWarnings("removal")
     public static ClassLoader getContextClassLoader() {
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            if (cl == null)
-                cl = ClassLoader.getSystemClassLoader();
-            return cl;
-        });
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        if (cl == null)
+            cl = ClassLoader.getSystemClassLoader();
+        return cl;
     }
 
-
-    @SuppressWarnings("removal")
     public static ClassLoader getSystemClassLoader() {
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
-            ClassLoader cl = null;
-            try {
-                cl = ClassLoader.getSystemClassLoader();
-            } catch (SecurityException ex) {
-            }
-            return cl;
-        });
+        return ClassLoader.getSystemClassLoader();
     }
 
-    @SuppressWarnings("removal")
     public static ClassLoader getParentClassLoader(final ClassLoader cl) {
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>) () -> {
-            ClassLoader parent = null;
-            try {
-                parent = cl.getParent();
-            } catch (SecurityException ex) {
-            }
+        ClassLoader parent = cl.getParent();
 
-            // eliminate loops in case of the boot
-            // ClassLoader returning itself as a parent
-            return (parent == cl) ? null : parent;
-        });
+        // eliminate loops in case of the boot
+        // ClassLoader returning itself as a parent
+        return (parent == cl) ? null : parent;
     }
 
 
     // Used for debugging purposes
-    @SuppressWarnings("removal")
     public static String getClassSource(Class<?> cls) {
-        return AccessController.doPrivileged((PrivilegedAction<String>) () -> {
-            CodeSource cs = cls.getProtectionDomain().getCodeSource();
-            if (cs != null) {
-                URL loc = cs.getLocation();
-                return loc != null ? loc.toString() : "(no location)";
-            } else {
-                return "(no code source)";
-            }
-        });
+        CodeSource cs = cls.getProtectionDomain().getCodeSource();
+        if (cs != null) {
+            URL loc = cs.getLocation();
+            return loc != null ? loc.toString() : "(no location)";
+        } else {
+            return "(no code source)";
+        }
     }
 
     // ----------------  For SAX ----------------------
@@ -525,29 +469,23 @@ public class SecuritySupport {
      * @return the current thread's context class loader, or the system class loader
      * @throws SecurityException
      */
-    @SuppressWarnings("removal")
     public static ClassLoader getClassLoader() throws SecurityException{
-        return AccessController.doPrivileged((PrivilegedAction<ClassLoader>)() -> {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
-            if (cl == null) {
-                cl = ClassLoader.getSystemClassLoader();
-            }
+        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        if (cl == null) {
+            cl = ClassLoader.getSystemClassLoader();
+        }
 
-            return cl;
-        });
+        return cl;
     }
 
-    @SuppressWarnings("removal")
     public static InputStream getResourceAsStream(final ClassLoader cl, final String name)
     {
-        return AccessController.doPrivileged((PrivilegedAction<InputStream>) () -> {
-            InputStream ris;
-            if (cl == null) {
-                ris = SecuritySupport.class.getResourceAsStream(name);
-            } else {
-                ris = cl.getResourceAsStream(name);
-            }
-            return ris;
-        });
+        InputStream ris;
+        if (cl == null) {
+            ris = SecuritySupport.class.getResourceAsStream(name);
+        } else {
+            ris = cl.getResourceAsStream(name);
+        }
+        return ris;
     }
 }

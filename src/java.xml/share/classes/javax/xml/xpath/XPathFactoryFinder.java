@@ -27,9 +27,6 @@ package javax.xml.xpath;
 
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -208,20 +205,12 @@ class XPathFactoryFinder  {
      * @param className Name of class to create.
      * @return Created class or <code>null</code>.
      */
-    @SuppressWarnings("removal")
     private Class<?> createClass(String className) {
         Class<?> clazz;
-        // make sure we have access to restricted packages
-        boolean internal = false;
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                internal = true;
-            }
-        }
 
         // use appropriate ClassLoader
         try {
-            if (classLoader != null && !internal) {
+            if (classLoader != null) {
                     clazz = Class.forName(className, false, classLoader);
             } else {
                     clazz = Class.forName(className);
@@ -276,18 +265,6 @@ class XPathFactoryFinder  {
         return xPathFactory;
     }
 
-    // Call isObjectModelSupportedBy with initial context.
-    @SuppressWarnings("removal")
-    private boolean isObjectModelSupportedBy(final XPathFactory factory,
-            final String objectModel,
-            AccessControlContext acc) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                        return factory.isObjectModelSupported(objectModel);
-                    }
-                }, acc);
-    }
-
     /**
      * Finds a service provider subclass of XPathFactory that supports the
      * given object model using the ServiceLoader.
@@ -297,28 +274,20 @@ class XPathFactoryFinder  {
      *         if none is found.
      * @throws XPathFactoryConfigurationException if a configuration error is found.
      */
-    @SuppressWarnings("removal")
     private XPathFactory findServiceProvider(final String objectModel)
             throws XPathFactoryConfigurationException {
 
         assert objectModel != null;
-        // store current context.
-        final AccessControlContext acc = AccessController.getContext();
         try {
-            return AccessController.doPrivileged(new PrivilegedAction<XPathFactory>() {
-                public XPathFactory run() {
-                    final ServiceLoader<XPathFactory> loader =
-                            ServiceLoader.load(SERVICE_CLASS);
-                    for (XPathFactory factory : loader) {
-                        // restore initial context to call
-                        // factory.isObjectModelSupportedBy
-                        if (isObjectModelSupportedBy(factory, objectModel, acc)) {
-                            return factory;
-                        }
-                    }
-                    return null; // no factory found.
+            final ServiceLoader<XPathFactory> loader =
+                    ServiceLoader.load(SERVICE_CLASS);
+            for (XPathFactory factory : loader) {
+                // factory.isObjectModelSupportedBy
+                if (factory.isObjectModelSupported(objectModel)) {
+                    return factory;
                 }
-            });
+            }
+            return null; // no factory found.
         } catch (ServiceConfigurationError error) {
             throw new XPathFactoryConfigurationException(error);
         }

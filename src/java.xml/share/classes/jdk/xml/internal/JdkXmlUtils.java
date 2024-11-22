@@ -401,12 +401,11 @@ public class JdkXmlUtils {
      *
      * @return a DocumentBuilderFactory instance.
      */
-    @SuppressWarnings("removal")
     public static DocumentBuilderFactory getDOMFactory(boolean overrideDefaultParser) {
         boolean override = overrideDefaultParser;
         String spDOMFactory = SecuritySupport.getJAXPSystemProperty(DOM_FACTORY_ID);
 
-        if (spDOMFactory != null && System.getSecurityManager() == null) {
+        if (spDOMFactory != null) {
             override = true;
         }
         DocumentBuilderFactory dbf
@@ -428,11 +427,10 @@ public class JdkXmlUtils {
      *
      * @return a SAXParserFactory instance.
      */
-    @SuppressWarnings("removal")
     public static SAXParserFactory getSAXFactory(boolean overrideDefaultParser) {
         boolean override = overrideDefaultParser;
         String spSAXFactory = SecuritySupport.getJAXPSystemProperty(SAX_FACTORY_ID);
-        if (spSAXFactory != null && System.getSecurityManager() == null) {
+        if (spSAXFactory != null) {
             override = true;
         }
 

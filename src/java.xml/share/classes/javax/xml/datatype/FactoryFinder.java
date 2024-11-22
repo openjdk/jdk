@@ -25,8 +25,6 @@
 
 package javax.xml.datatype;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -153,20 +151,11 @@ class FactoryFinder {
      * @param useBSClsLoader True if cl=null actually meant bootstrap classLoader. This parameter
      * is needed since DocumentBuilderFactory/SAXParserFactory defined null as context classLoader.
      */
-    @SuppressWarnings("removal")
     static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
             boolean doFallback, boolean useBSClsLoader)
         throws DatatypeConfigurationException
     {
         assert type != null;
-
-        // make sure we have access to restricted packages
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                cl = null;
-                useBSClsLoader = true;
-            }
-        }
 
         try {
             Class<?> providerClass = getProviderClass(className, cl, doFallback, useBSClsLoader);
@@ -247,22 +236,17 @@ class FactoryFinder {
      *
      * @return instance of provider class if found or null
      */
-    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type)
             throws DatatypeConfigurationException
     {
         try {
-            return AccessController.doPrivileged(new PrivilegedAction<T>() {
-                public T run() {
-                    final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
-                    final Iterator<T> iterator = serviceLoader.iterator();
-                    if (iterator.hasNext()) {
-                        return iterator.next();
-                    } else {
-                        return null;
-                    }
-                }
-            });
+            final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
+            final Iterator<T> iterator = serviceLoader.iterator();
+            if (iterator.hasNext()) {
+                return iterator.next();
+            } else {
+                return null;
+            }
         } catch(ServiceConfigurationError e) {
             final DatatypeConfigurationException error =
                     new DatatypeConfigurationException(

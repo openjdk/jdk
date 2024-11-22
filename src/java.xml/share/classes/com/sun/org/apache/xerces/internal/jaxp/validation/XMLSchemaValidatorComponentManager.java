@@ -230,7 +230,6 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
     private Locale fLocale = null;
 
     /** Constructs a component manager suitable for Xerces' schema validator. */
-    @SuppressWarnings("removal")
     public XMLSchemaValidatorComponentManager(XSGrammarPoolContainer grammarContainer) {
         // setup components
         fEntityManager = new XMLEntityManager();
@@ -293,11 +292,6 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         fFeatures.put(UNPARSED_ENTITY_CHECKING, Boolean.TRUE);
 
         boolean secureProcessing = grammarContainer.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING);
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            secureProcessing = true;
-        }
-
         fInitSecurityManager = (XMLSecurityManager)
                 grammarContainer.getProperty(SECURITY_MANAGER);
         if (fInitSecurityManager != null ) {

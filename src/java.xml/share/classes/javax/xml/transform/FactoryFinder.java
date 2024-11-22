@@ -25,8 +25,6 @@
 
 package javax.xml.transform;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -128,10 +126,9 @@ class FactoryFinder {
      * @param doFallback True if the current ClassLoader should be tried as
      * a fallback if the class is not found using cl
      *
-     * @param overrideDefaultParser True to allow overriding the system-default
+     * @param doFallback True to allow overriding the system-default
      * parser.
      */
-    @SuppressWarnings("removal")
     static <T> T newInstance(Class<T> type, String className, ClassLoader cl,
                              boolean doFallback)
         throws TransformerFactoryConfigurationError
@@ -139,13 +136,6 @@ class FactoryFinder {
         assert type != null;
 
         boolean useBSClsLoader = false;
-        // make sure we have access to restricted packages
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                cl = null;
-                useBSClsLoader = true;
-            }
-        }
 
         try {
             Class<?> providerClass = getProviderClass(className, cl, doFallback, useBSClsLoader);
@@ -229,22 +219,17 @@ class FactoryFinder {
      *
      * @return instance of provider class if found or null
      */
-    @SuppressWarnings("removal")
     private static <T> T findServiceProvider(final Class<T> type)
         throws TransformerFactoryConfigurationError
     {
       try {
-            return AccessController.doPrivileged(new PrivilegedAction<T>() {
-                public T run() {
-                    final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
-                    final Iterator<T> iterator = serviceLoader.iterator();
-                    if (iterator.hasNext()) {
-                        return iterator.next();
-                    } else {
-                        return null;
-                    }
-                 }
-            });
+            final ServiceLoader<T> serviceLoader = ServiceLoader.load(type);
+            final Iterator<T> iterator = serviceLoader.iterator();
+            if (iterator.hasNext()) {
+                return iterator.next();
+            } else {
+                return null;
+            }
         } catch(ServiceConfigurationError e) {
             // It is not possible to wrap an error directly in
             // FactoryConfigurationError - so we need to wrap the

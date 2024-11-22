@@ -265,14 +265,7 @@ public class TransformerFactoryImpl
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
      */
-    @SuppressWarnings("removal")
     public TransformerFactoryImpl() {
-
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            _isNotSecureProcessing = false;
-        }
-
         _xmlFeatures = new JdkXmlFeatures(!_isNotSecureProcessing);
         _overrideDefaultParser = _xmlFeatures.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);

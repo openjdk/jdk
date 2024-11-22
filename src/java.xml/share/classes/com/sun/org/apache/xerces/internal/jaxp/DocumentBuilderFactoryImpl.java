@@ -220,7 +220,6 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
         }
     }
 
-    @SuppressWarnings("removal")
     public void setFeature(String name, boolean value)
         throws ParserConfigurationException {
         if (features == null) {
@@ -228,11 +227,6 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
         }
         // If this is the secure processing feature, save it then return.
         if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
-            if (System.getSecurityManager() != null && (!value)) {
-                throw new ParserConfigurationException(
-                        SAXMessageFormatter.formatMessage(null,
-                        "jaxp-secureprocessing-feature", null));
-            }
             fSecureProcess = value;
             fSecurityManager.setSecureProcessing(fSecureProcess);
             features.put(name, value ? Boolean.TRUE : Boolean.FALSE);

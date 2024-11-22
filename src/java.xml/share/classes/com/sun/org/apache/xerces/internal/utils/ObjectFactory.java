@@ -75,14 +75,9 @@ public final class ObjectFactory {
      * Figure out which ClassLoader to use.  For JDK 1.2 and later use
      * the context ClassLoader.
      */
-    @SuppressWarnings("removal")
     public static ClassLoader findClassLoader()
         throws ConfigurationError
     {
-        if (System.getSecurityManager()!=null) {
-            //this will ensure bootclassloader is used
-            return null;
-        }
         // Figure out which ClassLoader to use for loading the provider
         // class.  If there is a Context ClassLoader then use it.
         ClassLoader context = SecuritySupport.getContextClassLoader();
@@ -138,16 +133,10 @@ public final class ObjectFactory {
      * Create an instance of a class using the same classloader for the ObjectFactory by default
      * or bootclassloader when Security Manager is in place
      */
-    @SuppressWarnings("removal")
     public static Object newInstance(String className, boolean doFallback)
         throws ConfigurationError
     {
-        if (System.getSecurityManager()!=null) {
-            return newInstance(className, null, doFallback);
-        } else {
-            return newInstance(className,
-                findClassLoader (), doFallback);
-        }
+        return newInstance(className, findClassLoader (), doFallback);
     }
 
     /**
@@ -191,21 +180,6 @@ public final class ObjectFactory {
                                       boolean doFallback)
         throws ClassNotFoundException, ConfigurationError
     {
-        //throw security exception if the calling thread is not allowed to access the package
-        //restrict the access to package as speicified in java.security policy
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (className.startsWith(JAXP_INTERNAL) ||
-                    className.startsWith(STAX_INTERNAL)) {
-                cl = null;
-            } else {
-                final int lastDot = className.lastIndexOf(".");
-                String packageName = className;
-                if (lastDot != -1) packageName = className.substring(0, lastDot);
-                security.checkPackageAccess(packageName);
-            }
-        }
         Class<?> providerClass;
         if (cl == null) {
             //use the bootstrap ClassLoader.

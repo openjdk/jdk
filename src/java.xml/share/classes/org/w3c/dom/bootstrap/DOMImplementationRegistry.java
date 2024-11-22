@@ -46,8 +46,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -143,7 +141,6 @@ public final class DOMImplementationRegistry {
      *     If any specified class does not implement
      * <code>DOMImplementationSource</code>
      */
-    @SuppressWarnings("removal")
     public static DOMImplementationRegistry newInstance()
         throws
         ClassNotFoundException,
@@ -173,15 +170,8 @@ public final class DOMImplementationRegistry {
             StringTokenizer st = new StringTokenizer(p);
             while (st.hasMoreTokens()) {
                 String sourceName = st.nextToken();
-                // make sure we have access to restricted packages
-                boolean internal = false;
-                if (System.getSecurityManager() != null) {
-                    if (sourceName != null && sourceName.startsWith(DEFAULT_PACKAGE)) {
-                        internal = true;
-                    }
-                }
-                Class<?> sourceClass = null;
-                if (classLoader != null && !internal) {
+                Class<?> sourceClass;
+                if (classLoader != null) {
                     sourceClass = classLoader.loadClass(sourceName);
                 } else {
                     sourceClass = Class.forName(sourceName);
@@ -341,20 +331,8 @@ public final class DOMImplementationRegistry {
      *
      * @return The Context Classloader
      */
-    @SuppressWarnings("removal")
     private static ClassLoader getContextClassLoader() {
-        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
-                @Override
-                public ClassLoader run() {
-                    ClassLoader classLoader = null;
-                    try {
-                        classLoader =
-                            Thread.currentThread().getContextClassLoader();
-                    } catch (SecurityException ex) {
-                    }
-                    return classLoader;
-                }
-            });
+        return Thread.currentThread().getContextClassLoader();
     }
 
     /**
@@ -364,14 +342,8 @@ public final class DOMImplementationRegistry {
      * @param name the name of the system property
      * @return the system property
      */
-    @SuppressWarnings("removal")
     private static String getSystemProperty(final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-                    @Override
-                    public String run() {
-                        return System.getProperty(name);
-                    }
-                });
+        return System.getProperty(name);
     }
 
     /**
@@ -383,21 +355,10 @@ public final class DOMImplementationRegistry {
      * @param name the resource
      * @return an Inputstream for the resource specified
      */
-    @SuppressWarnings("removal")
     private static InputStream getResourceAsStream(final ClassLoader classLoader,
                                                    final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<InputStream>() {
-                @Override
-                public InputStream run() {
-                    InputStream ris;
-                    if (classLoader == null) {
-                        ris =
-                            ClassLoader.getSystemResourceAsStream(name);
-                    } else {
-                        ris = classLoader.getResourceAsStream(name);
-                    }
-                    return ris;
-                }
-            });
+        return (classLoader == null)
+            ? ClassLoader.getSystemResourceAsStream(name)
+            : classLoader.getResourceAsStream(name);
     }
 }
