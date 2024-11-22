@@ -330,12 +330,12 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
   assert(left != result, "should be different registers");
   if (is_power_of_2((juint)c + 1)) {
     LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact((juint)c + 1);
-    LIR_Address *addr = new LIR_Address(left, left, scale, 0, T_INT);
+    LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
     __ sub(LIR_OprFact::address(addr), left, result); // rsb with shifted register
     return true;
   } else if (is_power_of_2((juint)c - 1)) {
     LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact((juint)c - 1);
-    LIR_Address *addr = new LIR_Address(left, left, scale, 0, T_INT);
+    LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
     __ add(left, LIR_OprFact::address(addr), result); // add with shifted register
     return true;
   } else if(c == -1) {
