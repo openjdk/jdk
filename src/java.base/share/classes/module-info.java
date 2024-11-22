@@ -291,7 +291,6 @@ module java.base {
         java.security.jgss,
         jdk.naming.dns;
     exports sun.net.util to
-        java.desktop,
         java.net.http,
         jdk.jconsole,
         jdk.sctp;
