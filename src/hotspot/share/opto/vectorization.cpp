@@ -489,7 +489,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // The Simple form of the address is disassembled by VPointer into:
   //
-  //   adr = base + offset + invar + scale * iv
+  //   adr = base + invar + scale * iv + con
   //
   // Where the iv can be written as:
   //
@@ -508,11 +508,11 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //          Simple form           Expansion of iv variable                  Reshaped with constants   Comments for terms
   //          -----------           ------------------------                  -----------------------   ------------------
   //   adr =  base               =  base                                   =  base                      (base % aw = 0)
-  //        + offset              + offset                                  + C_const                   (sum of constant terms)
   //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
   //                          /   + scale * init                            + C_init  * var_init        (term for variable init)
   //        + scale * iv   -> |   + scale * pre_stride * pre_iter           + C_pre   * pre_iter        (adjustable pre-loop term)
   //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
+  //        + con                 + con                                     + C_const                   (sum of constant terms)
   //
   // We describe the 6 terms:
   //   1) The "base" of the address is the address of a Java object (e.g. array),
@@ -522,7 +522,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
   //
-  //   2) The "C_const" term is the sum of all constant terms. This is "offset",
+  //   2) The "C_const" term is the sum of all constant terms. This is "con",
   //      plus "scale * init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
@@ -547,7 +547,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
-  const int C_const =      _offset + C_const_init * _scale;
+  const int C_const =      _con + C_const_init * _scale;
 
   // Set C_invar depending on if invar is present
   const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
@@ -906,36 +906,36 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   adr % aw =
   //
   //   -> Simple form
-  //   (base + offset + invar + scale * iv) % aw =
+  //   (base + invar + scale * iv + con) % aw =
   //
   //   -> Expand iv
-  //   (base + offset + invar + scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
+  //   (base + con + invar + scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
   //
   //   -> Reshape
-  //   (base + offset + invar
+  //   (base + con + invar
   //         + scale * init
   //         + scale * pre_stride * pre_iter
   //         + scale * main_stride * main_iter)) % aw =
   //
   //   -> base aligned: base % aw = 0
   //   -> main-loop iterations aligned (2): C_main % aw = (scale * main_stride) % aw = 0
-  //   (offset + invar + scale * init + scale * pre_stride * pre_iter) % aw =
+  //   (con + invar + scale * init + scale * pre_stride * pre_iter) % aw =
   //
   //   -> apply (12)
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * (m * q - C_const / (scale * pre_stride)
-  //                                        [- invar / (scale * pre_stride) ]
-  //                                        [- init / pre_stride            ]
-  //                                  )
+  //   (con + invar + scale * init
+  //        + scale * pre_stride * (m * q - C_const / (scale * pre_stride)
+  //                                     [- invar / (scale * pre_stride) ]
+  //                                     [- init / pre_stride            ]
+  //                               )
   //   ) % aw =
   //
-  //   -> expand C_const = offset [+ init * scale]  (if init const)
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * (m * q - offset / (scale * pre_stride)
-  //                                        [- init / pre_stride            ]             (if init constant)
-  //                                        [- invar / (scale * pre_stride) ]             (if invar present)
-  //                                        [- init / pre_stride            ]             (if init variable)
-  //                                  )
+  //   -> expand C_const = con [+ init * scale]  (if init const)
+  //   (con + invar + scale * init
+  //        + scale * pre_stride * (m * q - con / (scale * pre_stride)
+  //                                     [- init / pre_stride            ]             (if init constant)
+  //                                     [- invar / (scale * pre_stride) ]             (if invar present)
+  //                                     [- init / pre_stride            ]             (if init variable)
+  //                               )
   //   ) % aw =
   //
   //   -> assuming invar = 0 if it is not present
@@ -943,11 +943,11 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(scale * pre_stride)
   //   -> and hence: (scale * pre_stride * q) % aw = 0
   //   -> all terms are canceled out
-  //   (offset + invar + scale * init
-  //           + scale * pre_stride * m * q                             -> aw aligned
-  //           - scale * pre_stride * offset / (scale * pre_stride)     -> = offset
-  //           - scale * pre_stride * init / pre_stride                 -> = scale * init
-  //           - scale * pre_stride * invar / (scale * pre_stride)      -> = invar
+  //   (con + invar + scale * init
+  //        + scale * pre_stride * m * q                             -> aw aligned
+  //        - scale * pre_stride * con / (scale * pre_stride)        -> = con
+  //        - scale * pre_stride * init / pre_stride                 -> = scale * init
+  //        - scale * pre_stride * invar / (scale * pre_stride)      -> = invar
   //   ) % aw = 0
   //
   // The solution given by (12) does indeed guarantee alignment.
@@ -982,10 +982,10 @@ void AlignmentSolver::trace_start_solve() const {
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
 
-    // adr = base + offset + invar + scale * iv
+    // adr = base + con + invar + scale * iv
     tty->print("  adr = base");
     //VPointer::print_con_or_idx(_base);
-    tty->print(" + offset(%d) + invar", _offset);
+    tty->print(" + con(%d) + invar", _con);
     //VPointer::print_con_or_idx(_invar);
     tty->print_cr(" + scale(%d) * iv", _scale);
   }
@@ -1018,8 +1018,8 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
       tty->print_cr("  no invariant:");
       tty->print_cr("    C_invar = %d", C_invar);
     }
-    tty->print_cr("  C_const = offset(%d) + scale(%d) * C_const_init(%d) = %d",
-                  _offset, _scale, C_const_init, C_const);
+    tty->print_cr("  C_const = con(%d) + scale(%d) * C_const_init(%d) = %d",
+                  _con, _scale, C_const_init, C_const);
     tty->print_cr("  C_pre   = scale(%d) * pre_stride(%d) = %d",
                   _scale, _pre_stride, C_pre);
     tty->print_cr("  C_main  = scale(%d) * main_stride(%d) = %d",

@@ -870,9 +870,9 @@ class VectorElementSizeStats {
 // When alignment is required, we must adjust the pre-loop iteration count pre_iter,
 // such that the address is aligned for any main_iter >= 0:
 //
-//   adr = base + offset + invar + scale * init
-//                               + scale * pre_stride * pre_iter
-//                               + scale * main_stride * main_iter
+//   adr = base + invar + scale * init                      + con
+//                      + scale * pre_stride * pre_iter
+//                      + scale * main_stride * main_iter
 //
 // The AlignmentSolver generates solutions of the following forms:
 //   1. Empty:       No pre_iter guarantees alignment.
@@ -1102,8 +1102,8 @@ public:
 //
 // pre-loop:
 //   iv = init + i * pre_stride
-//   adr = base + offset + invar + scale * iv
-//   adr = base + offset + invar + scale * (init + i * pre_stride)
+//   adr = base + invar + scale * iv                      + con
+//   adr = base + invar + scale * (init + i * pre_stride) + con
 //   iv += pre_stride
 //   i++
 //
@@ -1117,7 +1117,7 @@ public:
 //   i = pre_iter + main_iter * unroll_factor
 //   iv = init + i * pre_stride = init + pre_iter * pre_stride + main_iter * unroll_factor * pre_stride
 //                              = init + pre_iter * pre_stride + main_iter * main_stride
-//   adr = base + offset + invar + scale * iv // must be aligned
+//   adr = base + invar + scale * iv + con // must be aligned
 //   iv += main_stride
 //   i  += unroll_factor
 //   main_iter++
@@ -1140,7 +1140,7 @@ private:
   // All vector loads and stores need to be memory aligned. The alignment width (aw) in
   // principle is the vector_width. But when vector_width > ObjectAlignmentInBytes this is
   // too strict, since any memory object is only guaranteed to be ObjectAlignmentInBytes
-  // aligned. For example, the relative offset between two arrays is only guaranteed to
+  // aligned. For example, the relative distance between two arrays is only guaranteed to
   // be divisible by ObjectAlignmentInBytes.
   const int      _aw;
 
@@ -1150,7 +1150,7 @@ private:
   //
   // The Simple form of the address is disassembled by VPointer into:
   //
-  //   adr = base + offset + invar + scale * iv
+  //   adr = base + invar + scale * iv + con
   //
   // Where the iv can be written as:
   //
@@ -1160,7 +1160,7 @@ private:
   // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
   const Node*    _base;           // base of address (e.g. Java array object, aw-aligned)
-  const int      _offset;
+  const int      _con;
   const Node*    _invar;
   const int      _invar_factor;   // known constant factor of invar
   const int      _scale;
@@ -1191,7 +1191,7 @@ public:
       _vector_width(      _vector_length * _element_size),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
       _base(              vpointer.decomposed_form().base().object_or_native()),
-      _offset(            vpointer.con()),
+      _con(               vpointer.con()),
       _invar(             nullptr), // TODO
       _invar_factor(      1),
       _scale(             vpointer.iv_scale()),
