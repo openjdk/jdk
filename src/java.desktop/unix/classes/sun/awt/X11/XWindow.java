@@ -1488,8 +1488,8 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     static native int getKeySymForAWTKeyCode(int keycode);
 
     /* These two methods are actually applicable to toplevel windows only.
-     * However, the functionality is required by both the XWindowPeer and
-     * XWarningWindow, both of which have the XWindow as a common ancestor.
+     * However, the functionality is required by XWindowPeer
+     * which has XWindow as an ancestor.
      * See XWM.setMotifDecor() for details.
      */
     public PropMwmHints getMWMHints() {

@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -336,10 +336,18 @@ file system locations may be directories, JAR files or JMOD files.
 
 <a id="option-proc">`-proc:`\[`none`, `only`, `full`\]</a>
 :   Controls whether annotation processing and compilation are done.
-    `-proc:none` means that compilation takes place without annotation
-    processing. `-proc:only` means that only annotation processing is done,
-    without any subsequent compilation. If this option is not used, or
-    `-proc:full` is specified, annotation processing and compilation are done.
+
+    -   `-proc:none` means that compilation takes place without annotation
+    processing
+
+    -   `-proc:only` means that only annotation processing is done,
+    without any subsequent compilation.
+
+    -   `-proc:full` means annotation processing and compilation are done.
+
+    If this option is not used, annotation processing and compilation
+    are done if at least one other option is used to explicitly
+    configure annotation processing.
 
 <a id="option-processor">`-processor` *class1*\[`,`*class2*`,`*class3*...\]</a>
 :   Names of the annotation processors to run. This bypasses the default
@@ -1427,15 +1435,26 @@ The API for annotation processors is defined in the
 
 ### How Annotation Processing Works
 
-Unless annotation processing is disabled with the [`-proc:none`](#option-proc) option, the
-compiler searches for any annotation processors that are available. The search
-path can be specified with the [`-processorpath`](#option-processor-path) option. If no path is
-specified, then the user class path is used. Processors are located by means of
-service provider-configuration files named
-`META-INF/services/javax.annotation.processing.Processor` on the search path.
-Such files should contain the names of any annotation processors to be used,
-listed one per line. Alternatively, processors can be specified explicitly,
-using the [`-processor`](#option-processor) option.
+Annotation processing is requested by using an option to configure
+annotation processing, such as [`-processor`](#option-processor),
+[`--processor-path`](#option-processor-path),
+[`--processor-module-path`](#option-processor-module-path) or by
+explicitly enabling processing with the [`-proc:full`](#option-proc)
+or [`-proc:only`](#option-proc) options.  Annotation processing is
+disabled using the [`-proc:none`](#option-proc) option.
+
+If annotation processing is requested, the compiler searches for any
+annotation processors that are available.
+
+The search path can be specified with the
+[`-processorpath`](#option-processor-path) option. If no path is
+specified, then the user class path is used. Processors are located by
+means of service provider-configuration files named
+`META-INF/services/javax.annotation.processing.Processor` on the
+search path.  Such files should contain the names of any
+annotationation processors to be used, listed one per
+line. Alternatively, processors can be specified explicitly, using the
+[`-processor`](#option-processor) option.
 
 After scanning the source files and classes on the command line to determine
 what annotations are present, the compiler queries the processors to determine

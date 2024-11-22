@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,7 +296,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Performs Cancel when Esc key is pressed.
      */
     private void handleEscKey(JButton btnCancel) {
-        @SuppressWarnings("serial") // anonymous class
         Action cancelKeyAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 dispose(CANCEL);
@@ -449,21 +448,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
     /**
      * Initialize ResourceBundle
      */
-    @SuppressWarnings("removal")
     public static void initResource() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
-                public Object run() {
-                    try {
-                        messageRB = ResourceBundle.getBundle(strBundle);
-                        return null;
-                    } catch (java.util.MissingResourceException e) {
-                        throw new Error("Fatal: Resource for ServiceUI " +
-                                        "is missing");
-                    }
-                }
-            }
-        );
+        try {
+            messageRB = ResourceBundle.getBundle(strBundle);
+        } catch (java.util.MissingResourceException e) {
+            throw new Error("Fatal: Resource for ServiceUI " +
+                            "is missing");
+        }
     }
 
     /**
@@ -543,15 +534,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Returns URL for image resource
      */
     private static URL getImageResource(final String key) {
-        @SuppressWarnings("removal")
-        URL url = java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction<URL>() {
-                public URL run() {
-                    URL url = ServiceDialog.class.getResource(
-                                                  "resources/" + key);
-                    return url;
-                }
-        });
+        URL url = ServiceDialog.class.getResource("resources/" + key);
 
         if (url == null) {
             throw new Error("Fatal: Resource for ServiceUI is broken; " +
@@ -2944,14 +2927,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         {
             super(new FlowLayout(FlowLayout.LEADING));
             final URL imgURL = getImageResource(img);
-            @SuppressWarnings("removal")
-            Icon icon = java.security.AccessController.doPrivileged(
-                                 new java.security.PrivilegedAction<Icon>() {
-                public Icon run() {
-                    Icon icon = new ImageIcon(imgURL);
-                    return icon;
-                }
-            });
+            Icon icon = new ImageIcon(imgURL);
             lbl = new JLabel(icon);
             add(lbl);
 

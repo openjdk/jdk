@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.internal;
+package jdk.jpackage.internal.util;
 
-import java.security.BasicPermission;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import javax.xml.stream.XMLStreamWriter;
 
-/**
- * The permission required to use jlink API. The permission target_name is
- * "jlink". e.g.: permission jdk.tools.jlink.plugins.JlinkPermission "jlink";
- *
- */
-public final class JlinkPermission extends BasicPermission {
+final class SkipDocumentHandler implements InvocationHandler {
 
-    private static final long serialVersionUID = -3687912306077727801L;
-
-    public JlinkPermission(String name) {
-        super(name);
+    public SkipDocumentHandler(XMLStreamWriter target) {
+        this.target = target;
     }
 
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        switch (method.getName()) {
+            case "writeStartDocument", "writeEndDocument" -> {
+            }
+            default -> method.invoke(target, args);
+        }
+        return null;
+    }
+
+    private final XMLStreamWriter target;
 }

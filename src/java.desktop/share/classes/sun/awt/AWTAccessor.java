@@ -305,17 +305,6 @@ public final class AWTAccessor {
          */
         void updateWindow(Window window);
 
-        /**
-         * Set the size of the security warning.
-         */
-        void setSecurityWarningSize(Window w, int width, int height);
-
-        /** Request to recalculate the new position of the security warning for
-         * the given window size/location as reported by the native system.
-         */
-        Point2D calculateSecurityWarningPosition(Window window,
-                double x, double y, double w, double h);
-
         /** Sets the synchronous status of focus requests on lightweight
          * components in the specified window to the specified value.
          */
