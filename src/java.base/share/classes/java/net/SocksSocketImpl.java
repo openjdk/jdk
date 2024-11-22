@@ -243,7 +243,6 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             // This is the general case
             // server is not null only when the socket was created with a
             // specified proxy in which case it does bypass the ProxySelector
-            @SuppressWarnings("removal")
             ProxySelector sel = ProxySelector.getDefault();
             if (sel == null) {
                 /*
