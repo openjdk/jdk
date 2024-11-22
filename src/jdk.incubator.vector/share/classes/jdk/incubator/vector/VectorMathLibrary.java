@@ -12,6 +12,11 @@ import java.util.function.IntFunction;
 
 import static jdk.incubator.vector.VectorOperators.*;
 
+// TODO:
+//   * refactor native library API: a single registerNatives() call which returns a vector of entry points
+//   * SVML: // FIXME: requires VM_Version::supports_avx512dq())
+//   * invoke native library as a fallback implementation
+//
 /*package-private*/ class VectorMathLibrary {
     private static final boolean DEBUG = Boolean.getBoolean("jdk.incubator.vector.VectorMathLibrary.DEBUG");
 
