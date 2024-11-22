@@ -179,6 +179,11 @@ public enum KnownOIDs {
     SHA3_384withRSA("2.16.840.1.101.3.4.3.15", "SHA3-384withRSA"),
     SHA3_512withRSA("2.16.840.1.101.3.4.3.16", "SHA3-512withRSA"),
 
+    // kems 2.16.840.1.101.3.4.4.*
+    ML_KEM_512("2.16.840.1.101.3.4.4.1", "ML-KEM-512"),
+    ML_KEM_768("2.16.840.1.101.3.4.4.2", "ML-KEM-768"),
+    ML_KEM_1024("2.16.840.1.101.3.4.4.3", "ML-KEM-1024"),
+
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*
     PKCS1("1.2.840.113549.1.1", "RSA") { // RSA KeyPairGenerator and KeyFactory

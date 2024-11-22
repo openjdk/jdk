@@ -123,9 +123,12 @@ public class NamingManager {
      *    or {@code Referenceable} containing a factory class name,
      *    use the named factory to create the object.
      *    Return {@code refInfo} if the factory cannot be created.
-     *    Under JDK 1.1, if the factory class must be loaded from a location
-     *    specified in the reference, a {@code SecurityManager} must have
-     *    been installed or the factory creation will fail.
+     *    Downloading a factory class from a location specified in the reference
+     *    can be supported by a custom implementation of {@link ObjectFactoryBuilder}.
+     *    The {@linkplain Reference#getFactoryClassLocation() factory class
+     *    location}, if present, is ignored. A custom {@link ObjectFactoryBuilder}
+     *    {@linkplain #setObjectFactoryBuilder(ObjectFactoryBuilder) may be used}
+     *    if a different policy is desired.
      *    If an exception is encountered while creating the factory,
      *    it is passed up to the caller.
      * <li>If {@code refInfo} is a {@code Reference} or
