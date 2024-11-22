@@ -37,12 +37,6 @@ package java.util.concurrent;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.reflect.Field;
-import java.security.AccessController;
-import java.security.AccessControlContext;
-import java.security.Permission;
-import java.security.Permissions;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -811,9 +805,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * initialization.  Since it (or any other created pool) need
      * never be used, we minimize initial construction overhead and
      * footprint to the setup of about a dozen fields, although with
-     * some System property parsing and security processing that takes
-     * far longer than the actual construction when SecurityManagers
-     * are used or properties are set. The common pool is
+     * some System property parsing properties are set. The common pool is
      * distinguished by having a null workerNamePrefix (which is an
      * odd convention, but avoids the need to decode status in factory
      * classes).  It also has PRESET_SIZE config set if parallelism
@@ -839,13 +831,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      *
      * As a more appropriate default in managed environments, unless
      * overridden by system properties, we use workers of subclass
-     * InnocuousForkJoinWorkerThread when there is a SecurityManager
-     * present. These workers have no permissions set, do not belong
-     * to any user-defined ThreadGroup, and clear all ThreadLocals and
-     * reset the ContextClassLoader before (re)activating to execute
-     * top-level task.  The associated mechanics may be JVM-dependent
-     * and must access particular Thread class fields to achieve this
-     * effect.
+     * InnocuousForkJoinWorkerThread for the commonPool.  These
+     * workers do not belong to any user-defined ThreadGroup, and
+     * clear all ThreadLocals and reset the ContextClassLoader before
+     * (re)activating to execute top-level tasks.  The associated
+     * mechanics may be JVM-dependent and must access particular
+     * Thread class fields to achieve this effect.
      *
      * InterruptibleTasks
      * ====================
@@ -1097,21 +1088,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         return ((long)index << ASHIFT) + ABASE;
     }
 
-    /**
-     * If there is a security manager, makes sure caller has
-     * permission to modify threads.
-     */
-    @SuppressWarnings("removal")
-    private static void checkPermission() {
-        SecurityManager security; RuntimePermission perm;
-        if ((security = System.getSecurityManager()) != null) {
-            if ((perm = modifyThreadPermission) == null)
-                modifyThreadPermission = perm = // races OK
-                    new RuntimePermission("modifyThread");
-            security.checkPermission(perm);
-        }
-    }
-
     // Nested classes
 
     /**
@@ -1147,64 +1123,9 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final class DefaultForkJoinWorkerThreadFactory
         implements ForkJoinWorkerThreadFactory {
         public final ForkJoinWorkerThread newThread(ForkJoinPool pool) {
-            boolean isCommon = (pool.workerNamePrefix == null);
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null && isCommon)
-                return newCommonWithACC(pool);
-            else
-                return newRegularWithACC(pool);
-        }
-
-        /*
-         * Create and use static AccessControlContexts only if there
-         * is a SecurityManager. (These can be removed if/when
-         * SecurityManagers are removed from platform.) The ACCs are
-         * immutable and equivalent even when racily initialized, so
-         * they don't require locking, although with the chance of
-         * needlessly duplicate construction.
-         */
-        @SuppressWarnings("removal")
-        static volatile AccessControlContext regularACC, commonACC;
-
-        @SuppressWarnings("removal")
-        static ForkJoinWorkerThread newRegularWithACC(ForkJoinPool pool) {
-            AccessControlContext acc = regularACC;
-            if (acc == null) {
-                Permissions ps = new Permissions();
-                ps.add(new RuntimePermission("getClassLoader"));
-                ps.add(new RuntimePermission("setContextClassLoader"));
-                regularACC = acc =
-                    new AccessControlContext(new ProtectionDomain[] {
-                            new ProtectionDomain(null, ps) });
-            }
-            return AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public ForkJoinWorkerThread run() {
-                        return new ForkJoinWorkerThread(null, pool, true, false);
-                    }}, acc);
-        }
-
-        @SuppressWarnings("removal")
-        static ForkJoinWorkerThread newCommonWithACC(ForkJoinPool pool) {
-            AccessControlContext acc = commonACC;
-            if (acc == null) {
-                Permissions ps = new Permissions();
-                ps.add(new RuntimePermission("getClassLoader"));
-                ps.add(new RuntimePermission("setContextClassLoader"));
-                ps.add(new RuntimePermission("modifyThread"));
-                ps.add(new RuntimePermission("enableContextClassLoaderOverride"));
-                ps.add(new RuntimePermission("modifyThreadGroup"));
-                commonACC = acc =
-                    new AccessControlContext(new ProtectionDomain[] {
-                            new ProtectionDomain(null, ps) });
-            }
-            return AccessController.doPrivileged(
-                new PrivilegedAction<>() {
-                    public ForkJoinWorkerThread run() {
-                        return new ForkJoinWorkerThread.
-                            InnocuousForkJoinWorkerThread(pool);
-                    }}, acc);
+            return ((pool.workerNamePrefix == null) ? // is commonPool
+                    new ForkJoinWorkerThread.InnocuousForkJoinWorkerThread(pool) :
+                    new ForkJoinWorkerThread(null, pool, true, false));
         }
     }
 
@@ -3024,7 +2945,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                         Predicate<? super ForkJoinPool> saturate,
                         long keepAliveTime,
                         TimeUnit unit) {
-        checkPermission();
         int p = parallelism;
         if (p <= 0 || p > MAX_CAP || p > maximumPoolSize || keepAliveTime <= 0L)
             throw new IllegalArgumentException();
@@ -3312,7 +3232,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             throw new IllegalArgumentException();
         if ((config & PRESET_SIZE) != 0)
             throw new UnsupportedOperationException("Cannot override System property");
-        checkPermission();
         return getAndSetParallelism(size);
     }
 
@@ -3710,7 +3629,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * may not be rejected.
      */
     public void shutdown() {
-        checkPermission();
         if (workerNamePrefix != null) // not common pool
             tryTerminate(false, true);
     }
@@ -3730,7 +3648,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return an empty list
      */
     public List<Runnable> shutdownNow() {
-        checkPermission();
         if (workerNamePrefix != null) // not common pool
             tryTerminate(true, true);
         return Collections.emptyList();
@@ -3837,7 +3754,6 @@ public class ForkJoinPool extends AbstractExecutorService {
     @Override
     public void close() {
         if (workerNamePrefix != null) {
-            checkPermission();
             CountDownLatch done = null;
             boolean interrupted = false;
             while ((tryTerminate(interrupted, true) & TERMINATED) == 0) {
@@ -4075,11 +3991,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             });
         defaultForkJoinWorkerThreadFactory =
             new DefaultForkJoinWorkerThreadFactory();
-        @SuppressWarnings("removal")
-        ForkJoinPool p = common = (System.getSecurityManager() == null) ?
-            new ForkJoinPool((byte)0) :
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public ForkJoinPool run() {
-                        return new ForkJoinPool((byte)0); }});
+        common = new ForkJoinPool((byte)0);
     }
 }
