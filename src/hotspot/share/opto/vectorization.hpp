@@ -750,6 +750,19 @@ public:
     });
   }
 
+  // Greatest common factor among the scales of the invar_summands.
+  // Out of simplicity, we only factor out positive powers-of-2,
+  // between 1 and ObjectAlignmentInBytes.
+  jint compute_invar_factor() const {
+    jint factor = ObjectAlignmentInBytes;
+    for_each_invar_summand([&] (const MemPointerSummand& s) {
+      while (!s.scale().is_multiple_of(NoOverflowInt(factor))) {
+        factor = factor / 2;
+      }
+    });
+    return factor;
+  }
+
   // Aliasing
   // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?
   bool is_adjacent_to_and_before(const VPointer& other) const;
@@ -1163,7 +1176,6 @@ private:
   // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
   const Node*    _invar;
-  const int      _invar_factor;   // known constant factor of invar
   const Node*    _init_node;      // value of iv before pre-loop
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
@@ -1189,7 +1201,6 @@ public:
       _vector_width(      vector_length * vpointer.size()),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
       _invar(             nullptr), // TODO
-      _invar_factor(      1),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
