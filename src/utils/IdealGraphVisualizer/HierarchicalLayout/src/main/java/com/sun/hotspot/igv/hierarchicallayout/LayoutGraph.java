@@ -695,6 +695,21 @@ public class LayoutGraph {
     }
 
     /**
+     * Checks if the specified layer number exists within the layers collection.
+     *
+     * @param layerNr The layer number to check (zero-based index).
+     * @return {@code true} if the layer exists; {@code false} otherwise.
+     */
+    public boolean hasLayer(int layerNr) {
+        if (layers == null || layers.isEmpty()) return false;
+        return layerNr >= 0 && layerNr < layers.size();
+    }
+
+    public boolean hasLayers() {
+        return layers != null && !layers.isEmpty();
+    }
+
+    /**
      * Finds the layer closest to the given y-coordinate.
      *
      * @param y the y-coordinate to check
