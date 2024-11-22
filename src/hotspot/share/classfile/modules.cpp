@@ -569,7 +569,6 @@ void Modules::dump_main_module_name() {
   if (module_name != nullptr) {
     _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
   }
-  ArchivePtrMarker::mark_pointer(&_archived_main_module_name);
 }
 
 void Modules::check_archived_flag_consistency(char** archived_flag, const char* runtime_flag, const char* property) {
@@ -619,7 +618,6 @@ void Modules::dump_native_access_flag() {
   if (native_access_names != nullptr) {
     _archived_native_access_flags = ArchiveBuilder::current()->ro_strdup(native_access_names);
   }
-  ArchivePtrMarker::mark_pointer(&_archived_native_access_flags);
 }
 
 const char* Modules::get_native_access_flags_as_sorted_string() {
@@ -639,7 +637,6 @@ void Modules::dump_addmods_names() {
   if (addmods_names != nullptr) {
     _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
   }
-  ArchivePtrMarker::mark_pointer(&_archived_addmods_names);
 }
 
 const char* Modules::get_addmods_names_as_sorted_string() {
