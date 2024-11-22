@@ -34,43 +34,43 @@ InlinePrinter::InlinePrinter(Arena* arena, bool enabled) : _enabled(enabled), _r
 InlinePrinter::IPInlineAttempt::IPInlineAttempt(InliningResult result) : result(result) {
 }
 
-outputStream* InlinePrinter::record(ciMethod* method, JVMState* state, InliningResult result, const char* msg) {
+outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningResult result, const char* msg) {
   if (!_enabled) {
     return &_nullStream;
   }
-  auto attempt = locate_call(state, method)->add(result);
+  IPInlineAttempt* attempt = locate(state, callee)->add(result);
   if (msg != nullptr) {
     attempt->msg.print("%s", msg);
   }
   return &attempt->msg; // IPInlineAttempts are heap allocated so this address is safe
 }
 
-void InlinePrinter::dump(outputStream* tty) {
+void InlinePrinter::print_on(outputStream* tty) {
   if (!_enabled) {
     return;
   }
   _root->dump(tty, -1, -1);
 }
 
-InlinePrinter::IPInlineSite* InlinePrinter::locate_call(JVMState* state, ciMethod* create_for) {
+InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* callee) {
   if (state == nullptr) {
     return _root;
   }
 
-  return locate_call(state->caller(), nullptr)->at_bci(state->bci(), create_for);
+  return locate(state->caller(), nullptr)->at_bci(state->bci(), callee);
 }
 
-InlinePrinter::IPInlineSite* InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* create_for) {
+InlinePrinter::IPInlineSite* InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* callee) {
   if (_children.length() <= bci) {
-    assert(create_for != nullptr, "an inline call is missing in the chain up to the root");
-    auto child = new (_arena) IPInlineSite(create_for, _arena);
+    assert(callee != nullptr, "an inline call is missing in the chain up to the root");
+    auto child = new (_arena) IPInlineSite(callee, _arena);
     _children.at_put_grow(bci, child, nullptr);
     return child;
   }
   if (auto child = _children.at(bci)) {
     return child;
   }
-  auto child = new (_arena) IPInlineSite(create_for, _arena);
+  auto child = new (_arena) IPInlineSite(callee, _arena);
   _children.at_put(bci, child);
   return child;
 }

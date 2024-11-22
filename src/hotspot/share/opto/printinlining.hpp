@@ -34,33 +34,6 @@ class ciMethod;
 enum class InliningResult;
 
 class InlinePrinter {
-public:
-  /**
-   * @param If enabled is false, all method calls are no-ops.
-   */
-  InlinePrinter(Arena* arena, bool enabled);
-
-  /**
-   * Saves the result of an inline attempt of `method` at `state`.
-   * @param method The method that was attempted to inline
-   * @param state Where the attempt was made.
-   * @param result Whether the inline was successful.
-   * @param msg An optional string message with more details that is copied to the stream for this attempt. Pointer is not captured.
-   * @returns An output stream which stores the message associated with this attempt. The buffer stays valid until InlinePrinter is deallocated.
-   *          You can print arbitrary information to this stream but do not add line breaks, as this will break formatting.
-   */
-  outputStream* record(ciMethod* method, JVMState* state, InliningResult result, const char* msg = nullptr);
-
-  /**
-   * Prints all collected inlining information to the given output stream.
-   */
-  void dump(outputStream* tty);
-
-  /**
-   * Whether inline printing is enabled. If not enabled, all method calls are no-ops.
-   */
-  bool is_enabled() const { return _enabled; }
-
 private:
   struct IPInlineAttempt : public ArenaObj {
     IPInlineAttempt(InliningResult result);
@@ -69,30 +42,27 @@ private:
   };
 
   class IPInlineSite : public ArenaObj {
+  private:
+    Arena* const _arena;
+    ciMethod* const _method;
+    GrowableArray<IPInlineAttempt*> _attempts;
+    GrowableArray<IPInlineSite*> _children;
+
   public:
     /**
-     * @param The method being called. May be null iff this is the root of the tree.
+     * Method may be null iff this is the root of the tree.
      */
     IPInlineSite(ciMethod* method, Arena* arena) : _arena(arena), _method(method),
                                                    _attempts(arena, 2, 0, nullptr),
                                                    _children(arena, 2, 0, nullptr) {}
     /**
      * Finds the node for an inline attempt that occurred inside this inline.
-     * @param If the method is allowed to create a missing inline site inside this inline, provide
-     *        the method which is being inline. If no new inline site should be created, provide
-     *        null.
-     * @param arena
+     * If this is a new site, provide the callee otherwise null.
      */
-    IPInlineSite* at_bci(int bci, ciMethod* create_for);
+    IPInlineSite* at_bci(int bci, ciMethod* callee);
     InlinePrinter::IPInlineAttempt* add(InliningResult result);
 
     void dump(outputStream* tty, int level, int bci);
-
-  private:
-    Arena* const _arena;
-    ciMethod* const _method;
-    GrowableArray<IPInlineAttempt*> _attempts;
-    GrowableArray<IPInlineSite*> _children;
   };
 
   bool _enabled;
@@ -103,15 +73,34 @@ private:
   nullStream _nullStream;
 
   /**
-   * Locates the IPCall node that corresponds to this JVM state.
+   * Locates the IPInlineSite node that corresponds to this JVM state.
    * state may be null. In this case, the root node is returned.
-   * @param Set is_leaf to true if you call this method to add an new inline attempt.
-   *        Must be false for recursive calls.
-   * @param create_for
+   * If this is a new site, provide the callee otherwise null.
    */
-  IPInlineSite* locate_call(JVMState* state, ciMethod* create_for);
+  IPInlineSite* locate(JVMState* state, ciMethod* callee);
 
   IPInlineSite* const _root;
+
+public:
+  InlinePrinter(Arena* arena, bool enabled);
+
+  /**
+   * Saves the result of an inline attempt of method at state.
+   * An optional string message with more details that is copied to the stream for this attempt. Pointer is not captured.
+   * Returns an output stream which stores the message associated with this attempt. The buffer stays valid until InlinePrinter is deallocated.
+   * You can print arbitrary information to this stream but do not add line breaks, as this will break formatting.
+   */
+  outputStream* record(ciMethod* callee, JVMState* state, InliningResult result, const char* msg = nullptr);
+
+  /**
+   * Prints all collected inlining information to the given output stream.
+   */
+  void print_on(outputStream* tty);
+
+  /**
+   * Whether inline printing is enabled. If not enabled, all method calls are no-ops.
+   */
+  bool is_enabled() const { return _enabled; }
 };
 
 #endif // PRINTINLINING_HPP

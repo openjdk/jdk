@@ -985,7 +985,6 @@ Compile::Compile(ciEnv* ci_env,
 }
 
 Compile::~Compile() {
-  delete _print_inlining_stream;
   delete _first_failure_details;
 };
 
@@ -4409,7 +4408,7 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
 }
 
 void Compile::dump_print_inlining() {
-  inline_printer()->dump(tty);
+  inline_printer()->print_on(tty);
 }
 
 void Compile::log_late_inline(CallGenerator* cg) {
