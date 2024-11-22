@@ -479,7 +479,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   assert(_aw > 0 && is_power_of_2(_aw), "aw must be power of 2");
 
   // Out of simplicity: non power-of-2 iv_scale not supported.
-  if (abs(_iv_scale) == 0 || !is_power_of_2(abs(_iv_scale))) {
+  if (abs(iv_scale()) == 0 || !is_power_of_2(abs(iv_scale()))) {
     return new EmptyAlignmentSolution("non power-of-2 iv_scale not supported");
   }
 
@@ -547,14 +547,14 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
-  const int C_const =      _vpointer.con() + C_const_init * _iv_scale;
+  const int C_const =      _vpointer.con() + C_const_init * iv_scale();
 
   // Set C_invar depending on if invar is present
   const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
 
-  const int C_init = _init_node->is_ConI() ? 0 : _iv_scale;
-  const int C_pre =  _iv_scale * _pre_stride;
-  const int C_main = _iv_scale * _main_stride;
+  const int C_init = _init_node->is_ConI() ? 0 : iv_scale();
+  const int C_pre =  iv_scale() * _pre_stride;
+  const int C_main = iv_scale() * _main_stride;
 
   DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
 
@@ -883,7 +883,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //   r = (-C_const / (iv_scale * pre_stride)) % q                                                    (13)
   //
-  const int r = AlignmentSolution::mod(-C_const / (_iv_scale * _pre_stride), q);
+  const int r = AlignmentSolution::mod(-C_const / (iv_scale() * _pre_stride), q);
   //
   //   pre_iter = m * q + r
   //                   [- invar / (iv_scale * pre_stride)  ]
@@ -898,7 +898,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
 
-  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _iv_scale);
+  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, iv_scale());
 
   // APPENDIX:
   // We can now verify the success of the solution given by (12):
@@ -987,7 +987,7 @@ void AlignmentSolver::trace_start_solve() const {
     //VPointer::print_con_or_idx(_base);
     tty->print(" + con(%d) + invar", _vpointer.con());
     //VPointer::print_con_or_idx(_invar);
-    tty->print_cr(" + iv_scale(%d) * iv", _iv_scale);
+    tty->print_cr(" + iv_scale(%d) * iv", iv_scale());
   }
 }
 
@@ -1019,11 +1019,11 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
       tty->print_cr("    C_invar = %d", C_invar);
     }
     tty->print_cr("  C_const = con(%d) + iv_scale(%d) * C_const_init(%d) = %d",
-                  _vpointer.con(), _iv_scale, C_const_init, C_const);
+                  _vpointer.con(), iv_scale(), C_const_init, C_const);
     tty->print_cr("  C_pre   = iv_scale(%d) * pre_stride(%d) = %d",
-                  _iv_scale, _pre_stride, C_pre);
+                  iv_scale(), _pre_stride, C_pre);
     tty->print_cr("  C_main  = iv_scale(%d) * main_stride(%d) = %d",
-                  _iv_scale, _main_stride, C_main);
+                  iv_scale(), _main_stride, C_main);
   }
 }
 
@@ -1093,12 +1093,12 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
     tty->print_cr("  EQ(10c): pre_iter_C_init  = mz2 * q(%d) - sign(C_pre) * Z(%d) * var_init ", q, Z);
 
     tty->print_cr("  r = (-C_const(%d) / (iv_scale(%d) * pre_stride(%d)) %% q(%d) = %d",
-                  C_const, _iv_scale, _pre_stride, q, r);
+                  C_const, iv_scale(), _pre_stride, q, r);
 
     tty->print_cr("  EQ(14):  pre_iter = m * q(%3d) - r(%d)", q, r);
     if (_invar != nullptr) {
       tty->print_cr("                                 - invar / (iv_scale(%d) * pre_stride(%d))",
-                    _iv_scale, _pre_stride);
+                    iv_scale(), _pre_stride);
     }
     if (!_init_node->is_ConI()) {
       tty->print_cr("                                 - init / pre_stride(%d)",

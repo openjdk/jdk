@@ -977,13 +977,13 @@ private:
   const int _q;
   const int _r;
   const Node* _invar;
-  const int _iv_scale;
+  const jint _iv_scale;
 public:
   ConstrainedAlignmentSolution(const MemNode* mem_ref,
                                const int q,
                                const int r,
                                const Node* invar,
-                               int iv_scale) :
+                               const jint iv_scale) :
       _mem_ref(mem_ref),
       _q(q),
       _r(r),
@@ -1162,7 +1162,6 @@ private:
   const Node*    _base;           // base of address (e.g. Java array object, aw-aligned)
   const Node*    _invar;
   const int      _invar_factor;   // known constant factor of invar
-  const int      _iv_scale;
   const Node*    _init_node;      // value of iv before pre-loop
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
@@ -1192,7 +1191,6 @@ public:
       _base(              vpointer.decomposed_form().base().object_or_native()),
       _invar(             nullptr), // TODO
       _invar_factor(      1),
-      _iv_scale(          vpointer.iv_scale()),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
@@ -1206,6 +1204,8 @@ public:
   AlignmentSolution* solve() const;
 
 private:
+  jint iv_scale() const { return _vpointer.iv_scale(); }
+
   class EQ4 {
    private:
     const int _C_const;
