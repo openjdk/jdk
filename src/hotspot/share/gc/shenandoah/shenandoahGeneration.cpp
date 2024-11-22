@@ -28,7 +28,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahMarkClosures.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -117,6 +117,38 @@ public:
   }
 
   bool is_thread_safe() override { return true; }
+};
+
+// Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
+// for adaptive tenuring when census is taken during marking.
+// In non-product builds, for the purposes of verification, we also collect the total
+// live objects in young regions as well.
+class ShenandoahUpdateCensusZeroCohortClosure : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahMarkingContext* const _ctx;
+  // Population size units are words (not bytes)
+  size_t _age0_pop;                // running tally of age0 population size
+  size_t _total_pop;               // total live population size
+public:
+  explicit ShenandoahUpdateCensusZeroCohortClosure(ShenandoahMarkingContext* ctx)
+    : _ctx(ctx), _age0_pop(0), _total_pop(0) {}
+
+  void heap_region_do(ShenandoahHeapRegion* r) override {
+    if (_ctx != nullptr && r->is_active()) {
+      assert(r->is_young(), "Young regions only");
+      HeapWord* tams = _ctx->top_at_mark_start(r);
+      HeapWord* top  = r->top();
+      if (top > tams) {
+        _age0_pop += pointer_delta(top, tams);
+      }
+      // TODO: check significance of _ctx != nullptr above, can that
+      // spoof _total_pop in some corner cases?
+      NOT_PRODUCT(_total_pop += r->get_live_data_words();)
+    }
+  }
+
+  size_t get_age0_population()  const { return _age0_pop; }
+  size_t get_total_population() const { return _total_pop; }
 };
 
 void ShenandoahGeneration::confirm_heuristics_mode() {

@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SRC_SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
-#define SRC_SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
 
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -69,4 +69,32 @@ public:
   }
 };
 
-#endif //SRC_SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
+// Makes regions pinned or unpinned according to the region's pin count
+class ShenandoahSynchronizePinnedRegionStates : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahHeapLock* const _lock;
+
+public:
+  ShenandoahSynchronizePinnedRegionStates();
+
+  void heap_region_do(ShenandoahHeapRegion* r) override;
+  bool is_thread_safe() override { return true; }
+
+  void synchronize_pin_count(ShenandoahHeapRegion* r);
+};
+
+class ShenandoahMarkingContext;
+
+// Synchronizes region pinned status, sets update watermark and adjust live data tally for regions
+class ShenandoahFinalMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
+private:
+  ShenandoahMarkingContext* const _ctx;
+  ShenandoahSynchronizePinnedRegionStates _pins;
+public:
+  explicit ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx);
+
+  void heap_region_do(ShenandoahHeapRegion* r) override;
+  bool is_thread_safe() override { return true; }
+};
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP

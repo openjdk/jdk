@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,16 +24,37 @@
 
 #include "precompiled.hpp"
 
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahMarkClosures.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() :
+  _lock(ShenandoahHeap::heap()->lock()) { }
 
-ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStateClosure(
-  ShenandoahMarkingContext *ctx) :
-  _ctx(ctx), _lock(ShenandoahHeap::heap()->lock()) {}
+void ShenandoahSynchronizePinnedRegionStates::heap_region_do(ShenandoahHeapRegion* r) {
+  // Drop "pinned" state from regions that no longer have a pinned count. Put
+  // regions with a pinned count into the "pinned" state.
+  if (r->is_active()) {
+    synchronize_pin_count(r);
+  }
+}
+
+void ShenandoahSynchronizePinnedRegionStates::synchronize_pin_count(ShenandoahHeapRegion* r) {
+  if (r->is_pinned()) {
+    if (r->pin_count() == 0) {
+      ShenandoahHeapLocker locker(_lock);
+      r->make_unpinned();
+    }
+  } else {
+    if (r->pin_count() > 0) {
+      ShenandoahHeapLocker locker(_lock);
+      r->make_pinned();
+    }
+  }
+}
+
+ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext *ctx) :
+        _ctx(ctx) { }
 
 void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapRegion* r) {
   if (r->is_active()) {
@@ -56,17 +76,7 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
     // We are about to select the collection set, make sure it knows about
     // current pinning status. Also, this allows trashing more regions that
     // now have their pinning status dropped.
-    if (r->is_pinned()) {
-      if (r->pin_count() == 0) {
-        ShenandoahHeapLocker locker(_lock);
-        r->make_unpinned();
-      }
-    } else {
-      if (r->pin_count() > 0) {
-        ShenandoahHeapLocker locker(_lock);
-        r->make_pinned();
-      }
-    }
+    _pins.synchronize_pin_count(r);
 
     // Remember limit for updating refs. It's guaranteed that we get no
     // from-space-refs written from here on.
@@ -74,25 +84,6 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
   } else {
     assert(!r->has_live(), "Region " SIZE_FORMAT " should have no live data", r->index());
     assert(_ctx == nullptr || _ctx->top_at_mark_start(r) == r->top(),
-             "Region " SIZE_FORMAT " should have correct TAMS", r->index());
-  }
-}
-
-
-ShenandoahUpdateCensusZeroCohortClosure::ShenandoahUpdateCensusZeroCohortClosure(
-  ShenandoahMarkingContext *ctx) :
-  _ctx(ctx), _age0_pop(0), _total_pop(0) {}
-
-void ShenandoahUpdateCensusZeroCohortClosure::heap_region_do(ShenandoahHeapRegion* r) {
-  if (_ctx != nullptr && r->is_active()) {
-    assert(r->is_young(), "Young regions only");
-    HeapWord* tams = _ctx->top_at_mark_start(r);
-    HeapWord* top  = r->top();
-    if (top > tams) {
-      _age0_pop += pointer_delta(top, tams);
-    }
-    // TODO: check significance of _ctx != nullptr above, can that
-    // spoof _total_pop in some corner cases?
-    NOT_PRODUCT(_total_pop += r->get_live_data_words();)
+           "Region " SIZE_FORMAT " should have correct TAMS", r->index());
   }
 }

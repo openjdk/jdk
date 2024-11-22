@@ -54,6 +54,7 @@
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
@@ -2382,26 +2383,6 @@ void ShenandoahHeap::update_heap_references(bool concurrent) {
   } else {
     ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator);
     workers()->run_task(&task);
-  }
-}
-
-ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() : _lock(ShenandoahHeap::heap()->lock()) { }
-
-void ShenandoahSynchronizePinnedRegionStates::heap_region_do(ShenandoahHeapRegion* r) {
-  // Drop "pinned" state from regions that no longer have a pinned count. Put
-  // regions with a pinned count into the "pinned" state.
-  if (r->is_active()) {
-    if (r->is_pinned()) {
-      if (r->pin_count() == 0) {
-        ShenandoahHeapLocker locker(_lock);
-        r->make_unpinned();
-      }
-    } else {
-      if (r->pin_count() > 0) {
-        ShenandoahHeapLocker locker(_lock);
-        r->make_pinned();
-      }
-    }
   }
 }
 
