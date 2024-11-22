@@ -60,11 +60,12 @@ public class NativeEntryPoint {
                                         MethodType methodType,
                                         boolean needsReturnBuffer,
                                         int capturedStateMask,
-                                        boolean needsTransition) {
+                                        boolean needsTransition,
+                                        boolean usingAddressPairs) {
         if (returnMoves.length > 1 != needsReturnBuffer) {
             throw new AssertionError("Multiple register return, but needsReturnBuffer was false");
         }
-        checkType(methodType, needsReturnBuffer, capturedStateMask);
+        checkType(methodType, needsReturnBuffer, capturedStateMask, usingAddressPairs);
 
         CacheKey key = new CacheKey(methodType, abi, Arrays.asList(argMoves), Arrays.asList(returnMoves),
                                     needsReturnBuffer, capturedStateMask, needsTransition);
@@ -80,13 +81,18 @@ public class NativeEntryPoint {
         });
     }
 
-    private static void checkType(MethodType methodType, boolean needsReturnBuffer, int savedValueMask) {
+    private static void checkType(MethodType methodType, boolean needsReturnBuffer, int savedValueMask,
+                                  boolean usingAddressPairs) {
         if (methodType.parameterType(0) != long.class) {
             throw new AssertionError("Address expected as first param: " + methodType);
         }
         int checkIdx = 1;
         if ((needsReturnBuffer && methodType.parameterType(checkIdx++) != long.class)
-            || (savedValueMask != 0 && methodType.parameterType(checkIdx) != long.class)) {
+            || (savedValueMask != 0 &&
+                (usingAddressPairs
+                        ? methodType.parameterType(checkIdx++) != Object.class
+                            || methodType.parameterType(checkIdx) != long.class
+                        : methodType.parameterType(checkIdx) != long.class))) {
             throw new AssertionError("return buffer and/or preserved value address expected: " + methodType);
         }
     }

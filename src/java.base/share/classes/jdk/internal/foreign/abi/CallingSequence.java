@@ -195,6 +195,10 @@ public class CallingSequence {
         return !linkerOptions.isCritical();
     }
 
+    public boolean usingAddressPairs() {
+        return linkerOptions.allowsHeapAccess();
+    }
+
     public int numLeadingParams() {
         return 2 + (linkerOptions.hasCapturedCallState() ? 1 : 0); // 2 for addr, allocator
     }
