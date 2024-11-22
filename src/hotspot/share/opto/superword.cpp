@@ -512,7 +512,7 @@ int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
   // Opcode
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
 
-  // VPointer summands
+  // XPointer summands
   return MemPointerDecomposedForm::cmp_summands(a->xpointer().decomposed_form(),
                                                 b->xpointer().decomposed_form());
 }
@@ -522,7 +522,7 @@ int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
   int cmp_group = cmp_by_group(a, b);
   if (cmp_group != 0) { return cmp_group; }
 
-  // VPointer con
+  // XPointer con
   jint a_con = a->xpointer().decomposed_form().con().value();
   jint b_con = b->xpointer().decomposed_form().con().value();
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a_con, b_con);
@@ -537,12 +537,12 @@ void SuperWord::create_adjacent_memop_pairs() {
 
   collect_valid_memops(memops);
 
-  // Sort the MemOps by group, and inside a group by VPointer con:
-  //  - Group: all memops with the same opcode, and the same VPointer summands. Adjacent memops
-  //           have the same opcode and the same VPointer summands, only the VPointer con is
+  // Sort the MemOps by group, and inside a group by XPointer con:
+  //  - Group: all memops with the same opcode, and the same XPointer summands. Adjacent memops
+  //           have the same opcode and the same XPointer summands, only the XPointer con is
   //           different. Thus, two memops can only be adjacent if they are in the same group.
   //           This decreases the work.
-  //  - VPointer con: Sorting by VPointer con inside the group allows us to perform a sliding
+  //  - XPointer con: Sorting by XPointer con inside the group allows us to perform a sliding
   //                  window algorithm, to determine adjacent memops efficiently.
   memops.sort(MemOp::cmp_by_group_and_con);
 

@@ -56,8 +56,6 @@
 // first statement is considered the left element, and the
 // second statement is considered the right element.
 
-class VPointer;
-
 // The PairSet is a set of pairs. These are later combined to packs,
 // and stored in the PackSet.
 class PairSet : public StackObj {
@@ -500,9 +498,6 @@ class SuperWord : public ResourceObj {
   }
 
   // VLoopVPointer accessors
-  const VPointer& vpointer(const MemNode* mem) const {
-    return _vloop_analyzer.vpointers().vpointer(mem);
-  }
   const XPointer& xpointer(const MemNode* mem) const {
     return _vloop_analyzer.vpointers().xpointer(mem);
   }

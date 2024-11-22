@@ -150,10 +150,15 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
   if (a > b) { return  1; }
 
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
-// It represents a memory region: [ptr, ptr + memory_size)
+// It represents a memory region:
+//   [adr, adr + memory_size)
+//   adr = base + invar + iv_scale * iv + con
 class VMemoryRegion : public StackObj {
 private:
-  Node* _base;        // ptr = base + offset + invar + scale * iv
+  const XPointer* _xpointer; // reference not possible, need empty VMemoryRegion constructor for GrowableArray
+
+  // TODO rm? - maybe also fix printing?
+  Node* _base;
   int _scale;
   Node* _invar;
   int _offset;
@@ -162,14 +167,15 @@ private:
   uint _schedule_order;
 
 public:
-  VMemoryRegion() {} // empty constructor for GrowableArray
-  VMemoryRegion(const VPointer& vpointer, int iv_offset, int vector_length, uint schedule_order) :
-    _base(vpointer.base()),
-    _scale(vpointer.scale_in_bytes()),
-    _invar(vpointer.invar()),
-    _offset(vpointer.offset_in_bytes() + _scale * iv_offset),
-    _memory_size(vpointer.memory_size() * vector_length),
-    _is_load(vpointer.mem()->is_Load()),
+  VMemoryRegion() : _xpointer(nullptr) {} // empty constructor for GrowableArray
+  VMemoryRegion(const XPointer& xpointer, int iv_offset, int vector_length, bool is_load, uint schedule_order) :
+    _xpointer(&xpointer),
+    _base(   xpointer.decomposed_form().base().object_or_native()),
+    _scale(  xpointer.iv_scale()),
+    _invar(  nullptr), // TODO
+    _offset( xpointer.con() + _scale * iv_offset),
+    _memory_size(xpointer.size() * vector_length),
+    _is_load(is_load),
     _schedule_order(schedule_order) {}
 
     Node* base()          const { return _base; }
@@ -217,13 +223,10 @@ public:
 
 #ifndef PRODUCT
   void print() const {
-    tty->print("VMemoryRegion[%s %dbytes, schedule_order(%4d), base",
+    tty->print("VMemoryRegion[%s %dbytes, schedule_order(%4d), ",
                _is_load ? "load " : "store", _memory_size, _schedule_order);
-    VPointer::print_con_or_idx(_base);
-    tty->print(" + offset(%4d)", _offset);
-    tty->print(" + invar");
-    VPointer::print_con_or_idx(_invar);
-    tty->print_cr(" + scale(%4d) * iv]", _scale);
+    _xpointer->decomposed_form().print_on(tty, false);
+    tty->print_cr("]");
   }
 #endif
 };
@@ -350,11 +353,12 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
-        const VPointer& p = vtn->vpointer(vloop_analyzer);
-        if (p.valid()) {
+        const XPointer& p = vtn->xpointer(vloop_analyzer);
+        if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
           uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
-          memory_regions.push(VMemoryRegion(p, iv_offset, vector_length, schedule_order++));
+          bool is_load = vtn->is_load_in_loop();
+          memory_regions.push(VMemoryRegion(p, iv_offset, vector_length, is_load, schedule_order++));
         }
       }
     }

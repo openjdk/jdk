@@ -666,12 +666,13 @@ public:
     }
   }
 
-  void print_on(outputStream* st) const {
+  void print_on(outputStream* st, bool end_with_cr = true) const {
     st->print("MemPointerDecomposedForm[base: ");
     _base.print_on(st);
     st->print(", form: ");
     print_form_on(st);
-    st->print_cr("]");
+    st->print("]");
+    if (end_with_cr) { st->cr(); }
   }
 #endif
 };
