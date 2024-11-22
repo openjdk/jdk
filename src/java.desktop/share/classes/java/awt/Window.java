@@ -210,18 +210,6 @@ public class Window extends Container implements Accessible {
     }
 
     /**
-     * This represents the warning message that is
-     * to be displayed in a non secure window. ie :
-     * a window that has a security manager installed that denies
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}.
-     * This message can be displayed anywhere in the window.
-     *
-     * @serial
-     * @see #getWarningString
-     */
-    String      warningString;
-
-    /**
      * {@code icons} is the graphical way we can
      * represent the frames and dialogs.
      * {@code Window} can't display icon but it's
@@ -398,13 +386,6 @@ public class Window extends Container implements Accessible {
 
     transient boolean isTrayIconWindow = false;
 
-    /**
-     * These fields are initialized in the native peer code
-     * or via AWTAccessor's WindowAccessor.
-     */
-    private transient volatile int securityWarningWidth;
-    private transient volatile int securityWarningHeight;
-
     static {
         /* ensure that the necessary native libraries are loaded */
         Toolkit.loadLibraries();
@@ -428,10 +409,6 @@ public class Window extends Container implements Accessible {
      * Constructs a new, initially invisible window in default size with the
      * specified {@code GraphicsConfiguration}.
      * <p>
-     * If there is a security manager, then it is invoked to check
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}
-     * to determine whether or not the window must be displayed with
-     * a warning banner.
      *
      * @param gc the {@code GraphicsConfiguration} of the target screen
      *     device. If {@code gc} is {@code null}, the system default
@@ -532,10 +509,6 @@ public class Window extends Container implements Accessible {
     /**
      * Constructs a new, initially invisible window in the default size.
      * <p>
-     * If there is a security manager set, it is invoked to check
-     * {@code AWTPermission("showWindowWithoutWarningBanner")}.
-     * If that check fails with a {@code SecurityException} then a warning
-     * banner is created.
      *
      * @throws HeadlessException when
      *     {@code GraphicsEnvironment.isHeadless()} returns {@code true}
@@ -1361,11 +1334,14 @@ public class Window extends Container implements Accessible {
      * Gets the warning string that is displayed with this window.
      * <p>
      * Warning strings are no longer applicable,
-     * so this method always returns {@code null}.
+     * so this method always returns {@code null} and may be
+     * removed in a future release.
      * @return    null
+     * @deprecated since JDK 24
      */
+    @Deprecated(since="24", forRemoval=true)
     public final String getWarningString() {
-        return warningString;
+        return null;
     }
 
     /**
@@ -3075,9 +3051,6 @@ public class Window extends Container implements Accessible {
          shape = (Shape)f.get("shape", null);
          opacity = (Float)f.get("opacity", 1.0f);
 
-         this.securityWarningWidth = 0;
-         this.securityWarningHeight = 0;
-
          deserializeResources(s);
     }
 
@@ -3977,67 +3950,10 @@ public class Window extends Container implements Accessible {
         return value;
     }
 
-    /**
-     * Calculate the position of the security warning.
-     *
-     * This method gets the window location/size as reported by the native
-     * system since the locally cached values may represent outdated data.
-     *
-     * The method is used from the native code, or via AWTAccessor.
-     *
-     * NOTE: this method is invoked on the toolkit thread, and therefore is not
-     * supposed to become public/user-overridable.
-     */
-    private Point2D calculateSecurityWarningPosition(double x, double y,
-            double w, double h)
-    {
-         // The desired location for the security warning
-        double wx = x + w * RIGHT_ALIGNMENT + 2.0;
-        double wy = y + h * TOP_ALIGNMENT + 0.0;
-
-        // First, make sure the warning is not too far from the window bounds
-        wx = Window.limit(wx,
-                x - securityWarningWidth - 2,
-                x + w + 2);
-        wy = Window.limit(wy,
-                y - securityWarningHeight - 2,
-                y + h + 2);
-
-        // Now make sure the warning window is visible on the screen
-        GraphicsConfiguration graphicsConfig =
-            getGraphicsConfiguration_NoClientCode();
-        Rectangle screenBounds = graphicsConfig.getBounds();
-        Insets screenInsets =
-            Toolkit.getDefaultToolkit().getScreenInsets(graphicsConfig);
-
-        wx = Window.limit(wx,
-                screenBounds.x + screenInsets.left,
-                screenBounds.x + screenBounds.width - screenInsets.right
-                - securityWarningWidth);
-        wy = Window.limit(wy,
-                screenBounds.y + screenInsets.top,
-                screenBounds.y + screenBounds.height - screenInsets.bottom
-                - securityWarningHeight);
-
-        return new Point2D.Double(wx, wy);
-    }
-
     static {
         AWTAccessor.setWindowAccessor(new AWTAccessor.WindowAccessor() {
             public void updateWindow(Window window) {
                 window.updateWindow();
-            }
-
-            public void setSecurityWarningSize(Window window, int width, int height)
-            {
-                window.securityWarningWidth = width;
-                window.securityWarningHeight = height;
-            }
-
-            public Point2D calculateSecurityWarningPosition(Window window,
-                    double x, double y, double w, double h)
-            {
-                return window.calculateSecurityWarningPosition(x, y, w, h);
             }
 
             public void setLWRequestStatus(Window changed, boolean status) {

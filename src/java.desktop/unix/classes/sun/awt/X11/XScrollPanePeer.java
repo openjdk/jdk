@@ -272,7 +272,6 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
      */
     @SuppressWarnings("deprecation")
     void scroll(int x, int y, int flag, int type) {
-        checkSecurity();
         ScrollPane sp = (ScrollPane)target;
         Component c = getScrollChild();
         if (c == null) {

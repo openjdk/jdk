@@ -199,7 +199,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static final X11GraphicsDevice device;
     private static final long display;
     static int awt_multiclick_time;
-    static boolean securityWarningEnabled;
 
     /**
      * Dimensions of default virtual screen in pixels. These values are used to
@@ -211,7 +210,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static XMouseInfoPeer xPeer;
 
     static {
-        initSecurityWarning();
         if (GraphicsEnvironment.isHeadless()) {
             localEnv = null;
             device = null;
@@ -238,16 +236,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static Thread toolkitThread;
     static boolean isToolkitThread() {
         return Thread.currentThread() == toolkitThread;
-    }
-
-    static void initSecurityWarning() {
-        // Enable warning only for internal builds
-        String runtime = System.getProperty("java.runtime.version");
-        securityWarningEnabled = (runtime != null && runtime.contains("internal"));
-    }
-
-    static boolean isSecurityWarningEnabled() {
-        return securityWarningEnabled;
     }
 
     static native void awt_output_flush();
