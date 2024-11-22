@@ -1113,7 +1113,6 @@ public class UIDefaults extends Hashtable<Object,Object>
          * @param o    an array of <code>Objects</code> to be passed as
          *              parameters to the static method in class c
          */
-        @SuppressWarnings("removal")
         public ProxyLazyValue(String c, String m, Object[] o) {
             className = c;
             methodName = m;
