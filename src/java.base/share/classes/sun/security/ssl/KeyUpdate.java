@@ -52,9 +52,9 @@ final class KeyUpdate {
 
     /**
      * The KeyUpdate handshake message.
-     *
+     * <p>
      * The KeyUpdate handshake message is used to indicate that the sender is
-     * updating its sending cryptographic keys.
+     * updating its sending cryptographic keys
      *
      *       enum {
      *           update_not_requested(0), update_requested(1), (255)
@@ -62,7 +62,7 @@ final class KeyUpdate {
      *
      *       struct {
      *           KeyUpdateRequest request_update;
-     *       } KeyUpdate;
+     *       } KeyUpdate
      */
     static final class KeyUpdateMessage extends HandshakeMessage {
         private final KeyUpdateRequest status;
