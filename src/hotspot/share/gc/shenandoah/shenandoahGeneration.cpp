@@ -755,7 +755,7 @@ bool ShenandoahGeneration::is_bitmap_clear() {
     ShenandoahHeapRegion* r = heap->get_region(idx);
     if (contains(r) && r->is_affiliated()) {
       if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
-          !context->is_bitmap_clear_range(r->bottom(), r->end())) {
+          !context->is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
         return false;
       }
     }

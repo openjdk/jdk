@@ -878,7 +878,7 @@ void ShenandoahHeap::notify_heap_changed() {
   // Update monitoring counters when we took a new region. This amortizes the
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
-  _heap_changed.set();
+  _heap_changed.try_set();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {
@@ -1967,9 +1967,6 @@ void ShenandoahHeap::set_gc_state(uint mask, bool value) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   _gc_state.set_cond(mask, value);
   _gc_state_changed = true;
-  // Check that if concurrent weak root is set then active_gen isn't null
-  assert(!is_concurrent_weak_root_in_progress() || active_generation() != nullptr, "Error");
-  shenandoah_assert_generations_reconciled();
 }
 
 void ShenandoahHeap::set_concurrent_young_mark_in_progress(bool in_progress) {

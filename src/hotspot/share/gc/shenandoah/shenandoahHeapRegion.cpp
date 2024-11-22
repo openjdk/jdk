@@ -834,7 +834,7 @@ void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation
     size_t idx = this->index();
     HeapWord* top_bitmap = ctx->top_bitmap(this);
 
-    assert(ctx->is_bitmap_clear_range(top_bitmap, _end),
+    assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, _end),
            "Region " SIZE_FORMAT ", bitmap should be clear between top_bitmap: " PTR_FORMAT " and end: " PTR_FORMAT, idx,
            p2i(top_bitmap), p2i(_end));
   }
