@@ -41,24 +41,26 @@ bool ShenandoahMarkingContext::is_bitmap_clear() const {
   size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* r = heap->get_region(idx);
-    if (r->is_affiliated() && heap->is_bitmap_slice_committed(r) && !is_bitmap_clear_range(r->bottom(), r->end())) {
+    if (r->is_affiliated() && heap->is_bitmap_slice_committed(r)
+        && !is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
       return false;
     }
   }
   return true;
 }
 
-bool ShenandoahMarkingContext::is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const {
+bool ShenandoahMarkingContext::is_bitmap_range_within_region_clear(const HeapWord* start, const HeapWord* end) const {
+  assert(start <= end, "Invalid start " PTR_FORMAT " and end " PTR_FORMAT, p2i(start), p2i(end));
   if (start < end) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     size_t start_idx = heap->heap_region_index_containing(start);
+#ifdef ASSERT
     size_t end_idx = heap->heap_region_index_containing(end - 1);
-    while (start_idx <= end_idx) {
-      ShenandoahHeapRegion* r = heap->get_region(start_idx);
-      if (!heap->is_bitmap_slice_committed(r)) {
-        return true;
-      }
-      start_idx++;
+    assert(start_idx == end_idx, "Expected range to be within same region (" SIZE_FORMAT ", " SIZE_FORMAT ")", start_idx, end_idx);
+#endif
+    ShenandoahHeapRegion* r = heap->get_region(start_idx);
+    if (!heap->is_bitmap_slice_committed(r)) {
+      return true;
     }
   }
   return _mark_bit_map.is_bitmap_clear_range(start, end);
@@ -91,7 +93,7 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
     _top_bitmaps[r->index()] = bottom;
   }
 
-  assert(is_bitmap_clear_range(bottom, r->end()),
+  assert(is_bitmap_range_within_region_clear(bottom, r->end()),
          "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());
 }
 

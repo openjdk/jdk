@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,8 @@ class DumpTimeClassInfo: public CHeapObj<mtClass> {
   bool                         _excluded;
   bool                         _is_early_klass;
   bool                         _has_checked_exclusion;
-
+  bool                         _is_required_hidden_class;
+  bool                         _has_scanned_constant_pool;
   class DTLoaderConstraint {
     Symbol* _name;
     char _loader_type1;
@@ -137,6 +138,8 @@ public:
     _failed_verification = false;
     _is_archived_lambda_proxy = false;
     _has_checked_exclusion = false;
+    _is_required_hidden_class = false;
+    _has_scanned_constant_pool = false;
     _id = -1;
     _clsfile_size = -1;
     _clsfile_crc32 = -1;
@@ -213,6 +216,11 @@ public:
   void set_failed_verification()                    { _failed_verification = true; }
   InstanceKlass* nest_host() const                  { return _nest_host; }
   void set_nest_host(InstanceKlass* nest_host)      { _nest_host = nest_host; }
+
+  bool is_required_hidden_class() const             { return _is_required_hidden_class; }
+  void set_is_required_hidden_class()               { _is_required_hidden_class = true; }
+  bool has_scanned_constant_pool() const            { return _has_scanned_constant_pool; }
+  void set_has_scanned_constant_pool()              { _has_scanned_constant_pool = true; }
 
   size_t runtime_info_bytesize() const;
 };

@@ -98,7 +98,7 @@ inline void ShenandoahMarkingContext::capture_top_at_mark_start(ShenandoahHeapRe
   assert((new_tams == r->bottom()) || (old_tams == r->bottom()) || (new_tams >= _top_bitmaps[idx]),
          "Region " SIZE_FORMAT", top_bitmaps updates should be monotonic: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(_top_bitmaps[idx]), p2i(new_tams));
-  assert(old_tams == r->bottom() || is_bitmap_clear_range(old_tams, new_tams),
+  assert(old_tams == r->bottom() || is_bitmap_range_within_region_clear(old_tams, new_tams),
          "Region " SIZE_FORMAT ", bitmap should be clear while adjusting TAMS: " PTR_FORMAT " -> " PTR_FORMAT,
          idx, p2i(old_tams), p2i(new_tams));
 
@@ -118,7 +118,7 @@ inline HeapWord* ShenandoahMarkingContext::top_at_mark_start(const ShenandoahHea
 }
 
 inline void ShenandoahMarkingContext::reset_top_bitmap(ShenandoahHeapRegion* r) {
-  assert(is_bitmap_clear_range(r->bottom(), r->end()),
+  assert(is_bitmap_range_within_region_clear(r->bottom(), r->end()),
          "Region " SIZE_FORMAT " should have no marks in bitmap", r->index());
   _top_bitmaps[r->index()] = r->bottom();
 }

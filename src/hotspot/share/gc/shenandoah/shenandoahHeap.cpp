@@ -54,6 +54,7 @@
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
@@ -878,7 +879,7 @@ void ShenandoahHeap::notify_heap_changed() {
   // Update monitoring counters when we took a new region. This amortizes the
   // update costs on slow path.
   monitoring_support()->notify_heap_changed();
-  _heap_changed.set();
+  _heap_changed.try_set();
 }
 
 void ShenandoahHeap::set_forced_counters_update(bool value) {
@@ -1967,9 +1968,6 @@ void ShenandoahHeap::set_gc_state(uint mask, bool value) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   _gc_state.set_cond(mask, value);
   _gc_state_changed = true;
-  // Check that if concurrent weak root is set then active_gen isn't null
-  assert(!is_concurrent_weak_root_in_progress() || active_generation() != nullptr, "Error");
-  shenandoah_assert_generations_reconciled();
 }
 
 void ShenandoahHeap::set_concurrent_young_mark_in_progress(bool in_progress) {
@@ -2385,26 +2383,6 @@ void ShenandoahHeap::update_heap_references(bool concurrent) {
   } else {
     ShenandoahUpdateHeapRefsTask<false> task(&_update_refs_iterator);
     workers()->run_task(&task);
-  }
-}
-
-ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() : _lock(ShenandoahHeap::heap()->lock()) { }
-
-void ShenandoahSynchronizePinnedRegionStates::heap_region_do(ShenandoahHeapRegion* r) {
-  // Drop "pinned" state from regions that no longer have a pinned count. Put
-  // regions with a pinned count into the "pinned" state.
-  if (r->is_active()) {
-    if (r->is_pinned()) {
-      if (r->pin_count() == 0) {
-        ShenandoahHeapLocker locker(_lock);
-        r->make_unpinned();
-      }
-    } else {
-      if (r->pin_count() > 0) {
-        ShenandoahHeapLocker locker(_lock);
-        r->make_pinned();
-      }
-    }
   }
 }
 

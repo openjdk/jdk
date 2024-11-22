@@ -85,7 +85,7 @@ public:
   void clear_bitmap(ShenandoahHeapRegion *r);
 
   bool is_bitmap_clear() const;
-  bool is_bitmap_clear_range(const HeapWord* start, const HeapWord* end) const;
+  bool is_bitmap_range_within_region_clear(const HeapWord* start, const HeapWord* end) const;
 
   bool is_complete();
   void mark_complete();
