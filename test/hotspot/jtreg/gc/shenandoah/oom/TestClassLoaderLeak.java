@@ -28,7 +28,7 @@
  * @summary Test OOME in due to classloader leak
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @run driver/timeout=600 TestClassLoaderLeak
+ * @run driver TestClassLoaderLeak
  */
 
 import java.util.*;
