@@ -39,7 +39,9 @@ import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
 import sun.nio.ch.DirectBuffer;
-
+#if[byte]
+import jdk.internal.vm.annotation.Stable;
+#end[byte]
 
 #if[rw]
 sealed
@@ -72,14 +74,18 @@ class Direct$Type$Buffer$RW$$BO$
     // Cached unaligned-access capability
     static final boolean UNALIGNED = Bits.unaligned();
 
-    private record Deallocator(long address, long size, int capacity) implements Runnable {
+    private @Stable boolean temporary; // defaults to false
+
+    private record Deallocator(long address, long size, int capacity,
+                               boolean temporary) implements Runnable {
         private Deallocator {
             assert address != 0;
         }
 
         public void run() {
             UNSAFE.freeMemory(address);
-            Bits.unreserveMemory(size, capacity);
+            if (!temporary)
+                Bits.unreserveMemory(size, capacity);
         }
     }
 
@@ -99,19 +105,22 @@ class Direct$Type$Buffer$RW$$BO$
 
     // Primary constructor
     //
-    Direct$Type$Buffer$RW$(int cap) {                   // package-private
+    Direct$Type$Buffer$RW$(int cap, boolean temporary) { // package-private
 #if[rw]
         super(-1, 0, cap, cap, null);
+        this.temporary = temporary;
         boolean pa = VM.isDirectMemoryPageAligned();
         int ps = Bits.pageSize();
         long size = Math.max(1L, (long)cap + (pa ? ps : 0));
-        Bits.reserveMemory(size, cap);
+        if (!temporary)
+            Bits.reserveMemory(size, cap);
 
         long base = 0;
         try {
             base = UNSAFE.allocateMemory(size);
         } catch (OutOfMemoryError x) {
-            Bits.unreserveMemory(size, cap);
+            if (!temporary)
+                Bits.unreserveMemory(size, cap);
             throw x;
         }
         UNSAFE.setMemory(base, size, (byte) 0);
@@ -122,11 +131,12 @@ class Direct$Type$Buffer$RW$$BO$
             address = base;
         }
         try {
-            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+            cleaner = Cleaner.create(this, new Deallocator(base, size, cap, temporary));
         } catch (Throwable t) {
             // Prevent leak if the Deallocator or Cleaner fail for any reason
             UNSAFE.freeMemory(base);
-            Bits.unreserveMemory(size, cap);
+            if (!temporary)
+                Bits.unreserveMemory(size, cap);
             throw t;
         }
         att = null;
@@ -134,6 +144,10 @@ class Direct$Type$Buffer$RW$$BO$
         super(cap);
         this.isReadOnly = true;
 #end[rw]
+    }
+
+    Direct$Type$Buffer$RW$(int cap) { // package-private
+        this(cap, false);
     }
 
 #if[rw]

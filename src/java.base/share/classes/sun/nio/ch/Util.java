@@ -36,10 +36,14 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
 
+import jdk.internal.access.JavaNioAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 
 public class Util {
+
+    private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     // -- Caches --
 
@@ -221,7 +225,7 @@ public class Util {
         // to remove the buffer from the cache (as this method does
         // below) given that we won't put the new buffer in the cache.
         if (isBufferTooLarge(size)) {
-            return ByteBuffer.allocateDirect(size);
+            return NIO_ACCESS.allocateDirectTemporary(size);
         }
 
         BufferCache cache = bufferCache.get();
@@ -236,7 +240,7 @@ public class Util {
                 buf = cache.removeFirst();
                 free(buf);
             }
-            return ByteBuffer.allocateDirect(size);
+            return NIO_ACCESS.allocateDirectTemporary(size);
         }
     }
 
@@ -247,7 +251,7 @@ public class Util {
     public static ByteBuffer getTemporaryAlignedDirectBuffer(int size,
                                                              int alignment) {
         if (isBufferTooLarge(size)) {
-            return ByteBuffer.allocateDirect(size + alignment - 1)
+            return NIO_ACCESS.allocateDirectTemporary(size + alignment - 1)
                     .alignedSlice(alignment);
         }
 
@@ -263,7 +267,7 @@ public class Util {
                 free(buf);
             }
         }
-        return ByteBuffer.allocateDirect(size + alignment - 1)
+        return NIO_ACCESS.allocateDirectTemporary(size + alignment - 1)
                 .alignedSlice(alignment);
     }
 

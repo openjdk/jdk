@@ -847,6 +847,11 @@ public abstract sealed class Buffer
                     return new HeapByteBuffer(hb, -1, 0, capacity, capacity, offset, segment);
                 }
 
+                @Override
+                public ByteBuffer allocateDirectTemporary(int cap) {
+                    return new DirectByteBuffer(cap, true);
+                }
+
                 @ForceInline
                 @Override
                 public Object getBufferBase(Buffer buffer) {
