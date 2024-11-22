@@ -2208,19 +2208,19 @@ do {                                                                  \
          (result        == R8_ARG6      || result        == noreg), "registers must match ppc64.ad"); \
 } while(0)
 
-void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
-                                                   Register r_super_klass,
-                                                   Register temp1,
-                                                   Register temp2,
-                                                   Register temp3,
-                                                   Register temp4,
-                                                   Register result,
-                                                   u1 super_klass_slot) {
+void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
+                                                         Register r_super_klass,
+                                                         Register temp1,
+                                                         Register temp2,
+                                                         Register temp3,
+                                                         Register temp4,
+                                                         Register result,
+                                                         u1 super_klass_slot) {
   assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result);
 
   Label L_done;
 
-  BLOCK_COMMENT("lookup_secondary_supers_table {");
+  BLOCK_COMMENT("lookup_secondary_supers_table_const {");
 
   const Register
     r_array_base   = temp1,
@@ -2290,7 +2290,90 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   bctrl();
 
   bind(L_done);
-  BLOCK_COMMENT("} lookup_secondary_supers_table");
+  BLOCK_COMMENT("} lookup_secondary_supers_table_const");
+
+  if (VerifySecondarySupers) {
+    verify_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                  temp1, temp2, temp3);
+  }
+}
+
+// At runtime, return 0 in result if r_super_klass is a superclass of
+// r_sub_klass, otherwise return nonzero. Use this version of
+// lookup_secondary_supers_table() if you don't know ahead of time
+// which superclass will be searched for. Used by interpreter and
+// runtime stubs. It is larger and has somewhat greater latency than
+// the version above, which takes a constant super_klass_slot.
+void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
+                                                       Register r_super_klass,
+                                                       Register temp1,
+                                                       Register temp2,
+                                                       Register temp3,
+                                                       Register temp4,
+                                                       Register result) {
+  assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result, R0);
+
+  Label L_done;
+
+  BLOCK_COMMENT("lookup_secondary_supers_table_var {");
+
+  const Register
+    r_array_base   = temp1,
+    slot           = temp2,
+    r_array_index  = temp3,
+    r_bitmap       = temp4;
+
+  lbz(slot, in_bytes(Klass::hash_slot_offset()), r_super_klass);
+  ld(r_bitmap, in_bytes(Klass::secondary_supers_bitmap_offset()), r_sub_klass);
+
+  li(result, 1); // Make sure that result is nonzero if the test below misses.
+
+  // First check the bitmap to see if super_klass might be present. If
+  // the bit is zero, we are certain that super_klass is not one of
+  // the secondary supers.
+  xori(R0, slot, Klass::SECONDARY_SUPERS_TABLE_SIZE - 1); // slot ^ 63 === 63 - slot (mod 64)
+  sld_(r_array_index, r_bitmap, R0); // shift left by 63-slot
+
+  // We test the MSB of r_array_index, i.e. its sign bit
+  bge(CCR0, L_done);
+
+  // We will consult the secondary-super array.
+  ld(r_array_base, in_bytes(Klass::secondary_supers_offset()), r_sub_klass);
+
+  // The value i in r_array_index is >= 1, so even though r_array_base
+  // points to the length, we don't need to adjust it to point to the data.
+  assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
+  assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
+
+  // Get the first array index that can contain super_klass into r_array_index.
+  popcntd(r_array_index, r_array_index);
+
+  // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
+  sldi(r_array_index, r_array_index, LogBytesPerWord); // scale
+
+  ldx(R0, r_array_base, r_array_index);
+  xor_(result, R0, r_super_klass);
+  beq(CCR0, L_done); // found a match, result is 0 in this case
+
+  // Linear probe. Rotate the bitmap so that the next bit to test is
+  // in Bit 1.
+  neg(R0, slot); // rotate right
+  rldcl(r_bitmap, r_bitmap, R0, 0);
+  Register temp = slot;
+  andi_(temp, r_bitmap, 2);
+  beq(CCR0, L_done); // fail (result != 0)
+
+  // The slot we just inspected is at secondary_supers[r_array_index - 1].
+  // The next slot to be inspected, by the logic we're about to call,
+  // is secondary_supers[r_array_index]. Bits 0 and 1 in the bitmap
+  // have been checked.
+  lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index,
+                                          r_bitmap, result, temp);
+  // return whatever we got from slow path
+
+  bind(L_done);
+
+  BLOCK_COMMENT("} lookup_secondary_supers_table_var");
 
   if (VerifySecondarySupers) {
     verify_secondary_supers_table(r_sub_klass, r_super_klass, result,

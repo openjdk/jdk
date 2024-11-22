@@ -336,6 +336,13 @@ inline void Assembler::rldimi_( Register a, Register s, int sh6, int mb6)       
 inline void Assembler::insrdi(  Register a, Register s, int n,   int b)           { Assembler::rldimi(a, s, 64-(b+n), b); }
 inline void Assembler::insrwi(  Register a, Register s, int n,   int b)           { Assembler::rlwimi(a, s, 32-(b+n), b, b+n-1); }
 
+inline void Assembler::rlwnm( Register a, Register s, Register b, int mb, int me) { emit_int32(RLWNM_OPCODE | rta(a) | rs(s) | rb(b) | mb2125(mb) | me2630(me) | rc(0)); }
+inline void Assembler::rlwnm_(Register a, Register s, Register b, int mb, int me) { emit_int32(RLWNM_OPCODE | rta(a) | rs(s) | rb(b) | mb2125(mb) | me2630(me) | rc(1)); }
+inline void Assembler::rldcl(  Register a, Register s, Register b, int mb)        { emit_int32(RLDCL_OPCODE | rta(a) | rs(s) | rb(b) | mb2126(mb) | rc(0)); }
+inline void Assembler::rldcl_( Register a, Register s, Register b, int mb)        { emit_int32(RLDCL_OPCODE | rta(a) | rs(s) | rb(b) | mb2126(mb) | rc(1)); }
+inline void Assembler::rldcr(  Register a, Register s, Register b, int me)        { emit_int32(RLDCR_OPCODE | rta(a) | rs(s) | rb(b) | me2126(me) | rc(0)); }
+inline void Assembler::rldcr_( Register a, Register s, Register b, int me)        { emit_int32(RLDCR_OPCODE | rta(a) | rs(s) | rb(b) | me2126(me) | rc(1)); }
+
 // PPC 1, section 3.3.2 Fixed-Point Load Instructions
 inline void Assembler::lwzx( Register d, Register s1, Register s2) { emit_int32(LWZX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::lwz(  Register d, Address &a) {
