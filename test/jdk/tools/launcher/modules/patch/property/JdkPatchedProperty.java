@@ -31,7 +31,7 @@ import java.lang.reflect.Constructor;
 
 /*
  * @test id=unpatched_override_cli
- * @summary Test property jdk.patched for unpatched runtime
+ * @summary Test CLI override of property jdk.patched for unpatched runtime
  * @run main/othervm -Djdk.patched=true JdkPatchedProperty false
  */
 
@@ -45,7 +45,7 @@ import java.lang.reflect.Constructor;
 
 /*
  * @test id=patched_override_cli
- * @summary Test property jdk.patched for patched runtime
+ * @summary Test CLI override of property jdk.patched for patched runtime
  * @compile --patch-module java.base=${test.src}/patch/java/lang
  *          ${test.src}/patch/java/lang/TestInteger.java JdkPatchedProperty.java
  * @run main/othervm --patch-module=java.base=${test.classes} -Djdk.patched=false JdkPatchedProperty true
@@ -69,12 +69,28 @@ public class JdkPatchedProperty {
             Object i = cons.newInstance();
             System.out.println("Found integer class from module patch: " + i.getClass());
         }
-        if (actual != expectPatched) {
-            String msg = "Expected " + (expectPatched ? "patched" : "unpatched") +
+        assertEquals(actual, expectPatched);
+    }
+
+    private static void assertEquals(boolean actual, boolean expected) {
+        if (actual != expected) {
+            String msg = "Expected " + (expected ? "patched" : "unpatched") +
                          " runtime but detected " + (actual ? "patched" : "unpatched") +
                          " runtime via property " + PATCHED_PROPERTY_NAME;
-            throw new RuntimeException(msg);
+            throw new AssertionError(msg);
         }
+    }
+
+    public void runTestCode() throws Exception {
+        // The System class happily lets you change JDK properties
+        System.setProperty(PATCHED_PROPERTY_NAME, Boolean.valueOf(!expectPatched).toString());
+        boolean actual = Boolean.getBoolean(PATCHED_PROPERTY_NAME);
+        assertEquals(actual, !expectPatched);
+
+        // clear properties, which gets expected values from the VM
+        System.setProperties(null);
+        actual = Boolean.getBoolean(PATCHED_PROPERTY_NAME);
+        assertEquals(actual, expectPatched);
     }
 
     public static void main(String[] args) throws Exception {
@@ -84,6 +100,7 @@ public class JdkPatchedProperty {
         boolean expectPatched = Boolean.parseBoolean(args[0]);
         JdkPatchedProperty t = new JdkPatchedProperty(expectPatched);
         t.runTest();
+        t.runTestCode();
     }
 
 }
