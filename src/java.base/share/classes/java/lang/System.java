@@ -662,6 +662,9 @@ public final class System {
      *     <td>The upgrade module path</td></tr>
      * <tr><th scope="row">{@systemProperty jdk.module.main}</th>
      *     <td>The module name of the initial/main module</td></tr>
+     * <tr><th scope="row">{@systemProperty jdk.patched}</th>
+     *     <td>Set to {@code true} if and only if one or more --patch-module
+     *     options were passed to the launcher. {@code false} otherwise.</td></tr>
      * <tr><th scope="row">{@systemProperty jdk.module.main.class}</th>
      *     <td>The main class name of the initial module</td></tr>
      * <tr><th scope="row">{@systemProperty file.encoding}</th>
