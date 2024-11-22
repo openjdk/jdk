@@ -49,7 +49,7 @@ class KeepAliveStreamCleaner
     implements Runnable
 {
     // maximum amount of remaining data that we will try to clean up
-    protected static final int MAX_DATA_REMAINING;
+    protected static final long MAX_DATA_REMAINING;
 
     // maximum amount of KeepAliveStreams to be queued
     protected static final int MAX_CAPACITY;
@@ -62,7 +62,7 @@ class KeepAliveStreamCleaner
 
     static {
         final String maxDataKey = "http.KeepAlive.remainingData";
-        MAX_DATA_REMAINING = NetProperties.getInteger(maxDataKey, 512) * 1024;
+        MAX_DATA_REMAINING = NetProperties.getInteger(maxDataKey, 512) * 1024L;
 
         final String maxCapacityKey = "http.KeepAlive.queuedConnections";
         MAX_CAPACITY = NetProperties.getInteger(maxCapacityKey, 10);

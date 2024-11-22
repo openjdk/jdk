@@ -38,10 +38,7 @@ import java.util.Properties;
  *
  */
 public class NetProperties {
-    private static Properties props = new Properties();
-    static {
-        loadDefaultProperties();
-    }
+    private static final Properties props = loadDefaultProperties(new Properties());
 
     private NetProperties() { };
 
@@ -50,7 +47,7 @@ public class NetProperties {
      * Loads the default networking system properties
      * the file is in jre/lib/net.properties
      */
-    private static void loadDefaultProperties() {
+    private static Properties loadDefaultProperties(Properties props) {
         String fname = StaticProperty.javaHome();
         if (fname == null) {
             throw new Error("Can't find java.home ??");
@@ -66,6 +63,7 @@ public class NetProperties {
             // Do nothing. We couldn't find or access the file
             // so we won't have default properties...
         }
+        return props;
     }
 
     /**
