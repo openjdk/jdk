@@ -2051,7 +2051,8 @@ bool Compile::inline_incrementally_one() {
         print_method(PHASE_INCREMENTAL_INLINE_STEP, 3, cg->call_node());
         break; // process one call site at a time
       } else {
-        cg->call_node()->set_failed_generator(cg);
+        cg->call_node()->set_generator(cg);
+        cg->call_node()->set_late_inline_failed(true);
         add_failed_late_inline(cg);
       }
     } else {
@@ -2088,8 +2089,8 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
     for (int i = 0; i < _failed_late_inlines.length(); i++) {
           CallGenerator* cg = _failed_late_inlines.at(i);
           CallNode* cn = cg->call_node();
-          cn->set_failed_generator(nullptr);
-          cn->set_late_inline_added(false);
+          cn->set_generator(nullptr);
+          cn->set_late_inline_failed(false);
     }
     _failed_late_inlines.clear();
     if (failing()) return;

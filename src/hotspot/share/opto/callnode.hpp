@@ -683,8 +683,7 @@ public:
   float           _cnt;         // Estimate of number of times called
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
   const char*     _name;        // Printable name, if _method is null
-  CallGenerator*  _failed_generator;
-  bool            _late_inline_added;
+  bool            _late_inline_failed;
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
     : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
@@ -693,8 +692,7 @@ public:
       _cnt(COUNT_UNKNOWN),
       _generator(nullptr),
       _name(nullptr),
-      _failed_generator(nullptr),
-      _late_inline_added(false)
+      _late_inline_failed(false)
   {
     init_class_id(Class_Call);
   }
@@ -703,15 +701,13 @@ public:
   address  entry_point()       const { return _entry_point; }
   float    cnt()               const { return _cnt; }
   CallGenerator* generator()   const { return _generator; }
-  CallGenerator* failed_generator() const { return _failed_generator; }
-  bool late_inline_added()     const { return _late_inline_added; }
+  bool late_inline_failed()    const { return _late_inline_failed; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
   void set_entry_point(address p)       { _entry_point = p; }
   void set_cnt(float c)                 { _cnt = c; }
   void set_generator(CallGenerator* cg) { _generator = cg; }
-  void set_failed_generator(CallGenerator* cg) { _failed_generator = cg; }
-  void set_late_inline_added(bool added) { _late_inline_added = added; }
+  void set_late_inline_failed(bool failed) { _late_inline_failed = failed; }
 
   virtual const Type* bottom_type() const;
   virtual const Type* Value(PhaseGVN* phase) const;
