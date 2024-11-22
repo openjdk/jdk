@@ -316,7 +316,6 @@ module java.base {
     exports sun.reflect.misc to
         java.desktop,
         java.management,
-        java.management.rmi,
         java.rmi,
         java.sql.rowset;
     exports sun.security.action to

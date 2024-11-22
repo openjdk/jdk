@@ -40,7 +40,6 @@ import javax.management.*;
 import javax.management.remote.JMXServerErrorException;
 import javax.management.remote.NotificationResult;
 import javax.security.auth.Subject;
-import sun.reflect.misc.ReflectUtil;
 
 import static javax.management.remote.rmi.RMIConnector.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
