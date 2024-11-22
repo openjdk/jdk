@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,148 +24,129 @@
 /*
  * @test
  * @bug 8264048
- *
- * @run main/othervm RemoveJar true true testpkg.Test testpkg.Test testjar/
- * @run main/othervm RemoveJar true true testpkg.Test testpkg.Missing testjar/
- * @run main/othervm RemoveJar true true testpkg.Missing testpkg.Test testjar/
- * @run main/othervm RemoveJar true true testpkg.Missing testpkg.Missing testjar/
- *
- * @run main/othervm RemoveJar true false testpkg.Test testpkg.Test testjar/
- * @run main/othervm RemoveJar true false testpkg.Test testpkg.Missing testjar/
- * @run main/othervm RemoveJar true false testpkg.Missing testpkg.Test testjar/
- * @run main/othervm RemoveJar true false testpkg.Missing testpkg.Missing testjar/
- *
- * @run main/othervm RemoveJar false true testpkg.Test testpkg.Test testjar/
- * @run main/othervm RemoveJar false true testpkg.Test testpkg.Missing testjar/
- * @run main/othervm RemoveJar false true testpkg.Missing testpkg.Test testjar/
- * @run main/othervm RemoveJar false true testpkg.Missing testpkg.Missing testjar/
- *
- * @run main/othervm RemoveJar false false testpkg.Test testpkg.Test testjar/
- * @run main/othervm RemoveJar false false testpkg.Test testpkg.Missing testjar/
- * @run main/othervm RemoveJar false false testpkg.Missing testpkg.Test testjar/
- * @run main/othervm RemoveJar false false testpkg.Missing testpkg.Missing testjar/
- *
- * @run main/othervm RemoveJar true true testpkg.Test testpkg.Test badpath
+ * @run junit/othervm RemoveJar
  *
  * @summary URLClassLoader.close() doesn't close cached JAR file on Windows when load() fails
  */
 
-import java.io.ByteArrayOutputStream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.io.UncheckedIOException;
+import java.io.OutputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
 import java.util.stream.Stream;
-import java.util.zip.ZipException;
-import java.util.spi.ToolProvider;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RemoveJar {
-    private final static String TEST_PKG = "testpkg";
-    private final static String JAR_DIR = "testjar/" + TEST_PKG;
-    private final static String FILE_NAME = "testjar.jar";
-    private final static ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    private final static PrintStream out = new PrintStream(baos);
-    private final static ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
-            .orElseThrow(() ->
-                    new RuntimeException("jar tool not found")
-            );
 
-    private static void buildJar() throws IOException {
-        // create dir
-        mkdir(JAR_DIR);
-        // create file
-        Path path = Paths.get(JAR_DIR);
-        String src = "package " + TEST_PKG + ";\n" +
-                "class Test {}\n";
-        Files.write(Paths.get(JAR_DIR + "/Test.java"), src.getBytes());
-        // compile class
-        compile(JAR_DIR + "/Test.java");
-        // package jar
-        jar("-cf testjar.jar " + JAR_DIR);
+    // Provide scenarios for the parameterized test
+    public static Stream<Arguments> arguments() {
+        List<Arguments> args = new ArrayList<>();
+
+        // Add all 16 combinations of:
+        // useCacheFirst x useCacheSecond x findFirst x findSecond
+        Set<Boolean> booleans = Set.of(true, false);
+        for (Boolean useCacheFirst : booleans) {
+            for (Boolean useCacheSecond : booleans) {
+                for (Boolean findFirst : booleans) {
+                    for (Boolean findSecond : booleans) {
+                        args.add(Arguments.of(useCacheFirst, useCacheSecond, findFirst, findSecond, "testjar/"));
+                    }
+                }
+            }
+        }
+        // One more with a bad path
+        args.add(Arguments.of(true, true, true, true, "badpath"));
+        return args.stream();
     }
 
-    public static void main(String args[]) throws Exception {
-        buildJar();
+    /**
+     * Attempt loading a class, then another with a mix existing and missing class names
+     * and a mix of URL caching enabled/disabled for the first and second load.
+     *
+     * After each load scenario, the JAR file should always be closed. This is verified
+     * by deleting it, which will fail of Windows if the JarFile is still open.
+     *
+     * @param useCacheFirst use caches for the first class loaded
+     * @param useCacheSecond use caches for the second class loaded
+     * @param findFirst true if the first lookup should be successful
+     * @param findSecond true if the second lookup should be successful
+     * @param subPath a the directory within the JAR to load classes from
+     *
+     * @throws IOException if un unexpected error occurs
+     */
+    @ParameterizedTest
+    @MethodSource("arguments")
+    public void shouldReleaseJarFile(boolean useCacheFirst, boolean useCacheSecond, boolean findFirst, boolean findSecond, String subPath) throws IOException {
 
-        URLClassLoader loader = null;
-        URL url = null;
-        Path path = Paths.get(FILE_NAME);
+        String firstClass = findFirst ? "testpkg.Test" : "testpkg.Missing";
+        String secondClass = findSecond ? "testpkg.Test" : "testpkg.Missing";
 
-        boolean useCacheFirst = Boolean.parseBoolean(args[0]);
-        boolean useCacheSecond = Boolean.parseBoolean(args[1]);
-        String firstClass = args[2];
-        String secondClass = args[3];
-        String subPath = args[4];
+        // Create JAR and URLClassLoader
+        Path jar = createJar();
+        String path = jar.toAbsolutePath().toString();
+        URL url = new URL("jar", "", "file:" +path  + "!/" + subPath);
+        URLClassLoader loader = new URLClassLoader(new URL[]{url});
 
         try {
-            String path_str = path.toUri().toURL().toString();
-            URLConnection.setDefaultUseCaches("jar", useCacheFirst);
-
-            url = new URL("jar", "", path_str + "!/" + subPath);
-            loader = new URLClassLoader(new URL[]{url});
-
-            loader.loadClass(firstClass);
-        } catch (Exception e) {
-            System.err.println("EXCEPTION: " + e);
-        }
-
-        try {
-            URLConnection.setDefaultUseCaches("jar", useCacheSecond);
-            loader.loadClass(secondClass);
-        } catch (Exception e) {
-            System.err.println("EXCEPTION: " + e);
-        } finally {
-            loader.close();
-            Files.delete(path);
-        }
-    }
-
-    private static Stream<Path> mkpath(String... args) {
-        return Arrays.stream(args).map(d -> Paths.get(".", d.split("/")));
-    }
-
-    private static void mkdir(String cmdline) {
-        System.out.println("mkdir -p " + cmdline);
-        mkpath(cmdline.split(" +")).forEach(p -> {
+            // Attempt to load the first class
             try {
-                Files.createDirectories(p);
-            } catch (IOException x) {
-                throw new UncheckedIOException(x);
+                URLConnection.setDefaultUseCaches("jar", useCacheFirst);
+                loader.loadClass(firstClass);
+            } catch (ClassNotFoundException e) {
+                System.err.println("EXCEPTION: " + e);
             }
-        });
-    }
 
-    private static void jar(String cmdline) throws IOException {
-        System.out.println("jar " + cmdline);
-        baos.reset();
-
-        // the run method catches IOExceptions, we need to expose them
-        ByteArrayOutputStream baes = new ByteArrayOutputStream();
-        PrintStream err = new PrintStream(baes);
-        PrintStream saveErr = System.err;
-        System.setErr(err);
-        int rc = JAR_TOOL.run(out, err, cmdline.split(" +"));
-        System.setErr(saveErr);
-        if (rc != 0) {
-            String s = baes.toString();
-            if (s.startsWith("java.util.zip.ZipException: duplicate entry: ")) {
-                throw new ZipException(s);
+            // Attempt to load the second class
+            try {
+                URLConnection.setDefaultUseCaches("jar", useCacheSecond);
+                loader.loadClass(secondClass);
+            } catch (ClassNotFoundException e) {
+                System.err.println("EXCEPTION: " + e);
             }
-            throw new IOException(s);
+        } finally {
+            // Close the URLClassLoader to close its JarFiles
+            loader.close();
+            // Fails on Windows if the JarFile is still kept open
+            Files.delete(jar);
+
         }
     }
 
-    /* run javac <args> */
-    private static void compile(String... args) {
-        if (com.sun.tools.javac.Main.compile(args) != 0) {
-            throw new RuntimeException("javac failed: args=" + Arrays.toString(args));
+    /**
+     * Create a JAR file containing the class file which is loaded by this test
+     * @return the path to th JAR file
+     *
+     * @throws IOException if un unexpected error occurs
+     */
+    static Path createJar() throws IOException {
+        Path jar = Path.of("testjar.jar");
+        try (var out = new BufferedOutputStream(Files.newOutputStream(jar));
+             var jo = new JarOutputStream(out)) {
+            jo.putNextEntry(new JarEntry("testpkg/Test.class"));
+            // Produce a loadable class file
+            byte[] classBytes = ClassFile.of()
+                    .build(ClassDesc.of("testpkg.Test"), cb -> {});
+            jo.write(classBytes);
         }
+        return jar;
     }
 }
 
