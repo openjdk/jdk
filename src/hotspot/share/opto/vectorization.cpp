@@ -547,7 +547,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
-  const int C_const =      _con + C_const_init * _scale;
+  const int C_const =      _vpointer.con() + C_const_init * _scale;
 
   // Set C_invar depending on if invar is present
   const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
@@ -985,7 +985,7 @@ void AlignmentSolver::trace_start_solve() const {
     // adr = base + con + invar + scale * iv
     tty->print("  adr = base");
     //VPointer::print_con_or_idx(_base);
-    tty->print(" + con(%d) + invar", _con);
+    tty->print(" + con(%d) + invar", _vpointer.con());
     //VPointer::print_con_or_idx(_invar);
     tty->print_cr(" + scale(%d) * iv", _scale);
   }
@@ -1019,7 +1019,7 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
       tty->print_cr("    C_invar = %d", C_invar);
     }
     tty->print_cr("  C_const = con(%d) + scale(%d) * C_const_init(%d) = %d",
-                  _con, _scale, C_const_init, C_const);
+                  _vpointer.con(), _scale, C_const_init, C_const);
     tty->print_cr("  C_pre   = scale(%d) * pre_stride(%d) = %d",
                   _scale, _pre_stride, C_pre);
     tty->print_cr("  C_main  = scale(%d) * main_stride(%d) = %d",

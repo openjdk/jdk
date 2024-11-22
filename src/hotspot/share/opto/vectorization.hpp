@@ -1160,7 +1160,6 @@ private:
   // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
   const Node*    _base;           // base of address (e.g. Java array object, aw-aligned)
-  const int      _con;
   const Node*    _invar;
   const int      _invar_factor;   // known constant factor of invar
   const int      _scale;
@@ -1191,7 +1190,6 @@ public:
       _vector_width(      _vector_length * _element_size),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
       _base(              vpointer.decomposed_form().base().object_or_native()),
-      _con(               vpointer.con()),
       _invar(             nullptr), // TODO
       _invar_factor(      1),
       _scale(             vpointer.iv_scale()),
