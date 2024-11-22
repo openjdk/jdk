@@ -1133,8 +1133,6 @@ private:
 
   // TODO rm?
   const MemNode* _mem_ref;       // first element
-  const uint     _vector_length; // number of elements in vector
-  const int      _element_size;
   const int      _vector_width;  // in bytes
 
   // All vector loads and stores need to be memory aligned. The alignment width (aw) in
@@ -1183,9 +1181,7 @@ public:
                   ) :
       _vpointer(          vpointer),
       _mem_ref(           mem_ref_not_null(mem_ref)),
-      _vector_length(     vector_length),
-      _element_size(      vpointer.size()),
-      _vector_width(      _vector_length * _element_size),
+      _vector_width(      vector_length * vpointer.size()),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
       _invar(             nullptr), // TODO
       _invar_factor(      1),

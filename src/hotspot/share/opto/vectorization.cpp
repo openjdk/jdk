@@ -963,8 +963,7 @@ void AlignmentSolver::trace_start_solve() const {
   if (is_trace()) {
     tty->print(" vector mem_ref:");
     _mem_ref->dump();
-    tty->print_cr("  vector_width = vector_length(%d) * element_size(%d) = %d",
-                  _vector_length, _element_size, _vector_width);
+    tty->print_cr("  vector_width = %d", _vector_width);
     tty->print_cr("  aw = alignment_width = min(vector_width(%d), ObjectAlignmentInBytes(%d)) = %d",
                   _vector_width, ObjectAlignmentInBytes, _aw);
 
