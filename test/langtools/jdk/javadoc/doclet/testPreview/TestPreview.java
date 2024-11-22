@@ -186,25 +186,12 @@ public class TestPreview extends JavadocTester {
                 "--show-packages=all",
                 "api2/nonpreviewextendspreview");
         checkExit(Exit.OK);
-
-        checkOutput("api2/nonpreviewextendspreview/NonPreviewExtendsPreview.html", true,
-                """
-                <div class="horizontal-scroll">
-                <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">NonPreviewExtendsPreview</span><span class="extends-implements">
-                extends <a href="CoreInterface.html" title="interface in nonpreviewextendspreview">CoreInterface</a><sup><a href="CoreInterface.html#preview-nonpreviewextendspreview.CoreInterface">PREVIEW</a></sup></span></div>
-                <div class="preview-block" id="preview-nonpreviewextendspreview.NonPreviewExtendsPreview"><span class="preview-label"><code>NonPreviewExtendsPreview</code> relies on preview features of the Java platform:</span>
-                <ul class="preview-comment">
-                <li><code>NonPreviewExtendsPreview</code> refers to one or more preview APIs:  <a href="CoreInterface.html" title="interface in nonpreviewextendspreview"><code>CoreInterface</code></a>.</li>
-                </ul>
-                <div class="preview-comment">Programs can only use <code>NonPreviewExtendsPreview</code> as <code><code>CoreInterface</code></code> when preview features are enabled.</div>
-                <div class="preview-comment">Preview features may be removed in a future release, or upgraded to permanent features of the Java platform.</div>
-                </div>
-                <div class="block">Non preview feature</div>
-                </div>
-                """);
         checkOutput("api2/nonpreviewextendspreview/NonPreviewExtendsPreview.html", false,
                 """
-                <div class="preview-comment">Programs can only use <code>NonPreviewExtendsPreview</code> when preview features are enabled.</div>
+                 <code>NonPreviewExtendsPreview</code> relies on preview features of the Java platform:
+                """,
+                """
+                <code>NonPreviewExtendsPreview</code> refers to one or more preview APIs:
                 """);
         checkOutput("api2/nonpreviewextendspreview/CoreInterface.html", true,
                 """

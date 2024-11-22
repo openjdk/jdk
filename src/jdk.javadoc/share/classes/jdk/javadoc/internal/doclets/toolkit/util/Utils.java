@@ -2710,20 +2710,7 @@ public class Utils {
                  .anyMatch(am -> "jdk.internal.javac.NoPreview".equals(getQualifiedTypeName(am.getAnnotationType())));
     }
 
-    // copied and trimmed down version of HtmlDocletWriter.getPreviewNotes
-    public Set<TypeElement> getReferredPreviewFeatures(Element el) {
-        PreviewSummary previewAPITypes = declaredUsingPreviewAPIs(el);
-        Set<TypeElement> previewAPI = new HashSet<>(previewAPITypes.previewAPI);
-        for (Element enclosed : el.getEnclosedElements()) {
-            if (!enclosed.getKind().isClass() && !enclosed.getKind().isInterface()) {
-                PreviewSummary memberAPITypes = declaredUsingPreviewAPIs(enclosed);
-                previewAPI.addAll(memberAPITypes.previewAPI);
-            }
-        }
-        return previewAPI;
-    }
-
-    public boolean isNonPreviewExtendingPreview(Element el) {
+    public boolean nonPreviewExtendsPreview(Element el) {
         if (!configuration.workArounds.isPreviewAPI(el) && (el.getKind().isDeclaredType())) {
             Element enclosingElement = el.getEnclosingElement();
             while (enclosingElement != null) {
@@ -2758,7 +2745,7 @@ public class Utils {
                        || !previewAPIs.reflectivePreviewAPI.isEmpty()
                        || !previewAPIs.declaredUsingPreviewFeature.isEmpty())
                     && !hasNoPreviewAnnotation(el)
-                    && !isNonPreviewExtendingPreview(el);
+                    && !nonPreviewExtendsPreview(el);
         }
     };
 

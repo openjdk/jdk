@@ -2515,7 +2515,8 @@ public abstract class HtmlDocletWriter {
             Content note2 = contents.getContent("doclet.PreviewTrailingNote2", nameCode);
             previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note2));
             target.add(previewDiv);
-        } else if (forWhat.getKind().isClass() || forWhat.getKind().isInterface()) {
+        } else if ((forWhat.getKind().isClass() || forWhat.getKind().isInterface())
+                && !utils.nonPreviewExtendsPreview(forWhat)) {
             //in custom code:
             List<Content> previewNotes = getPreviewNotes((TypeElement) forWhat);
             if (!previewNotes.isEmpty()) {
@@ -2531,20 +2532,9 @@ public abstract class HtmlDocletWriter {
                     ul.add(HtmlTree.LI(note));
                 }
                 previewDiv.add(ul);
-                Content note1;
-                if (utils.isNonPreviewExtendingPreview(forWhat)) {
-                    HtmlTree referredPreviewAPIs = HtmlTree.CODE();
-                    utils.getReferredPreviewFeatures(forWhat)
-                            .forEach(feature ->
-                                    referredPreviewAPIs.add(
-                                            HtmlTree.CODE(Text.of(feature.getSimpleName()))));
-                    note1 = contents.getContent("doclet.NonPreviewAsPreview",
-                            nameCode,
-                            referredPreviewAPIs);
-                } else {
-                    note1 = contents.getContent("doclet.PreviewTrailingNote1",
-                            nameCode);
-                }
+                Content note1 =
+                        contents.getContent("doclet.PreviewTrailingNote1",
+                                            nameCode);
                 previewDiv.add(HtmlTree.DIV(HtmlStyles.previewComment, note1));
                 Content note2 =
                         contents.getContent("doclet.PreviewTrailingNote2",
