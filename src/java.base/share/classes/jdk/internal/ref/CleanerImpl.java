@@ -290,9 +290,10 @@ public final class CleanerImpl implements Runnable {
             assert head.size < NODE_CAPACITY;
 
             // Put the incoming object in head node and record indexes.
+            final int lastIndex = head.size;
             phc.node = head;
-            phc.index = head.size;
-            head.arr[head.size] = phc;
+            phc.index = lastIndex;
+            head.arr[lastIndex] = phc;
             head.size++;
         }
 
@@ -308,13 +309,14 @@ public final class CleanerImpl implements Runnable {
                 return false;
             }
             assert phc.node.arr[phc.index] == phc;
-            assert head.size > 0;
 
             // Replace with another element from the head node, as long
             // as it is not the same element. This keeps all non-head
             // nodes at full capacity.
-            if (head != phc.node || (phc.index != head.size - 1)) {
-                PhantomCleanable<?> mover = head.arr[head.size - 1];
+            final int lastIndex = head.size - 1;
+            assert lastIndex >= 0;
+            if (head != phc.node || (phc.index != lastIndex)) {
+                PhantomCleanable<?> mover = head.arr[lastIndex];
                 mover.node = phc.node;
                 mover.index = phc.index;
                 phc.node.arr[phc.index] = mover;
@@ -324,7 +326,7 @@ public final class CleanerImpl implements Runnable {
             phc.node = null;
 
             // Remove the last element from the head node.
-            head.arr[head.size - 1] = null;
+            head.arr[lastIndex] = null;
             head.size--;
 
             // If head node becomes empty after this, and there are
