@@ -123,20 +123,21 @@ class CloseOnFailureTest {
     }
 
     @ParameterizedTest
-    @MethodSource("ctor_should_close_on_failures")
+    @MethodSource("ctorShouldCloseOnFailuresTestCases")
     @SuppressWarnings("resource")
-    void ctor_should_close_on_failures(TestCase testCase) throws Throwable {
+    void ctorShouldCloseOnFailures(TestCase testCase) throws Throwable {
 
         // Create a socket using the mock `SocketImpl` configured to fail
         withSocketImplFactory(() -> testCase.socketImpl, () -> {
 
             // Trigger the failure
             Exception error = assertThrows(Exception.class, () -> {
-                InetAddress address = InetAddress.getLoopbackAddress();
                 // Address and port are mostly ineffective.
                 // They just need to be _valid enough_ to reach to the point where both `SocketImpl#bind()` and `SocketImpl#connect()` are invoked.
                 // Failure will be triggered by the injected `SocketImpl`.
-                new Socket(address, 0xDEAD, address, 0xBEEF);
+                InetAddress serverAddress = InetAddress.getLoopbackAddress();
+                int deadServerPort = 0xDEAD;
+                new Socket(serverAddress, deadServerPort, null, 0);
             });
 
             // Run verifications
@@ -147,15 +148,15 @@ class CloseOnFailureTest {
 
     }
 
-    static List<TestCase> ctor_should_close_on_failures() {
+    static List<TestCase> ctorShouldCloseOnFailuresTestCases() {
         return List.of(
-                TestCase.ForBindFailure.ofIOException(),
-                TestCase.ForConnectFailure.ofIOException(),
-                TestCase.ForConnectFailure.ofIllegalArgumentException(1));
+                TestCase.BindFailureFactory.iOExceptionTestCase(),
+                TestCase.ConnectFailureFactory.iOExceptionTestCase(),
+                TestCase.ConnectFailureFactory.illegalArgumentExceptionTestCase(1));
     }
 
     @Test
-    void connect_should_close_on_unresolved_address() throws IOException {
+    void connectShouldCloseOnUnresolvedAddress() throws IOException {
         MockSocketImpl socketImpl = new MockSocketImpl(null, null);
         try (Socket socket = new Socket(socketImpl) {}) {
             InetSocketAddress address = InetSocketAddress.createUnresolved("no.such.host", 0xBEEF);
@@ -168,8 +169,8 @@ class CloseOnFailureTest {
     }
 
     @ParameterizedTest
-    @MethodSource("connect_should_close_on_failures")
-    void connect_should_close_on_failures(TestCase testCase) throws Throwable {
+    @MethodSource("connectShouldCloseOnFailuresTestCases")
+    void connectShouldCloseOnFailures(TestCase testCase) throws Throwable {
 
         // Create a socket using the mock `SocketImpl` configured to fail
         try (Socket socket = new Socket(testCase.socketImpl) {}) {
@@ -192,10 +193,10 @@ class CloseOnFailureTest {
 
     }
 
-    static List<TestCase> connect_should_close_on_failures() {
+    static List<TestCase> connectShouldCloseOnFailuresTestCases() {
         return List.of(
-                TestCase.ForConnectFailure.ofIOException(),
-                TestCase.ForConnectFailure.ofIllegalArgumentException(0));
+                TestCase.ConnectFailureFactory.iOExceptionTestCase(),
+                TestCase.ConnectFailureFactory.illegalArgumentExceptionTestCase(0));
     }
 
     private record TestCase(
@@ -207,14 +208,14 @@ class CloseOnFailureTest {
 
         private static final String ERROR_MESSAGE = "intentional test failure";
 
-        private static final class ForBindFailure {
+        private static final class BindFailureFactory {
 
-            private static TestCase ofIOException() {
+            private static TestCase iOExceptionTestCase() {
                 Exception bindError = new IOException(ERROR_MESSAGE);
                 MockSocketImpl socketImpl = new MockSocketImpl(bindError, null);
                 String description = String.format(
                         "%s.%s",
-                        ForBindFailure.class.getSimpleName(),
+                        BindFailureFactory.class.getSimpleName(),
                         bindError.getClass().getSimpleName());
                 return new TestCase(
                         description,
@@ -226,14 +227,14 @@ class CloseOnFailureTest {
 
         }
 
-        private static final class ForConnectFailure {
+        private static final class ConnectFailureFactory {
 
-            private static TestCase ofIOException() {
+            private static TestCase iOExceptionTestCase() {
                 Exception connectError = new IOException(ERROR_MESSAGE);
                 MockSocketImpl socketImpl = new MockSocketImpl(null, connectError);
                 String description = String.format(
                         "%s.%s",
-                        ForConnectFailure.class.getSimpleName(),
+                        ConnectFailureFactory.class.getSimpleName(),
                         connectError.getClass().getSimpleName());
                 return new TestCase(
                         description,
@@ -243,12 +244,12 @@ class CloseOnFailureTest {
                         _ -> {});
             }
 
-            private static TestCase ofIllegalArgumentException(int expectedCloseInvocationCount) {
+            private static TestCase illegalArgumentExceptionTestCase(int expectedCloseInvocationCount) {
                 Exception connectError = new IllegalArgumentException(ERROR_MESSAGE);
                 MockSocketImpl socketImpl = new MockSocketImpl(null, connectError);
                 String description = String.format(
                         "%s.%s",
-                        ForConnectFailure.class.getSimpleName(),
+                        ConnectFailureFactory.class.getSimpleName(),
                         connectError.getClass().getSimpleName());
                 return new TestCase(
                         description,
