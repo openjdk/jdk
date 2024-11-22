@@ -298,15 +298,16 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
   assert(left != result, "should be different registers");
   // Using unsigned arithmetics to avoid undefined behavior due to integer overflow.
   // The involved operations are not sensitive to signedness.
-  if (is_power_of_2((juint)c + 1)) {
-    __ shift_left(left, log2i_exact((juint)c + 1), result);
+  unsigned int u_value = (juint)c;
+  if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, log2i_exact(u_value + 1), result);
     __ sub(result, left, result);
     return true;
-  } else if (is_power_of_2((juint)c - 1)) {
-    __ shift_left(left, log2i_exact((juint)c - 1), result);
+  } else if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, log2i_exact(u_value - 1), result);
     __ add(result, left, result);
     return true;
-  } else if (c == -1) {
+  } else if (u_value == -1) {
     __ negate(left, result);
     return true;
   }

@@ -227,21 +227,22 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 }
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
+  unsigned int u_value = (juint)c;
   if (tmp->is_valid()) {
-    if (is_power_of_2((juint)c + 1)) {
+    if (is_power_of_2(u_value + 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2i_exact((juint)c + 1), left);
+      __ shift_left(left, log2i_exact(u_value + 1), left);
       __ sub(left, tmp, result);
       return true;
-    } else if (is_power_of_2((juint)c - 1)) {
+    } else if (is_power_of_2(u_value - 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2i_exact((juint)c - 1), left);
+      __ shift_left(left, log2i_exact(u_value - 1), left);
       __ add(left, tmp, result);
       return true;
     }
   }
 
-  if(c == -1) {
+  if (c == -1) {
     __ negate(left, result);
     return true;
   }
@@ -501,8 +502,8 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
     if (x->op() == Bytecodes::_imul) {
       bool use_tmp = false;
       if (right_arg->is_constant()) {
-        int iconst = right_arg->get_jint_constant();
-        if (is_power_of_2((juint)iconst - 1) || is_power_of_2((juint)iconst + 1)) {
+        unsigned int u_const = (juint)right_arg->get_jint_constant();
+        if (is_power_of_2(u_const - 1) || is_power_of_2(u_const + 1)) {
           use_tmp = true;
         }
       }
