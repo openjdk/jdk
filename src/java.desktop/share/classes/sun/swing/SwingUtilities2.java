@@ -1671,42 +1671,8 @@ public class SwingUtilities2 {
     public static Object makeIcon(final Class<?> baseClass,
                                   final Class<?> rootClass,
                                   final String imageFile) {
-        return makeIcon(baseClass, rootClass, imageFile, true);
-    }
-
-    /**
-     * Utility method that creates a {@code UIDefaults.LazyValue} that
-     * creates an {@code ImageIcon} {@code UIResource} for the
-     * specified image file name. The image is loaded using
-     * {@code getResourceAsStream}, starting with a call to that method
-     * on the base class parameter. If it cannot be found, searching will
-     * continue through the base class' inheritance hierarchy, up to and
-     * including {@code rootClass}.
-     *
-     * Finds an image with a given name without privileges enabled.
-     *
-     * @param baseClass the first class to use in searching for the resource
-     * @param rootClass an ancestor of {@code baseClass} to finish the
-     *                  search at
-     * @param imageFile the name of the file to be found
-     * @return a lazy value that creates the {@code ImageIcon}
-     *         {@code UIResource} for the image,
-     *         or null if it cannot be found
-     */
-    public static Object makeIcon_Unprivileged(final Class<?> baseClass,
-                                  final Class<?> rootClass,
-                                  final String imageFile) {
-        return makeIcon(baseClass, rootClass, imageFile, false);
-    }
-
-    private static Object makeIcon(final Class<?> baseClass,
-                                  final Class<?> rootClass,
-                                  final String imageFile,
-                                  final boolean enablePrivileges) {
         return (UIDefaults.LazyValue) (table) -> {
-            byte[] buffer = enablePrivileges ?
-                    getIconBytes(baseClass, rootClass, imageFile)
-                    : getIconBytes(baseClass, rootClass, imageFile);
+            byte[] buffer = getIconBytes(baseClass, rootClass, imageFile);
 
             if (buffer == null) {
                 return null;

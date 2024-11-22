@@ -23,6 +23,7 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -36,7 +37,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public class WindowsHelper {
@@ -94,8 +97,9 @@ public class WindowsHelper {
     static PackageHandlers createMsiPackageHandlers() {
         BiConsumer<JPackageCommand, Boolean> installMsi = (cmd, install) -> {
             cmd.verifyIsOfType(PackageType.WIN_MSI);
+            var msiPath = TransientMsi.create(cmd).path();
             runMsiexecWithRetries(Executor.of("msiexec", "/qn", "/norestart",
-                    install ? "/i" : "/x").addArgument(cmd.outputBundle().normalize()));
+                    install ? "/i" : "/x").addArgument(msiPath));
         };
 
         PackageHandlers msi = new PackageHandlers();
@@ -112,6 +116,8 @@ public class WindowsHelper {
                     TKit.removeRootFromAbsolutePath(
                             getInstallationRootDirectory(cmd)));
 
+            final Path msiPath = TransientMsi.create(cmd).path();
+
             // Put msiexec in .bat file because can't pass value of TARGETDIR
             // property containing spaces through ProcessBuilder properly.
             // Set folder permissions to allow msiexec unpack msi bundle.
@@ -121,7 +127,7 @@ public class WindowsHelper {
                     String.join(" ", List.of(
                     "msiexec",
                     "/a",
-                    String.format("\"%s\"", cmd.outputBundle().normalize()),
+                    String.format("\"%s\"", msiPath),
                     "/qn",
                     String.format("TARGETDIR=\"%s\"",
                             unpackDir.toAbsolutePath().normalize())))));
@@ -153,6 +159,49 @@ public class WindowsHelper {
             return destinationDir;
         };
         return msi;
+    }
+
+    record TransientMsi(Path path) {
+        static TransientMsi create(JPackageCommand cmd) {
+            var outputMsiPath = cmd.outputBundle().normalize();
+            if (isPathTooLong(outputMsiPath)) {
+                return toSupplier(() -> {
+                    var transientMsiPath = TKit.createTempDirectory("msi-copy").resolve("a.msi").normalize();
+                    TKit.trace(String.format("Copy [%s] to [%s]", outputMsiPath, transientMsiPath));
+                    Files.copy(outputMsiPath, transientMsiPath);
+                    return new TransientMsi(transientMsiPath);
+                }).get();
+            } else {
+                return new TransientMsi(outputMsiPath);
+            }
+        }
+    }
+
+    public enum WixType {
+        WIX3,
+        WIX4
+    }
+
+    public static WixType getWixTypeFromVerboseJPackageOutput(Executor.Result result) {
+        return result.getOutput().stream().map(str -> {
+            if (str.contains("[light.exe]")) {
+                return WixType.WIX3;
+            } else if (str.contains("[wix.exe]")) {
+                return WixType.WIX4;
+            } else {
+                return null;
+            }
+        }).filter(Objects::nonNull).reduce((a, b) -> {
+            throw new IllegalArgumentException("Invalid input: multiple invocations of WiX tools");
+        }).orElseThrow(() -> new IllegalArgumentException("Invalid input: no invocations of WiX tools"));
+    }
+
+    static Optional<Path> toShortPath(Path path) {
+        if (isPathTooLong(path)) {
+            return Optional.of(ShortPathUtils.toShortPath(path));
+        } else {
+            return Optional.empty();
+        }
     }
 
     static PackageHandlers createExePackageHandlers() {
@@ -301,6 +350,10 @@ public class WindowsHelper {
 
     private static boolean isUserLocalInstall(JPackageCommand cmd) {
         return cmd.hasArgument("--win-per-user-install");
+    }
+
+    private static boolean isPathTooLong(Path path) {
+        return path.toString().length() > WIN_MAX_PATH;
     }
 
     private static class DesktopIntegrationVerifier {
@@ -525,6 +578,32 @@ public class WindowsHelper {
         return value;
     }
 
+    private static final class ShortPathUtils {
+        private ShortPathUtils() {
+            try {
+                var shortPathUtilsClass = Class.forName("jdk.jpackage.internal.ShortPathUtils");
+
+                getShortPathWrapper = shortPathUtilsClass.getDeclaredMethod(
+                        "getShortPathWrapper", String.class);
+                // Note: this reflection call requires
+                // --add-opens jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED
+                getShortPathWrapper.setAccessible(true);
+            } catch (ClassNotFoundException | NoSuchMethodException
+                    | SecurityException ex) {
+                throw rethrowUnchecked(ex);
+            }
+        }
+
+        static Path toShortPath(Path path) {
+            return Path.of(toSupplier(() -> (String) INSTANCE.getShortPathWrapper.invoke(
+                    null, path.toString())).get());
+        }
+
+        private final Method getShortPathWrapper;
+
+        private static final ShortPathUtils INSTANCE = new ShortPathUtils();
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "bin\\server\\jvm.dll"));
 
@@ -540,4 +619,6 @@ public class WindowsHelper {
     private static final String USER_SHELL_FOLDERS_REGKEY = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders";
 
     private static final Map<String, String> REGISTRY_VALUES = new HashMap<>();
+
+    private static final int WIN_MAX_PATH = 260;
 }
