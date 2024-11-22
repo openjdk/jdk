@@ -478,9 +478,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   assert(is_power_of_2(abs(_main_stride)), "main_stride is power of 2");
   assert(_aw > 0 && is_power_of_2(_aw), "aw must be power of 2");
 
-  // Out of simplicity: non power-of-2 scale not supported.
-  if (abs(_scale) == 0 || !is_power_of_2(abs(_scale))) {
-    return new EmptyAlignmentSolution("non power-of-2 scale not supported");
+  // Out of simplicity: non power-of-2 iv_scale not supported.
+  if (abs(_iv_scale) == 0 || !is_power_of_2(abs(_iv_scale))) {
+    return new EmptyAlignmentSolution("non power-of-2 iv_scale not supported");
   }
 
   // We analyze the address of mem_ref. The idea is to disassemble it into a linear
@@ -489,7 +489,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   // The Simple form of the address is disassembled by VPointer into:
   //
-  //   adr = base + invar + scale * iv + con
+  //   adr = base + invar + iv_scale * iv + con
   //
   // Where the iv can be written as:
   //
@@ -505,14 +505,14 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // expanding the iv variable. In a second step, we reshape the expression again, and
   // state it as a linear expression, consisting of 6 terms.
   //
-  //          Simple form           Expansion of iv variable                  Reshaped with constants   Comments for terms
-  //          -----------           ------------------------                  -----------------------   ------------------
-  //   adr =  base               =  base                                   =  base                      (base % aw = 0)
-  //        + invar               + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
-  //                          /   + scale * init                            + C_init  * var_init        (term for variable init)
-  //        + scale * iv   -> |   + scale * pre_stride * pre_iter           + C_pre   * pre_iter        (adjustable pre-loop term)
-  //                          \   + scale * main_stride * main_iter         + C_main  * main_iter       (main-loop term)
-  //        + con                 + con                                     + C_const                   (sum of constant terms)
+  //          Simple form             Expansion of iv variable                  Reshaped with constants   Comments for terms
+  //          -----------             ------------------------                  -----------------------   ------------------
+  //   adr =  base                 =  base                                   =  base                      (base % aw = 0)
+  //        + invar                 + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
+  //                            /   + iv_scale * init                         + C_init  * var_init        (term for variable init)
+  //        + iv_scale * iv  -> |   + iv_scale * pre_stride * pre_iter        + C_pre   * pre_iter        (adjustable pre-loop term)
+  //                            \   + iv_scale * main_stride * main_iter      + C_main  * main_iter       (main-loop term)
+  //        + con                   + con                                     + C_const                   (sum of constant terms)
   //
   // We describe the 6 terms:
   //   1) The "base" of the address is the address of a Java object (e.g. array),
@@ -523,18 +523,18 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
   //
   //   2) The "C_const" term is the sum of all constant terms. This is "con",
-  //      plus "scale * init" if it is constant.
+  //      plus "iv_scale * init" if it is constant.
   //   3) The "C_invar * var_invar" is the factorization of "invar" into a constant
   //      and variable term. If there is no invariant, then "C_invar" is zero.
   //
   //        invar = C_invar * var_invar                                             (FAC_INVAR)
   //
-  //   4) The "C_init * var_init" is the factorization of "scale * init" into a
+  //   4) The "C_init * var_init" is the factorization of "iv_scale * init" into a
   //      constant and a variable term. If "init" is constant, then "C_init" is
   //      zero, and "C_const" accounts for "init" instead.
   //
-  //        scale * init = C_init * var_init + scale * C_const_init                 (FAC_INIT)
-  //        C_init       = (init is constant) ? 0    : scale
+  //        iv_scale * init = C_init * var_init + iv_scale * C_const_init           (FAC_INIT)
+  //        C_init       = (init is constant) ? 0    : iv_scale
   //        C_const_init = (init is constant) ? init : 0
   //
   //   5) The "C_pre * pre_iter" term represents how much the iv is incremented
@@ -547,14 +547,14 @@ AlignmentSolution* AlignmentSolver::solve() const {
 
   // Attribute init (i.e. _init_node) either to C_const or to C_init term.
   const int C_const_init = _init_node->is_ConI() ? _init_node->as_ConI()->get_int() : 0;
-  const int C_const =      _vpointer.con() + C_const_init * _scale;
+  const int C_const =      _vpointer.con() + C_const_init * _iv_scale;
 
   // Set C_invar depending on if invar is present
   const int C_invar = (_invar == nullptr) ? 0 : abs(_invar_factor);
 
-  const int C_init = _init_node->is_ConI() ? 0 : _scale;
-  const int C_pre =  _scale * _pre_stride;
-  const int C_main = _scale * _main_stride;
+  const int C_init = _init_node->is_ConI() ? 0 : _iv_scale;
+  const int C_pre =  _iv_scale * _pre_stride;
+  const int C_main = _iv_scale * _main_stride;
 
   DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
 
@@ -839,7 +839,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   pre_iter_C_const = mx2 * q - sign(C_pre) * X
   //                    = mx2 * q - sign(C_pre) * C_const             / abs(C_pre)
   //                    = mx2 * q - C_const / C_pre
-  //                    = mx2 * q - C_const / (scale * pre_stride)                                  (11a)
+  //                    = mx2 * q - C_const / (iv_scale * pre_stride)                               (11a)
   //
   // If there is an invariant:
   //
@@ -847,19 +847,19 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //                    = my2 * q - sign(C_pre) * C_invar * var_invar / abs(C_pre)
   //                    = my2 * q - sign(C_pre) * invar               / abs(C_pre)
   //                    = my2 * q - invar / C_pre
-  //                    = my2 * q - invar / (scale * pre_stride)                                    (11b, with invar)
+  //                    = my2 * q - invar / (iv_scale * pre_stride)                                 (11b, with invar)
   //
   // If there is no invariant (i.e. C_invar = 0 ==> Y = 0):
   //
   //   pre_iter_C_invar = my2 * q                                                                   (11b, no invar)
   //
-  // If init is variable (i.e. C_init = scale, init = var_init):
+  // If init is variable (i.e. C_init = iv_scale, init = var_init):
   //
-  //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z       * var_init
-  //                    = mz2 * q - sign(C_pre) * C_init  * var_init  / abs(C_pre)
-  //                    = mz2 * q - sign(C_pre) * scale   * init      / abs(C_pre)
-  //                    = mz2 * q - scale * init / C_pre
-  //                    = mz2 * q - scale * init / (scale * pre_stride)
+  //   pre_iter_C_init  = mz2 * q - sign(C_pre) * Z          * var_init
+  //                    = mz2 * q - sign(C_pre) * C_init     * var_init  / abs(C_pre)
+  //                    = mz2 * q - sign(C_pre) * iv_scale   * init      / abs(C_pre)
+  //                    = mz2 * q - iv_scale * init / C_pre
+  //                    = mz2 * q - iv_scale * init / (iv_scale * pre_stride)
   //                    = mz2 * q - init / pre_stride                                               (11c, variable init)
   //
   // If init is constant (i.e. C_init = 0 ==> Z = 0):
@@ -870,35 +870,35 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // with m = mx2 + my2 + mz2:
   //
   //   pre_iter =   pre_iter_C_const + pre_iter_C_invar + pre_iter_C_init
-  //            =   mx2 * q  - C_const / (scale * pre_stride)
-  //              + my2 * q [- invar / (scale * pre_stride) ]
-  //              + mz2 * q [- init / pre_stride            ]
+  //            =   mx2 * q  - C_const / (iv_scale * pre_stride)
+  //              + my2 * q [- invar / (iv_scale * pre_stride) ]
+  //              + mz2 * q [- init / pre_stride               ]
   //
   //            =   m * q                                 (periodic part)
-  //              - C_const / (scale * pre_stride)        (align constant term)
-  //             [- invar / (scale * pre_stride)   ]      (align invariant term, if present)
-  //             [- init / pre_stride              ]      (align variable init term, if present)    (12)
+  //              - C_const / (iv_scale * pre_stride)        (align constant term)
+  //             [- invar / (iv_scale * pre_stride)   ]      (align invariant term, if present)
+  //             [- init / pre_stride                 ]      (align variable init term, if present)    (12)
   //
   // We can further simplify this solution by introducing integer 0 <= r < q:
   //
-  //   r = (-C_const / (scale * pre_stride)) % q                                                    (13)
+  //   r = (-C_const / (iv_scale * pre_stride)) % q                                                    (13)
   //
-  const int r = AlignmentSolution::mod(-C_const / (_scale * _pre_stride), q);
+  const int r = AlignmentSolution::mod(-C_const / (_iv_scale * _pre_stride), q);
   //
   //   pre_iter = m * q + r
-  //                   [- invar / (scale * pre_stride)  ]
-  //                   [- init / pre_stride             ]                                           (14)
+  //                   [- invar / (iv_scale * pre_stride)  ]
+  //                   [- init / pre_stride                ]                                           (14)
   //
   // We thus get a solution that can be stated in terms of:
   //
-  //   q (periodicity), r (constant alignment), invar, scale, pre_stride, init
+  //   q (periodicity), r (constant alignment), invar, iv_scale, pre_stride, init
   //
   // However, pre_stride and init are shared by all mem_ref in the loop, hence we do not need to provide
   // them in the solution description.
 
   DEBUG_ONLY( trace_constrained_solution(C_const, C_invar, C_init, C_pre, q, r); )
 
-  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _scale);
+  return new ConstrainedAlignmentSolution(_mem_ref, q, r, _invar, _iv_scale);
 
   // APPENDIX:
   // We can now verify the success of the solution given by (12):
@@ -906,48 +906,48 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //   adr % aw =
   //
   //   -> Simple form
-  //   (base + invar + scale * iv + con) % aw =
+  //   (base + invar + iv_scale * iv + con) % aw =
   //
   //   -> Expand iv
-  //   (base + con + invar + scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
+  //   (base + con + invar + iv_scale * (init + pre_stride * pre_iter + main_stride * main_iter)) % aw =
   //
   //   -> Reshape
   //   (base + con + invar
-  //         + scale * init
-  //         + scale * pre_stride * pre_iter
-  //         + scale * main_stride * main_iter)) % aw =
+  //         + iv_scale * init
+  //         + iv_scale * pre_stride * pre_iter
+  //         + iv_scale * main_stride * main_iter)) % aw =
   //
   //   -> base aligned: base % aw = 0
-  //   -> main-loop iterations aligned (2): C_main % aw = (scale * main_stride) % aw = 0
-  //   (con + invar + scale * init + scale * pre_stride * pre_iter) % aw =
+  //   -> main-loop iterations aligned (2): C_main % aw = (iv_scale * main_stride) % aw = 0
+  //   (con + invar + iv_scale * init + iv_scale * pre_stride * pre_iter) % aw =
   //
   //   -> apply (12)
-  //   (con + invar + scale * init
-  //        + scale * pre_stride * (m * q - C_const / (scale * pre_stride)
-  //                                     [- invar / (scale * pre_stride) ]
-  //                                     [- init / pre_stride            ]
-  //                               )
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * (m * q - C_const / (iv_scale * pre_stride)
+  //                                        [- invar / (iv_scale * pre_stride) ]
+  //                                        [- init / pre_stride               ]
+  //                                  )
   //   ) % aw =
   //
-  //   -> expand C_const = con [+ init * scale]  (if init const)
-  //   (con + invar + scale * init
-  //        + scale * pre_stride * (m * q - con / (scale * pre_stride)
-  //                                     [- init / pre_stride            ]             (if init constant)
-  //                                     [- invar / (scale * pre_stride) ]             (if invar present)
-  //                                     [- init / pre_stride            ]             (if init variable)
-  //                               )
+  //   -> expand C_const = con [+ init * iv_scale]  (if init const)
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * (m * q - con / (iv_scale * pre_stride)
+  //                                        [- init / pre_stride               ]          (if init constant)
+  //                                        [- invar / (iv_scale * pre_stride) ]          (if invar present)
+  //                                        [- init / pre_stride               ]          (if init variable)
+  //                                  )
   //   ) % aw =
   //
   //   -> assuming invar = 0 if it is not present
   //   -> merge the two init terms (variable or constant)
-  //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(scale * pre_stride)
-  //   -> and hence: (scale * pre_stride * q) % aw = 0
+  //   -> apply (8): q = aw / (abs(C_pre)) = aw / abs(iv_scale * pre_stride)
+  //   -> and hence: (iv_scale * pre_stride * q) % aw = 0
   //   -> all terms are canceled out
-  //   (con + invar + scale * init
-  //        + scale * pre_stride * m * q                             -> aw aligned
-  //        - scale * pre_stride * con / (scale * pre_stride)        -> = con
-  //        - scale * pre_stride * init / pre_stride                 -> = scale * init
-  //        - scale * pre_stride * invar / (scale * pre_stride)      -> = invar
+  //   (con + invar + iv_scale * init
+  //        + iv_scale * pre_stride * m * q                              -> aw aligned
+  //        - iv_scale * pre_stride * con   / (iv_scale * pre_stride)    -> = con
+  //        - iv_scale * pre_stride * init  / pre_stride                 -> = iv_scale * init
+  //        - iv_scale * pre_stride * invar / (iv_scale * pre_stride)    -> = invar
   //   ) % aw = 0
   //
   // The solution given by (12) does indeed guarantee alignment.
@@ -982,12 +982,12 @@ void AlignmentSolver::trace_start_solve() const {
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
 
-    // adr = base + con + invar + scale * iv
+    // adr = base + con + invar + iv_scale * iv
     tty->print("  adr = base");
     //VPointer::print_con_or_idx(_base);
     tty->print(" + con(%d) + invar", _vpointer.con());
     //VPointer::print_con_or_idx(_invar);
-    tty->print_cr(" + scale(%d) * iv", _scale);
+    tty->print_cr(" + iv_scale(%d) * iv", _iv_scale);
   }
 }
 
@@ -1009,7 +1009,7 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
     } else {
       tty->print_cr("  init is variable:");
       tty->print_cr("    C_const_init = %d", C_const_init);
-      tty->print_cr("    C_init = abs(scale)= %d", C_init);
+      tty->print_cr("    C_init = abs(iv_scale)= %d", C_init);
     }
     if (_invar != nullptr) {
       tty->print_cr("  invariant present:");
@@ -1018,12 +1018,12 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
       tty->print_cr("  no invariant:");
       tty->print_cr("    C_invar = %d", C_invar);
     }
-    tty->print_cr("  C_const = con(%d) + scale(%d) * C_const_init(%d) = %d",
-                  _vpointer.con(), _scale, C_const_init, C_const);
-    tty->print_cr("  C_pre   = scale(%d) * pre_stride(%d) = %d",
-                  _scale, _pre_stride, C_pre);
-    tty->print_cr("  C_main  = scale(%d) * main_stride(%d) = %d",
-                  _scale, _main_stride, C_main);
+    tty->print_cr("  C_const = con(%d) + iv_scale(%d) * C_const_init(%d) = %d",
+                  _vpointer.con(), _iv_scale, C_const_init, C_const);
+    tty->print_cr("  C_pre   = iv_scale(%d) * pre_stride(%d) = %d",
+                  _iv_scale, _pre_stride, C_pre);
+    tty->print_cr("  C_main  = iv_scale(%d) * main_stride(%d) = %d",
+                  _iv_scale, _main_stride, C_main);
   }
 }
 
@@ -1092,13 +1092,13 @@ void AlignmentSolver::trace_constrained_solution(const int C_const,
     tty->print_cr("  EQ(10b): pre_iter_C_invar = my2 * q(%d) - sign(C_pre) * Y(%d) * var_invar", q, Y);
     tty->print_cr("  EQ(10c): pre_iter_C_init  = mz2 * q(%d) - sign(C_pre) * Z(%d) * var_init ", q, Z);
 
-    tty->print_cr("  r = (-C_const(%d) / (scale(%d) * pre_stride(%d)) %% q(%d) = %d",
-                  C_const, _scale, _pre_stride, q, r);
+    tty->print_cr("  r = (-C_const(%d) / (iv_scale(%d) * pre_stride(%d)) %% q(%d) = %d",
+                  C_const, _iv_scale, _pre_stride, q, r);
 
     tty->print_cr("  EQ(14):  pre_iter = m * q(%3d) - r(%d)", q, r);
     if (_invar != nullptr) {
-      tty->print_cr("                                 - invar / (scale(%d) * pre_stride(%d))",
-                    _scale, _pre_stride);
+      tty->print_cr("                                 - invar / (iv_scale(%d) * pre_stride(%d))",
+                    _iv_scale, _pre_stride);
     }
     if (!_init_node->is_ConI()) {
       tty->print_cr("                                 - init / pre_stride(%d)",

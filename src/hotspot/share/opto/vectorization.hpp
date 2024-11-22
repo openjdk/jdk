@@ -870,9 +870,9 @@ class VectorElementSizeStats {
 // When alignment is required, we must adjust the pre-loop iteration count pre_iter,
 // such that the address is aligned for any main_iter >= 0:
 //
-//   adr = base + invar + scale * init                      + con
-//                      + scale * pre_stride * pre_iter
-//                      + scale * main_stride * main_iter
+//   adr = base + invar + iv_scale * init                      + con
+//                      + iv_scale * pre_stride * pre_iter
+//                      + iv_scale * main_stride * main_iter
 //
 // The AlignmentSolver generates solutions of the following forms:
 //   1. Empty:       No pre_iter guarantees alignment.
@@ -881,9 +881,9 @@ class VectorElementSizeStats {
 //
 // The Constrained solution is of the following form:
 //
-//   pre_iter = m * q + r                                    (for any integer m)
-//                   [- invar / (scale * pre_stride)  ]      (if there is an invariant)
-//                   [- init / pre_stride             ]      (if init is variable)
+//   pre_iter = m * q + r                                       (for any integer m)
+//                   [- invar / (iv_scale * pre_stride)  ]      (if there is an invariant)
+//                   [- init / pre_stride                ]      (if init is variable)
 //
 // The solution is periodic with periodicity q, which is guaranteed to be a power of 2.
 // This periodic solution is "rotated" by three alignment terms: one for constants (r),
@@ -977,18 +977,18 @@ private:
   const int _q;
   const int _r;
   const Node* _invar;
-  const int _scale;
+  const int _iv_scale;
 public:
   ConstrainedAlignmentSolution(const MemNode* mem_ref,
                                const int q,
                                const int r,
                                const Node* invar,
-                               int scale) :
+                               int iv_scale) :
       _mem_ref(mem_ref),
       _q(q),
       _r(r),
       _invar(invar),
-      _scale(scale) {
+      _iv_scale(iv_scale) {
     assert(q > 1 && is_power_of_2(q), "q must be power of 2");
     assert(0 <= r && r < q, "r must be in modulo space of q");
     assert(_mem_ref != nullptr, "must have mem_ref");
@@ -1022,12 +1022,12 @@ public:
     // for any integers m1 and m2:
     //
     //   pre_iter = m1 * q1 + r1
-    //                     [- invar1 / (scale1 * pre_stride)  ]
-    //                     [- init / pre_stride               ]
+    //                     [- invar1 / (iv_scale1 * pre_stride)  ]
+    //                     [- init / pre_stride                  ]
     //
     //   pre_iter = m2 * q2 + r2
-    //                     [- invar2 / (scale2 * pre_stride)  ]
-    //                     [- init / pre_stride               ]
+    //                     [- invar2 / (iv_scale2 * pre_stride)  ]
+    //                     [- init / pre_stride                  ]
     //
     // Note: pre_stride and init are identical for all mem_refs in the loop.
     //
@@ -1036,13 +1036,13 @@ public:
     //
     // The invar alignment term is identical if either:
     //   - both mem_refs have no invariant.
-    //   - both mem_refs have the same invariant and the same scale.
+    //   - both mem_refs have the same invariant and the same iv_scale.
     //
     if (s1->_invar != s2->_invar) {
       return new EmptyAlignmentSolution("invar not identical");
     }
-    if (s1->_invar != nullptr && s1->_scale != s2->_scale) {
-      return new EmptyAlignmentSolution("has invar with different scale");
+    if (s1->_invar != nullptr && s1->_iv_scale != s2->_iv_scale) {
+      return new EmptyAlignmentSolution("has invar with different iv_scale");
     }
 
     // Now, we have reduced the problem to:
@@ -1084,7 +1084,7 @@ public:
   virtual void print() const override final {
     tty->print("m * q(%d) + r(%d)", _q, _r);
     if (_invar != nullptr) {
-      tty->print(" - invar[%d] / (scale(%d) * pre_stride)", _invar->_idx, _scale);
+      tty->print(" - invar[%d] / (iv_scale(%d) * pre_stride)", _invar->_idx, _iv_scale);
     }
     tty->print_cr(" [- init / pre_stride], mem_ref[%d]", mem_ref()->_idx);
   };
@@ -1102,8 +1102,8 @@ public:
 //
 // pre-loop:
 //   iv = init + i * pre_stride
-//   adr = base + invar + scale * iv                      + con
-//   adr = base + invar + scale * (init + i * pre_stride) + con
+//   adr = base + invar + iv_scale * iv                      + con
+//   adr = base + invar + iv_scale * (init + i * pre_stride) + con
 //   iv += pre_stride
 //   i++
 //
@@ -1117,7 +1117,7 @@ public:
 //   i = pre_iter + main_iter * unroll_factor
 //   iv = init + i * pre_stride = init + pre_iter * pre_stride + main_iter * unroll_factor * pre_stride
 //                              = init + pre_iter * pre_stride + main_iter * main_stride
-//   adr = base + invar + scale * iv + con // must be aligned
+//   adr = base + invar + iv_scale * iv + con // must be aligned
 //   iv += main_stride
 //   i  += unroll_factor
 //   main_iter++
@@ -1150,7 +1150,7 @@ private:
   //
   // The Simple form of the address is disassembled by VPointer into:
   //
-  //   adr = base + invar + scale * iv + con
+  //   adr = base + invar + iv_scale * iv + con
   //
   // Where the iv can be written as:
   //
@@ -1162,7 +1162,7 @@ private:
   const Node*    _base;           // base of address (e.g. Java array object, aw-aligned)
   const Node*    _invar;
   const int      _invar_factor;   // known constant factor of invar
-  const int      _scale;
+  const int      _iv_scale;
   const Node*    _init_node;      // value of iv before pre-loop
   const int      _pre_stride;     // address increment per pre-loop iteration
   const int      _main_stride;    // address increment per main-loop iteration
@@ -1192,7 +1192,7 @@ public:
       _base(              vpointer.decomposed_form().base().object_or_native()),
       _invar(             nullptr), // TODO
       _invar_factor(      1),
-      _scale(             vpointer.iv_scale()),
+      _iv_scale(          vpointer.iv_scale()),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
