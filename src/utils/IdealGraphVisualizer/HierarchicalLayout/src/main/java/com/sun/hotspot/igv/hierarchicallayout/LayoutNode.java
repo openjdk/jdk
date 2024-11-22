@@ -577,7 +577,7 @@ public class LayoutNode {
     }
 
     private boolean computeReversedStartPoints(boolean left) {
-        TreeMap<Integer, ArrayList<LayoutEdge>> sortedDownMap = reverseLeft ? new TreeMap<>() : new TreeMap<>(Collections.reverseOrder());
+        TreeMap<Integer, ArrayList<LayoutEdge>> sortedDownMap = left ? new TreeMap<>() : new TreeMap<>(Collections.reverseOrder());
         for (LayoutEdge succEdge : succs) {
             if (succEdge.isReversed()) {
                 succEdge.setRelativeFromX(succEdge.getLink().getTo().getRelativePosition().x);
