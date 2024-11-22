@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "runtime/sharedRuntime.hpp"
 
+#ifdef _M_ARM64
 // These are copied defines originally from fdlibm.h.
 
 #define __HI(x) *(1+(int*)&x)
@@ -38,7 +39,7 @@
 
 static const double one = 1.0, Zero[] = { 0.0, -0.0, };
 
-double SharedRuntime::fmod_winx64(double x, double y)
+double SharedRuntime::fmod_win64(double x, double y)
 {
   int n, hx, hy, hz, ix, iy, sx, i;
   unsigned lx, ly, lz;
@@ -157,3 +158,5 @@ double SharedRuntime::fmod_winx64(double x, double y)
   }
   return x;               /* exact output */
 }
+
+#endif
