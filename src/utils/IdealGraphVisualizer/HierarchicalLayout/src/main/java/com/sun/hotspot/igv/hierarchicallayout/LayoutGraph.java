@@ -42,14 +42,14 @@ public class LayoutGraph {
     // Registered Graph Components: Links, Vertices, and Port Mappings
     private final Set<Link> links;
     private final SortedSet<Vertex> vertices;
-    private final LinkedHashMap<Vertex, List<Port>> inputPorts;
-    private final LinkedHashMap<Vertex, List<Port>> outputPorts;
-    private final LinkedHashMap<Port, List<Link>> portLinks;
+    private final LinkedHashMap<Vertex, Set<Port>> inputPorts;
+    private final LinkedHashMap<Vertex, Set<Port>> outputPorts;
+    private final LinkedHashMap<Port, Set<Link>> portLinks;
 
     // Layout Management: LayoutNodes and LayoutLayers
     private final LinkedHashMap<Vertex, LayoutNode> layoutNodes;
     private final List<LayoutNode> dummyNodes;
-    private List<LayoutLayer> layers;
+    private final List<LayoutLayer> layers;
 
     /**
      * Constructs a new LayoutGraph using the provided collection of links and additional vertices.
@@ -76,11 +76,11 @@ public class LayoutGraph {
             vertices.add(fromVertex);
             vertices.add(toVertex);
 
-            outputPorts.computeIfAbsent(fromVertex, k -> new ArrayList<>()).add(fromPort);
-            inputPorts.computeIfAbsent(toVertex, k -> new ArrayList<>()).add(toPort);
+            outputPorts.computeIfAbsent(fromVertex, k -> new HashSet<>()).add(fromPort);
+            inputPorts.computeIfAbsent(toVertex, k -> new HashSet<>()).add(toPort);
 
-            portLinks.computeIfAbsent(fromPort, k -> new ArrayList<>()).add(link);
-            portLinks.computeIfAbsent(toPort, k -> new ArrayList<>()).add(link);
+            portLinks.computeIfAbsent(fromPort, k -> new HashSet<>()).add(link);
+            portLinks.computeIfAbsent(toPort, k -> new HashSet<>()).add(link);
         }
 
         // cleanup
@@ -146,12 +146,12 @@ public class LayoutGraph {
         links.add(link);
 
         // Update portLinks
-        portLinks.computeIfAbsent(fromPort, k -> new ArrayList<>()).add(link);
-        portLinks.computeIfAbsent(toPort, k -> new ArrayList<>()).add(link);
+        portLinks.computeIfAbsent(fromPort, k -> new HashSet<>()).add(link);
+        portLinks.computeIfAbsent(toPort, k -> new HashSet<>()).add(link);
 
         // Update inputPorts and outputPorts
-        outputPorts.computeIfAbsent(fromVertex, k -> new ArrayList<>()).add(fromPort);
-        inputPorts.computeIfAbsent(toVertex, k -> new ArrayList<>()).add(toPort);
+        outputPorts.computeIfAbsent(fromVertex, k -> new HashSet<>()).add(fromPort);
+        inputPorts.computeIfAbsent(toVertex, k -> new HashSet<>()).add(toPort);
     }
 
     /**
@@ -173,7 +173,7 @@ public class LayoutGraph {
         links.remove(link);
 
         // Update portLinks
-        List<Link> fromPortLinks = portLinks.get(fromPort);
+        Set<Link> fromPortLinks = portLinks.get(fromPort);
         if (fromPortLinks != null) {
             fromPortLinks.remove(link);
             if (fromPortLinks.isEmpty()) {
@@ -181,7 +181,7 @@ public class LayoutGraph {
             }
         }
 
-        List<Link> toPortLinks = portLinks.get(toPort);
+        Set<Link> toPortLinks = portLinks.get(toPort);
         if (toPortLinks != null) {
             toPortLinks.remove(link);
             if (toPortLinks.isEmpty()) {
@@ -190,7 +190,7 @@ public class LayoutGraph {
         }
 
         // Update inputPorts and outputPorts
-        List<Port> fromVertexOutputPorts = outputPorts.get(fromVertex);
+        Set<Port> fromVertexOutputPorts = outputPorts.get(fromVertex);
         if (fromVertexOutputPorts != null) {
             fromVertexOutputPorts.remove(fromPort);
             if (fromVertexOutputPorts.isEmpty()) {
@@ -198,7 +198,7 @@ public class LayoutGraph {
             }
         }
 
-        List<Port> toVertexInputPorts = inputPorts.get(toVertex);
+        Set<Port> toVertexInputPorts = inputPorts.get(toVertex);
         if (toVertexInputPorts != null) {
             toVertexInputPorts.remove(toPort);
             if (toVertexInputPorts.isEmpty()) {
@@ -222,8 +222,8 @@ public class LayoutGraph {
         vertices.add(vertex);
 
         // Initialize ports
-        inputPorts.put(vertex, new ArrayList<>());
-        outputPorts.put(vertex, new ArrayList<>());
+        inputPorts.put(vertex, new HashSet<>());
+        outputPorts.put(vertex, new HashSet<>());
     }
 
     /**
@@ -537,7 +537,7 @@ public class LayoutGraph {
      */
     public Set<Vertex> findRootVertices() {
         return vertices.stream()
-                .filter(v -> inputPorts.getOrDefault(v, Collections.emptyList()).isEmpty())
+                .filter(v -> inputPorts.getOrDefault(v, Collections.emptySet()).isEmpty())
                 .collect(Collectors.toSet());
     }
 
@@ -549,8 +549,8 @@ public class LayoutGraph {
      */
     public List<Link> getInputLinks(Vertex vertex) {
         List<Link> inputLinks = new ArrayList<>();
-        for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptyList())) {
-            inputLinks.addAll(portLinks.getOrDefault(inputPort, Collections.emptyList()));
+        for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            inputLinks.addAll(portLinks.getOrDefault(inputPort, Collections.emptySet()));
         }
         return inputLinks;
     }
@@ -563,8 +563,8 @@ public class LayoutGraph {
      */
     public List<Link> getOutputLinks(Vertex vertex) {
         List<Link> outputLinks = new ArrayList<>();
-        for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptyList())) {
-            outputLinks.addAll(portLinks.getOrDefault(outputPort, Collections.emptyList()));
+        for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            outputLinks.addAll(portLinks.getOrDefault(outputPort, Collections.emptySet()));
         }
         return outputLinks;
     }
@@ -572,12 +572,12 @@ public class LayoutGraph {
     public List<Link> getAllLinks(Vertex vertex) {
         List<Link> allLinks = new ArrayList<>();
 
-        for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptyList())) {
-            allLinks.addAll(portLinks.getOrDefault(inputPort, Collections.emptyList()));
+        for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            allLinks.addAll(portLinks.getOrDefault(inputPort, Collections.emptySet()));
         }
 
-        for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptyList())) {
-            allLinks.addAll(portLinks.getOrDefault(outputPort, Collections.emptyList()));
+        for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptySet())) {
+            allLinks.addAll(portLinks.getOrDefault(outputPort, Collections.emptySet()));
         }
 
         return allLinks;
@@ -590,7 +590,7 @@ public class LayoutGraph {
      */
     public void removeNodeAndEdges(LayoutNode node) {
         assert !node.isDummy();
-        removeEdges(node); // a node can only removed together with its edges
+        removeEdges(node); // a node can only be removed together with its edges
         int layer = node.getLayer();
         layers.get(layer).remove(node);
         layers.get(layer).updateNodeIndices();
