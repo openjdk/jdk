@@ -28,11 +28,10 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 
-InlinePrinter::InlinePrinter(Arena* arena, bool enabled) : _enabled(enabled), _root(new(arena) IPInlineSite(nullptr, arena)) {
+InlinePrinter::InlinePrinter(Arena* arena, bool enabled) : _enabled(enabled), _root(new(arena) IPInlineSite(nullptr, arena, 0)) {
 }
 
-InlinePrinter::IPInlineAttempt::IPInlineAttempt(InliningResult result) : result(result) {
-}
+InlinePrinter::IPInlineAttempt::IPInlineAttempt(InliningResult result) : result(result) {}
 
 outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningResult result, const char* msg) {
   if (!_enabled) {
@@ -49,7 +48,7 @@ void InlinePrinter::print_on(outputStream* tty) {
   if (!_enabled) {
     return;
   }
-  _root->dump(tty, -1, -1);
+  _root->dump(tty, -1);
 }
 
 InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* callee) {
@@ -61,17 +60,19 @@ InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* ca
 }
 
 InlinePrinter::IPInlineSite* InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* callee) {
-  if (_children.length() <= bci) {
+  int index = (bci == -1) ? 0 : bci; // -1 is a special case for some intrinsics (e.g. java.lang.ref.reference.get)
+  assert(index >= 0, "index cannot be negative");
+  if (_children.length() <= index) {
     assert(callee != nullptr, "an inline call is missing in the chain up to the root");
-    auto child = new (_arena) IPInlineSite(callee, _arena);
-    _children.at_put_grow(bci, child, nullptr);
+    auto child = new (_arena) IPInlineSite(callee, _arena, bci);
+    _children.at_put_grow(index, child, nullptr);
     return child;
   }
-  if (auto child = _children.at(bci)) {
+  if (auto child = _children.at(index)) {
     return child;
   }
-  auto child = new (_arena) IPInlineSite(callee, _arena);
-  _children.at_put(bci, child);
+  auto child = new (_arena) IPInlineSite(callee, _arena, bci);
+  _children.at_put(index, child);
   return child;
 }
 
@@ -81,22 +82,20 @@ InlinePrinter::IPInlineAttempt* InlinePrinter::IPInlineSite::add(InliningResult 
   return attempt;
 }
 
-void InlinePrinter::IPInlineSite::dump(outputStream* tty, int level, int bci) {
+void InlinePrinter::IPInlineSite::dump(outputStream* tty, int level) {
   if (_attempts.is_nonempty()) {
-    CompileTask::print_inlining_header(tty, _method, level, bci);
+    CompileTask::print_inlining_header(tty, _method, level, _bci);
   }
-  for (auto* attempt : _attempts) {
-    assert(bci >= 0, "BCI cannot be negative. Is there an inline attempt for the root?");
+  for (IPInlineAttempt* attempt : _attempts) {
     CompileTask::print_inlining_inner_message(tty, attempt->result, attempt->msg.base());
   }
   if (_attempts.is_nonempty()) {
     tty->cr();
   }
 
-  for (int bci = 0; bci < _children.length(); bci++) {
-    auto child = _children.at(bci);
+  for (IPInlineSite* child : _children) {
     if (child != nullptr) {
-      child->dump(tty, level + 1, bci);
+      child->dump(tty, level + 1);
     }
   }
 }

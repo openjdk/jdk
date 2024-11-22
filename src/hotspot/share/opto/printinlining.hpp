@@ -39,12 +39,14 @@ private:
     IPInlineAttempt(InliningResult result);
     const InliningResult result;
     stringStream msg;
+    int bci;
   };
 
   class IPInlineSite : public ArenaObj {
   private:
     Arena* const _arena;
     ciMethod* const _method;
+    int const _bci;
     GrowableArray<IPInlineAttempt*> _attempts;
     GrowableArray<IPInlineSite*> _children;
 
@@ -52,9 +54,9 @@ private:
     /**
      * Method may be null iff this is the root of the tree.
      */
-    IPInlineSite(ciMethod* method, Arena* arena) : _arena(arena), _method(method),
-                                                   _attempts(arena, 2, 0, nullptr),
-                                                   _children(arena, 2, 0, nullptr) {}
+    IPInlineSite(ciMethod* method, Arena* arena, int bci) : _arena(arena), _method(method), _bci(bci),
+                                                            _attempts(arena, 2, 0, nullptr),
+                                                            _children(arena, 2, 0, nullptr) {}
     /**
      * Finds the node for an inline attempt that occurred inside this inline.
      * If this is a new site, provide the callee otherwise null.
@@ -62,7 +64,7 @@ private:
     IPInlineSite* at_bci(int bci, ciMethod* callee);
     InlinePrinter::IPInlineAttempt* add(InliningResult result);
 
-    void dump(outputStream* tty, int level, int bci);
+    void dump(outputStream* tty, int level);
   };
 
   bool _enabled;
