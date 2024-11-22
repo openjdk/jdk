@@ -387,10 +387,9 @@ public class DatagramSocket implements java.io.Closeable {
      * this socket is unknown - it may or may not be connected to the address
      * that it was previously connected to.
      *
-     * <p> When a socket is connected, additional checks are performed
-     * on a send operation: if the packet's address is set and the packet's address
-     * and the socket's address do not match, an {@code IllegalArgumentException}
-     * will be thrown. A socket connected to a multicast address may only
+     * <p> When the socket is connected, the send method checks that the
+     * packet's address matches the remote address that the socket is
+     * connected to. A socket connected to a multicast address may only
      * be used to send packets. Datagrams in the socket's {@linkplain
      * java.net.StandardSocketOptions#SO_RCVBUF socket receive buffer}, which
      * have not been {@linkplain #receive(DatagramPacket) received} before invoking
