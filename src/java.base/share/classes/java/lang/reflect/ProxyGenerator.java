@@ -43,7 +43,6 @@ import java.util.Objects;
 import jdk.internal.constant.ClassOrInterfaceDescImpl;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
-import sun.security.action.GetBooleanAction;
 
 import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.attribute.StackMapFrameInfo;
@@ -106,9 +105,8 @@ final class ProxyGenerator {
      */
     @SuppressWarnings("removal")
     private static final boolean SAVE_GENERATED_FILES =
-            java.security.AccessController.doPrivileged(
-                    new GetBooleanAction(
-                            "jdk.proxy.ProxyGenerator.saveGeneratedFiles"));
+            Boolean.getBoolean("jdk.proxy.ProxyGenerator.saveGeneratedFiles");
+
 
     /* Preloaded ProxyMethod objects for methods in java.lang.Object */
     private static final Method OBJECT_HASH_CODE_METHOD;
@@ -215,27 +213,21 @@ final class ProxyGenerator {
         final byte[] classFile = gen.generateClassFile();
 
         if (SAVE_GENERATED_FILES) {
-            java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                            try {
-                                int i = name.lastIndexOf('.');
-                                Path path;
-                                if (i > 0) {
-                                    Path dir = Path.of(name.substring(0, i).replace('.', '/'));
-                                    Files.createDirectories(dir);
-                                    path = dir.resolve(name.substring(i + 1) + ".class");
-                                } else {
-                                    path = Path.of(name + ".class");
-                                }
-                                Files.write(path, classFile);
-                                return null;
-                            } catch (IOException e) {
-                                throw new InternalError(
-                                        "I/O exception saving generated file: " + e);
-                            }
-                        }
-                    });
+            try {
+                int i = name.lastIndexOf('.');
+                Path path;
+                if (i > 0) {
+                    Path dir = Path.of(name.substring(0, i).replace('.', '/'));
+                    Files.createDirectories(dir);
+                    path = dir.resolve(name.substring(i + 1) + ".class");
+                } else {
+                    path = Path.of(name + ".class");
+                }
+                Files.write(path, classFile);
+                return null;
+            } catch (IOException e) {
+                throw new InternalError("I/O exception saving generated file: " + e);
+            }
         }
 
         return classFile;
@@ -565,11 +557,6 @@ final class ProxyGenerator {
 
     /**
      * Generate the class initializer.
-     * Discussion: Currently, for Proxy to work with SecurityManager,
-     * we rely on the parameter classes of the methods to be computed
-     * from Proxy instead of via user code paths like bootstrap method
-     * lazy evaluation. That might change if we can pass in the live
-     * Method objects directly..
      */
     private void generateStaticInitializer(ClassBuilder clb) {
         clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
@@ -786,9 +773,6 @@ final class ProxyGenerator {
          * Generate code for initializing the static field that stores
          * the Method object for this proxy method. A class loader is
          * anticipated at local variable index 0.
-         * The generated code must be run in an AccessController.doPrivileged
-         * block if a SecurityManager is present, as otherwise the code
-         * cannot pass {@code null} ClassLoader to forName.
          */
         private void codeFieldInitialization(CodeBuilder cob) {
             var cp = cob.constantPool();

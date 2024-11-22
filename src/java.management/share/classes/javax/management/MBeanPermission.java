@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,10 @@ import java.security.Permission;
  *
  * <p>In a comma-separated list of actions, spaces are allowed before
  * and after each action.
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
  *
  * @since 1.5
  */

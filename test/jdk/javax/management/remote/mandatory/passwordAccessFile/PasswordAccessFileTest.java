@@ -32,7 +32,6 @@
  * @run build PasswordAccessFileTest SimpleStandard SimpleStandardMBean
  *
  * @run main/othervm PasswordAccessFileTest
- * @run main/othervm -Djava.security.manager=allow PasswordAccessFileTest
  */
 
 import java.io.File;

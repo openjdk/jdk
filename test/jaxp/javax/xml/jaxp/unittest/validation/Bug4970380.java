@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.ValidatorHandler;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXNotRecognizedException;
 
@@ -35,11 +34,9 @@ import org.xml.sax.SAXNotRecognizedException;
  * @test
  * @bug 4970380
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow validation.Bug4970380
  * @run testng/othervm validation.Bug4970380
  * @summary Test validatorHandler.getFeature(...) with unknown name and "http://xml.org/sax/features/namespace-prefixes".
  */
-@Listeners({jaxp.library.BasePolicy.class})
 public class Bug4970380 {
 
     @Test

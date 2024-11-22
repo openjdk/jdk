@@ -30,10 +30,7 @@
 
 #include "sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal.h"
 
-#ifdef _M_IX86
-  #include "sun_jvm_hotspot_debugger_x86_X86ThreadContext.h"
-  #define NPRGREG sun_jvm_hotspot_debugger_x86_X86ThreadContext_NPRGREG
-#elif _M_AMD64
+#ifdef _M_AMD64
   #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
   #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
 #elif _M_ARM64
@@ -560,39 +557,7 @@ static bool addThreads(JNIEnv* env, jobject obj) {
     memset(&context, 0, sizeof(CONTEXT));
 
 #undef REG_INDEX
-#ifdef _M_IX86
-    #define REG_INDEX(x) sun_jvm_hotspot_debugger_x86_X86ThreadContext_##x
-
-    context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;
-    ptrIDebugAdvanced->GetThreadContext(&context, sizeof(CONTEXT));
-
-    ptrRegs[REG_INDEX(GS)]  = context.SegGs;
-    ptrRegs[REG_INDEX(FS)]  = context.SegFs;
-    ptrRegs[REG_INDEX(ES)]  = context.SegEs;
-    ptrRegs[REG_INDEX(DS)]  = context.SegDs;
-
-    ptrRegs[REG_INDEX(EDI)] = context.Edi;
-    ptrRegs[REG_INDEX(ESI)] = context.Esi;
-    ptrRegs[REG_INDEX(EBX)] = context.Ebx;
-    ptrRegs[REG_INDEX(EDX)] = context.Edx;
-    ptrRegs[REG_INDEX(ECX)] = context.Ecx;
-    ptrRegs[REG_INDEX(EAX)] = context.Eax;
-
-    ptrRegs[REG_INDEX(FP)] = context.Ebp;
-    ptrRegs[REG_INDEX(PC)] = context.Eip;
-    ptrRegs[REG_INDEX(CS)]  = context.SegCs;
-    ptrRegs[REG_INDEX(EFL)] = context.EFlags;
-    ptrRegs[REG_INDEX(SP)] = context.Esp;
-    ptrRegs[REG_INDEX(SS)]  = context.SegSs;
-
-    ptrRegs[REG_INDEX(DR0)] = context.Dr0;
-    ptrRegs[REG_INDEX(DR1)] = context.Dr1;
-    ptrRegs[REG_INDEX(DR2)] = context.Dr2;
-    ptrRegs[REG_INDEX(DR3)] = context.Dr3;
-    ptrRegs[REG_INDEX(DR6)] = context.Dr6;
-    ptrRegs[REG_INDEX(DR7)] = context.Dr7;
-
-#elif _M_AMD64
+#ifdef _M_AMD64
     #define REG_INDEX(x) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##x
 
     context.ContextFlags = CONTEXT_FULL | CONTEXT_DEBUG_REGISTERS;

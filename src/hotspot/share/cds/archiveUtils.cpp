@@ -39,6 +39,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
@@ -241,9 +242,10 @@ void DumpRegion::commit_to(char* newtop) {
                  which, commit, _vs->actual_committed_size(), _vs->high());
 }
 
-
-char* DumpRegion::allocate(size_t num_bytes) {
-  char* p = (char*)align_up(_top, (size_t)SharedSpaceObjectAlignment);
+char* DumpRegion::allocate(size_t num_bytes, size_t alignment) {
+  // Always align to at least minimum alignment
+  alignment = MAX2(SharedSpaceObjectAlignment, alignment);
+  char* p = (char*)align_up(_top, alignment);
   char* newtop = p + align_up(num_bytes, (size_t)SharedSpaceObjectAlignment);
   expand_top_to(newtop);
   memset(p, 0, newtop - p);
@@ -343,7 +345,7 @@ void ReadClosure::do_tag(int tag) {
   int old_tag;
   old_tag = (int)(intptr_t)nextPtr();
   // do_int(&old_tag);
-  assert(tag == old_tag, "old tag doesn't match");
+  assert(tag == old_tag, "tag doesn't match (%d, expected %d)", old_tag, tag);
   FileMapInfo::assert_mark(tag == old_tag);
 }
 
@@ -369,6 +371,14 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   }
 }
 
+bool ArchiveUtils::has_aot_initialized_mirror(InstanceKlass* src_ik) {
+  if (SystemDictionaryShared::is_excluded_class(src_ik)) {
+    assert(!ArchiveBuilder::current()->has_been_buffered(src_ik), "sanity");
+    return false;
+  }
+  return ArchiveBuilder::current()->get_buffered_addr(src_ik)->has_aot_initialized_mirror();
+}
+
 size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
   assert(seg_idx < _count, "In range");
   return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
@@ -389,3 +399,188 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
   return _base_offset + seg_idx * _max_size_in_bytes;
 }
 
+ArchiveWorkers ArchiveWorkers::_workers;
+
+ArchiveWorkers::ArchiveWorkers() :
+        _start_semaphore(0),
+        _end_semaphore(0),
+        _num_workers(0),
+        _started_workers(0),
+        _waiting_workers(0),
+        _running_workers(0),
+        _state(NOT_READY),
+        _task(nullptr) {
+}
+
+void ArchiveWorkers::initialize() {
+  assert(Atomic::load(&_state) == NOT_READY, "Should be");
+
+  Atomic::store(&_num_workers, max_workers());
+  Atomic::store(&_state, READY);
+
+  // Kick off pool startup by creating a single worker.
+  start_worker_if_needed();
+}
+
+int ArchiveWorkers::max_workers() {
+  // The pool is used for short-lived bursty tasks. We do not want to spend
+  // too much time creating and waking up threads unnecessarily. Plus, we do
+  // not want to overwhelm large machines. This is why we want to be very
+  // conservative about the number of workers actually needed.
+  return MAX2(0, log2i_graceful(os::active_processor_count()));
+}
+
+bool ArchiveWorkers::is_parallel() {
+  return _num_workers > 0;
+}
+
+void ArchiveWorkers::shutdown() {
+  while (true) {
+    State state = Atomic::load(&_state);
+    if (state == SHUTDOWN) {
+      // Already shut down.
+      return;
+    }
+    if (Atomic::cmpxchg(&_state, state, SHUTDOWN, memory_order_relaxed) == state) {
+      if (is_parallel()) {
+        // Execute a shutdown task and block until all workers respond.
+        run_task(&_shutdown_task);
+      }
+    }
+  }
+}
+
+void ArchiveWorkers::start_worker_if_needed() {
+  while (true) {
+    int cur = Atomic::load(&_started_workers);
+    if (cur >= _num_workers) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_started_workers, cur, cur + 1, memory_order_relaxed) == cur) {
+      new ArchiveWorkerThread(this);
+      return;
+    }
+  }
+}
+
+void ArchiveWorkers::signal_worker_if_needed() {
+  while (true) {
+    int cur = Atomic::load(&_waiting_workers);
+    if (cur == 0) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_waiting_workers, cur, cur - 1, memory_order_relaxed) == cur) {
+      _start_semaphore.signal(1);
+      return;
+    }
+  }
+}
+
+void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
+  assert((Atomic::load(&_state) == READY) ||
+         ((Atomic::load(&_state) == SHUTDOWN) && (task == &_shutdown_task)),
+         "Should be in correct state");
+  assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
+
+  if (is_parallel()) {
+    run_task_multi(task);
+  } else {
+    run_task_single(task);
+  }
+}
+
+void ArchiveWorkers::run_task_single(ArchiveWorkerTask* task) {
+  // Single thread needs no chunking.
+  task->configure_max_chunks(1);
+
+  // Execute the task ourselves, as there are no workers.
+  task->work(0, 1);
+}
+
+void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
+  // Multiple threads can work with multiple chunks.
+  task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
+
+  // Set up the run and publish the task.
+  Atomic::store(&_waiting_workers, _num_workers);
+  Atomic::store(&_running_workers, _num_workers);
+  Atomic::release_store(&_task, task);
+
+  // Kick off pool wakeup by signaling a single worker, and proceed
+  // immediately to executing the task locally.
+  signal_worker_if_needed();
+
+  // Execute the task ourselves, while workers are catching up.
+  // This allows us to hide parts of task handoff latency.
+  task->run();
+
+  // Done executing task locally, wait for any remaining workers to complete,
+  // and then do the final housekeeping.
+  _end_semaphore.wait();
+  Atomic::store(&_task, (ArchiveWorkerTask *) nullptr);
+  OrderAccess::fence();
+
+  assert(Atomic::load(&_waiting_workers) == 0, "All workers were signaled");
+  assert(Atomic::load(&_running_workers) == 0, "No workers are running");
+}
+
+void ArchiveWorkerTask::run() {
+  while (true) {
+    int chunk = Atomic::load(&_chunk);
+    if (chunk >= _max_chunks) {
+      return;
+    }
+    if (Atomic::cmpxchg(&_chunk, chunk, chunk + 1, memory_order_relaxed) == chunk) {
+      assert(0 <= chunk && chunk < _max_chunks, "Sanity");
+      work(chunk, _max_chunks);
+    }
+  }
+}
+
+void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
+  if (_max_chunks == 0) {
+    _max_chunks = max_chunks;
+  }
+}
+
+bool ArchiveWorkers::run_as_worker() {
+  assert(is_parallel(), "Should be in parallel mode");
+  _start_semaphore.wait();
+
+  // Avalanche wakeups: each worker signals two others.
+  signal_worker_if_needed();
+  signal_worker_if_needed();
+
+  ArchiveWorkerTask* task = Atomic::load_acquire(&_task);
+  task->run();
+
+  // All work done in threads should be visible to caller.
+  OrderAccess::fence();
+
+  // Signal the pool the tasks are complete, if this is the last worker.
+  if (Atomic::sub(&_running_workers, 1, memory_order_relaxed) == 0) {
+    _end_semaphore.signal();
+  }
+
+  // Continue if task was not a termination task.
+  return (task != &_shutdown_task);
+}
+
+ArchiveWorkerThread::ArchiveWorkerThread(ArchiveWorkers* pool) : NamedThread(), _pool(pool) {
+  set_name("ArchiveWorkerThread");
+  os::create_thread(this, os::os_thread);
+  os::start_thread(this);
+}
+
+void ArchiveWorkerThread::run() {
+  // Avalanche thread startup: each starting worker starts two others.
+  _pool->start_worker_if_needed();
+  _pool->start_worker_if_needed();
+
+  // Set ourselves up.
+  os::set_priority(this, NearMaxPriority);
+
+  while (_pool->run_as_worker()) {
+    // Work until terminated.
+  }
+}

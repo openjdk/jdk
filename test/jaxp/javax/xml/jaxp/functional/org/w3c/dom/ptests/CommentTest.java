@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.testng.annotations.Listeners;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -36,11 +35,9 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/functional
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.CommentTest
  * @run testng/othervm org.w3c.dom.ptests.CommentTest
  * @summary Test for Comment implementation returned by Document.createComment(String)
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class CommentTest extends AbstractCharacterDataTest {
     @Override
     protected CharacterData createCharacterData(String text) throws IOException, SAXException, ParserConfigurationException {

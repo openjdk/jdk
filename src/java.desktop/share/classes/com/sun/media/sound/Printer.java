@@ -25,9 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.security.AccessController;
-
-import sun.security.action.GetPropertyAction;
 
 /**
  * Printer allows you to set up global debugging status and print
@@ -66,9 +63,7 @@ final class Printer {
      * Returns {@code true} if the build of the current jdk is "internal".
      */
     private static boolean isBuildInternal() {
-        @SuppressWarnings("removal")
-        String javaVersion = AccessController.doPrivileged(
-                new GetPropertyAction("java.version"));
+        String javaVersion = System.getProperty("java.version");
         return javaVersion != null && javaVersion.contains("internal");
     }
 
