@@ -182,8 +182,8 @@ void VLoopVPointers::count_vpointers() {
 }
 
 void VLoopVPointers::allocate_vpointers_array() {
-  uint bytes2 = _vpointers_length * sizeof(XPointer);
-  _xpointers = (XPointer*)_arena->Amalloc(bytes2);
+  uint bytes2 = _vpointers_length * sizeof(VPointer);
+  _vpointers = (VPointer*)_arena->Amalloc(bytes2);
 }
 
 void VLoopVPointers::compute_and_cache_vpointers() {
@@ -191,18 +191,18 @@ void VLoopVPointers::compute_and_cache_vpointers() {
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
     MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
-    ::new (&_xpointers[pointers_idx]) XPointer(mem, _vloop, empty_callback);
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, empty_callback);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
   });
 }
 
-const XPointer& VLoopVPointers::xpointer(const MemNode* mem) const {
+const VPointer& VLoopVPointers::vpointer(const MemNode* mem) const {
   assert(mem != nullptr && _vloop.in_bb(mem), "only mem in loop");
   int bb_idx = _body.bb_idx(mem);
   int pointers_idx = _bb_idx_to_vpointer.at(bb_idx);
   assert(0 <= pointers_idx && pointers_idx < _vpointers_length, "valid range");
-  return _xpointers[pointers_idx];
+  return _vpointers[pointers_idx];
 }
 
 #ifndef PRODUCT
@@ -210,7 +210,7 @@ void VLoopVPointers::print() const {
   tty->print_cr("\nVLoopVPointers::print:");
 
   _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
-    const XPointer& xp = xpointer(mem);
+    const VPointer& xp = vpointer(mem);
     tty->print("  ");
     xp.print_on(tty);
   });
@@ -244,7 +244,7 @@ void VLoopDependencyGraph::construct() {
       MemNode* n1 = slice_nodes.at(j);
       memory_pred_edges.clear();
 
-      const XPointer& p1 = _vpointers.xpointer(n1);
+      const VPointer& p1 = _vpointers.vpointer(n1);
       // For all memory nodes before it, check if we need to add a memory edge.
       for (int k = slice_nodes.length() - 1; k > j; k--) {
         MemNode* n2 = slice_nodes.at(k);
@@ -252,7 +252,7 @@ void VLoopDependencyGraph::construct() {
         // Ignore Load-Load dependencies:
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
-        const XPointer& p2 = _vpointers.xpointer(n2);
+        const VPointer& p2 = _vpointers.vpointer(n2);
         if (!p1.never_overlaps_with(p2, _vloop)) {
           // Possibly overlapping memory
           memory_pred_edges.append(_body.bb_idx(n2));
@@ -393,7 +393,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
-bool XPointer::is_adjacent_to_and_before(const XPointer& other, const VLoop& vloop) const {
+bool VPointer::is_adjacent_to_and_before(const VPointer& other, const VLoop& vloop) const {
   const MemPointerDecomposedForm& s1 = decomposed_form();
   const MemPointerDecomposedForm& s2 = other.decomposed_form();
   const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA vloop.mptrace() ));
@@ -411,11 +411,11 @@ bool XPointer::is_adjacent_to_and_before(const XPointer& other, const VLoop& vlo
   return is_adjacent;
 }
 
-bool XPointer::never_overlaps_with(const XPointer& other, const VLoop& vloop) const {
+bool VPointer::never_overlaps_with(const VPointer& other, const VLoop& vloop) const {
   if (!is_valid() || !other.is_valid()) {
 #ifndef PRODUCT
     if (vloop.mptrace().is_trace_overlap()) {
-      tty->print_cr("Never Overlap: false, because of invalid XPointer.");
+      tty->print_cr("Never Overlap: false, because of invalid VPointer.");
     }
 #endif
 
@@ -452,8 +452,8 @@ bool XPointer::never_overlaps_with(const XPointer& other, const VLoop& vloop) co
 }
 
 #ifndef PRODUCT
-void XPointer::print_on(outputStream* st) const {
-  st->print("XPointer[");
+void VPointer::print_on(outputStream* st) const {
+  st->print("VPointer[");
 
   if (!is_valid()) {
     st->print_cr("invalid]");

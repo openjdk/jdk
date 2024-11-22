@@ -49,7 +49,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
 {
 }
 
-// Collect ignored loop nodes during XPointer parsing.
+// Collect ignored loop nodes during VPointer parsing.
 class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerDecomposedFormParser::Callback {
 private:
   const VLoop&     _vloop;
@@ -180,7 +180,7 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
           ignored_nodes.set_ignored(adr);
         } else {
           // Mark the internal nodes of the address expression in ignored_nodes.
-          XPointer xp(current, vloop, ignored_nodes);
+          VPointer xp(current, vloop, ignored_nodes);
         }
       }
     }
@@ -512,9 +512,9 @@ int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
   // Opcode
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
 
-  // XPointer summands
-  return MemPointerDecomposedForm::cmp_summands(a->xpointer().decomposed_form(),
-                                                b->xpointer().decomposed_form());
+  // VPointer summands
+  return MemPointerDecomposedForm::cmp_summands(a->vpointer().decomposed_form(),
+                                                b->vpointer().decomposed_form());
 }
 
 int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
@@ -522,9 +522,9 @@ int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
   int cmp_group = cmp_by_group(a, b);
   if (cmp_group != 0) { return cmp_group; }
 
-  // XPointer con
-  jint a_con = a->xpointer().decomposed_form().con().value();
-  jint b_con = b->xpointer().decomposed_form().con().value();
+  // VPointer con
+  jint a_con = a->vpointer().decomposed_form().con().value();
+  jint b_con = b->vpointer().decomposed_form().con().value();
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a_con, b_con);
 
   return 0;
@@ -537,12 +537,12 @@ void SuperWord::create_adjacent_memop_pairs() {
 
   collect_valid_memops(memops);
 
-  // Sort the MemOps by group, and inside a group by XPointer con:
-  //  - Group: all memops with the same opcode, and the same XPointer summands. Adjacent memops
-  //           have the same opcode and the same XPointer summands, only the XPointer con is
+  // Sort the MemOps by group, and inside a group by VPointer con:
+  //  - Group: all memops with the same opcode, and the same VPointer summands. Adjacent memops
+  //           have the same opcode and the same VPointer summands, only the VPointer con is
   //           different. Thus, two memops can only be adjacent if they are in the same group.
   //           This decreases the work.
-  //  - XPointer con: Sorting by XPointer con inside the group allows us to perform a sliding
+  //  - VPointer con: Sorting by VPointer con inside the group allows us to perform a sliding
   //                  window algorithm, to determine adjacent memops efficiently.
   memops.sort(MemOp::cmp_by_group_and_con);
 
@@ -565,7 +565,7 @@ void SuperWord::create_adjacent_memop_pairs() {
 // Collect all memops that could potentially be vectorized.
 void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) {
   for_each_mem([&] (MemNode* mem, int bb_idx) {
-    const XPointer& p = xpointer(mem);
+    const VPointer& p = vpointer(mem);
     if (p.is_valid() &&
         !mem->is_LoadStore() &&
         is_java_primitive(mem->memory_type())) {
@@ -608,7 +608,7 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
       tty->print("  ");
       memop.mem()->dump();
       tty->print("  ");
-      memop.xpointer().print_on(tty);
+      memop.vpointer().print_on(tty);
     }
   }
 #endif
@@ -618,13 +618,13 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<Mem
 
   // For each ref in group: find others that can be paired:
   for (int i = group_start; i < group_end; i++) {
-    const XPointer& p1  = memops.at(i).xpointer();
+    const VPointer& p1  = memops.at(i).vpointer();
     MemNode* mem1 = memops.at(i).mem();
 
     bool found = false;
     // For each ref in group with larger or equal offset:
     for (int j = i + 1; j < group_end; j++) {
-      const XPointer& p2  = memops.at(j).xpointer();
+      const VPointer& p2  = memops.at(j).vpointer();
       MemNode* mem2 = memops.at(j).mem();
       assert(mem1 != mem2, "look only at pair of different memops");
 
@@ -778,8 +778,8 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
     return false;
   }
 
-  const XPointer& p1 = xpointer(s1->as_Mem());
-  const XPointer& p2 = xpointer(s2->as_Mem());
+  const VPointer& p1 = vpointer(s1->as_Mem());
+  const VPointer& p2 = vpointer(s2->as_Mem());
   return p1.is_adjacent_to_and_before(p2, _vloop);
 }
 
@@ -1479,7 +1479,7 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
-  const XPointer& mem_ref_p = xpointer(mem_ref);
+  const VPointer& mem_ref_p = vpointer(mem_ref);
   const CountedLoopEndNode* pre_end = _vloop.pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
 
@@ -2707,7 +2707,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  const XPointer& p = xpointer(align_to_ref);
+  const VPointer& p = vpointer(align_to_ref);
   assert(p.is_valid(), "sanity");
 
   // For the main-loop, we want the address of align_to_ref to be memory aligned

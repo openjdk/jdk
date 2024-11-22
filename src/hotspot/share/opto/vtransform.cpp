@@ -155,7 +155,7 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 //   adr = base + invar + iv_scale * iv + con
 class VMemoryRegion : public StackObj {
 private:
-  const XPointer* _xpointer; // reference not possible, need empty VMemoryRegion constructor for GrowableArray
+  const VPointer* _vpointer; // reference not possible, need empty VMemoryRegion constructor for GrowableArray
 
   // TODO rm? - maybe also fix printing?
   Node* _base;
@@ -167,14 +167,14 @@ private:
   uint _schedule_order;
 
 public:
-  VMemoryRegion() : _xpointer(nullptr) {} // empty constructor for GrowableArray
-  VMemoryRegion(const XPointer& xpointer, int iv_offset, int vector_length, bool is_load, uint schedule_order) :
-    _xpointer(&xpointer),
-    _base(   xpointer.decomposed_form().base().object_or_native()),
-    _scale(  xpointer.iv_scale()),
+  VMemoryRegion() : _vpointer(nullptr) {} // empty constructor for GrowableArray
+  VMemoryRegion(const VPointer& vpointer, int iv_offset, int vector_length, bool is_load, uint schedule_order) :
+    _vpointer(&vpointer),
+    _base(   vpointer.decomposed_form().base().object_or_native()),
+    _scale(  vpointer.iv_scale()),
     _invar(  nullptr), // TODO
-    _offset( xpointer.con() + _scale * iv_offset),
-    _memory_size(xpointer.size() * vector_length),
+    _offset( vpointer.con() + _scale * iv_offset),
+    _memory_size(vpointer.size() * vector_length),
     _is_load(is_load),
     _schedule_order(schedule_order) {}
 
@@ -225,7 +225,7 @@ public:
   void print() const {
     tty->print("VMemoryRegion[%s %dbytes, schedule_order(%4d), ",
                _is_load ? "load " : "store", _memory_size, _schedule_order);
-    _xpointer->decomposed_form().print_on(tty, false);
+    _vpointer->decomposed_form().print_on(tty, false);
     tty->print_cr("]");
   }
 #endif
@@ -353,7 +353,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     for (int i = 0; i < _schedule.length(); i++) {
       VTransformNode* vtn = _schedule.at(i);
       if (vtn->is_load_or_store_in_loop()) {
-        const XPointer& p = vtn->xpointer(vloop_analyzer);
+        const VPointer& p = vtn->vpointer(vloop_analyzer);
         if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
           uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
@@ -580,9 +580,9 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
   while (mem->is_StoreVector()) {
-    // TODO refactor with XPointer for this vector load!
+    // TODO refactor with VPointer for this vector load!
     MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
-    XPointer store_p(mem->as_Mem(), vloop_analyzer.vloop(), empty_callback);
+    VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop(), empty_callback);
     if (store_p.overlap_possible_with_any_in(nodes(), vloop_analyzer.vloop())) {
       break;
     } else {

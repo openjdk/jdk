@@ -498,8 +498,8 @@ class SuperWord : public ResourceObj {
   }
 
   // VLoopVPointer accessors
-  const XPointer& xpointer(const MemNode* mem) const {
-    return _vloop_analyzer.vpointers().xpointer(mem);
+  const VPointer& vpointer(const MemNode* mem) const {
+    return _vloop_analyzer.vpointers().vpointer(mem);
   }
 
 #ifndef PRODUCT
@@ -564,15 +564,15 @@ private:
   class MemOp : public StackObj {
   private:
     MemNode* _mem;
-    const XPointer* _xpointer;
+    const VPointer* _vpointer;
 
   public:
     // Empty, for GrowableArray
-    MemOp() : _mem(nullptr), _xpointer(nullptr) {}
-    MemOp(MemNode* mem, const XPointer* xpointer) : _mem(mem), _xpointer(xpointer) {}
+    MemOp() : _mem(nullptr), _vpointer(nullptr) {}
+    MemOp(MemNode* mem, const VPointer* vpointer) : _mem(mem), _vpointer(vpointer) {}
 
     MemNode* mem() const { return _mem; }
-    const XPointer& xpointer() const { return *_xpointer; }
+    const VPointer& vpointer() const { return *_vpointer; }
 
     static int cmp_by_group(MemOp* a, MemOp* b);
     static int cmp_by_group_and_con(MemOp* a, MemOp* b);

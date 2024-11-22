@@ -34,7 +34,7 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
-class XPointer;
+class VPointer;
 
 class VStatus : public StackObj {
 private:
@@ -483,7 +483,7 @@ private:
   const VLoopBody&         _body;
 
   // Array of cached pointers
-  XPointer* _xpointers;
+  VPointer* _vpointers;
   int _vpointers_length;
 
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
@@ -496,7 +496,7 @@ public:
     _arena(arena),
     _vloop(vloop),
     _body(body),
-    _xpointers(nullptr),
+    _vpointers(nullptr),
     _bb_idx_to_vpointer(arena,
                         vloop.estimated_body_length(),
                         vloop.estimated_body_length(),
@@ -504,7 +504,7 @@ public:
   NONCOPYABLE(VLoopVPointers);
 
   void compute_vpointers();
-  const XPointer& xpointer(const MemNode* mem) const;
+  const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
 
 private:
@@ -677,7 +677,7 @@ private:
   VStatus setup_submodules_helper();
 };
 
-// XPointer adapts the MemPointerDecomposedForm to the use in a loop:
+// VPointer adapts the MemPointerDecomposedForm to the use in a loop:
 //
 //   pointer = SUM(summands) + con
 //
@@ -700,7 +700,7 @@ private:
 //       pointer does not depend on the iv, since otherwise there would have to be
 //       a summand where its variable it main-loop variant.
 //
-class XPointer : public ArenaObj {
+class VPointer : public ArenaObj {
 private:
   typedef MemPointerDecomposedFormParser::Callback Callback;
 
@@ -714,14 +714,14 @@ private:
 
 public:
   // Default constructor, e.g. for GrowableArray.
-  XPointer() :
+  VPointer() :
     _decomposed_form(),
     _size(0),
     _iv_scale(0),
     _is_valid(false) {}
 
   template<typename Callback>
-  XPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
+  VPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
     _iv_scale(init_iv_scale(_decomposed_form, vloop)),
@@ -729,7 +729,7 @@ public:
   {
 #ifndef PRODUCT
     if (vloop.mptrace().is_trace_pointer()) {
-      tty->print_cr("XPointer::XPointer:");
+      tty->print_cr("VPointer::VPointer:");
       tty->print("mem: "); mem->dump();
       print_on(tty);
       mem->in(MemNode::Address)->dump_bfs(7, 0, "d");
@@ -747,14 +747,14 @@ public:
 
   // Aliasing
   // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?
-  bool is_adjacent_to_and_before(const XPointer& other, const VLoop& vloop) const;
-  bool never_overlaps_with(const XPointer& other, const VLoop& vloop) const;
+  bool is_adjacent_to_and_before(const VPointer& other, const VLoop& vloop) const;
+  bool never_overlaps_with(const VPointer& other, const VLoop& vloop) const;
 
   bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes, const VLoop& vloop) const {
     MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
     for (int i = 0; i < nodes.length(); i++) {
       MemNode* mem = nodes.at(i)->as_Mem();
-      XPointer mem_p(mem->as_Mem(), vloop, empty_callback);
+      VPointer mem_p(mem->as_Mem(), vloop, empty_callback);
       if (!never_overlaps_with(mem_p, vloop)) {
         return true; // possible overlap
       }
@@ -788,7 +788,7 @@ private:
   // TODO why pre-loop
   static bool init_is_valid(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
     if (!decomposed_form.base().is_known()) {
-      // XPointer needs to know if it is native (off-heap) or object (on-heap).
+      // VPointer needs to know if it is native (off-heap) or object (on-heap).
       // We may for example have failed to fully decompose the MemPointer, possibly
       // because such a decomposition is not considered safe.
       return false;
@@ -1129,7 +1129,7 @@ public:
 // a compatible solutions.
 class AlignmentSolver {
 private:
-  const XPointer& _xpointer;
+  const VPointer& _vpointer;
 
   // TODO rm?
   const MemNode* _mem_ref;       // first element
@@ -1176,7 +1176,7 @@ private:
   }
 
 public:
-  AlignmentSolver(const XPointer& xpointer,
+  AlignmentSolver(const VPointer& vpointer,
                   const MemNode* mem_ref,
                   const uint vector_length,
                   const Node* init_node,
@@ -1184,17 +1184,17 @@ public:
                   const int main_stride
                   DEBUG_ONLY( COMMA const bool is_trace)
                   ) :
-      _xpointer(          xpointer),
+      _vpointer(          vpointer),
       _mem_ref(           mem_ref_not_null(mem_ref)),
       _vector_length(     vector_length),
-      _element_size(      xpointer.size()),
+      _element_size(      vpointer.size()),
       _vector_width(      _vector_length * _element_size),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
-      _base(              xpointer.decomposed_form().base().object_or_native()),
-      _offset(            xpointer.con()),
+      _base(              vpointer.decomposed_form().base().object_or_native()),
+      _offset(            vpointer.con()),
       _invar(             nullptr), // TODO
       _invar_factor(      1),
-      _scale(             xpointer.iv_scale()),
+      _scale(             vpointer.iv_scale()),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
