@@ -339,7 +339,7 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
     LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
     __ add(left, LIR_OprFact::address(addr), result); // add with shifted register
     return true;
-  } else if (u_value == -1) {
+  } else if (c == -1) {
     __ negate(left, result);
     return true;
   }

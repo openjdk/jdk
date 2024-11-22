@@ -286,7 +286,7 @@ bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result
     __ shift_left(left, exact_log2(u_value + 1), tmp);
     __ sub(tmp, left, result);
     return true;
-  } else if (u_value == -1) {
+  } else if (c == -1) {
     __ negate(left, result);
     return true;
   }
