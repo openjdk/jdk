@@ -111,22 +111,23 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
         }
     }
 
-    private void generateActions(SortedSet<Vertex> vertices, Set<Link> links) {
+    private void generateActions(SortedSet<Vertex> newVertices, Set<Link> newLinks) {
         vertexActions.clear();
         linkActions.clear();
         vertexToAction.clear();
 
         HashSet<Link> oldLinks = new HashSet<>(graph.getLinks());
+        HashSet<Vertex> oldVertices = new HashSet<>(graph.getVertices());
 
-        HashSet<Vertex> addedVertices = new HashSet<>(vertices);
-        addedVertices.removeAll(graph.getVertices());
+        HashSet<Vertex> addedVertices = new HashSet<>(newVertices);
+        addedVertices.removeAll(oldVertices);
 
-        HashSet<Vertex> removedVertices = new HashSet<>(graph.getVertices());
-        removedVertices.removeAll(vertices);
+        HashSet<Vertex> removedVertices = new HashSet<>(oldVertices);
+        removedVertices.removeAll(newVertices);
 
-        HashSet<Link> addedLinks = new HashSet<>(links);
+        HashSet<Link> addedLinks = new HashSet<>(newLinks);
         HashSet<Link> removedLinks = new HashSet<>(oldLinks);
-        for (Link link1 : links) {
+        for (Link link1 : newLinks) {
             for (Link link2 : oldLinks) {
                 if (link1.equals(link2)) {
                     addedLinks.remove(link1);
@@ -135,6 +136,10 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
                 }
             }
         }
+
+        assert oldLinks.size() + addedLinks.size() - removedLinks.size() == newLinks.size();
+        assert oldVertices.size() + addedVertices.size() - removedVertices.size() == newVertices.size();
+
 
         for (Vertex v : addedVertices) {
             VertexAction a = new VertexAction(v, Action.ADD);
