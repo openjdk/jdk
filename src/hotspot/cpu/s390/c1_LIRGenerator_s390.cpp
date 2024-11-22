@@ -227,19 +227,21 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 }
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
-  if (c > 0 && c < max_jint && tmp->is_valid()) {
-    if (is_power_of_2(c + 1)) {
+  if (tmp->is_valid()) {
+    if (is_power_of_2((juint)c + 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2i_exact(c + 1), left);
+      __ shift_left(left, log2i_exact((juint)c + 1), left);
       __ sub(left, tmp, result);
       return true;
-    } else if (is_power_of_2(c - 1)) {
+    } else if (is_power_of_2((juint)c - 1)) {
       __ move(left, tmp);
-      __ shift_left(left, log2i_exact(c - 1), left);
+      __ shift_left(left, log2i_exact((juint)c - 1), left);
       __ add(left, tmp, result);
       return true;
     }
-  } else if(c == -1) {
+  }
+
+  if(c == -1) {
     __ negate(left, result);
     return true;
   }
@@ -500,7 +502,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
       bool use_tmp = false;
       if (right_arg->is_constant()) {
         int iconst = right_arg->get_jint_constant();
-        if (iconst > 0 && iconst < max_jint && (is_power_of_2(iconst - 1) || is_power_of_2(iconst + 1))) {
+        if (is_power_of_2((juint)iconst - 1) || is_power_of_2((juint)iconst + 1)) {
           use_tmp = true;
         }
       }
