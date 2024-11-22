@@ -40,6 +40,8 @@ import java.lang.Override;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
@@ -59,6 +61,7 @@ public class SSLSocketNoServerHelloClientShutdown
     private volatile Exception clientException;
     private volatile Exception serverException;
     private final int serverReadTimeout;
+    private final CountDownLatch serverLatch;
 
     public static void main(String[] args) throws Exception {
         new SSLSocketNoServerHelloClientShutdown().runTest();
@@ -68,7 +71,8 @@ public class SSLSocketNoServerHelloClientShutdown
         super();
         float timeoutFactor = Float.parseFloat(
                 System.getProperty("test.timeout.factor", "1.0"));
-        serverReadTimeout = (int) (5000 * timeoutFactor);
+        serverReadTimeout = (int) (30000 * timeoutFactor);
+        serverLatch = new CountDownLatch(1);
     }
 
     private void runTest() throws Exception {
@@ -100,6 +104,7 @@ public class SSLSocketNoServerHelloClientShutdown
                 serverException = e;
                 log(e.toString());
             } finally {
+                serverLatch.countDown();
                 thread.join();
             }
         } finally {
@@ -166,9 +171,10 @@ public class SSLSocketNoServerHelloClientShutdown
                     log("---Client sends unencrypted alerts---");
                     int len = clientSocketChannel.write(cTOs);
 
-                    // Give server a chance to read before we shutdown via
-                    // the try-with-resources block.
-                    Thread.sleep(serverReadTimeout);
+                    if (!serverLatch.await(serverReadTimeout,
+                                           TimeUnit.MILLISECONDS)) {
+                        log("Client: server thread not done yet, timing out");
+                    }
                 } catch (Exception e) {
                     clientException = e;
                 }
