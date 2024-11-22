@@ -68,7 +68,7 @@ public class TrustManagerFactory {
      * the value of the {@code ssl.TrustManagerFactory.algorithm}
      * security property to the desired algorithm name.
      *
-     * @see Security security properties
+     * @see java.security.Security security properties
      * @return the default algorithm name as specified by the
      * {@code ssl.TrustManagerFactory.algorithm} security property, or an
      * implementation-specific default if no such property exists.
