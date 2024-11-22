@@ -39,7 +39,7 @@ import jdk.test.whitebox.WhiteBox;
 public class AddmodsOption {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final boolean isJVMCISupported = (WB.getBooleanVMFlag("EnableJVMCI") != null);
+    private static final boolean isJVMCISupported = WB.getBooleanVMFlag("EnableJVMCI");
 
     public static void main(String[] args) throws Exception {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";

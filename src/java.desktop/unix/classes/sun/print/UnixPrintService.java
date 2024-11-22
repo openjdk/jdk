@@ -145,9 +145,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
       "| grep -E '^[ 0-9a-zA-Z_-]*@' | awk '{print $4}'"
     };
 
-    @SuppressWarnings("removal")
-    private static String encoding = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("file.encoding"));
+    private static String encoding = System.getProperty("file.encoding");
 
     /* let's try to support a few of these */
     private static final Class<?>[] serviceAttrCats = {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,11 @@
  * questions.
  */
 
-package sun.lwawt;
+package jdk.internal.access;
 
-public interface SecurityWarningWindow extends PlatformWindow {
-    /**
-     * @param x,y,w,h coordinates of the untrusted window
-     */
-    public void reposition(int x, int y, int w, int h);
+import java.lang.invoke.MethodHandle;
 
-    public void setVisible(boolean visible, boolean doSchedule);
+public interface JavaObjectStreamReflectionAccess {
+    MethodHandle defaultReadObject(Class<?> clazz);
+    MethodHandle defaultWriteObject(Class<?> clazz);
 }
