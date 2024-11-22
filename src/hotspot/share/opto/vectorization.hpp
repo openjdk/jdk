@@ -1159,7 +1159,6 @@ private:
   // pre_iter:    number of pre-loop iterations (adjustable via pre-loop limit)
   // main_iter:   number of main-loop iterations (main_iter >= 0)
   //
-  const Node*    _base;           // base of address (e.g. Java array object, aw-aligned)
   const Node*    _invar;
   const int      _invar_factor;   // known constant factor of invar
   const Node*    _init_node;      // value of iv before pre-loop
@@ -1188,7 +1187,6 @@ public:
       _element_size(      vpointer.size()),
       _vector_width(      _vector_length * _element_size),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
-      _base(              vpointer.decomposed_form().base().object_or_native()),
       _invar(             nullptr), // TODO
       _invar_factor(      1),
       _init_node(         init_node),
@@ -1204,6 +1202,7 @@ public:
   AlignmentSolution* solve() const;
 
 private:
+  MemPointerDecomposedForm::Base base() const { return _vpointer.decomposed_form().base();}
   jint iv_scale() const { return _vpointer.iv_scale(); }
 
   class EQ4 {

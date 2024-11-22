@@ -507,7 +507,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //
   //          Simple form             Expansion of iv variable                  Reshaped with constants   Comments for terms
   //          -----------             ------------------------                  -----------------------   ------------------
-  //   adr =  base                 =  base                                   =  base                      (base % aw = 0)
+  //   adr =  base                 =  base                                   =  base                      (assume: base % aw = 0)
   //        + invar                 + invar_factor * var_invar                + C_invar * var_invar       (term for invariant)
   //                            /   + iv_scale * init                         + C_init  * var_init        (term for variable init)
   //        + iv_scale * iv  -> |   + iv_scale * pre_stride * pre_iter        + C_pre   * pre_iter        (adjustable pre-loop term)
@@ -521,6 +521,9 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //      a power of 2. And hence we know that "base" is thus also aw-aligned:
   //
   //        base % ObjectAlignmentInBytes = 0     ==>    base % aw = 0
+  //
+  //      Note: we have been assuming that this also holds for native memory base
+  //            addresses. This is incorrect, see JDK-8323582.
   //
   //   2) The "C_const" term is the sum of all constant terms. This is "con",
   //      plus "iv_scale * init" if it is constant.
@@ -561,6 +564,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
   // modulo operator "%" such that the remainder is always positive, see AlignmentSolution::mod(i, q).
   //
+  // Note: the following assumption is incorrect for native memory bases, see JDK-8323582.
   // Since "base % aw = 0", we only need to ensure alignment of the other 5 terms:
   //
   //   (C_const + C_invar * var_invar + C_init * var_init + C_pre * pre_iter + C_main * main_iter) % aw = 0      (1)
@@ -918,6 +922,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
   //         + iv_scale * main_stride * main_iter)) % aw =
   //
   //   -> base aligned: base % aw = 0
+  //        Note: this assumption is incorrect for native memory bases, see JDK-8323582.
   //   -> main-loop iterations aligned (2): C_main % aw = (iv_scale * main_stride) % aw = 0
   //   (con + invar + iv_scale * init + iv_scale * pre_stride * pre_iter) % aw =
   //
@@ -983,8 +988,7 @@ void AlignmentSolver::trace_start_solve() const {
                   _pre_stride, _main_stride);
 
     // adr = base + con + invar + iv_scale * iv
-    tty->print("  adr = base");
-    //VPointer::print_con_or_idx(_base);
+    tty->print("  adr = base[%d]", base().object_or_native()->_idx);
     tty->print(" + con(%d) + invar", _vpointer.con());
     //VPointer::print_con_or_idx(_invar);
     tty->print_cr(" + iv_scale(%d) * iv", iv_scale());
@@ -999,7 +1003,7 @@ void AlignmentSolver::trace_reshaped_form(const int C_const,
                                           const int C_main) const
 {
   if (is_trace()) {
-    tty->print("      = base[%d] + ", _base->_idx);
+    tty->print("      = base[%d] + ", base().object_or_native()->_idx);
     tty->print_cr("C_const(%d) + C_invar(%d) * var_invar + C_init(%d) * var_init + C_pre(%d) * pre_iter + C_main(%d) * main_iter",
                   C_const, C_invar, C_init,  C_pre, C_main);
     if (_init_node->is_ConI()) {
