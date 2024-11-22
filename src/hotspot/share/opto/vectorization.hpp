@@ -34,7 +34,6 @@
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
 
-class VPointer;
 class XPointer;
 
 class VStatus : public StackObj {
@@ -484,7 +483,6 @@ private:
   const VLoopBody&         _body;
 
   // Array of cached pointers
-  VPointer* _vpointers;
   XPointer* _xpointers;
   int _vpointers_length;
 
@@ -498,7 +496,6 @@ public:
     _arena(arena),
     _vloop(vloop),
     _body(body),
-    _vpointers(nullptr),
     _xpointers(nullptr),
     _bb_idx_to_vpointer(arena,
                         vloop.estimated_body_length(),
@@ -507,7 +504,6 @@ public:
   NONCOPYABLE(VLoopVPointers);
 
   void compute_vpointers();
-  const VPointer& vpointer(const MemNode* mem) const;
   const XPointer& xpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
 
@@ -825,141 +821,6 @@ private:
     return vloop.phase()->is_dominator(ctrl, vloop.pre_loop_head());
   }
 };
-
-// TODO rm
-// vpointer = base + con + invar + scale * iv
-//
-//
-class VPointer : public ArenaObj {
- protected:
-  MemNode* const  _mem;      // My memory reference node
-  const VLoop&    _vloop;
-
-  // Components of the simple form:
-  Node* _base;               // Base address of an array OR null if some off-heap memory.
-  Node* _adr;                // Same as _base if an array pointer OR some off-heap memory pointer.
-  int   _scale;              // multiplier for iv (in bytes), 0 if no loop iv
-  int   _offset;             // constant offset (in bytes)
-
-  Node* _invar;              // invariant offset (in bytes), null if none
-#ifdef ASSERT
-  Node* _debug_invar;
-  bool  _debug_negate_invar; // if true then use: (0 - _invar)
-  Node* _debug_invar_scale;  // multiplier for invariant
-#endif
-
-  Node_Stack* _nstack;       // stack used to record a vpointer trace of variants
-  bool        _analyze_only; // Used in loop unrolling only for vpointer trace
-  uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
-
-  PhaseIdealLoop* phase() const { return _vloop.phase(); }
-  IdealLoopTree*  lpt() const   { return _vloop.lpt(); }
-  PhiNode*        iv() const    { return _vloop.iv(); }
-
- public:
-  enum CMP {
-    Less          = 1,
-    Greater       = 2,
-    Equal         = 4,
-    NotEqual      = (Less | Greater),
-    NotComparable = (Less | Greater | Equal)
-  };
-
-  VPointer(MemNode* const mem, const VLoop& vloop) :
-    VPointer(mem, vloop, nullptr, false) {}
-  VPointer(MemNode* const mem, const VLoop& vloop, Node_Stack* nstack) :
-    VPointer(mem, vloop, nstack, true) {}
- private:
-  VPointer(MemNode* const mem, const VLoop& vloop,
-           Node_Stack* nstack, bool analyze_only);
-  NONCOPYABLE(VPointer);
-
- public:
-  bool valid()             const { return _adr != nullptr; }
-  bool has_iv()            const { return _scale != 0; }
-
-  Node* base()             const { return _base; }
-  Node* adr()              const { return _adr; }
-  MemNode* mem()           const { return _mem; }
-  int   scale_in_bytes()   const { return _scale; }
-  Node* invar()            const { return _invar; }
-  int   offset_in_bytes()  const { return _offset; }
-  int   memory_size()      const { return _mem->memory_size(); }
-  Node_Stack* node_stack() const { return _nstack; }
-
-  // Biggest detectable factor of the invariant.
-  int   invar_factor() const;
-
-  // Comparable?
-  bool invar_equals(const VPointer& q) const {
-    assert(_debug_invar == NodeSentinel || q._debug_invar == NodeSentinel ||
-           (_invar == q._invar) == (_debug_invar == q._debug_invar &&
-                                    _debug_invar_scale == q._debug_invar_scale &&
-                                    _debug_negate_invar == q._debug_negate_invar), "");
-    return _invar == q._invar;
-  }
-
-  // We compute if and how two VPointers can alias at runtime, i.e. if the two addressed regions of memory can
-  // ever overlap. There are essentially 3 relevant return states:
-  //  - NotComparable:  Synonymous to "unknown aliasing".
-  //                    We have no information about how the two VPointers can alias. They could overlap, refer
-  //                    to another location in the same memory object, or point to a completely different object.
-  //                    -> Memory edge required. Aliasing unlikely but possible.
-  //
-  //  - Less / Greater: Synonymous to "never aliasing".
-  //                    The two VPointers may point into the same memory object, but be non-aliasing (i.e. we
-  //                    know both address regions inside the same memory object, but these regions are non-
-  //                    overlapping), or the VPointers point to entirely different objects.
-  //                    -> No memory edge required. Aliasing impossible.
-  //
-  //  - Equal:          Synonymous to "overlap, or point to different memory objects".
-  //                    The two VPointers either overlap on the same memory object, or point to two different
-  //                    memory objects.
-  //                    -> Memory edge required. Aliasing likely.
-  //
-  // In a future refactoring, we can simplify to two states:
-  //  - NeverAlias:     instead of Less / Greater
-  //  - MayAlias:       instead of Equal / NotComparable
-  //
-  // Two VPointer are "comparable" (Less / Greater / Equal), iff all of these conditions apply:
-  //   1) Both are valid, i.e. expressible in the compound-long-int or simple form.
-  //   2) The adr are identical, or both are array bases of different arrays.
-  //   3) They have identical scale.
-  //   4) They have identical invar.
-  //   5) The difference in offsets is limited: abs(offset0 - offset1) < 2^31.
-  int cmp(const VPointer& q) const {
-    if (valid() && q.valid() &&
-        (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
-        _scale == q._scale   && invar_equals(q)) {
-      jlong difference = abs(java_subtract((jlong)_offset, (jlong)q._offset));
-      jlong max_diff = (jlong)1 << 31;
-      if (difference >= max_diff) {
-        return NotComparable;
-      }
-      bool overlap = q._offset <   _offset +   memory_size() &&
-                       _offset < q._offset + q.memory_size();
-      return overlap ? Equal : (_offset < q._offset ? Less : Greater);
-    } else {
-      return NotComparable;
-    }
-  }
-
-  bool not_equal(const VPointer& q)  const { return not_equal(cmp(q)); }
-  bool equal(const VPointer& q)      const { return equal(cmp(q)); }
-  bool comparable(const VPointer& q) const { return comparable(cmp(q)); }
-  static bool not_equal(int cmp)  { return cmp <= NotEqual; }
-  static bool equal(int cmp)      { return cmp == Equal; }
-  static bool comparable(int cmp) { return cmp < NotComparable; }
-
-  // We need to be able to sort the VPointer to efficiently group the
-  // memops into groups, and to find adjacent memops.
-  static int cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2);
-  static int cmp_for_sort(const VPointer** p1, const VPointer** p2);
-
-  NOT_PRODUCT( void print() const; )
-  NOT_PRODUCT( static void print_con_or_idx(const Node* n); )
-};
-
 
 // Vector element size statistics for loop vectorization with vector masks
 class VectorElementSizeStats {

@@ -236,9 +236,6 @@ private:
   int iv_stride()             const { return cl()->stride_con(); }
 
   // VLoopVPointers accessors
-  const VPointer& vpointer(const MemNode* mem) const {
-    return _vloop_analyzer.vpointers().vpointer(mem);
-  }
   const XPointer& xpointer(const MemNode* mem) const {
     return _vloop_analyzer.vpointers().xpointer(mem);
   }
