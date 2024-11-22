@@ -980,7 +980,7 @@ void AlignmentSolver::trace_start_solve() const {
       _init_node->dump();
     }
 
-    tty->print_cr("  invar_summands:");
+    tty->print_cr("  invar = SUM(invar_summands), invar_summands:");
     int invar_count = 0;
     _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
       tty->print("   ");
@@ -990,24 +990,24 @@ void AlignmentSolver::trace_start_solve() const {
       invar_count++;
     });
     if (invar_count == 0) {
-      tty->print("   No invar_summands.");
+      tty->print_cr("   No invar_summands.");
     }
 
     const jint invar_factor = _vpointer.compute_invar_factor();
     tty->print_cr("  invar_factor = %d", invar_factor);
 
-    // TODO fix up printing
     // iv = init + pre_iter * pre_stride + main_iter * main_stride
     tty->print("  iv = init");
-    //VPointer::print_con_or_idx(_init_node);
+    if (_init_node->is_ConI()) {
+      tty->print("(%4d)", _init_node->as_ConI()->get_int());
+    } else {
+      tty->print("[%4d]", _init_node->_idx);
+    }
     tty->print_cr(" + pre_iter * pre_stride(%d) + main_iter * main_stride(%d)",
                   _pre_stride, _main_stride);
-
     // adr = base + con + invar + iv_scale * iv
     tty->print("  adr = base[%d]", base().object_or_native()->_idx);
-    tty->print(" + con(%d) + invar", _vpointer.con());
-    //VPointer::print_con_or_idx(_invar);
-    tty->print_cr(" + iv_scale(%d) * iv", iv_scale());
+    tty->print(" + con(%d) + invar + iv_scale(%d) * iv", _vpointer.con(), iv_scale());
   }
 }
 
