@@ -1479,17 +1479,13 @@ const AlignmentSolution* SuperWord::pack_alignment_solution(const Node_List* pac
   assert(pack != nullptr && (pack->at(0)->is_Load() || pack->at(0)->is_Store()), "only load/store packs");
 
   const MemNode* mem_ref = pack->at(0)->as_Mem();
-  const VPointer& mem_ref_p = vpointer(mem_ref);
+  const XPointer& mem_ref_p = xpointer(mem_ref);
   const CountedLoopEndNode* pre_end = _vloop.pre_loop_end();
   assert(pre_end->stride_is_con(), "pre loop stride is constant");
 
-  AlignmentSolver solver(pack->at(0)->as_Mem(),
+  AlignmentSolver solver(mem_ref_p,
+                         pack->at(0)->as_Mem(),
                          pack->size(),
-                         mem_ref_p.base(),
-                         mem_ref_p.offset_in_bytes(),
-                         mem_ref_p.invar(),
-                         mem_ref_p.invar_factor(),
-                         mem_ref_p.scale_in_bytes(),
                          pre_end->init_trip(),
                          pre_end->stride_con(),
                          iv_stride()

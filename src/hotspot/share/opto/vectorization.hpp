@@ -1270,6 +1270,9 @@ public:
 // a compatible solutions.
 class AlignmentSolver {
 private:
+  const XPointer& _xpointer;
+
+  // TODO rm?
   const MemNode* _mem_ref;       // first element
   const uint     _vector_length; // number of elements in vector
   const int      _element_size;
@@ -1314,28 +1317,25 @@ private:
   }
 
 public:
-  AlignmentSolver(const MemNode* mem_ref,
+  AlignmentSolver(const XPointer& xpointer,
+                  const MemNode* mem_ref,
                   const uint vector_length,
-                  const Node* base,
-                  const int offset,
-                  const Node* invar,
-                  const int invar_factor,
-                  const int scale,
                   const Node* init_node,
                   const int pre_stride,
                   const int main_stride
                   DEBUG_ONLY( COMMA const bool is_trace)
                   ) :
+      _xpointer(          xpointer),
       _mem_ref(           mem_ref_not_null(mem_ref)),
       _vector_length(     vector_length),
-      _element_size(      _mem_ref->memory_size()),
+      _element_size(      xpointer.size()),
       _vector_width(      _vector_length * _element_size),
       _aw(                MIN2(_vector_width, ObjectAlignmentInBytes)),
-      _base(              base),
-      _offset(            offset),
-      _invar(             invar),
-      _invar_factor(      invar_factor),
-      _scale(             scale),
+      _base(              xpointer.decomposed_form().base().object_or_native()),
+      _offset(            xpointer.con()),
+      _invar(             nullptr), // TODO
+      _invar_factor(      1),
+      _scale(             xpointer.iv_scale()),
       _init_node(         init_node),
       _pre_stride(        pre_stride),
       _main_stride(       main_stride)
