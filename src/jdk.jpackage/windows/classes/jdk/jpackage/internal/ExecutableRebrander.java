@@ -43,16 +43,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.function.Supplier;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.ShortPathUtils.adjustPath;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.COPYRIGHT;
-import static jdk.jpackage.internal.StandardBundlerParam.DESCRIPTION;
-import static jdk.jpackage.internal.StandardBundlerParam.TEMP_ROOT;
-import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
-import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
-import static jdk.jpackage.internal.WindowsAppImageBuilder.ICON_ICO;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 @SuppressWarnings("restricted")
 final class ExecutableRebrander {
@@ -102,8 +94,10 @@ final class ExecutableRebrander {
             }
         };
 
-        var absIcon = Optional.ofNullable(icon).map(Path::toAbsolutePath).orElse(
-                null);
+        final var absIcon = Optional.ofNullable(icon)
+                .map(Path::toAbsolutePath)
+                .map(ShortPathUtils::adjustPath)
+                .orElse(null);
         if (absIcon == null) {
             rebrandExecutable(env, target, versionSwapper);
         } else {
@@ -118,7 +112,7 @@ final class ExecutableRebrander {
     }
 
     private static void rebrandExecutable(BuildEnv env,
-            final Path target, UpdateResourceAction action) throws IOException {
+            final Path target, UpdateResourceAction ... actions) throws IOException {
         try {
             String tempDirectory = env.buildRoot().toAbsolutePath().toString();
             if (WindowsDefender.isThereAPotentialWindowsDefenderIssue(
@@ -200,12 +194,12 @@ final class ExecutableRebrander {
         }
     }
 
-    private static void iconSwapWrapper(long resourceLock,
-            String iconTarget) {
-        iconTarget = adjustPath(iconTarget);
-        if (iconSwap(resourceLock, iconTarget) != 0) {
-            throw new RuntimeException(MessageFormat.format(I18N.getString(
-                    "error.icon-swap"), iconTarget));
+    private static void validateValueAndPut(Map<String, String> target,
+            Map.Entry<String, String> e, String label) {
+        if (e.getValue().contains("\r") || e.getValue().contains("\n")) {
+            Log.error("Configuration parameter " + label
+                    + " contains multiple lines of text, ignore it");
+            e = Map.entry(e.getKey(), "");
         }
         target.put(e.getKey(), e.getValue());
     }

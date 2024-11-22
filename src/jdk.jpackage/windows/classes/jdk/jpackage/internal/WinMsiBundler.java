@@ -344,17 +344,12 @@ public class WinMsiBundler  extends AbstractBundler {
 
         Log.verbose(I18N.format("message.preparing-msi-config", msiOut.toAbsolutePath()));
 
-        Log.verbose(MessageFormat.format(I18N.getString(
-                "message.preparing-msi-config"), msiOut.toAbsolutePath()
-                        .toString()));
+        final var wixObjDir = env.buildRoot().resolve("wixobj");
 
-        var wixObjDir = TEMP_ROOT.fetchFrom(params).resolve("wixobj");
-
-        var wixPipeline = WixPipeline.build()
+        final var wixPipeline = WixPipeline.build()
                 .setWixObjDir(wixObjDir)
-                .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
-                .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
-                        wixVars);
+                .setWorkDir(env.appImageDir())
+                .addSource(env.configDir().resolve("main.wxs"), wixVars);
 
         for (var wixFragment : wixFragments) {
             wixFragment.configureWixPipeline(wixPipeline);
@@ -495,16 +490,16 @@ public class WinMsiBundler  extends AbstractBundler {
             NodeList nodes = (NodeList) xPath.evaluate(
                     "//WixLocalization/@Culture", doc, XPathConstants.NODESET);
             if (nodes.getLength() != 1) {
-                throw new IOException(MessageFormat.format(I18N.getString(
-                        "error.extract-culture-from-wix-l10n-file"),
+                throw new IOException(I18N.format(
+                        "error.extract-culture-from-wix-l10n-file",
                         wxlPath.toAbsolutePath().normalize()));
             }
 
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
-            throw new IOException(MessageFormat.format(I18N.getString(
-                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath().normalize()), ex);
+            throw new IOException(I18N.format("error.read-wix-l10n-file",
+                    wxlPath.toAbsolutePath().normalize()), ex);
         }
     }
 
