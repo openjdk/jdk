@@ -2087,10 +2087,10 @@ void Compile::inline_incrementally_cleanup(PhaseIterGVN& igvn) {
     igvn.optimize();
     // Reset failed generator in call node
     for (int i = 0; i < _failed_late_inlines.length(); i++) {
-          CallGenerator* cg = _failed_late_inlines.at(i);
-          CallNode* cn = cg->call_node();
-          cn->set_generator(nullptr);
-          cn->set_late_inline_failed(false);
+      CallGenerator* cg = _failed_late_inlines.at(i);
+      CallNode* cn = cg->call_node();
+      cn->set_generator(nullptr);
+      cn->set_late_inline_failed(false);
     }
     _failed_late_inlines.clear();
     if (failing()) return;
