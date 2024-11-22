@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.Window;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
@@ -42,21 +41,21 @@ import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
-/**
+/*
  * @test
  * @bug 4478780
  * @key headful
  * @summary Tests that Choice can be accessed and controlled by keyboard.
  */
+
 public class AccessibleChoiceTest {
     //Declare things used in the test, like buttons and labels here
-    Frame frame = new Frame("window owner");
-    Window win = new Window(frame);
+    Frame frame = new Frame("Accessible Choice Test Frame");
     Choice choice = new Choice();
     Button def = new Button("default owner");
     CountDownLatch go = new CountDownLatch(1);
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) throws Exception {
         AccessibleChoiceTest app = new AccessibleChoiceTest();
         app.test();
     }
@@ -66,14 +65,15 @@ public class AccessibleChoiceTest {
             init();
             start();
         } finally {
-            if (frame != null) frame.dispose();
-            if (win != null) win.dispose();
+            if (frame != null) {
+                frame.dispose();
+            }
         }
     }
 
     public void init() {
-        win.setLayout (new FlowLayout ());
-        win.add(def);
+        frame.setLayout(new FlowLayout());
+        frame.add(def);
         def.addFocusListener(new FocusAdapter() {
                 public void focusGained(FocusEvent e) {
                     go.countDown();
@@ -81,16 +81,14 @@ public class AccessibleChoiceTest {
             });
         choice.add("One");
         choice.add("Two");
-        win.add(choice);
+        frame.add(choice);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 
-    public void start () throws IOException {
-        frame.setVisible(true);
-        win.pack();
-        win.setLocation(100, 200);
-        win.setVisible(true);
-
-        Robot robot = null;
+    public void start() throws IOException {
+        Robot robot;
         try {
             robot = new Robot();
         } catch (Exception ex) {
@@ -98,12 +96,11 @@ public class AccessibleChoiceTest {
         }
         robot.waitForIdle();
         robot.delay(1000);
-        robot.setAutoDelay(150);
         robot.setAutoWaitForIdle(true);
 
         // Focus default button and wait till it gets focus
         Point loc = def.getLocationOnScreen();
-        robot.mouseMove(loc.x+2, loc.y+2);
+        robot.mouseMove(loc.x + 5, loc.y + 5);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
@@ -117,11 +114,17 @@ public class AccessibleChoiceTest {
             throw new RuntimeException("Button doesn't have focus");
         }
 
+        robot.delay(500);
+
         // Press Tab key to move focus to Choice
         robot.keyPress(KeyEvent.VK_TAB);
         robot.keyRelease(KeyEvent.VK_TAB);
 
         robot.delay(500);
+
+        if (!choice.isFocusOwner()) {
+            throw new RuntimeException("Choice doesn't have focus");
+        }
 
         // Press Down key to select next item in the choice(Motif 2.1)
         // If bug exists we won't be able to do so
