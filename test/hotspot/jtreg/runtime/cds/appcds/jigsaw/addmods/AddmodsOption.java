@@ -34,12 +34,9 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.Compiler;
 
 public class AddmodsOption {
-
-    private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final boolean isJVMCISupported = WB.getBooleanVMFlag("EnableJVMCI");
 
     public static void main(String[] args) throws Exception {
         final String moduleOption = "jdk.httpserver/sun.net.httpserver.simpleserver.Main";
@@ -143,7 +140,7 @@ public class AddmodsOption {
           .shouldContain("subgraph jdk.internal.module.ArchivedBootLayer is not recorde")
           .shouldHaveExitValue(0);
 
-        if (isJVMCISupported) {
+        if (Compiler.isJVMCIEnabled()) {
             // dump an archive with JVMCI option which indirectly adds the
             // jdk.internal.vm.ci module using the --add-modules option
             archiveName = TestCommon.getNewArchiveName("jvmci-module");
