@@ -710,7 +710,7 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
-const Type *AddHFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
+const Type *AddHFNode::add_of_identity(const Type *t1, const Type *t2) const {
   return nullptr;
 }
 
@@ -718,7 +718,7 @@ const Type *AddHFNode::add_of_identity( const Type *t1, const Type *t2 ) const {
 // Supplied function returns the sum of the inputs.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *AddHFNode::add_ring( const Type *t0, const Type *t1 ) const {
+const Type *AddHFNode::add_ring(const Type *t0, const Type *t1) const {
   if (!t0->isa_half_float_constant() || !t1->isa_half_float_constant()) {
     return bottom_type();
   }
@@ -1601,7 +1601,7 @@ Node* MaxNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type* MinHFNode::add_ring(const Type* t0, const Type* t1 ) const {
+const Type* MinHFNode::add_ring(const Type* t0, const Type* t1) const {
   const TypeH* r0 = t0->isa_half_float_constant();
   const TypeH* r1 = t1->isa_half_float_constant();
   if (r0 == nullptr || r1 == nullptr) {
@@ -1676,9 +1676,9 @@ const Type* MinDNode::add_ring(const Type* t0, const Type* t1) const {
 }
 
 //------------------------------add_ring---------------------------------------
-const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
-  const TypeF* r0 = t0->isa_float_constant();
-  const TypeF* r1 = t1->isa_float_constant();
+const Type* MaxHFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeH* r0 = t0->isa_half_float_constant();
+  const TypeH* r1 = t1->isa_half_float_constant();
   if (r0 == nullptr || r1 == nullptr) {
     return bottom_type();
   }
@@ -1700,10 +1700,11 @@ const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
   return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
 }
 
+
 //------------------------------add_ring---------------------------------------
-const Type* MaxHFNode::add_ring(const Type* t0, const Type* t1) const {
-  const TypeH* r0 = t0->isa_half_float_constant();
-  const TypeH* r1 = t1->isa_half_float_constant();
+const Type* MaxFNode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeF* r0 = t0->isa_float_constant();
+  const TypeF* r1 = t1->isa_float_constant();
   if (r0 == nullptr || r1 == nullptr) {
     return bottom_type();
   }

@@ -4514,14 +4514,39 @@ instruct vReplS_reg(vec dst, rRegI src) %{
 %}
 
 #ifdef _LP64
-instruct ReplS_imm(vec dst, immH con, rRegI rtmp) %{
-  predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
+instruct ReplH_imm(vec dst, immH con, rRegI rtmp) %{
   match(Set dst (Replicate con));
   effect(TEMP rtmp);
-  format %{ "replicateS $dst, $con" %}
+  format %{ "replicateH $dst, $con \t! using $rtmp as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert(VM_Version::supports_avx512_fp16() && bt == T_SHORT, "");
     __ movl($rtmp$$Register, $con$$constant);
+    __ evpbroadcastw($dst$$XMMRegister, $rtmp$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct ReplH_short_reg(vec dst, rRegI src) %{
+  predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate (ReinterpretS2HF src)));
+  format %{ "replicateH $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct ReplH_reg(vec dst, regF src, rRegI rtmp) %{
+  predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
+  effect(TEMP rtmp);
+  format %{ "replicateH $dst, $src \t! using $rtmp as TEMP" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vmovw($rtmp$$Register, $src$$XMMRegister);
     __ evpbroadcastw($dst$$XMMRegister, $rtmp$$Register, vlen_enc);
   %}
   ins_pipe( pipe_slow );
@@ -10902,7 +10927,7 @@ instruct reinterpretH2S(rRegI dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_sqrt_fp16(regF dst, regF src)
+instruct scalar_sqrt_fp16_reg(regF dst, regF src)
 %{
   match(Set dst (SqrtHF src));
   format %{ "vsqrtsh $dst, $src" %}
@@ -10912,7 +10937,7 @@ instruct scalar_sqrt_fp16(regF dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_binOps_fp16(regF dst, regF src1, regF src2)
+instruct scalar_binOps_fp16_reg(regF dst, regF src1, regF src2)
 %{
   match(Set dst (AddHF src1 src2));
   match(Set dst (DivHF src1 src2));
@@ -10928,7 +10953,7 @@ instruct scalar_binOps_fp16(regF dst, regF src1, regF src2)
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_fma_fp16(regF dst, regF src1, regF src2)
+instruct scalar_fma_fp16_reg(regF dst, regF src1, regF src2)
 %{
   match(Set dst (FmaHF  src2 (Binary dst src1)));
   effect(DEF dst);
@@ -11008,7 +11033,7 @@ instruct vector_fma_fp16_reg(vec dst, vec src1, vec src2)
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_fmah_fp16_mem(vec dst, memory src1, vec src2)
+instruct vector_fma_fp16_mem(vec dst, memory src1, vec src2)
 %{
   match(Set dst (FmaVHF src2 (Binary dst (VectorReinterpret (LoadVector src1)))));
   effect(DEF dst);

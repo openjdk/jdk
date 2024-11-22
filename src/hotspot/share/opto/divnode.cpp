@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -753,15 +753,15 @@ Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // prevent hoisting the divide above an unsafe test.
 const Type* DivHFNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if(t1 == Type::TOP) return Type::TOP;
+  if(t2 == Type::TOP) return Type::TOP;
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
+  const Type* bot = bottom_type();
+  if((t1 == bot) || (t2 == bot) ||
+     (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM))
     return bot;
 
   // x/x == 1, we ignore 0/0.
@@ -772,20 +772,20 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
     return TypeH::ONE;
   }
 
-  if( t2 == TypeH::ONE )
+  if(t2 == TypeH::ONE)
     return t1;
 
   // If divisor is a constant and not zero, divide them numbers
-  if( t1->base() == Type::HalfFloatCon &&
-      t2->base() == Type::HalfFloatCon &&
-      t2->getf() != 0.0 ) // could be negative zero
-    return TypeH::make( t1->getf()/t2->getf() );
+  if(t1->base() == Type::HalfFloatCon &&
+     t2->base() == Type::HalfFloatCon &&
+     t2->getf() != 0.0) // could be negative zero
+    return TypeH::make(t1->getf()/t2->getf());
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
   // Test TypeF::ZERO is not sufficient as it could be negative zero
 
-  if( t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0 )
+  if(t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0)
     return TypeH::ZERO;
 
   // Otherwise we give up all hope
@@ -801,36 +801,36 @@ Node* DivHFNode::Identity(PhaseGVN* phase) {
 
 
 //------------------------------Idealize---------------------------------------
-Node *DivHFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node *DivHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return nullptr;
+  if(in(0) && in(0)->is_top())  return nullptr;
 
-  const Type *t2 = phase->type( in(2) );
-  if( t2 == TypeH::ONE )         // Identity?
-    return nullptr;              // Skip it
+  const Type* t2 = phase->type(in(2));
+  if(t2 == TypeH::ONE)         // Identity?
+    return nullptr;            // Skip it
 
-  const TypeH *tf = t2->isa_half_float_constant();
-  if( !tf ) return nullptr;
-  if( tf->base() != Type::HalfFloatCon ) return nullptr;
+  const TypeH* tf = t2->isa_half_float_constant();
+  if(!tf) return nullptr;
+  if(tf->base() != Type::HalfFloatCon) return nullptr;
 
   // Check for out of range values
-  if( tf->is_nan() || !tf->is_finite() ) return nullptr;
+  if(tf->is_nan() || !tf->is_finite()) return nullptr;
 
   // Get the value
   float f = tf->getf();
   int exp;
 
   // Only for special case of dividing by a power of 2
-  if( frexp((double)f, &exp) != 0.5 ) return nullptr;
+  if(frexp((double)f, &exp) != 0.5) return nullptr;
 
   // Limit the range of acceptable exponents
-  if( exp < -14 || exp > 15 ) return nullptr;
+  if(exp < -14 || exp > 15) return nullptr;
 
   // Compute the reciprocal
   float reciprocal = ((float)1.0) / f;
 
-  assert( frexp((double)reciprocal, &exp) == 0.5, "reciprocal should be power of 2" );
+  assert(frexp((double)reciprocal, &exp) == 0.5, "reciprocal should be power of 2");
 
   // return multiplication by the reciprocal
   return (new MulHFNode(in(1), phase->makecon(TypeH::make(reciprocal))));

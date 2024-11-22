@@ -166,12 +166,12 @@ public:
 // Add 2 half-precision floats
 class AddHFNode : public AddNode {
 public:
-  AddHFNode( Node *in1, Node *in2 ) : AddNode(in1,in2) {}
+  AddHFNode(Node *in1, Node *in2) : AddNode(in1,in2) {}
   virtual int Opcode() const;
-  virtual const Type *add_of_identity( const Type *t1, const Type *t2 ) const;
-  virtual const Type *add_ring( const Type *, const Type * ) const;
-  virtual const Type *add_id() const { return TypeH::ZERO; }
-  virtual const Type *bottom_type() const { return Type::HALF_FLOAT; }
+  virtual const Type* add_of_identity(const Type *t1, const Type *t2) const;
+  virtual const Type* add_ring(const Type*, const Type*) const;
+  virtual const Type* add_id() const { return TypeH::ZERO; }
+  virtual const Type* bottom_type() const { return Type::HALF_FLOAT; }
   int max_opcode() const { return Op_MaxHF; }
   int min_opcode() const { return Op_MinHF; }
   virtual Node* Identity(PhaseGVN* phase) { return this; }

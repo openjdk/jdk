@@ -136,7 +136,6 @@ class SubHFNode : public SubFPNode {
 public:
   SubHFNode(Node* in1, Node* in2) : SubFPNode(in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
   const Type   *add_id() const { return TypeH::ZERO; }
   const Type   *bottom_type() const { return Type::HALF_FLOAT; }

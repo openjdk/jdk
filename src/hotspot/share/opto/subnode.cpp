@@ -553,39 +553,24 @@ const Type* SubFPNode::Value(PhaseGVN* phase) const {
 
 
 //=============================================================================
-//------------------------------Ideal------------------------------------------
-Node *SubHFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  const Type *t2 = phase->type( in(2) );
-  // Convert "x-c0" into "x+ -c0".
-  if( t2->base() == Type::HalfFloatCon ) {  // Might be bottom or top...
-    // return new (phase->C, 3) AddFNode(in(1), phase->makecon( TypeF::make(-t2->getf()) ) );
-  }
-
-  // Cannot replace 0.0-X with -X because a 'fsub' bytecode computes
-  // 0.0-0.0 as +0.0, while a 'fneg' bytecode computes -0.0.
-  //if( phase->type(in(1)) == TypeF::ZERO )
-  //return new (phase->C, 2) NegFNode(in(2));
-
-  return nullptr;
-}
-
 //------------------------------sub--------------------------------------------
 // A subtract node differences its two inputs.
-const Type *SubHFNode::sub( const Type *t1, const Type *t2 ) const {
+const Type* SubHFNode::sub(const Type* t1, const Type* t2) const {
   // no folding if one of operands is infinity or NaN, do not do constant folding
-  if( g_isfinite(t1->getf()) && g_isfinite(t2->getf()) ) {
-    return TypeH::make( t1->getf() - t2->getf() );
+  if(g_isfinite(t1->getf()) && g_isfinite(t2->getf())) {
+    return TypeH::make(t1->getf() - t2->getf());
   }
-  else if( g_isnan(t1->getf()) ) {
+  else if(g_isnan(t1->getf())) {
     return t1;
   }
-  else if( g_isnan(t2->getf()) ) {
+  else if(g_isnan(t2->getf())) {
     return t2;
   }
   else {
     return Type::HALF_FLOAT;
   }
 }
+
 //------------------------------Ideal------------------------------------------
 Node *SubFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   const Type *t2 = phase->type( in(2) );

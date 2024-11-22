@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ static int constant_size(ConstantTable::Constant* con) {
     return type2aelembytes(con->type()) * con->get_array()->length();
   }
   switch (con->type()) {
-  case T_SHORT:   return sizeof(jshort );
+  case T_SHORT:   return sizeof(jint   );
   case T_INT:     return sizeof(jint   );
   case T_LONG:    return sizeof(jlong  );
   case T_FLOAT:   return sizeof(jfloat );

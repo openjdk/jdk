@@ -257,7 +257,7 @@ Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (Float16NodeFactory::is_binary_oper(in(1)->Opcode()) &&
       in(1)->in(1)->Opcode() == Op_ConvHF2F &&
       in(1)->in(2)->Opcode() == Op_ConvHF2F) {
-    if (Matcher::match_rule_supported(in(1)->Opcode()) &&
+    if (Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(in(1)->Opcode())) &&
         Matcher::match_rule_supported(Op_ReinterpretS2HF) &&
         Matcher::match_rule_supported(Op_ReinterpretHF2S)) {
       Node* in1 = phase->transform(new ReinterpretS2HFNode(in(1)->in(1)->in(1)));
@@ -954,6 +954,25 @@ bool Float16NodeFactory::is_binary_oper(int opc) {
     case Op_MaxF:
     case Op_MinF:
       return true;
+    default:
+      return false;
+  }
+}
+
+int Float16NodeFactory::get_float16_binary_oper(int opc) {
+  switch(opc) {
+    case Op_AddF:
+      return Op_AddHF;
+    case Op_SubF:
+      return Op_SubHF;
+    case Op_MulF:
+      return Op_MulHF;
+    case Op_DivF:
+      return Op_DivHF;
+    case Op_MaxF:
+      return Op_MaxHF;
+    case Op_MinF:
+      return Op_MinHF;
     default:
       return false;
   }

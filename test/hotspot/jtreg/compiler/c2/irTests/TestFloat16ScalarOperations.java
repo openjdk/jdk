@@ -31,11 +31,10 @@
 * @library /test/lib /
 * @run driver TestFloat16ScalarOperations
 */
-
 import compiler.lib.ir_framework.*;
-import java.util.Random;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
+import java.util.Random;
 
 public class TestFloat16ScalarOperations {
     private static final int count = 1024;
@@ -51,16 +50,24 @@ public class TestFloat16ScalarOperations {
     public TestFloat16ScalarOperations() {
         src = new short[count];
         dst = new short[count];
+        Random r = jdk.test.lib.Utils.getRandomInstance();
         for (int i = 0; i < count; i++) {
-            src[i] = Float.floatToFloat16(i);
+            src[i] = Float.floatToFloat16(r.nextFloat());
+        }
+    }
+
+    static void assertResult(float actual, float expected, String msg) {
+        if (actual != expected) {
+            if (!Float.isNaN(actual) || !Float.isNaN(expected)) {
+                String error = "TEST: " + msg + ": actual(" + actual + ") != expected(" + expected + ")";
+                throw new AssertionError(error);
+            }
         }
     }
 
     @Test
     @IR(counts = {IRNode.ADD_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.ADD_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testAdd1() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -72,8 +79,6 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(failOn = {IRNode.ADD_HF, IRNode.REINTERPRET_S2HF, IRNode.REINTERPRET_HF2S},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(failOn = {IRNode.ADD_HF, IRNode.REINTERPRET_S2HF, IRNode.REINTERPRET_HF2S},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testAdd2() {
         Float16 hf0 = shortBitsToFloat16((short)0);
         Float16 hf1 = shortBitsToFloat16((short)15360);
@@ -86,8 +91,6 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.SUB_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.SUB_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testSub() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -99,8 +102,6 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.MUL_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.MUL_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testMul() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -112,8 +113,6 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.DIV_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.DIV_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testDiv() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -125,8 +124,6 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.MAX_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.MAX_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testMax() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -138,8 +135,6 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.MIN_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.MIN_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testMin() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -151,8 +146,6 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.SQRT_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.SQRT_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testSqrt() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -164,14 +157,91 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.FMA_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
-    @IR(counts = {IRNode.FMA_HF, "> 0", IRNode.REINTERPRET_S2HF, "> 0", IRNode.REINTERPRET_HF2S, "> 0"},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void testFma() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
             Float16 in = shortBitsToFloat16(src[i]);
-            res = Float16.fma(in, in, in) ;
+            res = Float16.fma(in, in, in);
             dst[i] = float16ToRawShortBits(res);
         }
+    }
+
+    @Test
+    @IR(counts = {IRNode.ADD_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testAddConstantFolding() {
+        assertResult(add(valueOf(1.0f), valueOf(2.0f)).floatValue(), 3.0f, "testAddConstantFolding");
+    }
+
+    @Test
+    @IR(counts = {IRNode.MAX_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testMaxConstantFolding() {
+        assertResult(max(valueOf(1.0f), valueOf(2.0f)).floatValue(), 2.0f, "testMaxConstantFolding");
+        assertResult(max(valueOf(0.0f), valueOf(-0.0f)).floatValue(), 0.0f, "testMaxConstantFolding");
+    }
+
+    @Test
+    @IR(counts = {IRNode.MIN_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testMinConstantFolding() {
+        assertResult(min(valueOf(1.0f), valueOf(2.0f)).floatValue(), 1.0f, "testMinConstantFolding");
+        assertResult(min(valueOf(0.0f), valueOf(-0.0f)).floatValue(), -0.0f, "testMinConstantFolding");
+    }
+
+    @Test
+    @IR(counts = {IRNode.DIV_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testDivConstantFolding() {
+        assertResult(divide(valueOf(2.0f), valueOf(2.0f)).floatValue(), 1.0f, "testDivConstantFolding");
+        assertResult(divide(valueOf(0.0f), valueOf(2.0f)).floatValue(), 0.0f, "testDivConstantFolding");
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_HF, " >0 ", IRNode.REINTERPRET_S2HF, " >0 ", IRNode.REINTERPRET_HF2S, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testDivByPOT() {
+        Float16 actual = valueOf(0.0f);
+        for (int i = 0; i < 100; i++) {
+            Float16 divisor = valueOf(8.0f);
+            Float16 dividend = shortBitsToFloat16(src[i]);
+            actual = add(actual, divide(dividend, divisor));
+        }
+        float expected = 0.0f;
+        for (int i = 0; i < 100; i++) {
+            float dividend = Float.float16ToFloat(src[i]);
+            expected += dividend / 8.0f;
+        }
+        assertResult(Math.round(actual.floatValue()), Math.round(expected), "testDivByPOT");
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_HF, " 0 ", IRNode.ADD_HF, " >0 ", IRNode.REINTERPRET_S2HF, " >0 ", IRNode.REINTERPRET_HF2S, " >0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testMulByTWO() {
+        Float16 res = valueOf(0.0f);
+        Float16 multiplier = valueOf(2.0f);
+        for (int i = 0; i < 20; i++) {
+            Float16 multiplicand = valueOf((float)i);
+            res = add(res, multiply(multiplicand, multiplier));
+        }
+        assertResult(res.floatValue(), (float)((20 * (20 - 1))/2) * 2.0f, "testMulByTWO");
+    }
+
+    @Test
+    @IR(counts = {IRNode.MUL_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testMulConstantFolding() {
+        float expected = 1.0f * 2.0f * 3.0f * 4.0f;
+        float actual = multiply(multiply(multiply(valueOf(1.0f), valueOf(2.0f)), valueOf(3.0f)), valueOf(4.0f)).floatValue();
+        assertResult(actual, expected, "testMulConstantFolding");
+    }
+
+    @Test
+    @IR(counts = {IRNode.FMA_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testFMAConstantFolding() {
+        assertResult(fma(valueOf(1.0f), valueOf(2.0f), valueOf(3.0f)).floatValue(), 1.0f * 2.0f + 3.0f, "testFMAConstantFolding");
+        assertResult(fma(valueOf(Float.NaN), valueOf(2.0f), valueOf(3.0f)).floatValue(), Float.NaN, "testFMAConstantFolding");
     }
 }

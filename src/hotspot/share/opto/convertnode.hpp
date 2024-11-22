@@ -297,6 +297,7 @@ class RoundDoubleModeNode: public Node {
 class Float16NodeFactory {
   public:
   static bool is_binary_oper(int opc);
+  static int get_float16_binary_oper(int opc);
   static Node* make(int opc, Node* c, Node* in1, Node* in2);
 };
 
