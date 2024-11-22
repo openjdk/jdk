@@ -780,7 +780,7 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
 
   const VPointer& p1 = vpointer(s1->as_Mem());
   const VPointer& p2 = vpointer(s2->as_Mem());
-  return p1.is_adjacent_to_and_before(p2, _vloop);
+  return p1.is_adjacent_to_and_before(p2);
 }
 
 //------------------------------isomorphic---------------------------

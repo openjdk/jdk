@@ -704,6 +704,7 @@ class VPointer : public ArenaObj {
 private:
   typedef MemPointerDecomposedFormParser::Callback Callback;
 
+  const VLoop& _vloop;
   const MemPointerDecomposedForm _decomposed_form;
   const jint _size;
 
@@ -713,19 +714,13 @@ private:
   const bool _is_valid; // TODO any accessor should assert if not valid!
 
 public:
-  // Default constructor, e.g. for GrowableArray.
-  VPointer() :
-    _decomposed_form(),
-    _size(0),
-    _iv_scale(0),
-    _is_valid(false) {}
-
   template<typename Callback>
   VPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
+    _vloop(vloop),
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
-    _iv_scale(init_iv_scale(_decomposed_form, vloop)),
-    _is_valid(init_is_valid(_decomposed_form, vloop))
+    _iv_scale(init_iv_scale(_decomposed_form, _vloop)),
+    _is_valid(init_is_valid(_decomposed_form, _vloop))
   {
 #ifndef PRODUCT
     if (vloop.mptrace().is_trace_pointer()) {
@@ -745,9 +740,11 @@ public:
   jint con()                                        const { return decomposed_form().con().value(); }
 
   template<typename Callback>
-  void for_each_invar_summand(Callback callback, const VLoop& vloop) const {
+  void for_each_invar_summand(Callback callback) const {
     decomposed_form().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
-      if (is_invariant(s.variable(), vloop)) {
+      Node* variable = s.variable();
+      if (variable != decomposed_form().base().object_or_native() &&
+          is_invariant(variable, _vloop)) {
         callback(s);
       }
     });
@@ -755,15 +752,15 @@ public:
 
   // Aliasing
   // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?
-  bool is_adjacent_to_and_before(const VPointer& other, const VLoop& vloop) const;
-  bool never_overlaps_with(const VPointer& other, const VLoop& vloop) const;
+  bool is_adjacent_to_and_before(const VPointer& other) const;
+  bool never_overlaps_with(const VPointer& other) const;
 
-  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes, const VLoop& vloop) const {
+  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
     MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
     for (int i = 0; i < nodes.length(); i++) {
       MemNode* mem = nodes.at(i)->as_Mem();
-      VPointer mem_p(mem->as_Mem(), vloop, empty_callback);
-      if (!never_overlaps_with(mem_p, vloop)) {
+      VPointer mem_p(mem->as_Mem(), _vloop, empty_callback);
+      if (!never_overlaps_with(mem_p)) {
         return true; // possible overlap
       }
     }

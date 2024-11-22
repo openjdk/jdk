@@ -253,7 +253,7 @@ void VLoopDependencyGraph::construct() {
         if (n1->is_Load() && n2->is_Load()) { continue; }
 
         const VPointer& p2 = _vpointers.vpointer(n2);
-        if (!p1.never_overlaps_with(p2, _vloop)) {
+        if (!p1.never_overlaps_with(p2)) {
           // Possibly overlapping memory
           memory_pred_edges.append(_body.bb_idx(n2));
         }
@@ -393,14 +393,14 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
-bool VPointer::is_adjacent_to_and_before(const VPointer& other, const VLoop& vloop) const {
+bool VPointer::is_adjacent_to_and_before(const VPointer& other) const {
   const MemPointerDecomposedForm& s1 = decomposed_form();
   const MemPointerDecomposedForm& s2 = other.decomposed_form();
-  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA vloop.mptrace() ));
+  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _vloop.mptrace() ));
   const bool is_adjacent = aliasing.is_always_at_distance(_size);
 
 #ifndef PRODUCT
-  if (vloop.mptrace().is_trace_adjacency()) {
+  if (_vloop.mptrace().is_trace_adjacency()) {
     tty->print("Adjacent: %s, because size = %d and aliasing = ",
                is_adjacent ? "true" : "false", _size);
     aliasing.print_on(tty);
@@ -411,10 +411,10 @@ bool VPointer::is_adjacent_to_and_before(const VPointer& other, const VLoop& vlo
   return is_adjacent;
 }
 
-bool VPointer::never_overlaps_with(const VPointer& other, const VLoop& vloop) const {
+bool VPointer::never_overlaps_with(const VPointer& other) const {
   if (!is_valid() || !other.is_valid()) {
 #ifndef PRODUCT
-    if (vloop.mptrace().is_trace_overlap()) {
+    if (_vloop.mptrace().is_trace_overlap()) {
       tty->print_cr("Never Overlap: false, because of invalid VPointer.");
     }
 #endif
@@ -424,7 +424,7 @@ bool VPointer::never_overlaps_with(const VPointer& other, const VLoop& vloop) co
 
   const MemPointerDecomposedForm& s1 = decomposed_form();
   const MemPointerDecomposedForm& s2 = other.decomposed_form();
-  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA vloop.mptrace() ));
+  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _vloop.mptrace() ));
 
   // The aliasing tries to compute:
   //   distance = s2 - s1
@@ -440,7 +440,7 @@ bool VPointer::never_overlaps_with(const VPointer& other, const VLoop& vloop) co
   bool is_never_overlap = aliasing.is_never_in_distance_range(distance_lo, distance_hi);
 
 #ifndef PRODUCT
-  if (vloop.mptrace().is_trace_overlap()) {
+  if (_vloop.mptrace().is_trace_overlap()) {
     tty->print("Never Overlap: %s, distance_lo: %d, distance_hi: %d, aliasing: ",
                is_never_overlap ? "true" : "false", distance_lo, distance_hi);
     aliasing.print_on(tty);
@@ -464,6 +464,11 @@ void VPointer::print_on(outputStream* st) const {
   _decomposed_form.base().print_on(st);
   st->print(", form: ");
   _decomposed_form.print_form_on(st);
+  st->print(", invar_summands: ");
+  for_each_invar_summand([&] (const MemPointerSummand& s) {
+    s.print_on(tty);
+    st->print(",");
+  });
   st->print_cr("]");
 }
 #endif
@@ -963,6 +968,8 @@ void AlignmentSolver::trace_start_solve() const {
   if (is_trace()) {
     tty->print(" vector mem_ref:");
     _mem_ref->dump();
+    tty->print("  VPointer: ");
+    _vpointer.print_on(tty);
     tty->print_cr("  vector_width = %d", _vector_width);
     tty->print_cr("  aw = alignment_width = min(vector_width(%d), ObjectAlignmentInBytes(%d)) = %d",
                   _vector_width, ObjectAlignmentInBytes, _aw);
@@ -972,15 +979,18 @@ void AlignmentSolver::trace_start_solve() const {
       _init_node->dump();
     }
 
-    if (_invar != nullptr) {
-      tty->print("  invar:");
-      _invar->dump();
+    tty->print_cr("  invar_summands:");
+    int invar_count = 0;
+    _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
+      tty->print("   ");
+      s.print_on(tty);
+      tty->print(" -> ");
+      s.variable()->dump();
+      invar_count++;
+    });
+    if (invar_count == 0) {
+      tty->print("   No invar_summands.");
     }
-    tty->print_cr("invar_summands:");
-    // TODO and check about base / iv
-    // _vpointer.for_each_invar_summand([&] (const MemPointerSummand& s) {
-    //   s.print_on(tty);
-    // }, );
 
     tty->print_cr("  invar_factor = %d", _invar_factor);
 

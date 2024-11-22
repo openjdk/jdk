@@ -583,7 +583,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
     // TODO refactor with VPointer for this vector load!
     MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
     VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop(), empty_callback);
-    if (store_p.overlap_possible_with_any_in(nodes(), vloop_analyzer.vloop())) {
+    if (store_p.overlap_possible_with_any_in(nodes())) {
       break;
     } else {
       mem = mem->in(MemNode::Memory);
