@@ -1014,9 +1014,7 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
     Klass* k = klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (ik->is_linked()) {
-        ik->constants()->add_dumped_interned_strings();
-      }
+      ik->constants()->add_dumped_interned_strings();
     }
   }
   if (_extra_interned_strings != nullptr) {
