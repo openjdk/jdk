@@ -146,6 +146,17 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             graph.createLayoutEdge(link);
         }
 
+        HierarchicalLayoutManager.ReverseEdges.apply(graph);
+
+        HierarchicalLayoutManager.LayerManager.apply(graph, maxLayerLength);
+
+        // STEP 3: Crossing Reduction
+        HierarchicalLayoutManager.CrossingReduction.apply(graph);
+
+        // STEP 4: Assign X coordinates
+        HierarchicalLayoutManager.AssignXCoordinates.apply(graph);
+
+
         for (LayoutNode node : graph.getLayoutNodes()) {
            // graph.addEdges(node, maxLayerLength);
         }

@@ -358,7 +358,43 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
         }
 
         static public void apply(LayoutGraph graph, int maxLayerLength) {
+            int cntUnassigned = 0;
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                if (node.getLayer() < 0) {
+                    cntUnassigned++;
+                }
+            }
+            System.out.println("cntUnassigned before " + cntUnassigned);
+
             assignLayers(graph);
+
+            cntUnassigned = 0;
+            int maxLayer = 0;
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                maxLayer = Math.max(maxLayer, node.getLayer());
+                if (node.getLayer() < 0) {
+                    cntUnassigned++;
+                }
+            }
+            System.out.println("cntUnassigned after " + cntUnassigned);
+
+            graph.initLayers(maxLayer + 1);
+
+
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                int currentLayer = node.getLayer();
+                for (LayoutEdge e : node.getSuccessors()) {
+                    int layerBelow = e.getTo().getLayer();
+                    assert layerBelow > currentLayer;  // TODO: fails
+                }
+
+                for (LayoutEdge e : node.getPredecessors()) {
+                    int layerAbove = e.getFrom().getLayer();
+                    assert layerAbove < currentLayer;
+                }
+            }
+
+
             createDummyNodes(graph, maxLayerLength);
             graph.updatePositions();
         }
