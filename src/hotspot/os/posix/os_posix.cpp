@@ -931,10 +931,6 @@ void os::_exit(int num) {
   ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
 }
 
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
 void os::naked_yield() {
   sched_yield();
 }
