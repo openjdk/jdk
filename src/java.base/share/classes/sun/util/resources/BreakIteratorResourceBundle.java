@@ -69,7 +69,7 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
         String path = getClass().getPackageName().replace('.', '/')
                       + '/' + info.getString(key);
         byte[] data;
-        try (InputStream is = getClass().getModule().getResourceAsStream(path);) {
+        try (InputStream is = getClass().getModule().getResourceAsStream(path)) {
             data = is.readAllBytes();
         } catch (Exception e) {
             throw new InternalError("Can't load " + path, e);

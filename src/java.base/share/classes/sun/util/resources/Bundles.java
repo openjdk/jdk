@@ -265,7 +265,7 @@ public abstract class Bundles {
                 if (bundle != null) {
                     return bundle;
                 }
-            } catch (ServiceConfigurationError | SecurityException e) {
+            } catch (ServiceConfigurationError e) {
                 if (cacheKey != null) {
                     cacheKey.setCause(e);
                 }
