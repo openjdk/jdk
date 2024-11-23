@@ -404,12 +404,7 @@ public class XMLEntityStorage {
     // which encoding to use. Leave them for now.
     private static synchronized String getUserDir() {
         // get the user.dir property
-        String userDir = "";
-        try {
-            userDir = SecuritySupport.getSystemProperty("user.dir");
-        }
-        catch (SecurityException se) {
-        }
+        String userDir = SecuritySupport.getSystemProperty("user.dir");
 
         // return empty string if property value is empty string.
         if (userDir.length() == 0)

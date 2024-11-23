@@ -253,8 +253,7 @@ class XPathFactoryFinder  {
         try {
             xPathFactory = (XPathFactory) clazz.getConstructor().newInstance();
         } catch (ClassCastException | IllegalAccessException | IllegalArgumentException |
-            InstantiationException | InvocationTargetException | NoSuchMethodException |
-            SecurityException ex) {
+            InstantiationException | InvocationTargetException | NoSuchMethodException ex) {
             debugPrintln(()->"could not instantiate " + clazz.getName());
             if (debug) {
                     ex.printStackTrace();

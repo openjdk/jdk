@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -149,7 +149,6 @@ public class NodeSortRecordFactory {
                LinkageError,
                IllegalAccessException,
                InstantiationException,
-               SecurityException,
                TransletException {
 
         try {

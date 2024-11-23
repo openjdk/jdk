@@ -49,16 +49,9 @@ class FactoryFinder {
 
     // Define system property "jaxp.debug" to get output
     static {
-        // Use try/catch block to support applets, which throws
-        // SecurityException out of this code.
-        try {
-            String val = SecuritySupport.getSystemProperty("jaxp.debug");
-            // Allow simply setting the prop to turn on debug
-            debug = val != null && !"false".equals(val);
-        }
-        catch (SecurityException se) {
-            debug = false;
-        }
+        String val = SecuritySupport.getSystemProperty("jaxp.debug");
+        // Allow simply setting the prop to turn on debug
+        debug = val != null && !"false".equals(val);
     }
 
     private static void dPrint(Supplier<String> msgGen) {
@@ -198,15 +191,10 @@ class FactoryFinder {
         dPrint(()->"find factoryId =" + factoryId);
 
         // Use the system property first
-        try {
-            String systemProp = SecuritySupport.getSystemProperty(factoryId);
-            if (systemProp != null) {
-                dPrint(()->"found system property, value=" + systemProp);
-                return newInstance(type, systemProp, null, true);
-            }
-        }
-        catch (SecurityException se) {
-            if (debug) se.printStackTrace();
+        String systemProp = SecuritySupport.getSystemProperty(factoryId);
+        if (systemProp != null) {
+            dPrint(()->"found system property, value=" + systemProp);
+            return newInstance(type, systemProp, null, true);
         }
 
         // try to read from the configuration file

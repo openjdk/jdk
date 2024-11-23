@@ -74,7 +74,7 @@ public class SecuritySupport {
     }
 
     /**
-     * Reads a system property with privilege
+     * Reads a system property
      *
      * @param propName the name of the property
      * @return the value of the property
@@ -84,7 +84,7 @@ public class SecuritySupport {
     }
 
     /**
-     * Reads a system property with privilege
+     * Reads a system property
      *
      * @param propName the name of the property
      * @return the value of the property
@@ -467,9 +467,8 @@ public class SecuritySupport {
      * Returns the current thread's context class loader, or the system class loader
      * if the context class loader is null.
      * @return the current thread's context class loader, or the system class loader
-     * @throws SecurityException
      */
-    public static ClassLoader getClassLoader() throws SecurityException{
+    public static ClassLoader getClassLoader() {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         if (cl == null) {
             cl = ClassLoader.getSystemClassLoader();

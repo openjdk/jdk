@@ -73,7 +73,7 @@ class NewInstance {
 
         try {
             return type.cast(driverClass.getConstructor().newInstance());
-        } catch (NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+        } catch (NoSuchMethodException | InvocationTargetException ex) {
             throw new InstantiationException(ex.getMessage());
         }
     }

@@ -41,14 +41,9 @@ public class Utils {
      * and processors
      */
     static {
-        try {
-            String val = SecuritySupport.getSystemProperty("jaxp.debug");
-            // Allow simply setting the prop to turn on debug
-            debug = val != null && !"false".equals(val);
-        }
-        catch (SecurityException se) {
-            debug = false;
-        }
+        String val = SecuritySupport.getSystemProperty("jaxp.debug");
+        // Allow simply setting the prop to turn on debug
+        debug = val != null && !"false".equals(val);
     }
 
     // print out debug information if jaxp.debug is enabled

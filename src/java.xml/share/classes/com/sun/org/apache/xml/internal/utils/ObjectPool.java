@@ -138,7 +138,7 @@ public class ObjectPool implements java.io.Serializable
       {
         return objectType.getConstructor().newInstance();
       }
-      catch (InstantiationException | IllegalAccessException | SecurityException |
+      catch (InstantiationException | IllegalAccessException |
               IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex){}
 
       // Throw unchecked exception for error in pool configuration.

@@ -96,44 +96,21 @@ public class FuncSystemProperty extends FunctionOneArg
              new Object[]{ namespace,
                            fullName });  //"Don't currently do anything with namespace "+namespace+" in property: "+fullName);
 
-        try
+        result = SecuritySupport.getSystemProperty(propName);
+        if (null == result)
         {
-          result = SecuritySupport.getSystemProperty(propName);
-
-          if (null == result)
-          {
-
-            // result = System.getenv(propName);
-            return XString.EMPTYSTRING;
-          }
-        }
-        catch (SecurityException se)
-        {
-          warn(xctxt, XPATHErrorResources.WG_SECURITY_EXCEPTION,
-               new Object[]{ fullName });  //"SecurityException when trying to access XSL system property: "+fullName);
-
+          // result = System.getenv(propName);
           return XString.EMPTYSTRING;
         }
       }
     }
     else
     {
-      try
+      result = SecuritySupport.getSystemProperty(fullName);
+
+      if (null == result)
       {
-        result = SecuritySupport.getSystemProperty(fullName);
-
-        if (null == result)
-        {
-
-          // result = System.getenv(fullName);
-          return XString.EMPTYSTRING;
-        }
-      }
-      catch (SecurityException se)
-      {
-        warn(xctxt, XPATHErrorResources.WG_SECURITY_EXCEPTION,
-             new Object[]{ fullName });  //"SecurityException when trying to access XSL system property: "+fullName);
-
+        // result = System.getenv(fullName);
         return XString.EMPTYSTRING;
       }
     }

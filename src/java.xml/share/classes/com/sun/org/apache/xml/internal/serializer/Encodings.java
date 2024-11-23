@@ -229,41 +229,33 @@ public final class Encodings extends Object
 
         if (null == encoding)
         {
-            try
+            // Get the default system character encoding.  This may be
+            // incorrect if they passed in a writer, but right now there
+            // seems to be no way to get the encoding from a writer.
+            encoding = SecuritySupport.getSystemProperty("file.encoding", "UTF8");
+
+            if (null != encoding)
             {
 
-                // Get the default system character encoding.  This may be
-                // incorrect if they passed in a writer, but right now there
-                // seems to be no way to get the encoding from a writer.
-                encoding = SecuritySupport.getSystemProperty("file.encoding", "UTF8");
+                /*
+                * See if the mime type is equal to UTF8.  If you don't
+                * do that, then  convertJava2MimeEncoding will convert
+                * 8859_1 to "ISO-8859-1", which is not what we want,
+                * I think, and I don't think I want to alter the tables
+                * to convert everything to UTF-8.
+                */
+                String jencoding =
+                    (encoding.equalsIgnoreCase("Cp1252")
+                        || encoding.equalsIgnoreCase("ISO8859_1")
+                        || encoding.equalsIgnoreCase("8859_1")
+                        || encoding.equalsIgnoreCase("UTF8"))
+                        ? DEFAULT_MIME_ENCODING
+                        : convertJava2MimeEncoding(encoding);
 
-                if (null != encoding)
-                {
-
-                    /*
-                    * See if the mime type is equal to UTF8.  If you don't
-                    * do that, then  convertJava2MimeEncoding will convert
-                    * 8859_1 to "ISO-8859-1", which is not what we want,
-                    * I think, and I don't think I want to alter the tables
-                    * to convert everything to UTF-8.
-                    */
-                    String jencoding =
-                        (encoding.equalsIgnoreCase("Cp1252")
-                            || encoding.equalsIgnoreCase("ISO8859_1")
-                            || encoding.equalsIgnoreCase("8859_1")
-                            || encoding.equalsIgnoreCase("UTF8"))
-                            ? DEFAULT_MIME_ENCODING
-                            : convertJava2MimeEncoding(encoding);
-
-                    encoding =
-                        (null != jencoding) ? jencoding : DEFAULT_MIME_ENCODING;
-                }
-                else
-                {
-                    encoding = DEFAULT_MIME_ENCODING;
-                }
+                encoding =
+                    (null != jencoding) ? jencoding : DEFAULT_MIME_ENCODING;
             }
-            catch (SecurityException se)
+            else
             {
                 encoding = DEFAULT_MIME_ENCODING;
             }
@@ -329,11 +321,7 @@ public final class Encodings extends Object
             String urlString = null;
             InputStream is = null;
 
-            try {
-                urlString = SecuritySupport.getSystemProperty(ENCODINGS_PROP, "");
-            } catch (SecurityException e) {
-            }
-
+            urlString = SecuritySupport.getSystemProperty(ENCODINGS_PROP, "");
             if (urlString != null && urlString.length() > 0) {
                 @SuppressWarnings("deprecation")
                 URL url = new URL(urlString);

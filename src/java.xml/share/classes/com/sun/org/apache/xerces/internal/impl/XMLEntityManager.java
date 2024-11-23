@@ -2010,12 +2010,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     // which encoding to use. Leave them for now.
     private static synchronized URI getUserDir() throws URI.MalformedURIException {
         // get the user.dir property
-        String userDir = "";
-        try {
-            userDir = SecuritySupport.getSystemProperty("user.dir");
-        }
-        catch (SecurityException se) {
-        }
+        String userDir = SecuritySupport.getSystemProperty("user.dir");
 
         // return empty string if property value is empty string.
         if (userDir.length() == 0)

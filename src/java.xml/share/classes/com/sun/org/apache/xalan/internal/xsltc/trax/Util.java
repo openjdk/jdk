@@ -207,10 +207,6 @@ public final class Util {
                                         "TransformerFactory.newTemplates()");
             throw new TransformerConfigurationException(err.toString());
         }
-        catch (SecurityException e) {
-            ErrorMsg err = new ErrorMsg(ErrorMsg.FILE_ACCESS_ERR, systemId);
-            throw new TransformerConfigurationException(err.toString());
-        }
         return input;
     }
 

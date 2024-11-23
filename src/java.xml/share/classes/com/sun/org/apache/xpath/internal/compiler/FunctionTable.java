@@ -348,7 +348,7 @@ public class FunctionTable
                   Class<?> c =  m_functions_customer[which-NUM_BUILT_IN_FUNCS];
                   return (Function) c.getConstructor().newInstance();
               }
-          }catch (InstantiationException | IllegalAccessException | SecurityException |
+          }catch (InstantiationException | IllegalAccessException |
               IllegalArgumentException | InvocationTargetException | NoSuchMethodException ex){
               throw new TransformerException(ex.getMessage());
           }
