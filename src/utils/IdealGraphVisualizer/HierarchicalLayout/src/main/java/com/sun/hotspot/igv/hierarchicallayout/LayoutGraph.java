@@ -89,15 +89,19 @@ public class LayoutGraph {
         layers = new ArrayList<>();
     }
 
+    public void clearLayout() {
+        layoutNodes.clear();
+        dummyNodes.clear();
+        layers.clear();
+    }
+
     /**
      * Initializes or resets the layout structures by clearing existing nodes, dummy nodes, and layers.
      * It then sets up the layout nodes for each vertex and creates layout edges based on the sorted links.
      */
     public void initializeLayout() {
         // Reset layout structures
-        layoutNodes.clear();
-        dummyNodes.clear();
-        layers.clear();
+        clearLayout();
 
         // Set up layout nodes for each vertex
         for (Vertex vertex : getVertices()) {
