@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8264048
+ * @modules java.base/sun.net.www.protocol.jar:open
  * @run junit/othervm RemoveJar
  *
  * @summary URLClassLoader.close() doesn't close cached JAR file on Windows when load() fails
@@ -35,10 +36,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
-import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
@@ -46,13 +45,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RemoveJar {
 
@@ -95,6 +94,9 @@ public class RemoveJar {
     @ParameterizedTest
     @MethodSource("arguments")
     public void shouldReleaseJarFile(boolean useCacheFirst, boolean useCacheSecond, boolean findFirst, boolean findSecond, String subPath) throws IOException {
+
+        // Sanity check that the JarFileFactory caches are unpopulated
+        assertEmptyJarFileCache();
 
         String firstClass = findFirst ? "testpkg.Test" : "testpkg.Missing";
         String secondClass = findSecond ? "testpkg.Test" : "testpkg.Missing";
@@ -147,6 +149,21 @@ public class RemoveJar {
             jo.write(classBytes);
         }
         return jar;
+    }
+
+    // Assert that JarFileFactory.fileCache and JarFileFactory.urlCache are empty
+    private void assertEmptyJarFileCache() {
+        try {
+            Class<?> clazz = getClass().getClassLoader().loadClass("sun.net.www.protocol.jar.JarFileFactory");
+            for (var fieldName : Set.of("fileCache", "urlCache")) {
+                var field = clazz.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                var map = (Map) field.get(null);
+                assertEquals(0, map.size(), "Expected empty cache map for field " + fieldName);
+            }
+        } catch (ClassNotFoundException | IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 
