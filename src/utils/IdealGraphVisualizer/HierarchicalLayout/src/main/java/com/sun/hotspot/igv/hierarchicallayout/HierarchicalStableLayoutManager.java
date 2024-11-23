@@ -100,6 +100,16 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             updateLayout(graph);
             HierarchicalLayoutManager.WriteResult.apply(graph);
         }
+
+        for (Vertex vertex : graph.getVertices()){
+            assert graph.hasLayoutNode(vertex);
+        }
+
+        for (LayoutNode node : graph.getLayoutNodes()){
+            assert node.getVertex() != null;
+            assert graph.containsVertex(node.getVertex());
+        }
+
         this.prevGraph = graph;
 
         System.out.println("real vertex in g");
@@ -150,16 +160,13 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
 
         HierarchicalLayoutManager.LayerManager.apply(graph, maxLayerLength);
 
+        graph.removeEmptyLayers();
+
         // STEP 3: Crossing Reduction
         HierarchicalLayoutManager.CrossingReduction.apply(graph);
 
         // STEP 4: Assign X coordinates
         HierarchicalLayoutManager.AssignXCoordinates.apply(graph);
-
-
-        for (LayoutNode node : graph.getLayoutNodes()) {
-           // graph.addEdges(node, maxLayerLength);
-        }
     }
 
     private void generateActions(SortedSet<Vertex> newVertices, Set<Link> newLinks) {
