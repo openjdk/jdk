@@ -381,15 +381,50 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
             graph.initLayers(maxLayer + 1);
 
 
+            Set<LayoutEdge> toReverse = new HashSet<>();
+            Set<LayoutEdge> sameLayerEdges = new HashSet<>();
+
             for (LayoutNode node : graph.getLayoutNodes()) {
                 int currentLayer = node.getLayer();
                 for (LayoutEdge e : node.getSuccessors()) {
                     int layerBelow = e.getTo().getLayer();
+                    if (layerBelow < currentLayer) {
+                        toReverse.add(e);
+                    } else if (layerBelow == currentLayer) {
+                        sameLayerEdges.add(e);
+                    }
+                }
+
+                for (LayoutEdge e : node.getPredecessors()) {
+                    int layerAbove = e.getFrom().getLayer();
+                    if (layerAbove > currentLayer) {
+                        toReverse.add(e);
+                    } else if (layerAbove == currentLayer) {
+                        sameLayerEdges.add(e);
+                    }
+                }
+            }
+
+            for (LayoutEdge e : toReverse) {
+                ReverseEdges.reverseEdge(e);
+            }
+
+            for (LayoutEdge e : sameLayerEdges) {
+                assert e.getLink() != null;
+                graph.removeEdge(e.getLink());
+            }
+
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                int currentLayer = node.getLayer();
+                for (LayoutEdge e : node.getSuccessors()) {
+                    int layerBelow = e.getTo().getLayer();
+                    assert layerBelow != currentLayer;  // TODO: fails
                     assert layerBelow > currentLayer;  // TODO: fails
                 }
 
                 for (LayoutEdge e : node.getPredecessors()) {
                     int layerAbove = e.getFrom().getLayer();
+                    assert layerAbove != currentLayer;
                     assert layerAbove < currentLayer;
                 }
             }
