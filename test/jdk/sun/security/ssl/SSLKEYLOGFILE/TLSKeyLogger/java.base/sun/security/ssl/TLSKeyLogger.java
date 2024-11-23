@@ -30,8 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HexFormat;
 import java.util.Objects;
 
@@ -40,36 +38,52 @@ import javax.crypto.SecretKey;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
- * A TLS key logger for SunJSSE.
- * <p>
- * This follows the SSLKEYLOGFILE format propsed in draft RFC:
+ * A very simple TLS key logging example for SunJSSE that
+ * follows the SSLKEYLOGFILE format proposed in the
  * <a href="https://datatracker.ietf.org/doc/draft-ietf-tls-keylogfile/"
+ * IETF internet draft</a>.
  * <p>
- * This is an example implementation of a TLSKeyLogger library API that
- * will allow SunJSSE to output connection keys.
- * <p>
- * Note well, this facility is for development/testing only, and should not be
- * used in production.
+ * Note well: this functionality is for development/testing only, and should
+ * not be used in production.  The Internet Draft (ID) is very clear on the
+ * consequences of not protecting the keys.
  *
- * {@snippet lang = java:
- *     #!/bin/sh
- *
- *     # Build the test app
- *     /java/ws/jdk/build/linux-x64/jdk/bin/javac \
- *         TLSKeyLoggerTest.java
+ * {@snippet lang=text :
+ *     Access to the content of a file in SSLKEYLOGFILE format allows an
+ *     attacker to break the confidentiality and integrity protection on any
+ *     TLS connections that are included in the file.  This includes both
+ *     active connections and connections for which encrypted records were
+ *     previously stored.  Ensuring adequate access control on these files
+ *     therefore becomes very important.
+ * }
+ * <P>
+ * Compiling/running the code can be a little tricky, so here is a short script
+ * that might be useful.
+ * <P>
+ * {@snippet lang=shell :
+ *     #!/bin/bash
+ *     JAVA_HOME=/java/ws/jdk/build/linux-x64/jdk
  *
  *     # Build the patch module for java.base.
- *     /java/ws/jdk/build/linux-x64/jdk/bin/javac \
+ *     $JAVA_HOME/bin/javac \
  *         -g:vars,lines \
  *         -d module/java.base \
  *         --patch-module java.base=TLSKeyLogger/java.base \
+ *         --add-reads java.base=ALL-UNNAMED \
  *         TLSKeyLogger/java.base/sun/security/ssl/TLSKeyLogger.java
  *
+ *     # Build the test app
+ *     $JAVA_HOME/bin/javac \
+ *         -d . \
+ *         TLSKeyLoggerTest.java \
+ *         ../../../../javax/net/ssl/templates/SSLContextTemplate.java
+ *
  *     # Run the test app
- *     /java/ws/jdk/build/linux-x64/jdk/bin/java \
+ *     $JAVA_HOME/bin/java \
  *         --patch-module java.base=module/java.base \
  *         TLSKeyLoggerTest
  *  }
+ *  <p>
+ *  The jtreg test does all this automatically.
  */
 final class TLSKeyLogger {
 
@@ -79,26 +93,22 @@ final class TLSKeyLogger {
     static final TLSKeyLogger INSTANCE = new TLSKeyLogger();
 
     static {
-        // TODO: env variables vs system property
-        @SuppressWarnings("removal")
-        final String envVal = AccessController.doPrivileged(
-                (PrivilegedAction<String>) () ->
-                    {return System.getenv("SSLKEYLOGFILE");
-        });
-
-        if (envVal == null) {
-            // keyLogFile = null;
-            keyLogFile = Path.of("SSLKEYLOGFILE");
-        } else {
-            Path file = null;
-            try {
-                // TODO: allow only secure values/paths
-                file = Path.of(envVal);
-            } catch (InvalidPathException ipe) {
-                // ignore
-            }
-            keyLogFile = file;
+        // Use SSLKEYLOGFILE environmental variable, or else the System
+        // Property.
+        String logFile = System.getenv("SSLKEYLOGFILE");
+        if (logFile == null) {
+            logFile = System.getProperty("SSLKEYLOGFILE");
         }
+
+        Path file = null;
+        try {
+            // TODO:  Allow only valid paths
+            file = Path.of(logFile);
+        } catch (InvalidPathException ipe) {
+            // Bad dog, no bone for you!
+            throw ipe;
+        }
+        keyLogFile = file;
     }
 
     void log(final TLSKeyLoggerLabel label, final byte[] clientHelloRandom,
@@ -130,15 +140,14 @@ final class TLSKeyLogger {
                     label.name() + "_" + keyUpdateCount;
             default -> label.name();
         };
+
         final StringBuilder line = new StringBuilder(labelVal).append(" ");
         line.append(hexFormat.formatHex(clientHelloRandom)).append(" ");
         line.append(hexFormat.formatHex(secret.getEncoded()));
-        // RFC states that the line separator should correspond to the OS where
+        // ID states that the line separator should correspond to the OS where
         // the file was generated
         line.append(System.lineSeparator());
         try {
-            // TODO: security manager
-            // TODO: consider thread safety
             Files.writeString(keyLogFile, line.toString(), US_ASCII,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException | SecurityException e) {

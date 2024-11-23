@@ -197,6 +197,8 @@ public class TLSKeyLoggerTest extends SSLContextTemplate {
                 checkTransfer(serverOut, clientIn);
                 checkTransfer(clientOut, serverIn);
 
+                // TODO:  Add a KeyUpdate here to make sure it's being output.
+
                 log("\tClosing clientEngine's *OUTBOUND*...");
                 clientEngine.closeOutbound();
                 logEngineStatus(clientEngine);
@@ -207,6 +209,10 @@ public class TLSKeyLoggerTest extends SSLContextTemplate {
                 logEngineStatus(serverEngine);
             }
         }
+        // TODO:
+        //     1. Add a check that the SSLKEYLOGFILE was generated, and
+        //     2. check the values in the output are correct, including
+        //        any KeyUpdates.
     }
 
     static boolean isOpen(SSLEngine engine) {
