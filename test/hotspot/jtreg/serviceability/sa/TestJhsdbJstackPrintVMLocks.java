@@ -79,7 +79,7 @@ public class TestJhsdbJstackPrintVMLocks {
             }
             throw new RuntimeException("Not able to find lock");
         } finally {
-            theApp.getProcess().destroyForcibly();
+            LingeredApp.stopApp(theApp);
         }
     }
 }
