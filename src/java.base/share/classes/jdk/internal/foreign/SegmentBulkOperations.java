@@ -62,7 +62,7 @@ public final class SegmentBulkOperations {
         dst.checkReadOnly(false);
         if (dst.length == 0) {
             // Implicit state check
-            dst.checkValidState();
+            dst.sessionImpl().checkValidState();
         } else if (dst.length < NATIVE_THRESHOLD_FILL) {
             // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
 
@@ -106,7 +106,7 @@ public final class SegmentBulkOperations {
                             AbstractMemorySegmentImpl dst, long dstOffset,
                             long size) {
 
-        Utils.checkNonNegativeIndex(size, "size");
+        Utils.checkNonNegativeArgument(size, "size");
         // Implicit null check for src and dst
         src.checkAccess(srcOffset, size, true);
         dst.checkAccess(dstOffset, size, false);

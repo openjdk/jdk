@@ -230,13 +230,6 @@ public final class Utils {
         }
     }
 
-    @ForceInline
-    public static void checkNonNegativeIndex(long value, String name) {
-        if (value < 0) {
-            throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);
-        }
-    }
-
     private static long computePadding(long offset, long align) {
         boolean isAligned = offset == 0 || offset % align == 0;
         if (isAligned) {

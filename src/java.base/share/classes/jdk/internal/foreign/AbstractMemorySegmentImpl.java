@@ -121,7 +121,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
-    public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
+    public final NativeMemorySegmentImpl reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
                 MemorySessionImpl.toMemorySession(arena), cleanup);
@@ -129,27 +129,26 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
-    public final MemorySegment reinterpret(long newSize) {
+    public final NativeMemorySegmentImpl reinterpret(long newSize) {
         return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
     }
 
     @Override
     @CallerSensitive
-    public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
+    public final NativeMemorySegmentImpl reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), byteSize(),
                 MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
-    public MemorySegment reinterpretInternal(Class<?> callerClass, long newSize, Scope scope, Consumer<MemorySegment> cleanup) {
+    private NativeMemorySegmentImpl reinterpretInternal(Class<?> callerClass, long newSize, MemorySessionImpl scope, Consumer<MemorySegment> cleanup) {
         Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret", false);
         Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
         Runnable action = cleanup != null ?
                 () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
                 null;
-        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-                (MemorySessionImpl)scope, readOnly, action);
+        return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize, scope, readOnly, action);
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -332,10 +331,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         checkBounds(offset, length);
     }
 
-    public void checkValidState() {
-        sessionImpl().checkValidState();
-    }
-
     @ForceInline
     public final void checkEnclosingLayout(long offset, MemoryLayout enclosing, boolean readOnly) {
         checkAccess(offset, enclosing.byteSize(), readOnly);
@@ -394,7 +389,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public Scope scope() {
+    public MemorySessionImpl scope() {
         return scope;
     }
 
@@ -539,7 +534,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    private static AbstractMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
+    private static NativeMemorySegmentImpl nativeSegment(Buffer b, long offset, long length) {
         if (!b.isDirect()) {
             throw new IllegalArgumentException("The provided heap buffer is not backed by an array.");
         }
@@ -575,7 +570,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                             MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
                             long elementCount) {
 
-        Utils.checkNonNegativeIndex(elementCount, "elementCount");
+        Utils.checkNonNegativeArgument(elementCount, "elementCount");
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)dstSegment;
         if (srcElementLayout.byteSize() != dstElementLayout.byteSize()) {
@@ -607,7 +602,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     public static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
                             Object dstArray, int dstIndex,
                             int elementCount) {
-        Utils.checkNonNegativeIndex(elementCount, "elementCount");
+        Utils.checkNonNegativeArgument(elementCount, "elementCount");
         var dstInfo = Utils.BaseAndScale.of(dstArray);
         if (dstArray.getClass().componentType() != srcLayout.carrier()) {
             throw new IllegalArgumentException("Incompatible value layout: " + srcLayout);
