@@ -33,11 +33,11 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
     int maxLayerLength;
 
     private final HierarchicalLayoutManager manager;
-    private HashMap<Vertex, VertexAction> vertexToAction;
-    private List<VertexAction> vertexActions;
-    private List<LinkAction> linkActions;
+    private final HashMap<Vertex, VertexAction> vertexToAction;
+    private final List<VertexAction> vertexActions;
+    private final List<LinkAction> linkActions;
 
-    enum Action {
+    private enum Action {
         ADD,
         REMOVE
     }
@@ -89,25 +89,72 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
         manager.setCutEdges(cutEdges);
     }
 
-    private LayoutGraph graph;
+    private LayoutGraph prevGraph;
 
     @Override
-    public void doLayout(LayoutGraph g) {
-        if (this.graph == null) {
-            this.graph = g;
-            manager.doLayout(this.graph);
+    public void doLayout(LayoutGraph graph) {
+        if (this.prevGraph == null) {
+            manager.doLayout(graph);
         } else {
-            updateLayout(g.getVertices(), g.getLinks());
+            updateLayout(graph);
             HierarchicalLayoutManager.WriteResult.apply(graph);
         }
+        this.prevGraph = graph;
+
+        System.out.println("real vertex in g");
+        for (Vertex v : graph.getVertices()) {
+            System.out.print(v.getPosition().x + " " + v.getPosition().y + ", ");
+        }
+        System.out.println();
+        System.out.println("computed LayoutNode->Vertex in graph");
+        for (LayoutNode node : prevGraph.getLayoutNodes()) {
+            System.out.print(node.getVertex().getPosition().x + " " + node.getVertex().getPosition().y + ", ");
+        }
+        System.out.println();
     }
 
-    public void updateLayout(SortedSet<Vertex> vertices, Set<Link> links) {
-        generateActions(vertices, links);
+    public void updateLayout(LayoutGraph graph) {
+        HashSet<Vertex> addedVertices = new HashSet<>();
+        Set<Link> links = graph.getLinks();
+
+        // Reset layout structures
+        graph.clearLayout();
+
+        // create empty layers
+        graph.initLayers(prevGraph.getLayerCount());
+        System.out.println("layer cnt " + graph.getLayerCount());
+
+        // Set up layout nodes for each vertex
+        for (Vertex vertex : graph.getVertices()) {
+            if (prevGraph.hasLayoutNode(vertex)) {
+                LayoutNode prevNode = prevGraph.getLayoutNode(vertex);
+                LayoutNode newNode = graph.createLayoutNode(vertex);
+                newNode.setPos(prevNode.getPos());
+                newNode.setX(prevNode.getX());
+                newNode.setY(prevNode.getY());
+                graph.addNodeToLayer(newNode, prevNode.getLayer());
+            } else {
+                addedVertices.add(vertex);
+            }
+        }
+
+        System.out.println("addedVertices cnt " + addedVertices.size());
+
+
+        // Set up layout edges in a sorted order for reproducibility
+        List<Link> sortedLinks = new ArrayList<>(links);
+       // sortedLinks.sort(LINK_COMPARATOR);
+        for (Link link : sortedLinks) {
+            //createLayoutEdge(link);
+        }
+
+
+
+       // generateActions(vertices, links);
 
         // Only apply updates if there are any
         if (!linkActions.isEmpty() || !vertexActions.isEmpty()) {
-            new ApplyActionUpdates().run(vertices, links);
+           // new ApplyActionUpdates().run(vertices, links);
         }
     }
 
@@ -116,8 +163,8 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
         linkActions.clear();
         vertexToAction.clear();
 
-        HashSet<Link> oldLinks = new HashSet<>(graph.getLinks());
-        HashSet<Vertex> oldVertices = new HashSet<>(graph.getVertices());
+        HashSet<Link> oldLinks = new HashSet<>(prevGraph.getLinks());
+        HashSet<Vertex> oldVertices = new HashSet<>(prevGraph.getVertices());
 
         HashSet<Vertex> addedVertices = new HashSet<>(newVertices);
         addedVertices.removeAll(oldVertices);
@@ -284,7 +331,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
          * The optimum is given by the least amount of edge crossings.
          */
         private int optimalPosition(LayoutNode node, int layerNr) {
-            LayoutLayer layer = graph.getLayer(layerNr);
+            LayoutLayer layer = prevGraph.getLayer(layerNr);
             layer.sort(NODE_POS_COMPARATOR);
             int edgeCrossings = Integer.MAX_VALUE;
             int optimalPos = -1;
@@ -300,8 +347,8 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
 
                 int currentCrossings = 0;
 
-                if (graph.hasLayer(layerNr - 1)) {
-                    List<LayoutNode> predNodes = graph.getLayer(layerNr - 1);
+                if (prevGraph.hasLayer(layerNr - 1)) {
+                    List<LayoutNode> predNodes = prevGraph.getLayer(layerNr - 1);
                     // For each link with an end point in vertex, check how many edges cross it
                     for (LayoutEdge edge : node.getPredecessors()) {
                         if (edge.getFrom().getLayer() == layerNr - 1) {
@@ -334,8 +381,8 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
                     }
                 }
                 // Edge crossings across current layerNr and layerNr below
-                if (graph.hasLayer(layerNr + 1)) {
-                    List<LayoutNode> succsNodes = graph.getLayer(layerNr + 1);
+                if (prevGraph.hasLayer(layerNr + 1)) {
+                    List<LayoutNode> succsNodes = prevGraph.getLayer(layerNr + 1);
                     // For each link with an end point in vertex, check how many edges cross it
                     for (LayoutEdge edge : node.getSuccessors()) {
                         if (edge.getTo().getLayer() == layerNr + 1) {
@@ -386,7 +433,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
 
 
         private void applyAddLinkAction(Link link) {
-            graph.addLink(link);
+            prevGraph.addLink(link);
 
             // if (toNode.layer == fromNode.layer) handleNeighborNodesOnSameLayer(fromNode, toNode);
         }
@@ -401,7 +448,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
         private int optimalLayer(Vertex vertex, List<Link> links) {
             if (vertex.isRoot()) {
                 return 0;
-            } else if (graph.hasLayers()) {
+            } else if (prevGraph.hasLayers()) {
                 return 0;
             }
 
@@ -409,13 +456,13 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             int totalEdgeLength = Integer.MAX_VALUE;
             int neighborsOnSameLayer = Integer.MAX_VALUE;
             int layer = -1;
-            for (int i = 0; i < graph.getLayerCount(); i++) {
+            for (int i = 0; i < prevGraph.getLayerCount(); i++) {
                 int curReversedEdges = 0;
                 int curTotalEdgeLength = 0;
                 int curNeighborsOnSameLayer = 0;
                 for (Link link : links) {
-                    LayoutNode fromNode = graph.getLayoutNode(link.getFrom().getVertex());
-                    LayoutNode toNode = graph.getLayoutNode(link.getTo().getVertex());
+                    LayoutNode fromNode = prevGraph.getLayoutNode(link.getFrom().getVertex());
+                    LayoutNode toNode = prevGraph.getLayoutNode(link.getTo().getVertex());
                     if (link.getTo().getVertex().equals(vertex) && fromNode != null) {
                         if (fromNode.getLayer() > i) {
                             curReversedEdges += 1;
@@ -457,22 +504,22 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             }
             int layer = optimalLayer(action.vertex, links);
 
-            graph.addVertex(action.vertex);
-            LayoutNode node = graph.createLayoutNode(action.vertex);
+            prevGraph.addVertex(action.vertex);
+            LayoutNode node = prevGraph.createLayoutNode(action.vertex);
 
-            if (graph.getLayer(layer).isEmpty()) {
+            if (prevGraph.getLayer(layer).isEmpty()) {
                 node.setPos(0);
             } else {
                 node.setPos(optimalPosition(node, layer));
             }
 
-            layer = graph.insertNewLayerIfNeeded(node, layer);
-            graph.addNodeToLayer(node, layer);
+            layer = prevGraph.insertNewLayerIfNeeded(node, layer);
+            prevGraph.addNodeToLayer(node, layer);
             node.setX(0);
-            graph.getLayer(layer).add(node.getPos(), node);
-            graph.getLayer(layer).sortNodesByX();
-            graph.removeEmptyLayers();
-            graph.addEdges(node, maxLayerLength);
+            prevGraph.getLayer(layer).add(node.getPos(), node);
+            prevGraph.getLayer(layer).sortNodesByX();
+            prevGraph.removeEmptyLayers();
+            prevGraph.addEdges(node, maxLayerLength);
 
             // Add associated edges
             for (LinkAction a : action.linkActions) {
@@ -483,11 +530,11 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
         }
 
         private void applyRemoveLinkAction(Link link) {
-            graph.removeLink(link);
+            prevGraph.removeLink(link);
         }
 
         private void applyRemoveVertexAction(VertexAction action) {
-           graph.removeVertex(action.vertex);
+           prevGraph.removeVertex(action.vertex);
 
             // Remove associated edges
             for (LinkAction a : action.linkActions) {
@@ -526,7 +573,7 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
             // Add or remove wrongful links
             Set<Link> layoutedLinks = new HashSet<>();
             Set<LayoutNode> layoutedNodes = new HashSet<>();
-            for (LayoutNode n : graph.getLayoutNodes()) {
+            for (LayoutNode n : prevGraph.getLayoutNodes()) {
                 for (LayoutEdge e : n.getPredecessors()) {
                     if (e.getLink() != null) {
                         layoutedLinks.add(e.getLink());
