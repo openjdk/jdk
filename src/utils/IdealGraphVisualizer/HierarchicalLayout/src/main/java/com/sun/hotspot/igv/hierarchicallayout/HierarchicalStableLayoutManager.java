@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutGraph.LINK_COMPARATOR;
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
@@ -114,47 +115,39 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
     }
 
     public void updateLayout(LayoutGraph graph) {
-        HashSet<Vertex> addedVertices = new HashSet<>();
-        Set<Link> links = graph.getLinks();
+        HashSet<LayoutNode> newLayoutNode = new HashSet<>();
 
         // Reset layout structures
         graph.clearLayout();
 
         // create empty layers
         graph.initLayers(prevGraph.getLayerCount());
-        System.out.println("layer cnt " + graph.getLayerCount());
 
         // Set up layout nodes for each vertex
         for (Vertex vertex : graph.getVertices()) {
+            LayoutNode newNode = graph.createLayoutNode(vertex);
             if (prevGraph.hasLayoutNode(vertex)) {
                 LayoutNode prevNode = prevGraph.getLayoutNode(vertex);
-                LayoutNode newNode = graph.createLayoutNode(vertex);
                 newNode.setPos(prevNode.getPos());
                 newNode.setX(prevNode.getX());
                 newNode.setY(prevNode.getY());
                 graph.addNodeToLayer(newNode, prevNode.getLayer());
             } else {
-                addedVertices.add(vertex);
+                newLayoutNode.add(newNode);
             }
         }
 
-        System.out.println("addedVertices cnt " + addedVertices.size());
-
+        System.out.println("addedVertices cnt " + newLayoutNode.size());
 
         // Set up layout edges in a sorted order for reproducibility
-        List<Link> sortedLinks = new ArrayList<>(links);
-       // sortedLinks.sort(LINK_COMPARATOR);
+        List<Link> sortedLinks = new ArrayList<>(graph.getLinks());
+        sortedLinks.sort(LINK_COMPARATOR);
         for (Link link : sortedLinks) {
-            //createLayoutEdge(link);
+            graph.createLayoutEdge(link);
         }
 
-
-
-       // generateActions(vertices, links);
-
-        // Only apply updates if there are any
-        if (!linkActions.isEmpty() || !vertexActions.isEmpty()) {
-           // new ApplyActionUpdates().run(vertices, links);
+        for (LayoutNode node : graph.getLayoutNodes()) {
+           // graph.addEdges(node, maxLayerLength);
         }
     }
 
