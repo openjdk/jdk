@@ -550,7 +550,7 @@ JavaMain(void* _args)
      * The launcher's exit code (in the absence of calls to
      * System.exit) will be non-zero if main threw an exception.
      */
-    if (mainInvoked && (*env)->ExceptionOccurred(env) == NULL) {
+    if (mainInvoked && !(*env)->ExceptionCheck(env)) {
         // main method was invoked and no exception was thrown from it,
         // return success.
         ret = 0;
