@@ -427,6 +427,10 @@ public class LayoutGraph {
         return layoutNodes.get(vertex);
     }
 
+    public boolean hasLayoutNode(Vertex vertex) {
+        return layoutNodes.containsKey(vertex);
+    }
+
     /**
      * Adds a LayoutNode to the specified layer and registers it in the graph.
      *
@@ -437,7 +441,9 @@ public class LayoutGraph {
         assert !node.isDummy();
         node.setLayer(layerNumber);
         getLayer(layerNumber).add(node);
-        layoutNodes.put(node.getVertex(), node);
+        if (!layoutNodes.containsKey(node.getVertex())) {
+            layoutNodes.put(node.getVertex(), node);
+        }
     }
 
     /**
