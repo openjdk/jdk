@@ -169,8 +169,6 @@ public final class ErrorMsg {
     public static final String OUTLINE_ERR_METHOD_TOO_BIG =
                                             "OUTLINE_ERR_METHOD_TOO_BIG";
 
-    public static final String DESERIALIZE_TRANSLET_ERR = "DESERIALIZE_TRANSLET_ERR";
-
     public static final String XPATH_LIMIT = "XPATH_LIMIT";
     public static final String XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";
     public static final String XPATH_OPERATOR_LIMIT = "XPATH_OPERATOR_LIMIT";

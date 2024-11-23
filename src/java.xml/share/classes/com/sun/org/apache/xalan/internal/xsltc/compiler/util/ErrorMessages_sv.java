@@ -980,8 +980,6 @@ public class ErrorMessages_sv extends ListResourceBundle {
          "Internt XSLTC-fel: en metod i transleten \u00F6verstiger Java Virtual Machines l\u00E4ngdbegr\u00E4nsning f\u00F6r en metod p\u00E5 64 kilobytes.  Det h\u00E4r orsakas vanligen av mycket stora mallar i en formatmall. F\u00F6rs\u00F6k att omstrukturera formatmallen att anv\u00E4nda mindre mallar."
         },
 
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "N\u00E4r Java-s\u00E4kerheten \u00E4r aktiverad \u00E4r st\u00F6det f\u00F6r avserialisering av TemplatesImpl avaktiverat. Du kan \u00E5sidos\u00E4tta det h\u00E4r genom att st\u00E4lla in systemegenskapen jdk.xml.enableTemplatesImplDeserialization till sant."}
-
     };
 
     }

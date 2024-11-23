@@ -980,8 +980,6 @@ public class ErrorMessages_it extends ListResourceBundle {
          "Errore XSLTC interno: un metodo nel translet supera la limitazione Java Virtual Machine relativa alla lunghezza per un metodo di 64 kilobyte. Ci\u00F2 \u00E8 generalmente causato dalle grandi dimensioni dei modelli in un foglio di stile. Provare a ristrutturare il foglio di stile per utilizzare modelli di dimensioni inferiori."
         },
 
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Quando la sicurezza Java \u00E8 abilitata, il supporto per la deserializzazione TemplatesImpl \u00E8 disabilitato. \u00C8 possibile ignorare questa condizione impostando su true la propriet\u00E0 di sistema jdk.xml.enableTemplatesImplDeserialization."}
-
     };
 
     }
