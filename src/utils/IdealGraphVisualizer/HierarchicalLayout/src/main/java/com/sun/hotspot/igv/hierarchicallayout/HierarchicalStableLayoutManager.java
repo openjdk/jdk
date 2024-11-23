@@ -162,11 +162,96 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
 
         graph.removeEmptyLayers();
 
+        HashSet<LayoutNode> roots = new HashSet<>();
+        // TODO: move all roots down
+        for (LayoutNode node : graph.getLayoutNodes()) {
+            if (!node.hasPredecessors()) {
+                if (canMoveNodeDown(node)) {
+                    //moveNodeDown(graph, node);
+                }
+            }
+        }
+
+        HashSet<LayoutNode> leaves = new HashSet<>();
+        // TODO: move all leaves dow
+
+
+        graph.removeEmptyLayers();
+
         // STEP 3: Crossing Reduction
         HierarchicalLayoutManager.CrossingReduction.apply(graph);
 
         // STEP 4: Assign X coordinates
         HierarchicalLayoutManager.AssignXCoordinates.apply(graph);
+    }
+
+    private boolean canMoveNodeUp(LayoutNode node) {
+        if (node.getLayer() == 0) {
+            return false;
+        }
+        int newLayer = node.getLayer() - 1;
+        for (LayoutEdge e : node.getPredecessors()) {
+            if (!e.getFrom().isDummy() && e.getFrom().getLayer() == newLayer) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean canMoveNodeDown(LayoutNode node) {
+        if (node.getLayer() == prevGraph.getLayerCount() - 1) {
+            return false;
+        }
+        int newLayer = node.getLayer() + 1;
+        for (LayoutEdge e : node.getSuccessors()) {
+            if (!e.getTo().isDummy() && e.getTo().getLayer() == newLayer) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void moveNodeDown(LayoutGraph graph, LayoutNode node) {
+        assert canMoveNodeDown(node);
+
+        List<LayoutEdge> previousSuccEdges = List.copyOf(node.getSuccessors());
+        for (LayoutEdge edge : previousSuccEdges) {
+            LayoutNode succNode = edge.getTo();
+            assert succNode.isDummy();
+            for (LayoutEdge e : succNode.getSuccessors()) {
+                e.setFrom(edge.getFrom());
+                e.setRelativeFromX(edge.getRelativeFromX());
+                node.addSuccessor(e);
+                node.removeSuccessor(edge);
+            }
+            removeNodeWithoutRemovingLayer(graph, succNode);
+        }
+
+        removeNodeWithoutRemovingLayer(graph, node);
+
+        /*
+        insertNode(node, node.layer + 1);
+
+        for (LayoutEdge edge : List.copyOf(node.preds)) {
+            processSingleEdge(edge);
+        }
+
+         */
+    }
+
+    public void removeNodeWithoutRemovingLayer(LayoutGraph graph, LayoutNode node) {
+        if (!graph.getLayoutNodes().contains(node)) {
+            return;
+        }
+        int layer = node.getLayer();
+        int pos = node.getPos();
+        LayoutLayer remainingLayerNodes = graph.getLayer(layer);
+        assert remainingLayerNodes.contains(node);
+        remainingLayerNodes.remove(node);
+        remainingLayerNodes.updateNodeIndices();
+
+        // Remove node from graph layout
+        //nodes.remove(node);
     }
 
     private void generateActions(SortedSet<Vertex> newVertices, Set<Link> newLinks) {
