@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -42,7 +42,7 @@ import com.sun.org.apache.xml.internal.serializer.utils.URI.MalformedURIExceptio
  *
  * @xsl.usage internal
  *
- * @LastModified: Jan 2022
+ * @LastModified: Nov 2024
  */
 public final class SystemIDResolver
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Pool of object of a given type to pick from to help memory usage
  * @xsl.usage internal
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2024
  */
 public class ObjectPool implements java.io.Serializable
 {

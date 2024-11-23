@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,7 +35,7 @@ import com.sun.org.apache.xml.internal.utils.URI.MalformedURIException;
  * see code comments for details on how resolution is performed.</p>
  * @xsl.usage internal
  *
- * @LastModified: Sept 2021
+ * @LastModified: Nov 2024
  */
 public class SystemIDResolver
 {

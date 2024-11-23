@@ -94,7 +94,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Feb 2024
+ * @LastModified: Nov 2024
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 

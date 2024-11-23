@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -31,7 +31,7 @@ import javax.xml.transform.TransformerException;
 /**
  * The function table for XPath.
  *
- * @LastModified: Oct 2017
+ * @LastModified: Nov 2024
  */
 public class FunctionTable
 {

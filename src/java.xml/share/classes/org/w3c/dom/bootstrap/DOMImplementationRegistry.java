@@ -336,8 +336,7 @@ public final class DOMImplementationRegistry {
     }
 
     /**
-     * This method returns the system property indicated by the specified name
-     * after checking access control privileges.
+     * This method returns the system property indicated by the specified name.
      *
      * @param name the name of the system property
      * @return the system property
@@ -347,13 +346,12 @@ public final class DOMImplementationRegistry {
     }
 
     /**
-     * This method returns an Inputstream for the reading resource
-     * META_INF/services/org.w3c.dom.DOMImplementationSourceList after checking
-     * access control privileges.
+     * This method returns an InputStream for the reading resource
+     * META_INF/services/org.w3c.dom.DOMImplementationSourceList.
      *
      * @param classLoader classLoader
      * @param name the resource
-     * @return an Inputstream for the resource specified
+     * @return an InputStream for the resource specified
      */
     private static InputStream getResourceAsStream(final ClassLoader classLoader,
                                                    final String name) {

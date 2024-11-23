@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: Jul 2022
+ * @LastModified: Nov 2024
  */
 public class XPATHErrorResources_ja extends ListResourceBundle
 {
