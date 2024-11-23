@@ -3166,8 +3166,8 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
   assert(label_nulls <= 1, "at most one null in the batch");
 
   RegSetIterator<Register> available_regs
-	// Z_R0 will be used to hold Z_R15(Z_SP) while pushing a new frame, So don't use that here.
-	// Z_R1 is will be used to hold r_bitmap in lookup_secondary_supers_table_var, so can't be used
+  // Z_R0 will be used to hold Z_R15(Z_SP) while pushing a new frame, So don't use that here.
+  // Z_R1 is will be used to hold r_bitmap in lookup_secondary_supers_table_var, so can't be used
   // Z_R2, Z_R3, Z_R4 will be used in secondary_supers_verify, for the failure reporting
     = (RegSet::range(Z_R0, Z_R15) - temps - sub_klass - super_klass - Z_R1_scratch - Z_R0_scratch - Z_R2 - Z_R3 - Z_R4).begin();
 
