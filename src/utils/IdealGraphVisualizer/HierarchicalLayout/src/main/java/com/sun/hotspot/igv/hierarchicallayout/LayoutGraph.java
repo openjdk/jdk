@@ -87,8 +87,6 @@ public class LayoutGraph {
         layoutNodes = new LinkedHashMap<>();
         dummyNodes = new ArrayList<>();
         layers = new ArrayList<>();
-
-        initializeLayout();
     }
 
     /**

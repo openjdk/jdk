@@ -46,7 +46,7 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
 
     @Override
     public void doLayout(LayoutGraph layoutGraph) {
-        graph = layoutGraph;
+        layoutGraph.initializeLayout();
 
         // STEP 1: Remove self edges and reverse edges
         ReverseEdges.apply(layoutGraph);
@@ -62,6 +62,8 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
 
         // STEP 5: Write back to interface
         WriteResult.apply(layoutGraph);
+
+        graph = layoutGraph;
     }
 
     @Override
