@@ -507,22 +507,4 @@ X86_SIMD_SORT_INLINE void simd_fast_sort(T *arr, arrsize_t from_index, arrsize_t
         qsort_<vtype, T>(arr, from_index, to_index - 1, 2 * (arrsize_t)log2(arrsize));
     }
 }
-
-#define DEFINE_METHODS(ISA, VTYPE) \
-    template <typename T> \
-    X86_SIMD_SORT_INLINE void ISA##_fast_sort( \
-            T *arr, arrsize_t from_index, arrsize_t to_index, const arrsize_t INS_SORT_THRESHOLD) \
-    { \
-        simd_fast_sort<VTYPE, T>(arr, from_index, to_index, INS_SORT_THRESHOLD); \
-    } \
-    template <typename T> \
-    X86_SIMD_SORT_INLINE void ISA##_fast_partition( \
-            T *arr, int64_t from_index, int64_t to_index, int32_t *pivot_indices, int64_t index_pivot1, int64_t index_pivot2) \
-    { \
-        simd_fast_partition<VTYPE, T>(arr, from_index, to_index, pivot_indices, index_pivot1, index_pivot2); \
-    }
-
-DEFINE_METHODS(avx2, avx2_vector<T>)
-DEFINE_METHODS(avx512, zmm_vector<T>)
-
 #endif  // XSS_COMMON_QSORT

@@ -27,6 +27,8 @@
 #ifndef AVX512_QSORT_64BIT
 #define AVX512_QSORT_64BIT
 
+#pragma GCC target("avx512dq", "avx512f")
+
 #include "xss-common-includes.h"
 #include "xss-common-qsort.h"
 

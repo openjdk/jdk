@@ -21,46 +21,30 @@
  * questions.
  *
  */
-
 #include "simdsort-support.hpp"
 #ifdef __SIMDSORT_SUPPORTED_LINUX
 
-#pragma GCC target("avx2")
+#include "simdsort.h"
+
 #include "avx2-32bit-qsort.hpp"
-#include "classfile_constants.h"
 
-
-#define DLL_PUBLIC __attribute__((visibility("default")))
-#define INSERTION_SORT_THRESHOLD_32BIT 16
-
-extern "C" {
-
-    DLL_PUBLIC void avx2_sort(void *array, int elem_type, int32_t from_index, int32_t to_index) {
-        switch(elem_type) {
-            case JVM_T_INT:
-                avx2_fast_sort((int32_t*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
-                break;
-            case JVM_T_FLOAT:
-                avx2_fast_sort((float*)array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
-                break;
-            default:
-                assert(false, "Unexpected type");
-        }
-    }
-
-    DLL_PUBLIC void avx2_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t *pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
-        switch(elem_type) {
-            case JVM_T_INT:
-                avx2_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-                break;
-            case JVM_T_FLOAT:
-                avx2_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-                break;
-            default:
-                assert(false, "Unexpected type");
-        }
-    }
-
+DLL_PUBLIC
+void avx2_sort_int(int32_t* array, int32_t from_index, int32_t to_index) {
+  simd_fast_sort<avx2_vector<int32_t>, int32_t>(array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
 }
 
+DLL_PUBLIC
+void avx2_sort_float(float* array, int32_t from_index, int32_t to_index) {
+  simd_fast_sort<avx2_vector<float>, float>(array, from_index, to_index, INSERTION_SORT_THRESHOLD_32BIT);
+}
+
+DLL_PUBLIC
+void avx2_partition_int(int32_t* array, int32_t from_index, int32_t to_index, int32_t* pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
+  simd_fast_partition<avx2_vector<int32_t>, int32_t>(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+}
+
+DLL_PUBLIC
+void avx2_partition_float(float* array, int32_t from_index, int32_t to_index, int32_t* pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
+  simd_fast_partition<avx2_vector<float>, float>(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+}
 #endif
