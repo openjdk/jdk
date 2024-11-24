@@ -131,7 +131,6 @@ class SerializeClosure;
   template(java_nio_Buffer,                           "java/nio/Buffer")                          \
   template(java_util_Arrays,                          "java/util/Arrays")                         \
   template(java_util_Properties,                      "java/util/Properties")                     \
-  template(java_util_DualPivotQuicksort,              "java/util/DualPivotQuicksort")             \
   template(jdk_internal_misc_Signal,                  "jdk/internal/misc/Signal")                 \
   template(jdk_internal_util_Preconditions,           "jdk/internal/util/Preconditions")          \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \

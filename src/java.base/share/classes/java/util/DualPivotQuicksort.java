@@ -151,7 +151,6 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @param so the method reference for the fallback implementation
      */
-    @IntrinsicCandidate
     @ForceInline
     private static <A> void sort(Class<?> elemType, A array, long offset, int low, int high, SortOperation<A> so) {
         so.sort(array, low, high);
@@ -189,7 +188,6 @@ final class DualPivotQuicksort {
      * @param pivotIndex2 the index of pivot2, the second pivot
      * @param po the method reference for the fallback implementation
      */
-    @IntrinsicCandidate
     @ForceInline
     private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<A> po) {
         return po.partition(array, low, high, pivotIndex1, pivotIndex2);
