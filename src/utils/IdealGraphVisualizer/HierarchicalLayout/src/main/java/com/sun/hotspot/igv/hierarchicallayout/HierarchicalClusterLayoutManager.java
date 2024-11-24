@@ -36,26 +36,55 @@ import java.util.*;
  */
 public class HierarchicalClusterLayoutManager extends LayoutManager {
 
-    private final LayoutManager subManager;
     private final LayoutManager manager;
+    private final HashMap<Cluster, LayoutMover> layoutMovers;
+    private final HashMap<Cluster, ClusterNode> clusterNodes;
+
 
     public HierarchicalClusterLayoutManager() {
         this.manager = new HierarchicalLayoutManager();
-        this.subManager = new HierarchicalLayoutManager();
+        this.layoutMovers = new HashMap<>();
+        this.clusterNodes = new HashMap<>();
     }
 
     @Override
     public void setCutEdges(boolean enable) {
-        subManager.setCutEdges(enable);
         manager.setCutEdges(enable);
     }
 
+    public LayoutMover getLayoutMover() {
+        return new LayoutMover() {
+            @Override
+            public void moveLink(Point linkPos, int shiftX) {
+
+            }
+
+            @Override
+            public void moveVertices(Set<? extends Vertex> movedVertices) {
+
+            }
+
+            @Override
+            public void moveVertex(Vertex movedVertex) {
+                Cluster cluster = movedVertex.getCluster();
+                LayoutMover layoutMover = layoutMovers.get(cluster);
+                if (layoutMover != null) {
+                    layoutMover.moveVertex(movedVertex);
+                    ClusterNode n = clusterNodes.get(cluster);
+                    n.updateSize();
+                    cluster.setBounds(new Rectangle(n.getPosition(), n.getSize()));
+                }
+            }
+        };
+    }
+
     public void doLayout(LayoutGraph graph) {
+        layoutMovers.clear();
+        clusterNodes.clear();
         HashMap<Cluster, List<Link>> listsConnection = new HashMap<>();
         HashMap<Cluster, HashMap<Port, ClusterInputSlotNode>> clusterInputSlotHash = new HashMap<>();
         HashMap<Cluster, HashMap<Port, ClusterOutputSlotNode>> clusterOutputSlotHash = new HashMap<>();
 
-        HashMap<Cluster, ClusterNode> clusterNodes = new HashMap<>();
         HashMap<Cluster, Set<ClusterInputSlotNode>> clusterInputSlotSet = new HashMap<>();
         HashMap<Cluster, Set<ClusterOutputSlotNode>> clusterOutputSlotSet = new HashMap<>();
         Set<Link> clusterEdges = new HashSet<>();
@@ -156,8 +185,10 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
 
         for (Cluster c : clusters) {
             ClusterNode n = clusterNodes.get(c);
+            HierarchicalLayoutManager subManager = new HierarchicalLayoutManager();
             subManager.doLayout(new LayoutGraph(n.getSubEdges(), n.getSubNodes()));
             n.updateSize();
+            layoutMovers.put(c, subManager);
         }
 
         Set<Vertex> roots = new LayoutGraph(interClusterEdges, new HashSet<>()).findRootVertices();
