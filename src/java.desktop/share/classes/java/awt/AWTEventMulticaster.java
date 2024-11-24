@@ -977,9 +977,6 @@ public class AWTEventMulticaster implements
      * checks up to 500 of the topmost nodes of a AWTEventMulticaster. If they all include
      * one leaf node, then this method returns true. This criteria will be met after
      * 500 iterations of {@link #addInternal(EventListener, EventListener)}.
-     * <p>
-     * The first time this method is invoked it will convert a tree that has a degree
-     * of approximately 500 to a tree with a degree of approximately 10.
      */
     private static boolean needsRebalance(AWTEventMulticaster l) {
         int level = 0;
