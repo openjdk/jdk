@@ -121,6 +121,11 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
         }
     }
 
+    @Override
+    public boolean isFreeForm() {
+        return false;
+    }
+
     public static class ReverseEdges {
 
         static public void apply(LayoutGraph graph) {

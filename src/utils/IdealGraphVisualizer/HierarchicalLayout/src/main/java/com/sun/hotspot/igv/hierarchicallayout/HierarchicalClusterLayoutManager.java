@@ -75,6 +75,11 @@ public class HierarchicalClusterLayoutManager extends LayoutManager {
                     cluster.setBounds(new Rectangle(n.getPosition(), n.getSize()));
                 }
             }
+
+            @Override
+            public boolean isFreeForm() {
+                return false;
+            }
         };
     }
 

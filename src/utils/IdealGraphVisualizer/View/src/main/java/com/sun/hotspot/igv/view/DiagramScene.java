@@ -698,8 +698,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             public void setNewLocation(Widget widget, Point location) {
                 if (layoutMover == null) return; // Do nothing if layoutMover is not available
                 int shiftX = location.x - widget.getLocation().x;
-                int shiftY = magnetToStartLayerY(widget, location);
-
+                int shiftY;
+                if (layoutMover.isFreeForm()) {
+                    shiftY = location.y - widget.getLocation().y;
+                } else {
+                    shiftY = magnetToStartLayerY(widget, location);
+                }
                 List<Figure> selectedFigures = new ArrayList<>( model.getSelectedFigures());
                 selectedFigures.sort(Comparator.comparingInt(f -> f.getPosition().x));
                 for (Figure figure : selectedFigures) {
@@ -711,12 +715,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                 int xTo = toPt.x + shiftX;
                                 int yTo = toPt.y + shiftY;
                                 lw.setTo(new Point(xTo, yTo));
-                                Point fromPt = lw.getFrom();
-                                lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
-                                LineWidget pred = lw.getPredecessor();
-                                pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
-                                pred.revalidate();
-                                lw.revalidate();
+                                if (!layoutMover.isFreeForm()) {
+                                    Point fromPt = lw.getFrom();
+                                    lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
+                                    LineWidget pred = lw.getPredecessor();
+                                    pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
+                                    pred.revalidate();
+                                    lw.revalidate();
+                                }
                             }
                         }
                     }
@@ -727,11 +733,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                 int xFrom = fromPt.x + shiftX;
                                 int yFrom = fromPt.y + shiftY;
                                 lw.setFrom(new Point(xFrom, yFrom));
-                                Point toPt = lw.getTo();
-                                lw.setTo(new Point(toPt.x + shiftX, toPt.y));
-                                for (LineWidget succ : lw.getSuccessors()) {
-                                    succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
-                                    succ.revalidate();
+                                if (!layoutMover.isFreeForm()) {
+                                    Point toPt = lw.getTo();
+                                    lw.setTo(new Point(toPt.x + shiftX, toPt.y));
+                                    for (LineWidget succ : lw.getSuccessors()) {
+                                        succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
+                                        succ.revalidate();
+                                    }
                                 }
                                 lw.revalidate();
                             }
@@ -1313,7 +1321,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
                 List<FigureConnection> connectionList = new ArrayList<>(outputSlot.getConnections());
-                processOutputSlot(outputSlot, connectionList, 0, null, null);
+                if (layoutMover.isFreeForm()) {
+                    processFreeForm(outputSlot, connectionList);
+                } else {
+                    processOutputSlot(outputSlot, connectionList, 0, null, null);
+                }
             }
         }
 

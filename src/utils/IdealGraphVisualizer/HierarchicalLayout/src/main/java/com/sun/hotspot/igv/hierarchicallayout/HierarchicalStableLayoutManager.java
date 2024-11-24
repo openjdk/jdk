@@ -54,6 +54,11 @@ public class HierarchicalStableLayoutManager extends LayoutManager implements La
         manager.moveVertex(movedVertex);
     }
 
+    @Override
+    public boolean isFreeForm() {
+        return false;
+    }
+
     private enum Action {
         ADD,
         REMOVE

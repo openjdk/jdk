@@ -48,7 +48,9 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     @Override
     public void moveVertices(Set<? extends Vertex> movedVertices) {
-
+        for (Vertex v : movedVertices) {
+            moveVertex(v);
+        }
     }
 
     @Override
@@ -60,6 +62,11 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         for (Link link : prevGraph.getAllLinks(vertex)) {
             setLinkControlPoints(link);
         }
+    }
+
+    @Override
+    public boolean isFreeForm() {
+        return true;
     }
 
     public void setCutEdges(boolean enable) {
