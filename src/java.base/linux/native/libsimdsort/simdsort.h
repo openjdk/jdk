@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 extern "C" {
   void avx2_sort_int  (int32_t* array, int32_t from_index, int32_t to_index);
   void avx2_sort_float(float*   array, int32_t from_index, int32_t to_index);

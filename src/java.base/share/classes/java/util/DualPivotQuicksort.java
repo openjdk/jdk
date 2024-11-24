@@ -25,11 +25,13 @@
 
 package java.util;
 
+import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.vector.VectorSupport;
 
 /**
  * This class implements powerful and fully optimized versions, both
@@ -151,9 +153,59 @@ final class DualPivotQuicksort {
      * @param high the index of the last element, exclusive, to be sorted
      * @param so the method reference for the fallback implementation
      */
+//    @ForceInline
+//    private static <A> void sort(Class<?> elemType, A array, long offset, int low, int high, SortOperation<A> so) {
+//        so.sort(array, low, high);
+//    }
+
+    // FIXME
+    private static int AVX = computeAVXLevel();
+
+    private static int computeAVXLevel() {
+        if (SIMDSortLibrary.isPresent()) {
+            if (VectorSupport.getMaxLaneCount(long.class) == 8) {
+                return 3;
+            } else if (VectorSupport.getMaxLaneCount(long.class) == 4) {
+                return 2;
+            }
+        }
+        return 0; // not supported
+    }
+
     @ForceInline
-    private static <A> void sort(Class<?> elemType, A array, long offset, int low, int high, SortOperation<A> so) {
-        so.sort(array, low, high);
+    private static void sort(int[] array, int low, int high, SortOperation<int[]> so) {
+        switch (AVX) {
+            case 3: SIMDSortLibrary.avx512_sort_int(MemorySegment.ofArray(array), low, high); break;
+            case 2: SIMDSortLibrary.avx2_sort_int(MemorySegment.ofArray(array), low, high); break;
+            default: so.sort(array, low, high); break;
+        }
+    }
+
+    @ForceInline
+    private static void sort(float[] array, int low, int high, SortOperation<float[]> so) {
+        switch (AVX) {
+            case 3: SIMDSortLibrary.avx512_sort_int(MemorySegment.ofArray(array), low, high); break;
+            case 2: SIMDSortLibrary.avx2_sort_int(MemorySegment.ofArray(array), low, high); break;
+            default: so.sort(array, low, high); break;
+        }
+    }
+
+    @ForceInline
+    private static void sort(long[] array, int low, int high, SortOperation<long[]> so) {
+        if (AVX == 3) {
+            SIMDSortLibrary.avx512_sort_long(MemorySegment.ofArray(array), low, high);
+        } else {
+            so.sort(array, low, high);
+        }
+    }
+
+    @ForceInline
+    private static void sort(double[] array, int low, int high, SortOperation<double[]> so) {
+        if (AVX == 3) {
+            SIMDSortLibrary.avx512_sort_long(MemorySegment.ofArray(array), low, high);
+        } else {
+            so.sort(array, low, high);
+        }
     }
 
     /**
@@ -177,9 +229,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param elemType the class of the array to be partitioned
      * @param array the array to be partitioned
-     * @param offset the relative offset, in bytes, from the base address of
      * the array to partition, otherwise if the array is {@code null},an absolute
      * address pointing to the first element to partition from.
      * @param low the index of the first element, inclusive, to be partitioned
@@ -188,9 +238,61 @@ final class DualPivotQuicksort {
      * @param pivotIndex2 the index of pivot2, the second pivot
      * @param po the method reference for the fallback implementation
      */
+//    @ForceInline
+//    private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<A> po) {
+//        return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+//    }
+
     @ForceInline
-    private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<A> po) {
-        return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+    private static int[] partition(int[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<int[]> po) {
+        if (AVX >= 2) {
+            int[] result = new int[2];
+            if (AVX == 3) {
+                SIMDSortLibrary.avx512_partition_int(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
+            } else {
+                SIMDSortLibrary.avx2_partition_int(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
+            }
+            return result;
+        } else {
+            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+        }
+    }
+
+    @ForceInline
+    private static int[] partition(float[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<float[]> po) {
+        if (AVX >= 2) {
+            int[] result = new int[2];
+            if (AVX == 3) {
+                SIMDSortLibrary.avx512_partition_float(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
+            } else {
+                SIMDSortLibrary.avx2_partition_float(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
+            }
+            return result;
+        } else {
+            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+        }
+    }
+
+    @ForceInline
+    private static int[] partition(long[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<long[]> po) {
+        if (AVX == 3) {
+            int[] result = new int[2];
+            SIMDSortLibrary.avx512_partition_long(MemorySegment.ofArray(array), low, high,  MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
+            return result;
+        } else {
+            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+        }
+    }
+
+    @ForceInline
+    private static int[] partition(double[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<double[]> po) {
+        if (AVX == 3) {
+            int[] result = new int[2];
+            SIMDSortLibrary.avx512_partition_double(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(new int[2]), pivotIndex1, pivotIndex2);
+            return result;
+        } else {
+            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
+        }
     }
 
     /**
@@ -255,7 +357,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
@@ -263,7 +365,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+                sort(a, low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
@@ -349,7 +451,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 
@@ -373,7 +475,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(int.class, a, Unsafe.ARRAY_INT_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -394,7 +496,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
@@ -481,7 +583,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
@@ -1058,7 +1160,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
@@ -1066,7 +1168,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+                sort(a, low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
@@ -1153,7 +1255,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1174,7 +1276,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(long.class, a, Unsafe.ARRAY_LONG_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1195,7 +1297,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
@@ -1282,7 +1384,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
@@ -2647,7 +2749,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
@@ -2655,7 +2757,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+                sort(a, low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
@@ -2742,7 +2844,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2763,7 +2865,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(float.class, a, Unsafe.ARRAY_FLOAT_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2784,7 +2886,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
@@ -2871,7 +2973,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
@@ -3499,7 +3601,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, DualPivotQuicksort::mixedInsertionSort);
+                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
                 return;
             }
 
@@ -3507,7 +3609,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, DualPivotQuicksort::insertionSort);
+                sort(a, low, high, DualPivotQuicksort::insertionSort);
                 return;
             }
 
@@ -3594,7 +3696,7 @@ final class DualPivotQuicksort {
                 * the pivots. These values are inexpensive approximation
                 * of tertiles. Note, that pivot1 < pivot2.
                 */
-                int[] pivotIndices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -3615,7 +3717,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(double.class, a, Unsafe.ARRAY_DOUBLE_BASE_OFFSET, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 
@@ -3637,7 +3739,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using the two pivots provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
@@ -3724,7 +3826,7 @@ final class DualPivotQuicksort {
     /**
      * Partitions the specified range of the array using a single pivot provided.
      *
-     * @param array the array to be partitioned
+     * @param a the array to be partitioned
      * @param low the index of the first element, inclusive, for partitioning
      * @param high the index of the last element, exclusive, for partitioning
      * @param pivotIndex1 the index of pivot1, the first pivot
