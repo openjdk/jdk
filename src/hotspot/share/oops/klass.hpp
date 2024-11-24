@@ -25,8 +25,6 @@
 #ifndef SHARE_OOPS_KLASS_HPP
 #define SHARE_OOPS_KLASS_HPP
 
-#include "memory/iterator.hpp"
-#include "memory/memRegion.hpp"
 #include "oops/klassFlags.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
@@ -60,8 +58,6 @@ class fieldDescriptor;
 class klassVtable;
 class ModuleEntry;
 class PackageEntry;
-class ParCompactionManager;
-class PSPromotionManager;
 class vtableEntry;
 
 class Klass : public Metadata {
