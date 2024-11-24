@@ -86,6 +86,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private final DiagramViewModel model;
     private ModelState modelState;
     private boolean rebuilding;
+
+    private final FreeInteractiveLayoutManager freeInteractiveLayoutManager;
     private final HierarchicalStableLayoutManager hierarchicalStableLayoutManager;
     private HierarchicalLayoutManager seaLayoutManager;
     private LayoutMover layoutMover;
@@ -508,6 +510,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         });
 
+        freeInteractiveLayoutManager = new FreeInteractiveLayoutManager();
         hierarchicalStableLayoutManager = new HierarchicalStableLayoutManager();
         seaLayoutManager = new HierarchicalLayoutManager();
 
@@ -819,7 +822,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         Set<Figure> visibleFigures = getVisibleFigures();
         Set<Connection> visibleConnections = getVisibleConnections();
-        if (getModel().getShowStableSea()) {
+        if (getModel().getShowFreeInteractive()) {
+            doFreeInteractiveLayout(visibleFigures, visibleConnections);
+        }
+        else if (getModel().getShowStableSea()) {
             doStableSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowSea()) {
             doSeaLayout(visibleFigures, visibleConnections);
@@ -887,6 +893,12 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         Widget w1 = getWidget(figureConnection.getFrom().getVertex());
         Widget w2 = getWidget(figureConnection.getTo().getVertex());
         return w1.isVisible() && w2.isVisible();
+    }
+
+    private void doFreeInteractiveLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
+        layoutMover = freeInteractiveLayoutManager;
+        freeInteractiveLayoutManager.setCutEdges(model.getCutEdges());
+        freeInteractiveLayoutManager.doLayout(new LayoutGraph(visibleConnections, visibleFigures));
     }
 
     private void doStableSeaLayout(Set<Figure> visibleFigures, Set<Connection> visibleConnections) {
