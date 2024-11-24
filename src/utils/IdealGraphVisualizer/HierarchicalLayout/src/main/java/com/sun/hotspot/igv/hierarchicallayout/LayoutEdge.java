@@ -90,12 +90,30 @@ public class LayoutEdge {
     }
 
     /**
+     * Gets the absolute y-coordinate of the starting point of the edge.
+     *
+     * @return The y-coordinate of the edge's starting point.
+     */
+    public int getStartY() {
+        return from.getBottom();
+    }
+
+    /**
      * Gets the absolute x-coordinate of the ending point of the edge.
      *
      * @return The x-coordinate of the edge's ending point.
      */
     public int getEndX() {
         return relativeToX + to.getLeft();
+    }
+
+    /**
+     * Gets the absolute y-coordinate of the ending point of the edge.
+     *
+     * @return The y-coordinate of the edge's ending point.
+     */
+    public int getEndY() {
+        return to.getTop();
     }
 
     /**

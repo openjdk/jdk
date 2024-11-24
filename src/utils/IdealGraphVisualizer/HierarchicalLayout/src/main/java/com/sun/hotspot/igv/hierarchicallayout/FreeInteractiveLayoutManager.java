@@ -23,7 +23,6 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import static com.sun.hotspot.igv.hierarchicallayout.LayoutGraph.LINK_COMPARATOR;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Point;
@@ -31,9 +30,16 @@ import java.util.*;
 
 public class FreeInteractiveLayoutManager extends LayoutManager implements LayoutMover {
 
-    private boolean cutEdges;
+    private boolean cutEdges = false;
 
     private static int LINE_OFFSET = 10;
+
+    private final Map<Vertex, LayoutNode> layoutNodes;
+
+    public FreeInteractiveLayoutManager() {
+        this.cutEdges = false;
+        this.layoutNodes = new HashMap<>();
+    }
 
     @Override
     public void moveLink(Point linkPos, int shiftX) {
@@ -50,46 +56,58 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     }
 
-    public FreeInteractiveLayoutManager() {
-        this.cutEdges = false;
-    }
-
     public void setCutEdges(boolean enable) {
         this.cutEdges = enable;
     }
 
-    private LayoutGraph graph;
-
     @Override
     public void doLayout(LayoutGraph graph) {
-        if (this.graph == null) {
+        Set<Vertex> verticesToLayout = new HashSet<>(graph.getVertices());
+        Set<Link> linksToLayout = new HashSet<>(graph.getLinks());
+        if (layoutNodes.isEmpty()) {
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager();
             manager.doLayout(graph);
-
-            for (LayoutNode layoutNode : graph.getLayoutNodes()) {
-                Vertex vertex = layoutNode.getVertex();
-                vertex.setPosition(new Point(layoutNode.getLeft(), layoutNode.getTop()));
-            }
-
-            for (Link link : graph.getLinks()) {
-                List<Point> points = link.getControlPoints();
-                if (points.isEmpty()) continue;
-                int n = points.size();
-                assert n >= 4;
-                List<Point> line = new ArrayList<>(4);
-
-                line.add(points.get(0));
-                line.add(adjustPoint(points.get(0), points.get(1), LINE_OFFSET));
-                line.add(adjustPoint(points.get(n-1), points.get(n-2), LINE_OFFSET));
-                line.add(points.get(n-1));
-                link.setControlPoints(line);
+            for (LayoutNode node : graph.getLayoutNodes()) {
+                layoutNodes.put(node.getVertex(), node);
             }
         } else {
+            // add new vertices to layoutNodes, x/y from barycenter
             updateLayout(graph);
-            HierarchicalLayoutManager.WriteResult.apply(graph);
         }
 
-        this.graph = graph;
+        // Write back vertices
+        for (Vertex vertex : verticesToLayout) {
+            LayoutNode layoutNode = layoutNodes.get(vertex);
+            assert layoutNode != null;
+            vertex.setPosition(new Point(layoutNode.getLeft(), layoutNode.getTop()));
+        }
+
+        // Write back links
+        for (Link link : linksToLayout) {
+
+            LayoutEdge edge = new LayoutEdge(
+                    layoutNodes.get(link.getFrom().getVertex()),
+                    layoutNodes.get(link.getTo().getVertex()),
+                    link.getFrom().getRelativePosition().x,
+                    link.getTo().getRelativePosition().x,
+                    link);
+
+            //edge.getFr()
+            /*
+            List<Point> points = link.getControlPoints();
+            if (points.isEmpty()) continue;
+            int n = points.size();
+            assert n >= 4;
+            List<Point> line = new ArrayList<>(4);
+
+            line.add(points.get(0));
+            line.add(adjustPoint(points.get(0), points.get(1), LINE_OFFSET));
+            line.add(adjustPoint(points.get(n-1), points.get(n-2), LINE_OFFSET));
+            line.add(points.get(n-1));
+            link.setControlPoints(line);
+
+             */
+        }
     }
 
     private static Point adjustPoint(Point from, Point to, double x) {
@@ -119,19 +137,13 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         // Set up layout nodes for each vertex
         for (Vertex vertex : graph.getVertices()) {
             LayoutNode newNode = graph.createLayoutNode(vertex);
-            if (graph.hasLayoutNode(vertex)) {
-                LayoutNode prevNode = graph.getLayoutNode(vertex);
-                newNode.setPos(prevNode.getPos());
-                newNode.setX(prevNode.getX());
-                newNode.setY(prevNode.getY());
-                graph.addNodeToLayer(newNode, prevNode.getLayer());
+            if (layoutNodes.containsKey(vertex)) {
+                LayoutNode cachedNode = layoutNodes.get(vertex);
+                newNode.setX(cachedNode.getX());
+                newNode.setY(cachedNode.getY());
             } else {
                 newLayoutNode.add(newNode);
             }
-        }
-
-        for (Link link : graph.getLinks()) {
-            graph.createLayoutEdge(link);
         }
     }
 

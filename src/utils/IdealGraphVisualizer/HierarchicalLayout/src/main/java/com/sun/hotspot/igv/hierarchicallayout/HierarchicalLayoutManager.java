@@ -612,7 +612,7 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
 
                     ArrayList<Point> linkPoints = new ArrayList<>();
                     // input edge stub
-                    linkPoints.add(new Point(predEdge.getEndX(), toNode.getTop()));
+                    linkPoints.add(new Point(predEdge.getEndX(), predEdge.getEndY()));
                     linkPoints.add(new Point(predEdge.getEndX(), graph.getLayer(toNode.getLayer()).getTop() - LAYER_OFFSET));
 
                     LayoutEdge curEdge = predEdge;
@@ -624,7 +624,7 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
                     }
                     linkPoints.add(new Point(curEdge.getStartX(), graph.getLayer(fromNode.getLayer()).getBottom() + LAYER_OFFSET));
                     // output edge stub
-                    linkPoints.add(new Point(curEdge.getStartX(), fromNode.getBottom()));
+                    linkPoints.add(new Point(curEdge.getStartX(), curEdge.getStartY()));
 
                     if (predEdge.isReversed()) {
                         for (Point relativeEnd : toNode.getReversedLinkEndPoints().get(predEdge.getLink())) {
