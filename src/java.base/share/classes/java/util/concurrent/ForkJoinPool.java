@@ -908,9 +908,6 @@ public class ForkJoinPool extends AbstractExecutorService {
      * shorts would suffice.  For class WorkQueue, an
      * embedded @Contended region segregates fields most heavily
      * updated by owners from those most commonly read by stealers or
-     * other management.  For class WorkQueue, an embedded padded
-     * region segregates fields (all declared as "int") most heavily
-     * updated by owners from those most commonly read by stealers or
      * other management.
      *
      * Initial sizing and resizing of WorkQueue arrays is an even more

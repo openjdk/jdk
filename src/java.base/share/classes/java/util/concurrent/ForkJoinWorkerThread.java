@@ -80,7 +80,7 @@ public class ForkJoinWorkerThread extends Thread {
         super.setDaemon(true);
         if (handler != null)
             super.setUncaughtExceptionHandler(handler);
-        if (useSystemClassLoader & !clearThreadLocals) // else done by Thread ctor
+        if (useSystemClassLoader && !clearThreadLocals) // else done by Thread ctor
             super.setContextClassLoader(ClassLoader.getSystemClassLoader());
     }
 
