@@ -27,9 +27,10 @@ import static com.sun.hotspot.igv.hierarchicallayout.LayoutGraph.LINK_COMPARATOR
 import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.NODE_POS_COMPARATOR;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
+import java.awt.Point;
 import java.util.*;
 
-public class HierarchicalStableLayoutManager extends LayoutManager {
+public class HierarchicalStableLayoutManager extends LayoutManager implements LayoutMover {
 
     int maxLayerLength;
 
@@ -37,6 +38,21 @@ public class HierarchicalStableLayoutManager extends LayoutManager {
     private final HashMap<Vertex, VertexAction> vertexToAction;
     private final List<VertexAction> vertexActions;
     private final List<LinkAction> linkActions;
+
+    @Override
+    public void moveLink(Point linkPos, int shiftX) {
+        manager.moveLink(linkPos, shiftX);
+    }
+
+    @Override
+    public void moveVertices(Set<? extends Vertex> movedVertices) {
+        manager.moveVertices(movedVertices);
+    }
+
+    @Override
+    public void moveVertex(Vertex movedVertex) {
+        manager.moveVertex(movedVertex);
+    }
 
     private enum Action {
         ADD,
