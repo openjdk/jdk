@@ -52,62 +52,76 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
     }
 
     @Override
-    public void moveVertex(Vertex movedVertex) {
-
+    public void moveVertex(Vertex vertex) {
+        assert prevGraph.containsVertex(vertex);
+        LayoutNode layoutNode = layoutNodes.get(vertex);
+        layoutNode.setX(vertex.getPosition().x);
+        layoutNode.setY(vertex.getPosition().y);
+        for (Link link : prevGraph.getAllLinks(vertex)) {
+            setLinkControlPoints(link);
+        }
     }
 
     public void setCutEdges(boolean enable) {
         this.cutEdges = enable;
     }
 
+    private LayoutGraph prevGraph;
+
     @Override
     public void doLayout(LayoutGraph graph) {
-        Set<Vertex> verticesToLayout = new HashSet<>(graph.getVertices());
-        Set<Link> linksToLayout = new HashSet<>(graph.getLinks());
+        prevGraph = graph;
         if (layoutNodes.isEmpty()) {
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager();
             manager.doLayout(graph);
             for (LayoutNode node : graph.getLayoutNodes()) {
                 layoutNodes.put(node.getVertex(), node);
             }
+            graph.clearLayout();
         } else {
             // add new vertices to layoutNodes, x/y from barycenter
-            updateLayout(graph);
+            HashSet<LayoutNode> newLayoutNode = new HashSet<>();
+
+            // Set up layout nodes for each vertex
+            for (Vertex vertex : prevGraph.getVertices()) {
+                if (!layoutNodes.containsKey(vertex)) {
+                    LayoutNode addedNode = new LayoutNode(vertex);
+                    addedNode.setX(0);
+                    addedNode.setY(0);
+                    layoutNodes.put(vertex, addedNode);
+                }
+            }
         }
 
         // Write back vertices
-        for (Vertex vertex : verticesToLayout) {
+        for (Vertex vertex : prevGraph.getVertices()) {
             LayoutNode layoutNode = layoutNodes.get(vertex);
             assert layoutNode != null;
             vertex.setPosition(new Point(layoutNode.getLeft(), layoutNode.getTop()));
         }
 
         // Write back links
-        for (Link link : linksToLayout) {
-
-            LayoutEdge edge = new LayoutEdge(
-                    layoutNodes.get(link.getFrom().getVertex()),
-                    layoutNodes.get(link.getTo().getVertex()),
-                    link.getFrom().getRelativePosition().x,
-                    link.getTo().getRelativePosition().x,
-                    link);
-
-            //edge.getFr()
-            /*
-            List<Point> points = link.getControlPoints();
-            if (points.isEmpty()) continue;
-            int n = points.size();
-            assert n >= 4;
-            List<Point> line = new ArrayList<>(4);
-
-            line.add(points.get(0));
-            line.add(adjustPoint(points.get(0), points.get(1), LINE_OFFSET));
-            line.add(adjustPoint(points.get(n-1), points.get(n-2), LINE_OFFSET));
-            line.add(points.get(n-1));
-            link.setControlPoints(line);
-
-             */
+        for (Link link : prevGraph.getLinks()) {
+            setLinkControlPoints(link);
         }
+    }
+
+    private void setLinkControlPoints(Link link) {
+        if (link.getFrom().getVertex() == link.getTo().getVertex()) return;
+        LayoutEdge edge = new LayoutEdge(
+                layoutNodes.get(link.getFrom().getVertex()),
+                layoutNodes.get(link.getTo().getVertex()),
+                link.getFrom().getRelativePosition().x,
+                link.getTo().getRelativePosition().x,
+                link);
+        Point startPoint = new Point(edge.getStartX(), edge.getStartY());
+        Point endPoint = new Point(edge.getEndX(), edge.getEndY());
+        List<Point> line = new ArrayList<>(4);
+        line.add(startPoint);
+        line.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
+        line.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
+        line.add(endPoint);
+        link.setControlPoints(line);
     }
 
     private static Point adjustPoint(Point from, Point to, double x) {
