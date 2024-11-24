@@ -33,6 +33,8 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     private boolean cutEdges;
 
+    private static int LINE_OFFSET = 10;
+
     @Override
     public void moveLink(Point linkPos, int shiftX) {
 
@@ -63,6 +65,25 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         if (this.graph == null) {
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager();
             manager.doLayout(graph);
+
+            for (LayoutNode layoutNode : graph.getLayoutNodes()) {
+                Vertex vertex = layoutNode.getVertex();
+                vertex.setPosition(new Point(layoutNode.getLeft(), layoutNode.getTop()));
+            }
+
+            for (Link link : graph.getLinks()) {
+                List<Point> points = link.getControlPoints();
+                if (points.isEmpty()) continue;
+                int n = points.size();
+                assert n >= 4;
+                List<Point> line = new ArrayList<>(4);
+
+                line.add(points.get(0));
+                line.add(adjustPoint(points.get(0), points.get(1), LINE_OFFSET));
+                line.add(adjustPoint(points.get(n-1), points.get(n-2), LINE_OFFSET));
+                line.add(points.get(n-1));
+                link.setControlPoints(line);
+            }
         } else {
             updateLayout(graph);
             HierarchicalLayoutManager.WriteResult.apply(graph);
@@ -71,14 +92,29 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         this.graph = graph;
     }
 
+    private static Point adjustPoint(Point from, Point to, double x) {
+        // Calculate the difference in x and y coordinates
+        double dx = to.x - from.x;
+        double dy = to.y - from.y;
+
+        // Calculate the current length of the line
+        double currentLength = Math.sqrt(dx * dx + dy * dy);
+
+        // Scale the differences to make the line length equal to x
+        double scale = x / currentLength;
+
+        // Calculate the new coordinates for the point "to"
+        int newX = (int) Math.round(from.x + dx * scale);
+        int newY = (int) Math.round(from.y + dy * scale);
+
+        return new Point(newX, newY);
+    }
+
     public void updateLayout(LayoutGraph graph) {
         HashSet<LayoutNode> newLayoutNode = new HashSet<>();
 
         // Reset layout structures
         graph.clearLayout();
-
-        // create empty layers
-        graph.initLayers(graph.getLayerCount());
 
         // Set up layout nodes for each vertex
         for (Vertex vertex : graph.getVertices()) {
