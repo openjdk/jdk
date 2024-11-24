@@ -954,9 +954,6 @@ public class AWTEventMulticaster implements
      * If listener-b is null, it returns listener-a
      * If neither are null, then it creates and returns
      * a new AWTEventMulticaster instance which chains a with b.
-     * <p>
-     * Occasionally (after approximately 500 invocations) the root
-     * AWTEventMulticaster is rebalanced.
      *
      * @param a event listener-a
      * @param b event listener-b
