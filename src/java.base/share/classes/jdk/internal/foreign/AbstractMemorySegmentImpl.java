@@ -121,7 +121,7 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
-    public final NativeMemorySegmentImpl reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
+    public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
                 MemorySessionImpl.toMemorySession(arena), cleanup);
@@ -129,13 +129,13 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     @CallerSensitive
-    public final NativeMemorySegmentImpl reinterpret(long newSize) {
+    public final MemorySegment reinterpret(long newSize) {
         return reinterpretInternal(Reflection.getCallerClass(), newSize, scope, null);
     }
 
     @Override
     @CallerSensitive
-    public final NativeMemorySegmentImpl reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
+    public final MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), byteSize(),
                 MemorySessionImpl.toMemorySession(arena), cleanup);
@@ -570,7 +570,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                             MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
                             long elementCount) {
 
-        Utils.checkNonNegativeArgument(elementCount, "elementCount");
+        Utils.checkNonNegativeIndex(elementCount, "elementCount");
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)dstSegment;
         if (srcElementLayout.byteSize() != dstElementLayout.byteSize()) {
@@ -602,7 +602,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     public static void copy(MemorySegment srcSegment, ValueLayout srcLayout, long srcOffset,
                             Object dstArray, int dstIndex,
                             int elementCount) {
-        Utils.checkNonNegativeArgument(elementCount, "elementCount");
+        Utils.checkNonNegativeIndex(elementCount, "elementCount");
         var dstInfo = Utils.BaseAndScale.of(dstArray);
         if (dstArray.getClass().componentType() != srcLayout.carrier()) {
             throw new IllegalArgumentException("Incompatible value layout: " + srcLayout);

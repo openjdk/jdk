@@ -106,7 +106,7 @@ public final class SegmentBulkOperations {
                             AbstractMemorySegmentImpl dst, long dstOffset,
                             long size) {
 
-        Utils.checkNonNegativeArgument(size, "size");
+        Utils.checkNonNegativeIndex(size, "size");
         // Implicit null check for src and dst
         src.checkAccess(srcOffset, size, true);
         dst.checkAccess(dstOffset, size, false);
