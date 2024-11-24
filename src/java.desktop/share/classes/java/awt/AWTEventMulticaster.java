@@ -984,8 +984,9 @@ public class AWTEventMulticaster implements
     private static boolean needsRebalance(AWTEventMulticaster l) {
         int level = 0;
         while (true) {
-            if (++level > 500)
+            if (++level > 500) {
                 return true;
+            }
             if (l.a instanceof AWTEventMulticaster aMulti) {
                 if (l.b instanceof AWTEventMulticaster) {
                     // we reached a node where both children are AWTEventMulticaster: let's assume
@@ -1012,10 +1013,12 @@ public class AWTEventMulticaster implements
      * the array provided. Otherwise this returns an AWTEventMulticaster.
      */
     private static EventListener rebalance(EventListener[] array, int index0, int index1) {
-        if (index0 == index1)
+        if (index0 == index1) {
             return array[index0];
-        if (index0 == index1 - 1)
+        }
+        if (index0 == index1 - 1) {
             return new AWTEventMulticaster(array[index0], array[index1]);
+        }
         int mid = (index0 + index1)/2;
         return new AWTEventMulticaster(
                 rebalance(array, index0, mid),
