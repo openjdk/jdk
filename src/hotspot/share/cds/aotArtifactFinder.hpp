@@ -76,7 +76,6 @@ class AOTArtifactFinder : AllStatic {
   static void end_scanning_for_oops();
   static void scan_oops_in_instance_class(InstanceKlass* ik);
   static void scan_oops_in_array_class(ArrayKlass* ak);
-  static bool is_lambda_proxy_class(InstanceKlass* ik);
   static void add_cached_type_array_class(TypeArrayKlass* tak);
   static void add_cached_instance_class(InstanceKlass* ik);
 public:

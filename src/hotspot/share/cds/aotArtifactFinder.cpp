@@ -84,6 +84,7 @@ void AOTArtifactFinder::find_artifacts() {
     }
   }
 
+#if INCLUDE_CDS_JAVA_HEAP
   // Add the mirrors that aren't associated with a Klass
   //    - primitive mirrors (E.g., "int.class" in Java code)
   //    - mirror of fillerArrayKlass
@@ -104,6 +105,7 @@ void AOTArtifactFinder::find_artifacts() {
     // Universe::fillerArrayKlass() isn't in the class hierarchy, so handle it specially.
     HeapShared::scan_java_mirror(Universe::fillerArrayKlass()->java_mirror());
   }
+#endif
 
   // Add all the InstanceKlasses (and their array classes) that are always included.
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* ik, DumpTimeClassInfo& info) {
@@ -133,6 +135,7 @@ void AOTArtifactFinder::find_artifacts() {
     }
   });
 
+#if INCLUDE_CDS_JAVA_HEAP
   // Keep scanning until we discover no more class that need to be AOT-initialized.
   if (CDSConfig::is_initing_classes_at_dump_time()) {
     while (_pending_aot_inited_classes->length() > 0) {
@@ -140,6 +143,7 @@ void AOTArtifactFinder::find_artifacts() {
       HeapShared::copy_and_rescan_aot_inited_mirror(ik);
     }
   }
+#endif
 
   // Exclude all the (hidden) classes that have not been discovered by the code above.
   SystemDictionaryShared::dumptime_table()->iterate_all_live_classes([&] (InstanceKlass* k, DumpTimeClassInfo& info) {
@@ -157,15 +161,19 @@ void AOTArtifactFinder::find_artifacts() {
 }
 
 void AOTArtifactFinder::start_scanning_for_oops() {
+#if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     HeapShared::start_scanning_for_oops();
   }
+#endif
 }
 
 void AOTArtifactFinder::end_scanning_for_oops() {
+#if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     HeapShared::end_scanning_for_oops();
   }
+#endif
 }
 
 void AOTArtifactFinder::add_aot_inited_class(InstanceKlass* ik) {
@@ -228,24 +236,24 @@ void AOTArtifactFinder::add_cached_class(Klass* k) {
   }
 }
 
-bool AOTArtifactFinder::is_lambda_proxy_class(InstanceKlass* ik) {
-  return false;
-}
-
 void AOTArtifactFinder::scan_oops_in_instance_class(InstanceKlass* ik) {
+#if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     HeapShared::scan_java_class(ik);
     scan_oops_in_array_class(ik->array_klasses());
   }
+#endif
 }
 
 void AOTArtifactFinder::scan_oops_in_array_class(ArrayKlass* ak) {
+#if INCLUDE_CDS_JAVA_HEAP
   if (CDSConfig::is_dumping_heap()) {
     while (ak != nullptr) {
       HeapShared::scan_java_class(ak);
       ak = ak->array_klass_or_null();
     }
   }
+#endif
 }
 
 void AOTArtifactFinder::all_cached_classes_do(MetaspaceClosure* it) {
