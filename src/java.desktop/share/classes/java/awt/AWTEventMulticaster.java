@@ -963,8 +963,9 @@ public class AWTEventMulticaster implements
         if (a == null)  return b;
         if (b == null)  return a;
         AWTEventMulticaster n = new AWTEventMulticaster(a, b);
-        if (!needsRebalance(n))
+        if (!needsRebalance(n)) {
             return n;
+        }
 
         EventListener[] array = getListeners(n, EventListener.class);
         return rebalance(array, 0, array.length - 1);
