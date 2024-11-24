@@ -1294,7 +1294,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       if (source_oop != nullptr) {
         // This is a regular oop that got archived.
-        print_oop_with_requested_addr_cr(&st, source_oop, false);
+        print_oop_with_requested_addr_cr(&st, source_oop, false, true);
         byte_size = source_oop->size() * BytesPerWord;
       } else if ((byte_size = ArchiveHeapWriter::get_filler_size_at(start)) > 0) {
         // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
@@ -1331,8 +1331,14 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
       switch (ft) {
       case T_ARRAY:
       case T_OBJECT:
-        fd->print_on(_st); // print just the name and offset
-        print_oop_with_requested_addr_cr(_st, _source_obj->obj_field(fd->offset()));
+        {
+          fd->print_on(_st); // print just the name and offset
+          oop obj = _source_obj->obj_field(fd->offset());
+          if (java_lang_Class::is_instance(obj)) {
+            obj = HeapShared::scratch_java_mirror(obj);
+          }
+          print_oop_with_requested_addr_cr(_st, obj);
+        }
         break;
       default:
         if (ArchiveHeapWriter::is_marked_as_native_pointer(_heap_info, _source_obj, fd->offset())) {
@@ -1388,14 +1394,54 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         objArrayOop source_obj_array = objArrayOop(source_oop);
         for (int i = 0; i < source_obj_array->length(); i++) {
           st.print(" -%4d: ", i);
-          print_oop_with_requested_addr_cr(&st, source_obj_array->obj_at(i));
+          oop obj = source_obj_array->obj_at(i);
+          if (java_lang_Class::is_instance(obj)) {
+            obj = HeapShared::scratch_java_mirror(obj);
+          }
+          print_oop_with_requested_addr_cr(&st, obj);
         }
       } else {
         st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
         ArchivedFieldPrinter print_field(heap_info, &st, source_oop, buffered_addr);
         InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
+
+        if (java_lang_Class::is_instance(source_oop)) {
+          oop scratch_mirror = source_oop;
+          st.print(" - signature: ");
+          print_class_signature_for_mirror(&st, scratch_mirror);
+          st.cr();
+
+          Klass* src_klass = java_lang_Class::as_Klass(scratch_mirror);
+          if (src_klass != nullptr && src_klass->is_instance_klass()) {
+            oop rr = HeapShared::scratch_resolved_references(InstanceKlass::cast(src_klass)->constants());
+            st.print(" - archived_resolved_references: ");
+            print_oop_with_requested_addr_cr(&st, rr);
+
+            // We need to print the fields in the scratch_mirror, not the original mirror.
+            // (if a class is not aot-initialized, static fields in its scratch mirror will be cleared).
+            assert(scratch_mirror == HeapShared::scratch_java_mirror(src_klass->java_mirror()), "sanity");
+            st.print_cr("- ---- static fields (%d):", java_lang_Class::static_oop_field_count(scratch_mirror));
+            InstanceKlass::cast(src_klass)->do_local_static_fields(&print_field);
+          }
+        }
       }
     }
+  }
+
+  static void print_class_signature_for_mirror(outputStream* st, oop scratch_mirror) {
+    assert(java_lang_Class::is_instance(scratch_mirror), "sanity");
+    if (java_lang_Class::is_primitive(scratch_mirror)) {
+      for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
+        BasicType bt = (BasicType)i;
+        if (!is_reference_type(bt) && scratch_mirror == HeapShared::scratch_java_mirror(bt)) {
+          oop orig_mirror = Universe::java_mirror(bt);
+          java_lang_Class::print_signature(orig_mirror, st);
+          return;
+        }
+      }
+      ShouldNotReachHere();
+    }
+    java_lang_Class::print_signature(scratch_mirror, st);
   }
 
   static void log_heap_roots() {
@@ -1412,7 +1458,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   // the narrowOop version of the requested address.
   //     0x00000007ffc7e840 (0xfff8fd08) java.lang.Class
   //     0x00000007ffc000f8 (0xfff8001f) [B length: 11
-  static void print_oop_with_requested_addr_cr(outputStream* st, oop source_oop, bool print_addr = true) {
+  static void print_oop_with_requested_addr_cr(outputStream* st, oop source_oop, bool print_addr = true, bool print_aot_init = false) {
     if (source_oop == nullptr) {
       st->print_cr("null");
     } else {
@@ -1428,7 +1474,29 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         int array_len = arrayOop(source_oop)->length();
         st->print_cr("%s length: %d", source_oop->klass()->external_name(), array_len);
       } else {
-        st->print_cr("%s", source_oop->klass()->external_name());
+        st->print("%s", source_oop->klass()->external_name());
+
+        if (java_lang_String::is_instance(source_oop)) {
+          st->print(" ");
+          java_lang_String::print(source_oop, st);
+        } else if (java_lang_Class::is_instance(source_oop)) {
+          oop scratch_mirror = source_oop;
+
+          st->print(" ");
+          print_class_signature_for_mirror(st, scratch_mirror);
+
+          if (print_aot_init) {
+            Klass* src_klass = java_lang_Class::as_Klass(scratch_mirror);
+            if (src_klass != nullptr && src_klass->is_instance_klass()) {
+              InstanceKlass* buffered_klass =
+                ArchiveBuilder::current()->get_buffered_addr(InstanceKlass::cast(src_klass));
+              if (buffered_klass->has_aot_initialized_mirror()) {
+                st->print(" (aot-inited)");
+              }
+            }
+          }
+        }
+        st->cr();
       }
     }
   }
