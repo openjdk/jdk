@@ -28,12 +28,17 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 
-InlinePrinter::InlinePrinter(Arena* arena, bool enabled) : _enabled(enabled), _root(new(arena) IPInlineSite(nullptr, arena, 0)) {}
+InlinePrinter::InlinePrinter(Arena* arena, Compile* compile) : C(compile), _root(new(arena) IPInlineSite(nullptr, arena, 0)) {}
+
+bool InlinePrinter::is_enabled() const {
+  return C->print_intrinsics() || C->print_inlining();
+}
+
 
 InlinePrinter::IPInlineAttempt::IPInlineAttempt(InliningResult result) : result(result) {}
 
 outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningResult result, const char* msg) {
-  if (!_enabled) {
+  if (!is_enabled()) {
     return &_nullStream;
   }
   IPInlineAttempt* attempt = locate(state, callee)->add(result);
@@ -44,7 +49,7 @@ outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningR
 }
 
 void InlinePrinter::print_on(outputStream* tty) {
-  if (!_enabled) {
+  if (!is_enabled()) {
     return;
   }
   _root->dump(tty, -1);

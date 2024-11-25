@@ -672,7 +672,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _number_of_mh_late_inlines(0),
       _oom(false),
       _replay_inline_data(nullptr),
-      _inline_printer(comp_arena(), directive->PrintInliningOption || PrintOptoInlining),
+      _inline_printer(comp_arena(), this),
       _java_calls(0),
       _inner_loops(0),
       _interpreter_frame_size(0),
@@ -707,6 +707,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   if (directive->ReplayInlineOption) {
     _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
   }
+  set_print_inlining(directive->PrintInliningOption || PrintOptoInlining);
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
@@ -936,7 +937,7 @@ Compile::Compile(ciEnv* ci_env,
       _number_of_mh_late_inlines(0),
       _oom(false),
       _replay_inline_data(nullptr),
-      _inline_printer(comp_arena(), directive->PrintInliningOption || PrintOptoInlining),
+      _inline_printer(comp_arena(), this),
       _java_calls(0),
       _inner_loops(0),
       _interpreter_frame_size(0),

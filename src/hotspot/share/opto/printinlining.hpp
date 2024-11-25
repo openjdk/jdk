@@ -31,8 +31,10 @@
 
 class JVMState;
 class ciMethod;
+class Compile;
 enum class InliningResult;
 
+// If not enabled, all method calls are no-ops.
 class InlinePrinter {
 private:
   struct IPInlineAttempt : public ArenaObj {
@@ -67,7 +69,9 @@ private:
     void dump(outputStream* tty, int level);
   };
 
-  bool _enabled;
+  bool is_enabled() const;
+
+  Compile *C;
 
   /**
    * In case print inline is disabled, this null stream is returned from ::record()
@@ -84,7 +88,7 @@ private:
   IPInlineSite* const _root;
 
 public:
-  InlinePrinter(Arena* arena, bool enabled);
+  InlinePrinter(Arena* arena, Compile* compile);
 
   /**
    * Saves the result of an inline attempt of method at state.
@@ -98,11 +102,6 @@ public:
    * Prints all collected inlining information to the given output stream.
    */
   void print_on(outputStream* tty);
-
-  /**
-   * Whether inline printing is enabled. If not enabled, all method calls are no-ops.
-   */
-  bool is_enabled() const { return _enabled; }
 };
 
 #endif // PRINTINLINING_HPP
