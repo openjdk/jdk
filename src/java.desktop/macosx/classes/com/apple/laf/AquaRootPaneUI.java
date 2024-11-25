@@ -40,9 +40,6 @@ import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
 /**
  * From AquaRootPaneUI.java
  *
- * The JRootPane manages the default button.  There can be only one active rootpane,
- * and one default button, so we need only one timer
- *
  * AquaRootPaneUI is a singleton object
  */
 public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener, WindowListener, ContainerListener {
@@ -148,24 +145,6 @@ public class AquaRootPaneUI extends BasicRootPaneUI implements AncestorListener,
                         ((AquaMenuBarUI)mbui).clearScreenMenuBar(frame);
                     }
                 }
-            }
-        }
-    }
-
-    /**
-     * Invoked when a property changes on the root pane. If the event
-     * indicates the {@code defaultButton} has changed, this will
-     * update the animation.
-     * If the enabled state changed, it will start or stop the animation
-     */
-    public void propertyChange(final PropertyChangeEvent e) {
-        super.propertyChange(e);
-
-        final String prop = e.getPropertyName();
-        if ("enabled".equals(prop) || AquaFocusHandler.FRAME_ACTIVE_PROPERTY.equals(prop)) {
-            final JRootPane root = (JRootPane)e.getSource();
-            if (root.isShowing() && root.getDefaultButton() != null) {
-                root.getDefaultButton().repaint();
             }
         }
     }
