@@ -1385,7 +1385,7 @@ public class TransformerFactoryImpl
         // Find the parent directory of the translet.
         String transletParentDir = transletFile.getParent();
         if (transletParentDir == null)
-            transletParentDir = SecuritySupport.getSystemProperty("user.dir");
+            transletParentDir = System.getProperty("user.dir");
 
         File transletParentFile = new File(transletParentDir);
 

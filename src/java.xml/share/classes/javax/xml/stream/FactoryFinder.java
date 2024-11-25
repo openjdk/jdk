@@ -50,7 +50,7 @@ class FactoryFinder {
 
     // Define system property "jaxp.debug" to get output
     static {
-        String val = SecuritySupport.getSystemProperty("jaxp.debug");
+        String val = System.getProperty("jaxp.debug");
         // Allow simply setting the prop to turn on debug
         debug = val != null && !"false".equals(val);
     }
@@ -219,7 +219,7 @@ class FactoryFinder {
         // Use the system property first
         final String systemProp;
         if (type.getName().equals(factoryId)) {
-            systemProp = SecuritySupport.getSystemProperty(factoryId);
+            systemProp = System.getProperty(factoryId);
         } else {
             systemProp = System.getProperty(factoryId);
         }

@@ -51,8 +51,8 @@ import org.xml.sax.XMLReader;
  * Constants for use across JAXP processors.
  */
 public class JdkXmlUtils {
-    public static final boolean IS_WINDOWS = SecuritySupport.getSystemProperty("os.name").contains("Windows");
-    public static final String JAVA_HOME = SecuritySupport.getSystemProperty("java.home");
+    public static final boolean IS_WINDOWS = System.getProperty("os.name").contains("Windows");
+    public static final String JAVA_HOME = System.getProperty("java.home");
 
     private static final String DOM_FACTORY_ID = "javax.xml.parsers.DocumentBuilderFactory";
     private static final String SAX_FACTORY_ID = "javax.xml.parsers.SAXParserFactory";
@@ -298,7 +298,7 @@ public class JdkXmlUtils {
             boolean useCatalog, CatalogFeatures catalogFeatures) {
         SAXParserFactory saxFactory;
         XMLReader reader = null;
-        String spSAXDriver = SecuritySupport.getSystemProperty(SAX_DRIVER);
+        String spSAXDriver = System.getProperty(SAX_DRIVER);
         if (spSAXDriver != null) {
             reader = getXMLReaderWXMLReaderFactory();
         } else if (overrideDefaultParser) {

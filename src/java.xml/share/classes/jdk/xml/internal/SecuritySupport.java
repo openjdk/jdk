@@ -74,53 +74,6 @@ public class SecuritySupport {
     }
 
     /**
-     * Reads a system property
-     *
-     * @param propName the name of the property
-     * @return the value of the property
-     */
-    public static String getSystemProperty(final String propName) {
-        return System.getProperty(propName);
-    }
-
-    /**
-     * Reads a system property
-     *
-     * @param propName the name of the property
-     * @return the value of the property
-     */
-    public static String getSystemProperty(final String propName, String defValue) {
-        String value = getSystemProperty(propName);
-        if (value == null) {
-            return defValue;
-        }
-        return value;
-    }
-
-    /**
-     * Reads a system property with specified type.
-     *
-     * @param <T> the type of the property value
-     * @param type the type of the property value
-     * @param propName the name of the property
-     * @param defValue the default value
-     * @return the value of the property, or the default value if no system
-     * property is found
-     */
-    public static <T> T getSystemProperty(Class<T> type, String propName, String defValue) {
-        String value = getSystemProperty(propName);
-        if (value == null) {
-            value = defValue;
-        }
-        if (Integer.class == type) {
-            return type.cast(Integer.parseInt(value));
-        } else if (Boolean.class == type) {
-            return type.cast(Boolean.parseBoolean(value));
-        }
-        return type.cast(value);
-    }
-
-    /**
      * Reads JAXP system property in this order: system property,
      * $java.home/conf/jaxp.properties if the system property is not specified
      *
@@ -152,7 +105,7 @@ public class SecuritySupport {
      * @return the value of the property
      */
     public static String getJAXPSystemProperty(String propName) {
-        String value = getSystemProperty(propName);
+        String value = System.getProperty(propName);
         if (value == null) {
             value = readConfig(propName);
         }
@@ -192,21 +145,21 @@ public class SecuritySupport {
             synchronized (cacheProps) {
                 if (firstTime) {
                     boolean found = loadProperties(
-                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                            Paths.get(System.getProperty("java.home"),
                                 "conf", "jaxp.properties")
                                 .toAbsolutePath().normalize().toString());
 
                     // attempts to find stax.properties only if jaxp.properties is not available
                     if (stax && !found) {
                         found = loadProperties(
-                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                            Paths.get(System.getProperty("java.home"),
                                     "conf", "stax.properties")
                                     .toAbsolutePath().normalize().toString()
                         );
                     }
 
                     // load the custom configure on top of the default if any
-                    String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE_PROPNAME);
+                    String configFile = System.getProperty(JdkConstants.CONFIG_FILE_PROPNAME);
                     if (configFile != null) {
                         loadProperties(configFile);
                     }
@@ -341,15 +294,6 @@ public class SecuritySupport {
      */
     public static boolean doesFileExist(final File f) {
         return f.exists();
-    }
-
-    /**
-     * Checks the LastModified attribute of a file.
-     * @param f the specified file
-     * @return the LastModified attribute
-     */
-    static long getLastModified(final File f) {
-        return f.lastModified();
     }
 
     /**

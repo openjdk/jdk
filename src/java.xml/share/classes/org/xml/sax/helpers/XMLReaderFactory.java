@@ -127,7 +127,7 @@ final public class XMLReaderFactory
 
         // 1. try the JVM-instance-wide system property
         try {
-            className = SecuritySupport.getSystemProperty(property);
+            className = System.getProperty(property);
         }
         catch (RuntimeException e) { /* continue searching */ }
 
@@ -238,14 +238,7 @@ final public class XMLReaderFactory
             throws SAXException {
         ClassLoader cl = Objects.requireNonNull(loader);
         try {
-            final ServiceLoader<T> serviceLoader;
-            serviceLoader = ServiceLoader.load(type, cl);
-            final Iterator<T> iterator = serviceLoader.iterator();
-            if (iterator.hasNext()) {
-                return iterator.next();
-            } else {
-                return null;
-            }
+            return ServiceLoader.load(type, cl).findFirst().orElse(null);
         } catch(ServiceConfigurationError e) {
             final RuntimeException x = new RuntimeException(
                     "Provider for " + type + " cannot be created", e);

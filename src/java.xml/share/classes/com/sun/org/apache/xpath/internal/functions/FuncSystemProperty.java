@@ -96,7 +96,7 @@ public class FuncSystemProperty extends FunctionOneArg
              new Object[]{ namespace,
                            fullName });  //"Don't currently do anything with namespace "+namespace+" in property: "+fullName);
 
-        result = SecuritySupport.getSystemProperty(propName);
+        result = System.getProperty(propName);
         if (null == result)
         {
           // result = System.getenv(propName);
@@ -106,7 +106,7 @@ public class FuncSystemProperty extends FunctionOneArg
     }
     else
     {
-      result = SecuritySupport.getSystemProperty(fullName);
+      result = System.getProperty(fullName);
 
       if (null == result)
       {

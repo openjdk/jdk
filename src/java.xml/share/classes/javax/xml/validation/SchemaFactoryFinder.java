@@ -46,12 +46,7 @@ class SchemaFactoryFinder  {
     private static final String DEFAULT_PACKAGE = "com.sun.org.apache.xerces.internal";
 
     static {
-        // Use try/catch block to support applets
-        try {
-            debug = SecuritySupport.getSystemProperty("jaxp.debug") != null;
-        } catch (Exception unused) {
-            debug = false;
-        }
+        debug = System.getProperty("jaxp.debug") != null;
     }
 
     /**
@@ -149,7 +144,7 @@ class SchemaFactoryFinder  {
         // system property look up
         try {
             debugPrintln(()->"Looking up system property '"+propertyName+"'" );
-            String r = SecuritySupport.getSystemProperty(propertyName);
+            String r = System.getProperty(propertyName);
             if(r!=null) {
                 debugPrintln(()->"The value is '"+r+"'");
                 sf = createInstance(r);

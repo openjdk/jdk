@@ -55,7 +55,7 @@ public final class ObjectFactory {
 
     /** Returns true if debug has been enabled. */
     private static boolean isDebugEnabled() {
-        String val = SecuritySupport.getSystemProperty("xerces.debug");
+        String val = System.getProperty("xerces.debug");
         // Allow simply setting the prop to turn on debug
         return (val != null && (!"false".equals(val)));
     } // isDebugEnabled()

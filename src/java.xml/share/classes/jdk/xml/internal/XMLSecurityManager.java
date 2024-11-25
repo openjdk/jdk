@@ -716,7 +716,7 @@ public final class XMLSecurityManager {
         if (sysPropertyName == null) return false;
 
         try {
-            String value = SecuritySupport.getSystemProperty(sysPropertyName);
+            String value = System.getProperty(sysPropertyName);
             if (value != null && !value.equals("")) {
                 setLimit(limit, State.SYSTEMPROPERTY, value);
                 return true;

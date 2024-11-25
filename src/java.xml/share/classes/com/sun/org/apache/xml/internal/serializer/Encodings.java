@@ -232,7 +232,7 @@ public final class Encodings extends Object
             // Get the default system character encoding.  This may be
             // incorrect if they passed in a writer, but right now there
             // seems to be no way to get the encoding from a writer.
-            encoding = SecuritySupport.getSystemProperty("file.encoding", "UTF8");
+            encoding = System.getProperty("file.encoding", "UTF8");
 
             if (null != encoding)
             {
@@ -321,7 +321,7 @@ public final class Encodings extends Object
             String urlString = null;
             InputStream is = null;
 
-            urlString = SecuritySupport.getSystemProperty(ENCODINGS_PROP, "");
+            urlString = System.getProperty(ENCODINGS_PROP, "");
             if (urlString != null && urlString.length() > 0) {
                 @SuppressWarnings("deprecation")
                 URL url = new URL(urlString);

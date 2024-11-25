@@ -45,12 +45,7 @@ class XPathFactoryFinder  {
     /** debug support code. */
     private static boolean debug = false;
     static {
-        // Use try/catch block to support applets
-        try {
-            debug = SecuritySupport.getSystemProperty("jaxp.debug") != null;
-        } catch (Exception unused) {
-            debug = false;
-        }
+        debug = System.getProperty("jaxp.debug") != null;
     }
 
     /**
@@ -154,7 +149,7 @@ class XPathFactoryFinder  {
         // system property look up
         try {
             debugPrintln(()->"Looking up system property '"+propertyName+"'" );
-            String r = SecuritySupport.getSystemProperty(propertyName);
+            String r = System.getProperty(propertyName);
             if(r!=null) {
                 debugPrintln(()->"The value is '"+r+"'");
                 xpathFactory = createInstance(r);
