@@ -418,7 +418,6 @@ public class FileLoginModule implements LoginModule {
      * @param usePasswdFromSharedState a flag to tell this method whether
      *          to retrieve the password from the sharedState.
      */
-    @SuppressWarnings("unchecked")  // sharedState used as Map<String,Object>
     private void attemptAuthentication(boolean usePasswdFromSharedState)
         throws LoginException {
 

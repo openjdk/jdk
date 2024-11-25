@@ -119,9 +119,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private static final String FORCE_PIPE_PROP = "sun.print.ippdebug";
 
     static {
-        @SuppressWarnings("removal")
-        String debugStr = java.security.AccessController.doPrivileged(
-                  new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
+        String debugStr = System.getProperty(FORCE_PIPE_PROP);
 
         debugPrint = "true".equalsIgnoreCase(debugStr);
     }
@@ -1874,18 +1872,12 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                    AttributeClass.TAG_URI,
                                    ""+myURI)};
 
-            @SuppressWarnings("removal")
-            OutputStream os = java.security.AccessController.
-                doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                    public OutputStream run() {
-                        try {
-                            return urlConnection.getOutputStream();
-                        } catch (Exception e) {
-                        }
-                        return null;
-                    }
-                });
 
+            OutputStream os = null;
+            try {
+                os = urlConnection.getOutputStream();
+            } catch (Exception e) {
+            }
             if (os == null) {
                 return;
             }

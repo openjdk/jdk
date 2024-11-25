@@ -334,7 +334,6 @@ public class ServerNotifForwarder {
     //----------------
     // PRIVATE METHODS
     //----------------
-    @SuppressWarnings("removal")
     private Subject getSubject() {
         return Subject.current();
     }

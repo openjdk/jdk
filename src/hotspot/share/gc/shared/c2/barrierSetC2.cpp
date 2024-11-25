@@ -156,8 +156,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
-                                 access.addr().type(), mo, requires_atomic_access, unaligned,
-                                 mismatched, unsafe, access.barrier_data());
+                                 mo, requires_atomic_access, unaligned, mismatched,
+                                 unsafe, access.barrier_data());
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
@@ -217,7 +217,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
                             unaligned, mismatched, unsafe, access.barrier_data());
       load = kit->gvn().transform(load);
     } else {
-      load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
+      load = kit->make_load(control, adr, val_type, access.type(), mo,
                             dep, requires_atomic_access, unaligned, mismatched, unsafe,
                             access.barrier_data());
     }

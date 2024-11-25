@@ -160,6 +160,10 @@ class Stream<T> extends ExchangeImpl<T> {
     // send lock: prevent sending DataFrames after reset occurred.
     private final Lock sendLock = new ReentrantLock();
     private final Lock stateLock = new ReentrantLock();
+    // inputQ lock: methods that take from the inputQ
+    //      must not run concurrently.
+    private final Lock inputQLock = new ReentrantLock();
+
     /**
      * A reference to this Stream's connection Send Window controller. The
      * stream MUST acquire the appropriate amount of Send Window before
@@ -183,6 +187,8 @@ class Stream<T> extends ExchangeImpl<T> {
     private void schedule() {
         boolean onCompleteCalled = false;
         HttpResponse.BodySubscriber<T> subscriber = responseSubscriber;
+        // prevents drainInputQueue() from running concurrently
+        inputQLock.lock();
         try {
             if (subscriber == null) {
                 // pendingResponseSubscriber will be null until response headers have been received and
@@ -199,7 +205,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame rf) {
                     inputQ.remove();
-                    if (endStreamReceived() && rf.getErrorCode() ==  ResetFrame.NO_ERROR) {
+                    if (endStreamReceived() && rf.getErrorCode() == ResetFrame.NO_ERROR) {
                         // If END_STREAM is already received, complete the requestBodyCF successfully
                         // and stop sending any request data.
                         requestBodyCF.complete(null);
@@ -208,7 +214,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     }
                     return;
                 }
-                DataFrame df = (DataFrame)frame;
+                DataFrame df = (DataFrame) frame;
                 boolean finished = df.getFlag(DataFrame.END_STREAM);
 
                 List<ByteBuffer> buffers = df.getData();
@@ -256,6 +262,7 @@ class Stream<T> extends ExchangeImpl<T> {
         } catch (Throwable throwable) {
             errorRef.compareAndSet(null, throwable);
         } finally {
+            inputQLock.unlock();
             if (sched.isStopped()) drainInputQueue();
         }
 
@@ -274,26 +281,36 @@ class Stream<T> extends ExchangeImpl<T> {
             } catch (Throwable x) {
                 Log.logError("Subscriber::onError threw exception: {0}", t);
             } finally {
+                // cancelImpl will eventually call drainInputQueue();
                 cancelImpl(t);
-                drainInputQueue();
             }
         }
     }
 
-    // must only be called from the scheduler schedule() loop.
-    // ensure that all received data frames are accounted for
+    // Called from the scheduler schedule() loop,
+    // or after resetting the stream.
+    // Ensures that all received data frames are accounted for
     // in the connection window flow control if the scheduler
     // is stopped before all the data is consumed.
+    // The inputQLock is used to prevent concurrently taking
+    // from the queue.
     private void drainInputQueue() {
         Http2Frame frame;
-        while ((frame = inputQ.poll()) != null) {
-            if (frame instanceof DataFrame df) {
-                // Data frames that have been added to the inputQ
-                // must be released using releaseUnconsumed() to
-                // account for the amount of unprocessed bytes
-                // tracked by the connection.windowUpdater.
-                connection.releaseUnconsumed(df);
+        // will wait until schedule() has finished taking
+        // from the queue, if needed.
+        inputQLock.lock();
+        try {
+            while ((frame = inputQ.poll()) != null) {
+                if (frame instanceof DataFrame df) {
+                    // Data frames that have been added to the inputQ
+                    // must be released using releaseUnconsumed() to
+                    // account for the amount of unprocessed bytes
+                    // tracked by the connection.windowUpdater.
+                    connection.releaseUnconsumed(df);
+                }
             }
+        } finally {
+            inputQLock.unlock();
         }
     }
 
@@ -405,10 +422,36 @@ class Stream<T> extends ExchangeImpl<T> {
                     return;
                 }
             }
-            inputQ.add(df);
+           pushDataFrame(len, df);
         } finally {
             sched.runOrSchedule();
         }
+    }
+
+    // Ensures that no data frame is pushed on the inputQ
+    // after the stream is closed.
+    // Changes to the `closed` boolean are guarded by the
+    // stateLock. Contention should be low as only one
+    // thread at a time adds to the inputQ, and
+    // we can only contend when closing the stream.
+    // Note that this method can run concurrently with
+    // methods holding the inputQLock: that is OK.
+    // The inputQLock is there to ensure that methods
+    // taking from the queue are not running concurrently
+    // with each others, but concurrently adding at the
+    // end of the queue while peeking/polling at the head
+    // is OK.
+    private void pushDataFrame(int len, DataFrame df) {
+        boolean closed = false;
+        stateLock.lock();
+        try {
+            if (!(closed = this.closed)) {
+                inputQ.add(df);
+            }
+        } finally {
+            stateLock.unlock();
+        }
+        if (closed && len > 0) connection.releaseUnconsumed(df);
     }
 
     /** Handles a RESET frame. RESET is always handled inline in the queue. */
@@ -1547,6 +1590,8 @@ class Stream<T> extends ExchangeImpl<T> {
             }
         } catch (Throwable ex) {
             Log.logError(ex);
+        } finally {
+            drainInputQueue();
         }
     }
 
@@ -1770,7 +1815,7 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         protected boolean windowSizeExceeded(long received) {
             onProtocolError(new ProtocolException("stream %s flow control window exceeded"
-                            .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
+                        .formatted(streamid)), ResetFrame.FLOW_CONTROL_ERROR);
             return true;
         }
     }

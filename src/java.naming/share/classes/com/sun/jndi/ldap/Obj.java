@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ final class Obj {
                 if (!VersionHelper.isSerialDataAllowed()) {
                     throw new NamingException("Object deserialization is not allowed");
                 }
-                ClassLoader cl = helper.getURLClassLoader(codebases);
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
                 return deserializeObject((byte[])attr.get(), cl);
             } else if ((attr = attrs.get(JAVA_ATTRIBUTES[REMOTE_LOC])) != null) {
                  // javaRemoteLocation attribute (RMI stub will be created)
@@ -246,7 +246,7 @@ final class Obj {
                 // For backward compatibility only
                 return decodeRmiObject(
                     (String)attrs.get(JAVA_ATTRIBUTES[CLASSNAME]).get(),
-                    (String)attr.get(), codebases);
+                    (String)attr.get());
             }
 
             attr = attrs.get(JAVA_ATTRIBUTES[OBJECT_CLASS]);
@@ -368,7 +368,7 @@ final class Obj {
      * @deprecated For backward compatibility only
      */
     private static Object decodeRmiObject(String className,
-        String rmiName, String[] codebases) throws NamingException {
+                                          String rmiName) throws NamingException {
             return new Reference(className, new StringRefAddr("URL", rmiName));
     }
 
@@ -410,7 +410,7 @@ final class Obj {
             int start, sep, posn;
             Base64.Decoder decoder = null;
 
-            ClassLoader cl = helper.getURLClassLoader(codebases);
+            ClassLoader cl = Thread.currentThread().getContextClassLoader();
 
             /*
              * Temporary array for decoded RefAddr addresses - used to ensure

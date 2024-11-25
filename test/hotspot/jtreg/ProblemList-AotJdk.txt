@@ -1,0 +1,18 @@
+runtime/modules/PatchModule/PatchModuleClassList.java 0000000 generic-all
+runtime/NMT/NMTWithCDS.java                           0000000 generic-all
+runtime/symbols/TestSharedArchiveConfigFile.java      0000000 generic-all
+
+gc/arguments/TestSerialHeapSizeFlags.java             0000000 generic-all
+gc/TestAllocateHeapAtMultiple.java                    0000000 generic-all
+gc/TestAllocateHeapAt.java                            0000000 generic-all
+
+# use -Xshare
+serviceability/sa/ClhsdbCDSJstackPrintAll.java        0000000 generic-all
+serviceability/sa/ClhsdbCDSCore.java                  0000000 generic-all
+serviceability/sa/CDSJMapClstats.java                 0000000 generic-all
+compiler/intrinsics/klass/TestIsPrimitive.java        0000000 generic-all
+
+# This test is incompatible with AOTClassLinking.
+# It has the assumption about unresolved Integer.
+# However when AOTClassLinking is enabled, Integer is always resolved at JVM start-up.
+compiler/ciReplay/TestInliningProtectionDomain.java   0000000 generic-all

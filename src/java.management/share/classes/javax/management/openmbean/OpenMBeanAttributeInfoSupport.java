@@ -60,7 +60,6 @@ public class OpenMBeanAttributeInfoSupport
     /**
      * @serial The open mbean attribute's <i>open type</i>
      */
-    @SuppressWarnings("serial") // Not statically typed as Serializable
     private OpenType<?> openType;
 
     /**
@@ -564,7 +563,7 @@ public class OpenMBeanAttributeInfoSupport
 
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings("unchecked")
     static int compare(Object x, Object y) {
         return ((Comparable) x).compareTo(y);
     }
@@ -929,7 +928,7 @@ public class OpenMBeanAttributeInfoSupport
         return isValue(this, obj);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})  // cast to Comparable
+    @SuppressWarnings("unchecked")  // cast to Comparable
     static boolean isValue(OpenMBeanParameterInfo info, Object obj) {
         if (info.hasDefaultValue() && obj == null)
             return true;
