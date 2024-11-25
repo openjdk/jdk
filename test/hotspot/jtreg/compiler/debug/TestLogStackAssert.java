@@ -28,8 +28,7 @@ package compiler.debug;
  * @bug 8344013
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Verify the xmlStream log stack is not left in a bad state
- * @library /test/lib /
- * @run main/othervm -XX:+LogCompilation -XX:CompileCommand=log,*.* -XX:+CITimeVerbose -Xcomp -Xbatch compiler.debug.TestLogStackAssert
+ * @run main/othervm -XX:+LogCompilation -XX:CompileCommand=log,*.* -XX:+CITimeVerbose -Xcomp compiler.debug.TestLogStackAssert
  */
 public class TestLogStackAssert {
 
