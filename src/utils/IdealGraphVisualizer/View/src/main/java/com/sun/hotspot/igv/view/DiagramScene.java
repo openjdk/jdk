@@ -617,7 +617,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 shadowWidget.setBorder(border);
                 shadowWidget.setBackground(new Color(c.getRed(), c.getGreen(), c.getBlue(), 50));
                 shadowWidget.setPreferredLocation(fw.getPreferredLocation());
-                shadowWidget.setPreferredBounds(fw.getPreferredBounds());
+                shadowWidget.setPreferredSize(f.getSize());
                 shadowWidget.setVisible(true);
                 shadowWidget.setOpaque(true);
                 shadowWidget.revalidate();
