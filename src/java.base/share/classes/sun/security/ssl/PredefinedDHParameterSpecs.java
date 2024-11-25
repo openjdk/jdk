@@ -230,13 +230,7 @@ final class PredefinedDHParameterSpecs {
     static final Map<Integer, DHParameterSpec> ffdheParams;
 
     static {
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return Security.getProperty(PROPERTY_NAME);
-                }
-            });
+        String property = Security.getProperty(PROPERTY_NAME);
 
         if (property != null && !property.isEmpty()) {
             // remove double quote marks from beginning/end of the property

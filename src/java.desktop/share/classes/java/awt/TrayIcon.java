@@ -32,8 +32,6 @@ import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
 import sun.awt.HeadlessToolkit;
 import java.util.EventObject;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 
 /**
  * A {@code TrayIcon} object represents a tray icon that can be
@@ -101,26 +99,6 @@ public class TrayIcon {
     transient MouseListener mouseListener;
     transient MouseMotionListener mouseMotionListener;
     transient ActionListener actionListener;
-
-    /*
-     * The tray icon's AccessControlContext.
-     *
-     * Unlike the acc in Component, this field is made final
-     * because TrayIcon is not serializable.
-     */
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc = AccessController.getContext();
-
-    /*
-     * Returns the acc this tray icon was constructed with.
-     */
-    @SuppressWarnings("removal")
-    final AccessControlContext getAccessControlContext() {
-        if (acc == null) {
-            throw new SecurityException("TrayIcon is missing AccessControlContext");
-        }
-        return acc;
-    }
 
     static {
         Toolkit.loadLibraries();

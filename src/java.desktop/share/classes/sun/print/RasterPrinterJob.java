@@ -174,9 +174,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * use a particular pipeline. Either the raster
          * pipeline or the pdl pipeline can be forced.
          */
-        @SuppressWarnings("removal")
-        String forceStr = java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
+        String forceStr = System.getProperty(FORCE_PIPE_PROP);
 
         if (forceStr != null) {
             if (forceStr.equalsIgnoreCase(FORCE_PDL)) {
@@ -186,9 +184,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             }
         }
 
-        @SuppressWarnings("removal")
-        String shapeTextStr =java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction(SHAPE_TEXT_PROP));
+        String shapeTextStr = System.getProperty(SHAPE_TEXT_PROP);
 
         if (shapeTextStr != null) {
             shapeTextProp = true;
@@ -731,20 +727,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
           GraphicsEnvironment.getLocalGraphicsEnvironment().
           getDefaultScreenDevice().getDefaultConfiguration();
 
-        @SuppressWarnings("removal")
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return page;
         }
         updatePageAttributes(service, page);
@@ -812,20 +797,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
-        @SuppressWarnings("removal")
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return null;
         }
 
@@ -953,7 +927,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("removal")
     public boolean printDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -1008,19 +981,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return false;
         }
 
@@ -1033,13 +996,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 services[i] = spsFactories[i].getPrintService(null);
             }
         } else {
-            services = java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction<PrintService[]>() {
-                public PrintService[] run() {
-                    PrintService[] services = PrinterJob.lookupPrintServices();
-                    return services;
-                }
-            });
+            services = PrinterJob.lookupPrintServices();
 
             if ((services == null) || (services.length == 0)) {
                 /*

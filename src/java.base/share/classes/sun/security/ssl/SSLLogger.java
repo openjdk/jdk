@@ -41,7 +41,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.util.HexDumpEncoder;
 import sun.security.util.Debug;
 import sun.security.x509.*;
@@ -65,7 +64,7 @@ public final class SSLLogger {
     static EnumSet<ComponentToken> activeComponents = EnumSet.noneOf(ComponentToken.class);
 
     static {
-        String p = GetPropertyAction.privilegedGetProperty("javax.net.debug");
+        String p = System.getProperty("javax.net.debug");
         if (p != null) {
             if (p.isEmpty()) {
                 property = "";

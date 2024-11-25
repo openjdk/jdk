@@ -90,16 +90,9 @@ public class JPEGImageReader extends ImageReader {
         initStatic();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void initStatic() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    System.loadLibrary("javajpeg");
-                    return null;
-                }
-            });
+        System.loadLibrary("javajpeg");
         initReaderIDs(ImageInputStream.class,
                       JPEGQTable.class,
                       JPEGHuffmanTable.class);
