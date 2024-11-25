@@ -28,7 +28,6 @@ package java.net;
 import java.util.Map;
 import java.util.List;
 import java.io.IOException;
-import sun.security.util.SecurityConstants;
 
 /**
  * A CookieHandler object provides a callback mechanism to hook up a
@@ -73,11 +72,6 @@ public abstract class CookieHandler {
      * @see #setDefault(CookieHandler)
      */
     public static synchronized CookieHandler getDefault() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.GET_COOKIEHANDLER_PERMISSION);
-        }
         return cookieHandler;
     }
 
@@ -91,11 +85,6 @@ public abstract class CookieHandler {
      * @see #getDefault()
      */
     public static synchronized void setDefault(CookieHandler cHandler) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(SecurityConstants.SET_COOKIEHANDLER_PERMISSION);
-        }
         cookieHandler = cHandler;
     }
 

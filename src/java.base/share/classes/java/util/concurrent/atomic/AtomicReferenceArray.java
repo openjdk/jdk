@@ -329,20 +329,12 @@ public class AtomicReferenceArray<E> implements java.io.Serializable {
             throw new java.io.InvalidObjectException("Not array type");
         if (a.getClass() != Object[].class)
             a = Arrays.copyOf((Object[])a, Array.getLength(a), Object[].class);
-        @SuppressWarnings("removal")
-        Field arrayField = java.security.AccessController.doPrivileged(
-            (java.security.PrivilegedAction<Field>) () -> {
-                try {
-                    Field f = AtomicReferenceArray.class
-                        .getDeclaredField("array");
-                    f.setAccessible(true);
-                    return f;
-                } catch (ReflectiveOperationException e) {
-                    throw new Error(e);
-                }});
         try {
+
+            Field arrayField = AtomicReferenceArray.class.getDeclaredField("array");
+            arrayField.setAccessible(true);
             arrayField.set(this, a);
-        } catch (IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new Error(e);
         }
     }

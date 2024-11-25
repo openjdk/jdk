@@ -29,7 +29,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import jdk.internal.classfile.impl.TransformImpl;
-import jdk.internal.javac.PreviewFeature;
 
 import static java.util.Objects.requireNonNull;
 
@@ -38,9 +37,8 @@ import static java.util.Objects.requireNonNull;
  *
  * @see ClassFileTransform
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public non-sealed interface MethodTransform
         extends ClassFileTransform<MethodTransform, MethodElement, MethodBuilder> {

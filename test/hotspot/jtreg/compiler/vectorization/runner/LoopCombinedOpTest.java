@@ -138,8 +138,11 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    // With sse2, the MulI does not vectorize. This means we have vectorized stores
+    // to res1, but scalar loads from res1. The store-to-load-forwarding failure
+    // detection catches this and rejects vectorization.
     public int[] multipleStores() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];

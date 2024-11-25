@@ -47,7 +47,6 @@ import com.sun.beans.introspect.EventSetInfo;
 import com.sun.beans.introspect.PropertyInfo;
 import jdk.internal.access.JavaBeansAccess;
 import jdk.internal.access.SharedSecrets;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * The Introspector class provides a standard way for tools to learn about
@@ -186,9 +185,6 @@ public class Introspector {
     public static BeanInfo getBeanInfo(Class<?> beanClass)
         throws IntrospectionException
     {
-        if (!ReflectUtil.isPackageAccessible(beanClass)) {
-            return (new Introspector(beanClass, null, USE_ALL_BEANINFO)).getBeanInfo();
-        }
         ThreadGroupContext context = ThreadGroupContext.getContext();
         BeanInfo beanInfo = context.getBeanInfo(beanClass);
         if (beanInfo == null) {
