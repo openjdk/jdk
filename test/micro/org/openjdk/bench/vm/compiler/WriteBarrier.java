@@ -52,13 +52,13 @@ public class WriteBarrier {
     // For array update tests
     private Object[] theArraySmall;
     private Object[] realReferencesSmall;
-    private Object[] nullReferencesSmall;
     private int[] indicesSmall;
 
     private Object[] theArrayLarge;
     private Object[] realReferencesLarge;
-    private Object[] nullReferencesLarge;
     private int[] indicesLarge;
+
+    private Object nullRef;
 
     // For field update tests
     public Referencer head = null;
@@ -86,12 +86,10 @@ public class WriteBarrier {
     public void setup() {
         theArraySmall = new Object[NUM_REFERENCES_SMALL];
         realReferencesSmall = new Object[NUM_REFERENCES_SMALL];
-        nullReferencesSmall = new Object[NUM_REFERENCES_SMALL];
         indicesSmall = new int[NUM_REFERENCES_SMALL];
 
         theArrayLarge = new Object[NUM_REFERENCES_LARGE];
         realReferencesLarge = new Object[NUM_REFERENCES_LARGE];
-        nullReferencesLarge = new Object[NUM_REFERENCES_LARGE];
         indicesLarge = new int[NUM_REFERENCES_LARGE];
 
         m_w = (int) System.currentTimeMillis();
@@ -137,7 +135,7 @@ public class WriteBarrier {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
-            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullReferencesSmall[indicesSmall[i]];
+            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullRef;
         }
     }
 
@@ -153,7 +151,7 @@ public class WriteBarrier {
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
-            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullReferencesLarge[indicesLarge[i]];
+            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullRef;
         }
     }
 
