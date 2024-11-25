@@ -315,7 +315,7 @@ static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = n
 // Extra Symbols to be added to the archive
 static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = nullptr;
 // Methods managed by SystemDictionary::find_method_handle_intrinsic() to be added to the archive
-static GrowableArray<Method*>* _pending_method_handle_intrinsics = NULL;
+static GrowableArray<Method*>* _pending_method_handle_intrinsics = nullptr;
 
 void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename) {
   _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);

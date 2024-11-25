@@ -428,7 +428,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   assert(is_shared(), "should always be set for shared constant pools");
   if (is_for_method_handle_intrinsic()) {
     // See the same check in remove_unshareable_info() below.
-    assert(cache() == NULL, "must not have cpCache");
+    assert(cache() == nullptr, "must not have cpCache");
     return;
   }
   assert(_cache != nullptr, "constant pool _cache should not be null");
@@ -474,7 +474,7 @@ void ConstantPool::remove_unshareable_info() {
     // This CP was created by Method::make_method_handle_intrinsic() and has nothing
     // that need to be removed/restored. It has no cpCache since the intrinsic methods
     // don't have any bytecodes.
-    assert(cache() == NULL, "must not have cpCache");
+    assert(cache() == nullptr, "must not have cpCache");
     return;
   }
 
@@ -680,13 +680,12 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
   Handle mirror_handle;
   Symbol* name = this_cp->symbol_at(name_index);
   Handle loader (THREAD, this_cp->pool_holder()->class_loader());
-  Handle protection_domain (THREAD, this_cp->pool_holder()->protection_domain());
 
   Klass* k;
   {
     // Turn off the single stepping while doing class resolution
     JvmtiHideSingleStepping jhss(javaThread);
-    k = SystemDictionary::resolve_or_fail(name, loader, protection_domain, true, THREAD);
+    k = SystemDictionary::resolve_or_fail(name, loader, true, THREAD);
   } //  JvmtiHideSingleStepping jhss(javaThread);
 
   if (!HAS_PENDING_EXCEPTION) {
@@ -756,10 +755,8 @@ Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int w
     HandleMark hm(current);
     Symbol* name = this_cp->symbol_at(name_index);
     oop loader = this_cp->pool_holder()->class_loader();
-    oop protection_domain = this_cp->pool_holder()->protection_domain();
-    Handle h_prot (current, protection_domain);
     Handle h_loader (current, loader);
-    Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader, h_prot);
+    Klass* k = SystemDictionary::find_instance_klass(current, name, h_loader);
 
     // Avoid constant pool verification at a safepoint, as it takes the Module_lock.
     if (k != nullptr && current->is_Java_thread()) {
