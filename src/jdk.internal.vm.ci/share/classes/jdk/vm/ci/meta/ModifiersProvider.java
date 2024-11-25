@@ -137,9 +137,11 @@ public interface ModifiersProvider {
     }
 
     /**
-     * Checks that this element is concrete and not abstract.
+     * Returns true if a method is with a real implementation, or if a type can
+     * be instantiated. For example, array types return true for both
+     * {@link #isAbstract()} and this method.
      *
-     * @return whether this element is concrete
+     * @see ResolvedJavaType#isConcrete()
      */
     default boolean isConcrete() {
         return !isAbstract();
