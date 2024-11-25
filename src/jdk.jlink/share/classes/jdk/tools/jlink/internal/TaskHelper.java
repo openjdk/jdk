@@ -535,18 +535,22 @@ public final class TaskHelper {
                     }
                     Option<?> opt = pluginOption == null ? option : pluginOption;
                     String param = null;
+                    boolean potentiallyGnuOption = false;
                     if (opt.hasArg) {
                         if (name.startsWith("--") && name.indexOf('=') > 0) {
                             param = name.substring(name.indexOf('=') + 1,
                                     name.length());
                         } else if (i + 1 < args.length) {
+                            potentiallyGnuOption = true;
                             param = args[++i];
                         }
-                        if (param == null || param.isEmpty()
-                                || (param.length() >= 2 && param.charAt(0) == '-'
-                                && param.charAt(1) == '-')) {
-                            throw new BadArgs("err.missing.arg", name).
-                                    showUsage(true);
+                        if (param == null || param.isEmpty()) {
+                            throw new BadArgs("err.missing.arg", name).showUsage(true);
+                        }
+                        if (potentiallyGnuOption && param.length() >= 2 &&
+                            param.charAt(0) == '-' && param.charAt(1) == '-' &&
+                            !param.contains(" ")) {
+                                throw new BadArgs("err.missing.arg", name).showUsage(true);
                         }
                     }
                     if (pluginOption != null) {
