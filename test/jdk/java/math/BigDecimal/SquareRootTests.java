@@ -60,6 +60,7 @@ public class SquareRootTests {
         failures += nearTen();
         failures += nearOne();
         failures += halfWay();
+        failures += exactResultTests();
 
         if (failures > 0 ) {
             throw new RuntimeException("Incurred " + failures + " failures" +
@@ -169,6 +170,77 @@ public class SquareRootTests {
     private static int compareSqrtImplementations(BigDecimal bd, MathContext mc) {
         return equalNumerically(BigSquareRoot.sqrt(bd, mc),
                                 bd.sqrt(mc), "sqrt(" + bd + ") under " + mc);
+    }
+
+    private static int exactResultTests() {
+        int failures = 0;
+        MathContext unnecessary = new MathContext(1, RoundingMode.UNNECESSARY);
+        MathContext arbitrary = new MathContext(0, RoundingMode.CEILING);
+
+        BigDecimal[] errCases = {
+                // (strippedScale & 1) != 0
+                BigDecimal.TEN,
+                // (strippedScale & 1) == 0 && !stripped.isPowerOfTen() && sqrtRem[1].signum != 0
+                BigDecimal.TWO,
+        };
+
+        for (BigDecimal input : errCases) {
+            BigDecimal result;
+            // mc.roundingMode == RoundingMode.UNNECESSARY
+            try {
+                result = input.sqrt(unnecessary);
+                System.err.println("Unexpected sqrt with UNNECESSARY RoundingMode: (" + input + ").sqrt() = " + result);
+                failures += 1;
+            } catch (ArithmeticException e) {
+                // Expected
+            }
+
+            // mc.roundingMode != RoundingMode.UNNECESSARY && mc.precision == 0
+            try {
+                result = BigDecimal.TEN.sqrt(arbitrary);
+                System.err.println("Unexpected sqrt with mc.precision == 0: (" + input + ").sqrt() = " + result);
+                failures += 1;
+            } catch (ArithmeticException e) {
+                // Expected
+            }
+        }
+
+        // (strippedScale & 1) == 0
+
+        // !stripped.isPowerOfTen() && sqrtRem[1].signum == 0 && (mc.precision != 0 && result.precision() > mc.precision)
+        try {
+            BigDecimal input = BigDecimal.valueOf(121);
+            BigDecimal result = input.sqrt(unnecessary);
+            System.err.println("Unexpected sqrt with result.precision() > mc.precision: (" + input + ").sqrt() = " + result);
+            failures += 1;
+        } catch (ArithmeticException e) {
+            // Expected
+        }
+
+        BigDecimal four = BigDecimal.valueOf(4);
+        Object[][] cases = {
+                // stripped.isPowerOfTen() && mc.roundingMode == RoundingMode.UNNECESSARY
+                { BigDecimal.ONE, unnecessary, BigDecimal.ONE },
+                // stripped.isPowerOfTen() && mc.roundingMode != RoundingMode.UNNECESSARY && mc.precision == 0
+                { BigDecimal.ONE, arbitrary, BigDecimal.ONE },
+                // !stripped.isPowerOfTen() && mc.roundingMode == RoundingMode.UNNECESSARY
+                // && sqrtRem[1].signum == 0 && mc.precision == 0
+                { four, new MathContext(0, RoundingMode.UNNECESSARY), BigDecimal.TWO },
+                // !stripped.isPowerOfTen() && mc.roundingMode != RoundingMode.UNNECESSARY
+                // && sqrtRem[1].signum == 0 && mc.precision == 0
+                { four, arbitrary, BigDecimal.TWO },
+                // !stripped.isPowerOfTen() && sqrtRem[1].signum == 0
+                // && (mc.precision != 0 && result.precision() <= mc.precision)
+                { four, unnecessary, BigDecimal.TWO },
+        };
+
+        for (Object[] testCase : cases) {
+            BigDecimal expected = (BigDecimal) testCase[2];
+            BigDecimal result = ((BigDecimal) testCase[0]).sqrt((MathContext) testCase[1]);
+            failures += equalNumerically(expected, result, "Exact results");
+        }
+
+        return failures;
     }
 
     /**
