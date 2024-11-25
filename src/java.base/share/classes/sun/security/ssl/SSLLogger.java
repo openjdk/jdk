@@ -70,35 +70,40 @@ public final class SSLLogger {
             if (p.isEmpty()) {
                 property = "";
                 logger = System.getLogger("javax.net.ssl");
+                activeComponents.add(ComponentToken.EMPTYALL);
             } else {
                 property = p.toLowerCase(Locale.ENGLISH);
                 if (property.contains("help")) {
                     help();
                 }
                 logger = new SSLConsoleLogger("javax.net.ssl", p);
-                String tmpProperty = property;
-                for (ComponentToken o : ComponentToken.values()) {
-                    if (tmpProperty.contains(o.component)) {
-                        activeComponents.add(o);
-                        // remove the pattern to avoid it being reused
-                        // e.g. "ssl,sslctx" parsing
-                        tmpProperty = tmpProperty.replaceFirst(o.component, "");
+                if (property.contains("all")) {
+                    activeComponents.add(ComponentToken.EMPTYALL);
+                } else {
+                    String tmpProperty = property;
+                    for (ComponentToken o : ComponentToken.values()) {
+                        if (tmpProperty.contains(o.component)) {
+                            activeComponents.add(o);
+                            // remove the pattern to avoid it being reused
+                            // e.g. "ssl,sslctx" parsing
+                            tmpProperty = tmpProperty.replaceFirst(o.component, "");
+                        }
+                    }
+                    // some rules to check
+                    if ((activeComponents.contains(ComponentToken.PLAINTEXT)
+                            || activeComponents.contains(ComponentToken.PACKET))
+                            && !activeComponents.contains(ComponentToken.RECORD)) {
+                        activeComponents.remove(ComponentToken.PLAINTEXT);
+                        activeComponents.remove(ComponentToken.PACKET);
+                    }
+
+                    if (activeComponents.contains(ComponentToken.VERBOSE)
+                            && !activeComponents.contains(ComponentToken.HANDSHAKE)) {
+                        activeComponents.remove(ComponentToken.VERBOSE);
                     }
                 }
-                // some rules to check
-                if ((activeComponents.contains(ComponentToken.PLAINTEXT)
-                        || activeComponents.contains(ComponentToken.PACKET))
-                        && !activeComponents.contains(ComponentToken.RECORD)) {
-                    activeComponents.remove(ComponentToken.PLAINTEXT);
-                    activeComponents.remove(ComponentToken.PACKET);
-                }
-
-                if (activeComponents.contains(ComponentToken.VERBOSE)
-                        && !activeComponents.contains(ComponentToken.HANDSHAKE)) {
-                    activeComponents.remove(ComponentToken.VERBOSE);
-                }
             }
-            isOn = (property.isEmpty() || property.equals("all"))
+            isOn = activeComponents.contains(ComponentToken.EMPTYALL)
                     || activeComponents.contains(ComponentToken.SSL);
         } else {
             property = null;
@@ -146,12 +151,11 @@ public final class SSLLogger {
      * system property value syntax as per help menu.
      */
     public static boolean isOn(String checkPoints) {
-
         if (!isOn) {
             return false;
         }
 
-        if (property.isEmpty() || property.equals("all")) {
+        if (activeComponents.contains(ComponentToken.EMPTYALL)) {
             // System.Logger in use or property = "all"
             return true;
         }
@@ -238,6 +242,7 @@ public final class SSLLogger {
     }
 
     enum ComponentToken {
+        EMPTYALL,
         DEFAULTCTX,
         HANDSHAKE,
         KEYMANAGER,
