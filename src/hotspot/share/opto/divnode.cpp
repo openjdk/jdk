@@ -1155,7 +1155,7 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 //------------------------------Idealize---------------------------------------
 
 template <typename TypeClass, typename Signed>
-Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
+static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   // Check for dead control input
   if (mod->in(0) && mod->remove_dead_region(phase, can_reshape)) {
     return mod;
@@ -1199,7 +1199,7 @@ Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
 }
 
 template <typename TypeClass, typename Unsigned, typename Signed>
-const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
+static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
   const Type* t1 = phase->type(mod->in(1));
   const Type* t2 = phase->type(mod->in(2));
   if (t1 == Type::TOP) {

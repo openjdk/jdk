@@ -59,7 +59,7 @@ public class ModINodeIdealizationTests {
             Asserts.assertEQ(a % a, constant(a));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         } catch (ArithmeticException e) {
-            Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
+            Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
         Asserts.assertEQ(Math.abs(a) % 32, powerOf2(a));

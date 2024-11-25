@@ -60,21 +60,21 @@ public class UDivLNodeIdealizationTests {
             Asserts.assertEQ(Long.divideUnsigned(a, a), constant(a));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         } catch (ArithmeticException e) {
-            Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
+            Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
         try {
             Asserts.assertEQ(Long.divideUnsigned((a * b), b), retainDenominator(a, b));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         } catch (ArithmeticException e) {
-            Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
+            Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
         try {
             Asserts.assertEQ(Long.divideUnsigned(a, Long.divideUnsigned(b, b)), identityThird(a, b));
             Asserts.assertFalse(shouldThrow, "Expected an exception to be thrown.");
         } catch (ArithmeticException e) {
-            Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
+            Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
         Asserts.assertEQ(Long.divideUnsigned(a, 1), identity(a));
