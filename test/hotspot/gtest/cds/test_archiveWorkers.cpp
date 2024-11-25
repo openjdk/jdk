@@ -42,29 +42,28 @@ public:
 
 // Test a repeated cycle of pool start works.
 TEST_VM(ArchiveWorkersTest, continuous_restart) {
-  for (int c = 0; c < 100; c++) {
-    ArchiveWorkersUseMark workers_mark;
+  for (int c = 0; c < 1000; c++) {
+    ArchiveWorkers workers;
   }
 }
 
-// Test a repeated cycle of single-task-use works.
+// Test a repeated cycle of sample task works.
 TEST_VM(ArchiveWorkersTest, single_task) {
-  for (int c = 0; c < 100; c++) {
-    ArchiveWorkersUseMark workers_mark;
+  for (int c = 0; c < 1000; c++) {
     TestArchiveWorkerTask task;
-    workers_mark.run_task(&task);
+    ArchiveWorkers workers;
+    workers.run_task(&task);
     ASSERT_EQ(task.max() * (task.max() - 1) / 2, task.sum());
   }
 }
 
-// Test a repeated cycle of multi-task-use works with non-one shot pool.
-TEST_VM(ArchiveWorkersTest, multiple_tasks) {
-  for (int c = 0; c < 100; c++) {
-    ArchiveWorkersUseMark workers_mark;
-    for (int t = 0; t < 10; t++) {
-      TestArchiveWorkerTask task;
-      workers_mark.run_task(&task);
-      ASSERT_EQ(task.max() * (task.max() - 1) / 2, task.sum());
-    }
-  }
+// Test that reusing the workers fails.
+#ifdef ASSERT
+TEST_VM_ASSERT_MSG(ArchiveWorkersTest, multiple_tasks, ".* Should be unused yet") {
+  TestArchiveWorkerTask task;
+  ArchiveWorkers workers;
+  workers.run_task(&task);
+  workers.run_task(&task);
 }
+#endif // ASSERT
+

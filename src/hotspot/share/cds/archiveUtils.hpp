@@ -326,7 +326,6 @@ class ArchiveWorkers;
 // A task to be worked on by worker threads
 class ArchiveWorkerTask : public CHeapObj<mtInternal> {
   friend class ArchiveWorkers;
-  friend class ArchiveWorkerShutdownTask;
 private:
   const char* _name;
   int _max_chunks;
@@ -354,76 +353,40 @@ public:
   void run() override;
 };
 
-class ArchiveWorkerShutdownTask : public ArchiveWorkerTask {
-public:
-  ArchiveWorkerShutdownTask() : ArchiveWorkerTask("Archive Worker Shutdown") {
-    // This task always have only one chunk.
-    configure_max_chunks(1);
-  }
-  void work(int chunk, int max_chunks) override {
-    // Do nothing.
-  }
-};
-
-// Special worker pool for archive workers. The goal for this pool is to
-// startup fast, distribute spiky workloads efficiently, and being able to
-// shutdown after use. This makes the implementation quite different from
-// the normal GC worker pool.
-class ArchiveWorkers {
+// Special archive workers. The goal for this implementation is to startup fast,
+// distribute spiky workloads efficiently, and shutdown immediately after use.
+// This makes the implementation quite different from the normal GC worker pool.
+class ArchiveWorkers : public StackObj {
   friend class ArchiveWorkerThread;
-  friend class ArchiveWorkersUseMark;
 private:
   // Target number of chunks per worker. This should be large enough to even
   // out work imbalance, and small enough to keep bookkeeping overheads low.
   static constexpr int CHUNKS_PER_WORKER = 4;
   static int max_workers();
 
-  ArchiveWorkerShutdownTask _shutdown_task;
-  Semaphore _start_semaphore;
   Semaphore _end_semaphore;
 
   int _num_workers;
   int _started_workers;
-  int _waiting_workers;
   int _running_workers;
 
-  typedef enum { NOT_READY, READY, SHUTDOWN } State;
+  typedef enum { UNUSED, WORKING, SHUTDOWN } State;
   volatile State _state;
 
   ArchiveWorkerTask* _task;
 
-  bool run_as_worker();
+  void run_as_worker();
   void start_worker_if_needed();
-  void signal_worker_if_needed();
 
   void run_task_single(ArchiveWorkerTask* task);
   void run_task_multi(ArchiveWorkerTask* task);
 
   bool is_parallel();
 
+public:
   ArchiveWorkers();
   ~ArchiveWorkers();
-  void initialize();
-  void shutdown();
   void run_task(ArchiveWorkerTask* task);
 };
-
-// State object to properly initialize the archive workers before
-// use and shut them down after use.
-class ArchiveWorkersUseMark : public StackObj {
-private:
-  ArchiveWorkers _workers;
-public:
-  ArchiveWorkersUseMark() {
-    _workers.initialize();
-  }
-  ~ArchiveWorkersUseMark() {
-    _workers.shutdown();
-  }
-  void run_task(ArchiveWorkerTask* task) {
-    _workers.run_task(task);
-  }
-};
-
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP
