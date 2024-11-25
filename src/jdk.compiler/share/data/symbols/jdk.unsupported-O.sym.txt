@@ -29,3 +29,8 @@
 module name jdk.unsupported
 header exports com/sun/nio/file,sun/misc,sun/reflect requires name\u0020;java.base\u0020;flags\u0020;8000 target macos-aarch64 flags 8000
 
+class name sun/reflect/ReflectionFactory
+method name defaultReadObjectForSerialization descriptor (Ljava/lang/Class;)Ljava/lang/invoke/MethodHandle; flags 11 signature (Ljava/lang/Class<*>;)Ljava/lang/invoke/MethodHandle;
+method name defaultWriteObjectForSerialization descriptor (Ljava/lang/Class;)Ljava/lang/invoke/MethodHandle; flags 11 signature (Ljava/lang/Class<*>;)Ljava/lang/invoke/MethodHandle;
+method name serialPersistentFields descriptor (Ljava/lang/Class;)[Ljava/io/ObjectStreamField; flags 11 signature (Ljava/lang/Class<*>;)[Ljava/io/ObjectStreamField;
+

@@ -29,3 +29,7 @@
 module name java.sql.rowset
 header exports javax/sql/rowset,javax/sql/rowset/serial,javax/sql/rowset/spi requires name\u0020;java.base\u0020;flags\u0020;8000,name\u0020;java.logging\u0020;flags\u0020;20,name\u0020;java.naming\u0020;flags\u0020;20,name\u0020;java.sql\u0020;flags\u0020;20 uses javax/sql/rowset/RowSetFactory target macos-aarch64 flags 8000
 
+class name javax/sql/rowset/serial/SerialJavaObject
+-method name getFields descriptor ()[Ljava/lang/reflect/Field;
+method name getFields descriptor ()[Ljava/lang/reflect/Field; thrownTypes javax/sql/rowset/serial/SerialException flags 1
+

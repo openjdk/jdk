@@ -38,7 +38,7 @@ method name selectFrom descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/v
 method name selectFrom descriptor (Ljdk/incubator/vector/Vector;Ljdk/incubator/vector/Vector;)Ljdk/incubator/vector/Vector; flags 1041 methodParameters 1000:null,1000:null
 
 class name jdk/incubator/vector/Float16
-header extends java/lang/Number implements java/lang/Comparable flags 31 signature Ljava/lang/Number;Ljava/lang/Comparable<Ljdk/incubator/vector/Float16;>;
+header extends java/lang/Number implements java/lang/Comparable flags 31 signature Ljava/lang/Number;Ljava/lang/Comparable<Ljdk/incubator/vector/Float16;>; runtimeAnnotations @Ljdk/internal/ValueBased;
 field name POSITIVE_INFINITY descriptor Ljdk/incubator/vector/Float16; flags 19
 field name NEGATIVE_INFINITY descriptor Ljdk/incubator/vector/Float16; flags 19
 field name NaN descriptor Ljdk/incubator/vector/Float16; flags 19

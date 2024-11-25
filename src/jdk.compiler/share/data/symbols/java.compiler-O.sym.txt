@@ -86,3 +86,6 @@ header extends javax/lang/model/util/TypeKindVisitor9 flags 21 signature <R:Ljav
 class name javax/lang/model/util/TypeKindVisitorPreview
 header extends javax/lang/model/util/TypeKindVisitor14 flags 21 signature <R:Ljava/lang/Object;P:Ljava/lang/Object;>Ljavax/lang/model/util/TypeKindVisitor14<TR;TP;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;LANGUAGE_MODEL;,reflective=Ztrue) runtimeAnnotations @Ljavax/annotation/processing/SupportedSourceVersion;(value=eLjavax/lang/model/SourceVersion;RELEASE_24;)
 
+class name javax/tools/ToolProvider
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I3)
+
