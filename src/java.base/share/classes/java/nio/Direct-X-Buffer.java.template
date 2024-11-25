@@ -39,9 +39,6 @@ import jdk.internal.misc.ScopedMemoryAccess.ScopedAccessError;
 import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
 import sun.nio.ch.DirectBuffer;
-#if[byte]
-import jdk.internal.vm.annotation.Stable;
-#end[byte]
 
 #if[rw]
 sealed
