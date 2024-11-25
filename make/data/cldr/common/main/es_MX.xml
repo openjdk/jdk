@@ -45,7 +45,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kgp">kaingang</language>
 			<language type="krc">karachái bálkaro</language>
 			<language type="kum">cumuco</language>
-			<language type="lo">lao</language>
 			<language type="mga" draft="contributed">irlandés medieval</language>
 			<language type="nan" draft="contributed">min nan (Chino)</language>
 			<language type="nr">ndebele meridional</language>
@@ -151,10 +150,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">a. m.</dayPeriod>
-							<dayPeriod type="pm">p. m.</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">a. m.</dayPeriod>
 							<dayPeriod type="pm">p. m.</dayPeriod>
 						</dayPeriodWidth>
@@ -392,25 +387,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekOfMonth-short">
 				<displayName>sem. de m</displayName>
 			</field>
-			<field type="weekOfMonth-narrow">
-				<displayName>sem. de m</displayName>
-			</field>
 			<field type="day-short">
 				<relativeTime type="future">
 					<relativeTimePattern count="one">en {0} día</relativeTimePattern>
 					<relativeTimePattern count="other">en {0} días</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-narrow">
-				<relativeTime type="future">
-					<relativeTimePattern count="one">en {0} día</relativeTimePattern>
-					<relativeTimePattern count="other">en {0} días</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="dayOfYear-short">
-				<displayName>día del a</displayName>
-			</field>
-			<field type="dayOfYear-narrow">
 				<displayName>día del a</displayName>
 			</field>
 			<field type="sun">
@@ -456,27 +439,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">el vier. pasado</relative>
 				<relative type="0">este vier.</relative>
 				<relative type="1">el próximo vier.</relative>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">hace {0} vie.</relativeTimePattern>
-					<relativeTimePattern count="other">hace {0} vie.</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">hace {0} VI</relativeTimePattern>
-					<relativeTimePattern count="other">hace {0} VI</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">el sábado pasado</relative>
 				<relative type="0">este sábado</relative>
 				<relative type="1">el sábado próximo</relative>
-			</field>
-			<field type="sat-narrow">
-				<relativeTime type="past">
-					<relativeTimePattern count="one">hace {0} SA</relativeTimePattern>
-					<relativeTimePattern count="other">hace {0} SA</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="hour-short">
 				<relativeTime type="future">
@@ -492,6 +459,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Africa/Bujumbura">
 				<exemplarCity>Buyumbura</exemplarCity>
 			</zone>
@@ -518,9 +488,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
 				<exemplarCity>St. Thomas</exemplarCity>
@@ -611,16 +578,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength type="long">
-				<decimalFormat>
-					<pattern type="1000000000000" count="one">0 billón</pattern>
-					<pattern type="1000000000000" count="other">0 billones</pattern>
-					<pattern type="10000000000000" count="one">00 billones</pattern>
-					<pattern type="10000000000000" count="other">00 billones</pattern>
-					<pattern type="100000000000000" count="one">000 billones</pattern>
-					<pattern type="100000000000000" count="other">000 billones</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 k</pattern>
@@ -683,15 +640,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currencyFormatLength>
 		</currencyFormats>
 		<currencies>
-			<currency type="AMD">
-				<displayName count="one">dram armenio</displayName>
-				<displayName count="other">drams armenios</displayName>
-			</currency>
-			<currency type="BDT">
-				<displayName>taka bangladesí</displayName>
-				<displayName count="one">taka bangladesí</displayName>
-				<displayName count="other">takas bangladesíes</displayName>
-			</currency>
 			<currency type="BTN">
 				<displayName>ngultrum butanés</displayName>
 				<displayName count="one">ngultrum butanés</displayName>
@@ -702,21 +650,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="FKP">
 				<symbol alt="narrow">£</symbol>
-			</currency>
-			<currency type="KGS">
-				<displayName>som kirguís</displayName>
-				<displayName count="one">som kirguís</displayName>
-				<displayName count="other">soms kirguises</displayName>
-			</currency>
-			<currency type="KHR">
-				<displayName>riel camboyano</displayName>
-				<displayName count="one">riel camboyano</displayName>
-				<displayName count="other">rieles camboyanos</displayName>
-			</currency>
-			<currency type="LAK">
-				<displayName>kip laosiano</displayName>
-				<displayName count="one">kip laosiano</displayName>
-				<displayName count="other">kips laosianos</displayName>
 			</currency>
 			<currency type="LVL">
 				<displayName count="one" draft="contributed">lats letón</displayName>
@@ -744,11 +677,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currency type="SSP">
 				<symbol alt="narrow">£</symbol>
 			</currency>
-			<currency type="STN">
-				<displayName>dobra santotomense</displayName>
-				<displayName count="one">dobra santotomense</displayName>
-				<displayName count="other">dobras santotomenses</displayName>
-			</currency>
 			<currency type="SYP">
 				<symbol alt="narrow">£</symbol>
 			</currency>
@@ -764,11 +692,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="one">bolívar venezolano</displayName>
 				<displayName count="other">bolivares venezolanos</displayName>
 			</currency>
-			<currency type="VND">
-				<displayName>dong vietnamita</displayName>
-				<displayName count="one">dong vietnamita</displayName>
-				<displayName count="other">dongs vietnamitas</displayName>
-			</currency>
 			<currency type="XXX">
 				<displayName count="one">(moneda desconocida)</displayName>
 				<displayName count="other">(moneda desconocida)</displayName>
@@ -782,9 +705,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<displayName>miligramos por decilitro</displayName>
-			</unit>
 			<unit type="concentr-percent">
 				<displayName>por ciento</displayName>
 			</unit>
@@ -1020,15 +940,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} mm</unitPattern>
 				<unitPattern count="other">{0}mm</unitPattern>
 			</unit>
-			<unit type="length-nautical-mile">
-				<displayName>M</displayName>
-			</unit>
 			<unit type="mass-kilogram">
 				<unitPattern count="one">{0} kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
-			</unit>
-			<unit type="power-horsepower">
-				<displayName>CV</displayName>
 			</unit>
 			<unit type="pressure-atmosphere">
 				<unitPattern count="one">{0} atm</unitPattern>

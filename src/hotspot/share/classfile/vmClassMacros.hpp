@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,7 @@
   do_klass(Error_klass,                                 java_lang_Error                                       ) \
   do_klass(Exception_klass,                             java_lang_Exception                                   ) \
   do_klass(RuntimeException_klass,                      java_lang_RuntimeException                            ) \
-  do_klass(SecurityManager_klass,                       java_lang_SecurityManager                             ) \
   do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain                        ) \
-  do_klass(AccessControlContext_klass,                  java_security_AccessControlContext                    ) \
-  do_klass(AccessController_klass,                      java_security_AccessController                        ) \
   do_klass(SecureClassLoader_klass,                     java_security_SecureClassLoader                       ) \
   do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException                      ) \
   do_klass(Record_klass,                                java_lang_Record                                      ) \
@@ -175,6 +172,7 @@
   do_klass(Short_klass,                                 java_lang_Short                                       ) \
   do_klass(Integer_klass,                               java_lang_Integer                                     ) \
   do_klass(Long_klass,                                  java_lang_Long                                        ) \
+  do_klass(Void_klass,                                  java_lang_Void                                        ) \
                                                                                                                 \
   /* force inline of iterators */                                                                               \
   do_klass(Iterator_klass,                              java_util_Iterator                                    ) \

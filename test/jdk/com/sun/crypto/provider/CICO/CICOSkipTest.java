@@ -75,7 +75,7 @@ public class CICOSkipTest {
         "OFB", "OFB64", "PCBC"};
     private static final String[] PADDINGS = {"NoPadding", "Pkcs5Padding"};
     private static final String[] PBE_ALGOS = {"PBEWithMD5AndDES",
-        "PBEWithMD5AndDES/CBC/PKCS5Padding"};
+        "PBEWithMD5AndDES/CBC/PKCS5Padding", "PBEWithSHA1AndDESede"};
 
     public static void main(String[] args) throws Exception {
         // how many kinds of padding mode such as PKCS5padding and NoPadding

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,9 +123,6 @@ public class SSLContext {
      *
      * @param context the SSLContext
      * @throws  NullPointerException if context is null
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method does not allow
-     *          {@code SSLPermission("setDefaultSSLContext")}
      * @since 1.6
      */
     public static void setDefault(SSLContext context) {

@@ -35,6 +35,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -3781,6 +3782,36 @@ address StubGenerator::generate_cont_returnBarrier_exception() {
   return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
 }
 
+address StubGenerator::generate_cont_preempt_stub() {
+  if (!Continuations::enabled()) return nullptr;
+  StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+  address start = __ pc();
+
+  __ reset_last_Java_frame(true);
+
+  // Set rsp to enterSpecial frame, i.e. remove all frames copied into the heap.
+  __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+
+  Label preemption_cancelled;
+  __ movbool(rscratch1, Address(r15_thread, JavaThread::preemption_cancelled_offset()));
+  __ testbool(rscratch1);
+  __ jcc(Assembler::notZero, preemption_cancelled);
+
+  // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+  SharedRuntime::continuation_enter_cleanup(_masm);
+  __ pop(rbp);
+  __ ret(0);
+
+  // We acquired the monitor after freezing the frames so call thaw to continue execution.
+  __ bind(preemption_cancelled);
+  __ movbool(Address(r15_thread, JavaThread::preemption_cancelled_offset()), false);
+  __ lea(rbp, Address(rsp, checked_cast<int32_t>(ContinuationEntry::size())));
+  __ movptr(rscratch1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
+  __ jmp(rscratch1);
+
+  return start;
+}
+
 // exception handler for upcall stubs
 address StubGenerator::generate_upcall_stub_exception_handler() {
   StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
@@ -3831,10 +3862,10 @@ address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klas
       r_sub_klass   = rsi,
       result        = rdi;
 
-  __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                   rdx, rcx, rbx, r11, // temps
-                                   result,
-                                   super_klass_index);
+  __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                         rdx, rcx, rbx, r11, // temps
+                                         result,
+                                         super_klass_index);
   __ ret(0);
 
   return start;
@@ -3953,6 +3984,7 @@ void StubGenerator::generate_continuation_stubs() {
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+  StubRoutines::_cont_preempt_stub = generate_cont_preempt_stub();
 }
 
 void StubGenerator::generate_final_stubs() {

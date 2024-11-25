@@ -232,20 +232,26 @@ public class DHKeyAgreement2 {
         }
         System.err.println("Shared secrets are the same");
 
+        testSecretKey(bobKeyAgree, alicePubKey, "DES");
+        testSecretKey(bobKeyAgree, alicePubKey, "AES");
+    }
+
+    private static void testSecretKey(KeyAgreement bobKeyAgree, PublicKey alicePubKey, String algo)
+            throws Exception {
         // Now let's return the shared secret as a SecretKey object
         // and use it for encryption
-        System.out.println("Return shared secret as SecretKey object ...");
+        System.out.println("Return shared secret as SecretKey object with algorithm: " + algo);
         bobKeyAgree.doPhase(alicePubKey, true);
-        SecretKey desKey = bobKeyAgree.generateSecret("DES");
+        SecretKey key = bobKeyAgree.generateSecret(algo);
 
-        Cipher desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-        desCipher.init(Cipher.ENCRYPT_MODE, desKey);
+        Cipher cipher = Cipher.getInstance(algo + "/ECB/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
 
         byte[] cleartext = "This is just an example".getBytes();
-        byte[] ciphertext = desCipher.doFinal(cleartext);
+        byte[] ciphertext = cipher.doFinal(cleartext);
 
-        desCipher.init(Cipher.DECRYPT_MODE, desKey);
-        byte[] cleartext1 = desCipher.doFinal(ciphertext);
+        cipher.init(Cipher.DECRYPT_MODE, key);
+        byte[] cleartext1 = cipher.doFinal(ciphertext);
 
         int clearLen = cleartext.length;
         int clear1Len = cleartext1.length;

@@ -180,12 +180,8 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * The InetAddress class has a cache to store successful as well as
  * unsuccessful host name resolutions.
  *
- * <p> By default, when a security manager is installed, in order to
- * protect against DNS spoofing attacks,
- * the result of positive host name resolutions are
- * cached forever. When a security manager is not installed, the default
- * behavior is to cache entries for a finite (implementation dependent)
- * period of time. The result of unsuccessful host
+ * <p> The default behavior is to cache entries for a finite (implementation
+ * dependent) period of time. The result of unsuccessful host
  * name resolution is cached for a very short period of time (10
  * seconds) to improve performance.
  *
@@ -736,19 +732,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * is required, call
      * {@link #getCanonicalHostName() getCanonicalHostName}.
      *
-     * <p>If there is a security manager, its
-     * {@code checkConnect} method is first called
-     * with the hostname and {@code -1}
-     * as its arguments to see if the operation is allowed.
-     * If the operation is not allowed, it will return
-     * the textual representation of the IP address.
-     *
-     * @return  the host name for this IP address, or if the operation
-     *    is not allowed by the security check, the textual
-     *    representation of the IP address.
+     * @return  the host name for this IP address
      *
      * @see InetAddress#getCanonicalHostName
-     * @see SecurityManager#checkConnect
      */
     public String getHostName() {
         return getHostName(true);
@@ -761,21 +747,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * this is package private so SocketPermission can make calls into
      * here without a security check.
      *
-     * <p>If there is a security manager, this method first
-     * calls its {@code checkConnect} method
-     * with the hostname and {@code -1}
-     * as its arguments to see if the calling code is allowed to know
-     * the hostname for this IP address, i.e., to connect to the host.
-     * If the operation is not allowed, it will return
-     * the textual representation of the IP address.
-     *
      * @return  the host name for this IP address, or if the operation
      *    is not allowed by the security check, the textual
      *    representation of the IP address.
      *
      * @param check make security check if true
-     *
-     * @see SecurityManager#checkConnect
      */
     String getHostName(boolean check) {
         if (holder().getHostName() == null) {
@@ -795,21 +771,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * domain name, this method returns the {@linkplain #getHostAddress() textual representation}
      * of the IP address.
      *
-     * <p>If there is a security manager, this method first
-     * calls its {@code checkConnect} method
-     * with the hostname and {@code -1}
-     * as its arguments to see if the calling code is allowed to know
-     * the hostname for this IP address, i.e., to connect to the host.
-     * If the operation is not allowed, it will return
-     * the textual representation of the IP address.
-     *
      * @return  the fully qualified domain name for this IP address.
-     *          If either the operation is not allowed by the security check
-     *          or the system-wide resolver wasn't able to determine the
+     *          If the system-wide resolver wasn't able to determine the
      *          fully qualified domain name for the IP address, the textual
      *          representation of the IP address is returned instead.
-     *
-     * @see SecurityManager#checkConnect
      *
      * @since 1.4
      */
@@ -824,14 +789,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     /**
      * Returns the fully qualified domain name for the given address.
      *
-     * <p>If there is a security manager, this method first
-     * calls its {@code checkConnect} method
-     * with the hostname and {@code -1}
-     * as its arguments to see if the calling code is allowed to know
-     * the hostname for the given IP address, i.e., to connect to the host.
-     * If the operation is not allowed, it will return
-     * the textual representation of the IP address.
-     *
      * @param check make security check if true
      *
      * @return  the fully qualified domain name for the given IP address.
@@ -839,8 +796,6 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      *          or the system-wide resolver wasn't able to determine the
      *          fully qualified domain name for the IP address, the textual
      *          representation of the IP address is returned instead.
-     *
-     * @see SecurityManager#checkConnect
      */
     private static String getHostFromNameService(InetAddress addr, boolean check) {
         String host;
@@ -1557,18 +1512,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * section&nbsp;2 and <a href="http://www.ietf.org/rfc/rfc2373.txt">RFC&nbsp;2373</a>
      * section&nbsp;2.5.3.
      *
-     * <p> If there is a security manager, and {@code host} is not {@code null}
-     * or {@code host.length() } is not equal to zero, the security manager's
-     * {@code checkConnect} method is called with the hostname and {@code -1}
-     * as its arguments to determine if the operation is allowed.
-     *
      * @param      host   the specified host, or {@code null}.
      * @return     an IP address for the given host name.
      * @throws     UnknownHostException  if no IP address for the
      *               {@code host} could be found, or if a scope_id was specified
      *               for a global IPv6 address.
-     * @throws     SecurityException if a security manager exists
-     *             and its checkConnect method doesn't allow the operation
      *
      * @spec https://www.rfc-editor.org/info/rfc2373 RFC 2373: IP Version 6 Addressing Architecture
      * @spec https://www.rfc-editor.org/info/rfc3330 RFC 3330: Special-Use IPv4 Addresses
@@ -1601,23 +1549,15 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * section&nbsp;2 and <a href="http://www.ietf.org/rfc/rfc2373.txt">RFC&nbsp;2373</a>
      * section&nbsp;2.5.3. </p>
      *
-     * <p> If there is a security manager, and {@code host} is not {@code null}
-     * or {@code host.length() } is not equal to zero, the security manager's
-     * {@code checkConnect} method is called with the hostname and {@code -1}
-     * as its arguments to determine if the operation is allowed.
-     *
      * @param      host   the name of the host, or {@code null}.
      * @return     an array of all the IP addresses for a given host name.
      *
      * @throws     UnknownHostException  if no IP address for the
      *               {@code host} could be found, or if a scope_id was specified
      *               for a global IPv6 address.
-     * @throws     SecurityException  if a security manager exists and its
-     *               {@code checkConnect} method doesn't allow the operation.
      *
      * @spec https://www.rfc-editor.org/info/rfc2373 RFC 2373: IP Version 6 Addressing Architecture
      * @spec https://www.rfc-editor.org/info/rfc3330 RFC 3330: Special-Use IPv4 Addresses
-     * @see SecurityManager#checkConnect
      */
     public static InetAddress[] getAllByName(String host)
         throws UnknownHostException {
@@ -1874,19 +1814,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * <P>Note: The resolved address may be cached for a short period of time.
      * </P>
      *
-     * <p>If there is a security manager, its
-     * {@code checkConnect} method is called
-     * with the local host name and {@code -1}
-     * as its arguments to see if the operation is allowed.
-     * If the operation is not allowed, an InetAddress representing
-     * the loopback address is returned.
-     *
      * @return     the address of the local host.
      *
      * @throws     UnknownHostException  if the local host name could not
      *             be resolved into an address.
      *
-     * @see SecurityManager#checkConnect
      * @see java.net.InetAddress#getByName(java.lang.String)
      */
     public static InetAddress getLocalHost() throws UnknownHostException {
