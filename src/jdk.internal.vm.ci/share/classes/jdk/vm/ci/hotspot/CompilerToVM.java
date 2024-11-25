@@ -1522,4 +1522,12 @@ final class CompilerToVM {
      * @returns false if no change was made, otherwise true
      */
     native boolean updateCompilerThreadCanCallJava(boolean newState);
+
+    /**
+     * Gets the address of the reserved long global variable identified by {@code id}.
+     * 
+     * @param id must be 0 or 1
+     * @throws IllegalArgumentException if {@code id} is not 0 or 1
+     */
+    native long getAddressOfReservedLong(int id);
 }

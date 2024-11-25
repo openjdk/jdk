@@ -126,6 +126,10 @@ class JVMCI : public AllStatic {
     max_EventLog_level = 4
   };
 
+  // Reserved longs for use by JVMCI.
+  static volatile jlong _reserved0;
+  static volatile jlong _reserved1;
+
   // Gets the Thread* value for the current thread or null if it's not available.
   static Thread* current_thread_or_null();
 
@@ -183,6 +187,19 @@ class JVMCI : public AllStatic {
   static bool in_shutdown();
 
   static bool is_compiler_initialized();
+
+  /**
+   * Gets the address of the reserved long field identified by `id`.
+   * Returns 0L if `id` is not 0 or 1.
+   */
+  static address get_reserved_long(int id) {
+    if (id == 0) {
+      return (address) &_reserved0;
+    } else if (id == 1) {
+      return (address) &_reserved1;
+    }
+    return 0L;
+  }
 
   /**
    * Determines if the VM is sufficiently booted to initialize JVMCI.

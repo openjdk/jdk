@@ -53,6 +53,8 @@ StringEventLog* JVMCI::_verbose_events = nullptr;
 volatile intx JVMCI::_first_error_tid = -1;
 volatile int JVMCI::_fatal_log_fd = -1;
 const char* JVMCI::_fatal_log_filename = nullptr;
+volatile jlong JVMCI::_reserved0 = 0L;
+volatile jlong JVMCI::_reserved1 = 0L;
 
 CompilerThread* CompilerThreadCanCallJava::update(JavaThread* current, bool new_state) {
   if (current->is_Compiler_thread()) {

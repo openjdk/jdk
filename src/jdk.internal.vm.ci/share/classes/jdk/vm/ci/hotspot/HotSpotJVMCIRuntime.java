@@ -655,6 +655,19 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return compilerToVm.getThreadLocalLong(id);
     }
 
+    /**
+     * Gets the address of the volatile long global variable identified by {@code id}.
+     * The variable is initialized to 0 and is shared by all JVMCI shared library JavaVMs.
+     * It's up to all callers of this method to coordinate on the semantics of a specific
+     * global variable.
+     *
+     * @param id must be 0 or 1
+     * @throws IllegalArgumentException if {@code id} is not 0 or 1
+     */
+    public long getAddressOfReservedLong(int id) {
+        return compilerToVm.getAddressOfReservedLong(id);
+    }
+
     HotSpotResolvedJavaType createClass(Class<?> javaClass) {
         if (javaClass.isPrimitive()) {
             return HotSpotResolvedPrimitiveType.forKind(JavaKind.fromJavaClass(javaClass));
