@@ -30,10 +30,8 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.im.spi.InputMethod;
 import java.awt.im.spi.InputMethodDescriptor;
-import java.security.AccessController;
 import java.util.Locale;
 import sun.awt.SunToolkit;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Provides sufficient information about an input method

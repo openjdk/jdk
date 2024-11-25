@@ -474,8 +474,8 @@ public final class Subject implements java.io.Serializable {
     /**
      * Perform privileged work as a particular {@code Subject}.
      *
-     * <p> This method ignores the {@code acc} argument, launches {@code action},
-     * and binds {@code subject} to the period of its execution.
+     * <p> This method launches {@code action} and binds {@code subject} to
+     * the period of its execution.
      *
      * @param subject the {@code Subject} that the specified
      *                  {@code action} will run as.  This parameter
@@ -487,8 +487,7 @@ public final class Subject implements java.io.Serializable {
      * @param action the code to be run as the specified
      *                  {@code Subject}.
      *
-     * @param acc the {@code AccessControlContext} to be tied to the
-     *                  specified <i>subject</i> and <i>action</i>.
+     * @param acc ignored
      *
      * @return the value returned by the PrivilegedAction's
      *                  {@code run} method.
@@ -540,8 +539,8 @@ public final class Subject implements java.io.Serializable {
     /**
      * Perform privileged work as a particular {@code Subject}.
      *
-     * <p> This method ignores the {@code acc} argument, launches {@code action},
-     * and binds {@code subject} to the period of its execution.
+     * <p> This method launches {@code action} and binds {@code subject} to
+     * the period of its execution.
      *
      * @param subject the {@code Subject} that the specified
      *                  {@code action} will run as.  This parameter
@@ -553,8 +552,7 @@ public final class Subject implements java.io.Serializable {
      * @param action the code to be run as the specified
      *                  {@code Subject}.
      *
-     * @param acc the {@code AccessControlContext} to be tied to the
-     *                  specified <i>subject</i> and <i>action</i>.
+     * @param acc ignored
      *
      * @return the value returned by the
      *                  PrivilegedExceptionAction's {@code run} method.
