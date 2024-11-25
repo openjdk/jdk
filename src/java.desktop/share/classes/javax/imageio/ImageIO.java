@@ -169,7 +169,7 @@ public final class ImageIO {
     /**
      * Determines whether the caller has write access to the cache
      * directory, stores the result in the {@code CacheInfo} object,
-     * and returns the decision. 
+     * and returns the decision.
      */
     private static boolean hasCachePermission() {
         Boolean hasPermission = getCacheInfo().getHasPermission();
