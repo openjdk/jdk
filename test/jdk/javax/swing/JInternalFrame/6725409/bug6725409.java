@@ -138,7 +138,6 @@ public class bug6725409 {
 
     private static void sync() {
         robot.waitForIdle();
-        robot.delay(500);
     }
 
     // Extend WindowsInternalFrameTitlePane to get access to systemPopupMenu
