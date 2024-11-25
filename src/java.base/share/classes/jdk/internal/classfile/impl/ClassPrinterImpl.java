@@ -44,7 +44,6 @@ import java.lang.reflect.AccessFlag;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -947,9 +946,9 @@ public final class ClassPrinterImpl {
                     nodes.add(map("enclosing method",
                             "class", ema.enclosingClass().name().stringValue(),
                             "method name", ema.enclosingMethodName()
-                                    .map((Function<Utf8Entry, ConstantDesc>)Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT),
+                                    .<ConstantDesc>map(Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT),
                             "method type", ema.enclosingMethodType()
-                                    .map((Function<Utf8Entry, ConstantDesc>)Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)));
+                                    .<ConstantDesc>map(Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)));
                 case ExceptionsAttribute exa ->
                     nodes.add(list("exceptions", "exc", exa.exceptions().stream()
                             .map(e -> e.name().stringValue())));
@@ -959,14 +958,14 @@ public final class ClassPrinterImpl {
                                 leaf("inner class", ic.innerClass().name().stringValue()),
                                 leaf("outer class", ic.outerClass()
                                         .map(cle -> (ConstantDesc)cle.name().stringValue()).orElse(BSM_NULL_CONSTANT)),
-                                leaf("inner name", ic.innerName().map((Function<Utf8Entry, ConstantDesc>)Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)),
+                                leaf("inner name", ic.innerName().<ConstantDesc>map(Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)),
                                 list("flags", "flag", ic.flags().stream().map(AccessFlag::name))))));
                 case MethodParametersAttribute mpa -> {
                     var n = new MapNodeImpl(BLOCK, "method parameters");
                     for (int i = 0; i < mpa.parameters().size(); i++) {
                         var p = mpa.parameters().get(i);
                         n.with(new MapNodeImpl(FLOW, i + 1).with(
-                                leaf("name", p.name().map((Function<Utf8Entry, ConstantDesc>)Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)),
+                                leaf("name", p.name().<ConstantDesc>map(Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)),
                                 list("flags", "flag", p.flags().stream().map(AccessFlag::name))));
                     }
                 }
@@ -974,7 +973,7 @@ public final class ClassPrinterImpl {
                     nodes.add(new MapNodeImpl(BLOCK, "module")
                             .with(leaf("name", ma.moduleName().name().stringValue()),
                                   list("flags","flag", ma.moduleFlags().stream().map(AccessFlag::name)),
-                                  leaf("version", ma.moduleVersion().map((Function<Utf8Entry, ConstantDesc>)Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)),
+                                  leaf("version", ma.moduleVersion().<ConstantDesc>map(Utf8Entry::stringValue).orElse(BSM_NULL_CONSTANT)),
                                   list("uses", "class", ma.uses().stream().map(ce -> ce.name().stringValue())),
                                   new ListNodeImpl(BLOCK, "requires", ma.requires().stream().map(req ->
                                     new MapNodeImpl(FLOW, "req").with(
