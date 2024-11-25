@@ -33,7 +33,6 @@ import java.io.Serial;
 import java.util.Arrays;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.util.logging.PlatformLogger;
 
 /**
