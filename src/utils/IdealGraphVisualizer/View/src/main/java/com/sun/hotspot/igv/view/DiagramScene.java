@@ -628,7 +628,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 Border border = new FigureWidget.RoundedBorder(Color.RED, 1);
                 pointerWidget.setBorder(border);
                 pointerWidget.setBackground(Color.RED);
-                pointerWidget.setPreferredBounds(new Rectangle(0, 0, 3, shadowWidget.getPreferredBounds().height));
+                pointerWidget.setPreferredBounds(new Rectangle(0, 0, 3, f.getSize().height));
                 pointerWidget.setVisible(false);
                 pointerWidget.setOpaque(true);
             }
@@ -651,6 +651,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public void movementFinished(Widget widget) {
+                shadowWidget.setVisible(false);
+                pointerWidget.setVisible(false);
                 if (layoutMover == null || !hasMoved) return; // Do nothing if layoutMover is not available or no movement occurred
                 rebuilding = true;
 
@@ -667,8 +669,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     fw.updatePosition();
                 }
 
-                shadowWidget.setVisible(false);
-                pointerWidget.setVisible(false);
                 validateAll();
                 addUndo();
                 rebuilding = false;

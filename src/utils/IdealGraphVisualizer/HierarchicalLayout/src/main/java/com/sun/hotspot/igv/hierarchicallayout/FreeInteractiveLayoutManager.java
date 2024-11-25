@@ -242,10 +242,8 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         Point endPoint = new Point(endX, endY);
         List<Point> line = new ArrayList<>();
         line.add(startPoint);
-        line.add(startPoint);
         line.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
         line.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
-        line.add(endPoint);
         line.add(endPoint);
         link.setControlPoints(line);
     }
