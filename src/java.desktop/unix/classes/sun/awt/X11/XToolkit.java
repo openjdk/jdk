@@ -111,12 +111,9 @@ import java.awt.peer.TextFieldPeer;
 import java.awt.peer.TrayIconPeer;
 import java.awt.peer.WindowPeer;
 import java.beans.PropertyChangeListener;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -131,7 +128,6 @@ import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
@@ -147,8 +143,6 @@ import sun.awt.util.ThreadGroupUtils;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.print.PrintJob2D;
-import sun.security.action.GetBooleanAction;
-import sun.security.action.GetPropertyAction;
 import sun.util.logging.PlatformLogger;
 
 import static sun.awt.X11.XlibUtil.scaleDown;
@@ -203,7 +197,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static final X11GraphicsDevice device;
     private static final long display;
     static int awt_multiclick_time;
-    static boolean securityWarningEnabled;
 
     /**
      * Dimensions of default virtual screen in pixels. These values are used to
@@ -215,7 +208,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     private static XMouseInfoPeer xPeer;
 
     static {
-        initSecurityWarning();
         if (GraphicsEnvironment.isHeadless()) {
             localEnv = null;
             device = null;
@@ -242,18 +234,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static Thread toolkitThread;
     static boolean isToolkitThread() {
         return Thread.currentThread() == toolkitThread;
-    }
-
-    static void initSecurityWarning() {
-        // Enable warning only for internal builds
-        @SuppressWarnings("removal")
-        String runtime = AccessController.doPrivileged(
-                             new GetPropertyAction("java.runtime.version"));
-        securityWarningEnabled = (runtime != null && runtime.contains("internal"));
-    }
-
-    static boolean isSecurityWarningEnabled() {
-        return securityWarningEnabled;
     }
 
     static native void awt_output_flush();
@@ -326,7 +306,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
-    @SuppressWarnings("removal")
     void init() {
         awtLock();
         try {
@@ -339,13 +318,10 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             arrowCursor = XlibWrapper.XCreateFontCursor(XToolkit.getDisplay(),
                 XCursorFontConstants.XC_arrow);
             final String extraButtons = "sun.awt.enableExtraMouseButtons";
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                areExtraMouseButtonsEnabled =
-                    Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
-                //set system property if not yet assigned
-                System.setProperty(extraButtons, ""+areExtraMouseButtonsEnabled);
-                return null;
-            });
+            areExtraMouseButtonsEnabled =
+                Boolean.parseBoolean(System.getProperty(extraButtons, "true"));
+            //set system property if not yet assigned
+            System.setProperty(extraButtons, "" + areExtraMouseButtonsEnabled);
             // Detect display mode changes
             XlibWrapper.XSelectInput(XToolkit.getDisplay(), XToolkit.getDefaultRootWindow(), XConstants.StructureNotifyMask);
             XToolkit.addEventDispatcher(XToolkit.getDefaultRootWindow(), new XEventDispatcher() {
@@ -370,28 +346,24 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         } finally {
             awtUnlock();
         }
-        PrivilegedAction<Void> a = () -> {
-            Runnable r = () -> {
-                XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
-                if (peer != null) {
-                    peer.dispose();
-                }
-                if (xs != null) {
-                    ((XAWTXSettings)xs).dispose();
-                }
-                freeXKB();
-                if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                    dumpPeers();
-                }
-            };
-            String name = "XToolkt-Shutdown-Thread";
-            Thread shutdownThread = new Thread(
-                    ThreadGroupUtils.getRootThreadGroup(), r, name, 0, false);
-            shutdownThread.setContextClassLoader(null);
-            Runtime.getRuntime().addShutdownHook(shutdownThread);
-            return null;
+        Runnable r = () -> {
+            XSystemTrayPeer peer = XSystemTrayPeer.getPeerInstance();
+            if (peer != null) {
+                peer.dispose();
+            }
+            if (xs != null) {
+                ((XAWTXSettings)xs).dispose();
+            }
+            freeXKB();
+            if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                dumpPeers();
+            }
         };
-        AccessController.doPrivileged(a);
+        String name = "XToolkt-Shutdown-Thread";
+        Thread shutdownThread = new Thread(
+                ThreadGroupUtils.getRootThreadGroup(), r, name, 0, false);
+        shutdownThread.setContextClassLoader(null);
+        Runtime.getRuntime().addShutdownHook(shutdownThread);
     }
 
     static String getCorrectXIDString(String val) {
@@ -409,7 +381,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         return awtAppClassName;
     }
 
-    @SuppressWarnings("removal")
     public XToolkit() {
         super();
         if (PerformanceLogger.loggingEnabled()) {
@@ -432,16 +403,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
             init();
             XWM.init();
 
-            toolkitThread = AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                String name = "AWT-XAWT";
-                Thread thread = new Thread(
+            String name = "AWT-XAWT";
+            toolkitThread = new Thread(
                         ThreadGroupUtils.getRootThreadGroup(), this, name,
                         0, false);
-                thread.setContextClassLoader(null);
-                thread.setPriority(Thread.NORM_PRIORITY + 1);
-                thread.setDaemon(true);
-                return thread;
-            });
+            toolkitThread.setContextClassLoader(null);
+            toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
+            toolkitThread.setDaemon(true);
             toolkitThread.start();
         }
     }
@@ -1120,11 +1088,9 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * Returns the value of "sun.awt.disableGtkFileDialogs" property. Default
      * value is {@code false}.
      */
-    @SuppressWarnings("removal")
     public static synchronized boolean getSunAwtDisableGtkFileDialogs() {
         if (sunAwtDisableGtkFileDialogs == null) {
-            sunAwtDisableGtkFileDialogs = AccessController.doPrivileged(
-                                              new GetBooleanAction("sun.awt.disableGtkFileDialogs"));
+            sunAwtDisableGtkFileDialogs = Boolean.getBoolean("sun.awt.disableGtkFileDialogs");
         }
         return sunAwtDisableGtkFileDialogs.booleanValue();
     }
@@ -1265,11 +1231,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     @Override
     public  Clipboard getSystemClipboard() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-        }
         synchronized (this) {
             if (clipboard == null) {
                 clipboard = new XClipboard("System", "CLIPBOARD");
@@ -1280,11 +1241,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     @Override
     public Clipboard getSystemSelection() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-        }
         synchronized (this) {
             if (selection == null) {
                 selection = new XClipboard("Selection", "PRIMARY");
@@ -2139,9 +2095,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     private static void setBackingStoreType() {
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-                new sun.security.action.GetPropertyAction("sun.awt.backingStore"));
+        String prop = System.getProperty("sun.awt.backingStore");
 
         if (prop == null) {
             backingStoreType = XConstants.NotUseful;
@@ -2565,8 +2519,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
      * Returns the value of "sun.awt.disablegrab" property. Default
      * value is {@code false}.
      */
-    @SuppressWarnings("removal")
     public static boolean getSunAwtDisableGrab() {
-        return AccessController.doPrivileged(new GetBooleanAction("sun.awt.disablegrab"));
+        return Boolean.getBoolean("sun.awt.disablegrab");
     }
 }

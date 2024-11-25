@@ -922,9 +922,10 @@ IfTrueNode* CreateAssertionPredicatesVisitor::initialize_from_template(
     const TemplateAssertionPredicate& template_assertion_predicate, Node* new_control) const {
   DEBUG_ONLY(template_assertion_predicate.verify();)
   IfNode* template_head = template_assertion_predicate.head();
-  InitializedAssertionPredicateCreator initialized_assertion_predicate(_phase);
-  IfTrueNode* initialized_predicate = initialized_assertion_predicate.create_from_template(template_head, new_control,
-                                                                                           _init, _stride);
+  InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(_phase);
+  IfTrueNode* initialized_predicate = initialized_assertion_predicate_creator.create_from_template(template_head,
+                                                                                                   new_control,
+                                                                                                   _init, _stride);
   DEBUG_ONLY(InitializedAssertionPredicate::verify(initialized_predicate);)
   template_assertion_predicate.rewire_loop_data_dependencies(initialized_predicate, _node_in_loop_body, _phase);
   rewire_to_old_predicate_chain_head(initialized_predicate);
