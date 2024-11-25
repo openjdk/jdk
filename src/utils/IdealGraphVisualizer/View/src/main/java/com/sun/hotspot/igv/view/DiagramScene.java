@@ -1327,7 +1327,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
                 List<FigureConnection> connectionList = new ArrayList<>(outputSlot.getConnections());
-                if (layoutMover.isFreeForm()) {
+                if (layoutMover != null && layoutMover.isFreeForm()) {
                     processFreeForm(outputSlot, connectionList);
                 } else {
                     processOutputSlot(outputSlot, connectionList, 0, null, null);

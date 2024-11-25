@@ -60,9 +60,7 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
     }
 
     @Override
-    public void moveLink(Point linkPos, int shiftX) {
-
-    }
+    public void moveLink(Point linkPos, int shiftX) {}
 
     @Override
     public void moveVertices(Set<? extends Vertex> movedVertices) {
@@ -73,6 +71,7 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     @Override
     public void moveVertex(Vertex vertex) {
+        System.out.println("moveVertex " + vertex.getPosition());
         assert prevGraph.containsVertex(vertex);
         LayoutNode layoutNode = layoutNodes.get(vertex);
         layoutNode.setX(vertex.getPosition().x);
@@ -93,6 +92,7 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     @Override
     public void doLayout(LayoutGraph graph) {
+        System.out.println("doLayout");
         prevGraph = graph;
         if (layoutNodes.isEmpty()) {
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager();
@@ -229,19 +229,30 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     private void setLinkControlPoints(Link link) {
         if (link.getFrom().getVertex() == link.getTo().getVertex()) return;
-        LayoutEdge edge = new LayoutEdge(
-                layoutNodes.get(link.getFrom().getVertex()),
-                layoutNodes.get(link.getTo().getVertex()),
-                link.getFrom().getRelativePosition().x,
-                link.getTo().getRelativePosition().x,
-                link);
-        Point startPoint = new Point(edge.getStartX(), edge.getStartY());
-        Point endPoint = new Point(edge.getEndX(), edge.getEndY());
-        List<Point> line = new ArrayList<>(4);
+        System.out.println("setLinkControlPoints");
+        if (!link.getControlPoints().isEmpty()) System.out.println("old link: " + link.getControlPoints().get(0));
+
+        LayoutNode from = layoutNodes.get(link.getFrom().getVertex());
+        LayoutNode to = layoutNodes.get(link.getTo().getVertex());
+        int relativeFromX = link.getFrom().getRelativePosition().x;
+        int relativeToX = link.getTo().getRelativePosition().x;
+
+        int startX = from.getLeft() + relativeFromX;
+        int startY = from.getBottom();
+        int endX = to.getLeft() + relativeToX;
+        int endY = to.getTop();
+
+        Point startPoint = new Point(startX, startY);
+        Point endPoint = new Point(endX, endY);
+        List<Point> line = new ArrayList<>();
         line.add(startPoint);
-        line.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
-        line.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
+        line.add(startPoint);
+
+        //line.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
+        //line.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
+        line.add(endPoint);
         line.add(endPoint);
         link.setControlPoints(line);
+        if (!link.getControlPoints().isEmpty()) System.out.println("new link: " + link.getControlPoints().get(0));
     }
 }
