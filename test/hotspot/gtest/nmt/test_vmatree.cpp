@@ -653,7 +653,7 @@ TEST_VM_F(NMTVMATreeTest, SetMemTypeOfRegions) {
   Tree tree;
   Tree::RegionData rd(NCS::StackIndex(), mtNone);
   int count = 0;
-  auto dump_and_count_nodes = [&](Node* n){
+  auto dump_and_count_nodes = [&](TNode* n){
     tty->print_cr(SIZE_FORMAT ",in.type: %d, in.tag: %s, out.type: %d, out.tag: %s" ,
     (size_t)n->key(), (int)n->val().in.type(), NMTUtil::tag_to_name(n->val().out.mem_tag()),
     (int)n->val().out.type(), NMTUtil::tag_to_name(n->val().in.mem_tag()));

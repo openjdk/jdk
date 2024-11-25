@@ -30,7 +30,7 @@
 #include "nmt/vmtCommon.hpp"
 
 // RegionsTree extends VMATree to add some more specific API and also defines a helper
-// for processing the tree nodes in a shorter and more menaingful way.
+// for processing the tree nodes in a shorter and more meaningful way.
 class RegionsTree : public VMATree {
  private:
   NativeCallStackStorage _ncs_storage;

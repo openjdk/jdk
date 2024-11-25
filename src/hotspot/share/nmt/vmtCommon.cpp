@@ -118,7 +118,6 @@ public:
       // Align the size to work with full pages (Alpine and AIX stack top is not page aligned)
       size_t aligned_stack_size = align_up(stack_size, os::vm_page_size());
 
-      ReservedMemoryRegion* region = const_cast<ReservedMemoryRegion*>(rgn);
       NativeCallStack ncs; // empty stack
 
       RegionIterator itr(stack_bottom, aligned_stack_size);
