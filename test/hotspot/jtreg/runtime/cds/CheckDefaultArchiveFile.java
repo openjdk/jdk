@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSTestUtils;
-import jtreg.SkippedException;
 import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
 
 public class CheckDefaultArchiveFile {
     public static void main(String[] args) throws Exception {
@@ -47,7 +47,8 @@ public class CheckDefaultArchiveFile {
         String vmName = System.getProperty("java.vm.name");
         String vmString = vmName + "(" + osArch + ")";
         String jsaString = wb.getDefaultArchivePath();
-        System.out.println("classes.jsa location:" + jsaString);
+        System.out.println("Default CDS archive location:" + jsaString);
+        String javaOptions = System.getProperty("test.java.opts");
         if (jsaString == null) {
             if (Platform.isDefaultCDSArchiveSupported()) {
                 throw new RuntimeException("default CDS archive supported, but classes.jsa path null");
@@ -57,9 +58,14 @@ public class CheckDefaultArchiveFile {
             if (Platform.isDefaultCDSArchiveSupported()) {
                 if (Files.exists(jsa)) {
                     System.out.println("Passed. " + vmString +
-                                       ": has default classes.jsa file");
+                                       ": has default " + jsaString + " file");
                 } else {
-                    throw new RuntimeException(vmString + "has no " + jsaString);
+                    if (javaOptions.indexOf("-XX:+UseCompactObjectHeaders") != -1 && jsaString.endsWith("_coh.jsa")) {
+                       // JDK build may not include CDS archives for compact object headers.
+                       throw new SkippedException("CDS archive for compact object headers " + jsaString + " is not available in this test JDK");
+                    } else {
+                        throw new RuntimeException(vmString + "has no " + jsaString);
+                    }
                 }
             } else {
                 throw new SkippedException("Default CDS archive is not supported");
