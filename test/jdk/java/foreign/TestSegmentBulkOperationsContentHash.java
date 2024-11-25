@@ -94,9 +94,6 @@ final class TestSegmentBulkOperationsContentHash {
         var arena = Arena.ofConfined();
         var segment = arena.allocate(len);
         arena.close();
-
-        System.out.println("segment.scope().isAlive() = " + segment.scope().isAlive());
-
         assertThrows(IllegalStateException.class, () -> hash(segment));
     }
 
