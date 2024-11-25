@@ -37,7 +37,7 @@ public class UModINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "constantAgain", "powerOf2", "reallyConstant"})
+    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Big", "reallyConstant"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         a = (a == 0) ? 2 : a;
@@ -95,5 +95,13 @@ public class UModINodeIdealizationTests {
     // Checks that for x % 2^k, 2^k-1 is used as a bit mask.
     public int powerOf2(int x) {
         return Integer.remainderUnsigned(x, 32);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_I, IRNode.MUL})
+    @IR(counts = {IRNode.AND, "1"})
+    // Checks that for x % 2^k, 2^k-1 is used as a bit mask.
+    public int powerOf2Big(int x) {
+        return Integer.remainderUnsigned(x, -2147483648); // -2147483648 = Integer.parseUnsignedInt("2147483648")
     }
 }

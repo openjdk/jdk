@@ -1150,7 +1150,7 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 
-template <typename TypeClass, typename Signed>
+template <typename TypeClass, typename Unsigned>
 static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   // Check for dead control input
   if (mod->in(0) && mod->remove_dead_region(phase, can_reshape)) {
@@ -1178,7 +1178,7 @@ static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   if (!ti->is_con()) {
     return nullptr;
   }
-  Signed con = ti->get_con();
+  Unsigned con = static_cast<Unsigned>(ti->get_con());
 
   if (con == 1) {
     return ConNode::make(TypeClass::ZERO);
@@ -1233,7 +1233,7 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
 }
 
 Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return unsigned_mod_ideal<TypeInt, jint>(phase, can_reshape, this);
+  return unsigned_mod_ideal<TypeInt, juint>(phase, can_reshape, this);
 }
 
 const Type* UModINode::Value(PhaseGVN* phase) const {
@@ -1453,7 +1453,7 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return unsigned_mod_ideal<TypeLong, jlong>(phase, can_reshape, this);
+  return unsigned_mod_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
 
 const Type* UModLNode::Value(PhaseGVN* phase) const {
