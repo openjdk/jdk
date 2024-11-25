@@ -497,9 +497,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Timing (must come after argument parsing)
   TraceTime timer("Create VM", TRACETIME_LOG(Info, startuptime));
 
-  // Initialize object layout after parsing the args
-  ObjLayout::initialize();
-
   // Initialize the os module after parsing the args
   jint os_init_2_result = os::init_2();
   if (os_init_2_result != JNI_OK) return os_init_2_result;
