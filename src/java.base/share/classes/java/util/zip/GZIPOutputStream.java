@@ -75,7 +75,7 @@ public class GZIPOutputStream extends DeflaterOutputStream {
      * @throws    IOException If an I/O error has occurred.
      * @throws    IllegalArgumentException if {@code size <= 0}
      *
-     * @since 24
+     * @since 25
      */
     public GZIPOutputStream(OutputStream out, Deflater def, int size, boolean syncFlush)
         throws IOException

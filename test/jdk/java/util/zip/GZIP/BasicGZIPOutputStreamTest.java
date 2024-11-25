@@ -42,8 +42,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 public class BasicGZIPOutputStreamTest {
 
-////// Verify that the GZIPOutputStream constructors throw the expected NullPointerException
-
+    // Verify that the GZIPOutputStream constructors throw the expected NullPointerException
     private static Stream<Arguments> npeFromConstructors() {
         return Stream.of(
             ctorTestCase(() -> new GZIPOutputStream(null)),
@@ -60,8 +59,7 @@ public class BasicGZIPOutputStreamTest {
                 "GZIPOutputStream constructor did not throw NullPointerException");
     }
 
-////// Verify that the GZIPOutputStream constructors throw the expected IllegalArgumentException
-
+    // Verify that the GZIPOutputStream constructors throw the expected IllegalArgumentException
     private static Stream<Arguments> iaeFromConstructors() {
         return Stream.of(
             ctorTestCase(() -> new GZIPOutputStream(newValidOutput(), 0)),
@@ -76,8 +74,7 @@ public class BasicGZIPOutputStreamTest {
                 "GZIPOutputStream constructor did not throw IllegalArgumentException");
     }
 
-////// Verify that the GZIPOutputStream constructors throw the expected IOException
-
+    // Verify that the GZIPOutputStream constructors throw the expected IOException
     private static Stream<Arguments> ioeFromConstructors() {
         return Stream.of(
             ctorTestCase(() -> new GZIPOutputStream(newInvalidOutput())),
