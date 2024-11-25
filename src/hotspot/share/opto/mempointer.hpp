@@ -628,10 +628,19 @@ public:
 
 private:
   bool has_same_summands_as(const MemPointerDecomposedForm& other, uint start) const;
-  bool has_same_summands_as(const MemPointerDecomposedForm& other) const { return has_same_summands_as(other, 0); };
+  bool has_same_summands_as(const MemPointerDecomposedForm& other) const { return has_same_summands_as(other, 0); }
   bool has_different_base_but_otherwise_same_summands_as(const MemPointerDecomposedForm& other) const;
 
 public:
+  bool has_same_non_base_summands_as(const MemPointerDecomposedForm& other) const {
+    if (!base().is_known() || !other.base().is_known()) {
+      assert(false, "unknonw base case is not answered optimally");
+      return false;
+    }
+    // Known base at 0th summand: all other summands are non-base summands.
+    return has_same_summands_as(other, 1);
+  }
+
   const MemPointerSummand& summands_at(const uint i) const {
     assert(i < SUMMANDS_SIZE, "in bounds");
     return _summands[i];

@@ -766,6 +766,20 @@ public:
     return invar_count > 0 ? factor : 0;
   }
 
+  int count_invar_summands() const {
+    int invar_count = 0;
+    for_each_invar_summand([&] (const MemPointerSummand& s) {
+      invar_count++;
+    });
+    return invar_count;
+  }
+
+  bool has_same_invar_and_iv_scale_as(const VPointer& other) const {
+    // If we have the same invar_summands, and the same iv summand with the same iv_scale,
+    // then all summands except the base must be the same.
+    return decomposed_form().has_same_non_base_summands_as(other.decomposed_form());
+  }
+
   // Aliasing
   // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?
   bool is_adjacent_to_and_before(const VPointer& other) const;
@@ -1022,6 +1036,7 @@ public:
   virtual bool is_constrained() const override final { return true; }
 
   const MemNode* mem_ref() const        { return _mem_ref; }
+  const VPointer& vpointer() const { return _vpointer; }
 
   virtual const ConstrainedAlignmentSolution* as_constrained() const override final { return this; }
 
@@ -1061,12 +1076,10 @@ public:
     //   - both mem_refs have no invariant.
     //   - both mem_refs have the same invariant and the same iv_scale.
     //
-    assert(false, "fix invar check");
-    if (s1->_invar != s2->_invar) {
-      return new EmptyAlignmentSolution("invar not identical");
-    }
-    if (s1->_invar != nullptr && s1->_vpointer.iv_scale() != s2->_vpointer.iv_scale()) {
-      return new EmptyAlignmentSolution("has invar with different iv_scale");
+    bool both_no_invar = s1->vpointer().count_invar_summands() == 0 &&
+                         s2->vpointer().count_invar_summands() == 0;
+    if(!both_no_invar && !s1->vpointer().has_same_invar_and_iv_scale_as(s2->vpointer())) {
+      return new EmptyAlignmentSolution("invar alignment term not identical");
     }
 
     // Now, we have reduced the problem to:
