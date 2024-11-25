@@ -710,15 +710,14 @@ Node *AddFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //=============================================================================
 //------------------------------add_of_identity--------------------------------
 // Check for addition of the identity
-const Type *AddHFNode::add_of_identity(const Type *t1, const Type *t2) const {
+const Type *AddHFNode::add_of_identity(const Type* t1, const Type* t2) const {
   return nullptr;
 }
 
-//------------------------------add_ring---------------------------------------
 // Supplied function returns the sum of the inputs.
 // This also type-checks the inputs for sanity.  Guaranteed never to
 // be passed a TOP or BOTTOM type, these are filtered out by pre-check.
-const Type *AddHFNode::add_ring(const Type *t0, const Type *t1) const {
+const Type* AddHFNode::add_ring(const Type* t0, const Type* t1) const {
   if (!t0->isa_half_float_constant() || !t1->isa_half_float_constant()) {
     return bottom_type();
   }
@@ -1621,7 +1620,9 @@ const Type* MinHFNode::add_ring(const Type* t0, const Type* t1) const {
     return f0 < f1 ? r0 : r1;
   }
 
-  // handle min of 0.0, -0.0 case.
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for max value
+  // detection.
   return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
 }
 
@@ -1646,7 +1647,9 @@ const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
     return f0 < f1 ? r0 : r1;
   }
 
-  // handle min of 0.0, -0.0 case.
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for min value
+  // detection.
   return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
 }
 

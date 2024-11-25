@@ -119,14 +119,13 @@ public:
 // Simple half float constants
 class ConHNode : public ConNode {
 public:
-  ConHNode( const TypeH *t ) : ConNode(t) {}
+  ConHNode(const TypeH* t) : ConNode(t) {}
   virtual int Opcode() const;
 
   // Factory method:
   static ConHNode* make(float con) {
-    return new ConHNode( TypeH::make(con) );
+    return new ConHNode(TypeH::make(con));
   }
-
 };
 
 //------------------------------ConFNode---------------------------------------

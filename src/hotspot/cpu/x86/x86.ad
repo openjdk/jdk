@@ -4514,10 +4514,10 @@ instruct vReplS_reg(vec dst, rRegI src) %{
 %}
 
 #ifdef _LP64
-instruct ReplH_imm(vec dst, immH con, rRegI rtmp) %{
+instruct ReplHF_imm(vec dst, immH con, rRegI rtmp) %{
   match(Set dst (Replicate con));
   effect(TEMP rtmp);
-  format %{ "replicateH $dst, $con \t! using $rtmp as TEMP" %}
+  format %{ "replicateHF $dst, $con \t! using $rtmp as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -4528,10 +4528,10 @@ instruct ReplH_imm(vec dst, immH con, rRegI rtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ReplH_short_reg(vec dst, rRegI src) %{
+instruct ReplHF_short_reg(vec dst, rRegI src) %{
   predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate (ReinterpretS2HF src)));
-  format %{ "replicateH $dst, $src" %}
+  format %{ "replicateHF $dst, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vlen_enc);
@@ -4539,11 +4539,11 @@ instruct ReplH_short_reg(vec dst, rRegI src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ReplH_reg(vec dst, regF src, rRegI rtmp) %{
+instruct ReplHF_reg(vec dst, regF src, rRegI rtmp) %{
   predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate src));
   effect(TEMP rtmp);
-  format %{ "replicateH $dst, $src \t! using $rtmp as TEMP" %}
+  format %{ "replicateHF $dst, $src \t! using $rtmp as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ vmovw($rtmp$$Register, $src$$XMMRegister);
@@ -10897,7 +10897,7 @@ instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
   ins_pipe(pipe_slow);
 %}
 
-instruct reinterpretS2H(regF dst, rRegI src)
+instruct reinterpretS2HF(regF dst, rRegI src)
 %{
   match(Set dst (ReinterpretS2HF src));
   format %{ "vmovw $dst, $src" %}
@@ -10917,7 +10917,7 @@ instruct convF2HFAndS2HF(regF dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct reinterpretH2S(rRegI dst, regF src)
+instruct reinterpretHF2S(rRegI dst, regF src)
 %{
   match(Set dst (ReinterpretHF2S src));
   format %{ "vmovw $dst, $src" %}
@@ -10927,17 +10927,17 @@ instruct reinterpretH2S(rRegI dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_sqrt_fp16_reg(regF dst, regF src)
+instruct scalar_sqrt_HF_reg(regF dst, regF src)
 %{
   match(Set dst (SqrtHF src));
-  format %{ "vsqrtsh $dst, $src" %}
+  format %{ "scalar_sqrt_fp16 $dst, $src" %}
   ins_encode %{
     __ vsqrtsh($dst$$XMMRegister, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_binOps_fp16_reg(regF dst, regF src1, regF src2)
+instruct scalar_binOps_HF_reg(regF dst, regF src1, regF src2)
 %{
   match(Set dst (AddHF src1 src2));
   match(Set dst (DivHF src1 src2));
@@ -10945,7 +10945,7 @@ instruct scalar_binOps_fp16_reg(regF dst, regF src1, regF src2)
   match(Set dst (MinHF src1 src2));
   match(Set dst (MulHF src1 src2));
   match(Set dst (SubHF src1 src2));
-  format %{ "efp16sh $dst, $src1, $src2" %}
+  format %{ "scalar_binop_fp16 $dst, $src1, $src2" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
     __ efp16sh(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
@@ -10953,21 +10953,21 @@ instruct scalar_binOps_fp16_reg(regF dst, regF src1, regF src2)
   ins_pipe(pipe_slow);
 %}
 
-instruct scalar_fma_fp16_reg(regF dst, regF src1, regF src2)
+instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
 %{
   match(Set dst (FmaHF  src2 (Binary dst src1)));
   effect(DEF dst);
-  format %{ "evfmash $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
   ins_encode %{
     __ vfmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_sqrt_fp16_reg(vec dst, vec src)
+instruct vector_sqrt_HF_reg(vec dst, vec src)
 %{
   match(Set dst (SqrtVHF src));
-  format %{ "evsqrtph_reg $dst, $src" %}
+  format %{ "vector_sqrt_fp16 $dst, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ evsqrtph($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
@@ -10975,10 +10975,10 @@ instruct vector_sqrt_fp16_reg(vec dst, vec src)
   ins_pipe(pipe_slow);
 %}
 
-instruct vector_sqrt_fp16_mem(vec dst, memory src)
+instruct vector_sqrt_HF_mem(vec dst, memory src)
 %{
   match(Set dst (SqrtVHF (VectorReinterpret (LoadVector src))));
-  format %{ "evsqrtph_mem $dst, $src" %}
+  format %{ "vector_sqrt_fp16_mem $dst, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ evsqrtph($dst$$XMMRegister, $src$$Address, vlen_enc);
@@ -10986,7 +10986,7 @@ instruct vector_sqrt_fp16_mem(vec dst, memory src)
   ins_pipe(pipe_slow);
 %}
 
-instruct vector_binOps_fp16_reg(vec dst, vec src1, vec src2)
+instruct vector_binOps_HF_reg(vec dst, vec src1, vec src2)
 %{
   match(Set dst (AddVHF src1 src2));
   match(Set dst (DivVHF src1 src2));
@@ -10994,7 +10994,7 @@ instruct vector_binOps_fp16_reg(vec dst, vec src1, vec src2)
   match(Set dst (MinVHF src1 src2));
   match(Set dst (MulVHF src1 src2));
   match(Set dst (SubVHF src1 src2));
-  format %{ "evbinopfp16_reg $dst, $src1, $src2" %}
+  format %{ "vector_binop_fp16 $dst, $src1, $src2" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     int opcode = this->ideal_Opcode();
@@ -11003,7 +11003,7 @@ instruct vector_binOps_fp16_reg(vec dst, vec src1, vec src2)
   ins_pipe(pipe_slow);
 %}
 
-instruct vector_binOps_fp16_mem(vec dst, vec src1, memory src2)
+instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
 %{
   match(Set dst (AddVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (DivVHF src1 (VectorReinterpret (LoadVector src2))));
@@ -11011,7 +11011,7 @@ instruct vector_binOps_fp16_mem(vec dst, vec src1, memory src2)
   match(Set dst (MinVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (MulVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (SubVHF src1 (VectorReinterpret (LoadVector src2))));
-  format %{ "evbinopfp16_mem $dst, $src1, $src2" %}
+  format %{ "vector_binop_fp16_mem $dst, $src1, $src2" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     int opcode = this->ideal_Opcode();
@@ -11021,11 +11021,11 @@ instruct vector_binOps_fp16_mem(vec dst, vec src1, memory src2)
 %}
 
 
-instruct vector_fma_fp16_reg(vec dst, vec src1, vec src2)
+instruct vector_fma_HF_reg(vec dst, vec src1, vec src2)
 %{
   match(Set dst (FmaVHF src2 (Binary dst src1)));
   effect(DEF dst);
-  format %{ "evfmaph_reg $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
@@ -11033,11 +11033,11 @@ instruct vector_fma_fp16_reg(vec dst, vec src1, vec src2)
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_fma_fp16_mem(vec dst, memory src1, vec src2)
+instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
 %{
   match(Set dst (FmaVHF src2 (Binary dst (VectorReinterpret (LoadVector src1)))));
   effect(DEF dst);
-  format %{ "evfmaph_mem $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$Address, vlen_enc);

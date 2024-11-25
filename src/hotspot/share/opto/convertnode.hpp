@@ -231,7 +231,7 @@ class ReinterpretS2HFNode : public Node {
 // Reinterpret Half Float to Short
 class ReinterpretHF2SNode : public Node {
   public:
-  ReinterpretHF2SNode( Node *in1 ) : Node(0,in1) {}
+  ReinterpretHF2SNode(Node* in1) : Node(0,in1) {}
   virtual int Opcode() const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type* bottom_type() const { return TypeInt::SHORT; }
@@ -296,7 +296,7 @@ class RoundDoubleModeNode: public Node {
 
 class Float16NodeFactory {
   public:
-  static bool is_binary_oper(int opc);
+  static bool is_float32_binary_oper(int opc);
   static int get_float16_binary_oper(int opc);
   static Node* make(int opc, Node* c, Node* in1, Node* in2);
 };

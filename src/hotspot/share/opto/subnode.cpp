@@ -1966,12 +1966,12 @@ const Type* SqrtFNode::Value(PhaseGVN* phase) const {
 }
 
 const Type* SqrtHFNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::HalfFloatCon ) return Type::HALF_FLOAT;
+  const Type* t1 = phase->type(in(1));
+  if (t1 == Type::TOP) { return Type::TOP; }
+  if (t1->base() != Type::HalfFloatCon) { return Type::HALF_FLOAT; }
   float f = t1->getf();
-  if( f < 0.0f ) return Type::HALF_FLOAT;
-  return TypeH::make( (float)sqrt( (double)f ) );
+  if (f < 0.0f) return Type::HALF_FLOAT;
+  return TypeH::make((float)sqrt((double)f));
 }
 
 const Type* ReverseINode::Value(PhaseGVN* phase) const {

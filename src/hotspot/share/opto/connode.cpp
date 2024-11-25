@@ -44,9 +44,11 @@ uint ConNode::hash() const {
 
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make(const Type *t) {
+  if (t->isa_half_float_constant()) {
+    return new ConHNode( t->is_half_float_constant() );
+  }
   switch( t->basic_type() ) {
   case T_INT:         return new ConINode( t->is_int() );
-  case T_SHORT:       return new ConHNode( t->is_half_float_constant() );
   case T_LONG:        return new ConLNode( t->is_long() );
   case T_FLOAT:       return new ConFNode( t->is_float_constant() );
   case T_DOUBLE:      return new ConDNode( t->is_double_constant() );

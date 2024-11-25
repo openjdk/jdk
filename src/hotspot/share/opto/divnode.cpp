@@ -755,14 +755,15 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   const Type* t1 = phase->type(in(1));
   const Type* t2 = phase->type(in(2));
-  if(t1 == Type::TOP) return Type::TOP;
-  if(t2 == Type::TOP) return Type::TOP;
+  if(t1 == Type::TOP) { return Type::TOP; }
+  if(t2 == Type::TOP) { return Type::TOP; }
 
   // Either input is BOTTOM ==> the result is the local BOTTOM
   const Type* bot = bottom_type();
   if((t1 == bot) || (t2 == bot) ||
-     (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM))
+     (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
     return bot;
+  }
 
   // x/x == 1, we ignore 0/0.
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
@@ -772,21 +773,25 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
     return TypeH::ONE;
   }
 
-  if(t2 == TypeH::ONE)
+  if(t2 == TypeH::ONE) {
     return t1;
+  }
 
   // If divisor is a constant and not zero, divide them numbers
   if(t1->base() == Type::HalfFloatCon &&
      t2->base() == Type::HalfFloatCon &&
-     t2->getf() != 0.0) // could be negative zero
+     t2->getf() != 0.0)  {
+    // could be negative zero
     return TypeH::make(t1->getf()/t2->getf());
+  }
 
   // If the dividend is a constant zero
   // Note: if t1 and t2 are zero then result is NaN (JVMS page 213)
   // Test TypeF::ZERO is not sufficient as it could be negative zero
 
-  if(t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0)
+  if(t1 == TypeH::ZERO && !g_isnan(t2->getf()) && t2->getf() != 0.0) {
     return TypeH::ZERO;
+  }
 
   // Otherwise we give up all hope
   return Type::HALF_FLOAT;
@@ -794,40 +799,51 @@ const Type* DivHFNode::Value(PhaseGVN* phase) const {
 
 //------------------------------isA_Copy---------------------------------------
 // Dividing by self is 1.
-// If the divisor is 1, we are an identity on the dividend.
+// IF the divisor is 1, we are an identity on the dividend.
 Node* DivHFNode::Identity(PhaseGVN* phase) {
   return (phase->type( in(2) ) == TypeH::ONE) ? in(1) : this;
 }
 
 
 //------------------------------Idealize---------------------------------------
-Node *DivHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
+Node* DivHFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
-  if(in(0) && in(0)->is_top())  return nullptr;
+  if (in(0) != nullptr && in(0)->is_top())  { return nullptr; }
 
   const Type* t2 = phase->type(in(2));
-  if(t2 == TypeH::ONE)         // Identity?
+  if (t2 == TypeH::ONE) {      // Identity?
     return nullptr;            // Skip it
-
+  }
   const TypeH* tf = t2->isa_half_float_constant();
-  if(!tf) return nullptr;
-  if(tf->base() != Type::HalfFloatCon) return nullptr;
+  if(tf == nullptr) { return nullptr; }
+  if(tf->base() != Type::HalfFloatCon) { return nullptr; }
 
   // Check for out of range values
-  if(tf->is_nan() || !tf->is_finite()) return nullptr;
+  if(tf->is_nan() || !tf->is_finite()) { return nullptr; }
 
   // Get the value
   float f = tf->getf();
   int exp;
 
-  // Only for special case of dividing by a power of 2
-  if(frexp((double)f, &exp) != 0.5) return nullptr;
+  // Consider the following geometric progression series of POT(power of two) numbers.
+  // 0.5 x 2^0 = 0.5, 0.5 x 2^1 = 1.0, 0.5 x 2^2 = 2.0, 0.5 x 2^3 = 4.0 ... 0.5 x 2^n,
+  // In all the above cases, normalized mantissa returned by frexp routine will
+  // be exactly equal to 0.5 while exponent will be 0,1,2,3...n
+  // Perform division to multiplication transform only if divisor is a POT value.
+  if(frexp((double)f, &exp) != 0.5) { return nullptr; }
 
   // Limit the range of acceptable exponents
-  if(exp < -14 || exp > 15) return nullptr;
+  if(exp < -14 || exp > 15) { return nullptr; }
 
-  // Compute the reciprocal
+  // Since divisor is a POT number, hence its reciprocal will never
+  // overflow 11 bits precision range of Float16
+  // value if exponent returned by frexp routine strictly lie
+  // within the exponent range of normal min(0x1.0P-14) and
+  // normal max(0x1.ffcP+15) values.
+  // Thus we can safely compute the reciprocal of divisor without
+  // any concerns about the precision loss and transform the division
+  // into a multiplication operation.
   float reciprocal = ((float)1.0) / f;
 
   assert(frexp((double)reciprocal, &exp) == 0.5, "reciprocal should be power of 2");

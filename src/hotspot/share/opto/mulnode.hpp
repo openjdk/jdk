@@ -150,14 +150,14 @@ public:
   MulHFNode(Node* in1, Node* in2) : MulNode(in1, in2) {}
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  virtual const Type *mul_ring( const Type *, const Type * ) const;
-  const Type *mul_id() const { return TypeH::ONE; }
-  const Type *add_id() const { return TypeH::ZERO; }
+  virtual const Type* mul_ring(const Type*, const Type*) const;
+  const Type* mul_id() const { return TypeH::ONE; }
+  const Type* add_id() const { return TypeH::ZERO; }
   int add_opcode() const { return Op_AddHF; }
   int mul_opcode() const { return Op_MulHF; }
   int max_opcode() const { return Op_MaxHF; }
   int min_opcode() const { return Op_MinHF; }
-  const Type *bottom_type() const { return Type::HALF_FLOAT; }
+  const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
 };
 

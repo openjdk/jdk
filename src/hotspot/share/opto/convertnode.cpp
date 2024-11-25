@@ -253,8 +253,22 @@ const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Ideal------------------------------------------
 Node* ConvF2HFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // Optimize pattern - ConvHF2F (FP32BinOp) ConvF2HF ==> ReinterpretS2HF (FP16BinOp) ReinterpretHF2S.
-  if (Float16NodeFactory::is_binary_oper(in(1)->Opcode()) &&
+  // Float16 instance encapsulates a short field holding IEEE 754
+  // binary16 value. On unboxing, this short field is loaded into a
+  // GPR register while FP operation operates over floating point
+  // registers. ConvHF2F converts incoming short value to a FP32 value
+  // to perform operation at FP32 granularity. However, if target
+  // support FP16 ISA we can save this redundant up casting and
+  // optimize the graph pallet using following transformation.
+  //
+  // ConvF2HF(FP32BinOp(ConvHF2F(x), ConvHF2F(y))) =>
+  //        ReinterpretHF2S(FP16BinOp(ReinterpretS2HF(x), ReinterpretS2HF(y)))
+  //
+  // Please note we need to inject appropriate reinterpretation
+  // IR to move the values b/w GPR and floating point register
+  // before and after FP16 operation.
+
+  if (Float16NodeFactory::is_float32_binary_oper(in(1)->Opcode()) &&
       in(1)->in(1)->Opcode() == Op_ConvHF2F &&
       in(1)->in(2)->Opcode() == Op_ConvHF2F) {
     if (Matcher::match_rule_supported(Float16NodeFactory::get_float16_binary_oper(in(1)->Opcode())) &&
@@ -945,7 +959,7 @@ const Type* ReinterpretHF2SNode::Value(PhaseGVN* phase) const {
   return TypeInt::SHORT;
 }
 
-bool Float16NodeFactory::is_binary_oper(int opc) {
+bool Float16NodeFactory::is_float32_binary_oper(int opc) {
   switch(opc) {
     case Op_AddF:
     case Op_SubF:

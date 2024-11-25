@@ -1484,12 +1484,12 @@ const Type *TypeH::xmeet( const Type *t ) const {
   default:                      // All else is a mistake
     typerr(t);
 
-  case HalfFloatCon:                // Float-constant vs Float-constant?
-    if( jint_cast(_f) != jint_cast(t->getf()) )         // unequal constants?
+  case HalfFloatCon:            // Float-constant vs Float-constant?
+    if(jint_cast(_f) != jint_cast(t->getf())) {         // unequal constants?
                                 // must compare bitwise as positive zero, negative zero and NaN have
                                 // all the same representation in C++
       return HALF_FLOAT;        // Return generic float
-                                // Equal constants
+    }                           // Equal constants
   case Top:
   case HalfFloatTop:
     break;                      // Return the float constant

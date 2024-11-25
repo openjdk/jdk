@@ -34,7 +34,6 @@ import jdk.test.lib.Asserts;
  * @summary Test that Ideal transformations of MulHFNode are being performed as expected.
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.MulHFNodeIdealizationTests
  */
 public class MulHFNodeIdealizationTests {
