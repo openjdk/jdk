@@ -51,13 +51,6 @@ static bool is_instance_ref_klass(Klass* k) {
   return k->is_instance_klass() && InstanceKlass::cast(k)->reference_type() != REF_NONE;
 }
 
-class ShenandoahIgnoreReferenceDiscoverer : public ReferenceDiscoverer {
-public:
-  virtual bool discover_reference(oop obj, ReferenceType type) {
-    return true;
-  }
-};
-
 class ShenandoahVerifyOopClosure : public BasicOopIterateClosure {
 private:
   const char* _phase;
@@ -68,6 +61,7 @@ private:
   ShenandoahLivenessData* _ld;
   void* _interior_loc;
   oop _loc;
+  ReferenceIterationMode _ref_mode;
 
 public:
   ShenandoahVerifyOopClosure(ShenandoahVerifierStack* stack, MarkBitMap* map, ShenandoahLivenessData* ld,
@@ -82,8 +76,18 @@ public:
     _loc(nullptr) {
     if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
         options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
-      set_ref_discoverer_internal(new ShenandoahIgnoreReferenceDiscoverer());
+      // Unknown status for Reference.referent field. Do not touch it, it might be dead.
+      // Normally, barriers would prevent us from seeing the dead referents, but verifier
+      // runs with barriers disabled.
+      _ref_mode = DO_FIELDS_EXCEPT_REFERENT;
+    } else {
+      // Otherwise do all fields.
+      _ref_mode = DO_FIELDS;
     }
+  }
+
+  ReferenceIterationMode reference_iteration_mode() override {
+    return _ref_mode;
   }
 
 private:
@@ -98,7 +102,7 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (is_instance_ref_klass(obj->klass())) {
+      if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
         obj = ShenandoahForwarding::get_forwardee(obj);
       }
       // Single threaded verification can use faster non-atomic stack and bitmap
@@ -119,13 +123,13 @@ private:
     // that failure report would not try to touch something that was not yet verified to be
     // safe to process.
 
-    check(ShenandoahAsserts::_safe_unknown, obj, _heap->is_in(obj),
-              "oop must be in heap");
+    check(ShenandoahAsserts::_safe_unknown, obj, _heap->is_in_reserved(obj),
+              "oop must be in heap bounds");
     check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
 
     ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
-    Klass* obj_klass = obj->klass_or_null();
+    Klass* obj_klass = ShenandoahForwarding::klass(obj);
 
     // Verify that obj is not in dead space:
     {
@@ -140,11 +144,11 @@ private:
              "Object start should be within the region");
 
       if (!obj_reg->is_humongous()) {
-        check(ShenandoahAsserts::_safe_unknown, obj, (obj_addr + obj->size()) <= obj_reg->top(),
+        check(ShenandoahAsserts::_safe_unknown, obj, (obj_addr + ShenandoahForwarding::size(obj)) <= obj_reg->top(),
                "Object end should be within the region");
       } else {
         size_t humongous_start = obj_reg->index();
-        size_t humongous_end = humongous_start + (obj->size() >> ShenandoahHeapRegion::region_size_words_shift());
+        size_t humongous_end = humongous_start + (ShenandoahForwarding::size(obj) >> ShenandoahHeapRegion::region_size_words_shift());
         for (size_t idx = humongous_start + 1; idx < humongous_end; idx++) {
           check(ShenandoahAsserts::_safe_unknown, obj, _heap->get_region(idx)->is_humongous_continuation(),
                  "Humongous object is in continuation that fits it");
@@ -161,7 +165,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add(&_ld[obj_reg->index()], (uint) obj->size(), memory_order_relaxed);
+          Atomic::add(&_ld[obj_reg->index()], (uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(),
@@ -177,8 +181,8 @@ private:
     ShenandoahHeapRegion* fwd_reg = nullptr;
 
     if (obj != fwd) {
-      check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in(fwd),
-             "Forwardee must be in heap");
+      check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in_reserved(fwd),
+             "Forwardee must be in heap bounds");
       check(ShenandoahAsserts::_safe_oop, obj, !CompressedOops::is_null(fwd),
              "Forwardee is set");
       check(ShenandoahAsserts::_safe_oop, obj, is_object_aligned(fwd),
@@ -195,6 +199,9 @@ private:
 
       fwd_reg = _heap->heap_region_containing(fwd);
 
+      check(ShenandoahAsserts::_safe_oop, obj, fwd_reg->is_active(),
+            "Forwardee should be in active region");
+
       // Verify that forwardee is not in the dead space:
       check(ShenandoahAsserts::_safe_oop, obj, !fwd_reg->is_humongous(),
              "Should have no humongous forwardees");
@@ -202,7 +209,7 @@ private:
       HeapWord *fwd_addr = cast_from_oop<HeapWord *>(fwd);
       check(ShenandoahAsserts::_safe_oop, obj, fwd_addr < fwd_reg->top(),
              "Forwardee start should be within the region");
-      check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + fwd->size()) <= fwd_reg->top(),
+      check(ShenandoahAsserts::_safe_oop, obj, (fwd_addr + ShenandoahForwarding::size(fwd)) <= fwd_reg->top(),
              "Forwardee end should be within the region");
 
       oop fwd2 = ShenandoahForwarding::get_forwardee_raw_unchecked(fwd);
@@ -210,6 +217,21 @@ private:
              "Double forwarding");
     } else {
       fwd_reg = obj_reg;
+    }
+
+    // Do additional checks for special objects: their fields can hold metadata as well.
+    // We want to check class loading/unloading did not corrupt them.
+
+    if (obj_klass == vmClasses::Class_klass()) {
+      Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+      check(ShenandoahAsserts::_safe_oop, obj,
+            klass == nullptr || Metaspace::contains(klass),
+            "Instance class mirror should point to Metaspace");
+
+      Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+      check(ShenandoahAsserts::_safe_oop, obj,
+            array_klass == nullptr || Metaspace::contains(array_klass),
+            "Array class mirror should point to Metaspace");
     }
 
     // ------------ obj and fwd are safe at this point --------------
@@ -305,12 +327,16 @@ public:
    */
   void verify_oops_from(oop obj) {
     _loc = obj;
-    obj->oop_iterate(this);
+    // oop_iterate() can not deal with forwarded objects, because
+    // it needs to load klass(), which may be overridden by the
+    // forwarding pointer.
+    oop fwd = ShenandoahForwarding::get_forwardee_raw(obj);
+    fwd->oop_iterate(this);
     _loc = nullptr;
   }
 
-  virtual void do_oop(oop* p) { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) override { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) override { do_oop_work(p); }
 };
 
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
@@ -569,7 +595,7 @@ public:
 
       while (addr < limit) {
         verify_and_follow(addr, stack, cl, &processed);
-        addr += cast_to_oop(addr)->size();
+        addr += ShenandoahForwarding::size(cast_to_oop(addr));
       }
     }
 
@@ -585,7 +611,7 @@ public:
 
     // Verify everything reachable from that object too, hopefully realizing
     // everything was already marked, and never touching further:
-    if (!is_instance_ref_klass(obj->klass())) {
+    if (!is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
       cl.verify_oops_from(obj);
       (*processed)++;
     }
@@ -638,14 +664,6 @@ void ShenandoahVerifier::verify_at_safepoint(const char *label,
       case _verify_gcstate_forwarded:
         enabled = true;
         expected = ShenandoahHeap::HAS_FORWARDED;
-        break;
-      case _verify_gcstate_evacuation:
-        enabled = true;
-        expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION;
-        if (!_heap->is_stw_gc_in_progress()) {
-          // Only concurrent GC sets this.
-          expected |= ShenandoahHeap::WEAK_ROOTS;
-        }
         break;
       case _verify_gcstate_stable:
         enabled = true;
@@ -826,30 +844,6 @@ void ShenandoahVerifier::verify_before_evacuation() {
           _verify_liveness_complete,                 // liveness data must be complete here
           _verify_regions_disable,                   // trash regions not yet recycled
           _verify_gcstate_stable_weakroots           // heap is still stable, weakroots are in progress
-  );
-}
-
-void ShenandoahVerifier::verify_during_evacuation() {
-  verify_at_safepoint(
-          "During Evacuation",
-          _verify_forwarded_allow,    // some forwarded references are allowed
-          _verify_marked_disable,     // walk only roots
-          _verify_cset_disable,       // some cset references are not forwarded yet
-          _verify_liveness_disable,   // liveness data might be already stale after pre-evacs
-          _verify_regions_disable,    // trash regions not yet recycled
-          _verify_gcstate_evacuation  // evacuation is in progress
-  );
-}
-
-void ShenandoahVerifier::verify_after_evacuation() {
-  verify_at_safepoint(
-          "After Evacuation",
-          _verify_forwarded_allow,     // objects are still forwarded
-          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_forwarded,      // all cset refs are fully forwarded
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash,     // trash regions have been recycled already
-          _verify_gcstate_forwarded    // evacuation produced some forwarded objects
   );
 }
 

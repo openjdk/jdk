@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ class VirtualMemory {
 class VirtualMemoryAllocationSite : public AllocationSite {
   VirtualMemory _c;
  public:
-  VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
-    AllocationSite(stack, flag) { }
+  VirtualMemoryAllocationSite(const NativeCallStack& stack, MemTag mem_tag) :
+    AllocationSite(stack, mem_tag) { }
 
   inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
   inline void commit_memory (size_t sz)  { _c.commit_memory(sz);   }
@@ -95,22 +95,22 @@ class VirtualMemorySnapshot : public ResourceObj {
   friend class VirtualMemorySummary;
 
  private:
-  VirtualMemory  _virtual_memory[mt_number_of_types];
+  VirtualMemory  _virtual_memory[mt_number_of_tags];
 
  public:
-  inline VirtualMemory* by_type(MEMFLAGS flag) {
-    int index = NMTUtil::flag_to_index(flag);
+  inline VirtualMemory* by_type(MemTag mem_tag) {
+    int index = NMTUtil::tag_to_index(mem_tag);
     return &_virtual_memory[index];
   }
 
-  inline const VirtualMemory* by_type(MEMFLAGS flag) const {
-    int index = NMTUtil::flag_to_index(flag);
+  inline const VirtualMemory* by_type(MemTag mem_tag) const {
+    int index = NMTUtil::tag_to_index(mem_tag);
     return &_virtual_memory[index];
   }
 
   inline size_t total_reserved() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_types; index ++) {
+    for (int index = 0; index < mt_number_of_tags; index ++) {
       amount += _virtual_memory[index].reserved();
     }
     return amount;
@@ -118,14 +118,14 @@ class VirtualMemorySnapshot : public ResourceObj {
 
   inline size_t total_committed() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_types; index ++) {
+    for (int index = 0; index < mt_number_of_tags; index ++) {
       amount += _virtual_memory[index].committed();
     }
     return amount;
   }
 
   void copy_to(VirtualMemorySnapshot* s) {
-    for (int index = 0; index < mt_number_of_types; index ++) {
+    for (int index = 0; index < mt_number_of_tags; index ++) {
       s->_virtual_memory[index] = _virtual_memory[index];
     }
   }
@@ -134,32 +134,32 @@ class VirtualMemorySnapshot : public ResourceObj {
 class VirtualMemorySummary : AllStatic {
  public:
 
-  static inline void record_reserved_memory(size_t size, MEMFLAGS flag) {
-    as_snapshot()->by_type(flag)->reserve_memory(size);
+  static inline void record_reserved_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_type(mem_tag)->reserve_memory(size);
   }
 
-  static inline void record_committed_memory(size_t size, MEMFLAGS flag) {
-    as_snapshot()->by_type(flag)->commit_memory(size);
+  static inline void record_committed_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_type(mem_tag)->commit_memory(size);
   }
 
-  static inline void record_uncommitted_memory(size_t size, MEMFLAGS flag) {
-    as_snapshot()->by_type(flag)->uncommit_memory(size);
+  static inline void record_uncommitted_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_type(mem_tag)->uncommit_memory(size);
   }
 
-  static inline void record_released_memory(size_t size, MEMFLAGS flag) {
-    as_snapshot()->by_type(flag)->release_memory(size);
+  static inline void record_released_memory(size_t size, MemTag mem_tag) {
+    as_snapshot()->by_type(mem_tag)->release_memory(size);
   }
 
-  // Move virtual memory from one memory type to another.
-  // Virtual memory can be reserved before it is associated with a memory type, and tagged
+  // Move virtual memory from one memory tag to another.
+  // Virtual memory can be reserved before it is associated with a memory tag, and tagged
   // as 'unknown'. Once the memory is tagged, the virtual memory will be moved from 'unknown'
-  // type to specified memory type.
-  static inline void move_reserved_memory(MEMFLAGS from, MEMFLAGS to, size_t size) {
+  // type to specified memory tag.
+  static inline void move_reserved_memory(MemTag from, MemTag to, size_t size) {
     as_snapshot()->by_type(from)->release_memory(size);
     as_snapshot()->by_type(to)->reserve_memory(size);
   }
 
-  static inline void move_committed_memory(MEMFLAGS from, MEMFLAGS to, size_t size) {
+  static inline void move_committed_memory(MemTag from, MemTag to, size_t size) {
     as_snapshot()->by_type(from)->uncommit_memory(size);
     as_snapshot()->by_type(to)->commit_memory(size);
   }
@@ -293,16 +293,16 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     _committed_regions;
 
   NativeCallStack  _stack;
-  MEMFLAGS         _flag;
+  MemTag           _mem_tag;
 
  public:
   ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone) :
-    VirtualMemoryRegion(base, size), _stack(stack), _flag(flag) { }
+    MemTag mem_tag = mtNone) :
+    VirtualMemoryRegion(base, size), _stack(stack), _mem_tag(mem_tag) { }
 
 
   ReservedMemoryRegion(address base, size_t size) :
-    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _flag(mtNone) { }
+    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _mem_tag(mtNone) { }
 
   // Copy constructor
   ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
@@ -313,8 +313,8 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   inline void  set_call_stack(const NativeCallStack& stack) { _stack = stack; }
   inline const NativeCallStack* call_stack() const          { return &_stack;  }
 
-  void  set_flag(MEMFLAGS flag);
-  inline MEMFLAGS flag() const            { return _flag;  }
+  void  set_mem_tag(MemTag mem_tag);
+  inline MemTag mem_tag() const            { return _mem_tag;  }
 
   // uncommitted thread stack bottom, above guard pages if there is any.
   address thread_stack_uncommitted_bottom() const;
@@ -336,8 +336,8 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     set_base(other.base());
     set_size(other.size());
 
-    _stack =         *other.call_stack();
-    _flag  =         other.flag();
+    _stack   = *other.call_stack();
+    _mem_tag = other.mem_tag();
     _committed_regions.clear();
 
     CommittedRegionIterator itr = other.iterate_committed_regions();
@@ -350,7 +350,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
-  const char* flag_name() const { return NMTUtil::flag_to_name(_flag); }
+  const char* mem_tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
 
  private:
   // The committed region contains the uncommitted region, subtract the uncommitted
@@ -380,18 +380,18 @@ class VirtualMemoryTracker : AllStatic {
  public:
   static bool initialize(NMT_TrackingLevel level);
 
-  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
+  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MemTag mem_tag = mtNone);
 
   static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   static bool remove_uncommitted_region (address base_addr, size_t size);
   static bool remove_released_region    (address base_addr, size_t size);
   static bool remove_released_region    (ReservedMemoryRegion* rgn);
-  static void set_reserved_region_type  (address addr, MEMFLAGS flag);
+  static void set_reserved_region_type  (address addr, MemTag mem_tag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
-  //  stack and the memory flags of the original section.
-  static bool split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag);
+  //  stack and the memory tag of the original section.
+  static bool split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_type);
 
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);

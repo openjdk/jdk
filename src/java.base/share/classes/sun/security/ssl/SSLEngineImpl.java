@@ -416,11 +416,12 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             HandshakeStatus currentHandshakeStatus) throws IOException {
         // Don't bother to kickstart if handshaking is in progress, or if the
         // connection is not duplex-open.
-        if ((conContext.handshakeContext == null) &&
-                conContext.protocolVersion.useTLS13PlusSpec() &&
-                !conContext.isOutboundClosed() &&
-                !conContext.isInboundClosed() &&
-                !conContext.isBroken) {
+        if (SSLConfiguration.serverNewSessionTicketCount > 0 &&
+            conContext.handshakeContext == null &&
+            conContext.protocolVersion.useTLS13PlusSpec() &&
+            !conContext.isOutboundClosed() &&
+            !conContext.isInboundClosed() &&
+            !conContext.isBroken) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.finest("trigger NST");
             }

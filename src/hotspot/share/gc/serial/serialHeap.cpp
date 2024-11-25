@@ -40,6 +40,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -156,7 +157,7 @@ void SerialHeap::safepoint_synchronize_end() {
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
-  return old_gen()->allocate(word_size, false /* is_tlab */);
+  return old_gen()->allocate(word_size);
 }
 
 void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
@@ -199,6 +200,8 @@ jint SerialHeap::initialize() {
   _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
 
   GCInitLogger::print();
+
+  FullGCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }
@@ -292,11 +295,12 @@ bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
   if (_old_gen->should_allocate(size, is_tlab)) {
-    result = _old_gen->expand_and_allocate(size, is_tlab);
+    result = _old_gen->expand_and_allocate(size);
   }
   if (result == nullptr) {
     if (_young_gen->should_allocate(size, is_tlab)) {
-      result = _young_gen->expand_and_allocate(size, is_tlab);
+      // Young-gen is not expanded.
+      result = _young_gen->allocate(size);
     }
   }
   assert(result == nullptr || is_in_reserved(result), "result not in heap");
@@ -314,7 +318,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     // First allocation attempt is lock-free.
     DefNewGeneration *young = _young_gen;
     if (young->should_allocate(size, is_tlab)) {
-      result = young->par_allocate(size, is_tlab);
+      result = young->par_allocate(size);
       if (result != nullptr) {
         assert(is_in_reserved(result), "result not in heap");
         return result;
@@ -406,14 +410,14 @@ HeapWord* SerialHeap::attempt_allocation(size_t size,
   HeapWord* res = nullptr;
 
   if (_young_gen->should_allocate(size, is_tlab)) {
-    res = _young_gen->allocate(size, is_tlab);
+    res = _young_gen->allocate(size);
     if (res != nullptr || first_only) {
       return res;
     }
   }
 
   if (_old_gen->should_allocate(size, is_tlab)) {
-    res = _old_gen->allocate(size, is_tlab);
+    res = _old_gen->allocate(size);
   }
 
   return res;
@@ -881,12 +885,12 @@ void SerialHeap::verify(VerifyOption option /* ignored */) {
 }
 
 void SerialHeap::print_on(outputStream* st) const {
-  if (_young_gen != nullptr) {
-    _young_gen->print_on(st);
-  }
-  if (_old_gen != nullptr) {
-    _old_gen->print_on(st);
-  }
+  assert(_young_gen != nullptr, "precondition");
+  assert(_old_gen   != nullptr, "precondition");
+
+  _young_gen->print_on(st);
+  _old_gen->print_on(st);
+
   MetaspaceUtils::print_on(st);
 }
 
@@ -907,7 +911,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   log_info(gc, heap)(HEAP_CHANGE_FORMAT" "
                      HEAP_CHANGE_FORMAT" "
                      HEAP_CHANGE_FORMAT,
-                     HEAP_CHANGE_FORMAT_ARGS(def_new_gen->short_name(),
+                     HEAP_CHANGE_FORMAT_ARGS(def_new_gen->name(),
                                              pre_gc_values.young_gen_used(),
                                              pre_gc_values.young_gen_capacity(),
                                              def_new_gen->used(),
@@ -923,7 +927,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
                                              def_new_gen->from()->used(),
                                              def_new_gen->from()->capacity()));
   log_info(gc, heap)(HEAP_CHANGE_FORMAT,
-                     HEAP_CHANGE_FORMAT_ARGS(old_gen()->short_name(),
+                     HEAP_CHANGE_FORMAT_ARGS(old_gen()->name(),
                                              pre_gc_values.old_gen_used(),
                                              pre_gc_values.old_gen_capacity(),
                                              old_gen()->used(),

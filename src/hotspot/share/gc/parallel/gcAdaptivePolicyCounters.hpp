@@ -223,10 +223,6 @@ class GCAdaptivePolicyCounters : public GCPolicyCounters {
   }
 
   void set_size_policy(AdaptiveSizePolicy* v) { _size_policy = v; }
-
-  virtual GCPolicyCounters::Name kind() const {
-    return GCPolicyCounters::GCAdaptivePolicyCountersKind;
-  }
 };
 
 #endif // SHARE_GC_PARALLEL_GCADAPTIVEPOLICYCOUNTERS_HPP

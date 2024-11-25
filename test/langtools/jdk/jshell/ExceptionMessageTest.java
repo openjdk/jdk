@@ -26,6 +26,7 @@
  * @bug 8185108
  * @summary Test exception().getMessage() in events returned by eval()
  * @run testng ExceptionMessageTest
+ * @key intermittent
  */
 
 import java.util.HashMap;

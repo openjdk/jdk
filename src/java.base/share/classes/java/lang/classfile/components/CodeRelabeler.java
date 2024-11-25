@@ -24,14 +24,16 @@
  */
 package java.lang.classfile.components;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.Label;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
+
 import jdk.internal.classfile.impl.CodeRelabelerImpl;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A code relabeler is a {@link CodeTransform} replacing all occurrences
@@ -43,9 +45,8 @@ import jdk.internal.javac.PreviewFeature;
  * Repeated injection of the same code block must be relabeled, so each instance of
  * {@link java.lang.classfile.Label} is bound in the target bytecode exactly once.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabelerImpl {
 
     /**
@@ -62,6 +63,7 @@ public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabele
      * @return a new instance of CodeRelabeler
      */
     static CodeRelabeler of(Map<Label, Label> map) {
+        requireNonNull(map);
         return of((l, cob) -> map.computeIfAbsent(l, ll -> cob.newLabel()));
     }
 
@@ -72,6 +74,6 @@ public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabele
      * @return a new instance of CodeRelabeler
      */
     static CodeRelabeler of(BiFunction<Label, CodeBuilder, Label> mapFunction) {
-        return new CodeRelabelerImpl(mapFunction);
+        return new CodeRelabelerImpl(requireNonNull(mapFunction));
     }
 }

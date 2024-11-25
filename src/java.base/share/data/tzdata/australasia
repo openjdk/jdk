@@ -66,8 +66,8 @@ Zone Australia/Perth	 7:43:24 -	LMT	1895 Dec
 			 8:00	Aus	AW%sT	1943 Jul
 			 8:00	AW	AW%sT
 Zone Australia/Eucla	 8:35:28 -	LMT	1895 Dec
-			 8:45	Aus +0845/+0945	1943 Jul
-			 8:45	AW  +0845/+0945
+			 8:45	Aus	%z	1943 Jul
+			 8:45	AW	%z
 
 # Queensland
 #
@@ -232,8 +232,8 @@ Rule	LH	2008	max	-	Apr	Sun>=1	2:00	0	-
 Rule	LH	2008	max	-	Oct	Sun>=1	2:00	0:30	-
 Zone Australia/Lord_Howe 10:36:20 -	LMT	1895 Feb
 			10:00	-	AEST	1981 Mar
-			10:30	LH	+1030/+1130 1985 Jul
-			10:30	LH	+1030/+11
+			10:30	LH	%z	1985 Jul
+			10:30	LH	%z
 
 # Australian miscellany
 #
@@ -439,16 +439,16 @@ Rule	Fiji	2019	only	-	Nov	Sun>=8	2:00	1:00	-
 Rule	Fiji	2020	only	-	Dec	20	2:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:55:44 -	LMT	1915 Oct 26 # Suva
-			12:00	Fiji	+12/+13
+			12:00	Fiji	%z
 
 # French Polynesia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Gambier	 -8:59:48 -	LMT	1912 Oct  1 # Rikitea
-			 -9:00	-	-09
+			 -9:00	-	%z
 Zone	Pacific/Marquesas -9:18:00 -	LMT	1912 Oct  1
-			 -9:30	-	-0930
+			 -9:30	-	%z
 Zone	Pacific/Tahiti	 -9:58:16 -	LMT	1912 Oct  1 # Papeete
-			-10:00	-	-10
+			-10:00	-	%z
 # Clipperton (near North America) is administered from French Polynesia;
 # it is uninhabited.
 
@@ -491,7 +491,7 @@ Rule	Guam	1977	only	-	Aug	28	2:00	0	S
 Zone	Pacific/Guam	-14:21:00 -	LMT	1844 Dec 31
 			 9:39:00 -	LMT	1901        # Agana
 			10:00	-	GST	1941 Dec 10 # Guam
-			 9:00	-	+09	1944 Jul 31
+			 9:00	-	%z	1944 Jul 31
 			10:00	Guam	G%sT	2000 Dec 23
 			10:00	-	ChST	# Chamorro Standard Time
 
@@ -503,30 +503,30 @@ Zone	Pacific/Guam	-14:21:00 -	LMT	1844 Dec 31
 # Wallis & Futuna
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tarawa	 11:32:04 -	LMT	1901 # Bairiki
-			 12:00	-	+12
+			 12:00	-	%z
 
 # Kiribati (except Gilbert Is)
 # See Pacific/Tarawa for the Gilbert Is.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Kanton	  0	-	-00	1937 Aug 31
-			-12:00	-	-12	1979 Oct
-			-11:00	-	-11	1994 Dec 31
-			 13:00	-	+13
+			-12:00	-	%z	1979 Oct
+			-11:00	-	%z	1994 Dec 31
+			 13:00	-	%z
 Zone Pacific/Kiritimati	-10:29:20 -	LMT	1901
-			-10:40	-	-1040	1979 Oct
-			-10:00	-	-10	1994 Dec 31
-			 14:00	-	+14
+			-10:40	-	%z	1979 Oct
+			-10:00	-	%z	1994 Dec 31
+			 14:00	-	%z
 
 # Marshall Is
 # See Pacific/Tarawa for most locations.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Kwajalein	 11:09:20 -	LMT	1901
-			 11:00	-	+11	1937
-			 10:00	-	+10	1941 Apr  1
-			  9:00	-	+09	1944 Feb  6
-			 11:00	-	+11	1969 Oct
-			-12:00	-	-12	1993 Aug 20 24:00
-			 12:00	-	+12
+			 11:00	-	%z	1937
+			 10:00	-	%z	1941 Apr  1
+			  9:00	-	%z	1944 Feb  6
+			 11:00	-	%z	1969 Oct
+			-12:00	-	%z	1993 Aug 20 24:00
+			 12:00	-	%z
 
 # Micronesia
 # For Chuuk and Yap see Pacific/Port_Moresby.
@@ -534,22 +534,22 @@ Zone Pacific/Kwajalein	 11:09:20 -	LMT	1901
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Kosrae	-13:08:04 -	LMT	1844 Dec 31
 			 10:51:56 -	LMT	1901
-			 11:00	-	+11	1914 Oct
-			  9:00	-	+09	1919 Feb  1
-			 11:00	-	+11	1937
-			 10:00	-	+10	1941 Apr  1
-			  9:00	-	+09	1945 Aug
-			 11:00	-	+11	1969 Oct
-			 12:00	-	+12	1999
-			 11:00	-	+11
+			 11:00	-	%z	1914 Oct
+			  9:00	-	%z	1919 Feb  1
+			 11:00	-	%z	1937
+			 10:00	-	%z	1941 Apr  1
+			  9:00	-	%z	1945 Aug
+			 11:00	-	%z	1969 Oct
+			 12:00	-	%z	1999
+			 11:00	-	%z
 
 # Nauru
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Nauru	11:07:40 -	LMT	1921 Jan 15 # Uaobe
-			11:30	-	+1130	1942 Aug 29
-			 9:00	-	+09	1945 Sep  8
-			11:30	-	+1130	1979 Feb 10  2:00
-			12:00	-	+12
+			11:30	-	%z	1942 Aug 29
+			 9:00	-	%z	1945 Sep  8
+			11:30	-	%z	1979 Feb 10  2:00
+			12:00	-	%z
 
 # New Caledonia
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
@@ -560,7 +560,7 @@ Rule	NC	1996	only	-	Dec	 1	2:00s	1:00	-
 Rule	NC	1997	only	-	Mar	 2	2:00s	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Noumea	11:05:48 -	LMT	1912 Jan 13 # Nouméa
-			11:00	NC	+11/+12
+			11:00	NC	%z
 
 
 ###############################################################################
@@ -604,8 +604,8 @@ Zone Pacific/Auckland	11:39:04 -	LMT	1868 Nov  2
 			12:00	NZ	NZ%sT
 
 Zone Pacific/Chatham	12:13:48 -	LMT	1868 Nov  2
-			12:15	-	+1215	1946 Jan  1
-			12:45	Chatham	+1245/+1345
+			12:15	-	%z	1946 Jan  1
+			12:45	Chatham	%z
 
 # Auckland Is
 # uninhabited; Māori and Moriori, colonial settlers, pastoralists, sealers,
@@ -658,8 +658,8 @@ Rule	Cook	1979	1990	-	Oct	lastSun	0:00	0:30	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Rarotonga	13:20:56 -	LMT	1899 Dec 26 # Avarua
 			-10:39:04 -	LMT	1952 Oct 16
-			-10:30	-	-1030	1978 Nov 12
-			-10:00	Cook	-10/-0930
+			-10:30	-	%z	1978 Nov 12
+			-10:00	Cook	%z
 
 ###############################################################################
 
@@ -676,30 +676,30 @@ Zone Pacific/Rarotonga	13:20:56 -	LMT	1899 Dec 26 # Avarua
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Niue	-11:19:40 -	LMT	1952 Oct 16	# Alofi
-			-11:20	-	-1120	1964 Jul
-			-11:00	-	-11
+			-11:20	-	%z	1964 Jul
+			-11:00	-	%z
 
 # Norfolk
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Norfolk	11:11:52 -	LMT	1901 # Kingston
-			11:12	-	+1112	1951
-			11:30	-	+1130	1974 Oct 27 02:00s
-			11:30	1:00	+1230	1975 Mar  2 02:00s
-			11:30	-	+1130	2015 Oct  4 02:00s
-			11:00	-	+11	2019 Jul
-			11:00	AN	+11/+12
+			11:12	-	%z	1951
+			11:30	-	%z	1974 Oct 27 02:00s
+			11:30	1:00	%z	1975 Mar  2 02:00s
+			11:30	-	%z	2015 Oct  4 02:00s
+			11:00	-	%z	2019 Jul
+			11:00	AN	%z
 
 # Palau (Belau)
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Palau	-15:02:04 -	LMT	1844 Dec 31	# Koror
 			  8:57:56 -	LMT	1901
-			  9:00	-	+09
+			  9:00	-	%z
 
 # Papua New Guinea
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 			9:48:32	-	PMMT	1895 # Port Moresby Mean Time
-			10:00	-	+10
+			10:00	-	%z
 #
 # From Paul Eggert (2014-10-13):
 # Base the Bougainville entry on the Arawa-Kieta region, which appears to have
@@ -720,16 +720,16 @@ Zone Pacific/Port_Moresby 9:48:40 -	LMT	1880
 #
 Zone Pacific/Bougainville 10:22:16 -	LMT	1880
 			 9:48:32 -	PMMT	1895
-			10:00	-	+10	1942 Jul
-			 9:00	-	+09	1945 Aug 21
-			10:00	-	+10	2014 Dec 28  2:00
-			11:00	-	+11
+			10:00	-	%z	1942 Jul
+			 9:00	-	%z	1945 Aug 21
+			10:00	-	%z	2014 Dec 28  2:00
+			11:00	-	%z
 
 # Pitcairn
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Pitcairn	-8:40:20 -	LMT	1901        # Adamstown
-			-8:30	-	-0830	1998 Apr 27  0:00
-			-8:00	-	-08
+			-8:30	-	%z	1998 Apr 27  0:00
+			-8:00	-	%z
 
 # American Samoa
 # Midway
@@ -818,15 +818,15 @@ Rule	WS	2012	2020	-	Sep	lastSun	3:00	1	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Apia	 12:33:04 -	LMT	1892 Jul  5
 			-11:26:56 -	LMT	1911
-			-11:30	-	-1130	1950
-			-11:00	WS	-11/-10	2011 Dec 29 24:00
-			 13:00	WS	+13/+14
+			-11:30	-	%z	1950
+			-11:00	WS	%z	2011 Dec 29 24:00
+			 13:00	WS	%z
 
 # Solomon Is
 # excludes Bougainville, for which see Papua New Guinea
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct  1 # Honiara
-			11:00	-	+11
+			11:00	-	%z
 
 # Tokelau
 #
@@ -849,8 +849,8 @@ Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct  1 # Honiara
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
-			-11:00	-	-11	2011 Dec 30
-			13:00	-	+13
+			-11:00	-	%z	2011 Dec 30
+			13:00	-	%z
 
 # Tonga
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
@@ -862,9 +862,9 @@ Rule	Tonga	2016	only	-	Nov	Sun>=1	2:00	1:00	-
 Rule	Tonga	2017	only	-	Jan	Sun>=15	3:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Tongatapu	12:19:12 -	LMT	1945 Sep 10
-			12:20	-	+1220	1961
-			13:00	-	+13	1999
-			13:00	Tonga	+13/+14
+			12:20	-	%z	1961
+			13:00	-	%z	1999
+			13:00	Tonga	%z
 
 
 # US minor outlying islands
@@ -953,7 +953,7 @@ Rule	Vanuatu	1992	1993	-	Jan	Sat>=22	24:00	0	-
 Rule	Vanuatu	1992	only	-	Oct	Sat>=22	24:00	1:00	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
-			11:00	Vanuatu	+11/+12
+			11:00	Vanuatu	%z
 
 ###############################################################################
 

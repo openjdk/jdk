@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,17 @@
 
 package java.lang.classfile.attribute;
 
-import java.util.List;
-
 import java.lang.classfile.Annotation;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code RuntimeVisibleParameterAnnotations} attribute {@jvms 4.7.18}, which
+ * Models the {@code RuntimeVisibleParameterAnnotations} attribute (JVMS {@jvms 4.7.18}), which
  * can appear on methods. Delivered as a {@link java.lang.classfile.MethodElement}
  * when traversing a {@link MethodModel}.
  *
@@ -46,9 +45,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RuntimeVisibleParameterAnnotationsAttribute
         extends Attribute<RuntimeVisibleParameterAnnotationsAttribute>, MethodElement
         permits BoundAttribute.BoundRuntimeVisibleParameterAnnotationsAttribute,

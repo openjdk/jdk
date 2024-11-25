@@ -127,10 +127,10 @@ OopStorage::ActiveArray::~ActiveArray() {
 }
 
 OopStorage::ActiveArray* OopStorage::ActiveArray::create(size_t size,
-                                                         MEMFLAGS memflags,
+                                                         MemTag mem_tag,
                                                          AllocFailType alloc_fail) {
   size_t size_in_bytes = blocks_offset() + sizeof(Block*) * size;
-  void* mem = NEW_C_HEAP_ARRAY3(char, size_in_bytes, memflags, CURRENT_PC, alloc_fail);
+  void* mem = NEW_C_HEAP_ARRAY3(char, size_in_bytes, mem_tag, CURRENT_PC, alloc_fail);
   if (mem == nullptr) return nullptr;
   return new (mem) ActiveArray(size);
 }
@@ -300,7 +300,12 @@ void OopStorage::Block::set_active_index(size_t index) {
 
 size_t OopStorage::Block::active_index_safe(const Block* block) {
   STATIC_ASSERT(sizeof(intptr_t) == sizeof(block->_active_index));
-  return SafeFetchN((intptr_t*)&block->_active_index, 0);
+  // Be careful, because block could be a false positive from block_for_ptr.
+  assert(block != nullptr, "precondition");
+  uintptr_t block_addr = reinterpret_cast<uintptr_t>(block);
+  uintptr_t index_loc = block_addr + offset_of(Block, _active_index);
+  static_assert(sizeof(size_t) == sizeof(intptr_t), "assumption");
+  return static_cast<size_t>(SafeFetchN(reinterpret_cast<intptr_t*>(index_loc), 0));
 }
 
 unsigned OopStorage::Block::get_index(const oop* ptr) const {
@@ -343,7 +348,7 @@ OopStorage::Block* OopStorage::Block::new_block(const OopStorage* owner) {
   // _data must be first member: aligning block => aligning _data.
   STATIC_ASSERT(_data_pos == 0);
   size_t size_needed = allocation_size();
-  void* memory = NEW_C_HEAP_ARRAY_RETURN_NULL(char, size_needed, owner->memflags());
+  void* memory = NEW_C_HEAP_ARRAY_RETURN_NULL(char, size_needed, owner->mem_tag());
   if (memory == nullptr) {
     return nullptr;
   }
@@ -366,21 +371,23 @@ void OopStorage::Block::delete_block(const Block& block) {
 OopStorage::Block*
 OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
   STATIC_ASSERT(_data_pos == 0);
-  // Const-ness of ptr is not related to const-ness of containing block.
+  assert(ptr != nullptr, "precondition");
   // Blocks are allocated section-aligned, so get the containing section.
-  oop* section_start = align_down(const_cast<oop*>(ptr), block_alignment);
+  uintptr_t section_start = align_down(reinterpret_cast<uintptr_t>(ptr), block_alignment);
   // Start with a guess that the containing section is the last section,
   // so the block starts section_count-1 sections earlier.
-  oop* section = section_start - (section_size * (section_count - 1));
+  size_t section_size_in_bytes = sizeof(oop) * section_size;
+  uintptr_t section = section_start - (section_size_in_bytes * (section_count - 1));
   // Walk up through the potential block start positions, looking for
   // the owner in the expected location.  If we're below the actual block
   // start position, the value at the owner position will be some oop
   // (possibly null), which can never match the owner.
   intptr_t owner_addr = reinterpret_cast<intptr_t>(owner);
-  for (unsigned i = 0; i < section_count; ++i, section += section_size) {
-    Block* candidate = reinterpret_cast<Block*>(section);
-    if (SafeFetchN(&candidate->_owner_address, 0) == owner_addr) {
-      return candidate;
+  for (unsigned i = 0; i < section_count; ++i, section += section_size_in_bytes) {
+    uintptr_t owner_loc = section + offset_of(Block, _owner_address);
+    static_assert(sizeof(OopStorage*) == sizeof(intptr_t), "assumption");
+    if (SafeFetchN(reinterpret_cast<intptr_t*>(owner_loc), 0) == owner_addr) {
+      return reinterpret_cast<Block*>(section);
     }
   }
   return nullptr;
@@ -575,7 +582,7 @@ bool OopStorage::expand_active_array() {
   log_debug(oopstorage, blocks)("%s: expand active array " SIZE_FORMAT,
                                 name(), new_size);
   ActiveArray* new_array = ActiveArray::create(new_size,
-                                               memflags(),
+                                               mem_tag(),
                                                AllocFailStrategy::RETURN_NULL);
   if (new_array == nullptr) return false;
   new_array->copy_from(old_array);
@@ -643,8 +650,7 @@ public:
   }
 };
 
-OopStorage::Block* OopStorage::find_block_or_null(const oop* ptr) const {
-  assert(ptr != nullptr, "precondition");
+OopStorage::Block* OopStorage::block_for_ptr(const oop* ptr) const {
   return Block::block_for_ptr(this, ptr);
 }
 
@@ -771,7 +777,7 @@ static inline void check_release_entry(const oop* entry) {
 
 void OopStorage::release(const oop* ptr) {
   check_release_entry(ptr);
-  Block* block = find_block_or_null(ptr);
+  Block* block = block_for_ptr(ptr);
   assert(block != nullptr, "%s: invalid release " PTR_FORMAT, name(), p2i(ptr));
   log_trace(oopstorage, ref)("%s: releasing " PTR_FORMAT, name(), p2i(ptr));
   block->release_entries(block->bitmask_for_entry(ptr), this);
@@ -782,7 +788,7 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
   size_t i = 0;
   while (i < size) {
     check_release_entry(ptrs[i]);
-    Block* block = find_block_or_null(ptrs[i]);
+    Block* block = block_for_ptr(ptrs[i]);
     assert(block != nullptr, "%s: invalid release " PTR_FORMAT, name(), p2i(ptrs[i]));
     size_t count = 0;
     uintx releasing = 0;
@@ -805,8 +811,8 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
   }
 }
 
-OopStorage* OopStorage::create(const char* name, MEMFLAGS memflags) {
-  return new (memflags) OopStorage(name, memflags);
+OopStorage* OopStorage::create(const char* name, MemTag mem_tag) {
+  return new (mem_tag) OopStorage(name, mem_tag);
 }
 
 const size_t initial_active_array_size = 8;
@@ -819,9 +825,9 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
   return new PaddedMutex(rank, name);
 }
 
-OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :
+OopStorage::OopStorage(const char* name, MemTag mem_tag) :
   _name(os::strdup(name)),
-  _active_array(ActiveArray::create(initial_active_array_size, memflags)),
+  _active_array(ActiveArray::create(initial_active_array_size, mem_tag)),
   _allocation_list(),
   _deferred_updates(nullptr),
   _allocation_mutex(make_oopstorage_mutex(name, "alloc", Mutex::oopstorage)),
@@ -829,7 +835,7 @@ OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :
   _num_dead_callback(nullptr),
   _allocation_count(0),
   _concurrent_iteration_count(0),
-  _memflags(memflags),
+  _mem_tag(mem_tag),
   _needs_cleanup(false)
 {
   _active_array->increment_refcount();
@@ -989,7 +995,8 @@ bool OopStorage::delete_empty_blocks() {
 }
 
 OopStorage::EntryStatus OopStorage::allocation_status(const oop* ptr) const {
-  const Block* block = find_block_or_null(ptr);
+  if (ptr == nullptr) return INVALID_ENTRY;
+  const Block* block = block_for_ptr(ptr);
   if (block != nullptr) {
     // Prevent block deletion and _active_array modification.
     MutexLocker ml(_allocation_mutex, Mutex::_no_safepoint_check_flag);
@@ -1030,7 +1037,7 @@ size_t OopStorage::total_memory_usage() const {
   return total_size;
 }
 
-MEMFLAGS OopStorage::memflags() const { return _memflags; }
+MemTag OopStorage::mem_tag() const { return _mem_tag; }
 
 // Parallel iteration support
 
@@ -1134,6 +1141,26 @@ void OopStorage::BasicParState::report_num_dead() const {
 }
 
 const char* OopStorage::name() const { return _name; }
+
+bool OopStorage::print_containing(const oop* addr, outputStream* st) {
+  if (addr != nullptr) {
+    Block* block = block_for_ptr(addr);
+    if (block != nullptr && block->print_containing(addr, st)) {
+      st->print(" in oop storage \"%s\"", name());
+      return true;
+    }
+  }
+  return false;
+}
+
+bool OopStorage::Block::print_containing(const oop* addr, outputStream* st) {
+  if (contains(addr)) {
+    st->print(PTR_FORMAT " is a pointer %u/%zu into block %zu",
+              p2i(addr), get_index(addr), ARRAY_SIZE(_data), _active_index);
+    return true;
+  }
+  return false;
+}
 
 #ifndef PRODUCT
 

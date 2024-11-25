@@ -35,6 +35,7 @@ class LeakProfiler : public AllStatic {
   static bool start(int sample_count);
   static bool stop();
   static bool is_running();
+  static bool is_supported();
 
   static void emit_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs);
   static void sample(HeapWord* object, size_t size, JavaThread* thread);

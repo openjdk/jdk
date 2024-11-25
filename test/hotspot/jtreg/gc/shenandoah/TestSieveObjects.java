@@ -127,45 +127,6 @@
  *      TestSieveObjects
  */
 
-/*
- * @test id=iu-aggressive
- * @summary Acceptance tests: collector can deal with retained objects
- * @key randomness
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      TestSieveObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      TestSieveObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestSieveObjects
- */
-
-/*
- * @test id=iu
- * @summary Acceptance tests: collector can deal with retained objects
- * @key randomness
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahVerify
- *      TestSieveObjects
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      TestSieveObjects
- */
-
 import java.util.Random;
 import jdk.test.lib.Utils;
 

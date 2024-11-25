@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 
 package java.lang.classfile.attribute;
 
-import java.util.List;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.constantpool.ConstantPool;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code BootstrapMethods} attribute {@jvms 4.7.23}, which serves as
+ * Models the {@code BootstrapMethods} attribute (JVMS {@jvms 4.7.23}), which serves as
  * an extension to the constant pool of a classfile.  Elements of the bootstrap
  * method table are accessed through {@link ConstantPool}.
  * <p>
@@ -45,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 7.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface BootstrapMethodsAttribute
         extends Attribute<BootstrapMethodsAttribute>
         permits BoundAttribute.BoundBootstrapMethodsAttribute,

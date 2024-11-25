@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,8 @@ public abstract class CRL {
      * "{@docRoot}/../specs/security/standard-names.html">
      * Java Security Standard Algorithm Names</a> document
      * for information about standard CRL types.
+     *
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
      */
     protected CRL(String type) {
         this.type = type;

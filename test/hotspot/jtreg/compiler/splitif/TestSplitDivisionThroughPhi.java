@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
 * @test
 * @key stress randomness
-* @bug 8299259
+* @bug 8299259 8336729
 * @requires vm.compiler2.enabled
 * @summary Test various cases of divisions/modulo which should not be split through iv phis.
 * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM -XX:StressSeed=884154126
@@ -35,13 +35,35 @@
 /**
 * @test
 * @key stress randomness
-* @bug 8299259
+* @bug 8299259 8336729
 * @requires vm.compiler2.enabled
 * @summary Test various cases of divisions/modulo which should not be split through iv phis.
 * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM
 *                   -XX:CompileCommand=compileonly,compiler.splitif.TestSplitDivisionThroughPhi::*
 *                   compiler.splitif.TestSplitDivisionThroughPhi
 */
+
+/**
+ * @test
+ * @key stress randomness
+ * @bug 8336729
+ * @requires vm.compiler2.enabled
+ * @summary Test various cases of divisions/modulo which should not be split through iv phis.
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM -XX:StressSeed=3434
+ *                   -XX:CompileCommand=compileonly,compiler.splitif.TestSplitDivisionThroughPhi::*
+ *                   compiler.splitif.TestSplitDivisionThroughPhi
+ */
+
+/**
+ * @test
+ * @key stress randomness
+ * @bug 8336729
+ * @requires vm.compiler2.enabled
+ * @summary Test various cases of divisions/modulo which should not be split through iv phis.
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM
+ *                   -XX:CompileCommand=compileonly,compiler.splitif.TestSplitDivisionThroughPhi::*
+ *                   compiler.splitif.TestSplitDivisionThroughPhi
+ */
 
 package compiler.splitif;
 
@@ -61,6 +83,8 @@ public class TestSplitDivisionThroughPhi {
             testPushDivLThruPhiInChain();
             testPushModLThruPhi();
             testPushModLThruPhiInChain();
+            testPushDivLThruPhiForOuterLongLoop();
+            testPushModLThruPhiForOuterLongLoop();
         }
     }
 
@@ -75,6 +99,27 @@ public class TestSplitDivisionThroughPhi {
             // as input which has type [0..8]. We end up executing a division by zero on the last iteration because
             // the DivI it is not pinned to the loop exit test and can freely float above the loop exit check.
             iFld = 10 / i;
+        }
+    }
+
+    // Fixed with JDK-8336729.
+    static void testPushDivLThruPhiForOuterLongLoop() {
+        // This loop is first transformed into a LongCountedLoop in the first loop opts phase.
+        // In the second loop opts phase, the LongCountedLoop is split into an inner and an outer loop. Both get the
+        // same iv phi type which is [2..10]. Only the inner loop is transformed into a CountedLoopNode while the outer
+        // loop is still a LoopNode. We run into the same problem as described in testPushDivIThruPhi() when splitting
+        // the DivL node through the long iv phi of the outer LoopNode.
+        // The fix for JDK-8299259 only prevents this splitting for CountedLoopNodes. We now extend it to LoopNodes
+        // in general.
+        for (long i = 10; i > 1; i -= 2) {
+            lFld = 10 / i;
+        }
+    }
+
+    // Same as testPushDivLThruPhiForOuterLongLoop() but for ModL.
+    static void testPushModLThruPhiForOuterLongLoop() {
+        for (int i = 10; i > 1; i -= 2) {
+            iFld = 10 % i;
         }
     }
 

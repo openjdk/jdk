@@ -35,6 +35,8 @@ class JfrStorage;
 class JfrStringPool;
 
 class JfrRecorderService : public StackObj {
+  friend class JfrSafepointClearVMOperation;
+  friend class JfrSafepointWriteVMOperation;
  private:
   JfrCheckpointManager& _checkpoint_manager;
   JfrChunkWriter& _chunkwriter;

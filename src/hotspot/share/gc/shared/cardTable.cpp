@@ -84,7 +84,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
     MAX2(_page_size, os::vm_allocation_granularity());
   ReservedSpace heap_rs(_byte_map_size, rs_align, _page_size);
 
-  MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag((address)heap_rs.base(), mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
                        heap_rs.base(), heap_rs.size(), _page_size);

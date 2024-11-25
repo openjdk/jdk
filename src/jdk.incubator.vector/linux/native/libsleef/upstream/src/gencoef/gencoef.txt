@@ -1,0 +1,43 @@
+
+With this small tool, the coefficients for polynomial approximation
+used in kernels can be generated.
+
+Usage
+
+Edit gencoefdp.c. In the beginning of the file, specifications of the
+parameters for generating coefficients are listed. Enable one of them
+by changing #if. Then, run make to compile the source code. Run the
+gencoef, and it will show the generated coefficients in a few minutes.
+
+
+How it works
+
+There are two phases of the program.
+
+The first phase is the regression for minimizing the maximum relative
+error. This problem can be reduced to a linear programming problem,
+and the Simplex method is used in this implementation. This requires
+multi-precision calculation, and the implementation uses the MPFR
+library to do this. In this phase, only a small number of values
+(specified by S macro, usually 40 or so) of the function to
+approximate are sampled within the argument range. The function to
+approximate can be given by FRFUNC function. Specifying higher values
+for S does not always give better results.
+
+The second phase is to optimize the coefficients so that it gives good
+accuracy with double precision calculation. In this phase, it checks
+100000 points (specified by Q macro) within the specified argument
+range to see if the polynomial gives good error bound. In some cases,
+the last few terms have to be calculated in higher precision in order
+to achieve 1 ULP overall accuracy, and this implementation can take
+care of that. The L parameter specifies the number of high precision
+coefficients.
+
+In some cases, it is desirable to fix the last few coefficients to
+values like 1. This can be specified if you define FIXCOEF0
+macro. This sometimes does not work, however. In this case, you need
+to specify the function to approximate as shown in the definition for
+cos.
+
+Finding a set of good parameters is not a straightforward process. You
+usually need many iterations of trial and error.

@@ -705,7 +705,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
     {
       java_lang_Class::fixup_module_field(k, module_handle);
     }
-    k->class_loader_data()->dec_keep_alive();
+    k->class_loader_data()->dec_keep_alive_ref_count();
   }
 
   delete java_lang_Class::fixup_module_field_list();

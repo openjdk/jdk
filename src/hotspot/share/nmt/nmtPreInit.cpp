@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,8 +198,8 @@ void NMTPreInit::create_table() {
 }
 
 // Allocate with os::malloc (hidden to prevent having to include os.hpp)
-void* NMTPreInit::do_os_malloc(size_t size, MEMFLAGS memflags) {
-  return os::malloc(size, memflags);
+void* NMTPreInit::do_os_malloc(size_t size, MemTag mem_tag) {
+  return os::malloc(size, mem_tag);
 }
 
 // Switches from NMT pre-init state to NMT post-init state;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,8 +219,8 @@ class C1G1PostBarrierCodeGenClosure : public StubAssemblerCodeGenClosure {
 void G1BarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1G1PreBarrierCodeGenClosure pre_code_gen_cl;
   C1G1PostBarrierCodeGenClosure post_code_gen_cl;
-  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, -1, "g1_pre_barrier_slow",
+  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID, "g1_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
-  _post_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, -1, "g1_post_barrier_slow",
+  _post_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID, "g1_post_barrier_slow",
                                                                false, &post_code_gen_cl);
 }

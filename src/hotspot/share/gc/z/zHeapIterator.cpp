@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ private:
 
   oop load_oop(oop* p) {
     const oop o = Atomic::load(p);
-    assert_is_valid(to_zaddress(o));
+    check_is_valid_zaddress(o);
     return RawAccess<>::oop_load(p);
   }
 
@@ -204,7 +204,7 @@ private:
     assert(ZCollectedHeap::heap()->is_in(p), "Should be in heap");
 
     if (VisitReferents) {
-      return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
+      return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, (ptrdiff_t)_base->field_offset(p));
     }
 
     return HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
@@ -447,7 +447,7 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
   const objArrayOop obj = objArrayOop(array.obj());
   const int length = obj->length();
   const int start = array.index();
-  const int stride = MIN2<int>(length - start, ObjArrayMarkingStride);
+  const int stride = MIN2<int>(length - start, (int)ObjArrayMarkingStride);
   const int end = start + stride;
 
   // Push remaining array chunk first

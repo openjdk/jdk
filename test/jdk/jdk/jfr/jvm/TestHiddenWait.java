@@ -77,6 +77,15 @@ public class TestHiddenWait {
                 s.start();
             }
             List<RecordedEvent> events = Events.fromRecording(r);
+            // Only keep events from the test thread and the JFR threads
+            String testThread = Thread.currentThread().getName();
+            events.removeIf(event -> {
+               String threadName = event.getThread().getJavaName();
+               if (threadName.equals(testThread) || threadName.contains("JFR")) {
+                   return false;
+               }
+               return true;
+            });
             for (RecordedEvent event : events) {
                 if (!event.getEventType().getName().equals(PERIODIC_EVENT_NAME)) {
                     System.out.println(event);

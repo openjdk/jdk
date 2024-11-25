@@ -25,13 +25,10 @@
  * @bug 8325203
  * @summary Test that Jpackage windows executable application kills the launched 3rd party application
  *          when System.exit(0) is invoked along with terminating java program.
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @requires os.family == "windows"
- * @build WinChildProcessTest
  * @build jdk.jpackage.test.*
  * @build WinChildProcessTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinChildProcessTest
  *
@@ -46,14 +43,15 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
+import static jdk.jpackage.test.WindowsHelper.killProcess;
 
 public class WinChildProcessTest {
     private static final Path TEST_APP_JAVA = TKit.TEST_SRC_ROOT
             .resolve("apps/ChildProcessAppLauncher.java");
 
     @Test
-    public static void test() throws Throwable {
-        long calcPid = 0;
+    public static void test() {
+        long childPid = 0;
         try {
             JPackageCommand cmd = JPackageCommand
                     .helloAppImage(TEST_APP_JAVA + "*Hello");
@@ -68,21 +66,22 @@ public class WinChildProcessTest {
                     .execute(0).getOutput();
             String pidStr = output.get(0);
 
-            // parse calculator PID
-            calcPid = Long.parseLong(pidStr.split("=", 2)[1]);
+            // parse child PID
+            childPid = Long.parseLong(pidStr.split("=", 2)[1]);
 
             // Check whether the termination of third party application launcher
             // also terminating the launched third party application
             // If third party application is not terminated the test is
             // successful else failure
-            Optional<ProcessHandle> processHandle = ProcessHandle.of(calcPid);
+            Optional<ProcessHandle> processHandle = ProcessHandle.of(childPid);
             boolean isAlive = processHandle.isPresent()
                     && processHandle.get().isAlive();
-            System.out.println("Is Alive " + isAlive);
-            TKit.assertTrue(isAlive, "Check is calculator process is alive");
+            TKit.assertTrue(isAlive, "Check child process is alive");
         } finally {
-            // Kill only a specific calculator instance
-            Runtime.getRuntime().exec("taskkill /F /PID " + calcPid);
+            if (childPid != 0) {
+                // Kill only a specific child instance
+                killProcess(childPid);
+            }
         }
     }
 }

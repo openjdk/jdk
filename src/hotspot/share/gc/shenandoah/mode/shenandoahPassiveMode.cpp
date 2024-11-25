@@ -47,7 +47,6 @@ void ShenandoahPassiveMode::initialize_flags() const {
   // Disable known barriers by default.
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahLoadRefBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahSATBBarrier);
-  SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahIUBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCASBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahCloneBarrier);
   SHENANDOAH_ERGO_DISABLE_FLAG(ShenandoahStackWatermarkBarrier);

@@ -657,7 +657,7 @@ public final class PlatformRecorder {
         }
         target.setStartTime(startTime);
         target.setStopTime(endTime);
-        target.setInternalDuration(Duration.between(startTime, endTime));
+        target.setInternalDuration(startTime.until(endTime));
     }
 
     public synchronized void migrate(SafePath repo) throws IOException {

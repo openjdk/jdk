@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import javax.xml.validation.Validator;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
@@ -60,11 +59,9 @@ import org.xml.sax.helpers.DefaultHandler;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow javax.xml.validation.ptests.ValidatorTest
  * @run testng/othervm javax.xml.validation.ptests.ValidatorTest
  * @summary Class containing the test cases for Validator API
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class ValidatorTest {
 
     @BeforeClass

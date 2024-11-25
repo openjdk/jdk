@@ -25,18 +25,12 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.CustomAttribute;
-import java.lang.classfile.MethodBuilder;
-import java.lang.classfile.MethodElement;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
@@ -46,7 +40,6 @@ public final class DirectMethodBuilder
     final Utf8Entry desc;
     int flags;
     int[] parameterSlots;
-    MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
                                ClassFileImpl context,
@@ -56,9 +49,15 @@ public final class DirectMethodBuilder
                                MethodModel original) {
         super(constantPool, context);
         setOriginal(original);
-        this.name = nameInfo;
-        this.desc = typeInfo;
+        this.name = requireNonNull(nameInfo);
+        this.desc = requireNonNull(typeInfo);
         this.flags = flags;
+    }
+
+    @Override
+    public MethodBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
     }
 
     void setFlags(int flags) {
@@ -81,14 +80,7 @@ public final class DirectMethodBuilder
 
     @Override
     public MethodTypeDesc methodTypeSymbol() {
-        if (mDesc == null) {
-            if (original instanceof MethodInfo mi) {
-                mDesc = mi.methodTypeSymbol();
-            } else {
-                mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
-            }
-        }
-        return mDesc;
+        return Util.methodTypeSymbol(methodType());
     }
 
     @Override
@@ -98,6 +90,9 @@ public final class DirectMethodBuilder
 
     @Override
     public int parameterSlot(int paramNo) {
+        if (paramNo == 0) {
+            return ((flags & ClassFile.ACC_STATIC) != 0) ? 0 : 1;
+        }
         if (parameterSlots == null)
             parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
@@ -113,7 +108,7 @@ public final class DirectMethodBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute<?>) element);
+            writeAttribute((CustomAttribute<?>) requireNonNull(element));
         }
         return this;
     }
@@ -147,9 +142,7 @@ public final class DirectMethodBuilder
 
     @Override
     public void writeTo(BufWriterImpl buf) {
-        buf.writeU2(flags);
-        buf.writeIndex(name);
-        buf.writeIndex(desc);
+        buf.writeU2U2U2(flags, buf.cpIndex(name), buf.cpIndex(desc));
         attributes.writeTo(buf);
     }
 }

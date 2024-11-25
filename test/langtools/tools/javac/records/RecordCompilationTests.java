@@ -1358,7 +1358,7 @@ class RecordCompilationTests extends CompilationTestCase {
         try {
             String[] testOptions = {};
             setCompileOptions(testOptions);
-            assertFail("compiler.err.illegal.start.of.type",
+            assertFail("compiler.err.statement.not.expected",
                     "class R {\n" +
                             "    record RR(int i) {\n" +
                             "        return null;\n" +
@@ -1615,7 +1615,7 @@ class RecordCompilationTests extends CompilationTestCase {
         }
         assert tAnno != null;
         Assert.check(tAnno.targetInfo().targetType().name().equals(positionType));
-        String annotationName = tAnno.classSymbol().displayName();
+        String annotationName = tAnno.annotation().classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
     private void checkAnno(Attribute<?> rAnnos,

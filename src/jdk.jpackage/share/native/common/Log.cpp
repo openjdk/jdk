@@ -40,10 +40,6 @@ namespace {
     // variables are initialized if any. This will result in AV. To avoid such
     // use cases keep logging module free from static variables that require
     // initialization with functions called by CRT.
-    //
-
-    // by default log everything
-    const Logger::LogLevel defaultLogLevel = Logger::LOG_TRACE;
 
     char defaultLogAppenderMemory[sizeof(StreamLogAppender)] = {};
 

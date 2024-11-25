@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,18 @@
 
 package java.lang.classfile.attribute;
 
-import java.util.List;
-
 import java.lang.classfile.Annotation;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code RuntimeInvisibleParameterAnnotations} attribute
- * {@jvms 4.7.19}, which can appear on methods. Delivered as a {@link
+ * (JVMS {@jvms 4.7.19}), which can appear on methods. Delivered as a {@link
  * java.lang.classfile.MethodElement} when traversing a {@link MethodModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.
@@ -46,9 +45,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RuntimeInvisibleParameterAnnotationsAttribute
         extends Attribute<RuntimeInvisibleParameterAnnotationsAttribute>, MethodElement
         permits BoundAttribute.BoundRuntimeInvisibleParameterAnnotationsAttribute,

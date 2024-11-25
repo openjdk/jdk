@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* 
 template <typename Function>
 inline void ZPageTableParallelIterator::do_pages(Function function) {
   _index_distributor.do_indices([&](int index) {
-    ZPage* const page = _table->at(index);
+    ZPage* const page = _table->at(size_t(index));
     if (page != nullptr) {
       const size_t start_index = untype(page->start()) >> ZGranuleSizeShift;
       if (size_t(index) == start_index) {

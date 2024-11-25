@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -375,7 +375,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ load_method_holder_cld(rscratch1, rmethod);
 
   // Is it a strong CLD?
-  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_offset()));
+  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_ref_count_offset()));
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?

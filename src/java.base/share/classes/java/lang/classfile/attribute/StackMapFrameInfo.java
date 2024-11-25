@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,19 @@
 
 package java.lang.classfile.attribute;
 
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ClassDesc;
 import java.util.List;
 
-import java.lang.classfile.Label;
-import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import static java.lang.classfile.ClassFile.*;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models stack map frame of {@code StackMapTable} attribute {@jvms 4.7.4}.
+ * Models stack map frame of {@code StackMapTable} attribute (JVMS {@jvms 4.7.4}).
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface StackMapFrameInfo
             permits StackMapDecoder.StackMapFrameImpl {
 
@@ -80,13 +77,43 @@ public sealed interface StackMapFrameInfo
     /**
      * The type of a stack value.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface VerificationTypeInfo {
+
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#TOP TOP}. */
+        int ITEM_TOP = 0;
+
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#INTEGER INTEGER}. */
+        int ITEM_INTEGER = 1;
+
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#FLOAT FLOAT}. */
+        int ITEM_FLOAT = 2;
+
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#DOUBLE DOUBLE}. */
+        int ITEM_DOUBLE = 3;
+
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#LONG LONG}. */
+        int ITEM_LONG = 4;
+
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#NULL NULL}. */
+        int ITEM_NULL = 5;
+
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS UNINITIALIZED_THIS}. */
+        int ITEM_UNINITIALIZED_THIS = 6;
+
+        /** The {@link #tag() tag} for verification type info {@link ObjectVerificationTypeInfo OBJECT}. */
+        int ITEM_OBJECT = 7;
+
+        /** The {@link #tag() tag} for verification type info {@link UninitializedVerificationTypeInfo UNINITIALIZED}. */
+        int ITEM_UNINITIALIZED = 8;
 
         /**
          * {@return the tag of the type info}
+         *
+         * @apiNote
+         * {@code ITEM_}-prefixed constants in this class, such as {@link #ITEM_TOP}, describe the
+         * possible return values of this method.
          */
         int tag();
     }
@@ -94,31 +121,30 @@ public sealed interface StackMapFrameInfo
     /**
      * A simple stack value.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public enum SimpleVerificationTypeInfo implements VerificationTypeInfo {
 
         /** verification type top */
-        ITEM_TOP(VT_TOP),
+        TOP(ITEM_TOP),
 
         /** verification type int */
-        ITEM_INTEGER(VT_INTEGER),
+        INTEGER(ITEM_INTEGER),
 
         /** verification type float */
-        ITEM_FLOAT(VT_FLOAT),
+        FLOAT(ITEM_FLOAT),
 
         /** verification type double */
-        ITEM_DOUBLE(VT_DOUBLE),
+        DOUBLE(ITEM_DOUBLE),
 
         /** verification type long */
-        ITEM_LONG(VT_LONG),
+        LONG(ITEM_LONG),
 
         /** verification type null */
-        ITEM_NULL(VT_NULL),
+        NULL(ITEM_NULL),
 
         /** verification type uninitializedThis */
-        ITEM_UNINITIALIZED_THIS(VT_UNINITIALIZED_THIS);
+        UNINITIALIZED_THIS(ITEM_UNINITIALIZED_THIS);
 
 
         private final int tag;
@@ -134,11 +160,10 @@ public sealed interface StackMapFrameInfo
     }
 
     /**
-     * A stack value for an object type.
+     * A stack value for an object type. Its {@link #tag() tag} is {@value #ITEM_OBJECT}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ObjectVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.ObjectVerificationTypeInfoImpl {
 
@@ -173,11 +198,10 @@ public sealed interface StackMapFrameInfo
     }
 
     /**
-     * An uninitialized stack value.
+     * An uninitialized stack value. Its {@link #tag() tag} is {@value #ITEM_UNINITIALIZED}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface UninitializedVerificationTypeInfo extends VerificationTypeInfo
             permits StackMapDecoder.UninitializedVerificationTypeInfoImpl {
 

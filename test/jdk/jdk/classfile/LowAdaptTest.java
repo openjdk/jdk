@@ -27,6 +27,9 @@
  * @run junit LowAdaptTest
  */
 import java.lang.constant.ClassDesc;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
@@ -35,7 +38,6 @@ import java.lang.constant.MethodTypeDesc;
 import java.net.URI;
 import java.nio.file.Paths;
 
-import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
@@ -75,7 +77,7 @@ class LowAdaptTest {
             cl.methods().forEach(cb::with);
 
             cb.withMethod("doit", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> {
                               xb.invokedynamic(indy);
                               xb.astore(1);

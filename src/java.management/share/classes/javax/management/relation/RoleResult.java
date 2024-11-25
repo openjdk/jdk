@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,62 +44,18 @@ import java.security.AccessController;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")
 public class RoleResult implements Serializable {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = 3786616013762091099L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = -6304063118040985512L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-      new ObjectStreamField("myRoleList", RoleList.class),
-      new ObjectStreamField("myRoleUnresList", RoleUnresolvedList.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-      new ObjectStreamField("roleList", RoleList.class),
-      new ObjectStreamField("unresolvedRoleList", RoleUnresolvedList.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = -6304063118040985512L;
     /**
      * @serialField roleList RoleList List of roles successfully accessed
      * @serialField unresolvedRoleList RoleUnresolvedList List of roles unsuccessfully accessed
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK : Too bad, no compat with 1.0
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+      new ObjectStreamField("roleList", RoleList.class),
+      new ObjectStreamField("unresolvedRoleList", RoleUnresolvedList.class)
+    };
 
     //
     // Private members
@@ -206,28 +162,7 @@ public class RoleResult implements Serializable {
      */
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
-      if (compat)
-      {
-        // Read an object serialized in the old serial form
-        //
-        ObjectInputStream.GetField fields = in.readFields();
-        roleList = (RoleList) fields.get("myRoleList", null);
-        if (fields.defaulted("myRoleList"))
-        {
-          throw new NullPointerException("myRoleList");
-        }
-        unresolvedRoleList = (RoleUnresolvedList) fields.get("myRoleUnresList", null);
-        if (fields.defaulted("myRoleUnresList"))
-        {
-          throw new NullPointerException("myRoleUnresList");
-        }
-      }
-      else
-      {
-        // Read an object serialized in the new serial form
-        //
-        in.defaultReadObject();
-      }
+      in.defaultReadObject();
     }
 
 
@@ -236,20 +171,6 @@ public class RoleResult implements Serializable {
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
-      if (compat)
-      {
-        // Serializes this instance in the old serial form
-        //
-        ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("myRoleList", roleList);
-        fields.put("myRoleUnresList", unresolvedRoleList);
-        out.writeFields();
-      }
-      else
-      {
-        // Serializes this instance in the new serial form
-        //
-        out.defaultWriteObject();
-      }
+      out.defaultWriteObject();
     }
 }

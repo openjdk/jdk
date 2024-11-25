@@ -1321,7 +1321,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
     if (name() != nullptr) {
       n = java_lang_String::as_utf8_string(name());
     } else {
-      int utf8_length = 0;
+      size_t utf8_length = 0;
       n = UNICODE::as_utf8((jchar*) nullptr, utf8_length);
     }
 
@@ -1350,10 +1350,6 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
   JavaThread* calling_thread = JavaThread::current();
   HandleMark hm(calling_thread);
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
 
@@ -1361,22 +1357,28 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
   oop thread_oop = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
-    delete owned_monitors_list;
     return err;
   }
 
-  if (java_thread != nullptr) {
-    Handle thread_handle(calling_thread, thread_oop);
-    EscapeBarrier eb(true, calling_thread, java_thread);
-    if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
-      delete owned_monitors_list;
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-    // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
-    JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
-    err = op.result();
+  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
+    *owned_monitor_count_ptr = 0;
+    return JVMTI_ERROR_NONE;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+
+  Handle thread_handle(calling_thread, thread_oop);
+  EscapeBarrier eb(java_thread != nullptr, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    delete owned_monitors_list;
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+  // get owned monitors info with handshake
+  GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+  err = op.result();
 
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {
@@ -1408,10 +1410,6 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   JavaThread* calling_thread = JavaThread::current();
   HandleMark hm(calling_thread);
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
 
@@ -1419,22 +1417,28 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   oop thread_oop = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
-    delete owned_monitors_list;
     return err;
   }
 
-  if (java_thread != nullptr) {
-    Handle thread_handle(calling_thread, thread_oop);
-    EscapeBarrier eb(true, calling_thread, java_thread);
-    if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
-      delete owned_monitors_list;
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-    // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
-    JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
-    err = op.result();
+  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
+    *monitor_info_count_ptr = 0;
+    return JVMTI_ERROR_NONE;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+
+  Handle thread_handle(calling_thread, thread_oop);
+  EscapeBarrier eb(java_thread != nullptr, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    delete owned_monitors_list;
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+  // get owned monitors info with handshake
+  GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+  err = op.result();
 
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {
@@ -2534,6 +2538,7 @@ JvmtiEnv::ClearBreakpoint(Method* method, jlocation location) {
 
 jvmtiError
 JvmtiEnv::SetFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_access_watched(true);
@@ -2546,6 +2551,7 @@ JvmtiEnv::SetFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
 
 jvmtiError
 JvmtiEnv::ClearFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
   // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_access_watched(false);
@@ -2558,6 +2564,7 @@ JvmtiEnv::ClearFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
 
 jvmtiError
 JvmtiEnv::SetFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_modification_watched(true);
@@ -2570,6 +2577,7 @@ JvmtiEnv::SetFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
 
 jvmtiError
 JvmtiEnv::ClearFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
    // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_modification_watched(false);
@@ -3128,7 +3136,9 @@ JvmtiEnv::GetFieldName(fieldDescriptor* fdesc_ptr, char** name_ptr, char** signa
 // declaring_class_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetFieldDeclaringClass(fieldDescriptor* fdesc_ptr, jclass* declaring_class_ptr) {
-
+  // As for the GetFieldDeclaringClass method, the XSL generated C++ code that calls it has
+  // a jclass of the relevant class or a subclass of it, which is fine in terms of ensuring
+  // the holder is kept alive.
   *declaring_class_ptr = get_jni_class_non_null(fdesc_ptr->field_holder());
   return JVMTI_ERROR_NONE;
 } /* end GetFieldDeclaringClass */
@@ -3206,7 +3216,9 @@ JvmtiEnv::GetMethodName(Method* method, char** name_ptr, char** signature_ptr, c
 jvmtiError
 JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
-  (*declaring_class_ptr) = get_jni_class_non_null(method->method_holder());
+  Klass* k = method->method_holder();
+  Handle holder(Thread::current(), k->klass_holder()); // keep the klass alive
+  (*declaring_class_ptr) = get_jni_class_non_null(k);
   return JVMTI_ERROR_NONE;
 } /* end GetMethodDeclaringClass */
 

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947
+ *           8331947 8281533
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -33,6 +33,7 @@
  * @run main TestPreview
  */
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import javadoc.tester.JavadocTester;
 
@@ -156,7 +157,20 @@ public class TestPreview extends JavadocTester {
                     <li><a href="../module-summary.html">java.base</a></li>
                     <li><a href="package-summary.html">preview</a></li>
                     <li><a href="Core.html" class="current-selection">Core</a></li>
-                    </ol>""");
+                    </ol>""",
+                """
+                    <div class="block">Preview feature. Links: <a href="CoreRecord.html" title="cla\
+                    ss in preview"><code>CoreRecord</code></a><sup><a href="CoreRecord.html#preview\
+                    -preview.CoreRecord">PREVIEW</a></sup>, <a href="CoreRecord.html" title="class \
+                    in preview"><code>core record</code></a><sup><a href="CoreRecord.html#preview-p\
+                    review.CoreRecord">PREVIEW</a></sup>,
+                     <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
+                    reRecord.html" title="class in preview">core record</a>.</div>""",
+                """
+                    <li><a href="CoreRecord.html" title="class in preview"><code>CoreRecord</code><\
+                    /a><sup><a href="CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup><\
+                    /li>
+                    <li><a href="CoreRecord.html" title="class in preview">core record</a></li>""");
 
         // 8331947: Support preview features without JEP should not be included in Preview API page
         checkOutput("preview-list.html", false, "supportMethod");
@@ -195,5 +209,19 @@ public class TestPreview extends JavadocTester {
 
         checkOutput("java.base/preview/NoPreview.html", false,
                     "refers to one or more preview");
+    }
+
+    @Test
+    public void testRequiresTransitiveJavaBase() {
+        Path src = Paths.get(testSrc, "requiresTransitiveJavaBase");
+        javadoc("-d", "out-requires-transitive-java-base",
+                "-XDforcePreview", "--enable-preview", "-source", System.getProperty("java.specification.version"),
+                "--module-source-path", src.toString(),
+                "--module", "m",
+                "--expand-requires", "transitive");
+        checkExit(Exit.OK);
+
+        checkOutput("m/module-summary.html", true,
+                    "Indirect exports from the <code>java.base</code> module are");
     }
 }

@@ -127,7 +127,6 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     // Background color for unselected tabs
     private Color unselectedBackground;
     private boolean contentOpaque = true;
-    private boolean tabsOpaque = true;
 
     /**
      *
@@ -156,7 +155,6 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     protected void installDefaults() {
         selectColor = UIManager.getColor("TabbedPane.selected");
         contentOpaque = UIManager.getBoolean("TabbedPane.contentOpaque");
-        tabsOpaque = UIManager.getBoolean("TabbedPane.tabsOpaque");
         unselectedBackground = UIManager.getColor("TabbedPane.unselectedBackground");
         updateStyle(tabPane);
     }
@@ -655,10 +653,8 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
             g.setColor(getUnselectedBackgroundAt(tabIndex));
         }
 
-        if (tabsOpaque || tabPane.isOpaque()) {
-            tabContext.getPainter().paintTabbedPaneTabBackground(tabContext, g,
-                    x, y, width, height, tabIndex, placement);
-        }
+        tabContext.getPainter().paintTabbedPaneTabBackground(tabContext, g,
+                x, y, width, height, tabIndex, placement);
         tabContext.getPainter().paintTabbedPaneTabBorder(tabContext, g,
                 x, y, width, height, tabIndex, placement);
 

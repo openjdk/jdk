@@ -72,14 +72,14 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, Roop);
-    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     branch_optimized(Assembler::bcondAllOne, slow_case);
   }
 
   assert(LockingMode != LM_MONITOR, "LM_MONITOR is already handled, by emit_lock()");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(Roop, Rmark, tmp, slow_case);
+    lightweight_lock(Rbox, Roop, Rmark, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     NearLabel done;
 
@@ -120,6 +120,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
     branch_optimized(Assembler::bcondNotZero, slow_case);
     // done
     bind(done);
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
 }
 
@@ -151,6 +153,8 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
     // If the object header was not pointing to the displaced header,
     // we do unlocking via runtime call.
     branch_optimized(Assembler::bcondNotEqual, slow_case);
+  } else {
+    assert(false, "Unhandled LockingMode:%d", LockingMode);
   }
   // done
   bind(done);
@@ -173,17 +177,21 @@ void C1_MacroAssembler::try_allocate(
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register Rzero, Register t1) {
   assert_different_registers(obj, klass, len, t1, Rzero);
-  // This assumes that all prototype bits fit in an int32_t.
-  load_const_optimized(t1, (intx)markWord::prototype().value());
-  z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  if (UseCompactObjectHeaders) {
+    z_lg(t1, Address(klass, in_bytes(Klass::prototype_header_offset())));
+    z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+  } else {
+    load_const_optimized(t1, (intx)markWord::prototype().value());
+    z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+    store_klass(klass, obj, t1);
+  }
 
   if (len->is_valid()) {
     // Length will be in the klass gap, if one exists.
     z_st(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-  } else if (UseCompressedClassPointers) {
+  } else if (UseCompressedClassPointers && !UseCompactObjectHeaders) {
     store_klass_gap(Rzero, obj);  // Zero klass gap for compressed oops.
   }
-  store_klass(klass, obj, t1);
 }
 
 void C1_MacroAssembler::initialize_body(Register objectFields, Register len_in_bytes, Register Rzero) {
@@ -254,7 +262,7 @@ void C1_MacroAssembler::initialize_object(
   // Dtrace support is unimplemented.
   //  if (CURRENT_ENV->dtrace_alloc_probes()) {
   //    assert(obj == rax, "must be");
-  //    call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //    call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   //  }
 
   verify_oop(obj, FILE_AND_LINE);
@@ -315,7 +323,7 @@ void C1_MacroAssembler::allocate_array(
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {
   //   assert(obj == rax, "must be");
-  //   call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //   call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   // }
 
   verify_oop(obj, FILE_AND_LINE);

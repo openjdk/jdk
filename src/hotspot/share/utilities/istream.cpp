@@ -78,7 +78,6 @@ bool inputStream::next() {
 void inputStream::set_done() {
   size_t end = _beg = _end = _content_end;
   _next = end + NEXT_PHANTOM;
-  _line_ending = 0;
   assert(definitely_done(), "");
 }
 
@@ -94,7 +93,6 @@ void inputStream::set_error(bool error_condition) {
 
 void inputStream::clear_buffer() {
   _content_end = _beg = _end = _next = 0;
-  _line_ending = 0;
 }
 
 const char* inputStream::next_content(size_t& next_content_length) const {
@@ -146,7 +144,6 @@ bool inputStream::fill_buffer() {
     else                { COV(FIB_L); }
     if (last_partial) {
       assert(have_current_line(), "");
-      _line_ending = 0;
       _content_end -= 1;  // reverse insertion of phantom newline
       assert(_next == _content_end + NEXT_PHANTOM, "");
       assert(have_current_line(), "");
@@ -224,7 +221,6 @@ void inputStream::set_buffer_content(size_t content_start,
   if (nl == nullptr) {
     COV(SBC_N);
     _next = _end = content_end;
-    _line_ending = 0;
     assert(need_to_read(), "");
   } else {
     COV(SBC_L);
@@ -247,7 +243,6 @@ void inputStream::set_buffer_content(size_t content_start,
       // accept '\r' before '\n'.
     }
     _end = end;  // now this->current_line() points to buf[beg..end]
-    _line_ending = (int)(_next - end);
     assert(have_current_line(), "");
     assert(current_line() == &_buffer[_beg], "");
     assert(current_line_length() == _end - _beg, "");
@@ -299,7 +294,7 @@ void inputStream::dump(const char* what) {
   bool ntr = (_next == _end),
        hcl = (_beg < _content_end && _end < _next),
        ddn = (_beg == _content_end && _next > _content_end);
-  tty->print_cr("%s%sistream %s%s%s%s%s [%d<%.*s>%d/%d..%d] LE=%d,"
+  tty->print_cr("%s%sistream %s%s%s%s%s [%d<%.*s>%d/%d..%d] "
                 " B=%llx%s[%d], LN=%d, CH=%d",
                 what ? what : "", what ? ": " : "",
                 _buffer == nullptr ? "U" : "",
@@ -312,7 +307,6 @@ void inputStream::dump(const char* what) {
                 diff < 0 ? 0 : diff > 10 ? 10 : diff,
                 _buffer ? &_buffer[_beg] : "",
                 (int)_end, (int)_next, (int)_content_end,
-                _line_ending,
                 (unsigned long long)(intptr_t)_buffer,
                 _buffer == _small_buffer ? "(SB)" : "",
                 (int)_buffer_size,

@@ -29,8 +29,11 @@
  * @run junit VerifierSelfTest
  */
 import java.io.IOException;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
+
 import static java.lang.constant.ConstantDescs.*;
+
 import java.lang.invoke.MethodHandleInfo;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -46,12 +49,14 @@ import java.util.stream.Stream;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.components.ClassPrinter;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ModuleDesc;
 
 import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class VerifierSelfTest {
@@ -108,6 +113,11 @@ class VerifierSelfTest {
                 public void writeBody(BufWriterImpl b) {
                     b.writeU2(0);
                 }
+
+                @Override
+                public Utf8Entry attributeName() {
+                    return cb.constantPool().utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TABLE);
+                }
             }));
         assertTrue(cc.verify(bytes).stream().anyMatch(e -> e.getMessage().contains("Invalid LocalVariableTable attribute location")));
     }
@@ -116,7 +126,7 @@ class VerifierSelfTest {
     void testInvalidClassNameEntry() {
         var cc = ClassFile.of();
         var bytes = cc.parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
-            0, 0, 0, 0, 0, 2, ClassFile.TAG_INTEGER, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+            0, 0, 0, 0, 0, 2, PoolEntry.TAG_INTEGER, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
         assertTrue(cc.verify(bytes).stream().anyMatch(e -> e.getMessage().contains("expected ClassEntry")));
     }
 
@@ -365,7 +375,7 @@ class VerifierSelfTest {
             super(new AttributeMapper<CloneAttribute>(){
                 @Override
                 public String name() {
-                    return a.attributeName();
+                    return a.attributeName().stringValue();
                 }
 
                 @Override

@@ -59,8 +59,8 @@ class ZStackWatermark : public StackWatermark {
 private:
   // Stores old watermarks, which describes the
   // colors of the non-processed part of the stack.
-  const static int      _old_watermarks_max = 3;
-  ZColorWatermark       _old_watermarks[_old_watermarks_max];
+  static const int      OldWatermarksMax = 3;
+  ZColorWatermark       _old_watermarks[OldWatermarksMax];
   int                   _old_watermarks_newest;
 
   ThreadLocalAllocStats _stats;

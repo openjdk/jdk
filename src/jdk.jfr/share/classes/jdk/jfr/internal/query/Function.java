@@ -472,7 +472,7 @@ abstract class Function {
             if (last == null) {
                 return ChronoUnit.FOREVER.getDuration();
             }
-            return Duration.between(first, last);
+            return first.until(last);
         }
     }
 

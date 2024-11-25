@@ -41,25 +41,6 @@
  *      TestRefprocSanity
  */
 
-/*
- * @test id=iu
- * @summary Test that null references/referents work fine
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahVerify
- *      TestRefprocSanity
- *
- * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      TestRefprocSanity
- *
- * @run main/othervm -Xmx128m -Xms128m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      TestRefprocSanity
- */
-
 import java.lang.ref.*;
 
 public class TestRefprocSanity {

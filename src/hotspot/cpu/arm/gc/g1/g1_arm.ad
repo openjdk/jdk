@@ -1,0 +1,201 @@
+//
+// Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+
+source_hpp %{
+
+#include "gc/g1/c2/g1BarrierSetC2.hpp"
+#include "gc/shared/gc_globals.hpp"
+
+%}
+
+source %{
+
+#include "gc/g1/g1BarrierSetAssembler_arm.hpp"
+#include "gc/g1/g1BarrierSetRuntime.hpp"
+
+static void write_barrier_pre(MacroAssembler* masm,
+                              const MachNode* node,
+                              Register obj,
+                              Register pre_val,
+                              Register tmp1,
+                              Register tmp2,
+                              RegSet preserve = RegSet(),
+                              RegSet no_preserve = RegSet()) {
+  if (!G1PreBarrierStubC2::needs_barrier(node)) {
+    return;
+  }
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
+  G1BarrierSetAssembler* g1_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
+  G1PreBarrierStubC2* const stub = G1PreBarrierStubC2::create(node);
+  for (RegSetIterator<Register> reg = preserve.begin(); *reg != noreg; ++reg) {
+    stub->preserve(*reg);
+  }
+  for (RegSetIterator<Register> reg = no_preserve.begin(); *reg != noreg; ++reg) {
+    stub->dont_preserve(*reg);
+  }
+  g1_asm->g1_write_barrier_pre_c2(masm, obj, pre_val, Rthread, tmp1, tmp2, stub);
+}
+
+static void write_barrier_post(MacroAssembler* masm,
+                               const MachNode* node,
+                               Register store_addr,
+                               Register new_val,
+                               Register tmp1,
+                               Register tmp2,
+                               Register tmp3) {
+  if (!G1PostBarrierStubC2::needs_barrier(node)) {
+    return;
+  }
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
+  G1BarrierSetAssembler* g1_asm = static_cast<G1BarrierSetAssembler*>(BarrierSet::barrier_set()->barrier_set_assembler());
+  G1PostBarrierStubC2* const stub = G1PostBarrierStubC2::create(node);
+  g1_asm->g1_write_barrier_post_c2(masm, store_addr, new_val, Rthread, tmp1, tmp2, tmp3, stub);
+}
+
+%}
+
+instruct g1StoreP(indirect mem, iRegP src, iRegP tmp1, iRegP tmp2, iRegP tmp3, flagsReg icc)
+%{
+  predicate(UseG1GC && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreP mem src));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL icc);
+  ins_cost(2 * (MEMORY_REF_COST + BRANCH_COST));
+  format %{ "sd  $src, $mem\t# ptr" %}
+  ins_encode %{
+    guarantee($mem$$disp == 0, "impossible encoding");
+    write_barrier_pre(masm, this,
+                      $mem$$Register  /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register) /* preserve */);
+    __ str($src$$Register, Address($mem$$Register));
+    write_barrier_post(masm, this,
+                       $mem$$Register  /* store_addr */,
+                       $src$$Register  /* new_val */,
+                       $tmp1$$Register /* tmp1 */,
+                       $tmp2$$Register /* tmp2 */,
+                       $tmp3$$Register /* tmp3 */);
+  %}
+  ins_pipe(istore_mem_reg);
+%}
+
+instruct g1CompareAndSwapP(iRegI res, indirect mem, iRegP newval, iRegP tmp1, iRegP tmp2, iRegP tmp3, iRegP oldval, flagsReg ccr )
+%{
+  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
+  effect(KILL ccr, TEMP res, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  ins_cost(4 * (MEMORY_REF_COST + BRANCH_COST));
+  format %{ "loop: \n\t"
+            "LDREX    $tmp1, $mem\t! If $oldval==[$mem] Then store $newval into [$mem]\n\t"
+            "CMP      $tmp1, $oldval\n\t"
+            "STREX.eq $tmp1, $newval, $mem\n\t"
+            "MOV.ne   $tmp1, 0 \n\t"
+            "EORS.eq  $tmp1,$tmp1, 1 \n\t"
+            "B.eq     loop \n\t"
+            "MOV      $res, $tmp1" %}
+  ins_encode %{
+    guarantee($mem$$disp == 0, "impossible encoding");
+    assert_different_registers($oldval$$Register, $mem$$Register);
+    assert_different_registers($newval$$Register, $mem$$Register);
+    write_barrier_pre(masm, this,
+                      noreg             /* obj */,
+                      $oldval$$Register /* pre_val */,
+                      $tmp2$$Register   /* tmp1 */,
+                      $tmp3$$Register   /* tmp2 */,
+                      RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
+                      RegSet::of($res$$Register) /* no_preserve */);
+    Label loop;
+    __ bind(loop);
+    __ ldrex($tmp1$$Register,$mem$$Address);
+    __ cmp($tmp1$$Register, $oldval$$Register);
+    __ strex($tmp1$$Register, $newval$$Register, $mem$$Address, eq);
+    __ mov($tmp1$$Register, 0, ne);
+    __ eors($tmp1$$Register, $tmp1$$Register, 1, eq);
+    __ b(loop, eq);
+    __ mov($res$$Register, $tmp1$$Register);
+    write_barrier_post(masm, this,
+                       $mem$$Register  /* store_addr */,
+                       $newval$$Register /* new_val */,
+                       $tmp1$$Register /* tmp1 */,
+                       $tmp2$$Register /* tmp2 */,
+                       $tmp3$$Register /* tmp3 */);
+  %}
+  ins_pipe(long_memory_op);
+%}
+
+
+instruct g1GetAndSetP(indirect mem, iRegP newval, iRegP tmp1, iRegP tmp2, iRegP tmp3, iRegP preval, flagsReg ccr)
+%{
+  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  match(Set preval (GetAndSetP mem newval));
+  effect(KILL ccr, TEMP preval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  ins_cost(4 * (MEMORY_REF_COST + BRANCH_COST));
+  format %{ "loop: \n\t"
+            "LDREX    $preval, $mem\n\t"
+            "STREX    $tmp1, $newval, $mem\n\t"
+            "CMP      $tmp1, 0 \n\t"
+            "B.ne     loop \n\t" %}
+  ins_encode %{
+    guarantee($mem$$disp == 0, "impossible encoding");
+    assert_different_registers($mem$$Register, $newval$$Register);
+    write_barrier_pre(masm, this,
+                      $mem$$Register    /* obj */,
+                      $preval$$Register /* pre_val (as a temporary register) */,
+                      $tmp1$$Register   /* tmp1 */,
+                      $tmp2$$Register   /* tmp2 */,
+                      RegSet::of($mem$$Register, $preval$$Register, $newval$$Register) /* preserve */);
+    Label loop;
+    __ bind(loop);
+    __ ldrex($preval$$Register,$mem$$Address);
+    __ strex($tmp1$$Register, $newval$$Register, $mem$$Address);
+    __ cmp($tmp1$$Register, 0);
+    __ b(loop, ne);
+    write_barrier_post(masm, this,
+                       $mem$$Register    /* store_addr */,
+                       $newval$$Register /* new_val */,
+                       $tmp1$$Register   /* tmp1 */,
+                       $tmp2$$Register   /* tmp2 */,
+                       $tmp3$$Register   /* tmp3 */);
+  %}
+  ins_pipe(long_memory_op);
+%}
+
+instruct g1LoadP(iRegP dst, indirect mem, iRegP tmp1, iRegP tmp2, flagsReg icc)
+%{
+  predicate(UseG1GC && n->as_Load()->barrier_data() != 0);
+  match(Set dst (LoadP mem));
+  effect(TEMP dst, TEMP tmp1, TEMP tmp2, KILL icc);
+  ins_cost(MEMORY_REF_COST + BRANCH_COST);
+  format %{ "ld  $dst, $mem\t# ptr" %}
+  ins_encode %{
+    guarantee($mem$$disp == 0, "impossible encoding");
+    __ ldr($dst$$Register, Address($mem$$Register));
+    write_barrier_pre(masm, this,
+                      noreg /* obj */,
+                      $dst$$Register /* pre_val */,
+                      $tmp1$$Register /* tmp1 */,
+                      $tmp2$$Register /* tmp2 */);
+  %}
+  ins_pipe(iload_mem);
+%}

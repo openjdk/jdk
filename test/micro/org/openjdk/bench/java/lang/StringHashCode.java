@@ -96,7 +96,7 @@ public class StringHashCode {
     @State(Scope.Thread)
     @Warmup(iterations = 5, time = 1)
     @Measurement(iterations = 5, time = 1)
-    @Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED"})
+    @Fork(value = 3, jvmArgs = {"--add-exports", "java.base/java.lang=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED"})
     public static class Algorithm {
 
         private final static String alphabet = "abcdefghijklmnopqrstuvwxyz";

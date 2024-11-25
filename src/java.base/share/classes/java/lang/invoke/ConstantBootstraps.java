@@ -25,6 +25,7 @@
 package java.lang.invoke;
 
 import sun.invoke.util.Wrapper;
+import jdk.internal.constant.ConstantUtils;
 
 import static java.lang.invoke.MethodHandleNatives.mapLookupExceptionToError;
 import static java.util.Objects.requireNonNull;
@@ -112,7 +113,7 @@ public final class ConstantBootstraps {
             throw new IllegalArgumentException(String.format("not primitive: %s", name));
         }
 
-        return Wrapper.forPrimitiveType(name.charAt(0)).primitiveType();
+        return ConstantUtils.forPrimitiveType(name, 0).resolveConstantDesc(lookup);
     }
 
     /**

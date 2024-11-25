@@ -182,12 +182,12 @@ define AddJdkLibrary
   $1_$2_NAME := $$(strip $$(lastword $$(subst :, , $3)))
   $1_$2_MODULE := $$(strip $$(patsubst %$$($1_$2_NAME), %, $3))
 
-  ifeq ($$(filter lib%, $$($1_$2_NAME)),)
+  ifeq ($$(filter lib%, $$($1_$2_NAME)), )
     $$(error Library name $$($1_$2_NAME) missing lib prefix in $1)
   endif
   $1_$2_NAME := $$(strip $$(patsubst lib%, %, $$($1_$2_NAME)))
 
-  ifeq ($$($1_$2_MODULE),)
+  ifeq ($$($1_$2_MODULE), )
     $1_$2_MODULE := $$(MODULE)
   else
     $1_$2_MODULE := $$(strip $$(patsubst %:, %, $$($1_$2_MODULE)))
@@ -196,10 +196,10 @@ define AddJdkLibrary
   # Determine if the library in question is static.
   # Ideally, we should not hardcode these
   ifeq ($(call isTargetOs, aix)+$$($1_$2_MODULE):$$($1_$2_NAME), true+java.base:jli)
-     $1_$2_STATIC_LIBRARY := true
+    $1_$2_STATIC_LIBRARY := true
   endif
   ifeq ($$($1_$2_MODULE):$$($1_$2_NAME), gtest:gtest)
-     $1_$2_STATIC_LIBRARY := true
+    $1_$2_STATIC_LIBRARY := true
   endif
 
   # Setup $1_$2_LIBPATH.

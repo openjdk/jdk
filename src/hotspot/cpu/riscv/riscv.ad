@@ -84,8 +84,8 @@ reg_def R0      ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()         ); // zr
 reg_def R0_H    ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()->next() );
 reg_def R1      ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()         ); // ra
 reg_def R1_H    ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()->next() );
-reg_def R2      ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()         ); // sp
-reg_def R2_H    ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()->next() );
+reg_def R2      ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()         ); // sp
+reg_def R2_H    ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()->next() );
 reg_def R3      ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()         ); // gp
 reg_def R3_H    ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()->next() );
 reg_def R4      ( NS,  NS,  Op_RegI, 4,  x4->as_VMReg()         ); // tp
@@ -1238,42 +1238,27 @@ bool needs_acquiring_load_reserved(const Node *n)
 
 int MachCallStaticJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return 1 * NativeInstruction::instruction_size; // jal
-  }
   return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
-  }
   return NativeMovConstReg::movptr2_instruction_size + (3 * NativeInstruction::instruction_size); // movptr2, auipc + ld + jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
-  // For generated stubs the call will be:
-  //   auipc + ld + jalr
-  // Using trampos:
-  //   jal(addr)
-  // or with far branches
-  //   jal(trampoline_stub)
-  // for real runtime callouts it will be 11 instructions
+  // For address inside the code cache the call will be:
+  //   auipc + jalr
+  // For real runtime callouts it will be 8 instructions
   // see riscv_enc_java_to_runtime
-  //   la(t1, retaddr)                ->  auipc + addi
-  //   la(t0, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
-  //   addi(sp, sp, -2 * wordSize)    ->  addi
-  //   sd(t1, Address(sp, wordSize))  ->  sd
-  //   jalr(t0)                       ->  jalr
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb != nullptr) {
-    if (UseTrampolines) {
-      return 1 * NativeInstruction::instruction_size;
-    }
-    return 3 * NativeInstruction::instruction_size;
+  //   la(t0, retaddr)                                             ->  auipc + addi
+  //   sd(t0, Address(xthread, JavaThread::last_Java_pc_offset())) ->  sd
+  //   movptr(t1, addr, offset, t0)                                ->  lui + lui + slli + add
+  //   jalr(t1, offset)                                            ->  jalr
+  if (CodeCache::contains(_entry_point)) {
+    return 2 * NativeInstruction::instruction_size;
   } else {
-    return 11 * NativeInstruction::instruction_size;
+    return 8 * NativeInstruction::instruction_size;
   }
 }
 
@@ -1822,13 +1807,13 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   assert_cond(st != nullptr);
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tlwu t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tlwu t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tlwu t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tlwu t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   } else {
-    st->print_cr("\tld t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tld t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tld t1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t2, [t0      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   }
-  st->print_cr("\tbeq t0, t2, ic_hit");
+  st->print_cr("\tbeq t1, t2, ic_hit");
   st->print_cr("\tj, SharedRuntime::_ic_miss_stub\t # Inline cache check");
   st->print_cr("\tic_hit:");
 }
@@ -1857,8 +1842,8 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 // Emit exception handler code.
 int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
 {
-  // auipc t0, #exception_blob_entry_point
-  // jr (offset)t0
+  // auipc t1, #exception_blob_entry_point
+  // jr (offset)t1
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   address base = __ start_a_stub(size_exception_handler());
@@ -1920,6 +1905,18 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_EncodeISOArray:
       return UseRVV;
 
+    // Current test shows that, it brings performance gain when MaxVectorSize >= 32, but brings
+    // regression when MaxVectorSize == 16. So only enable the intrinsic when MaxVectorSize >= 32.
+    case Op_RoundVF:
+      return UseRVV && MaxVectorSize >= 32;
+
+    // For double, current test shows that even with MaxVectorSize == 32, there is still some regression.
+    // Although there is no hardware to verify it for now, from the trend of performance data on hardwares
+    // (with vlenb == 16 and 32 respectively), it's promising to bring better performance rather than
+    // regression for double when MaxVectorSize == 64+. So only enable the intrinsic when MaxVectorSize >= 64.
+    case Op_RoundVD:
+      return UseRVV && MaxVectorSize >= 64;
+
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;
@@ -1954,18 +1951,18 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VMASK_REG_mask;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
-}
-
 // Vector calling convention not yet implemented.
 bool Matcher::supports_vector_calling_convention(void) {
-  return false;
+  return EnableVectorSupport && UseVectorStubs;
 }
 
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
-  Unimplemented();
-  return OptoRegPair(0, 0);
+  assert(EnableVectorSupport && UseVectorStubs, "sanity");
+  assert(ideal_reg == Op_VecA, "sanity");
+  // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+  int lo = V8_num;
+  int hi = V8_K_num;
+  return OptoRegPair(hi, lo);
 }
 
 // Is this branch offset short enough that a short branch can be used?
@@ -2212,7 +2209,8 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
   if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
       is_vector_bitwise_not_pattern(n, m) ||
-      is_vector_scalar_bitwise_pattern(n, m)) {
+      is_vector_scalar_bitwise_pattern(n, m) ||
+      is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -2422,10 +2420,8 @@ encode %{
       // The NOP here is purely to ensure that eliding a call to
       // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
       __ nop();
-      if (!UseTrampolines) {
-        __ nop();
-        __ nop();
-      }
+      __ nop();
+      __ nop();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       int method_index = resolved_method_index(masm);
@@ -2476,30 +2472,25 @@ encode %{
   enc_class riscv_enc_java_to_runtime(method meth) %{
     Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
 
-    // some calls to generated routines (arraycopy code) are scheduled
-    // by C2 as runtime calls. if so we can call them using a jr (they
-    // will be in a reachable segment) otherwise we have to use a jalr
-    // which loads the absolute address into a register.
+    // Some calls to generated routines (arraycopy code) are scheduled by C2
+    // as runtime calls. if so we can call them using a far call (they will be
+    // in the code cache, thus in a reachable segment) otherwise we have to use
+    // a movptr+jalr pair which loads the absolute address into a register.
     address entry = (address)$meth$$method;
-    CodeBlob *cb = CodeCache::find_blob(entry);
-    if (cb != nullptr) {
-      address call = __ reloc_call(Address(entry, relocInfo::runtime_call_type));
-      if (call == nullptr) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
-      }
+    if (CodeCache::contains(entry)) {
+      __ far_call(Address(entry, relocInfo::runtime_call_type));
       __ post_call_nop();
     } else {
       Label retaddr;
-      __ la(t1, retaddr);
-      __ la(t0, RuntimeAddress(entry));
-      // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
-      __ addi(sp, sp, -2 * wordSize);
-      __ sd(t1, Address(sp, wordSize));
-      __ jalr(t0);
+      // Make the anchor frame walkable
+      __ la(t0, retaddr);
+      __ sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
+      int32_t offset = 0;
+      // No relocation needed
+      __ movptr(t1, entry, offset, t0); // lui + lui + slli + add
+      __ jalr(t1, offset);
       __ bind(retaddr);
       __ post_call_nop();
-      __ addi(sp, sp, 2 * wordSize);
     }
   %}
 
@@ -4773,10 +4764,11 @@ instruct loadP(iRegPNoSp dst, memory mem)
 // Load Compressed Pointer
 instruct loadN(iRegNNoSp dst, memory mem)
 %{
+  predicate(n->as_Load()->barrier_data() == 0);
   match(Set dst (LoadN mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadN, compressed ptr, #@loadN" %}
+  format %{ "lwu  $dst, $mem\t# compressed ptr, #@loadN" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
@@ -4803,13 +4795,33 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 // Load Narrow Klass Pointer
 instruct loadNKlass(iRegNNoSp dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadNKlass, compressed class ptr, #@loadNKlass" %}
+  format %{ "lwu  $dst, $mem\t# compressed class ptr, #@loadNKlass" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory mem)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+
+  ins_cost(LOAD_COST);
+  format %{
+    "lwu  $dst, $mem\t# compressed klass ptr, shifted\n\t"
+    "srli $dst, $dst, markWord::klass_shift_at_offset"
+  %}
+
+  ins_encode %{
+    __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), (unsigned) markWord::klass_shift_at_offset);
   %}
 
   ins_pipe(iload_reg_mem);
@@ -5021,41 +5033,6 @@ instruct loadConD0(fRegD dst, immD0 con) %{
   ins_pipe(fp_load_constant_d);
 %}
 
-// Store Instructions
-// Store CMS card-mark Immediate
-instruct storeimmCM0(immI0 zero, memory mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(STORE_COST);
-  format %{ "storestore (elided)\n\t"
-            "sb zr, $mem\t# byte, #@storeimmCM0" %}
-
-  ins_encode %{
-    __ sb(zr, Address(as_Register($mem$$base), $mem$$disp));
-  %}
-
-  ins_pipe(istore_mem);
-%}
-
-// Store CMS card-mark Immediate with intervening StoreStore
-// needed when using CMS with no conditional card marking
-instruct storeimmCM0_ordered(immI0 zero, memory mem)
-%{
-  match(Set mem (StoreCM mem zero));
-
-  ins_cost(ALU_COST + STORE_COST);
-  format %{ "membar(StoreStore)\n\t"
-            "sb zr, $mem\t# byte, #@storeimmCM0_ordered" %}
-
-  ins_encode %{
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sb(zr, Address(as_Register($mem$$base), $mem$$disp));
-  %}
-
-  ins_pipe(istore_mem);
-%}
-
 // Store Byte
 instruct storeB(iRegIorL2I src, memory mem)
 %{
@@ -5208,6 +5185,7 @@ instruct storeimmP0(immP0 zero, memory mem)
 // Store Compressed Pointer
 instruct storeN(iRegN src, memory mem)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem src));
 
   ins_cost(STORE_COST);
@@ -5222,6 +5200,7 @@ instruct storeN(iRegN src, memory mem)
 
 instruct storeImmN0(immN0 zero, memory mem)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem zero));
 
   ins_cost(STORE_COST);
@@ -5412,6 +5391,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
 
 instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 8 + BRANCH_COST * 4);
@@ -5533,7 +5513,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
 instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
@@ -5641,6 +5621,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 3);
@@ -5774,7 +5755,7 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
 
 instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
@@ -5902,6 +5883,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
@@ -6033,7 +6015,7 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
 
 instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
@@ -6105,6 +6087,8 @@ instruct get_and_setL(indirect mem, iRegL newv, iRegLNoSp prev)
 
 instruct get_and_setN(indirect mem, iRegN newv, iRegINoSp prev)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set prev (GetAndSetN mem newv));
 
   ins_cost(ALU_COST);
@@ -6170,7 +6154,7 @@ instruct get_and_setLAcq(indirect mem, iRegL newv, iRegLNoSp prev)
 
 instruct get_and_setNAcq(indirect mem, iRegN newv, iRegINoSp prev)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set prev (GetAndSetN mem newv));
 
@@ -10003,11 +9987,11 @@ instruct CallStaticJavaDirect(method meth)
 // Call Java Dynamic Instruction
 // Note: If this code changes, the corresponding ret_addr_offset() and
 //       compute_padding() functions will have to be adjusted.
-instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
+instruct CallDynamicJavaDirect(method meth)
 %{
   match(CallDynamicJava);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST + ALU_COST * 5);
 
@@ -10022,11 +10006,11 @@ instruct CallDynamicJavaDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallRuntimeDirect(method meth, rFlagsReg cr)
+instruct CallRuntimeDirect(method meth)
 %{
   match(CallRuntime);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10039,11 +10023,11 @@ instruct CallRuntimeDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction
 
-instruct CallLeafDirect(method meth, rFlagsReg cr)
+instruct CallLeafDirect(method meth)
 %{
   match(CallLeaf);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10054,13 +10038,30 @@ instruct CallLeafDirect(method meth, rFlagsReg cr)
   ins_pipe(pipe_class_call);
 %}
 
+// Call Runtime Instruction without safepoint and with vector arguments
+
+instruct CallLeafDirectVector(method meth)
+%{
+  match(CallLeafVector);
+
+  effect(USE meth);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "CALL, runtime leaf vector $meth" %}
+
+  ins_encode(riscv_enc_java_to_runtime(meth));
+
+  ins_pipe(pipe_class_call);
+%}
+
 // Call Runtime Instruction
 
-instruct CallLeafNoFPDirect(method meth, rFlagsReg cr)
+instruct CallLeafNoFPDirect(method meth)
 %{
   match(CallLeafNoFP);
 
-  effect(USE meth, KILL cr);
+  effect(USE meth);
 
   ins_cost(BRANCH_COST);
 
@@ -10095,11 +10096,11 @@ instruct partialSubtypeCheck(iRegP_R15 result, iRegP_R14 sub, iRegP_R10 super, i
 %}
 
 instruct partialSubtypeCheckConstSuper(iRegP_R14 sub, iRegP_R10 super_reg, immP super_con, iRegP_R15 result,
-                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16)
+                                       iRegP_R11 tmpR11, iRegP_R12 tmpR12, iRegP_R13 tmpR13, iRegP_R16 tmpR16, rFlagsReg cr)
 %{
   predicate(UseSecondarySupersTable);
   match(Set result (PartialSubtypeCheck sub (Binary super_reg super_con)));
-  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16);
+  effect(TEMP tmpR11, TEMP tmpR12, TEMP tmpR13, TEMP tmpR16, KILL cr);
 
   ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
   format %{ "partialSubtypeCheck $result, $sub, $super_reg, $super_con" %}
@@ -10376,12 +10377,12 @@ instruct stringL_indexof_char(iRegP_R11 str1, iRegI_R12 cnt1, iRegI_R13 ch,
 
 // clearing of an array
 instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
-                            iRegP_R31 tmp2, Universe dummy)
+                            iRegP_R31 tmp2, rFlagsReg cr, Universe dummy)
 %{
   // temp registers must match the one used in StubGenerator::generate_zero_blocks()
   predicate(UseBlockZeroing || !UseRVV);
   match(Set dummy (ClearArray cnt base));
-  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2);
+  effect(USE_KILL cnt, USE_KILL base, TEMP tmp1, TEMP tmp2, KILL cr);
 
   ins_cost(4 * DEFAULT_COST);
   format %{ "ClearArray $cnt, $base\t#@clearArray_reg_reg" %}
@@ -10520,17 +10521,19 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
+                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3, #@cmpFastLock" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLock" %}
 
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($object$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -10553,33 +10556,37 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iR
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $box,$tmp1,$tmp2 #@cmpFastLockLightweight" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLockLightweight" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_lock_lightweight($object$$Register, $box$$Register,
+                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                  iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $box,$tmp1,$tmp2, #@cmpFastUnlockLightweight" %}
+  format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlockLightweight" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register,
+                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -10613,6 +10620,22 @@ instruct TailjmpInd(iRegPNoSpNoFp jump_target, iRegP_R10 ex_oop)
   format %{ "jalr $jump_target\t# $ex_oop holds exception oop, #@TailjmpInd." %}
 
   ins_encode(riscv_enc_tail_jmp(jump_target));
+
+  ins_pipe(pipe_class_call);
+%}
+
+// Forward exception.
+instruct ForwardExceptionjmp()
+%{
+  match(ForwardException);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "j forward_exception_stub\t#@ForwardException" %}
+
+  ins_encode %{
+    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+  %}
 
   ins_pipe(pipe_class_call);
 %}

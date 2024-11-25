@@ -53,7 +53,6 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -295,10 +294,9 @@ class G1PrepareEvacuationTask : public WorkerTask {
     G1MonotonicArenaMemoryStats _card_set_stats;
 
     void sample_card_set_size(G1HeapRegion* hr) {
-      // Sample card set sizes for young gen and humongous before GC: this makes
-      // the policy to give back memory to the OS keep the most recent amount of
-      // memory for these regions.
-      if (hr->is_young() || hr->is_starts_humongous()) {
+      // Sample card set sizes for humongous before GC: this makes the policy to give
+      // back memory to the OS keep the most recent amount of memory for these regions.
+      if (hr->is_starts_humongous()) {
         _card_set_stats.add(hr->rem_set()->card_set_memory_stats());
       }
     }
@@ -507,6 +505,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   {
     Ticks start = Ticks::now();
     rem_set()->prepare_for_scan_heap_roots();
+
+    _g1h->prepare_group_cardsets_for_scan();
+
     phase_times()->record_prepare_heap_roots_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
 
@@ -514,7 +515,10 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     G1PrepareEvacuationTask g1_prep_task(_g1h);
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
-    _g1h->set_young_gen_card_set_stats(g1_prep_task.all_card_set_stats());
+    G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
+    sampled_card_set_stats.add(_g1h->young_regions_card_set_mm()->memory_stats());
+    _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
+
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0);
@@ -587,8 +591,10 @@ class G1EvacuateRegionsBaseTask : public WorkerTask {
 protected:
   G1CollectedHeap* _g1h;
   G1ParScanThreadStateSet* _per_thread_states;
+
   G1ScannerTasksQueueSet* _task_queues;
   TaskTerminator _terminator;
+
   uint _num_workers;
 
   void evacuate_live_objects(G1ParScanThreadState* pss,
@@ -663,7 +669,22 @@ class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
     _root_processor->evacuate_roots(pss, worker_id);
     _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy, _has_optional_evacuation_work);
-    _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
+    _g1h->rem_set()->scan_collection_set_code_roots(pss, worker_id, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
+    // There are no optional roots to scan right now.
+#ifdef ASSERT
+    class VerifyOptionalCollectionSetRootsEmptyClosure : public G1HeapRegionClosure {
+      G1ParScanThreadState* _pss;
+
+    public:
+      VerifyOptionalCollectionSetRootsEmptyClosure(G1ParScanThreadState* pss) : _pss(pss) { }
+
+      bool do_heap_region(G1HeapRegion* r) override {
+        assert(!r->has_index_in_opt_cset(), "must be");
+        return false;
+      }
+    } cl(pss);
+    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+#endif
   }
 
   void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) {
@@ -732,7 +753,8 @@ class G1EvacuateOptionalRegionsTask : public G1EvacuateRegionsBaseTask {
 
   void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
     _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptObjCopy, true /* remember_already_scanned_cards */);
-    _g1h->rem_set()->scan_collection_set_regions(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::OptObjCopy);
+    _g1h->rem_set()->scan_collection_set_code_roots(pss, worker_id, G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::OptObjCopy);
+    _g1h->rem_set()->scan_collection_set_optional_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ObjCopy);
   }
 
   void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) {

@@ -66,12 +66,10 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
         continue;
 
   #ifndef COMPILER2
-      COMPILER1_PRESENT(ShouldNotReachHere();)
   #if INCLUDE_JVMCI
-      if (UseJVMCICompiler) {
-        ShouldNotReachHere();
-      }
+      if (!EnableJVMCI)
   #endif
+        ShouldNotReachHere();
   #endif // !COMPILER2
 
       address loc = fr->oopmapreg_to_location(omv.reg(), reg_map);

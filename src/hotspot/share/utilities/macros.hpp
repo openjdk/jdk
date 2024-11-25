@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,6 +338,7 @@
 #define NOT_PRODUCT_ARG(arg)
 #define PRODUCT_RETURN  {}
 #define PRODUCT_RETURN0 { return 0; }
+#define PRODUCT_RETURN_NULL { return nullptr; }
 #define PRODUCT_RETURN_(code) { code }
 #else // PRODUCT
 #define PRODUCT_ONLY(code)
@@ -345,6 +346,7 @@
 #define NOT_PRODUCT_ARG(arg) arg,
 #define PRODUCT_RETURN  /*next token must be ;*/
 #define PRODUCT_RETURN0 /*next token must be ;*/
+#define PRODUCT_RETURN_NULL /* next token must be ;*/
 #define PRODUCT_RETURN_(code)  /*next token must be ;*/
 #endif // PRODUCT
 
@@ -621,7 +623,7 @@
 #define COMPILER_HEADER(basename)        XSTR(COMPILER_HEADER_STEM(basename).hpp)
 #define COMPILER_HEADER_INLINE(basename) XSTR(COMPILER_HEADER_STEM(basename).inline.hpp)
 
-#if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64) && !defined(_WINDOWS)
+#if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64)
 #define INCLUDE_CDS_JAVA_HEAP 1
 #define CDS_JAVA_HEAP_ONLY(x) x
 #define NOT_CDS_JAVA_HEAP(x)

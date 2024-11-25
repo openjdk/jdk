@@ -571,7 +571,6 @@ Java_sun_java2d_x11_X11Renderer_XDoPath
 #ifndef HEADLESS
     X11SDOps *xsdo = (X11SDOps *) pXSData;
     jarray typesArray;
-    jobject pointArray;
     jarray coordsArray;
     jint numTypes;
     jint fillRule;

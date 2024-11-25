@@ -119,6 +119,30 @@ public class TestDereferencePath {
         }
     }
 
+    static final MemoryLayout A_VALUE = MemoryLayout.structLayout(
+            ValueLayout.ADDRESS.withName("b")
+                    .withTargetLayout(ValueLayout.JAVA_INT)
+    );
+
+    static final VarHandle a_value = A_VALUE.varHandle(
+            PathElement.groupElement("b"), PathElement.dereferenceElement());
+
+    @Test
+    public void testDerefValue() {
+        try (Arena arena = Arena.ofConfined()) {
+            // init structs
+            MemorySegment a = arena.allocate(A);
+            MemorySegment b = arena.allocate(ValueLayout.JAVA_INT);
+            // init struct fields
+            a.set(ValueLayout.ADDRESS, 0, b);
+            b.set(ValueLayout.JAVA_INT, 0, 42);
+            // dereference
+            int val = (int) a_value.get(a, 0L);
+            assertEquals(val, 42);
+        }
+    }
+
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testBadDerefInSelect() {
         A.select(PathElement.groupElement("b"), PathElement.dereferenceElement());

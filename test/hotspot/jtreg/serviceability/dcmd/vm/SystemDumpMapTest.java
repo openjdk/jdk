@@ -35,7 +35,7 @@ import java.util.regex.Pattern;
  * @test
  * @summary Test of diagnostic command System.map
  * @library /test/lib
- * @requires (os.family=="linux")
+ * @requires (os.family == "linux" | os.family == "windows")
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
@@ -63,11 +63,11 @@ public class SystemDumpMapTest extends SystemMapTestBase {
             boolean NMTOff = output.contains("NMT is disabled");
             String regexBase = ".*0x\\p{XDigit}+ - 0x\\p{XDigit}+ +\\d+";
             HashSet<Pattern> patterns = new HashSet<>();
-            for (String s: shouldMatchUnconditionally) {
+            for (String s: shouldMatchUnconditionally()) {
                 patterns.add(Pattern.compile(s));
             }
             if (!NMTOff) { // expect VM annotations if NMT is on
-                for (String s: shouldMatchIfNMTIsEnabled) {
+                for (String s: shouldMatchIfNMTIsEnabled()) {
                     patterns.add(Pattern.compile(s));
                 }
             }

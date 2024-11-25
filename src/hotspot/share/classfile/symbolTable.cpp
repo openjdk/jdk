@@ -174,7 +174,8 @@ public:
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
       size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
       if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
-        log_trace_symboltable_helper(&value, "Leaked permanent symbol");
+        // Can't access the symbol after Afree, but we just printed it above.
+        NOT_PRODUCT(log_trace(symboltable)(" - Leaked permanent symbol");)
       }
     }
     SymbolTable::item_removed();
@@ -193,7 +194,7 @@ private:
       // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
       // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
       // sometimes be higher. This would cause non-deterministic contents in the archive.
-      DEBUG_ONLY(static void* last = 0);
+      DEBUG_ONLY(static void* last = nullptr);
       void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
       assert(p > last, "must increase monotonically");
       DEBUG_ONLY(last = p);
@@ -211,7 +212,7 @@ private:
 };
 
 void SymbolTable::create_table ()  {
-  size_t start_size_log_2 = ceil_log2(SymbolTableSize);
+  size_t start_size_log_2 = log2i_ceil(SymbolTableSize);
   _current_size = ((size_t)1) << start_size_log_2;
   log_trace(symboltable)("Start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                          _current_size, start_size_log_2);
@@ -349,6 +350,7 @@ Symbol* SymbolTable::lookup_common(const char* name,
 // to be used for arbitrary strings. For debug builds we will assert if
 // a string is too long, whereas product builds will truncate it.
 static int check_length(const char* name, int len) {
+  assert(len >= 0, "negative length %d suggests integer overflow in the caller", len);
   assert(len <= Symbol::max_length(),
          "String length %d exceeds the maximum Symbol length of %d", len, Symbol::max_length());
   if (len > Symbol::max_length()) {
@@ -461,33 +463,33 @@ Symbol* SymbolTable::lookup_only(const char* name, int len, unsigned int& hash) 
 // and probing logic, so there is no need for convert_to_utf8 until
 // an actual new Symbol* is created.
 Symbol* SymbolTable::new_symbol(const jchar* name, int utf16_length) {
-  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  size_t utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
-  if (utf8_length < (int) sizeof(stack_buf)) {
+  if (utf8_length < sizeof(stack_buf)) {
     char* chars = stack_buf;
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return new_symbol(chars, utf8_length);
+    return new_symbol(chars, checked_cast<int>(utf8_length));
   } else {
     ResourceMark rm;
     char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return new_symbol(chars, utf8_length);
+    return new_symbol(chars, checked_cast<int>(utf8_length));
   }
 }
 
 Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
                                          unsigned int& hash) {
-  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  size_t utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
-  if (utf8_length < (int) sizeof(stack_buf)) {
+  if (utf8_length < sizeof(stack_buf)) {
     char* chars = stack_buf;
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup_only(chars, utf8_length, hash);
+    return lookup_only(chars, checked_cast<int>(utf8_length), hash);
   } else {
     ResourceMark rm;
     char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup_only(chars, utf8_length, hash);
+    return lookup_only(chars, checked_cast<int>(utf8_length), hash);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,44 +24,38 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.AnnotationValue.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.attribute.StackMapFrameInfo.ObjectVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.SimpleVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.UninitializedVerificationTypeInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo;
+import java.lang.classfile.components.ClassPrinter.LeafNode;
+import java.lang.classfile.components.ClassPrinter.ListNode;
+import java.lang.classfile.components.ClassPrinter.MapNode;
+import java.lang.classfile.components.ClassPrinter.Node;
+import java.lang.classfile.components.ClassPrinter.Verbosity;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.reflect.AccessFlag;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.lang.classfile.Annotation;
 
-import java.lang.classfile.AnnotationElement;
-import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.AnnotationValue.*;
-import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.components.ClassPrinter.*;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.TypeAnnotation;
-import java.lang.classfile.attribute.*;
-import java.lang.classfile.attribute.StackMapFrameInfo.*;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.instruction.*;
-
-import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.CompoundElement;
-import java.lang.classfile.FieldModel;
-import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_CLASS;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_DOUBLE;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_FLOAT;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_LONG;
+import static java.lang.classfile.constantpool.PoolEntry.TAG_STRING;
+import static java.lang.classfile.constantpool.PoolEntry.*;
+import static java.util.Objects.requireNonNull;
+import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.BLOCK;
+import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.FLOW;
 
 public final class ClassPrinterImpl {
 
@@ -507,15 +501,15 @@ public final class ClassPrinterImpl {
 
     private static Node[] elementValueToTree(AnnotationValue v) {
         return switch (v) {
-            case OfString cv -> leafs("string", String.valueOf(cv.constantValue()));
-            case OfDouble cv -> leafs("double", String.valueOf(cv.constantValue()));
-            case OfFloat cv -> leafs("float", String.valueOf(cv.constantValue()));
-            case OfLong cv -> leafs("long", String.valueOf(cv.constantValue()));
-            case OfInteger cv -> leafs("int", String.valueOf(cv.constantValue()));
-            case OfShort cv -> leafs("short", String.valueOf(cv.constantValue()));
-            case OfCharacter cv -> leafs("char", String.valueOf(cv.constantValue()));
-            case OfByte cv -> leafs("byte", String.valueOf(cv.constantValue()));
-            case OfBoolean cv -> leafs("boolean", String.valueOf((int)cv.constantValue() != 0));
+            case OfString cv -> leafs("string", String.valueOf(cv.stringValue()));
+            case OfDouble cv -> leafs("double", String.valueOf(cv.doubleValue()));
+            case OfFloat cv -> leafs("float", String.valueOf(cv.floatValue()));
+            case OfLong cv -> leafs("long", String.valueOf(cv.longValue()));
+            case OfInt cv -> leafs("int", String.valueOf(cv.intValue()));
+            case OfShort cv -> leafs("short", String.valueOf(cv.shortValue()));
+            case OfChar cv -> leafs("char", String.valueOf(cv.charValue()));
+            case OfByte cv -> leafs("byte", String.valueOf(cv.byteValue()));
+            case OfBoolean cv -> leafs("boolean", String.valueOf(cv.booleanValue()));
             case OfClass clv -> leafs("class", clv.className().stringValue());
             case OfEnum ev -> leafs("enum class", ev.className().stringValue(),
                                     "constant name", ev.constantName().stringValue());
@@ -536,21 +530,21 @@ public final class ClassPrinterImpl {
             switch (vti) {
                 case SimpleVerificationTypeInfo s -> {
                     switch (s) {
-                        case ITEM_DOUBLE -> {
+                        case DOUBLE -> {
                             ret.accept("double");
                             ret.accept("double2");
                         }
-                        case ITEM_FLOAT ->
+                        case FLOAT ->
                             ret.accept("float");
-                        case ITEM_INTEGER ->
+                        case INTEGER ->
                             ret.accept("int");
-                        case ITEM_LONG ->  {
+                        case LONG ->  {
                             ret.accept("long");
                             ret.accept("long2");
                         }
-                        case ITEM_NULL -> ret.accept("null");
-                        case ITEM_TOP -> ret.accept("?");
-                        case ITEM_UNINITIALIZED_THIS -> ret.accept("THIS");
+                        case NULL -> ret.accept("null");
+                        case TOP -> ret.accept("?");
+                        case UNINITIALIZED_THIS -> ret.accept("THIS");
                     }
                 }
                 case ObjectVerificationTypeInfo o ->
@@ -564,6 +558,7 @@ public final class ClassPrinterImpl {
     private record ExceptionHandler(int start, int end, int handler, String catchType) {}
 
     public static MapNode modelToTree(CompoundElement<?> model, Verbosity verbosity) {
+        requireNonNull(verbosity); // we are using == checks in implementations
         return switch(model) {
             case ClassModel cm -> classToTree(cm, verbosity);
             case FieldModel fm -> fieldToTree(fm, verbosity);
@@ -579,7 +574,7 @@ public final class ClassPrinterImpl {
                       list("flags", "flag", clm.flags().flags().stream().map(AccessFlag::name)),
                       leaf("superclass", clm.superclass().map(ClassEntry::asInternalName).orElse("")),
                       list("interfaces", "interface", clm.interfaces().stream().map(ClassEntry::asInternalName)),
-                      list("attributes", "attribute", clm.attributes().stream().map(Attribute::attributeName)))
+                      list("attributes", "attribute", clm.attributes().stream().map(Attribute::attributeName).map(Utf8Entry::stringValue)))
                 .with(constantPoolToTree(clm.constantPool(), verbosity))
                 .with(attributesToTree(clm.attributes(), verbosity))
                 .with(new ListNodeImpl(BLOCK, "fields", clm.fields().stream().map(f ->
@@ -603,12 +598,12 @@ public final class ClassPrinterImpl {
                             case TAG_STRING -> "String";
                             case TAG_FIELDREF -> "Fieldref";
                             case TAG_METHODREF -> "Methodref";
-                            case TAG_INTERFACEMETHODREF -> "InterfaceMethodref";
-                            case TAG_NAMEANDTYPE -> "NameAndType";
-                            case TAG_METHODHANDLE -> "MethodHandle";
-                            case TAG_METHODTYPE -> "MethodType";
-                            case TAG_CONSTANTDYNAMIC -> "Dynamic";
-                            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
+                            case TAG_INTERFACE_METHODREF -> "InterfaceMethodref";
+                            case TAG_NAME_AND_TYPE -> "NameAndType";
+                            case TAG_METHOD_HANDLE -> "MethodHandle";
+                            case TAG_METHOD_TYPE -> "MethodType";
+                            case TAG_DYNAMIC -> "Dynamic";
+                            case TAG_INVOKE_DYNAMIC -> "InvokeDynamic";
                             case TAG_MODULE -> "Module";
                             case TAG_PACKAGE -> "Package";
                             default -> throw new AssertionError("Unknown CP tag: " + e.tag());
@@ -677,7 +672,7 @@ public final class ClassPrinterImpl {
                                           "flag", f.flags().flags().stream().map(AccessFlag::name)),
                                   leaf("field type", f.fieldType().stringValue()),
                                   list("attributes",
-                                          "attribute", f.attributes().stream().map(Attribute::attributeName)))
+                                          "attribute", f.attributes().stream().map(Attribute::attributeName).map(Utf8Entry::stringValue)))
                             .with(attributesToTree(f.attributes(), verbosity));
     }
 
@@ -688,7 +683,7 @@ public final class ClassPrinterImpl {
                               "flag", m.flags().flags().stream().map(AccessFlag::name)),
                       leaf("method type", m.methodType().stringValue()),
                       list("attributes",
-                              "attribute", m.attributes().stream().map(Attribute::attributeName)))
+                              "attribute", m.attributes().stream().map(Attribute::attributeName).map(Utf8Entry::stringValue)))
                 .with(attributesToTree(m.attributes(), verbosity))
                 .with(codeToTree((CodeAttribute)m.code().orElse(null), verbosity));
     }
@@ -699,7 +694,7 @@ public final class ClassPrinterImpl {
             codeNode.with(leaf("max stack", com.maxStack()));
             codeNode.with(leaf("max locals", com.maxLocals()));
             codeNode.with(list("attributes",
-                    "attribute", com.attributes().stream().map(Attribute::attributeName)));
+                    "attribute", com.attributes().stream().map(Attribute::attributeName).map(Utf8Entry::stringValue)));
             var stackMap = new MapNodeImpl(BLOCK, "stack map frames");
             var visibleTypeAnnos = new LinkedHashMap<Integer, List<TypeAnnotation>>();
             var invisibleTypeAnnos = new LinkedHashMap<Integer, List<TypeAnnotation>>();
@@ -851,7 +846,7 @@ public final class ClassPrinterImpl {
                                 "type", newo.className().name().stringValue()));
                         case NewPrimitiveArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
-                                "descriptor", newa.typeKind().typeName()));
+                                "descriptor", newa.typeKind().upperBound().displayName()));
                         case NewReferenceArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
                                 "descriptor", newa.componentType().name().stringValue()));
@@ -1001,7 +996,7 @@ public final class ClassPrinterImpl {
                                         "name", rc.name().stringValue(),
                                         "type", rc.descriptor().stringValue()))
                                     .with(list("attributes", "attribute", rc.attributes().stream()
-                                            .map(Attribute::attributeName)))
+                                            .map(Attribute::attributeName).map(Utf8Entry::stringValue)))
                                     .with(attributesToTree(rc.attributes(), verbosity)))));
                 case AnnotationDefaultAttribute ada ->
                     nodes.add(new MapNodeImpl(FLOW, "annotation default").with(elementValueToTree(ada.defaultValue())));
@@ -1038,9 +1033,9 @@ public final class ClassPrinterImpl {
     private static Node typeAnnotationsToTree(Style style, String name, List<TypeAnnotation> annos) {
         return new ListNodeImpl(style, name, annos.stream().map(a ->
                 new MapNodeImpl(FLOW, "anno")
-                        .with(leaf("annotation class", a.className().stringValue()),
+                        .with(leaf("annotation class", a.annotation().className().stringValue()),
                               leaf("target info", a.targetInfo().targetType().name()))
-                        .with(elementValuePairsToTree(a.elements()))));
+                        .with(elementValuePairsToTree(a.annotation().elements()))));
 
     }
 

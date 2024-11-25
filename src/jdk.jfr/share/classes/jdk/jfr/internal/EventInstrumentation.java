@@ -499,7 +499,7 @@ final class EventInstrumentation {
                 // if (!settingsMethod(eventConfiguration.settingX)) goto fail;
                 codeBuilder.aload(0);
                 getEventConfiguration(codeBuilder);
-                codeBuilder.ldc(index);
+                codeBuilder.loadConstant(index);
                 invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_EVENT_CONFIGURATION_GET_SETTING);
                 MethodTypeDesc mdesc = MethodTypeDesc.ofDescriptor("(" + sd.paramType().descriptorString() + ")Z");
                 codeBuilder.checkcast(sd.paramType());
@@ -562,7 +562,7 @@ final class EventInstrumentation {
         // write begin event
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW], [EW], [EventConfiguration]
-        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         // stack: [EW], [EW], [EventConfiguration] [long]
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW], [integer]
@@ -676,7 +676,7 @@ final class EventInstrumentation {
         // stack: [EW] [EW]
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW] [EW] [EC]
-        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW] [int]
         blockCodeBuilder.ifeq(excluded);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/javaClasses.hpp"
 #include "jfr/support/jfrSymbolTable.hpp"
-#include "oops/instanceKlass.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/klass.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/mutexLocker.hpp"
 
@@ -200,7 +199,7 @@ traceid JfrSymbolTable::bootstrap_name(bool leakp) {
 
 traceid JfrSymbolTable::mark(const Symbol* sym, bool leakp /* false */) {
   assert(sym != nullptr, "invariant");
-  return mark((uintptr_t)sym->identity_hash(), sym, leakp);
+  return mark(sym->identity_hash(), sym, leakp);
 }
 
 traceid JfrSymbolTable::mark(uintptr_t hash, const Symbol* sym, bool leakp) {
@@ -236,59 +235,25 @@ traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
 }
 
 /*
-* hidden classes symbol is the external name +
-* the address of its InstanceKlass slash appended:
-*   java.lang.invoke.LambdaForm$BMH/22626602
-*
-* caller needs ResourceMark
-*/
-
-uintptr_t JfrSymbolTable::hidden_klass_name_hash(const InstanceKlass* ik) {
-  assert(ik != nullptr, "invariant");
-  assert(ik->is_hidden(), "invariant");
-  const oop mirror = ik->java_mirror_no_keepalive();
-  assert(mirror != nullptr, "invariant");
-  return (uintptr_t)mirror->identity_hash();
-}
-
-static const char* create_hidden_klass_symbol(const InstanceKlass* ik, uintptr_t hash) {
-  assert(ik != nullptr, "invariant");
-  assert(ik->is_hidden(), "invariant");
-  assert(hash != 0, "invariant");
-  char* hidden_symbol = nullptr;
-  const oop mirror = ik->java_mirror_no_keepalive();
-  assert(mirror != nullptr, "invariant");
-  char hash_buf[40];
-  os::snprintf_checked(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, hash);
-  const size_t hash_len = strlen(hash_buf);
-  const size_t result_len = ik->name()->utf8_length();
-  hidden_symbol = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);
-  ik->name()->as_klass_external_name(hidden_symbol, (int)result_len + 1);
-  assert(strlen(hidden_symbol) == result_len, "invariant");
-  strcpy(hidden_symbol + result_len, hash_buf);
-  assert(strlen(hidden_symbol) == result_len + hash_len, "invariant");
-  return hidden_symbol;
-}
-
-bool JfrSymbolTable::is_hidden_klass(const Klass* k) {
+ * The hidden class symbol is the external name with the
+ * address of its Klass slash appended.
+ *
+ * "java.lang.invoke.LambdaForm$DMH/0x0000000037144c00"
+ *
+ * Caller needs ResourceMark.
+ */
+traceid JfrSymbolTable::mark_hidden_klass_name(const Klass* k, bool leakp) {
   assert(k != nullptr, "invariant");
-  return k->is_instance_klass() && ((const InstanceKlass*)k)->is_hidden();
-}
-
-traceid JfrSymbolTable::mark_hidden_klass_name(const InstanceKlass* ik, bool leakp) {
-  assert(ik != nullptr, "invariant");
-  assert(ik->is_hidden(), "invariant");
-  const uintptr_t hash = hidden_klass_name_hash(ik);
-  const char* const hidden_symbol = create_hidden_klass_symbol(ik, hash);
-  return mark(hash, hidden_symbol, leakp);
+  assert(k->is_hidden(), "invariant");
+  const uintptr_t hash = k->name()->identity_hash();
+  return mark(hash, k->external_name(), leakp);
 }
 
 traceid JfrSymbolTable::mark(const Klass* k, bool leakp) {
   assert(k != nullptr, "invariant");
   traceid symbol_id = 0;
-  if (is_hidden_klass(k)) {
-    assert(k->is_instance_klass(), "invariant");
-    symbol_id = mark_hidden_klass_name((const InstanceKlass*)k, leakp);
+  if (k->is_hidden()) {
+    symbol_id = mark_hidden_klass_name(k, leakp);
   } else {
     Symbol* const sym = k->name();
     if (sym != nullptr) {

@@ -31,10 +31,13 @@
  * @summary Test parsing of module-info.class with different class file versions
  */
 
+import java.lang.classfile.ClassFile;
 import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Requires.Modifier;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
@@ -46,6 +49,8 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class ClassFileVersionsTest {
+    private static final int PREVIEW_MINOR_VERSION =
+            ClassFile.PREVIEW_MINOR_VERSION;
     private static final int FEATURE;
     static {
         FEATURE = Runtime.version().feature();
@@ -56,26 +61,34 @@ public class ClassFileVersionsTest {
     @DataProvider(name = "supported")
     public Object[][] supported() {
         /*
-         * There are four test cases for JDK 9 and then one test case
+         * There are four test cases for JDK 9, one test case
          * for each subsequent JDK version from JDK 10 to the current
-         * feature release for a total of (4 + (FEATURE - 9) ) =>
-         * (feature - 5) rows.
+         * feature release, and two tests for the current release with
+         * a preview flag set, for a total of (4 + (FEATURE - 9) + 2)
+         * rows.
          */
-        Object[][] result = new Object[(FEATURE - 5)][];
+        List<Object[]> result = new ArrayList<>(4 + (FEATURE - 9) + 2);
 
         // Class file version of JDK 9 is 53.0
-        result[0] = new Object[]{ 53, 0, Set.of()};
-        result[1] = new Object[]{ 53, 0, Set.of(STATIC) };
-        result[2] = new Object[]{ 53, 0, Set.of(TRANSITIVE) };
-        result[3] = new Object[]{ 53, 0, Set.of(STATIC, TRANSITIVE) };
+        result.add(new Object[]{ 53, 0, Set.of()});
+        result.add(new Object[]{ 53, 0, Set.of(STATIC) });
+        result.add(new Object[]{ 53, 0, Set.of(TRANSITIVE) });
+        result.add(new Object[]{ 53, 0, Set.of(STATIC, TRANSITIVE) });
 
         // Major class file version of JDK N is 44 + n. Create rows
         // for JDK 10 through FEATURE.
-        for (int i = 4; i < (FEATURE - 5) ; i++) {
-            result[i] = new Object[]{i + 50, 0, Set.of()};
+        for (int i = 10; i <= FEATURE; i++) {
+            result.add(new Object[]{ 44 + i, 0, Set.of()});
         }
 
-        return result;
+        result.add(new Object[]{ 44 + FEATURE,
+                                 PREVIEW_MINOR_VERSION,
+                                 Set.of()});
+        result.add(new Object[]{ 44 + FEATURE,
+                                 PREVIEW_MINOR_VERSION,
+                                 Set.of(TRANSITIVE) });
+
+        return result.toArray(s -> new Object[s][]);
     }
 
     // major, minor, modifiers for requires java.base
@@ -84,27 +97,34 @@ public class ClassFileVersionsTest {
         /*
          * There are three test cases for releases prior to JDK 9,
          * three test cases for each JDK version from JDK 10 to the
-         * current feature release, plus one addition test case for
-         * the next release for a total of (3 + (FEATURE - 9) * 3 + 1)
+         * current feature release, two tests for the current release with
+         * the preview flag set, plus one addition test case for
+         * the next release for a total of (3 + (FEATURE - 9) * 3 + 2 + 1)
          * rows.
          */
-        int unsupportedCount = 3 + (FEATURE - 9)*3 + 1;
-        Object[][] result = new Object[unsupportedCount][];
+        List<Object[]> result = new ArrayList<>(3 + (FEATURE - 9) * 3 + 2 + 1);
 
-        result[0] = new Object[]{50, 0, Set.of()}; // JDK 6
-        result[1] = new Object[]{51, 0, Set.of()}; // JDK 7
-        result[2] = new Object[]{52, 0, Set.of()}; // JDK 8
+        result.add(new Object[]{50, 0, Set.of()}); // JDK 6
+        result.add(new Object[]{51, 0, Set.of()}); // JDK 7
+        result.add(new Object[]{52, 0, Set.of()}); // JDK 8
 
         for (int i = 10; i <= FEATURE ; i++) {
-            int base = 3 + (i-10)*3;
             // Major class file version of JDK N is 44+n
-            result[base]     = new Object[]{i + 44, 0, Set.of(STATIC)};
-            result[base + 1] = new Object[]{i + 44, 0, Set.of(TRANSITIVE)};
-            result[base + 2] = new Object[]{i + 44, 0, Set.of(STATIC, TRANSITIVE)};
+            result.add(new Object[]{i + 44, 0, Set.of(STATIC)});
+            result.add(new Object[]{i + 44, 0, Set.of(TRANSITIVE)});
+            result.add(new Object[]{i + 44, 0, Set.of(STATIC, TRANSITIVE)});
         }
 
-        result[unsupportedCount - 1] = new Object[]{FEATURE+1+44, 0, Set.of()};
-        return result;
+        result.add(new Object[]{FEATURE + 44,
+                                PREVIEW_MINOR_VERSION,
+                                Set.of(STATIC)});
+        result.add(new Object[]{FEATURE + 44,
+                                PREVIEW_MINOR_VERSION,
+                                Set.of(STATIC, TRANSITIVE)});
+
+        result.add(new Object[]{FEATURE+1+44, 0, Set.of()});
+
+        return result.toArray(s -> new Object[s][]);
     }
 
     @Test(dataProvider = "supported")

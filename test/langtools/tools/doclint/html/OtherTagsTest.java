@@ -16,7 +16,7 @@ public class OtherTagsTest {
      *  <frameset> </frameset>
      *  <head> </head>
      *  <hr width="50%">
-     *  <link>
+     *  <link rel="http://example.com/stylesheet.css">
      *  <meta>
      *  <noframes> </noframes>
      *  <script> </script>

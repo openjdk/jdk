@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,32 +24,22 @@
  */
 package java.lang.classfile.components.snippets;
 
+import java.lang.classfile.*;
+import java.lang.classfile.components.ClassPrinter;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.components.CodeLocalsShifter;
+import java.lang.classfile.components.CodeRelabeler;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.ReturnInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
-
 import java.lang.constant.ConstantDescs;
 import java.lang.reflect.AccessFlag;
 import java.util.ArrayDeque;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.FieldModel;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.instruction.InvokeInstruction;
-
-import java.lang.classfile.MethodTransform;
-import java.lang.classfile.components.ClassPrinter;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.classfile.components.CodeLocalsShifter;
-import java.lang.classfile.components.CodeRelabeler;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
 
 class PackageSnippets {
 
@@ -181,7 +171,7 @@ class PackageSnippets {
                                                 var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));

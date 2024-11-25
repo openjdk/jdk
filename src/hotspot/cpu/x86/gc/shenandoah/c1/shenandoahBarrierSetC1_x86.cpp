@@ -46,9 +46,6 @@ void LIR_OpShenandoahCompareAndSwap::emit_code(LIR_Assembler* masm) {
   assert(cmpval != addr, "cmp and addr must be in different registers");
   assert(newval != addr, "new value and addr must be in different registers");
 
-  // Apply IU barrier to newval.
-  ShenandoahBarrierSet::assembler()->iu_barrier(masm->masm(), newval, tmp1);
-
 #ifdef _LP64
   if (UseCompressedOops) {
     __ encode_heap_oop(cmpval);
@@ -100,10 +97,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRIt
   LIR_Opr result = gen->new_register(type);
   value.load_item();
   LIR_Opr value_opr = value.result();
-
-  if (access.is_oop()) {
-    value_opr = iu_barrier(access.gen(), value_opr, access.access_emit_info(), access.decorators());
-  }
 
   // Because we want a 2-arg form of xchg and xadd
   __ move(value_opr, result);

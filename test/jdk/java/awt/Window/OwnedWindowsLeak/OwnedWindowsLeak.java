@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
   @summary Tests that windows are removed from owner's child windows list
   @modules java.desktop/java.awt:open
   @author art: area=awt.toplevel
-  @run main/othervm -mx128m OwnedWindowsLeak
+  @run main/othervm -Xmx128m OwnedWindowsLeak
 */
 
 import java.awt.Frame;

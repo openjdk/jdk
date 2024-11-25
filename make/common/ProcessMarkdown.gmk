@@ -22,7 +22,7 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
+ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including ProcessMarkdown.gmk)
 endif
 
@@ -92,7 +92,7 @@ define ProcessMarkdown
 	    -t $$($1_FORMAT) --eol=lf --standalone \
 	    $$($1_$2_CSS_OPTION) $$($1_$2_OPTIONS_FROM_SRC) $$($1_$2_OPTIONS) \
 	    '$$($1_$2_PANDOC_INPUT)' -o '$$($1_$2_PANDOC_OUTPUT)')
-        ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+        ifneq ($$(findstring $$(LOG_LEVEL), debug trace), )
 	  TOO_LONG_LINES=`$$(GREP) -E -e '^.{80}.+$$$$' $$<` || true ; \
 	  if [ "x$$$$TOO_LONG_LINES" != x ]; then \
 	    $$(ECHO) "Warning: Unsuitable markdown in $$<:" ; \

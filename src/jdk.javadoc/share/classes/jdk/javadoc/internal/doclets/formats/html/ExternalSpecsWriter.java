@@ -49,15 +49,16 @@ import com.sun.source.util.TreePath;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -103,7 +104,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         addExternalSpecs(mainContent);
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.EXTERNAL_SPECS))
-                .addMainContent(HtmlTree.DIV(HtmlStyle.header,
+                .addMainContent(HtmlTree.DIV(HtmlStyles.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.External_Specifications"))))
                 .addMainContent(mainContent)
@@ -192,10 +193,10 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         }
         var hostNamesList = new ArrayList<>(hostNamesSet);
 
-        var table = new Table<URI>(HtmlStyle.summaryTable)
+        var table = new Table<URI>(HtmlStyles.summaryTable)
                 .setCaption(contents.externalSpecifications)
                 .setHeader(new TableHeader(contents.specificationLabel, contents.referencedIn))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                 .setId(HtmlIds.EXTERNAL_SPECS);
         if ((hostNamesList.size() + (noHost ? 1 : 0)) > 1) {
             for (var host : hostNamesList) {
@@ -211,7 +212,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         for (List<IndexItem> searchIndexItems : searchIndexMap.values()) {
             IndexItem ii = searchIndexItems.get(0);
             Content specName = createSpecLink(ii);
-            Content referencesList = HtmlTree.UL(HtmlStyle.refList, searchIndexItems,
+            Content referencesList = HtmlTree.UL(HtmlStyles.refList, searchIndexItems,
                     item -> HtmlTree.LI(createLink(item)));
             Content references = searchIndexItems.size() < USE_DETAILS_THRESHHOLD
                     ? referencesList

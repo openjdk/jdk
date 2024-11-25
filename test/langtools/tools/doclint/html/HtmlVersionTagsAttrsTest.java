@@ -100,10 +100,6 @@ public class HtmlVersionTagsAttrsTest {
      * </hgroup>
      * hgroup no longer supported in HTML5.
      * </section>
-     * <details>
-     * <summary>Summary</summary>
-     * <p>Details and Summary no longer supported in HTML5</p>
-     * </details>
      */
     public void notSupportedTags_html5() { }
 
@@ -152,6 +148,10 @@ public class HtmlVersionTagsAttrsTest {
      * </template>
      * <p>Test current time is <time>10:00</time> at night</p>
      * <p>Test<wbr>text</p>
+     * <details>
+     * <summary>Summary</summary>
+     * <p>Details</p>
+     * </details>
      */
     public void SupportedTags_html5() { }
 

@@ -264,6 +264,8 @@ class VM_Version : public Abstract_VM_Version {
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 
+  static void common_initialize();
+
 #ifdef COMPILER2
   static void c2_initialize();
 #endif // COMPILER2
@@ -283,6 +285,7 @@ class VM_Version : public Abstract_VM_Version {
 
   // RISCV64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
+  static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

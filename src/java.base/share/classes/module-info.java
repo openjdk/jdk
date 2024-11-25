@@ -146,6 +146,8 @@ module java.base {
         jdk.compiler;
     exports com.sun.security.ntlm to
         java.security.sasl;
+    exports jdk.internal to
+        jdk.incubator.vector;
     // Note: all modules in the exported list participate in preview  features
     // and therefore if they use preview features they do not need to be
     // compiled with "--enable-preview".
@@ -154,6 +156,7 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         java.desktop, // for ScopedValue
+        java.se, // for ParticipatesInPreview
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
         jdk.jartool, // participates in preview features
@@ -165,13 +168,12 @@ module java.base {
         java.desktop,
         java.logging,
         java.management,
-        java.management.rmi,
-        java.naming,
         java.rmi,
         jdk.charsets,
         jdk.jartool,
         jdk.jlink,
         jdk.jfr,
+        jdk.management,
         jdk.net,
         jdk.sctp,
         jdk.crypto.cryptoki;
@@ -256,7 +258,8 @@ module java.base {
         jdk.internal.jvmstat,
         jdk.management,
         jdk.management.agent,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.jfr;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
@@ -312,14 +315,10 @@ module java.base {
         java.desktop;
     exports sun.reflect.misc to
         java.desktop,
-        java.datatransfer,
         java.management,
         java.management.rmi,
         java.rmi,
         java.sql.rowset;
-    exports sun.security.action to
-        java.desktop,
-        java.security.jgss;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
@@ -345,7 +344,6 @@ module java.base {
     exports sun.security.tools to
         jdk.jartool;
     exports sun.security.util to
-        java.desktop,
         java.naming,
         java.rmi,
         java.security.jgss,

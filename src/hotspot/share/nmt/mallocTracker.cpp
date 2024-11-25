@@ -69,7 +69,7 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
+  for (int index = 0; index < mt_number_of_tags; index ++) {
     s->_malloc[index] = _malloc[index];
     total_size += s->_malloc[index].malloc_size();
     total_count += s->_malloc[index].malloc_count();
@@ -81,7 +81,7 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
+  for (int index = 0; index < mt_number_of_tags; index ++) {
     amount += _malloc[index].arena_size();
   }
   return amount;
@@ -91,7 +91,7 @@ size_t MallocMemorySnapshot::total_arena() const {
 // from total chunks to get total free chunk size
 void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
-  int chunk_idx = NMTUtil::flag_to_index(mtChunk);
+  int chunk_idx = NMTUtil::tag_to_index(mtChunk);
   _malloc[chunk_idx].record_free(arena_size);
   _all_mallocs.deallocate(arena_size);
 }
@@ -128,11 +128,11 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
   return true;
 }
 
-bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
+bool MallocMemorySummary::category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit) {
 
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+  NMTUtil::tag_to_enum_name(mem_tag), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
 
   // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
   // We don't want to risk recursive assertion or torn hs-err logs.
@@ -167,20 +167,20 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 }
 
 // Record a malloc memory allocation
-void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
+void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");
   assert(malloc_base != nullptr, "precondition");
 
-  MallocMemorySummary::record_malloc(size, flags);
+  MallocMemorySummary::record_malloc(size, mem_tag);
   uint32_t mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::allocation_at(stack, size, &mst_marker, flags);
+    MallocSiteTable::allocation_at(stack, size, &mst_marker, mem_tag);
   }
 
   // Uses placement global new operator to initialize malloc header
-  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, mst_marker);
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, mem_tag, mst_marker);
   void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
@@ -192,7 +192,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   {
     const MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
     assert(header2->size() == size, "Wrong size");
-    assert(header2->flags() == flags, "Wrong flags");
+    assert(header2->mem_tag() == mem_tag, "Wrong memory tag");
   }
 #endif
 
@@ -213,7 +213,7 @@ void* MallocTracker::record_free_block(void* memblock) {
 }
 
 void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
-  MallocMemorySummary::record_free(free_info.size, free_info.flags);
+  MallocMemorySummary::record_free(free_info.size, free_info.mem_tag);
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
   }
@@ -296,7 +296,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
                  p2i(p), where,
                  (block->is_dead() ? "dead" : "live"),
                  p2i(block + 1), // lets print the payload start, not the header
-                 block->size(), NMTUtil::flag_to_enum_name(block->flags()));
+                 block->size(), NMTUtil::tag_to_enum_name(block->mem_tag()));
     if (MemTracker::tracking_level() == NMT_detail) {
       NativeCallStack ncs;
       if (MallocSiteTable::access_stack(ncs, *block)) {

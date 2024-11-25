@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,44 +81,9 @@ import javax.management.RuntimeOperationsException;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")
 public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = -3944083498453227709L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = -1935722590756516193L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-        new ObjectStreamField("modelMBeanDescriptor", Descriptor.class),
-                new ObjectStreamField("mmbAttributes", MBeanAttributeInfo[].class),
-                new ObjectStreamField("mmbConstructors", MBeanConstructorInfo[].class),
-                new ObjectStreamField("mmbNotifications", MBeanNotificationInfo[].class),
-                new ObjectStreamField("mmbOperations", MBeanOperationInfo[].class),
-                new ObjectStreamField("currClass", String.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-        new ObjectStreamField("modelMBeanDescriptor", Descriptor.class),
-                new ObjectStreamField("modelMBeanAttributes", MBeanAttributeInfo[].class),
-                new ObjectStreamField("modelMBeanConstructors", MBeanConstructorInfo[].class),
-                new ObjectStreamField("modelMBeanNotifications", MBeanNotificationInfo[].class),
-                new ObjectStreamField("modelMBeanOperations", MBeanOperationInfo[].class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = -1935722590756516193L;
     /**
      * @serialField modelMBeanDescriptor Descriptor The descriptor containing
      *              MBean wide policy
@@ -135,27 +100,14 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
      *              {@link ModelMBeanOperationInfo} objects which
      *              have descriptors
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK: No compat with 1.0
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+        new ObjectStreamField("modelMBeanDescriptor", Descriptor.class),
+                new ObjectStreamField("modelMBeanAttributes", MBeanAttributeInfo[].class),
+                new ObjectStreamField("modelMBeanConstructors", MBeanConstructorInfo[].class),
+                new ObjectStreamField("modelMBeanNotifications", MBeanNotificationInfo[].class),
+                new ObjectStreamField("modelMBeanOperations", MBeanOperationInfo[].class)
+    };
 
     /**
      * @serial The descriptor containing MBean wide policy
@@ -957,40 +909,8 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
      */
     private void readObject(ObjectInputStream in)
     throws IOException, ClassNotFoundException {
-        if (compat) {
-            // Read an object serialized in the old serial form
-            //
-            ObjectInputStream.GetField fields = in.readFields();
-            modelMBeanDescriptor =
-                    (Descriptor) fields.get("modelMBeanDescriptor", null);
-            if (fields.defaulted("modelMBeanDescriptor")) {
-                throw new NullPointerException("modelMBeanDescriptor");
-            }
-            modelMBeanAttributes =
-                    (MBeanAttributeInfo[]) fields.get("mmbAttributes", null);
-            if (fields.defaulted("mmbAttributes")) {
-                throw new NullPointerException("mmbAttributes");
-            }
-            modelMBeanConstructors =
-                    (MBeanConstructorInfo[]) fields.get("mmbConstructors", null);
-            if (fields.defaulted("mmbConstructors")) {
-                throw new NullPointerException("mmbConstructors");
-            }
-            modelMBeanNotifications =
-                    (MBeanNotificationInfo[]) fields.get("mmbNotifications", null);
-            if (fields.defaulted("mmbNotifications")) {
-                throw new NullPointerException("mmbNotifications");
-            }
-            modelMBeanOperations =
-                    (MBeanOperationInfo[]) fields.get("mmbOperations", null);
-            if (fields.defaulted("mmbOperations")) {
-                throw new NullPointerException("mmbOperations");
-            }
-        } else {
-            // Read an object serialized in the new serial form
-            //
-            in.defaultReadObject();
-        }
+
+        in.defaultReadObject();
     }
 
 
@@ -999,22 +919,7 @@ public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
      */
     private void writeObject(ObjectOutputStream out)
     throws IOException {
-        if (compat) {
-            // Serializes this instance in the old serial form
-            //
-            ObjectOutputStream.PutField fields = out.putFields();
-            fields.put("modelMBeanDescriptor", modelMBeanDescriptor);
-            fields.put("mmbAttributes", modelMBeanAttributes);
-            fields.put("mmbConstructors", modelMBeanConstructors);
-            fields.put("mmbNotifications", modelMBeanNotifications);
-            fields.put("mmbOperations", modelMBeanOperations);
-            fields.put("currClass", currClass);
-            out.writeFields();
-        } else {
-            // Serializes this instance in the new serial form
-            //
-            out.defaultWriteObject();
-        }
+        out.defaultWriteObject();
     }
 
 

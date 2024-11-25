@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Properties;
 
 import sun.net.www.HeaderParser;
@@ -70,8 +69,7 @@ import sun.security.action.GetPropertyAction;
  *    through a proxy, rather between client and proxy, or between client and server (with no proxy)
  */
 
-public class NTLMAuthentication extends AuthenticationInfo {
-    private static final long serialVersionUID = 170L;
+public final class NTLMAuthentication extends AuthenticationInfo {
 
     private static final NTLMAuthenticationCallback NTLMAuthCallback =
         NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
@@ -120,10 +118,8 @@ public class NTLMAuthentication extends AuthenticationInfo {
         });
     };
 
-    @SuppressWarnings("serial") // Type of field is not Serializable
     PasswordAuthentication pw;
 
-    @SuppressWarnings("serial") // Type of field is not Serializable
     Client client;
     /**
      * Create a NTLMAuthentication:

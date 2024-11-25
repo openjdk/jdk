@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,9 +189,18 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
     destroy_value();
   } else {
     // Use realloc as we may have a default set.
-    _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
-    int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
-    assert((size_t)n <= len, "Unexpected number of characters in string");
+    if (strcmp(type(), "FILE") == 0) {
+      _value = REALLOC_C_HEAP_ARRAY(char, _value, JVM_MAXPATHLEN, mtInternal);
+      if (!Arguments::copy_expand_pid(str, len, _value, JVM_MAXPATHLEN)) {
+        stringStream error_msg;
+        error_msg.print("File path invalid or too long: %s", str);
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
+      }
+    } else {
+      _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
+      int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
+      assert((size_t)n <= len, "Unexpected number of characters in string");
+    }
   }
 }
 

@@ -23,6 +23,7 @@
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import javax.swing.SwingUtilities;
 
 import sun.java2d.Disposer;
@@ -32,21 +33,28 @@ import sun.java2d.DisposerRecord;
  * @test
  * @bug 8289208
  * @summary Verifies Disposer robustness in a multi-threaded environment.
- * @run main/othervm -mx128m TestDisposerRace
+ * @run main/othervm -Xmx128m TestDisposerRace
  * @modules java.desktop/sun.java2d
  */
 public final class TestDisposerRace {
     private static final AtomicInteger recordsCount = new AtomicInteger();
     private static volatile boolean disposerDone = false;
 
+    private static final String KO_OVERFLOW = "Some records have not been disposed!";
+    private static final String KO_UNDERFLOW = "Disposed more records than were added!";
+
     public static void main(String[] args) throws Exception {
-        TestDisposerRace test = new TestDisposerRace();
-        test.run();
+        new TestDisposerRace().run();
 
         checkRecordsCountIsSane();
         if (recordsCount.get() > 0) {
+            System.err.println(KO_OVERFLOW); // In case the next line fails to allocate due to OOME
             throw new RuntimeException("Some records (" + recordsCount + ") have not been disposed");
         }
+    }
+
+    interface ThrowingRunnable<E extends Exception> {
+        void run() throws E;
     }
 
     TestDisposerRace() {
@@ -56,14 +64,14 @@ public final class TestDisposerRace {
     void run() throws Exception {
         generateOOME();
         for (int i = 0; i < 1000; ++i) {
-            SwingUtilities.invokeAndWait(Disposer::pollRemove);
-            if (i % 10 == 0) {
-                // Adding records will race with the diposer trying to remove them
+            retryOnOOME(() -> SwingUtilities.invokeAndWait(Disposer::pollRemove));
+
+            // Adding records will race with the diposer trying to remove them
+            if (i % 10 == 0)
                 addRecordsToDisposer(1000);
-            }
         }
 
-        Disposer.addObjectRecord(new Object(), new FinalDisposerRecord());
+        retryOnOOME(() -> Disposer.addObjectRecord(new Object(), new FinalDisposerRecord()));
 
         while (!disposerDone) {
              generateOOME();
@@ -72,18 +80,45 @@ public final class TestDisposerRace {
 
     private static void checkRecordsCountIsSane() {
         if (recordsCount.get() < 0) {
-            throw new RuntimeException("Disposed more records than were added");
+            throw new RuntimeException(KO_UNDERFLOW);
+        }
+    }
+
+    private static <T> T retryOnOOME(Supplier<T> allocator) {
+        for(;;) {
+            try {
+                return allocator.get();
+            } catch (OutOfMemoryError ignored1) {
+                try {
+                    Thread.sleep(1); // Give GC a little chance to run
+                } catch (InterruptedException ignored2) {}
+            }
+        }
+    }
+
+    private static <E extends Exception> void retryOnOOME(ThrowingRunnable<E> tr) throws E {
+        for(;;) {
+            try {
+                tr.run();
+                break;
+            } catch (OutOfMemoryError ignored1) {
+                try {
+                    Thread.sleep(1); // Give GC a little chance to run
+                } catch (InterruptedException ignored2) {}
+            }
         }
     }
 
     private void addRecordsToDisposer(int count) {
         checkRecordsCountIsSane();
 
-        recordsCount.addAndGet(count);
+        MyDisposerRecord disposerRecord = retryOnOOME(MyDisposerRecord::new);
 
-        MyDisposerRecord disposerRecord = new MyDisposerRecord();
-        for (int i = 0; i < count; i++) {
-            Disposer.addObjectRecord(new Object(), disposerRecord);
+        while(count > 0) {
+            recordsCount.incrementAndGet(); // pre-add to make sure it doesn't go negative
+            var o = retryOnOOME(Object::new);
+            retryOnOOME(() -> Disposer.addObjectRecord(o, disposerRecord));
+            --count;
         }
     }
 
@@ -106,8 +141,8 @@ public final class TestDisposerRace {
     }
 
     private static void generateOOME() throws Exception {
-        final List<Object> leak = new LinkedList<>();
         try {
+            final List<Object> leak = new LinkedList<>();
             while (true) {
                 leak.add(new byte[1024 * 1024]);
             }

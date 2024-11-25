@@ -33,7 +33,7 @@ import java.lang.invoke.MethodHandles;
  * @summary Example test that illustrates the use of the IR test framework for
  *          verification of late-expanded GC barriers.
  * @library /test/lib /
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @run driver ir_framework.examples.GCBarrierIRExample
  */
 
@@ -61,7 +61,7 @@ public class GCBarrierIRExample {
         // emission, such as ZGC. Because the collector selection flags are not
         // whitelisted (see IR framework's README.md file), the user (as opposed
         // to jtreg) needs to set these flags here.
-        TestFramework.runWithFlags("-XX:+UseZGC", "-XX:+ZGenerational");
+        TestFramework.runWithFlags("-XX:+UseZGC");
     }
 
     @Test

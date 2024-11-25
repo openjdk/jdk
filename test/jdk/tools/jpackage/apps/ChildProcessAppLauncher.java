@@ -26,12 +26,17 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 public class ChildProcessAppLauncher {
-
-    public static void main(String[] args) throws IOException {
-            String calcPath = Path.of(System.getenv("SystemRoot"), "system32", "calc.exe").toString();
-            ProcessBuilder processBuilder = new ProcessBuilder(calcPath);
+    public static void main(String[] args) throws IOException, InterruptedException {
+        if (args.length == 1 && "noexit".equals(args[0])) {
+            var lock = new Object();
+            synchronized (lock) {
+                lock.wait();
+            }
+        } else {
+            var childPath = System.getProperty("jpackage.app-path"); // get the path to the current jpackage app launcher
+            ProcessBuilder processBuilder = new ProcessBuilder(childPath, "noexit"); //ChildProcessAppLauncher acts as third party app
             Process process = processBuilder.start();
-            System.out.println("Calc id=" + process.pid());
-            System.exit(0);
+            System.out.println("Child id=" + process.pid());
+        }
     }
 }

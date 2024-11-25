@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,33 +40,9 @@ import java.util.Objects;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
 
-    /* Serial version */
-    private static final long serialVersionUID;
-    static {
-        /* For complicated reasons, the serialVersionUID changed
-           between JMX 1.0 and JMX 1.1, even though JMX 1.1 did not
-           have compatibility code for this class.  So the
-           serialization produced by this class with JMX 1.2 and
-           jmx.serial.form=1.0 is not the same as that produced by
-           this class with JMX 1.1 and jmx.serial.form=1.0.  However,
-           the serialization without that property is the same, and
-           that is the only form required by JMX 1.2.
-        */
-        long uid = 8644704819898565848L;
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            if ("1.0".equals(form))
-                uid = 7043855487133450673L;
-        } catch (Exception e) {
-            // OK: exception means no compat with 1.0, too bad
-        }
-        serialVersionUID = uid;
-    }
+    private static final long serialVersionUID = 8644704819898565848L;
 
     static final MBeanAttributeInfo[] NO_ATTRIBUTES =
         new MBeanAttributeInfo[0];

@@ -25,35 +25,22 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
 import java.util.Optional;
 
-import java.lang.classfile.attribute.CodeAttribute;
 import jdk.internal.classfile.impl.BufferedCodeBuilder;
-import jdk.internal.classfile.impl.CodeImpl;
-import java.lang.classfile.instruction.ExceptionCatch;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the body of a method (the {@code Code} attribute).  The instructions
  * of the method body are accessed via a streaming view.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeModel
         extends CompoundElement<CodeElement>, AttributedElement, MethodElement
-        permits CodeAttribute, BufferedCodeBuilder.Model, CodeImpl {
-
-    /**
-     * {@return the maximum size of the local variable table}
-     */
-    int maxLocals();
-
-    /**
-     * {@return the maximum size of the operand stack}
-     */
-    int maxStack();
+        permits CodeAttribute, BufferedCodeBuilder.Model {
 
     /**
      * {@return the enclosing method, if known}

@@ -26,8 +26,8 @@
 /**
  * <h2>Provides classfile parsing, generation, and transformation library.</h2>
  * The {@code java.lang.classfile} package contains classes for reading, writing, and
- * modifying Java class files, as specified in Chapter {@jvms 4} of the <cite>Java
- * Java Virtual Machine Specification</cite>.
+ * modifying Java class files, as specified in Chapter {@jvms 4} of the
+ * <cite>Java Virtual Machine Specification</cite>.
  *
  * <h2>Reading classfiles</h2>
  * The main class for reading classfiles is {@link java.lang.classfile.ClassModel}; we
@@ -147,7 +147,7 @@
  * ClassReader, int)} method for mapping from the classfile format
  * to an attribute instance, and the
  * {@link java.lang.classfile.AttributeMapper#writeAttribute(java.lang.classfile.BufWriter,
- * java.lang.Object)} method for mapping back to the classfile format.  It also
+ * java.lang.classfile.Attribute)} method for mapping back to the classfile format.  It also
  * contains metadata including the attribute name, the set of classfile entities
  * where the attribute is applicable, and whether multiple attributes of the
  * same kind are allowed on a single entity.
@@ -546,9 +546,6 @@
  *     | CharacterRange(int rangeStart, int rangeEnd, int flags, Label startScope, Label endScope)
  * }
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile;
-
-import jdk.internal.javac.PreviewFeature;

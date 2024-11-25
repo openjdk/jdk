@@ -124,7 +124,6 @@ public class TestClassLoaderLeak {
 
         String[][][] modeHeuristics = new String[][][] {
              {{"satb"},    {"adaptive", "compact", "static", "aggressive"}},
-             {{"iu"},      {"adaptive", "aggressive"}},
              {{"passive"}, {"passive"}}
         };
 

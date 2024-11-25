@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,6 +89,7 @@ class SerializeClosure;
   template(java_lang_Integer_IntegerCache,            "java/lang/Integer$IntegerCache")           \
   template(java_lang_Long,                            "java/lang/Long")                           \
   template(java_lang_Long_LongCache,                  "java/lang/Long$LongCache")                 \
+  template(java_lang_Void,                            "java/lang/Void")                           \
                                                                                                   \
   template(jdk_internal_vm_vector_VectorSupport,      "jdk/internal/vm/vector/VectorSupport")               \
   template(jdk_internal_vm_vector_VectorPayload,      "jdk/internal/vm/vector/VectorSupport$VectorPayload") \
@@ -117,12 +118,8 @@ class SerializeClosure;
   template(java_lang_reflect_RecordComponent,         "java/lang/reflect/RecordComponent")        \
   template(java_lang_StringBuffer,                    "java/lang/StringBuffer")                   \
   template(java_lang_StringBuilder,                   "java/lang/StringBuilder")                  \
-  template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
   template(java_lang_ScopedValue,                     "java/lang/ScopedValue")                    \
   template(java_lang_ScopedValue_Carrier,             "java/lang/ScopedValue$Carrier")            \
-  template(java_security_AccessControlContext,        "java/security/AccessControlContext")       \
-  template(java_security_AccessController,            "java/security/AccessController")           \
-  template(executePrivileged_name,                    "executePrivileged")                        \
   template(java_security_CodeSource,                  "java/security/CodeSource")                 \
   template(java_security_ProtectionDomain,            "java/security/ProtectionDomain")           \
   template(java_security_SecureClassLoader,           "java/security/SecureClassLoader")          \
@@ -203,6 +200,7 @@ class SerializeClosure;
   template(java_lang_CloneNotSupportedException,      "java/lang/CloneNotSupportedException")     \
   template(java_lang_IllegalAccessException,          "java/lang/IllegalAccessException")         \
   template(java_lang_IllegalArgumentException,        "java/lang/IllegalArgumentException")       \
+  template(java_lang_IllegalCallerException,          "java/lang/IllegalCallerException")         \
   template(java_lang_IllegalStateException,           "java/lang/IllegalStateException")          \
   template(java_lang_IllegalMonitorStateException,    "java/lang/IllegalMonitorStateException")   \
   template(java_lang_IllegalThreadStateException,     "java/lang/IllegalThreadStateException")    \
@@ -261,12 +259,10 @@ class SerializeClosure;
                                                                                                   \
   template(jdk_internal_reflect,                      "jdk/internal/reflect")                     \
   template(reflect_MethodAccessorImpl,                "jdk/internal/reflect/MethodAccessorImpl")      \
-  template(reflect_DelegatingClassLoader,             "jdk/internal/reflect/DelegatingClassLoader")   \
   template(reflect_Reflection,                        "jdk/internal/reflect/Reflection")              \
   template(reflect_CallerSensitive,                   "jdk/internal/reflect/CallerSensitive")         \
   template(reflect_CallerSensitive_signature,         "Ljdk/internal/reflect/CallerSensitive;")       \
   template(reflect_DirectConstructorHandleAccessor_NativeAccessor,   "jdk/internal/reflect/DirectConstructorHandleAccessor$NativeAccessor") \
-  template(reflect_SerializationConstructorAccessorImpl,             "jdk/internal/reflect/SerializationConstructorAccessorImpl") \
   template(clazz_name,                                "clazz")                                    \
   template(exceptionTypes_name,                       "exceptionTypes")                           \
   template(modifiers_name,                            "modifiers")                                \
@@ -307,7 +303,10 @@ class SerializeClosure;
   template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;") \
                                                                                                   \
   template(jdk_internal_vm_annotation_ChangesCurrentThread_signature,  "Ljdk/internal/vm/annotation/ChangesCurrentThread;")  \
+  template(jdk_internal_vm_annotation_JvmtiHideEvents_signature,       "Ljdk/internal/vm/annotation/JvmtiHideEvents;")  \
   template(jdk_internal_vm_annotation_JvmtiMountTransition_signature,  "Ljdk/internal/vm/annotation/JvmtiMountTransition;")  \
+                                                                                                  \
+  template(java_lang_ref_SoftReference_signature,         "Ljava/lang/ref/SoftReference;")        \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
@@ -398,7 +397,6 @@ class SerializeClosure;
   template(notifyJvmtiEnd_name,                       "notifyJvmtiEnd")                           \
   template(notifyJvmtiMount_name,                     "notifyJvmtiMount")                         \
   template(notifyJvmtiUnmount_name,                   "notifyJvmtiUnmount")                       \
-  template(notifyJvmtiHideFrames_name,                "notifyJvmtiHideFrames")                    \
   template(notifyJvmtiDisableSuspend_name,            "notifyJvmtiDisableSuspend")                \
   template(doYield_name,                              "doYield")                                  \
   template(enter_name,                                "enter")                                    \
@@ -406,6 +404,8 @@ class SerializeClosure;
   template(onContinue_name,                           "onContinue0")                              \
   template(scope_name,                                "scope")                                    \
   template(yieldInfo_name,                            "yieldInfo")                                \
+  template(pin_name,                                  "pin")                                      \
+  template(unpin_name,                                "unpin")                                    \
   template(tail_name,                                 "tail")                                     \
   template(size_name,                                 "size")                                     \
   template(bottom_name,                               "bottom")                                   \
@@ -423,6 +423,7 @@ class SerializeClosure;
   template(cs_name,                                   "cs")                                       \
   template(get_name,                                  "get")                                      \
   template(refersTo0_name,                            "refersTo0")                                \
+  template(clear0_name,                               "clear0")                                   \
   template(put_name,                                  "put")                                      \
   template(type_name,                                 "type")                                     \
   template(findNative_name,                           "findNative")                               \
@@ -435,12 +436,7 @@ class SerializeClosure;
   template(getCause_name,                             "getCause")                                 \
   template(initCause_name,                            "initCause")                                \
   template(getProperty_name,                          "getProperty")                              \
-  template(context_name,                              "context")                                  \
-  template(contextClassLoader_name,                   "contextClassLoader")                       \
-  template(inheritedAccessControlContext_name,        "inheritedAccessControlContext")            \
-  template(getClassContext_name,                      "getClassContext")                          \
   template(wait_name,                                 "wait0")                                    \
-  template(checkPackageAccess_name,                   "checkPackageAccess")                       \
   template(forName_name,                              "forName")                                  \
   template(forName0_name,                             "forName0")                                 \
   template(isJavaIdentifierStart_name,                "isJavaIdentifierStart")                    \
@@ -487,7 +483,6 @@ class SerializeClosure;
   template(input_stream_void_signature,               "(Ljava/io/InputStream;)V")                 \
   template(input_stream_signature,                    "Ljava/io/InputStream;")                    \
   template(print_stream_signature,                    "Ljava/io/PrintStream;")                    \
-  template(security_manager_signature,                "Ljava/lang/SecurityManager;")              \
   template(defineOrCheckPackage_name,                 "defineOrCheckPackage")                     \
   template(defineOrCheckPackage_signature,            "(Ljava/lang/String;Ljava/util/jar/Manifest;Ljava/net/URL;)Ljava/lang/Package;") \
   template(getProtectionDomain_name,                  "getProtectionDomain")                      \
@@ -514,6 +509,8 @@ class SerializeClosure;
   template(checkIndex_name,                           "checkIndex")                               \
   template(jfr_epoch_name,                            "jfr_epoch")                                \
   template(maxThawingSize_name,                       "maxThawingSize")                           \
+  template(lockStackSize_name,                        "lockStackSize")                            \
+  template(objectWaiter_name,                         "objectWaiter")                             \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -562,6 +559,7 @@ class SerializeClosure;
   template(continuation_signature,                    "Ljdk/internal/vm/Continuation;")           \
   template(continuationscope_signature,               "Ljdk/internal/vm/ContinuationScope;")      \
   template(stackchunk_signature,                      "Ljdk/internal/vm/StackChunk;")             \
+  template(vthread_signature,                         "Ljava/lang/VirtualThread;")                \
   template(object_void_signature,                     "(Ljava/lang/Object;)V")                    \
   template(object_int_signature,                      "(Ljava/lang/Object;)I")                    \
   template(long_object_long_signature,                "(JLjava/lang/Object;)J")                   \
@@ -586,7 +584,7 @@ class SerializeClosure;
   template(string_boolean_class_signature,            "(Ljava/lang/String;Z)Ljava/lang/Class;")                   \
   template(object_object_object_signature,            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;") \
   template(string_string_signature,                   "(Ljava/lang/String;)Ljava/lang/String;")                   \
-  template(classloader_string_long_signature,         "(Ljava/lang/ClassLoader;Ljava/lang/String;)J")             \
+  template(classloader_class_string_string_long_signature,         "(Ljava/lang/ClassLoader;Ljava/lang/Class;Ljava/lang/String;Ljava/lang/String;)J")             \
   template(byte_array_void_signature,                 "([B)V")                                                    \
   template(long_long_void_signature,                  "(JJ)V")                                                    \
   template(void_byte_array_signature,                 "()[B")                                                     \
@@ -598,9 +596,6 @@ class SerializeClosure;
   template(void_string_signature,                     "()Ljava/lang/String;")                                     \
   template(object_array_object_signature,             "([Ljava/lang/Object;)Ljava/lang/Object;")                  \
   template(object_object_array_object_signature,      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")\
-  template(protectiondomain_signature,                "[Ljava/security/ProtectionDomain;")                        \
-  template(accesscontrolcontext_signature,            "Ljava/security/AccessControlContext;")                     \
-  template(class_protectiondomain_signature,          "(Ljava/lang/Class;Ljava/security/ProtectionDomain;)V")     \
   template(thread_signature,                          "Ljava/lang/Thread;")                                       \
   template(thread_fieldholder_signature,              "Ljava/lang/Thread$FieldHolder;")                           \
   template(threadgroup_signature,                     "Ljava/lang/ThreadGroup;")                                  \
@@ -723,6 +718,7 @@ class SerializeClosure;
   JFR_TEMPLATES(template)                                                                                         \
                                                                                                                   \
   /* CDS */                                                                                                       \
+  template(createArchivedObjects,                           "createArchivedObjects")                              \
   template(dumpSharedArchive,                               "dumpSharedArchive")                                  \
   template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
@@ -736,6 +732,7 @@ class SerializeClosure;
   template(jdk_internal_misc_CDS,                           "jdk/internal/misc/CDS")                              \
   template(java_util_concurrent_ConcurrentHashMap,          "java/util/concurrent/ConcurrentHashMap")             \
   template(java_util_ArrayList,                             "java/util/ArrayList")                                \
+  template(runtimeSetup,                                    "runtimeSetup")                                       \
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
   template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \

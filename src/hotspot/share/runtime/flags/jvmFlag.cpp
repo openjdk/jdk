@@ -31,6 +31,7 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLookup.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/stringUtils.hpp"
 
@@ -692,7 +693,7 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
   //       called as part of error reporting, so handle native OOMs gracefully.
 
   // The last entry is the null entry.
-  const size_t length = JVMFlag::numFlags - 1;
+  constexpr size_t length = (sizeof(flagTable) / sizeof(JVMFlag)) - 1;
 
   // Print
   if (!printRanges) {
@@ -701,26 +702,26 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     out->print_cr("[Global flags ranges]");
   }
 
-  // Sort
-  JVMFlag** array = NEW_C_HEAP_ARRAY_RETURN_NULL(JVMFlag*, length, mtArguments);
-  if (array != nullptr) {
+  BitMap::bm_word_t iteratorArray[BitMap::calc_size_in_words(length)];
+  BitMapView iteratorMarkers(iteratorArray, length);
+  iteratorMarkers.clear_range(0, length);
+  // Print the flag with best sort value, then mark it.
+  for (size_t j = 0; j < length; j++) {
+    JVMFlag* bestFlag = nullptr;
+    size_t bestFlagIndex = 0;
     for (size_t i = 0; i < length; i++) {
-      array[i] = &flagTable[i];
-    }
-    qsort(array, length, sizeof(JVMFlag*), compare_flags);
-
-    for (size_t i = 0; i < length; i++) {
-      if (array[i]->is_unlocked() && !(skipDefaults && array[i]->is_default())) {
-        array[i]->print_on(out, withComments, printRanges);
+      const bool skip = (skipDefaults && flagTable[i].is_default());
+      const bool visited = iteratorMarkers.at(i);
+      if (!visited && flagTable[i].is_unlocked() && !skip) {
+        if ((bestFlag == nullptr) || (strcmp(bestFlag->name(), flagTable[i].name()) > 0)) {
+          bestFlag = &flagTable[i];
+          bestFlagIndex = i;
+        }
       }
     }
-    FREE_C_HEAP_ARRAY(JVMFlag*, array);
-  } else {
-    // OOM? Print unsorted.
-    for (size_t i = 0; i < length; i++) {
-      if (flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
-        flagTable[i].print_on(out, withComments, printRanges);
-      }
+    if (bestFlag != nullptr) {
+      bestFlag->print_on(out, withComments, printRanges);
+      iteratorMarkers.at_put(bestFlagIndex, true);
     }
   }
 }

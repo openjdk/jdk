@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import static javax.sound.sampled.AudioFileFormat.Type.WAVE;
  * @test
  * @bug 8204454
  * @summary URL.getContent() should return AudioClip for supported formats
- * @run main/othervm -mx128m AudioContentHandlers
+ * @run main/othervm -Xmx128m AudioContentHandlers
  */
 public final class AudioContentHandlers {
 

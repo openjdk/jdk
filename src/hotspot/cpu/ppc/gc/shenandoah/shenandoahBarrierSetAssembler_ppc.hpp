@@ -82,11 +82,6 @@ public:
                           Register tmp1, Register tmp2, Register tmp3,
                           MacroAssembler::PreservationLevel preservation_level);
 
-  void iu_barrier(MacroAssembler* masm,
-                        Register val,
-                        Register tmp1, Register tmp2,
-                        MacroAssembler::PreservationLevel preservation_level, DecoratorSet decorators = 0);
-
   void load_reference_barrier(MacroAssembler* masm, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs,
                               Register dst,

@@ -525,6 +525,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return r;
     }
 
+    static FloatVector selectFromTwoVectorHelper(Vector<Float> indexes, Vector<Float> src1, Vector<Float> src2) {
+        int vlen = indexes.length();
+        float[] res = new float[vlen];
+        float[] vecPayload1 = ((FloatVector)indexes).vec();
+        float[] vecPayload2 = ((FloatVector)src1).vec();
+        float[] vecPayload3 = ((FloatVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((FloatVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2247,17 +2260,18 @@ public abstract class FloatVector extends AbstractVector<Float> {
      */
     @Override
     public abstract
-    FloatVector rearrange(VectorShuffle<Float> m);
+    FloatVector rearrange(VectorShuffle<Float> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Float>>
     FloatVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, float.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
@@ -2282,17 +2296,14 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                            M m) {
 
         m.check(masktype, this);
-        VectorMask<Float> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, float.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2405,7 +2416,10 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     @ForceInline
     final FloatVector selectFromTemplate(FloatVector v) {
-        return v.rearrange(this.toShuffle());
+        return (FloatVector)VectorSupport.selectFromOp(getClass(), null, float.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2417,9 +2431,31 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /*package-private*/
     @ForceInline
-    final FloatVector selectFromTemplate(FloatVector v,
-                                                  AbstractMask<Float> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Float>>
+    FloatVector selectFromTemplate(FloatVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (FloatVector)VectorSupport.selectFromOp(getClass(), masktype, float.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    FloatVector selectFrom(Vector<Float> v1, Vector<Float> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -3535,7 +3571,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

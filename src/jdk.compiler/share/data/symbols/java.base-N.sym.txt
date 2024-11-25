@@ -462,18 +462,6 @@ class name java/net/Socket
 method name <init> descriptor (Ljava/lang/String;IZ)V thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.1")
 method name <init> descriptor (Ljava/net/InetAddress;IZ)V thrownTypes java/io/IOException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="1.1")
 
-class name java/nio/HeapByteBuffer
-method name hashCode descriptor ()I flags 1
-
-class name java/nio/HeapByteBufferR
-method name hashCode descriptor ()I flags 1
-
-class name java/nio/HeapCharBuffer
-method name hashCode descriptor ()I flags 1
-
-class name java/nio/HeapCharBufferR
-method name hashCode descriptor ()I flags 1
-
 class name java/security/Provider
 header extends java/util/Properties nestMembers java/security/Provider$Service flags 421
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609

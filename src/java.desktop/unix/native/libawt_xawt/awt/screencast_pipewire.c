@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,7 +675,6 @@ static gboolean isAllDataReady() {
 
 
 static void *pipewire_libhandle = NULL;
-//glib_version_2_68 false for gtk2, as it comes from gtk3_interface.c
 
 extern gboolean glib_version_2_68;
 

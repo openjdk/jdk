@@ -35,7 +35,6 @@
 #include "classfile/classPrinter.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
-#include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -185,6 +184,16 @@ WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_
   java_lang_String::print(JNIHandles::resolve(str), &sb, max_length);
   oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
   return (jstring) JNIHandles::make_local(THREAD, result);
+WB_END
+
+WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
+  JavaThread* self = JavaThread::current();
+  // VMStatistic_lock is used to minimize interference with VM locking
+  MutexLocker mu(VMStatistic_lock);
+  VM_HangInSafepoint force_safepoint_stuck_op;
+  VMThread::execute(&force_safepoint_stuck_op);
+  ShouldNotReachHere();
+  return 0;
 WB_END
 
 class WBIsKlassAliveClosure : public LockedClassesDo {
@@ -424,11 +433,7 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_ZGC
   if (UseZGC) {
-    if (ZGenerational) {
-      return ZHeap::heap()->is_old(to_zaddress(p));
-    } else {
-      return Universe::heap()->is_in(p);
-    }
+    return ZHeap::heap()->is_old(to_zaddress(p));
   }
 #endif
 #if INCLUDE_SHENANDOAHGC
@@ -590,7 +595,7 @@ WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
     return JNIHandles::make_local(THREAD, h());
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_G1ActiveMemoryNodeCount(JNIEnv* env, jobject o))
@@ -676,7 +681,7 @@ WB_END
 
 #endif // INCLUDE_G1GC
 
-// Alloc memory using the test memory type so that we can use that to see if
+// Alloc memory using the test memory tag so that we can use that to see if
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
@@ -692,11 +697,11 @@ WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, 
   return (jlong)(uintptr_t)os::malloc(size, mtTest, stack);
 WB_END
 
-// Alloc memory with pseudo call stack and specific memory type.
-WB_ENTRY(jlong, WB_NMTMallocWithPseudoStackAndType(JNIEnv* env, jobject o, jlong size, jint pseudo_stack, jint type))
+// Alloc memory with pseudo call stack and specific memory tag.
+WB_ENTRY(jlong, WB_NMTMallocWithPseudoStackAndType(JNIEnv* env, jobject o, jlong size, jint pseudo_stack, jint mem_tag))
   address pc = (address)(size_t)pseudo_stack;
   NativeCallStack stack(&pc, 1);
-  return (jlong)(uintptr_t)os::malloc(size, (MEMFLAGS)type, stack);
+  return (jlong)(uintptr_t)os::malloc(size, (MemTag)mem_tag, stack);
 WB_END
 
 // Free the memory allocated by NMTAllocTest
@@ -708,21 +713,21 @@ WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
 
   addr = (jlong)(uintptr_t)os::reserve_memory(size);
-  MemTracker::record_virtual_memory_type((address)addr, mtTest);
+  MemTracker::record_virtual_memory_tag((address)addr, mtTest);
 
   return addr;
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
   addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size);
-  MemTracker::record_virtual_memory_type((address)addr, mtTest);
+  MemTracker::record_virtual_memory_tag((address)addr, mtTest);
 
   return addr;
 WB_END
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
   os::commit_memory((char *)(uintptr_t)addr, size, !ExecMem);
-  MemTracker::record_virtual_memory_type((address)(uintptr_t)addr, mtTest);
+  MemTracker::record_virtual_memory_tag((address)(uintptr_t)addr, mtTest);
 WB_END
 
 WB_ENTRY(void, WB_NMTUncommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
@@ -799,6 +804,7 @@ WB_END
 WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
   bool result = false;
   if (thread->has_last_Java_frame()) {
+    ResourceMark rm(THREAD);
     RegisterMap reg_map(thread,
                         RegisterMap::UpdateMap::include,
                         RegisterMap::ProcessFrames::include,
@@ -1081,6 +1087,10 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   AbstractCompiler* comp = CompileBroker::compiler(comp_level);
   if (method == nullptr) {
     tty->print_cr("WB error: request to compile null method");
+    return false;
+  }
+  if (method->is_abstract()) {
+    tty->print_cr("WB error: request to compile abstract method");
     return false;
   }
   if (comp_level > CompilationPolicy::highest_compile_level()) {
@@ -1720,8 +1730,13 @@ int WhiteBox::array_bytes_to_length(size_t bytes) {
 ///////////////
 // MetaspaceTestContext and MetaspaceTestArena
 WB_ENTRY(jlong, WB_CreateMetaspaceTestContext(JNIEnv* env, jobject wb, jlong commit_limit, jlong reserve_limit))
+  assert(is_aligned(commit_limit, BytesPerWord),
+         "WB_CreateMetaspaceTestContext: commit_limit is not a multiple of the system word byte size");
+  assert(is_aligned(reserve_limit, BytesPerWord),
+         "WB_CreateMetaspaceTestContext: reserve_limit is not a multiple of the system word byte size");
   metaspace::MetaspaceTestContext* context =
-      new metaspace::MetaspaceTestContext("whitebox-metaspace-context", (size_t) commit_limit, (size_t) reserve_limit);
+      new metaspace::MetaspaceTestContext("whitebox-metaspace-context", (size_t) commit_limit / BytesPerWord,
+                                          (size_t) reserve_limit / BytesPerWord);
   return (jlong)p2i(context);
 WB_END
 
@@ -1739,18 +1754,18 @@ WB_ENTRY(void, WB_PrintMetaspaceTestContext(JNIEnv* env, jobject wb, jlong conte
   context0->print_on(tty);
 WB_END
 
-WB_ENTRY(jlong, WB_GetTotalCommittedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+WB_ENTRY(jlong, WB_GetTotalCommittedBytesInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
   metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
-  return context0->committed_words();
+  return (jlong)context0->committed_words() * BytesPerWord;
 WB_END
 
-WB_ENTRY(jlong, WB_GetTotalUsedWordsInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
+WB_ENTRY(jlong, WB_GetTotalUsedBytesInMetaspaceTestContext(JNIEnv* env, jobject wb, jlong context))
   metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
-  return context0->used_words();
+  return (jlong)context0->used_words() * BytesPerWord;
 WB_END
 
 WB_ENTRY(jlong, WB_CreateArenaInTestContext(JNIEnv* env, jobject wb, jlong context, jboolean is_micro))
-  const Metaspace::MetaspaceType type = is_micro ? Metaspace::ReflectionMetaspaceType : Metaspace::StandardMetaspaceType;
+  const Metaspace::MetaspaceType type = is_micro ? Metaspace::ClassMirrorHolderMetaspaceType : Metaspace::StandardMetaspaceType;
   metaspace::MetaspaceTestContext* context0 = (metaspace::MetaspaceTestContext*) context;
   return (jlong)p2i(context0->create_arena(type));
 WB_END
@@ -1759,19 +1774,31 @@ WB_ENTRY(void, WB_DestroyMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena
   delete (metaspace::MetaspaceTestArena*) arena;
 WB_END
 
-WB_ENTRY(jlong, WB_AllocateFromMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong word_size))
-  metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
-  MetaWord* p = arena0->allocate((size_t) word_size);
+WB_ENTRY(jlong, WB_AllocateFromMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong size))
+  assert(is_aligned(size, BytesPerWord),
+         "WB_AllocateFromMetaspaceTestArena: size is not a multiple of the system word byte size");
+  metaspace::MetaspaceTestArena *arena0 = (metaspace::MetaspaceTestArena *)arena;
+  MetaWord *p = arena0->allocate((size_t) size / BytesPerWord);
   return (jlong)p2i(p);
 WB_END
 
-WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong p, jlong word_size))
+WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong p, jlong size))
+  assert(is_aligned(size, BytesPerWord),
+         "WB_DeallocateToMetaspaceTestArena: size is not a multiple of the system word byte size");
   metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
-  arena0->deallocate((MetaWord*)p, (size_t) word_size);
+  arena0->deallocate((MetaWord*)p, (size_t) size / BytesPerWord);
 WB_END
 
 WB_ENTRY(jlong, WB_GetMaxMetaspaceAllocationSize(JNIEnv* env, jobject wb))
   return (jlong) Metaspace::max_allocation_word_size() * BytesPerWord;
+WB_END
+
+WB_ENTRY(jlong, WB_WordSize(JNIEnv* env))
+  return (jlong)BytesPerWord;
+WB_END
+
+WB_ENTRY(jlong, WB_RootChunkWordSize(JNIEnv* env))
+  return (jlong)Metaspace::reserve_alignment_words();
 WB_END
 
 //////////////
@@ -2496,6 +2523,13 @@ WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
   return ret;
 WB_END
 
+// Available cpus of the host machine, Linux only.
+// Used in container testing.
+WB_ENTRY(jint, WB_HostCPUs(JNIEnv* env, jobject o))
+  LINUX_ONLY(return os::Linux::active_processor_count();)
+  return -1; // Not used/implemented on other platforms
+WB_END
+
 WB_ENTRY(void, WB_PrintOsInfo(JNIEnv* env, jobject o))
   os::print_os_info(tty);
 WB_END
@@ -2509,10 +2543,6 @@ WB_END
 
 WB_ENTRY(jlong, WB_ResolvedMethodItemsCount(JNIEnv* env, jobject o))
   return (jlong) ResolvedMethodTable::items_count();
-WB_END
-
-WB_ENTRY(jint, WB_ProtectionDomainRemovedCount(JNIEnv* env, jobject o))
-  return (jint) ProtectionDomainCacheTable::removed_entries_count();
 WB_END
 
 WB_ENTRY(jint, WB_GetKlassMetadataSize(JNIEnv* env, jobject wb, jclass mirror))
@@ -2581,7 +2611,7 @@ WB_ENTRY(void, WB_VerifyFrames(JNIEnv* env, jobject wb, jboolean log, jboolean u
   for (StackFrameStream fst(JavaThread::current(), update_map, true); !fst.is_done(); fst.next()) {
     frame* current_frame = fst.current();
     if (log) {
-      current_frame->print_value_on(&st, nullptr);
+      current_frame->print_value_on(&st);
     }
     current_frame->verify(fst.register_map());
   }
@@ -2937,18 +2967,18 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_ValidateCgroup },
   {CC"hostPhysicalMemory",        CC"()J",            (void*)&WB_HostPhysicalMemory },
   {CC"hostPhysicalSwap",          CC"()J",            (void*)&WB_HostPhysicalSwap },
+  {CC"hostCPUs",                  CC"()I",            (void*)&WB_HostCPUs },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
-  {CC"protectionDomainRemovedCount",   CC"()I",       (void*)&WB_ProtectionDomainRemovedCount },
   {CC"getKlassMetadataSize", CC"(Ljava/lang/Class;)I",(void*)&WB_GetKlassMetadataSize},
 
   {CC"createMetaspaceTestContext", CC"(JJ)J",         (void*)&WB_CreateMetaspaceTestContext},
   {CC"destroyMetaspaceTestContext", CC"(J)V",         (void*)&WB_DestroyMetaspaceTestContext},
   {CC"purgeMetaspaceTestContext", CC"(J)V",           (void*)&WB_PurgeMetaspaceTestContext},
   {CC"printMetaspaceTestContext", CC"(J)V",           (void*)&WB_PrintMetaspaceTestContext},
-  {CC"getTotalCommittedWordsInMetaspaceTestContext", CC"(J)J",(void*)&WB_GetTotalCommittedWordsInMetaspaceTestContext},
-  {CC"getTotalUsedWordsInMetaspaceTestContext", CC"(J)J", (void*)&WB_GetTotalUsedWordsInMetaspaceTestContext},
+  {CC"getTotalCommittedBytesInMetaspaceTestContext", CC"(J)J",(void*)&WB_GetTotalCommittedBytesInMetaspaceTestContext},
+  {CC"getTotalUsedBytesInMetaspaceTestContext", CC"(J)J", (void*)&WB_GetTotalUsedBytesInMetaspaceTestContext},
   {CC"createArenaInTestContext", CC"(JZ)J",           (void*)&WB_CreateArenaInTestContext},
   {CC"destroyMetaspaceTestArena", CC"(J)V",           (void*)&WB_DestroyMetaspaceTestArena},
   {CC"allocateFromMetaspaceTestArena", CC"(JJ)J",     (void*)&WB_AllocateFromMetaspaceTestArena},
@@ -2968,6 +2998,9 @@ static JNINativeMethod methods[] = {
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
+  {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
+  {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
+  {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize}
 };
 
 

@@ -35,7 +35,7 @@ TEST_VM_F(NMTNativeCallStackStorageTest, DoNotStoreStackIfNotDetailed) {
   NativeCallStack ncs{};
   NCSS ncss(false);
   NCSS::StackIndex si = ncss.push(ncs);
-  EXPECT_TRUE(si.is_invalid());
+  EXPECT_TRUE(NCSS::is_invalid(si));
   NativeCallStack ncs_received = ncss.get(si);
   EXPECT_TRUE(ncs_received.is_empty());
 }
@@ -57,7 +57,7 @@ TEST_VM_F(NMTNativeCallStackStorageTest, CollisionsReceiveDifferentIndexes) {
   for (int i = 0; i < nr_of_stacks; i++) {
     for (int j = 0; j < nr_of_stacks; j++) {
       if (i == j) continue;
-      EXPECT_FALSE(NCSS::StackIndex::equals(si_arr[i],si_arr[j]));
+      EXPECT_FALSE(NCSS::equals(si_arr[i],si_arr[j]));
     }
   }
 }
