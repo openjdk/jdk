@@ -1013,8 +1013,6 @@ private:
   const int _r;
   // Use VPointer for invar and iv_scale
   const VPointer& _vpointer;
-  // TODO use VPointer for invar and iv_scale
-  const Node* _invar;
 public:
   ConstrainedAlignmentSolution(const MemNode* mem_ref,
                                const int q,
@@ -1023,8 +1021,7 @@ public:
       _mem_ref(mem_ref),
       _q(q),
       _r(r),
-      _vpointer(vpointer),
-      _invar(nullptr)
+      _vpointer(vpointer)
   {
     assert(q > 1 && is_power_of_2(q), "q must be power of 2");
     assert(0 <= r && r < q, "r must be in modulo space of q");
@@ -1076,9 +1073,12 @@ public:
     //   - both mem_refs have no invariant.
     //   - both mem_refs have the same invariant and the same iv_scale.
     //
-    bool both_no_invar = s1->vpointer().count_invar_summands() == 0 &&
-                         s2->vpointer().count_invar_summands() == 0;
-    if(!both_no_invar && !s1->vpointer().has_same_invar_and_iv_scale_as(s2->vpointer())) {
+    // Use VPointer to do checks on invar and iv_scale:
+    const VPointer& p1 = s1->vpointer();
+    const VPointer& p2 = s2->vpointer();
+    bool both_no_invar = p1.count_invar_summands() == 0 &&
+                         p2.count_invar_summands() == 0;
+    if(!both_no_invar && !p1.has_same_invar_and_iv_scale_as(p2)) {
       return new EmptyAlignmentSolution("invar alignment term not identical");
     }
 
@@ -1120,8 +1120,8 @@ public:
 
   virtual void print() const override final {
     tty->print("m * q(%d) + r(%d)", _q, _r);
-    if (_invar != nullptr) {
-      tty->print(" - invar[%d] / (iv_scale(%d) * pre_stride)", _invar->_idx, _vpointer.iv_scale());
+    if (_vpointer.count_invar_summands() > 0) {
+      tty->print(" - invar / (iv_scale(%d) * pre_stride)", _vpointer.iv_scale());
     }
     tty->print_cr(" [- init / pre_stride], mem_ref[%d]", mem_ref()->_idx);
   };
