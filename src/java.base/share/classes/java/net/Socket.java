@@ -454,7 +454,7 @@ public class Socket implements java.io.Closeable {
         throws IOException
     {
         Objects.requireNonNull(address);
-        assert address instanceof InetSocketAddress isa && !isa.isUnresolved();
+        assert address instanceof InetSocketAddress;
 
         // create the SocketImpl and the underlying socket
         SocketImpl impl = createImpl();
