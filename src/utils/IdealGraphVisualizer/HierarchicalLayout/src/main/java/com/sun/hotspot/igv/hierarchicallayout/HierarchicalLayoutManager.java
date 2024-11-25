@@ -370,8 +370,6 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
                     cntUnassigned++;
                 }
             }
-            System.out.println("cntUnassigned before " + cntUnassigned);
-
             assignLayers(graph);
 
             cntUnassigned = 0;
@@ -382,10 +380,8 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
                     cntUnassigned++;
                 }
             }
-            System.out.println("cntUnassigned after " + cntUnassigned);
 
             graph.initLayers(maxLayer + 1);
-
 
             Set<LayoutEdge> toReverse = new HashSet<>();
             Set<LayoutEdge> sameLayerEdges = new HashSet<>();

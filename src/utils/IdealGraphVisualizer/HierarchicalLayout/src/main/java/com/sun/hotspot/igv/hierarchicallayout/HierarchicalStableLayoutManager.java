@@ -132,17 +132,6 @@ public class HierarchicalStableLayoutManager extends LayoutManager implements La
         }
 
         this.prevGraph = graph;
-
-        System.out.println("real vertex in g");
-        for (Vertex v : graph.getVertices()) {
-            System.out.print(v.getPosition().x + " " + v.getPosition().y + ", ");
-        }
-        System.out.println();
-        System.out.println("computed LayoutNode->Vertex in graph");
-        for (LayoutNode node : prevGraph.getLayoutNodes()) {
-            System.out.print(node.getVertex().getPosition().x + " " + node.getVertex().getPosition().y + ", ");
-        }
-        System.out.println();
     }
 
     public void updateLayout(LayoutGraph graph) {
@@ -167,8 +156,6 @@ public class HierarchicalStableLayoutManager extends LayoutManager implements La
                 newLayoutNode.add(newNode);
             }
         }
-
-        System.out.println("addedVertices cnt " + newLayoutNode.size());
 
         // Set up layout edges in a sorted order for reproducibility
         List<Link> sortedLinks = new ArrayList<>(graph.getLinks());

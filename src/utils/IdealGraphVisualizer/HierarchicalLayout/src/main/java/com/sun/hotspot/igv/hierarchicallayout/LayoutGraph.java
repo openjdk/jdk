@@ -579,7 +579,6 @@ public class LayoutGraph {
 
     public List<Vertex> getNeighborVertices(Vertex vertex) {
         List<Vertex> neighborVertices = new ArrayList<>();
-
         for (Port inputPort : inputPorts.getOrDefault(vertex, Collections.emptySet())) {
             for (Link inputLink : portLinks.getOrDefault(inputPort, Collections.emptySet())) {
                 Vertex fromVertex = inputLink.getFrom().getVertex();
@@ -587,7 +586,6 @@ public class LayoutGraph {
                 neighborVertices.add(fromVertex);
             }
         }
-        System.out.println("getNeighborVertices1 " + neighborVertices.size());
         for (Port outputPort : outputPorts.getOrDefault(vertex, Collections.emptySet())) {
             for (Link outputLink : portLinks.getOrDefault(outputPort, Collections.emptySet())) {
                 Vertex toVertex = outputLink.getTo().getVertex();
@@ -595,7 +593,6 @@ public class LayoutGraph {
                 neighborVertices.add(toVertex);
             }
         }
-        System.out.println("getNeighborVertices2 " + neighborVertices.size());
         return neighborVertices;
     }
 
