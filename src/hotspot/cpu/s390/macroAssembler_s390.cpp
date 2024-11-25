@@ -3173,34 +3173,13 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
 
   RegSet pushed_regs;
 
-  int slots = 0;
-  constexpr int NumRegs = 5;
-  Register* regs[NumRegs] = {&temp_reg, &temp2_reg, &temp3_reg, &temp4_reg, &result_reg};
-  bool is_noreg[NumRegs] = {
-    temp_reg == noreg,
-    temp2_reg == noreg,
-    temp3_reg == noreg,
-    temp4_reg == noreg,
-    result_reg == noreg
-  };
+  temp_reg  = allocate_if_noreg(temp_reg,  available_regs, pushed_regs);
+  temp2_reg = allocate_if_noreg(temp2_reg, available_regs, pushed_regs);
+  temp3_reg = allocate_if_noreg(temp3_reg, available_regs, pushed_regs);;
+  temp4_reg = allocate_if_noreg(temp4_reg, available_regs, pushed_regs);
+  result_reg = allocate_if_noreg(result_reg, available_regs, pushed_regs);
 
-  // Allocate registers and count slots
-  for (int i = 0; i < NumRegs; ++i) {
-    if (is_noreg[i]) {
-      slots++;
-      *regs[i] = allocate_if_noreg(*regs[i], available_regs, pushed_regs);
-    }
-  }
-
-#ifdef ASSERT
-  assert(temp_reg   != noreg, "temp_reg: sanity");
-  assert(temp2_reg  != noreg, "temp2_reg: sanity");
-  assert(temp3_reg  != noreg, "temp3_reg: sanity");
-  assert(temp4_reg  != noreg, "temp4_reg: sanity");
-  assert(result_reg != noreg, "result_reg: sanity");
-#endif // ASSERT
-
-  const int frame_size = slots * BytesPerWord + frame::z_abi_160_size;
+  const int frame_size = pushed_regs.size() * BytesPerWord + frame::z_abi_160_size;
 
   // Push & save registers
   {
@@ -3208,12 +3187,9 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
     save_return_pc();
     push_frame(frame_size);
 
-    for (int j = 0; j < NumRegs; ++j) {
-      if (is_noreg[j]) {
-        z_stg(*regs[j], (i++) * BytesPerWord + frame::z_abi_160_size, Z_SP);
-      }
+    for (auto it = pushed_regs.begin(); *it != noreg; i++) {
+      z_stg(*it++, i * BytesPerWord + frame::z_abi_160_size, Z_SP);
     }
-
     assert(i * BytesPerWord + frame::z_abi_160_size == frame_size, "sanity");
   }
 
@@ -3225,12 +3201,9 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
 
   {
     int i = 0;
-    for (int j = 0; j < NumRegs; ++j) {
-      if (is_noreg[j]) {
-        z_lg(*regs[j], (i++) * BytesPerWord + frame::z_abi_160_size, Z_SP);
-      }
+    for (auto it = pushed_regs.begin(); *it != noreg; ++i) {
+      z_lg(*it++, i * BytesPerWord + frame::z_abi_160_size, Z_SP);
     }
-
     assert(i * BytesPerWord + frame::z_abi_160_size == frame_size, "sanity");
     pop_frame();
     restore_return_pc();
