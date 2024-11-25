@@ -30,8 +30,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.nio.channels.FileChannel.MapMode;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 
 /**
  * JDK-specific map modes implemented in java.base.

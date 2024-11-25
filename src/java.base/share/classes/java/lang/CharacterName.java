@@ -47,7 +47,8 @@ class CharacterName {
 
     private CharacterName()  {
         try (DataInputStream dis = new DataInputStream(
-                new InflaterInputStream(getClass().getResourceAsStream("uniName.dat")))) {
+                new InflaterInputStream(CharacterName.class
+                        .getResourceAsStream("uniName.dat")))) {
 
             int total = dis.readInt();
             int bkNum = dis.readInt();

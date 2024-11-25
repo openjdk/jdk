@@ -114,7 +114,6 @@ final class Finalizer extends FinalReference<Object> { /* Package-private; must 
      * The advantage of creating a fresh thread, however, is that it insulates
      * invokers of that method from a stalled or deadlocked finalizer thread.
      */
-    @SuppressWarnings("removal")
     private static void forkSecondaryFinalizer(final Runnable proc) {
         ThreadGroup tg = Thread.currentThread().getThreadGroup();
         for (ThreadGroup tgn = tg;
