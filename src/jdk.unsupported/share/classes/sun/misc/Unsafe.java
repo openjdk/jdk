@@ -31,11 +31,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.net.URL;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.Set;
 
@@ -1832,7 +1828,7 @@ public final class Unsafe {
     }
 
     /**
-     * Represents the options for the depreacted method-access methods.
+     * Represents the options for the deprecated method-access methods.
      */
     private enum MemoryAccessOption {
         /**
@@ -1884,14 +1880,8 @@ public final class Unsafe {
      * Holder for StackWalker that retains class references.
      */
     private static class StackWalkerHolder {
-        static final StackWalker INSTANCE;
-        static {
-            PrivilegedAction<StackWalker> pa = () ->
-                    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-            @SuppressWarnings("removal")
-            StackWalker walker = AccessController.doPrivileged(pa);
-            INSTANCE = walker;
-        }
+        static final StackWalker INSTANCE =
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
     }
 
     /**
@@ -1921,9 +1911,7 @@ public final class Unsafe {
      * Returns a string with the caller class and the location URL from the CodeSource.
      */
     private static String callerAndLocation(Class<?> callerClass) {
-        PrivilegedAction<ProtectionDomain> pa = callerClass::getProtectionDomain;
-        @SuppressWarnings("removal")
-        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
+        CodeSource cs = callerClass.getProtectionDomain().getCodeSource();
         String who = callerClass.getName();
         if (cs != null && cs.getLocation() != null) {
             who += " (" + cs.getLocation() + ")";

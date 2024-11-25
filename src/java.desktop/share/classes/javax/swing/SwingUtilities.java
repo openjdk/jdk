@@ -24,7 +24,6 @@
  */
 package javax.swing;
 
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
@@ -2033,7 +2032,6 @@ public class SwingUtilities implements SwingConstants
 
 
     static Class<?> loadSystemClass(String className) throws ClassNotFoundException {
-        ReflectUtil.checkPackageAccess(className);
         return Class.forName(className, true, Thread.currentThread().
                              getContextClassLoader());
     }

@@ -118,12 +118,8 @@ class SerializeClosure;
   template(java_lang_reflect_RecordComponent,         "java/lang/reflect/RecordComponent")        \
   template(java_lang_StringBuffer,                    "java/lang/StringBuffer")                   \
   template(java_lang_StringBuilder,                   "java/lang/StringBuilder")                  \
-  template(java_lang_SecurityManager,                 "java/lang/SecurityManager")                \
   template(java_lang_ScopedValue,                     "java/lang/ScopedValue")                    \
   template(java_lang_ScopedValue_Carrier,             "java/lang/ScopedValue$Carrier")            \
-  template(java_security_AccessControlContext,        "java/security/AccessControlContext")       \
-  template(java_security_AccessController,            "java/security/AccessController")           \
-  template(executePrivileged_name,                    "executePrivileged")                        \
   template(java_security_CodeSource,                  "java/security/CodeSource")                 \
   template(java_security_ProtectionDomain,            "java/security/ProtectionDomain")           \
   template(java_security_SecureClassLoader,           "java/security/SecureClassLoader")          \
@@ -440,9 +436,6 @@ class SerializeClosure;
   template(getCause_name,                             "getCause")                                 \
   template(initCause_name,                            "initCause")                                \
   template(getProperty_name,                          "getProperty")                              \
-  template(context_name,                              "context")                                  \
-  template(contextClassLoader_name,                   "contextClassLoader")                       \
-  template(getClassContext_name,                      "getClassContext")                          \
   template(wait_name,                                 "wait0")                                    \
   template(forName_name,                              "forName")                                  \
   template(forName0_name,                             "forName0")                                 \
@@ -490,7 +483,6 @@ class SerializeClosure;
   template(input_stream_void_signature,               "(Ljava/io/InputStream;)V")                 \
   template(input_stream_signature,                    "Ljava/io/InputStream;")                    \
   template(print_stream_signature,                    "Ljava/io/PrintStream;")                    \
-  template(security_manager_signature,                "Ljava/lang/SecurityManager;")              \
   template(defineOrCheckPackage_name,                 "defineOrCheckPackage")                     \
   template(defineOrCheckPackage_signature,            "(Ljava/lang/String;Ljava/util/jar/Manifest;Ljava/net/URL;)Ljava/lang/Package;") \
   template(getProtectionDomain_name,                  "getProtectionDomain")                      \
@@ -604,9 +596,6 @@ class SerializeClosure;
   template(void_string_signature,                     "()Ljava/lang/String;")                                     \
   template(object_array_object_signature,             "([Ljava/lang/Object;)Ljava/lang/Object;")                  \
   template(object_object_array_object_signature,      "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;")\
-  template(protectiondomain_signature,                "[Ljava/security/ProtectionDomain;")                        \
-  template(accesscontrolcontext_signature,            "Ljava/security/AccessControlContext;")                     \
-  template(class_protectiondomain_signature,          "(Ljava/lang/Class;Ljava/security/ProtectionDomain;)V")     \
   template(thread_signature,                          "Ljava/lang/Thread;")                                       \
   template(thread_fieldholder_signature,              "Ljava/lang/Thread$FieldHolder;")                           \
   template(threadgroup_signature,                     "Ljava/lang/ThreadGroup;")                                  \
