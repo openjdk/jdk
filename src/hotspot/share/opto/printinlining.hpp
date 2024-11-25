@@ -53,16 +53,12 @@ private:
     GrowableArray<IPInlineSite*> _children;
 
   public:
-    /**
-     * Method may be null iff this is the root of the tree.
-     */
+    // Method may be null iff this is the root of the tree.
     IPInlineSite(ciMethod* method, Arena* arena, int bci) : _arena(arena), _method(method), _bci(bci),
                                                             _attempts(arena, 2, 0, nullptr),
                                                             _children(arena, 2, 0, nullptr) {}
-    /**
-     * Finds the node for an inline attempt that occurred inside this inline.
-     * If this is a new site, provide the callee otherwise null.
-     */
+    // Finds the node for an inline attempt that occurred inside this inline.
+    // If this is a new site, provide the callee otherwise null.
     IPInlineSite* at_bci(int bci, ciMethod* callee);
     InlinePrinter::IPInlineAttempt* add(InliningResult result);
 
@@ -73,16 +69,12 @@ private:
 
   Compile *C;
 
-  /**
-   * In case print inline is disabled, this null stream is returned from ::record()
-   */
+  // In case print inline is disabled, this null stream is returned from ::record()
   nullStream _nullStream;
 
-  /**
-   * Locates the IPInlineSite node that corresponds to this JVM state.
-   * state may be null. In this case, the root node is returned.
-   * If this is a new site, provide the callee otherwise null.
-   */
+  // Locates the IPInlineSite node that corresponds to this JVM state.
+  // state may be null. In this case, the root node is returned.
+  // If this is a new site, provide the callee otherwise null.
   IPInlineSite* locate(JVMState* state, ciMethod* callee);
 
   IPInlineSite* const _root;
@@ -90,17 +82,13 @@ private:
 public:
   InlinePrinter(Arena* arena, Compile* compile);
 
-  /**
-   * Saves the result of an inline attempt of method at state.
-   * An optional string message with more details that is copied to the stream for this attempt. Pointer is not captured.
-   * Returns an output stream which stores the message associated with this attempt. The buffer stays valid until InlinePrinter is deallocated.
-   * You can print arbitrary information to this stream but do not add line breaks, as this will break formatting.
-   */
+  // Saves the result of an inline attempt of method at state.
+  // An optional string message with more details that is copied to the stream for this attempt. Pointer is not captured.
+  // Returns an output stream which stores the message associated with this attempt. The buffer stays valid until InlinePrinter is deallocated.
+  // You can print arbitrary information to this stream but do not add line breaks, as this will break formatting.
   outputStream* record(ciMethod* callee, JVMState* state, InliningResult result, const char* msg = nullptr);
 
-  /**
-   * Prints all collected inlining information to the given output stream.
-   */
+  // Prints all collected inlining information to the given output stream.
   void print_on(outputStream* tty);
 };
 
