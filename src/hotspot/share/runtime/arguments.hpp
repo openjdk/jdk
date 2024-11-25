@@ -464,11 +464,8 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
-  static bool is_add_modules_property(const char* key);
-  static unsigned int addmods_count() { return  _addmods_count; }
-  static bool is_enable_native_access_property(const char* key);
-  static unsigned int enable_native_access_count() { return _enable_native_access_count; }
-  static bool is_module_path_property(const char* key);
+  static bool is_non_cds_compatible_internal_module_property(const char* property);
+  static bool internal_module_property_helper(const char* property, bool check_for_cds);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }

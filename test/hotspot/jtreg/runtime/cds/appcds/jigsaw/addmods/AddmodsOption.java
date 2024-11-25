@@ -83,7 +83,7 @@ public class AddmodsOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Mismatched modules for jdk.module.addmods")
+          .shouldContain("Mismatched values for property jdk.module.addmods")
           .shouldContain("runtime jdk.incubator.vector dump time jdk.jconsole")
           .shouldContain(subgraphCannotBeUsed);
 

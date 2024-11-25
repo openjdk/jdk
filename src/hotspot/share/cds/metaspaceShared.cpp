@@ -423,9 +423,7 @@ void MetaspaceShared::write_method_handle_intrinsics() {
 void MetaspaceShared::early_serialize(SerializeClosure* soc) {
   int tag = 0;
   soc->do_tag(--tag);
-  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
-  CDS_JAVA_HEAP_ONLY(Modules::serialize_addmods_names(soc);)
-  CDS_JAVA_HEAP_ONLY(Modules::serialize_native_access_flags(soc);)
+  CDS_JAVA_HEAP_ONLY(Modules::serialize_archived_module_info(soc);)
   soc->do_tag(666);
 }
 
@@ -568,12 +566,7 @@ public:
 char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
-  // Write module name into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
-  // Write module names from --add-modules into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_addmods_names();)
-  // Write native enable-native-access flag into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_native_access_flag());
+  CDS_JAVA_HEAP_ONLY(Modules::dump_archived_module_info());
 
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
