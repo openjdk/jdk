@@ -2842,7 +2842,6 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const int con       = p.con();
   Node* base          = p.decomposed_form().base().object_or_native();
   bool is_base_native = p.decomposed_form().base().is_native();
-  Node* invar         = nullptr; // TODO
 
   // TODO: maybe use NoOverflowInt here, and for solver?
 
@@ -2859,11 +2858,15 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
     tty->print_cr("  con:       %d", con);
     tty->print("  base:");
     base->dump();
-    if (invar == nullptr) {
+    if (p.count_invar_summands() == 0) {
       tty->print_cr("  invar:     null");
     } else {
-      tty->print("  invar:");
-      invar->dump();
+      tty->print_cr("  invar_summands:");
+      p.for_each_invar_summand([&] (const MemPointerSummand& s) {
+        tty->print("   -> ");
+        s.print_on(tty);
+      });
+      tty->cr();
     }
     tty->print("  old_limit: ");
     old_limit->dump();
@@ -2906,24 +2909,31 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* xbic = igvn().intcon(is_sub ? -con : con);
   TRACE_ALIGN_VECTOR_NODE(xbic);
 
-  // 1.2: invar (if it exists)
-  if (invar != nullptr) {
-    if (igvn().type(invar)->isa_long()) {
+  // 1.2: invar = SUM(invar_summands)
+  //      We iteratively add / subtract all invar_summands, if there are any.
+  p.for_each_invar_summand([&] (const MemPointerSummand& s) {
+    Node* invar_variable = s.variable();
+    jint  invar_scale    = s.scale().value();
+    if (igvn().type(invar_variable)->isa_long()) {
       // Computations are done % (vector width/element size) so it's
       // safe to simply convert invar to an int and loose the upper 32
       // bit half.
-      invar = new ConvL2INode(invar);
-      phase()->register_new_node(invar, pre_ctrl);
-      TRACE_ALIGN_VECTOR_NODE(invar);
-   }
+      invar_variable = new ConvL2INode(invar_variable);
+      phase()->register_new_node(invar_variable, pre_ctrl);
+      TRACE_ALIGN_VECTOR_NODE(invar_variable);
+    }
+    Node* invar_scale_con = igvn().intcon(invar_scale);
+    Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
+    phase()->register_new_node(invar_summand, pre_ctrl);
+    TRACE_ALIGN_VECTOR_NODE(invar_summand);
     if (is_sub) {
-      xbic = new SubINode(xbic, invar);
+      xbic = new SubINode(xbic, invar_summand);
     } else {
-      xbic = new AddINode(xbic, invar);
+      xbic = new AddINode(xbic, invar_summand);
     }
     phase()->register_new_node(xbic, pre_ctrl);
     TRACE_ALIGN_VECTOR_NODE(xbic);
-  }
+  });
 
   // 1.3: base (unless base is guaranteed aw aligned)
   if (aw > ObjectAlignmentInBytes || is_base_native) {
