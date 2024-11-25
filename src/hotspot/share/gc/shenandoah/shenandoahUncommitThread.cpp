@@ -176,8 +176,8 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
 
   size_t committed_end = _heap->committed();
   double elapsed = os::elapsedTime() - start;
-  log_info(gc)("%s " PROPERFMT "->" PROPERFMT "(" PROPERFMT ") %.3fms",
-               msg, PROPERFMTARGS(committed_start), PROPERFMTARGS(committed_end), PROPERFMTARGS(_heap->capacity()),
+  log_info(gc)("%s " PROPERFMT "(" PROPERFMT ") %.3fms",
+               msg, PROPERFMTARGS(committed_start - committed_end), PROPERFMTARGS(_heap->capacity()),
                elapsed * MILLIUNITS);
 }
 
