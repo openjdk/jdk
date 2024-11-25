@@ -157,6 +157,21 @@ public final class SegmentBulkOperations {
     }
 
     @ForceInline
+    public static int contentHash(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        // The state has to be checked explicitly for zero-length segments
+        segment.scope.checkValidState();
+        int result = 1;
+        final long begin = segment.unsafeGetOffset() + fromOffset;
+        final long end = begin + length;
+        for (long i = begin; i < end; i++) {
+            result = 31 * result + SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), i);
+        }
+        return result;
+    }
+
+    @ForceInline
     public static long mismatch(AbstractMemorySegmentImpl src, long srcFromOffset, long srcToOffset,
                                 AbstractMemorySegmentImpl dst, long dstFromOffset, long dstToOffset) {
         final long srcBytes = srcToOffset - srcFromOffset;
