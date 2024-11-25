@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import static com.sun.hotspot.igv.hierarchicallayout.LayoutNode.LAYOUT_NODE_DEGREE_COMPARATOR;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Point;
@@ -32,13 +33,30 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     private boolean cutEdges = false;
 
-    private static int LINE_OFFSET = 10;
+    private static final int LINE_OFFSET = 10;
 
-    private final Map<Vertex, LayoutNode> layoutNodes;
+    private Map<Vertex, LayoutNode> layoutNodes;
+
+    private LayoutGraph prevGraph;
+
+    private final Random random = new Random(42);
+
+    // Create a comparator to sort nodes by the number of unassigned neighbors
+    private final Comparator<LayoutNode> LeastUnassignedNeighborsComparator = Comparator.comparingInt(node -> {
+        Vertex vertex = node.getVertex();
+        int unassignedNeighbors = 0;
+        for (Vertex neighborVertex : prevGraph.getNeighborVertices(vertex)) {
+            if (!layoutNodes.containsKey(neighborVertex)) {
+                unassignedNeighbors++;
+            }
+        }
+        return unassignedNeighbors;
+    });
 
     public FreeInteractiveLayoutManager() {
         this.cutEdges = false;
         this.layoutNodes = new HashMap<>();
+        this.prevGraph = null;
     }
 
     @Override
@@ -73,8 +91,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         this.cutEdges = enable;
     }
 
-    private LayoutGraph prevGraph;
-
     @Override
     public void doLayout(LayoutGraph graph) {
         prevGraph = graph;
@@ -87,17 +103,70 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
             graph.clearLayout();
         } else {
             // add new vertices to layoutNodes, x/y from barycenter
-            HashSet<LayoutNode> newLayoutNode = new HashSet<>();
+            List<LayoutNode> newLayoutNodes = new ArrayList<>();
 
             // Set up layout nodes for each vertex
             for (Vertex vertex : prevGraph.getVertices()) {
                 if (!layoutNodes.containsKey(vertex)) {
                     LayoutNode addedNode = new LayoutNode(vertex);
-                    addedNode.setX(0);
-                    addedNode.setY(0);
-                    layoutNodes.put(vertex, addedNode);
+                    newLayoutNodes.add(addedNode);
+
                 }
             }
+
+            positionNewLayoutNodes(newLayoutNodes);
+
+            /*
+            newLayoutNodes.sort(LeastUnassignedNeighborsComparator);
+
+            // Place each newLayoutNode by calculating its position
+            for (LayoutNode node : newLayoutNodes) {
+                Vertex vertex = node.getVertex();
+
+                // Gather positions of all assigned neighbors
+                List<LayoutNode> assignedNeighbors = new ArrayList<>();
+                for (Vertex neighborVertex : prevGraph.getNeighborVertices(vertex)) {
+                    if (layoutNodes.containsKey(neighborVertex)) {
+                        assignedNeighbors.add(layoutNodes.get(neighborVertex));
+                    }
+                }
+
+                if (!assignedNeighbors.isEmpty()) {
+                    if (assignedNeighbors.size() == 1) {
+                        // If there's only one neighbor, use its position and add randomness
+                        LayoutNode neighbor = assignedNeighbors.get(0);
+                        int randomX = random.nextInt(101); // Random value between 0 and 100
+                        int randomY = random.nextInt(101); // Random value between 0 and 100
+                        node.setX(neighbor.getX() + randomX);
+                        node.setY(neighbor.getY() + randomY);
+                    } else {
+                        // Calculate barycenter (average of neighbors' positions)
+                        double barycenterX = 0;
+                        double barycenterY = 0;
+                        for (LayoutNode neighbor : assignedNeighbors) {
+                            barycenterX += neighbor.getX();
+                            barycenterY += neighbor.getY();
+                        }
+                        barycenterX /= assignedNeighbors.size();
+                        barycenterY /= assignedNeighbors.size();
+
+                        // Set node's position based on barycenter
+                        node.setX((int) barycenterX);
+                        node.setY((int) barycenterY);
+                    }
+                } else {
+                    // No neighbors in layoutNodes, set to a random default position
+                    int randomX = random.nextInt(101); // Random value between 0 and 100
+                    int randomY = random.nextInt(101); // Random value between 0 and 100
+                    node.setX(randomX);
+                    node.setY(randomY);
+                }
+
+                // Add the node to the layoutNodes map
+                layoutNodes.put(vertex, node);
+            }
+
+             */
         }
 
         // Write back vertices
@@ -112,6 +181,90 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
             setLinkControlPoints(link);
         }
     }
+
+    public void positionNewLayoutNodes(List<LayoutNode> newLayoutNodes) {
+        Random random = new Random();
+
+        // First pass: Initial positioning
+        newLayoutNodes.sort(LeastUnassignedNeighborsComparator);
+
+        for (LayoutNode node : newLayoutNodes) {
+            Vertex vertex = node.getVertex();
+
+            List<LayoutNode> assignedNeighbors = new ArrayList<>();
+            for (Vertex neighborVertex : prevGraph.getNeighborVertices(vertex)) {
+                if (layoutNodes.containsKey(neighborVertex)) {
+                    assignedNeighbors.add(layoutNodes.get(neighborVertex));
+                }
+            }
+
+            if (!assignedNeighbors.isEmpty()) {
+                double barycenterX = 0;
+                double barycenterY = 0;
+                for (LayoutNode neighbor : assignedNeighbors) {
+                    barycenterX += neighbor.getX();
+                    barycenterY += neighbor.getY();
+                }
+                barycenterX /= assignedNeighbors.size();
+                barycenterY /= assignedNeighbors.size();
+                node.setX((int) barycenterX);
+                node.setY((int) barycenterY);
+            } else {
+                node.setX(0);
+                node.setY(0);
+            }
+
+            layoutNodes.put(vertex, node);
+        }
+
+        // Refine positions in second pass: Sort newLayoutNodes by descending neighbor degree.
+        newLayoutNodes.sort(LAYOUT_NODE_DEGREE_COMPARATOR.reversed());
+
+        for (LayoutNode node : newLayoutNodes) {
+            Vertex vertex = node.getVertex();
+
+            // Assert all neighbors are now assigned
+            for (Vertex neighborVertex : prevGraph.getNeighborVertices(vertex)) {
+                assert layoutNodes.containsKey(neighborVertex) : "Neighbor is not assigned";
+            }
+
+            // Gather assigned neighbors
+            List<LayoutNode> assignedNeighbors = new ArrayList<>();
+            for (Vertex neighborVertex : prevGraph.getNeighborVertices(vertex)) {
+                assignedNeighbors.add(layoutNodes.get(neighborVertex));
+            }
+
+            if (assignedNeighbors.isEmpty()) {
+                // No neighbors: Position randomly around (0, 0)
+                int randomX = random.nextInt(101); // Random value between 0 and 100
+                int randomY = random.nextInt(101); // Random value between 0 and 100
+                node.setX(randomX);
+                node.setY(randomY);
+            } else if (assignedNeighbors.size() == 1) {
+                // Only one neighbor: Position randomly around the neighbor
+                LayoutNode neighbor = assignedNeighbors.get(0);
+                int randomX = neighbor.getX() + random.nextInt(101); // Add random offset
+                int randomY = neighbor.getY() + random.nextInt(101); // Add random offset
+                node.setX(randomX);
+                node.setY(randomY);
+            } else {
+                // Multiple neighbors: Calculate barycenter
+                double barycenterX = 0;
+                double barycenterY = 0;
+                for (LayoutNode neighbor : assignedNeighbors) {
+                    barycenterX += neighbor.getX();
+                    barycenterY += neighbor.getY();
+                }
+                barycenterX /= assignedNeighbors.size();
+                barycenterY /= assignedNeighbors.size();
+                node.setX((int) barycenterX);
+                node.setY((int) barycenterY);
+            }
+
+            // Update position in layoutNodes
+            layoutNodes.put(vertex, node);
+        }    }
+
 
     private void setLinkControlPoints(Link link) {
         if (link.getFrom().getVertex() == link.getTo().getVertex()) return;
