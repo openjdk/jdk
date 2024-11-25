@@ -29,6 +29,7 @@ import java.io.Externalizable;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
+import java.io.ObjectStreamField;
 import java.io.OptionalDataException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
@@ -39,7 +40,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 import java.security.PrivilegedAction;
+import java.util.Set;
+
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
@@ -66,6 +70,7 @@ public class ReflectionFactory {
     private static volatile Method hasStaticInitializerMethod;
 
     private final JavaLangReflectAccess langReflectAccess;
+
     private ReflectionFactory() {
         this.langReflectAccess = SharedSecrets.getJavaLangReflectAccess();
     }
@@ -363,6 +368,46 @@ public class ReflectionFactory {
         }
     }
 
+    public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
+        if (hasDefaultOrNoSerialization(cl)) {
+            return null;
+        }
+
+        return SharedSecrets.getJavaObjectStreamReflectionAccess().defaultReadObject(cl);
+    }
+
+    public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
+        if (hasDefaultOrNoSerialization(cl)) {
+            return null;
+        }
+
+        return SharedSecrets.getJavaObjectStreamReflectionAccess().defaultWriteObject(cl);
+    }
+
+    /**
+     * These are specific leaf classes which appear to be Serializable, but which
+     * have special semantics according to the serialization specification. We
+     * could theoretically include array classes here, but it is easier and clearer
+     * to just use `Class#isArray` instead.
+     */
+    private static final Set<Class<?>> nonSerializableLeafClasses = Set.of(
+        Class.class,
+        String.class,
+        ObjectStreamClass.class
+    );
+
+    private static boolean hasDefaultOrNoSerialization(Class<?> cl) {
+        return ! Serializable.class.isAssignableFrom(cl)
+            || cl.isInterface()
+            || cl.isArray()
+            || Proxy.isProxyClass(cl)
+            || Externalizable.class.isAssignableFrom(cl)
+            || cl.isEnum()
+            || cl.isRecord()
+            || cl.isHidden()
+            || nonSerializableLeafClasses.contains(cl);
+    }
+
     /**
      * Returns a MethodHandle for {@code writeReplace} on the serializable class
      * or null if no match found.
@@ -468,6 +513,28 @@ public class ReflectionFactory {
         }
     }
 
+    public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
+        if (! Serializable.class.isAssignableFrom(cl) || cl.isInterface() || cl.isEnum()) {
+            return null;
+        }
+
+        try {
+            Field field = cl.getDeclaredField("serialPersistentFields");
+            int mods = field.getModifiers();
+            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
+                return null;
+            }
+            if (field.getType() != ObjectStreamField[].class) {
+                return null;
+            }
+            field.setAccessible(true);
+            ObjectStreamField[] array = (ObjectStreamField[]) field.get(null);
+            return array != null && array.length > 0 ? array.clone() : array;
+        } catch (ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
     //--------------------------------------------------------------------------
     //
     // Internals only below this point
@@ -556,5 +623,4 @@ public class ReflectionFactory {
         return cl1.getClassLoader() == cl2.getClassLoader() &&
                 cl1.getPackageName() == cl2.getPackageName();
     }
-
 }

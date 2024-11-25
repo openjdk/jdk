@@ -28,7 +28,6 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Rectangle;
 import java.awt.event.PaintEvent;
-import java.security.AccessController;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.event.IgnorePaintEvent;

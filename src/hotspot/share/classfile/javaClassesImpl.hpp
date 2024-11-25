@@ -40,6 +40,7 @@
   STACKFRAMEINFO_INJECTED_FIELDS(macro)     \
   MODULE_INJECTED_FIELDS(macro)             \
   THREAD_INJECTED_FIELDS(macro)             \
+  VTHREAD_INJECTED_FIELDS(macro)            \
   INTERNALERROR_INJECTED_FIELDS(macro)      \
   STACKCHUNK_INJECTED_FIELDS(macro)
 
