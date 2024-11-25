@@ -315,7 +315,7 @@ public:
   const TypeAryPtr   *is_aryptr() const;         // Array oop
 
   template <typename TypeClass>
-  const TypeClass* is() const;
+  const TypeClass* cast() const;
 
   const TypeMetadataPtr   *isa_metadataptr() const;   // Returns null if not oop ptr type
   const TypeMetadataPtr   *is_metadataptr() const;    // Java-style GC'd pointer
@@ -2170,12 +2170,12 @@ inline bool Type::is_floatingpoint() const {
 }
 
 template <>
-inline const TypeInt* Type::is<TypeInt>() const {
+inline const TypeInt* Type::cast<TypeInt>() const {
   return is_int();
 }
 
 template <>
-inline const TypeLong* Type::is<TypeLong>() const {
+inline const TypeLong* Type::cast<TypeLong>() const {
   return is_long();
 }
 

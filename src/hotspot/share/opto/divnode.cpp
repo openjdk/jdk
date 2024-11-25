@@ -489,7 +489,7 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
     return nullptr;          // Skip it
   }
 
-  const TypeClass* tl = t->is<TypeClass>();
+  const TypeClass* tl = t->cast<TypeClass>();
   if (!tl) {
     return nullptr;
   }
@@ -1166,7 +1166,7 @@ static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   if (t == Type::TOP) {
     return nullptr;
   }
-  const TypeClass* ti = t->is<TypeClass>();
+  const TypeClass* ti = t->cast<TypeClass>();
 
   // Check for useless control input
   // Check for excluding mod-zero case
@@ -1221,8 +1221,8 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return bot;
   }
 
-  const TypeClass* i1 = t1->is<TypeClass>();
-  const TypeClass* i2 = t2->is<TypeClass>();
+  const TypeClass* i1 = t1->cast<TypeClass>();
+  const TypeClass* i2 = t2->cast<TypeClass>();
   if (i1->is_con() && i2->is_con()) {
     Unsigned au = static_cast<Unsigned>(i1->get_con());
     Unsigned bu = static_cast<Unsigned>(i2->get_con());
