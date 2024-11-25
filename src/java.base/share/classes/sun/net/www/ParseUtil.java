@@ -173,7 +173,7 @@ public final class ParseUtil {
      * represent.
      * @throws IllegalArgumentException if {@code s} could not be decoded
      */
-    public static String decode(String s) throws IllegalArgumentException {
+    public static String decode(String s) {
         int n = s.length();
         if ((n == 0) || (s.indexOf('%') < 0))
             return s;
