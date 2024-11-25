@@ -609,6 +609,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private MoveProvider getFigureMoveProvider() {
         return new MoveProvider() {
 
+            private boolean hasMoved = false; // Flag to track movement
+            private int startLayerY;
+
             private void setFigureShadow(Figure f) {
                 FigureWidget fw = getWidget(f);
                 Color c = f.getColor();
@@ -632,7 +635,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 pointerWidget.setOpaque(true);
             }
 
-            private int startLayerY;
 
             @Override
             public void movementStarted(Widget widget) {
@@ -640,6 +642,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
                 widget.bringToFront();
                 startLayerY = widget.getLocation().y;
+                hasMoved = false; // Reset the movement flag
                 Set<Figure> selectedFigures = model.getSelectedFigures();
                 if (selectedFigures.size() == 1) {
                     Figure selectedFigure = selectedFigures.iterator().next();
@@ -650,8 +653,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
             @Override
             public void movementFinished(Widget widget) {
-                if (layoutMover == null) return; // Do nothing if layoutMover is not available
-
+                if (layoutMover == null || !hasMoved) return; // Do nothing if layoutMover is not available or no movement occurred
                 rebuilding = true;
 
                 Set<Figure> movedFigures = new HashSet<>(model.getSelectedFigures());
@@ -697,6 +699,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             @Override
             public void setNewLocation(Widget widget, Point location) {
                 if (layoutMover == null) return; // Do nothing if layoutMover is not available
+                hasMoved = true; // Mark that a movement occurred
+
                 int shiftX = location.x - widget.getLocation().x;
                 int shiftY;
                 if (layoutMover.isFreeForm()) {
@@ -721,8 +725,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                     LineWidget pred = lw.getPredecessor();
                                     pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
                                     pred.revalidate();
-                                    lw.revalidate();
                                 }
+                                lw.revalidate();
                             }
                         }
                     }
@@ -755,6 +759,8 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     Point newLocation = new Point(fw.getLocation().x + shiftX -3, fw.getLocation().y + shiftY);
                     ActionFactory.createDefaultMoveProvider().setNewLocation(pointerWidget, newLocation);
                 }
+                connectionLayer.revalidate();
+                connectionLayer.repaint();
             }
         };
     }
