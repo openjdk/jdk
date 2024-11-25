@@ -25,9 +25,6 @@
 
 package javax.imageio.spi;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -731,8 +728,6 @@ class SubRegistry {
     // No way to express heterogeneous map, we want
     // Map<Class<T>, T>, where T is ?
     final Map<Class<?>, Object> map = new HashMap<>();
-    @SuppressWarnings("removal")
-    final Map<Class<?>, AccessControlContext> accMap = new HashMap<>();
 
     public SubRegistry(ServiceRegistry registry, Class<?> category) {
         this.registry = registry;
@@ -748,7 +743,6 @@ class SubRegistry {
             deregisterServiceProvider(oprovider);
         }
         map.put(provider.getClass(), provider);
-        accMap.put(provider.getClass(), AccessController.getContext());
         poset.add(provider);
         if (provider instanceof RegisterableService) {
             RegisterableService rs = (RegisterableService)provider;
@@ -773,7 +767,6 @@ class SubRegistry {
 
         if (provider == oprovider) {
             map.remove(provider.getClass());
-            accMap.remove(provider.getClass());
             poset.remove(provider);
             if (provider instanceof RegisterableService) {
                 RegisterableService rs = (RegisterableService)provider;
@@ -815,26 +808,17 @@ class SubRegistry {
         return (T)map.get(providerClass);
     }
 
-    @SuppressWarnings("removal")
     public synchronized void clear() {
         Iterator<Object> iter = map.values().iterator();
         while (iter.hasNext()) {
             Object provider = iter.next();
             iter.remove();
 
-            if (provider instanceof RegisterableService) {
-                RegisterableService rs = (RegisterableService)provider;
-                AccessControlContext acc = accMap.get(provider.getClass());
-                if (acc != null || System.getSecurityManager() == null) {
-                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                    rs.onDeregistration(registry, category);
-                        return null;
-                    }, acc);
-                }
+            if (provider instanceof RegisterableService rs) {
+                rs.onDeregistration(registry, category);
             }
         }
         poset.clear();
-        accMap.clear();
     }
 
     @SuppressWarnings("removal")

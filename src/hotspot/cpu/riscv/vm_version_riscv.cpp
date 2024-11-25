@@ -150,11 +150,12 @@ void VM_Version::common_initialize() {
   }
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
-    if (unaligned_access.value() != MISALIGNED_FAST) {
-      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
-    } else {
-      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, false);
-    }
+    FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
+      unaligned_access.value() != MISALIGNED_FAST);
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 
   // See JDK-8026049
@@ -233,7 +234,6 @@ void VM_Version::c2_initialize() {
 
   if (!UseRVV) {
     FLAG_SET_DEFAULT(MaxVectorSize, 0);
-    FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
   } else {
     if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
       warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",

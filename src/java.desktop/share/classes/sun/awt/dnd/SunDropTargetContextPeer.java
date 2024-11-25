@@ -224,18 +224,6 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         InvalidDnDOperationException
     {
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        try {
-            if (!dropInProcess && sm != null) {
-                sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-            }
-        } catch (Exception e) {
-            Thread currentThread = Thread.currentThread();
-            currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, e);
-            return null;
-        }
-
         Long lFormat = null;
         Transferable localTransferable = local;
 

@@ -97,7 +97,23 @@ void VM_Version::initialize() {
   intx cache_line_size = Dcache_lineSize(0);
 
 #ifdef COMPILER2
-  MaxVectorSize = 8;
+  int model_ix = get_model_index();
+
+  if ( model_ix >= 7 ) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVX)) {
+      FLAG_SET_ERGO(SuperwordUseVX, true);
+    }
+    if (model_ix > 7 && FLAG_IS_DEFAULT(UseSFPV) && SuperwordUseVX) {
+      FLAG_SET_ERGO(UseSFPV, true);
+    } else if (model_ix == 7 && UseSFPV) {
+      warning("UseSFPV specified, but needs at least Z14.");
+      FLAG_SET_DEFAULT(UseSFPV, false);
+    }
+  } else if (SuperwordUseVX) {
+    warning("SuperwordUseVX specified, but needs at least Z13.");
+    FLAG_SET_DEFAULT(SuperwordUseVX, false);
+  }
+  MaxVectorSize = SuperwordUseVX ? 16 : 8;
 #endif
 
   if (has_PrefetchRaw()) {
@@ -303,6 +319,12 @@ void VM_Version::initialize() {
   // Unaligned accesses are not atomic, of course.
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  }
+
+  // The OptoScheduling information is not maintained in s390.ad.
+  if (OptoScheduling) {
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
   }
 }
 

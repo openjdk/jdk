@@ -152,10 +152,6 @@ bool oopDesc::is_array_noinline()       const { return is_array();       }
 bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
 bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
 
-bool oopDesc::has_klass_gap() {
-  return UseCompressedClassPointers && !UseCompactObjectHeaders;
-}
-
 #if INCLUDE_CDS_JAVA_HEAP
 void oopDesc::set_narrow_klass(narrowKlass nk) {
   assert(CDSConfig::is_dumping_heap(), "Used by CDS only. Do not abuse!");
