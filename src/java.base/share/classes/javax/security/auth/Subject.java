@@ -1007,9 +1007,9 @@ public final class Subject implements java.io.Serializable {
         }
 
         public Iterator<E> iterator() {
-            final LinkedList<E> list = elements;
+            LinkedList<E> list = elements;
             return new Iterator<>() {
-                final ListIterator<E> i = list.listIterator(0);
+                ListIterator<E> i = list.listIterator(0);
 
                 public boolean hasNext() {
                     return i.hasNext();
@@ -1058,7 +1058,7 @@ public final class Subject implements java.io.Serializable {
                 return elements.add(o);
             else {
                 return false;
-        }
+            }
         }
 
         public boolean remove(Object o) {
@@ -1066,7 +1066,7 @@ public final class Subject implements java.io.Serializable {
             Objects.requireNonNull(o,
                     ResourcesMgr.getString("invalid.null.input.s."));
 
-            final Iterator<E> e = iterator();
+            Iterator<E> e = iterator();
             while (e.hasNext()) {
                 E next = e.next();
 
@@ -1083,7 +1083,7 @@ public final class Subject implements java.io.Serializable {
             Objects.requireNonNull(o,
                     ResourcesMgr.getString("invalid.null.input.s."));
 
-            final Iterator<E> e = iterator();
+            Iterator<E> e = iterator();
             while (e.hasNext()) {
                 E next = e.next();
 
@@ -1110,7 +1110,7 @@ public final class Subject implements java.io.Serializable {
             c = collectionNullClean(c);
 
             boolean modified = false;
-            final Iterator<E> e = iterator();
+            Iterator<E> e = iterator();
             while (e.hasNext()) {
                 E next = e.next();
 
@@ -1141,7 +1141,7 @@ public final class Subject implements java.io.Serializable {
             c = collectionNullClean(c);
 
             boolean modified = false;
-            final Iterator<E> e = iterator();
+            Iterator<E> e = iterator();
             while (e.hasNext()) {
                 E next = e.next();
 
@@ -1155,7 +1155,7 @@ public final class Subject implements java.io.Serializable {
         }
 
         public void clear() {
-            final Iterator<E> e = iterator();
+            Iterator<E> e = iterator();
             while (e.hasNext()) {
                 E next = e.next();
                 e.remove();
@@ -1281,7 +1281,7 @@ public final class Subject implements java.io.Serializable {
 
         @SuppressWarnings("unchecked")
         private void populateSet() {
-            final Iterator<?> iterator;
+            Iterator<?> iterator;
             switch(which) {
             case Subject.PRINCIPAL_SET:
                 iterator = Subject.this.principals.iterator();
