@@ -27,6 +27,7 @@ package sun.security.provider;
 
 import java.io.*;
 
+import java.security.PEMRecord;
 import java.security.cert.*;
 import java.util.*;
 
@@ -36,7 +37,6 @@ import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.DerValue;
-import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 import sun.security.x509.X509CRLImpl;
 import sun.security.x509.X509CertImpl;

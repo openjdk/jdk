@@ -127,15 +127,18 @@ public class Pem {
         int hyphen = (shortHeader ? 1 : 0);
         int eol = 0;
 
+        ByteArrayOutputStream os = new ByteArrayOutputStream(6);
         // Find starting hyphens
         do {
-            switch (is.read()) {
+            int d = is.read();
+            switch (d) {
                 case '-' -> hyphen++;
                 case -1 -> {
                     return null;
                 }
                 default -> hyphen = 0;
             }
+            os.write(d);
         } while (hyphen != 5);
 
         StringBuilder sb = new StringBuilder(64);
@@ -261,11 +264,17 @@ public class Pem {
                 "match: " + headerType + " " + footerType);
         }
 
-        return new PEMRecord(header, data);
+        // If there was data before finding the 5 dashes of the PEM header,
+        // backup 5 characters and save that data.
+        byte[] preData = null;
+        if (os.size() > 5) {
+            preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
+        }
+
+        return new PEMRecord(header, data, preData);
     }
 
     public static PEMRecord readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
-
 }

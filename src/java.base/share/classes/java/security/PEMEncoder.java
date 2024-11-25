@@ -30,7 +30,6 @@ import jdk.internal.javac.PreviewFeature;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
-import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 import sun.security.x509.AlgorithmId;
 
@@ -200,6 +199,8 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException(e);
                 }
             }
+            case PEMRecord rec -> pemEncoded(rec);
+
             default -> throw new IllegalArgumentException("PEM does not " +
                 "support " + de.getClass().getCanonicalName());
         };

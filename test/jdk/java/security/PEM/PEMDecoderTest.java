@@ -91,6 +91,92 @@ public class PEMDecoderTest {
         System.out.println("Signature/Verify:");
         PEMData.privList.forEach(PEMDecoderTest::testSignature);
         PEMData.oasList.forEach(PEMDecoderTest::testSignature);
+
+
+        // PEMRecord tests
+        test(PEMData.ecCSR);
+
+        DEREncodable result = test(PEMData.ecCSRWithData);
+        if (result instanceof PEMRecord rec) {
+            if (PEMData.preData.compareTo(new String(rec.leadingData())) != 0) {
+                System.err.println("expected: " + PEMData.preData);
+                System.err.println("received: " + new String(rec.leadingData()));
+                throw new AssertionError("ecCSRWithData preData wrong");
+            }
+            if (rec.pem().lastIndexOf("F") > rec.pem().length() - 5) {
+                System.err.println("received: " + rec.pem());
+                throw new AssertionError("ecCSRWithData: " +
+                    "End of PEM data has an unexpected character");
+            }
+        } else {
+            throw new AssertionError("ecCSRWithData didn't return a PEMRecord");
+        }
+
+        result = PEMDecoder.of().decode(PEMData.pubecpem.pem(), PEMRecord.class);
+        if (!(result instanceof PEMRecord)) {
+            throw new AssertionError("pubecpem didn't return a PEMRecord");
+        }
+        if (((PEMRecord) result).id().compareTo(PEMRecord.PUBLIC_KEY) != 0) {
+            throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
+        }
+
+        ByteArrayOutputStream ba = new ByteArrayOutputStream(2048);
+        OutputStreamWriter os = new OutputStreamWriter(ba);
+        os.write(PEMData.preData);
+        os.write(PEMData.pubecpem.pem());
+        os.write(PEMData.preData);
+        os.write(PEMData.pubecpem.pem());
+        os.write(PEMData.postData);
+        os.flush();
+        Stream<DEREncodable> stream = PEMDecoder.of().decodeFromStream(
+            new ByteArrayInputStream(ba.toByteArray()));
+        ArrayList<DEREncodable> list = new ArrayList<>(stream.toList());
+
+        //Supplier<Stream<DEREncodable>> list = (Supplier<Stream<DEREncodable>>) stream;
+        if (list.size() != 2) {
+            throw new AssertionError("count should be 2.  Was " +
+                list.size());
+        }
+        for (DEREncodable d : list) {
+            if (!(d instanceof ECPublicKey)) {
+                throw new AssertionError("item in stream did not" +
+                    " contain ECPublicKey.  Was " + d.toString());
+            }
+        }
+
+        os.write(PEMData.preData);
+        os.write(PEMData.ecprivpem.pem());
+        os.write(PEMData.preData);
+        os.write(PEMData.privpem.pem());
+        os.flush();
+        stream = PEMDecoder.of().decodeFromStream(
+            new ByteArrayInputStream(ba.toByteArray()), ECPrivateKey.class);
+        list = new ArrayList<>(stream.toList());
+
+        if (list.size() != 1) {
+            throw new AssertionError("count should be 2.  Was " +
+                list.size());
+        }
+        for (DEREncodable d : list) {
+            if (!(d instanceof ECPrivateKey)) {
+                throw new AssertionError("item in stream did not" +
+                    " contain ECPrivateKey.  Was " + d.toString());
+            }
+        }
+        os.write(PEMData.pubrsapem.pem(), 0, 120);
+        os.flush();
+        try {
+            stream = PEMDecoder.of().decodeFromStream(
+                new ByteArrayInputStream(ba.toByteArray()));
+            throw new AssertionError("Should have got a IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            ;
+        }
+        list = new ArrayList<>(stream.toList());
+        if (list.size() != 4) {
+            throw new AssertionError("count should be 4.  Was " +
+                list.size());
+        }
     }
 
     static void testFailure(PEMData.Entry entry) {

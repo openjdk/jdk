@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
-import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -175,9 +174,7 @@ public final class PEMDecoder {
                     yield kf.generatePrivate(
                         RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(pem.pem())));
                 }
-                default ->
-                    throw new IllegalArgumentException("Unsupported type or " +
-                        "not properly formatted PEM");
+                default -> pem;
             };
         } catch (GeneralSecurityException | IOException e) {
             throw new IllegalArgumentException(e);
