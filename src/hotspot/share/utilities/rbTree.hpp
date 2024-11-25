@@ -68,6 +68,16 @@ public:
     const K& key() const { return _key; }
     V& val() { return _value; }
 
+    // Unsafe operation, user needs to guarantee that:
+    // All nodes less than the previous key is also less than the new key.
+    // All nodes greater than the previous key is also greater than the new key.
+    void update_key(K& new_key) {
+    #ifdef ASSERT
+      assert(verify_key_update(new_key), "New key does not satisfy current tree conditions");
+    #endif // ASSERT
+      _key = new_key;
+    }
+
   private:
     RBNode(const K& k, const V& v)
         : _parent(nullptr), _left(nullptr), _right(nullptr), _color(Color::RED), _black_height(0),
@@ -270,6 +280,43 @@ public:
     }
 
 #ifdef ASSERT
+    bool verify_key_update(K new_key) {
+      RBNode* predecessor = _left;
+      RBNode* successor = _right;
+
+      if (predecessor != nullptr) {
+        while (predecessor->_right != nullptr) {
+          predecessor = predecessor->_right;
+        }
+      } else {
+        predecessor = _parent;
+        while (predecessor != nullptr && COMPARATOR::cmp(predecessor->key(), _key) >= 0) {
+          predecessor = predecessor->_parent;
+        }
+      }
+
+      if (successor != nullptr) {
+        while (successor->_left != nullptr) {
+          successor = successor->_left;
+        }
+      } else {
+        successor = _parent;
+        while (successor != nullptr && COMPARATOR::cmp(successor->key(), _key) <= 0) {
+          successor = successor->_parent;
+        }
+      }
+
+      bool is_valid = true;
+      if (predecessor != nullptr && COMPARATOR::cmp(predecessor->key(), _key) < 0) {
+        is_valid = false;
+      }
+      if (successor != nullptr && COMPARATOR::cmp(successor->key(), _key) > 0) {
+        is_valid = false;
+      }
+
+      return is_valid;
+    }
+
     bool is_correct(int num_blacks, RBNode* min, RBNode* max) const {
       if (_black_height != num_blacks) {
         return false;
@@ -622,7 +669,7 @@ public:
   RBTree() : _allocator(), _num_nodes(0), _num_outdated(false), _root(nullptr), _min(nullptr), _max(nullptr) {}
   ~RBTree() { this->remove_all(); }
 
-  size_t num_nodes() {
+  size_t size() {
     if (_num_outdated) {
       _num_nodes = _root->count_nodes();
       _num_outdated = false;
@@ -734,6 +781,38 @@ public:
       }
     }
     return candidate;
+  }
+
+  RBNode* closest_gt(const K& key) {
+    RBNode* candidate = nullptr;
+    RBNode* pos = _root;
+    while (pos != nullptr) {
+      int cmp_r = COMPARATOR::cmp(pos->key(), key);
+      if (cmp_r > 0) { // node > key
+        // Found a match, try to find a better one.
+        candidate = pos;
+        pos = pos->_left;
+      } else { // node <= key
+        pos = pos->_right;
+      }
+    }
+    return candidate;
+  }
+
+  struct Range {
+    RBNode* start;
+    RBNode* end;
+    Range(RBNode* start, RBNode* end)
+    : start(start), end(end) {}
+  };
+
+  // Return the range [start, end)
+  // where start->key() <= addr < end->key().
+  // Failure to find the range leads to start and/or end being null.
+  Range find_enclosing_range(K addr) {
+    RBNode* start = closest_leq(addr);
+    RBNode* end = closest_gt(addr);
+    return Range(start, end);
   }
 
   V* find(K& key) {
@@ -886,8 +965,8 @@ public:
     }
 
     const size_t actual_num_nodes = _root->count_nodes();
-    const size_t expected_num_nodes = num_nodes();
-    const int maximum_depth = log2i(num_nodes() + 1) * 2;
+    const size_t expected_num_nodes = size();
+    const int maximum_depth = log2i(size() + 1) * 2;
 
     assert(expected_num_nodes == actual_num_nodes, "unexpected number of nodes in rbtree. expected: " SIZE_FORMAT ", actual: " SIZE_FORMAT, expected_num_nodes, actual_num_nodes);
     assert(2 * black_nodes <= maximum_depth, "rbtree is too deep for its number of nodes. can be at most: " INT32_FORMAT ", but is: " INT32_FORMAT, maximum_depth, 2 * black_nodes);

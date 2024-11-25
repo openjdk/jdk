@@ -341,7 +341,7 @@ public:
     }
 
     verify_it(rbtree);
-    EXPECT_EQ(rbtree.num_nodes(), 0UL);
+    EXPECT_EQ(rbtree.size(), 0UL);
   }
 #endif // ASSERT
 
