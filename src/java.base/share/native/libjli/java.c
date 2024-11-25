@@ -660,6 +660,7 @@ JavaMain(void* _args)
         ret = 1;
     }
     LEAVE();
+    return ret;
 }
 
 /*
