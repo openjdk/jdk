@@ -328,7 +328,7 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
-  unsigned int u_value = (juint)c;
+  juint u_value = (juint)c;
   if (is_power_of_2(u_value + 1)) {
     LIR_Address::Scale scale = (LIR_Address::Scale) log2i_exact(u_value + 1);
     LIR_Address* addr = new LIR_Address(left, left, scale, 0, T_INT);
