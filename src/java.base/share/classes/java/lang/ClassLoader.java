@@ -1688,14 +1688,10 @@ public abstract class ClassLoader {
     /**
      * Called by VM for reading class bytes.
      */
-    private byte[] getResourceAsByteArray(String name) {
+    private byte[] getResourceAsByteArray(String name) throws IOException {
         Objects.requireNonNull(name);
         InputStream is = getResourceAsStream(name);
-        try {
-            return is != null ? is.readAllBytes() : null;
-        } catch (IOException e) {
-            return null;
-        }
+        return is != null ? is.readAllBytes() : null;
     }
 
     /**

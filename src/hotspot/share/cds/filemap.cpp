@@ -2715,7 +2715,6 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
 
   // The result should be a [B
   assert(obj->is_typeArray(), "just checking");
-  assert(TypeArrayKlass::cast(obj->klass())->element_type() == T_BYTE, "just checking");
 
   // copy from byte[] to a buffer
   typeArrayOop ba = typeArrayOop(obj);
@@ -2723,8 +2722,6 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
   u1* buffer = NEW_RESOURCE_ARRAY(u1, len);
   ArrayAccess<>::arraycopy_to_native<>(ba, typeArrayOopDesc::element_offset<jbyte>(0), buffer, len);
 
-  return new ClassFileStream(buffer,
-                             len,
-                             cpe->name());
+  return new ClassFileStream(buffer, len, cpe->name());
 }
 #endif
