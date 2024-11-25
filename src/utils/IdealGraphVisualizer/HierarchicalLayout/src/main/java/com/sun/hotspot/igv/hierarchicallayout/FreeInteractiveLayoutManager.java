@@ -41,6 +41,12 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     private final Random random = new Random(42);
 
+    // Constants for offsets and displacements
+    private static final int MAX_OFFSET_AROUND_NEIGHBOR = 50; // Max offset for random positioning around a neighbor
+    private static final int MAX_OFFSET_AROUND_ORIGIN = 100; // Max offset for random positioning around origin
+    private static final int DISPLACEMENT_RANGE_BARYCENTER = 20; // Displacement range for barycenter calculation
+    private static final int DISPLACEMENT_RANGE_SINGLE = 100;
+
     // Create a comparator to sort nodes by the number of unassigned neighbors
     private final Comparator<LayoutNode> LeastUnassignedNeighborsComparator = Comparator.comparingInt(node -> {
         Vertex vertex = node.getVertex();
@@ -128,12 +134,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         }
     }
 
-    // Constants for offsets and displacements
-    private static final int MAX_OFFSET_AROUND_NEIGHBOR = 50; // Max offset for random positioning around a neighbor
-    private static final int MAX_OFFSET_AROUND_ORIGIN = 100; // Max offset for random positioning around origin
-    private static final int DISPLACEMENT_RANGE_BARYCENTER = 20; // Displacement range for barycenter calculation
-    private static final int DISPLACEMENT_RANGE_REFINEMENT = 10; // Fine displacement range for refinement
-
     public void positionNewLayoutNodes(List<LayoutNode> newLayoutNodes) {
         Random random = new Random();
 
@@ -153,8 +153,8 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
             if (!assignedNeighbors.isEmpty()) {
                 if (assignedNeighbors.size() == 1) {
-                    // Single neighbor: Random position around the neighbor
-                    setRandomPositionAroundNode(node, assignedNeighbors.get(0));
+                    // Single neighbor: position around the neighbor
+                    setPositionAroundSingleNode(node, assignedNeighbors.get(0), DISPLACEMENT_RANGE_SINGLE);
                 } else {
                     // Multiple neighbors: Calculate barycenter with displacement
                     calculateBarycenterWithDisplacement(node, assignedNeighbors, DISPLACEMENT_RANGE_BARYCENTER);
@@ -171,6 +171,9 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         // Second pass: Refine positions based on neighbor degree
         newLayoutNodes.sort(LAYOUT_NODE_DEGREE_COMPARATOR.reversed());
 
+        // Collect all nodes (existing and new)
+        Collection<LayoutNode> allNodes = layoutNodes.values();
+
         for (LayoutNode node : newLayoutNodes) {
             Vertex vertex = node.getVertex();
 
@@ -183,8 +186,8 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
             }
 
             if (!assignedNeighbors.isEmpty()) {
-                // Refine position based on weighted barycenter
-                calculateBarycenterWithDisplacement(node, assignedNeighbors, DISPLACEMENT_RANGE_REFINEMENT);
+                // Refine position based on force-based method
+                applyForceBasedAdjustment(node, assignedNeighbors, allNodes);
             }
 
             // Ensure node's position remains updated in the layout
@@ -192,10 +195,84 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         }
     }
 
-    // Utility method: Random position around a given node
-    private void setRandomPositionAroundNode(LayoutNode node, LayoutNode neighbor) {
+    private void applyForceBasedAdjustment(LayoutNode node, List<LayoutNode> assignedNeighbors, Collection<LayoutNode> allNodes) {
+        // Constants for force-based adjustment
+        final int ITERATIONS = 50;
+        final double REPULSION_CONSTANT = 1000;
+        final double SPRING_CONSTANT = 0.2;
+        final double DAMPING = 0.8;
+        final double MAX_DISPLACEMENT = 10;
+        double IDEAL_LENGTH = 50;
+        IDEAL_LENGTH = 50 / Math.log(prevGraph.getAllLinks(node.getVertex()).size() + 1);
+
+        double posX = node.getX();
+        double posY = node.getY();
+        double dx = 0, dy = 0; // Displacement
+
+        for (int i = 0; i < ITERATIONS; i++) {
+            double netForceX = 0;
+            double netForceY = 0;
+
+            // Repulsive forces from all other nodes
+            for (LayoutNode otherNode : allNodes) {
+                if (otherNode == node) continue; // Skip self
+
+                double deltaX = posX - otherNode.getX();
+                double deltaY = posY - otherNode.getY();
+                double distanceSquared = deltaX * deltaX + deltaY * deltaY + 0.01; // Prevent division by zero
+                double distance = Math.sqrt(distanceSquared);
+
+                // Repulsive force (Coulomb's law)
+                double repulsiveForce = REPULSION_CONSTANT / distanceSquared;
+                netForceX += (deltaX / distance) * repulsiveForce;
+                netForceY += (deltaY / distance) * repulsiveForce;
+            }
+
+            // Attractive forces to assigned neighbors
+            for (LayoutNode neighbor : assignedNeighbors) {
+                double deltaX = neighbor.getX() - posX;
+                double deltaY = neighbor.getY() - posY;
+                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY + 0.01); // Prevent division by zero
+
+                // Attractive force (Hooke's law)
+                double idealLength = 100; // Adjust as necessary
+                double displacement = distance - idealLength;
+                double attractiveForce = SPRING_CONSTANT * displacement;
+                netForceX += (deltaX / distance) * attractiveForce;
+                netForceY += (deltaY / distance) * attractiveForce;
+            }
+
+            // Update displacement with damping
+            dx = (dx + netForceX) * DAMPING;
+            dy = (dy + netForceY) * DAMPING;
+
+            // Update node position
+            posX += dx;
+            posY += dy;
+        }
+
+        // Set final position
+        node.setX((int) posX);
+        node.setY((int) posY);
+    }
+
+
+    // Utility method: position around a given node
+    private void setPositionAroundSingleNode(LayoutNode node, LayoutNode neighbor, int displacement) {
+        boolean neighborIsPredecessor = prevGraph.isPredecessorVertex(node.getVertex(), neighbor.getVertex());
+        boolean neighborIsSuccessor = prevGraph.isSuccessorVertex(node.getVertex(), neighbor.getVertex());
+
+        int shiftY = 0;
+        if (neighborIsPredecessor) {
+            shiftY = displacement;
+        } else if (neighborIsSuccessor) {
+            shiftY = -displacement;
+        }
+        assert shiftY != 0;
+
+
+        int randomY = neighbor.getY() + random.nextInt(MAX_OFFSET_AROUND_NEIGHBOR + 1) + shiftY;
         int randomX = neighbor.getX() + random.nextInt(MAX_OFFSET_AROUND_NEIGHBOR + 1);
-        int randomY = neighbor.getY() + random.nextInt(MAX_OFFSET_AROUND_NEIGHBOR + 1);
         node.setX(randomX);
         node.setY(randomY);
     }
