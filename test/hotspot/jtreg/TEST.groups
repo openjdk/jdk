@@ -56,6 +56,7 @@ hotspot_runtime_no_cds = \
 hotspot_runtime_non_cds_mode = \
   runtime \
   -runtime/cds/CheckSharingWithDefaultArchive.java \
+  -runtime/cds/appcds/aotClassLinking/BulkLoaderTest.java \
   -runtime/cds/appcds/dynamicArchive/DynamicSharedSymbols.java \
   -runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchive.java \
   -runtime/cds/appcds/jcmd
@@ -430,6 +431,7 @@ hotspot_cds_only = \
 
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
+ -runtime/cds/appcds/applications \
  -runtime/cds/appcds/cacheObject \
  -runtime/cds/appcds/complexURI \
  -runtime/cds/appcds/customLoader \
@@ -447,10 +449,12 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/jvmti/redefineClasses/OldClassAndRedefineClass.java \
  -runtime/cds/appcds/lambdaForm/DefaultClassListLFInvokers.java \
  -runtime/cds/appcds/methodHandles \
+ -runtime/cds/appcds/aotClassLinking/BulkLoaderTest.java \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/resolvedConstants \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
  -runtime/cds/appcds/BadBSM.java \
+ -runtime/cds/appcds/CommandLineFlagCombo.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/DumpRuntimeClassesTest.java \
@@ -518,6 +522,61 @@ hotspot_cds_epsilongc = \
   runtime/cds/appcds/jigsaw \
   runtime/cds/appcds/loaderConstraints
 
+# Run CDS tests with -XX:+AOTClassLinking. This should include most CDS tests, except for
+# those that rely on redefining classes that are already archived.
+hotspot_aot_classlinking = \
+  runtime/cds \
+ -runtime/cds/appcds/aotClassLinking \
+ -runtime/cds/appcds/BadBSM.java \
+ -runtime/cds/appcds/cacheObject/ArchivedIntegerCacheTest.java \
+ -runtime/cds/appcds/cacheObject/ArchivedModuleCompareTest.java \
+ -runtime/cds/appcds/CDSandJFR.java \
+ -runtime/cds/appcds/customLoader/HelloCustom_JFR.java \
+ -runtime/cds/appcds/customLoader/ParallelTestMultiFP.java \
+ -runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
+ -runtime/cds/appcds/customLoader/SameNameInTwoLoadersTest.java \
+ -runtime/cds/appcds/DumpClassListWithLF.java \
+ -runtime/cds/appcds/dynamicArchive/ModulePath.java \
+ -runtime/cds/appcds/dynamicArchive/LambdaInBaseArchive.java \
+ -runtime/cds/appcds/dynamicArchive/LambdasInTwoArchives.java \
+ -runtime/cds/appcds/HelloExtTest.java \
+ -runtime/cds/appcds/javaldr/AnonVmClassesDuringDump.java \
+ -runtime/cds/appcds/javaldr/GCDuringDump.java \
+ -runtime/cds/appcds/javaldr/LockDuringDump.java \
+ -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
+ -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
+ -runtime/cds/appcds/jigsaw/modulepath/AddOpens.java \
+ -runtime/cds/appcds/jigsaw/modulepath/AddModules.java \
+ -runtime/cds/appcds/jigsaw/modulepath/JvmtiAddPath.java \
+ -runtime/cds/appcds/jigsaw/modulepath/MainModuleOnly.java \
+ -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP.java \
+ -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndCP_JFR.java \
+ -runtime/cds/appcds/jigsaw/modulepath/ModulePathAndFMG.java \
+ -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \
+ -runtime/cds/appcds/jigsaw/overridetests/OverrideTests.java \
+ -runtime/cds/appcds/jigsaw/RedefineClassesInModuleGraph.java \
+ -runtime/cds/appcds/JvmtiAddPath.java \
+ -runtime/cds/appcds/jvmti \
+ -runtime/cds/appcds/LambdaProxyClasslist.java \
+ -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
+ -runtime/cds/appcds/redefineClass \
+ -runtime/cds/appcds/resolvedConstants/AOTLinkedLambdas.java \
+ -runtime/cds/appcds/resolvedConstants/AOTLinkedVarHandles.java \
+ -runtime/cds/appcds/resolvedConstants/ResolvedConstants.java \
+ -runtime/cds/appcds/RewriteBytecodesTest.java \
+ -runtime/cds/appcds/SpecifySysLoaderProp.java \
+ -runtime/cds/appcds/StaticArchiveWithLambda.java \
+ -runtime/cds/appcds/TestEpsilonGCWithCDS.java \
+ -runtime/cds/appcds/TestParallelGCWithCDS.java \
+ -runtime/cds/appcds/TestSerialGCWithCDS.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
+ -runtime/cds/appcds/TestWithProfiler.java \
+ -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \
+ -runtime/cds/serviceability/ReplaceCriticalClasses.java \
+ -runtime/cds/serviceability/transformRelatedClasses/TransformInterfaceAndImplementor.java \
+ -runtime/cds/serviceability/transformRelatedClasses/TransformSuperAndSubClasses.java \
+ -runtime/cds/serviceability/transformRelatedClasses/TransformSuperSubTwoPckgs.java
+
 # needs -nativepath:<output>/images/test/hotspot/jtreg/native/
 hotspot_metaspace = \
   gtest/MetaspaceGtests.java \
@@ -536,6 +595,10 @@ tier1_runtime_appcds = \
 tier1_runtime_appcds_exclude = \
   runtime/cds/appcds/ \
   -:tier1_runtime_appcds
+
+tier1_runtime_no_cds = \
+   :tier1_runtime \
+   -runtime/cds
 
 # This group should be executed with "jtreg -Dtest.cds.run.with.jfr=true ..."
 # to test interaction between AppCDS and JFR. It also has the side effect of

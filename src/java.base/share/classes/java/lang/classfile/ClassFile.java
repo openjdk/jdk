@@ -43,7 +43,6 @@ import java.util.function.Function;
 
 import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.CD_module_info;
@@ -53,9 +52,8 @@ import static jdk.internal.constant.ConstantUtils.CD_module_info;
  * A {@code ClassFile} has a set of options that condition how parsing and
  * generation is done.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFile
         permits ClassFileImpl {
 
@@ -84,9 +82,8 @@ public sealed interface ClassFile
      * An option that affects the parsing and writing of classfiles.
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface Option {
     }
 
@@ -94,9 +91,8 @@ public sealed interface ClassFile
      * Option describing attribute mappers for custom attributes.
      * Default is only to process standard attributes.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface AttributeMapperOption extends Option
             permits ClassFileImpl.AttributeMapperOptionImpl {
 
@@ -119,9 +115,8 @@ public sealed interface ClassFile
      * Option describing the class hierarchy resolver to use when generating
      * stack maps.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyResolverOption extends Option
             permits ClassFileImpl.ClassHierarchyResolverOptionImpl {
 
@@ -150,9 +145,8 @@ public sealed interface ClassFile
      * Default is {@code SHARED_POOL} to preserve the original constant
      * pool.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ConstantPoolSharingOption implements Option {
 
         /** Preserves the original constant pool when transforming classfile */
@@ -167,9 +161,8 @@ public sealed interface ClassFile
      * Default is {@code PATCH_DEAD_CODE} to automatically patch out unreachable
      * code with NOPs.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadCodeOption implements Option {
 
         /** Patch unreachable code */
@@ -188,9 +181,8 @@ public sealed interface ClassFile
      * Setting this option to {@code DROP_DEAD_LABELS} filters the above
      * elements instead.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadLabelsOption implements Option {
 
         /** Fail on unresolved labels */
@@ -207,9 +199,8 @@ public sealed interface ClassFile
      * reduce the overhead of parsing or transforming classfiles.
      * Default is {@code PASS_DEBUG} to process debug elements.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DebugElementsOption implements Option {
 
         /** Process debug elements */
@@ -225,9 +216,8 @@ public sealed interface ClassFile
      * classfiles.
      * Default is {@code PASS_LINE_NUMBERS} to process line numbers.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum LineNumbersOption implements Option {
 
         /** Process line numbers */
@@ -243,9 +233,8 @@ public sealed interface ClassFile
      * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
      * instructions.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ShortJumpsOption implements Option {
 
         /** Automatically convert short jumps to long when necessary */
@@ -262,9 +251,8 @@ public sealed interface ClassFile
      * {@link #JAVA_6_VERSION} the stack maps may not be generated.
      * @jvms 4.10.1 Verification by Type Checking
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum StackMapsOption implements Option {
 
         /** Generate stack maps when required */
@@ -284,9 +272,8 @@ public sealed interface ClassFile
      * Default is {@code PASS_ALL_ATTRIBUTES} to process all original attributes.
      * @see AttributeMapper.AttributeStability
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum AttributesProcessingOption implements Option {
 
         /** Process all original attributes during transformation */
@@ -648,16 +635,10 @@ public sealed interface ClassFile
     /** The class major version of JAVA_22. */
     int JAVA_22_VERSION = 66;
 
-    /**
-     * The class major version of JAVA_23.
-     * @since 23
-     */
+    /** The class major version of JAVA_23. */
     int JAVA_23_VERSION = 67;
 
-    /**
-     * The class major version of JAVA_24.
-     * @since 24
-     */
+    /** The class major version of JAVA_24. */
     int JAVA_24_VERSION = 68;
 
     /**
