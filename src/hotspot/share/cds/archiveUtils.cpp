@@ -399,8 +399,6 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
   return _base_offset + seg_idx * _max_size_in_bytes;
 }
 
-ArchiveWorkers ArchiveWorkers::_workers;
-
 ArchiveWorkers::ArchiveWorkers() :
         _start_semaphore(0),
         _end_semaphore(0),
@@ -412,8 +410,12 @@ ArchiveWorkers::ArchiveWorkers() :
         _task(nullptr) {
 }
 
+ArchiveWorkers::~ArchiveWorkers() {
+  assert(Atomic::load(&_state) == SHUTDOWN, "Should be shutdown first");
+}
+
 void ArchiveWorkers::initialize() {
-  assert(Atomic::load(&_state) == NOT_READY, "Should be");
+  assert(Atomic::load(&_state) == NOT_READY, "Should be not ready yet");
 
   Atomic::store(&_num_workers, max_workers());
   Atomic::store(&_state, READY);
@@ -479,7 +481,7 @@ void ArchiveWorkers::signal_worker_if_needed() {
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   assert((Atomic::load(&_state) == READY) ||
          ((Atomic::load(&_state) == SHUTDOWN) && (task == &_shutdown_task)),
-         "Should be in correct state");
+         "Should be ready");
   assert(Atomic::load(&_task) == nullptr, "Should not have running tasks");
 
   if (is_parallel()) {
@@ -545,6 +547,15 @@ void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
 
 bool ArchiveWorkers::run_as_worker() {
   assert(is_parallel(), "Should be in parallel mode");
+
+  // Wait for tasks. Normally, nothing prevents a worker to circle back here and
+  // claim another permit from the semaphore, while other workers are lagging behind.
+  // This happens more often when workers are still starting up. While inconvenient,
+  // this is still correct, as long as pool is not going for shutdown.
+  //
+  // When we are going for shutdown, then every worker exits after processing the shutdown
+  // task. This guarantees every worker gets here only once, and shutdown would not complete
+  // until all straggling threads pass through this semaphore.
   _start_semaphore.wait();
 
   // Avalanche wakeups: each worker signals two others.
@@ -557,7 +568,7 @@ bool ArchiveWorkers::run_as_worker() {
   // All work done in threads should be visible to caller.
   OrderAccess::fence();
 
-  // Signal the pool the tasks are complete, if this is the last worker.
+  // Signal the pool the tasks are complete, if this was the last running worker.
   if (Atomic::sub(&_running_workers, 1, memory_order_relaxed) == 0) {
     _end_semaphore.signal();
   }

@@ -1088,9 +1088,6 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
 
-  // We are about to open the archives. Initialize workers now.
-  ArchiveWorkers::workers()->initialize();
-
   FileMapInfo* static_mapinfo = open_static_archive();
   FileMapInfo* dynamic_mapinfo = nullptr;
 
@@ -1681,9 +1678,6 @@ void MetaspaceShared::initialize_shared_spaces() {
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
-
-  // Archive was fully read. Workers are no longer needed.
-  ArchiveWorkers::workers()->shutdown();
 
   LogStreamHandle(Info, cds) lsh;
   if (lsh.is_enabled()) {

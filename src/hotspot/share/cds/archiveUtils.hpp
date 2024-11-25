@@ -371,14 +371,12 @@ public:
 // the normal GC worker pool.
 class ArchiveWorkers {
   friend class ArchiveWorkerThread;
+  friend class ArchiveWorkersUseMark;
 private:
   // Target number of chunks per worker. This should be large enough to even
   // out work imbalance, and small enough to keep bookkeeping overheads low.
   static constexpr int CHUNKS_PER_WORKER = 4;
   static int max_workers();
-
-  // Global shared instance. Can be uninitialized, can be shut down.
-  static ArchiveWorkers _workers;
 
   ArchiveWorkerShutdownTask _shutdown_task;
   Semaphore _start_semaphore;
@@ -404,12 +402,28 @@ private:
   bool is_parallel();
 
   ArchiveWorkers();
-
-public:
-  static ArchiveWorkers* workers() { return &_workers; }
+  ~ArchiveWorkers();
   void initialize();
   void shutdown();
   void run_task(ArchiveWorkerTask* task);
 };
+
+// State object to properly initialize the archive workers before
+// use and shut them down after use.
+class ArchiveWorkersUseMark : public StackObj {
+private:
+  ArchiveWorkers _workers;
+public:
+  ArchiveWorkersUseMark() {
+    _workers.initialize();
+  }
+  ~ArchiveWorkersUseMark() {
+    _workers.shutdown();
+  }
+  void run_task(ArchiveWorkerTask* task) {
+    _workers.run_task(task);
+  }
+};
+
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP
