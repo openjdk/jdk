@@ -82,12 +82,13 @@ public class ClassPathUnusableURLs {
                 .resolve("foo.jar");
         final Manifest manifest = new Manifest();
         manifest.getMainAttributes().putValue("Manifest-Version", "1.0");
-        try (final OutputStream fos = Files.newOutputStream(JAR_FILE_IN_EMOJI_DIR);
-             final JarOutputStream jaros = new JarOutputStream(fos, manifest)) {
+        try (OutputStream fos = Files.newOutputStream(JAR_FILE_IN_EMOJI_DIR);
+             JarOutputStream jos = new JarOutputStream(fos, manifest)) {
+
             final JarEntry jarEntry = new JarEntry(RESOURCE_NAME);
-            jaros.putNextEntry(jarEntry);
-            jaros.write("hello".getBytes(US_ASCII));
-            jaros.closeEntry();
+            jos.putNextEntry(jarEntry);
+            jos.write("hello".getBytes(US_ASCII));
+            jos.closeEntry();
         }
         // Even if the resource is present in more than one classpath element,
         // we expect it to be found by the URLClassPath only in the path which has just ascii
