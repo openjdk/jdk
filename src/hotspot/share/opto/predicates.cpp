@@ -211,7 +211,7 @@ class OpaqueLoopNodesVerifier : public BFSActions {
   // - Always an OpaqueLoopInitNode
   // - Only an OpaqueLoopStrideNode for the last value.
   void verify(const TemplateAssertionPredicate& template_assertion_predicate) {
-    DataNodeInputsBFS bfs(*this);
+    DataNodeBFS bfs(*this);
     bfs.run(template_assertion_predicate.opaque_node());
     if (template_assertion_predicate.is_last_value()) {
       assert(_found_init && _found_stride,
@@ -224,7 +224,7 @@ class OpaqueLoopNodesVerifier : public BFSActions {
 
   // An Initialized Assertion Predicate never has any OpaqueLoop*Nodes.
   void verify(const InitializedAssertionPredicate& initialized_assertion_predicate) {
-    DataNodeInputsBFS bfs(*this);
+    DataNodeBFS bfs(*this);
     bfs.run(initialized_assertion_predicate.opaque_node());
     assert(!_found_init && !_found_stride,
            "must neither find OpaqueLoopInit nor OpaqueLoopStride for Initialized Assertion Predicate");
@@ -491,7 +491,7 @@ class ReplaceOpaqueStrideInput : public BFSActions {
   NONCOPYABLE(ReplaceOpaqueStrideInput);
 
   void replace_for(OpaqueTemplateAssertionPredicateNode* opaque_node) {
-    DataNodeInputsBFS bfs(*this);
+    DataNodeBFS bfs(*this);
     bfs.run(opaque_node);
   }
 
@@ -905,10 +905,9 @@ IfTrueNode* CreateAssertionPredicatesVisitor::initialize_from_template(
     const TemplateAssertionPredicate& template_assertion_predicate) const {
   DEBUG_ONLY(template_assertion_predicate.verify();)
   IfNode* template_head = template_assertion_predicate.head();
-  InitializedAssertionPredicateCreator initialized_assertion_predicate_creator(_phase);
-  IfTrueNode* initialized_predicate = initialized_assertion_predicate_creator.create_from_template(template_head,
-                                                                                                   _new_control,
-                                                                                                   _init, _stride);
+  InitializedAssertionPredicateCreator initialized_assertion_predicate(_phase);
+  IfTrueNode* initialized_predicate = initialized_assertion_predicate.create_from_template(template_head,_new_control,
+                                                                                           _init, _stride);
   DEBUG_ONLY(InitializedAssertionPredicate::verify(initialized_predicate);)
   template_assertion_predicate.rewire_loop_data_dependencies(initialized_predicate, _node_in_loop_body, _phase);
   return initialized_predicate;
