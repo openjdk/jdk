@@ -59,7 +59,7 @@ public class HoveringAndDraggingTest {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testUI(initialize())
+                .testUI(HoveringAndDraggingTest::initialize)
                 .build()
                 .awaitAndCheck();
     }
@@ -71,7 +71,7 @@ public class HoveringAndDraggingTest {
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 3; ++x) {
                 if (x == 1 && y == 1) {
-                    panel.add(new TextArea(bigString()));
+                    panel.add(new TextArea(getLongString()));
                 } else {
                     panel.add(new Panel());
                 }
@@ -84,18 +84,14 @@ public class HoveringAndDraggingTest {
         return frame;
     }
 
-    static String bigString() {
-        String s = "";
-        for (int lines = 0; ; ++lines) {
+    static String getLongString() {
+        StringBuilder s = new StringBuilder();
+        for (int lines = 0; lines < 50; ++lines) {
             for (int symbols = 0; symbols < 100; ++symbols) {
-                s += "0";
+                s.append("0".repeat(100));
             }
-            if (lines < 50) {
-                s += "\n";
-            } else {
-                break;
-            }
+            s.append("\n");
         }
-        return s;
+        return s.toString();
     }
 }
