@@ -428,7 +428,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   assert(is_shared(), "should always be set for shared constant pools");
   if (is_for_method_handle_intrinsic()) {
     // See the same check in remove_unshareable_info() below.
-    assert(cache() == NULL, "must not have cpCache");
+    assert(cache() == nullptr, "must not have cpCache");
     return;
   }
   assert(_cache != nullptr, "constant pool _cache should not be null");
@@ -474,7 +474,7 @@ void ConstantPool::remove_unshareable_info() {
     // This CP was created by Method::make_method_handle_intrinsic() and has nothing
     // that need to be removed/restored. It has no cpCache since the intrinsic methods
     // don't have any bytecodes.
-    assert(cache() == NULL, "must not have cpCache");
+    assert(cache() == nullptr, "must not have cpCache");
     return;
   }
 
