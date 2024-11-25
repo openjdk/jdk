@@ -68,11 +68,8 @@ public class ExtendedRobot extends Robot {
      * @throws  AWTException if the platform configuration does not allow low-level input
      *          control. This exception is always thrown when
      *          GraphicsEnvironment.isHeadless() returns true
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      *
      * @see     java.awt.GraphicsEnvironment#isHeadless
-     * @see     SecurityManager#checkPermission
-     * @see     java.awt.AWTPermission
      */
     public ExtendedRobot() throws AWTException {
         super();
@@ -99,12 +96,9 @@ public class ExtendedRobot extends Robot {
      *          GraphicsEnvironment.isHeadless() returns true.
      * @throws  IllegalArgumentException if {@code screen} is not a screen
      *          GraphicsDevice.
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      *
      * @see     java.awt.GraphicsEnvironment#isHeadless
      * @see     GraphicsDevice
-     * @see     SecurityManager#checkPermission
-     * @see     java.awt.AWTPermission
      */
     public ExtendedRobot(GraphicsDevice screen) throws AWTException {
         super(screen);
