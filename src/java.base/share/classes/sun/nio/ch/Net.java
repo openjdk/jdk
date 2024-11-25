@@ -190,30 +190,10 @@ public class Net {
         return new SocketException(msg);
     }
 
-    static void translateException(Exception x,
-                                   boolean unknownHostForUnresolved)
-        throws IOException
-    {
+    static void translateException(Exception x) throws IOException {
         if (x instanceof IOException ioe)
             throw ioe;
-        // Throw UnknownHostException from here since it cannot
-        // be thrown as a SocketException
-        if (unknownHostForUnresolved &&
-            (x instanceof UnresolvedAddressException))
-        {
-             throw new UnknownHostException();
-        }
         translateToSocketException(x);
-    }
-
-    static void translateException(Exception x)
-        throws IOException
-    {
-        translateException(x, false);
-    }
-
-    private static InetSocketAddress getLoopbackAddress(int port) {
-        return new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
     }
 
     private static final InetAddress ANY_LOCAL_INET4ADDRESS;
