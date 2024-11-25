@@ -838,7 +838,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 }
                 // Read the random (32 bytes)
                 if (fragmentData.remaining() < 32) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
                         SSLLogger.fine("Rejected client hello fragment (bad random len) " +
                                 "fo=" + hsf.fragmentOffset + " fl=" + hsf.fragmentLength);
                     }
@@ -862,7 +862,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 // Cookie
                 byte[] cookie = Record.getBytes8(fragmentData);
                 if (firstHello && cookie.length != 0) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
                         SSLLogger.fine("Rejected initial client hello fragment (bad cookie len) " +
                                 "fo=" + hsf.fragmentOffset + " fl=" + hsf.fragmentLength);
                     }
@@ -898,7 +898,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     }
                 }
             } catch (IOException ioe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
                     SSLLogger.fine("Rejected client hello fragment " +
                             "fo=" + hsf.fragmentOffset + " fl=" + hsf.fragmentLength);
                 }
