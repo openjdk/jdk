@@ -280,7 +280,7 @@ public:
     constexpr const int num_nodes = 100;
     RBTreeCHeap<int, int, Cmp> tree;
     for (int n = 0; n <= num_nodes; n++) {
-      tree.insert(n, n);
+      tree.upsert(n, n);
     }
 
     RBTreeCHeap<int, int, Cmp>::RBTreeIterator iterator(&tree);
@@ -315,7 +315,7 @@ public:
     for (int i = 0; i < size; i++) {
       int r = os::random();
       if (r % 2 == 0) {
-        rbtree.insert(allocations.at(i), allocations.at(i));
+        rbtree.upsert(allocations.at(i), allocations.at(i));
       }
       if (i % 100 == 0) {
         verify_it(rbtree);
@@ -382,7 +382,7 @@ TEST_VM_F(RBTreeTest, InsertRemoveVerify) {
     for (int n_t2 = 0; n_t2 < n_t1; n_t2++) {
       RBTreeCHeap<int, int, Cmp> tree;
       for (int i = 0; i < n_t1; i++) {
-        tree.insert(i, i);
+        tree.upsert(i, i);
       }
       for (int i = 0; i < n_t2; i++) {
         tree.remove(i);

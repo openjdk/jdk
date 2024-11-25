@@ -44,7 +44,6 @@ class RBTree {
   friend class NMTVMATreeTest;
 
 private:
-  enum Color { BLACK, RED };
 
   ALLOCATOR _allocator;
   size_t _num_nodes;
@@ -58,8 +57,7 @@ public:
     RBNode* _parent;
     RBNode* _left;
     RBNode* _right;
-    Color _color;
-    int _black_height;
+    unsigned int _black_height; // MSB encodes Red/Black, 0 - red, 1 - black
 
     K _key;
     V _value;
@@ -68,9 +66,28 @@ public:
     const K& key() const { return _key; }
     V& val() { return _value; }
 
+    unsigned int black_height() const {
+      return _black_height & (-1U >> 1);
+    }
+
+    bool is_black() const  {
+      return (_black_height & ~(-1U >> 1)) != 0;
+    }
+
+    bool is_red() const {
+      return (_black_height & ~(-1U >> 1)) == 0;
+    }
+
   private:
+    void color_black() {
+      _black_height |= ~(-1U >> 1);
+    }
+
+    void color_red() {
+      _black_height &= (-1U >> 1);
+    }
     RBNode(const K& k, const V& v)
-        : _parent(nullptr), _left(nullptr), _right(nullptr), _color(Color::RED), _black_height(0),
+        : _parent(nullptr), _left(nullptr), _right(nullptr), _black_height(0U),
           _key(k), _value(v) {}
 
     bool is_right_child() {
@@ -171,12 +188,12 @@ public:
     }
 
 #ifdef ASSERT
-    bool is_correct(int num_blacks) const {
-      if (_black_height != num_blacks) {
+    bool is_correct(unsigned int num_blacks) const {
+      if (black_height() != num_blacks) {
         return false;
       }
 
-      if (_color == BLACK) {
+      if (is_black()) {
         num_blacks--;
       }
 
@@ -184,7 +201,7 @@ public:
       bool right_is_correct = num_blacks == 0;
       if (_left != nullptr) {
         if (COMPARATOR::cmp(_left->key(), _key) >= 0 || // left >= root, or
-            (_color == RED && _left->_color == RED) ||  // 2 red nodes, or
+            (is_red() && _left->is_red())            || // 2 red nodes, or
             (_left->_parent != this)) {                 // Pointer mismatch,
           return false;                                 // all incorrect.
         }
@@ -192,7 +209,7 @@ public:
       }
       if (_right != nullptr) {
         if (COMPARATOR::cmp(_right->key(), _key) <= 0 || // right <= root, or
-            (_color == RED && _left->_color == RED)   || // 2 red nodes, or
+            (is_red() && _left->is_red())             || // 2 red nodes, or
             (_right->_parent != this)) {                 // Pointer mismatch,
           return false;                                  // all incorrect.
         }
@@ -230,15 +247,15 @@ private:
     if (node == nullptr) {
       return 0;
     }
-    return node->_black_height;
+    return node->black_height();
   }
 
   static inline bool is_black(RBNode* node) {
-    return node == nullptr || node->_color == BLACK;
+    return node == nullptr || node->is_black();
   }
 
   static inline bool is_red(RBNode* node) {
-    return node != nullptr && node->_color == RED;
+    return node != nullptr && node->is_red();
   }
 
   RBNode* find(RBNode* curr, const K& k) {
@@ -257,7 +274,7 @@ private:
     return nullptr;
   }
 
-  RBNode* insert_node(const K& k, const V& v, bool replace) {
+  RBNode* insert_node(const K& k, const V& v) {
     RBNode* curr = _root;
     if (curr == nullptr) { // Tree is empty
       _root = allocate_node(k, v);
@@ -269,9 +286,7 @@ private:
       int key_cmp_k = COMPARATOR::cmp(k, curr->key());
 
       if (key_cmp_k == 0) { // k == key
-        if (replace) {
-          curr->_value = v;
-        }
+        curr->_value = v;
         return curr;
       }
 
@@ -298,17 +313,17 @@ private:
   }
 
   void fix_violations(RBNode* node) {
-    if(node->_color == BLACK) { // node's value was updated
+    if(node->is_black()) { // node's value was updated
       return;                    // Tree is already correct
     }
 
     RBNode* parent = node->_parent;
-    while (parent != nullptr && parent->_color != Color::BLACK) {
+    while (parent != nullptr && parent->is_red()) {
       // Node and parent are both red, creating a red-violation
 
       RBNode* grandparent = parent->_parent;
       if (grandparent == nullptr) { // Parent is the tree root
-        parent->_color = BLACK;     // Color parent black to eliminate the red-violation
+        parent->color_black();      // Color parent black to eliminate the red-violation
         parent->_black_height++;
         return;
       }
@@ -333,8 +348,8 @@ private:
         }
 
         // Swap parent and grandparent colors to eliminate the red-violation
-        parent->_color = BLACK;
-        grandparent->_color = RED;
+        parent->color_black();
+        grandparent->color_red();
         parent->_black_height++;
         grandparent->_black_height--;
 
@@ -347,11 +362,11 @@ private:
 
       // Parent and uncle are both red
       // Paint both black, paint grandparent red to not create a black-violation
-      parent->_color = BLACK;
-      uncle->_color = BLACK;
+      parent->color_black();
+      uncle->color_black();
       parent->_black_height++;
       uncle->_black_height++;
-      grandparent->_color = RED;
+      grandparent->color_red();
 
       // Move up two levels to check for new potential red-violation
       node = grandparent;
@@ -366,9 +381,9 @@ private:
       RBNode* sibling = node->is_left_child() ? parent->_right : parent->_left;
       if (is_red(sibling)) { // Sibling red, parent and nephews must be black
         // Swap parent and sibling colors
-        parent->_color = RED;
+        parent->color_red();
         parent->_black_height--;
-        sibling->_color = BLACK;
+        sibling->color_black();
         sibling->_black_height++;
 
         // Rotate parent down and sibling up
@@ -397,9 +412,9 @@ private:
             sibling->rotate_left();
           }
 
-          sibling->_color = RED;
+          sibling->color_red();
           sibling->_black_height--;
-          close_nephew->_color = BLACK;
+          close_nephew->color_black();
           close_nephew->_black_height++;
 
           distant_nephew = sibling;
@@ -418,30 +433,34 @@ private:
         }
 
         // Swap parent and sibling colors
-        sibling->_color = parent->_color;
-        parent->_color = BLACK;
-        if (sibling->_color == BLACK) {
+        if (parent->is_black()) {
+          sibling->color_black();
+        } else {
+          sibling->color_red();
+        }
+        parent->color_black();
+        if (sibling->is_black()) {
           parent->_black_height--;
           sibling->_black_height++;
         }
 
         // Color distant nephew black to restore black balance
-        distant_nephew->_color = BLACK;
+        distant_nephew->color_black();
         distant_nephew->_black_height++;
         return;
       }
 
       if (is_red(parent)) { // parent red, sibling and nephews black
         // Swap parent and sibling colors to restore black balance
-        sibling->_color = RED;
+        sibling->color_red();
         sibling->_black_height--;
-        parent->_color = BLACK;
+        parent->color_black();
         return;
       }
 
       // Parent, sibling, and both nephews black
       // Color sibling red and move up one level
-      sibling->_color = RED;
+      sibling->color_red();
       sibling->_black_height--;
       parent->_black_height--;
       node = parent;
@@ -456,7 +475,7 @@ private:
     if (left != nullptr) { // node has a left only-child
       // node must be black, and child red, otherwise a black-violation would exist
       // Remove node and color the child black.
-      node->_left->_color = BLACK;
+      node->_left->color_black();
       node->_left->_black_height++;
       node->_left->_parent = node->_parent;
       if (parent == nullptr) {
@@ -465,7 +484,7 @@ private:
         node->_parent->replace_child(node, left);
       }
     } else if (right != nullptr) { // node has a right only-child
-      node->_right->_color = BLACK;
+      node->_right->color_black();
       node->_right->_black_height++;
       node->_right->_parent = node->_parent;
       if (parent == nullptr) {
@@ -509,13 +528,8 @@ public:
     return _num_nodes;
   }
 
-  void insert(const K& k, const V& v) {
-    RBNode* node = insert_node(k, v, false);
-    fix_violations(node);
-  }
-
   void upsert(const K& k, const V& v) {
-    RBNode* node = insert_node(k, v, true);
+    RBNode* node = insert_node(k, v);
     fix_violations(node);
   }
 
@@ -635,10 +649,10 @@ public:
 
     assert(_root->_parent == nullptr, "root of rbtree has a parent");
 
-    int black_nodes = 0;
+    unsigned int black_nodes = 0;
     RBNode* node = _root;
     while (node != nullptr) {
-      if (node->_color == BLACK) {
+      if (node->is_black()) {
         black_nodes++;
       }
       node = node->_left;
@@ -646,10 +660,10 @@ public:
 
     const size_t actual_num_nodes = _root->count_nodes();
     const size_t expected_num_nodes = size();
-    const int maximum_depth = log2i(size() + 1) * 2;
+    const unsigned int maximum_depth = log2i(size() + 1) * 2;
 
     assert(expected_num_nodes == actual_num_nodes, "unexpected number of nodes in rbtree. expected: " SIZE_FORMAT ", actual: " SIZE_FORMAT, expected_num_nodes, actual_num_nodes);
-    assert(2 * black_nodes <= maximum_depth, "rbtree is too deep for its number of nodes. can be at most: " INT32_FORMAT ", but is: " INT32_FORMAT, maximum_depth, 2 * black_nodes);
+    assert(2 * black_nodes <= maximum_depth, "rbtree is too deep for its number of nodes. can be at most: " INT32_FORMAT ", but is: " UINT32_FORMAT, maximum_depth, 2 * black_nodes);
     assert(_root->is_correct(black_nodes), "rbtree does not hold rb-properties");
   }
 #endif // ASSERT
