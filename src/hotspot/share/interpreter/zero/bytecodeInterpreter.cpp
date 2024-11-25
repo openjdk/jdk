@@ -641,9 +641,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
               success = false;
             }
           }
-          if (success) {
-            THREAD->inc_held_monitor_count();
-          }
         }
         if (!success) {
             CALL_VM(InterpreterRuntime::monitorenter(THREAD, mon), handle_exception);
@@ -744,9 +741,6 @@ void BytecodeInterpreter::run(interpreterState istate) {
           } else {
             success = false;
           }
-        }
-        if (success) {
-          THREAD->inc_held_monitor_count();
         }
       }
       if (!success) {
@@ -1680,9 +1674,6 @@ run:
                 success = false;
               }
             }
-            if (success) {
-              THREAD->inc_held_monitor_count();
-            }
           }
           if (!success) {
             CALL_VM(InterpreterRuntime::monitorenter(THREAD, entry), handle_exception);
@@ -1719,9 +1710,6 @@ run:
                   most_recent->set_obj(lockee);
                   success = false;
                 }
-              }
-              if (success) {
-                THREAD->dec_held_monitor_count();
               }
             }
             if (!success) {
@@ -3166,9 +3154,6 @@ run:
                 success = false;
               }
             }
-            if (success) {
-              THREAD->dec_held_monitor_count();
-            }
           }
           if (!success) {
             InterpreterRuntime::monitorexit(end);
@@ -3244,9 +3229,6 @@ run:
                   THREAD->clear_pending_exception();
                 }
               }
-            }
-            if (dec_monitor_count) {
-              THREAD->dec_held_monitor_count();
             }
           }
         }

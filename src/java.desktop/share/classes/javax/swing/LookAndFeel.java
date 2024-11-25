@@ -469,7 +469,7 @@ public abstract class LookAndFeel
      * @see Class#getResourceAsStream(String)
      */
     public static Object makeIcon(final Class<?> baseClass, final String gifFile) {
-        return SwingUtilities2.makeIcon_Unprivileged(baseClass, baseClass, gifFile);
+        return SwingUtilities2.makeIcon(baseClass, baseClass, gifFile);
     }
 
     /**

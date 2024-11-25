@@ -484,6 +484,12 @@ inline void Assembler::bclrl( int boint, int biint, int bhint, relocInfo::relocT
 inline void Assembler::bcctr( int boint, int biint, int bhint, relocInfo::relocType rt) { emit_data(BCCTR_OPCODE| bo(boint) | bi(biint) | bh(bhint) | aa(0) | lk(0), rt); }
 inline void Assembler::bcctrl(int boint, int biint, int bhint, relocInfo::relocType rt) { emit_data(BCCTR_OPCODE| bo(boint) | bi(biint) | bh(bhint) | aa(0) | lk(1), rt); }
 
+inline bool Assembler::is_branch(address a) {
+  int32_t instr = *(int32_t*) a;
+  int op = inv_op_ppc(instr);
+  return op == b_op || op == bc_op;
+}
+
 // helper function for b
 inline bool Assembler::is_within_range_of_b(address a, address pc) {
   // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).

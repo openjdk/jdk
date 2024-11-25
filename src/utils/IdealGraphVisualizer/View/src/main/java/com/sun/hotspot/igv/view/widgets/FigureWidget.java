@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,20 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         if (getFigure().getProperties().get("extra_label") != null) {
             LabelWidget extraLabelWidget = labelWidgets.get(labelWidgets.size() - 1);
             extraLabelWidget.setFont(Diagram.FONT.deriveFont(Font.ITALIC));
-            extraLabelWidget.setForeground(selected ? getTextColor() : Color.DARK_GRAY);
+            extraLabelWidget.setForeground(getTextColorHelper(figure.getColor(), !selected));
+        }
+    }
+
+    public static Color getTextColor(Color color) {
+        return getTextColorHelper(color, false);
+    }
+
+    private static Color getTextColorHelper(Color bg, boolean useGrey) {
+        double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
+        if (brightness < 150) {
+            return useGrey ? Color.LIGHT_GRAY : Color.WHITE;
+        } else {
+            return useGrey ? Color.DARK_GRAY : Color.BLACK;
         }
     }
 
@@ -113,7 +126,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             LayoutFactory.SerialAlignment.LEFT_TOP :
             LayoutFactory.SerialAlignment.CENTER;
         middleWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
-        middleWidget.setBackground(f.getColor());
         middleWidget.setOpaque(true);
         middleWidget.getActions().addAction(new DoubleClickAction(this));
         middleWidget.setCheckClipping(false);
@@ -143,13 +155,13 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             textWidget.addChild(lw);
             lw.setLabel(displayString);
             lw.setFont(Diagram.FONT);
-            lw.setForeground(getTextColor());
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
             lw.setBorder(BorderFactory.createEmptyBorder());
             lw.setCheckClipping(false);
         }
         formatExtraLabel(false);
+        refreshColor();
 
         if (getFigure().getWarning() != null) {
             ImageWidget warningWidget = new ImageWidget(scene, warningSign);
@@ -182,6 +194,13 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         node.setDisplayName(getName());
 
         this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
+    }
+
+    public void refreshColor() {
+        middleWidget.setBackground(figure.getColor());
+        for (LabelWidget lw : labelWidgets) {
+            lw.setForeground(getTextColor(figure.getColor()));
+        }
     }
 
     @Override
@@ -220,16 +239,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
 
     public Figure getFigure() {
         return figure;
-    }
-
-    private Color getTextColor() {
-        Color bg = figure.getColor();
-        double brightness = bg.getRed() * 0.21 + bg.getGreen() * 0.72 + bg.getBlue() * 0.07;
-        if (brightness < 150) {
-            return Color.WHITE;
-        } else {
-            return Color.BLACK;
-        }
     }
 
     @Override

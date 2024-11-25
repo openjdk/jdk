@@ -112,9 +112,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
         content = XContentWindow.createContent(this);
 
-        if (warningWindow != null) {
-            warningWindow.toFront();
-        }
         focusProxy = createFocusProxy();
     }
 
@@ -843,7 +840,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
         reconfigureContentWindow(newDimensions);
         updateChildrenSizes();
 
-        repositionSecurityWarning();
     }
 
     private void checkShellRectSize(Rectangle shellRect) {

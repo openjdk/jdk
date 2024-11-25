@@ -1346,7 +1346,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());
@@ -1356,7 +1356,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());

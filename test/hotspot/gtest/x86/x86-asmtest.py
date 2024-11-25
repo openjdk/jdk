@@ -29,6 +29,9 @@ import subprocess
 OBJDUMP = "objdump"
 X86_AS = "as"
 X86_OBJCOPY = "objcopy"
+SEED = 1327
+
+random.seed(SEED)
 
 cond_to_suffix = {
     'overflow': 'o',
@@ -49,7 +52,8 @@ cond_to_suffix = {
     'greater': 'g',
 }
 
-shift_rot_ops = {'sarl', 'sarq', 'sall', 'salq', 'shll', 'shlq', 'shrl', 'shrq', 'shrdl', 'shrdq', 'shldl', 'shldq', 'rcrq', 'rorl', 'rorq', 'roll', 'rolq', 'rcll', 'rclq'}
+shift_rot_ops = {'sarl', 'sarq', 'sall', 'salq', 'shll', 'shlq', 'shrl', 'shrq', 'shrdl', 'shrdq', 'shldl', 'shldq', 'rcrq', 'rorl', 'rorq', 'roll', 'rolq', 'rcll', 'rclq',
+                 'esarl', 'esarq', 'esall', 'esalq', 'eshll', 'eshlq', 'eshrl', 'eshrq', 'eshrdl', 'eshrdq', 'eshldl', 'eshldq', 'ercrq', 'erorl', 'erorq', 'eroll', 'erolq', 'ercll', 'erclq'}
 
 registers_mapping = {
     # skip rax, rsi, rdi, rsp, rbp as they have special encodings
@@ -160,6 +164,22 @@ class Instruction(object):
         # JDK assembler uses 'cl' for shift instructions with one operand by default
         cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 1 else '')
         return f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
+
+class NFInstruction(Instruction):
+    def __init__(self, name, aname, no_flag):
+        super().__init__(name, aname)
+        self.no_flag = no_flag
+    
+    def cstr(self):
+        return f'__ {self._name}(' + ', '.join([op.cstr() for op in self.operands]) + (f', {str(self.no_flag).lower()}' if self.no_flag is not None else '') + ');'
+    
+    def astr(self):
+        # JDK assembler uses 'cl' for shift instructions with one operand by default
+        cl_str = (', cl' if self._name in shift_rot_ops and len(self.operands) == 2 else '')
+        # special case for shift instructions with three operands
+        if (self._name == 'eshldl' or self._name == 'eshldq' or self._name == 'eshrdl' or self._name == 'eshrdq') and all([isinstance(op, Register) for op in self.operands]):
+            cl_str = ', cl'
+        return ('{NF}' if self.no_flag else '{EVEX}') + f'{self._aname} ' + ', '.join([op.astr() for op in self.operands]) + cl_str
 
 class RegInstruction(Instruction):
     def __init__(self, name, aname, width, reg):
@@ -273,6 +293,36 @@ class CondRegInstruction(RegInstruction):
     def astr(self):
         return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + self.reg.astr()
 
+class CondRegRegRegInstruction(Instruction):
+    def __init__(self, name, aname, width, cond, reg1, reg2, reg3):
+        super().__init__(name, aname)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.reg3 = Register().generate(reg3, width)
+        self.cond = cond
+        self.generate_operands(self.reg1, self.reg2, self.reg3)
+    
+    def cstr(self):
+        return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
+    
+    def astr(self):
+        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in self.operands])
+
+class CondRegRegMemInstruction(Instruction):
+    def __init__(self, name, aname, width, cond, reg1, reg2, mem_base, mem_idx):
+        super().__init__(name, aname)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.mem = Address().generate(mem_base, mem_idx, width)
+        self.cond = cond
+        self.generate_operands(self.reg1, self.reg2, self.mem)
+    
+    def cstr(self):
+        return f'__ {self._name} (' + 'Assembler::Condition::' + self.cond + ', ' + ', '.join([reg.cstr() for reg in self.operands]) + ');'
+    
+    def astr(self):
+        return f'{self._aname}' + cond_to_suffix[self.cond] + ' ' + ', '.join([reg.astr() for reg in self.operands])
+
 class MoveRegMemInstruction(Instruction):
     def __init__(self, name, aname, width, mem_width, reg, mem_base, mem_idx):
         super().__init__(name, aname)
@@ -286,6 +336,84 @@ class MoveRegRegInstruction(Instruction):
         self.reg1 = Register().generate(reg1, width)
         self.reg2 = Register().generate(reg2, reg_width)
         self.generate_operands(self.reg1, self.reg2)
+
+class RegNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg):
+        super().__init__(name, aname, no_flag)
+        self.reg = Register().generate(reg, width)
+        self.generate_operands(self.reg)
+
+class MemNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, mem_base, mem_idx):
+        super().__init__(name, aname, no_flag)
+        self.mem = Address().generate(mem_base, mem_idx, width)
+        self.generate_operands(self.mem)
+
+class RegRegNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg1, reg2):
+        super().__init__(name, aname, no_flag)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.generate_operands(self.reg1, self.reg2)
+
+class RegMemNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg, mem_base, mem_idx):
+        super().__init__(name, aname, no_flag)
+        self.reg = Register().generate(reg, width)
+        self.mem = Address().generate(mem_base, mem_idx, width)
+        self.generate_operands(self.reg, self.mem)
+
+class RegMemImmNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg, imm, mem_base, mem_idx):
+        super().__init__(name, aname, no_flag)
+        self.reg = Register().generate(reg, width)
+        self.mem = Address().generate(mem_base, mem_idx, width)
+        self.imm = Immediate().generate(imm)
+        self.generate_operands(self.reg, self.mem, self.imm)
+
+class RegMemRegNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg1, mem_base, mem_idx, reg2):
+        super().__init__(name, aname, no_flag)
+        self.reg1 = Register().generate(reg1, width)
+        self.mem = Address().generate(mem_base, mem_idx, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.generate_operands(self.reg1, self.mem, self.reg2)
+
+class RegRegImmNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg1, reg2, imm):
+        super().__init__(name, aname, no_flag)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.imm = Immediate().generate(imm)
+        self.generate_operands(self.reg1, self.reg2, self.imm)
+
+class RegRegMemNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg1, reg2, mem_base, mem_idx):
+        super().__init__(name, aname, no_flag)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.mem = Address().generate(mem_base, mem_idx, width)
+        self.generate_operands(self.reg1, self.reg2, self.mem)
+
+class RegRegRegNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3):
+        super().__init__(name, aname, no_flag)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.reg3 = Register().generate(reg3, width)
+        self.generate_operands(self.reg1, self.reg2, self.reg3)
+
+    def astr(self):
+        return f'{{load}}' + super().astr()
+
+class RegRegRegImmNddInstruction(NFInstruction):
+    def __init__(self, name, aname, width, no_flag, reg1, reg2, reg3, imm):
+        super().__init__(name, aname, no_flag)
+        self.reg1 = Register().generate(reg1, width)
+        self.reg2 = Register().generate(reg2, width)
+        self.reg3 = Register().generate(reg3, width)
+        self.imm = Immediate().generate(imm)
+        self.generate_operands(self.reg1, self.reg2, self.reg3, self.imm)
 
 test_regs = list(registers_mapping.keys())
 
@@ -330,7 +458,7 @@ def handle_lp64_flag(lp64_flag, print_lp64_flag, *regs):
 def get_immediate_list(op_name, width):
     # special cases
     word_imm_ops = {'addw', 'cmpw'}
-    dword_imm_ops = {'subl_imm32', 'subq_imm32', 'orq_imm32', 'cmpl_imm32', 'testl'}
+    dword_imm_ops = {'subl_imm32', 'subq_imm32', 'orq_imm32', 'cmpl_imm32', 'esubl_imm32', 'esubq_imm32', 'eorq_imm32', 'testl'}
     qword_imm_ops = {'mov64'}
     neg_imm_ops = {'testq'}
     bt_ops = {'btq'}
@@ -357,7 +485,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
         op_name = op[0]
         width = op[2]
 
-        if RegOp in [RegInstruction, CondRegInstruction]:
+        if RegOp in [RegInstruction, CondRegInstruction, RegNddInstruction]:
             if full_set:
                 for i in range(len(test_regs)):
                     test_reg = test_regs[i]
@@ -370,7 +498,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 instr = RegOp(*op, reg=test_reg)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
-        elif RegOp in [TwoRegInstruction, MoveRegRegInstruction]:
+        elif RegOp in [TwoRegInstruction, MoveRegRegInstruction, RegRegNddInstruction]:
             if full_set:
                 for i in range(len(test_regs)):
                     test_reg1 = test_regs[i]
@@ -385,7 +513,24 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
-        elif RegOp in [MemRegInstruction, RegMemInstruction, MoveRegMemInstruction, CmpxchgInstruction, CondRegMemInstruction]:
+        elif RegOp in [RegRegRegNddInstruction, CondRegRegRegInstruction]:
+            if full_set:
+                for i in range(len(test_regs)):
+                    test_reg1 = test_regs[i]
+                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
+                    test_reg3 = test_regs[(i + 2) % len(test_regs)]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
+                    instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                test_reg1 = random.choice(test_regs)
+                test_reg2 = random.choice(test_regs)
+                test_reg3 = random.choice(test_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
+                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3)
+                print_instruction(instr, lp64_flag, print_lp64_flag)
+
+        elif RegOp in [MemRegInstruction, RegMemInstruction, MoveRegMemInstruction, CmpxchgInstruction, CondRegMemInstruction, RegMemNddInstruction]:
             if full_set:
                 for i in range(len(test_regs)):
                     test_reg = test_regs[i]
@@ -443,7 +588,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 instr = RegOp(*op, imm=imm, mem_base=test_mem_base, mem_idx=test_mem_idx)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
-        elif RegOp in [MemInstruction]:
+        elif RegOp in [MemInstruction, MemNddInstruction]:
             if full_set:
                 for i in range(len(test_regs)):
                     test_mem_base = test_regs[i]
@@ -461,7 +606,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 instr = RegOp(*op, mem_base=test_mem_base, mem_idx=test_mem_idx)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
-        elif RegOp in [RegRegImmInstruction]:
+        elif RegOp in [RegRegImmInstruction, RegRegImmNddInstruction]:
             if full_set:
                 imm_list = get_immediate_list(op_name, width)
                 for i in range(len(test_regs)):
@@ -479,7 +624,7 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, imm=imm)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
-        elif RegOp in [RegMemImmInstruction]:
+        elif RegOp in [RegMemImmInstruction, RegMemImmNddInstruction]:
             if full_set:
                 imm_list = get_immediate_list(op_name, width)
                 for i in range(len(test_regs)):
@@ -500,6 +645,48 @@ def generate(RegOp, ops, print_lp64_flag=True, full_set=False):
                 test_mem_idx = random.choice(filtered_regs)
                 lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg, test_mem_base, test_mem_idx)
                 instr = RegOp(*op, reg=test_reg, imm=imm, mem_base=test_mem_base, mem_idx=test_mem_idx)
+                print_instruction(instr, lp64_flag, print_lp64_flag)
+
+        elif RegOp in [RegMemRegNddInstruction, RegRegMemNddInstruction, CondRegRegMemInstruction]:
+            if full_set:
+                for i in range(len(test_regs)):
+                    test_reg1 = test_regs[i]
+                    test_mem_base = test_regs[(i + 1) % len(test_regs)]
+                    test_mem_idx = test_regs[(i + 2) % len(test_regs)]
+                    test_reg2 = test_regs[(i + 3) % len(test_regs)]
+                    if test_mem_idx == 'rsp':
+                        continue
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_mem_base, test_mem_idx, test_reg2)
+                    instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
+                    print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                filtered_regs = [reg for reg in test_regs if reg != 'rsp']
+                test_reg1 = random.choice(test_regs)
+                test_mem_base = random.choice(test_regs)
+                test_mem_idx = random.choice(filtered_regs)
+                test_reg2 = random.choice(test_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_mem_base, test_mem_idx, test_reg2)
+                instr = RegOp(*op, reg1=test_reg1, mem_base=test_mem_base, mem_idx=test_mem_idx, reg2=test_reg2)
+                print_instruction(instr, lp64_flag, print_lp64_flag)
+        
+        elif RegOp in [RegRegRegImmNddInstruction]:
+            if full_set:
+                imm_list = get_immediate_list(op_name, width)
+                for i in range(len(test_regs)):
+                    test_reg1 = test_regs[i]
+                    test_reg2 = test_regs[(i + 1) % len(test_regs)]
+                    test_reg3 = test_regs[(i + 2) % len(test_regs)]
+                    lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
+                    for imm in imm_list:
+                        instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3, imm=imm)
+                        print_instruction(instr, lp64_flag, print_lp64_flag)
+            else:
+                imm = random.choice(get_immediate_list(op_name, width))
+                test_reg1 = random.choice(test_regs)
+                test_reg2 = random.choice(test_regs)
+                test_reg3 = random.choice(test_regs)
+                lp64_flag = handle_lp64_flag(lp64_flag, print_lp64_flag, test_reg1, test_reg2, test_reg3)
+                instr = RegOp(*op, reg1=test_reg1, reg2=test_reg2, reg3=test_reg3, imm=imm)
                 print_instruction(instr, lp64_flag, print_lp64_flag)
 
         elif RegOp in [Push2Instruction, Pop2Instruction]:
@@ -707,6 +894,183 @@ instruction_set = {
         ('cmpxchgw', 'cmpxchg', 16),
         ('cmpxchgl', 'cmpxchg', 32),
     ],
+    # --- NDD instructions ---
+    RegNddInstruction: [
+        ('eidivl', 'idiv', 32, False),
+        ('eidivl', 'idiv', 32, True),
+        ('edivl', 'div', 32, False),
+        ('edivl', 'div', 32, True),
+        ('eimull', 'imul', 32, False),
+        ('eimull', 'imul', 32, True),
+        ('emull', 'mul', 32, False),
+        ('emull', 'mul', 32, True),
+    ],
+    MemNddInstruction: [
+        ('emull', 'mul', 32, False),
+        ('emull', 'mul', 32, True),
+    ],
+    RegRegNddInstruction: [
+        ('elzcntl', 'lzcnt', 32, False),
+        ('elzcntl', 'lzcnt', 32, True),
+        ('enegl', 'neg', 32, False),
+        ('enegl', 'neg', 32, True),
+        ('epopcntl', 'popcnt', 32, False),
+        ('epopcntl', 'popcnt', 32, True),
+        ('enotl', 'not', 32, None),
+        ('eroll', 'rol', 32, False),
+        ('eroll', 'rol', 32, True),
+        ('erorl', 'ror', 32, False),
+        ('erorl', 'ror', 32, True),
+        ('esall', 'sal', 32, False),
+        ('esall', 'sal', 32, True),
+        ('esarl', 'sar', 32, False),
+        ('esarl', 'sar', 32, True),
+        ('edecl', 'dec', 32, False),
+        ('edecl', 'dec', 32, True),
+        ('eincl', 'inc', 32, False),
+        ('eincl', 'inc', 32, True), 
+        ('eshll', 'shl', 32, False),
+        ('eshll', 'shl', 32, True),
+        ('eshrl', 'shr', 32, False),
+        ('eshrl', 'shr', 32, True),
+        ('etzcntl', 'tzcnt', 32, False),
+        ('etzcntl', 'tzcnt', 32, True),
+    ],
+    RegMemNddInstruction: [
+        ('elzcntl', 'lzcnt', 32, False),
+        ('elzcntl', 'lzcnt', 32, True),
+        ('enegl', 'neg', 32, False),
+        ('enegl', 'neg', 32, True),
+        ('epopcntl', 'popcnt', 32, False),
+        ('epopcntl', 'popcnt', 32, True),
+        ('esall', 'sal', 32, False),
+        ('esall', 'sal', 32, True),
+        ('esarl', 'sar', 32, False),
+        ('esarl', 'sar', 32, True),
+        ('edecl', 'dec', 32, False),
+        ('edecl', 'dec', 32, True),
+        ('eincl', 'inc', 32, False),
+        ('eincl', 'inc', 32, True),
+        ('eshrl', 'shr', 32, False),
+        ('eshrl', 'shr', 32, True),
+        ('etzcntl', 'tzcnt', 32, False),
+        ('etzcntl', 'tzcnt', 32, True),
+    ],
+    RegMemImmNddInstruction: [
+        ('eaddl', 'add', 32, False),
+        ('eaddl', 'add', 32, True),
+        ('eandl', 'and', 32, False),
+        ('eandl', 'and', 32, True),
+        ('eimull', 'imul', 32, False),
+        ('eimull', 'imul', 32, True),
+        ('eorl', 'or', 32, False),
+        ('eorl', 'or', 32, True),
+        ('eorb', 'or', 8, False),
+        ('eorb', 'or', 8, True),
+        ('esall', 'sal', 32, False),
+        ('esall', 'sal', 32, True),
+        ('esarl', 'sar', 32, False),
+        ('esarl', 'sar', 32, True),
+        ('eshrl', 'shr', 32, False),
+        ('eshrl', 'shr', 32, True),
+        ('esubl', 'sub', 32, False),
+        ('esubl', 'sub', 32, True),
+        ('exorl', 'xor', 32, False),
+        ('exorl', 'xor', 32, True),
+    ],
+    RegMemRegNddInstruction: [
+        ('eaddl', 'add', 32, False),
+        ('eaddl', 'add', 32, True),
+        ('eorl', 'or', 32, False),
+        ('eorl', 'or', 32, True),
+        ('eorb', 'or', 8, False),
+        ('eorb', 'or', 8, True),
+        ('esubl', 'sub', 32, False),
+        ('esubl', 'sub', 32, True),
+        ('exorl', 'xor', 32, False),
+        ('exorl', 'xor', 32, True),
+        ('exorb', 'xor', 8, False),
+        ('exorb', 'xor', 8, True),
+    ],
+    RegRegImmNddInstruction: [
+        ('eaddl', 'add', 32, False),
+        ('eaddl', 'add', 32, True),
+        ('eandl', 'and', 32, False),
+        ('eandl', 'and', 32, True),
+        ('eimull', 'imul', 32, False),
+        ('eimull', 'imul', 32, True),
+        ('eorl', 'or', 32, False),
+        ('eorl', 'or', 32, True),
+        ('ercll', 'rcl', 32, None),
+        ('eroll', 'rol', 32, False),
+        ('eroll', 'rol', 32, True),
+        ('erorl', 'ror', 32, False),
+        ('erorl', 'ror', 32, True),
+        ('esall', 'sal', 32, False),
+        ('esall', 'sal', 32, True),
+        ('esarl', 'sar', 32, False),
+        ('esarl', 'sar', 32, True),
+        ('eshll', 'shl', 32, False),
+        ('eshll', 'shl', 32, True),
+        ('eshrl', 'shr', 32, False),
+        ('eshrl', 'shr', 32, True),
+        ('esubl', 'sub', 32, False),
+        ('esubl', 'sub', 32, True),
+        ('exorl', 'xor', 32, False),
+        ('exorl', 'xor', 32, True),
+        ('esubl_imm32', 'sub', 32, False),
+        ('esubl_imm32', 'sub', 32, True),
+    ],
+    RegRegMemNddInstruction: [
+        ('eaddl', 'add', 32, False),
+        ('eaddl', 'add', 32, True),
+        ('eandl', 'and', 32, False),
+        ('eandl', 'and', 32, True),
+        ('eimull', 'imul', 32, False),
+        ('eimull', 'imul', 32, True),
+        ('eorl', 'or', 32, False),
+        ('eorl', 'or', 32, True),
+        ('esubl', 'sub', 32, False),
+        ('esubl', 'sub', 32, True),
+        ('exorl', 'xor', 32, False),
+        ('exorl', 'xor', 32, True),
+        ('exorb', 'xor', 8, False),
+        ('exorb', 'xor', 8, True),
+        ('exorw', 'xor', 16, False),
+        ('exorw', 'xor', 16, True),
+    ],
+    RegRegRegNddInstruction: [
+        ('eaddl', 'add', 32, False),
+        ('eaddl', 'add', 32, True),
+        ('eandl', 'and', 32, False),
+        ('eandl', 'and', 32, True),
+        ('eimull', 'imul', 32, False),
+        ('eimull', 'imul', 32, True),
+        ('eorw', 'or', 16, False),
+        ('eorw', 'or', 16, True),
+        ('eorl', 'or', 32, False),
+        ('eorl', 'or', 32, True),
+        ('eshldl', 'shld', 32, False),
+        ('eshldl', 'shld', 32, True),
+        ('eshrdl', 'shrd', 32, False),
+        ('eshrdl', 'shrd', 32, True),
+        ('esubl', 'sub', 32, False),
+        ('esubl', 'sub', 32, True),
+        ('exorl', 'xor', 32, False),
+        ('exorl', 'xor', 32, True),
+    ],
+    RegRegRegImmNddInstruction: [
+        ('eshldl', 'shld', 32, False),
+        ('eshldl', 'shld', 32, True),
+        ('eshrdl', 'shrd', 32, False),
+        ('eshrdl', 'shrd', 32, True),
+    ],
+    CondRegRegRegInstruction: [
+        ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
+    ],
+    CondRegRegMemInstruction: [
+        ('ecmovl', 'cmov', 32, key) for key in cond_to_suffix.keys()
+    ],
 }
 
 instruction_set64 = {
@@ -858,6 +1222,177 @@ instruction_set64 = {
     ],
     CmpxchgInstruction: [
         ('cmpxchgq', 'cmpxchg', 64),
+    ],
+    # --- NDD instructions ---
+    RegNddInstruction: [
+        ('eidivq', 'idiv', 64, False),
+        ('eidivq', 'idiv', 64, True),
+        ('edivq', 'div', 64, False),
+        ('edivq', 'div', 64, True),
+        ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, True),
+        ('emulq', 'mul', 64, False),
+        ('emulq', 'mul', 64, True),
+    ],
+    MemNddInstruction: [
+        ('emulq', 'mul', 64, False),
+        ('emulq', 'mul', 64, True),
+    ],
+    RegRegNddInstruction: [
+        ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, True),
+        ('elzcntq', 'lzcnt', 64, False),
+        ('elzcntq', 'lzcnt', 64, True),
+        ('enegq', 'neg', 64, False),
+        ('enegq', 'neg', 64, True),
+        ('enotq', 'not', 64, None),
+        ('epopcntq', 'popcnt', 64, False),
+        ('epopcntq', 'popcnt', 64, True),
+        ('erolq', 'rol', 64, False),
+        ('erolq', 'rol', 64, True),
+        ('erorq', 'ror', 64, False),
+        ('erorq', 'ror', 64, True),
+        ('esalq', 'sal', 64, False),
+        ('esalq', 'sal', 64, True),
+        ('esarq', 'sar', 64, False),
+        ('esarq', 'sar', 64, True),
+        ('edecq', 'dec', 64, False),
+        ('edecq', 'dec', 64, True),
+        ('eincq', 'inc', 64, False),
+        ('eincq', 'inc', 64, True),
+        ('eshlq', 'shl', 64, False),
+        ('eshlq', 'shl', 64, True),
+        ('eshrq', 'shr', 64, False),
+        ('eshrq', 'shr', 64, True),
+        ('etzcntq', 'tzcnt', 64, False),
+        ('etzcntq', 'tzcnt', 64, True),
+    ],
+    RegMemNddInstruction: [
+        ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, True),
+        ('elzcntq', 'lzcnt', 64, False),
+        ('elzcntq', 'lzcnt', 64, True),
+        ('enegq', 'neg', 64, False),
+        ('enegq', 'neg', 64, True),
+        ('epopcntq', 'popcnt', 64, False),
+        ('epopcntq', 'popcnt', 64, True),
+        ('esalq', 'sal', 64, False),
+        ('esalq', 'sal', 64, True),
+        ('esarq', 'sar', 64, False),
+        ('esarq', 'sar', 64, True),
+        ('edecq', 'dec', 64, False),
+        ('edecq', 'dec', 64, True),
+        ('eincq', 'inc', 64, False),
+        ('eincq', 'inc', 64, True),
+        ('eshrq', 'shr', 64, False),
+        ('eshrq', 'shr', 64, True),
+        ('etzcntq', 'tzcnt', 64, False),
+        ('etzcntq', 'tzcnt', 64, True),
+    ],
+    RegMemRegNddInstruction: [
+        ('eaddq', 'add', 64, False),
+        ('eaddq', 'add', 64, True),
+        ('eandq', 'and', 64, False),
+        ('eandq', 'and', 64, True),
+        ('eorq', 'or', 64, False),
+        ('eorq', 'or', 64, True),
+        ('esubq', 'sub', 64, False),
+        ('esubq', 'sub', 64, True),
+        ('exorq', 'xor', 64, False),
+        ('exorq', 'xor', 64, True),
+    ],
+    RegMemImmNddInstruction: [
+        ('eaddq', 'add', 64, False),
+        ('eaddq', 'add', 64, True),
+        ('eandq', 'and', 64, False),
+        ('eandq', 'and', 64, True),
+        ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, True),
+        ('eorq', 'or', 64, False),
+        ('eorq', 'or', 64, True),
+        ('esalq', 'sal', 64, False),
+        ('esalq', 'sal', 64, True),
+        ('esarq', 'sar', 64, False),
+        ('esarq', 'sar', 64, True),
+        ('eshrq', 'shr', 64, False),
+        ('eshrq', 'shr', 64, True),
+        ('esubq', 'sub', 64, False),
+        ('esubq', 'sub', 64, True),
+        ('exorq', 'xor', 64, False),
+        ('exorq', 'xor', 64, True),
+    ],
+    RegRegImmNddInstruction: [
+        ('eaddq', 'add', 64, False),
+        ('eaddq', 'add', 64, True),
+        ('eandq', 'and', 64, False),
+        ('eandq', 'and', 64, True),
+        ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, True),
+        ('eorq', 'or', 64, False),
+        ('eorq', 'or', 64, True),
+        ('erclq', 'rcl', 64, None),
+        ('erolq', 'rol', 64, False),
+        ('erolq', 'rol', 64, True),
+        ('erorq', 'ror', 64, False),
+        ('erorq', 'ror', 64, True),
+        ('esalq', 'sal', 64, False),
+        ('esalq', 'sal', 64, True),
+        ('esarq', 'sar', 64, False),
+        ('esarq', 'sar', 64, True),
+        ('eshlq', 'shl', 64, False),
+        ('eshlq', 'shl', 64, True),
+        ('eshrq', 'shr', 64, False),
+        ('eshrq', 'shr', 64, True),
+        ('esubq', 'sub', 64, False),
+        ('esubq', 'sub', 64, True),
+        ('exorq', 'xor', 64, False),
+        ('exorq', 'xor', 64, True),
+        ('eorq_imm32', 'or', 64, False),
+        ('eorq_imm32', 'or', 64, False),
+        ('esubq_imm32', 'sub', 64, False), 
+        ('esubq_imm32', 'sub', 64, True), 
+    ],
+    RegRegMemNddInstruction: [
+        ('eaddq', 'add', 64, False),
+        ('eaddq', 'add', 64, True),
+        ('eandq', 'and', 64, False),
+        ('eandq', 'and', 64, True),
+        ('eorq', 'or', 64, False),
+        ('eorq', 'or', 64, True),
+        ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, True),
+        ('esubq', 'sub', 64, False),
+        ('esubq', 'sub', 64, True),
+        ('exorq', 'xor', 64, False),
+        ('exorq', 'xor', 64, True),
+    ],
+    RegRegRegNddInstruction: [
+        ('eaddq', 'add', 64, False),
+        ('eaddq', 'add', 64, True),
+        ('eadcxq', 'adcx', 64, None),
+        ('eadoxq', 'adox', 64, None),
+        ('eandq', 'and', 64, False),
+        ('eandq', 'and', 64, True),
+        ('eimulq', 'imul', 64, False),
+        ('eimulq', 'imul', 64, True),
+        ('eorq', 'or', 64, False),
+        ('eorq', 'or', 64, True),
+        ('esubq', 'sub', 64, False),
+        ('esubq', 'sub', 64, True),
+        ('exorq', 'xor', 64, False),
+        ('exorq', 'xor', 64, True),
+    ],
+    RegRegRegImmNddInstruction: [
+        ('eshldq', 'shld', 64, False),
+        ('eshldq', 'shld', 64, True),
+        ('eshrdq', 'shrd', 64, False),
+        ('eshrdq', 'shrd', 64, True),
+    ],
+    CondRegRegRegInstruction: [
+        ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
+    ],
+    CondRegRegMemInstruction: [
+        ('ecmovq', 'cmov', 64, key) for key in cond_to_suffix.keys()
     ],
 }
 
