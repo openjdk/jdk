@@ -848,7 +848,7 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public ByteBuffer allocateDirectTemporary(int cap) {
+                public ByteBuffer allocateTemporaryDirectBuffer(int cap) {
                     return new DirectByteBuffer(cap, true);
                 }
 

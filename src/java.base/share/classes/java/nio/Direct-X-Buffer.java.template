@@ -74,8 +74,6 @@ class Direct$Type$Buffer$RW$$BO$
     // Cached unaligned-access capability
     static final boolean UNALIGNED = Bits.unaligned();
 
-    private @Stable boolean temporary; // defaults to false
-
     private record Deallocator(long address, long size, int capacity) implements Runnable {
         private Deallocator {
             assert address != 0;
@@ -106,7 +104,6 @@ class Direct$Type$Buffer$RW$$BO$
     Direct$Type$Buffer$RW$(int cap, boolean temporary) { // package-private
 #if[rw]
         super(-1, 0, cap, cap, null);
-        this.temporary = temporary;
         boolean pa = VM.isDirectMemoryPageAligned();
         int ps = Bits.pageSize();
         long size = Math.max(1L, (long)cap + (pa ? ps : 0));
