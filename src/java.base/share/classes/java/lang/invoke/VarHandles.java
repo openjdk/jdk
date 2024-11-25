@@ -196,7 +196,7 @@ final class VarHandles {
 
         Class<?> componentType = arrayClass.getComponentType();
 
-        int aoffset = UNSAFE.arrayBaseOffset(arrayClass);
+        int aoffset = (int) UNSAFE.arrayBaseOffset(arrayClass);
         int ascale = UNSAFE.arrayIndexScale(arrayClass);
         int ashift = 31 - Integer.numberOfLeadingZeros(ascale);
 

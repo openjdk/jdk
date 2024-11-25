@@ -39,7 +39,7 @@ import java.lang.reflect.Field;
 public class Test6968348 {
     static Unsafe unsafe = Unsafe.getUnsafe();
     static final long[] buffer = new long[4096];
-    static int array_long_base_offset;
+    static long array_long_base_offset;
 
     public static void main(String[] args) throws Exception {
         array_long_base_offset = unsafe.arrayBaseOffset(long[].class);

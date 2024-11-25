@@ -50,7 +50,7 @@ public class TestIntUnsafeVolatile {
   private static final int UNALIGN_OFF = 5;
 
   private static final Unsafe unsafe = Unsafe.getUnsafe();
-  private static final int BASE;
+  private static final long BASE;
   static {
     try {
       BASE = unsafe.arrayBaseOffset(int[].class);

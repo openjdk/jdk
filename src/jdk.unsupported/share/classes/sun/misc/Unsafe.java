@@ -863,7 +863,7 @@ public final class Unsafe {
      * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
     @Deprecated(since="23", forRemoval=true)
-    public static final int INVALID_FIELD_OFFSET = jdk.internal.misc.Unsafe.INVALID_FIELD_OFFSET;
+    public static final int INVALID_FIELD_OFFSET = (int) jdk.internal.misc.Unsafe.INVALID_FIELD_OFFSET;
 
     /**
      * Reports the location of a given field in the storage allocation of its
@@ -994,7 +994,7 @@ public final class Unsafe {
     @ForceInline
     public int arrayBaseOffset(Class<?> arrayClass) {
         beforeMemoryAccess();
-        return theInternalUnsafe.arrayBaseOffset(arrayClass);
+        return (int) theInternalUnsafe.arrayBaseOffset(arrayClass);
     }
 
     /** The value of {@code arrayBaseOffset(boolean[].class)}.

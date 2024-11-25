@@ -42,7 +42,7 @@ import static org.openjdk.bench.java.lang.foreign.CLayouts.*;
 public class GetArrayUnsafeXorOpImpl implements XorOp {
 
     static final Unsafe UNSAFE = Utils.unsafe;
-    static final int BYTE_ARR_OFFSET = Utils.unsafe.arrayBaseOffset(byte[].class);
+    static final long BYTE_ARR_OFFSET = Utils.unsafe.arrayBaseOffset(byte[].class);
 
     static {
         System.loadLibrary("jnitest");

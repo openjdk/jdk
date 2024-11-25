@@ -57,8 +57,8 @@ public class LoopOverNonConstantHeap extends JavaLayouts {
     static final int ELEM_SIZE = 1_000_000;
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
-    static final int UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
-    static final int UNSAFE_INT_BASE = unsafe.arrayBaseOffset(int[].class);
+    static final long UNSAFE_BYTE_BASE = unsafe.arrayBaseOffset(byte[].class);
+    static final long UNSAFE_INT_BASE = unsafe.arrayBaseOffset(int[].class);
 
     MemorySegment segment, alignedSegment;
     byte[] base;

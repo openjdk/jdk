@@ -1043,8 +1043,11 @@ public final class Unsafe {
      * This constant differs from all results that will ever be returned from
      * {@link #staticFieldOffset}, {@link #objectFieldOffset},
      * or {@link #arrayBaseOffset}.
+     * <p>
+     * The static type is @code long} to emphasize that long arithmetics should
+     * always be used for offset calculations to avoid overflows.
      */
-    public static final int INVALID_FIELD_OFFSET = -1;
+    public static final long INVALID_FIELD_OFFSET = -1;
 
     /**
      * Reports the location of a given field in the storage allocation of its
@@ -1172,11 +1175,15 @@ public final class Unsafe {
      * for the same class, you may use that scale factor, together with this
      * base offset, to form new offsets to access elements of arrays of the
      * given class.
+     * <p>
+     * The return value is in the range of a {@code int}.  The return type is
+     * {@code long} to emphasize that long arithmetics should always be used
+     * for offset calculations to avoid overflows.
      *
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
-    public int arrayBaseOffset(Class<?> arrayClass) {
+    public long arrayBaseOffset(Class<?> arrayClass) {
         if (arrayClass == null) {
             throw new NullPointerException();
         }
@@ -1227,6 +1234,9 @@ public final class Unsafe {
      * will generally not work properly with accessors like {@link
      * #getByte(Object, long)}, so the scale factor for such classes is reported
      * as zero.
+     * <p>
+     * The computation of the actual memory offset should always use {@code
+     * long} arithmetics to avoid overflows.
      *
      * @see #arrayBaseOffset
      * @see #getInt(Object, long)
@@ -3840,7 +3850,7 @@ public final class Unsafe {
     private native Object staticFieldBase0(Field f);
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
-    private native int arrayBaseOffset0(Class<?> arrayClass);
+    private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetics
     private native int arrayIndexScale0(Class<?> arrayClass);
     private native int getLoadAverage0(double[] loadavg, int nelems);
 

@@ -60,7 +60,7 @@ public class SunMiscUnsafeAccessTestObject {
 
     static final long STATIC_V_OFFSET;
 
-    static int ARRAY_OFFSET;
+    static long ARRAY_OFFSET;
 
     static int ARRAY_SHIFT;
 

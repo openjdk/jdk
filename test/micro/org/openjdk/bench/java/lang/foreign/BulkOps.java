@@ -69,7 +69,7 @@ public class BulkOps {
 
     final int[] ints = new int[ELEM_SIZE];
     final MemorySegment bytesSegment = MemorySegment.ofArray(ints);
-    final int UNSAFE_INT_OFFSET = unsafe.arrayBaseOffset(int[].class);
+    final long UNSAFE_INT_OFFSET = unsafe.arrayBaseOffset(int[].class);
 
     // large(ish) segments/buffers with same content, 0, for mismatch, non-multiple-of-8 sized
     static final int SIZE_WITH_TAIL = (1024 * 1024) + 7;
