@@ -2111,8 +2111,8 @@ inline int Op_DivModIL(BasicType bt, bool is_unsigned) {
   }
 }
 
-// Interface to define actions that should be taken when running DataNodeBFS. Each use can extend this class to specify
-// a customized BFS.
+// Interface to define actions that should be taken when running a *NodeInputsBFS. Each use can extend this class to
+// specify a customized BFS.
 class BFSActions : public StackObj {
  public:
   // Should a node's inputs further be visited in the BFS traversal? By default, we visit all data inputs. Override this
@@ -2130,31 +2130,72 @@ class BFSActions : public StackObj {
   virtual void target_node_action(Node* target_node) = 0;
 };
 
-// Class to perform a BFS traversal on the data nodes from a given start node. The provided BFSActions guide which
-// data node's inputs should be further visited, which data nodes are target nodes and what to do with the target nodes.
-class DataNodeBFS : public StackObj {
+// Interface to define the node input visiting strategy. This interface is only used for CustomNodeInputsBFS and their
+// users.
+class BFSInputVisitStrategy : public StackObj {
+ public:
+  // Should this input be visited? This method can fundamentally restrict a BFS, for example, if only data nodes should
+  // be visited.
+  virtual bool should_visit_input(const Node* input) const = 0;
+
+  // This method returns the starting input index that should be visited when processing 'node'.
+  // Example implementations:
+  // - Only visiting data nodes? Return the constant index 1.
+  // - Visiting CFG nodes? Return index 0 but if 'node' is a Region, we should start at index 1.
+  virtual uint start_input_index(const Node* node) const = 0;
+};
+
+// Generic and customizable class to perform a BFS traversal on input nodes, dictated by the given BFSInputVisitStrategy,
+// from a given start node. The provided BFSActions guide which of a visited node's inputs should be further visited,
+// which nodes are target nodes and what to do with the target nodes.
+//
+// A user to traverse the node inputs of a graph is encouraged to first have a look at the common use cases covered by
+// the specialized *NodeInputsBFS classes found below that use this class internally. For example, DataNodeInputsBFS
+// only traverses data node inputs.
+class CustomNodeInputsBFS : public StackObj {
+  // Strategy defined by different *NodeInputsBFS classes.
+  const BFSInputVisitStrategy& _bfs_visit_input_strategy;
+
+  // BFS actions defined by a user of a *NodeInputsBFS class.
   BFSActions& _bfs_actions;
 
- public:
-  explicit DataNodeBFS(BFSActions& bfs_action) : _bfs_actions(bfs_action) {}
+  void visit_inputs_of(const Node* node, Unique_Node_List& nodes_to_visit);
 
-  // Run the BFS starting from 'start_node' and apply the actions provided to this class.
+ public:
+  CustomNodeInputsBFS(const BFSInputVisitStrategy& bfs_input_visit_strategy, BFSActions& bfs_actions)
+     : _bfs_visit_input_strategy(bfs_input_visit_strategy),
+       _bfs_actions(bfs_actions) {}
+
+  void run(Node* start_node);
+};
+
+// This class defines a data node visiting strategy for CustomNodeInputsBFS.
+class BFSDataNodeInputVisitStrategy : public BFSInputVisitStrategy {
+ public:
+  // Only visit data nodes.
+  bool should_visit_input(const Node* input) const override {
+    return !input->is_CFG();
+  }
+
+  // Data node inputs start at index 1 for data nodes.
+  uint start_input_index(const Node* node) const override {
+    return 1;
+  }
+};
+
+// Class to perform a BFS traversal on the data input nodes from a given start data node. The provided BFSActions guide
+// which of a data node's inputs should be further visited, which data nodes are target nodes and what to do with the
+// target nodes.
+class DataNodeInputsBFS : public StackObj {
+  const BFSDataNodeInputVisitStrategy _bfs_data_node_input_visit_strategy;
+  CustomNodeInputsBFS _custom_node_inputs_bfs;
+
+ public:
+  explicit DataNodeInputsBFS(BFSActions& bfs_actions)
+      : _custom_node_inputs_bfs(_bfs_data_node_input_visit_strategy, bfs_actions) {}
+
   void run(Node* start_node) {
-    ResourceMark rm;
-    Unique_Node_List _nodes_to_visit;
-    _nodes_to_visit.push(start_node);
-    for (uint i = 0; i < _nodes_to_visit.size(); i++) {
-      Node* next = _nodes_to_visit[i];
-      for (uint j = 1; j < next->req(); j++) {
-        Node* input = next->in(j);
-        if (_bfs_actions.is_target_node(input)) {
-          assert(_bfs_actions.should_visit(input), "must also pass node filter");
-          _bfs_actions.target_node_action(input);
-        } else if (_bfs_actions.should_visit(input)) {
-          _nodes_to_visit.push(input);
-        }
-      }
-    }
+    _custom_node_inputs_bfs.run(start_node);
   }
 };
 

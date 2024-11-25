@@ -3029,3 +3029,31 @@ const Type* TypeNode::Value(PhaseGVN* phase) const { return _type; }
 uint TypeNode::ideal_reg() const {
   return _type->ideal_reg();
 }
+
+// Run the BFS starting from 'start_node' and apply the actions provided to this class.
+void CustomNodeInputsBFS::run(Node* start_node) {
+  assert(_bfs_visit_input_strategy.should_visit_input(start_node), "start node must pass the visiting strategy");
+  ResourceMark rm;
+  Unique_Node_List nodes_to_visit;
+  nodes_to_visit.push(start_node);
+  for (uint i = 0; i < nodes_to_visit.size(); i++) {
+    Node* next = nodes_to_visit[i];
+    visit_inputs_of(next, nodes_to_visit);
+  }
+}
+
+void CustomNodeInputsBFS::visit_inputs_of(const Node* node, Unique_Node_List& nodes_to_visit) {
+  for (uint i = _bfs_visit_input_strategy.start_input_index(node); i < node->req(); i++) {
+    Node* input = node->in(i);
+    if (!_bfs_visit_input_strategy.should_visit_input(input)) {
+      // Different *NodeInputsBFS classes can define different strategies
+      continue;
+    }
+    if (_bfs_actions.is_target_node(input)) {
+      assert(_bfs_actions.should_visit(input), "must also pass node filter");
+      _bfs_actions.target_node_action(input);
+    } else if (_bfs_actions.should_visit(input)) {
+      nodes_to_visit.push(input);
+    }
+  }
+}
