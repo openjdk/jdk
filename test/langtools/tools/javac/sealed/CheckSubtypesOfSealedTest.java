@@ -76,7 +76,7 @@ public class CheckSubtypesOfSealedTest extends TestBase {
             void check(ClassModel classFile) throws Exception {
                 boolean found = false;
                 for (Attribute<?> attr: classFile.attributes()) {
-                    if (attr.attributeName().equals("PermittedSubclasses")) {
+                    if (attr.attributeName().equalsString("PermittedSubclasses")) {
                         PermittedSubclassesAttribute permittedSubclasses = (PermittedSubclassesAttribute)attr;
                         found = true;
                         if (permittedSubclasses.permittedSubclasses().isEmpty()) {
@@ -99,7 +99,7 @@ public class CheckSubtypesOfSealedTest extends TestBase {
         NOT_SEALED {
             void check(ClassModel classFile) throws Exception {
                 for (Attribute<?> attr: classFile.attributes()) {
-                    if (attr.attributeName().equals("PermittedSubclasses")) {
+                    if (attr.attributeName().equalsString("PermittedSubclasses")) {
                         throw new AssertionError(classFile.thisClass().name() + " should not be sealed");
                     }
                 }

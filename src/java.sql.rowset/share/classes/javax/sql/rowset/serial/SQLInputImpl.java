@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package javax.sql.rowset.serial;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.Map;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * An input stream used for custom mapping user-defined types (UDTs).
@@ -477,7 +476,6 @@ public class SQLInputImpl implements SQLInput {
                 // create new instance of the class
                 SQLData obj = null;
                 try {
-                    ReflectUtil.checkPackageAccess(c);
                     @SuppressWarnings("deprecation")
                     Object tmp = c.newInstance();
                     obj = (SQLData)tmp;

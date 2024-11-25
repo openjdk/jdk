@@ -143,7 +143,10 @@ ObjArrayKlass::ObjArrayKlass(int n, Klass* element_klass, Symbol* name) : ArrayK
 }
 
 size_t ObjArrayKlass::oop_size(oop obj) const {
-  assert(obj->is_objArray(), "must be object array");
+  // In this assert, we cannot safely access the Klass* with compact headers,
+  // because size_given_klass() calls oop_size() on objects that might be
+  // concurrently forwarded, which would overwrite the Klass*.
+  assert(UseCompactObjectHeaders || obj->is_objArray(), "must be object array");
   return objArrayOop(obj)->object_size();
 }
 

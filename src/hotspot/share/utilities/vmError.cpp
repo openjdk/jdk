@@ -717,10 +717,6 @@ void VMError::report(outputStream* st, bool _verbose) {
   address lastpc = nullptr;
 
   BEGIN
-  if (MemTracker::enabled() && NmtVirtualMemory_lock != nullptr && NmtVirtualMemory_lock->owned_by_self()) {
-    // Manually unlock to avoid reentrancy due to mallocs in detailed mode.
-    NmtVirtualMemory_lock->unlock();
-  }
 
   STEP("printing fatal error message")
     st->print_cr("#");
@@ -1227,7 +1223,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("printing owned locks on error", _verbose)
     // mutexes/monitors that currently have an owner
-    print_owned_locks_on_error(st);
+    Mutex::print_owned_locks_on_error(st);
     st->cr();
 
   STEP_IF("printing number of OutOfMemoryError and StackOverflow exceptions",

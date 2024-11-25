@@ -27,8 +27,6 @@ package java.lang.classfile.constantpool;
 import java.lang.classfile.AnnotationValue;
 import java.lang.constant.ConstantDesc;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A constant pool entry that may be used by annotation constant values,
  * which includes the four kinds of primitive constants and UTF8 constants.
@@ -43,9 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @see AnnotationValue.OfConstant
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationConstantValueEntry extends PoolEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, Utf8Entry {
 

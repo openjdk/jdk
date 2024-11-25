@@ -114,7 +114,8 @@
   template(GTestStopSafepoint)                    \
   template(JFROldObject)                          \
   template(JvmtiPostObjectFree)                   \
-  template(RendezvousGCThreads)
+  template(RendezvousGCThreads)                   \
+  template(ReinitializeMDO)
 
 class Thread;
 class outputStream;

@@ -465,7 +465,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 void MemDetailReporter::report_memory_file_allocations() {
   stringStream st;
   {
-    NmtVirtualMemoryLocker ml;
+    MemoryFileTracker::Instance::Locker lock;
     MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
   }
   output()->print_raw(st.freeze());

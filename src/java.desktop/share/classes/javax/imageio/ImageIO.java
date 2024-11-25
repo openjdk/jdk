@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,7 +49,6 @@ import javax.imageio.spi.ServiceRegistry;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import sun.awt.AppContext;
-import sun.security.action.GetPropertyAction;
 
 /**
  * A class containing static convenience methods for locating
@@ -165,10 +163,8 @@ public final class ImageIO {
      * Returns the default temporary (cache) directory as defined by the
      * java.io.tmpdir system property.
      */
-    @SuppressWarnings("removal")
     private static String getTempDir() {
-        GetPropertyAction a = new GetPropertyAction("java.io.tmpdir");
-        return AccessController.doPrivileged(a);
+        return System.getProperty("java.io.tmpdir");
     }
 
     /**
@@ -277,8 +273,6 @@ public final class ImageIO {
      *
      * @see File#createTempFile(String, String, File)
      *
-     * @throws SecurityException if the security manager denies
-     * access to the directory.
      * @throws IllegalArgumentException if {@code cacheDir} is
      * non-{@code null} but is not a directory.
      *

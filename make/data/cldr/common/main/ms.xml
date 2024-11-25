@@ -68,6 +68,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">Bini</language>
 			<language type="bkm">Kom</language>
 			<language type="bla">Siksika</language>
+			<language type="blo">Anii</language>
 			<language type="bm">Bambara</language>
 			<language type="bn">Benggali</language>
 			<language type="bo">Tibet</language>
@@ -264,6 +265,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">Komi</language>
 			<language type="kw">Cornish</language>
 			<language type="kwk">Kwak’wala</language>
+			<language type="kxv">Kuvi</language>
 			<language type="ky">Kirghiz</language>
 			<language type="la">Latin</language>
 			<language type="lad">Ladino</language>
@@ -273,8 +275,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">Lezghian</language>
 			<language type="lg">Ganda</language>
 			<language type="li">Limburgish</language>
+			<language type="lij">Liguria</language>
 			<language type="lil">Lillooet</language>
 			<language type="lkt">Lakota</language>
+			<language type="lmo">Lombard</language>
 			<language type="ln">Lingala</language>
 			<language type="lo">Laos</language>
 			<language type="lou">Kreol Louisiana</language>
@@ -438,6 +442,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">Congo Swahili</language>
 			<language type="swb">Comoria</language>
 			<language type="syr">Syriac</language>
+			<language type="szl">Silesia</language>
 			<language type="ta">Tamil</language>
 			<language type="tce">Tutchone Selatan</language>
 			<language type="te">Telugu</language>
@@ -480,7 +485,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">Uzbekistan</language>
 			<language type="vai">Vai</language>
 			<language type="ve">Venda</language>
+			<language type="vec">Venetia</language>
 			<language type="vi">Vietnam</language>
+			<language type="vmw">Makhuwa</language>
 			<language type="vo">Volapük</language>
 			<language type="vun">Vunjo</language>
 			<language type="wa">Walloon</language>
@@ -492,6 +499,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">Cina Wu</language>
 			<language type="xal">Kalmyk</language>
 			<language type="xh">Xhosa</language>
+			<language type="xnr">Kangri</language>
 			<language type="xog">Soga</language>
 			<language type="yav">Yangben</language>
 			<language type="ybb">Yemba</language>
@@ -500,6 +508,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">Nheengatu</language>
 			<language type="yue">Kantonis</language>
 			<language type="yue" alt="menu">Cina, Kantonis</language>
+			<language type="za">Zhuang</language>
 			<language type="zgh">Tamazight Maghribi Standard</language>
 			<language type="zh">Cina</language>
 			<language type="zh" alt="menu">Cina, Mandarin</language>
@@ -515,7 +524,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<scripts>
 			<script type="Adlm">Adlam</script>
 			<script type="Aghb" draft="contributed">Kaukasia Albania</script>
-			<script type="Arab">Arab</script>
 			<script type="Arab" alt="variant">Perso-Arab</script>
 			<script type="Aran">Nastaliq</script>
 			<script type="Armi" draft="contributed">Aramia Imperial</script>
@@ -573,7 +581,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Hrkt">Ejaan sukuan Jepun</script>
 			<script type="Hung" draft="contributed">Hungary Lama</script>
 			<script type="Ital" draft="contributed">Italik Lama</script>
-			<script type="Jamo">Jamo</script>
 			<script type="Java" draft="contributed">Jawa</script>
 			<script type="Jpan">Jepun</script>
 			<script type="Kali" draft="contributed">Kayah Li</script>
@@ -613,7 +620,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Nand" draft="contributed">Nandinagari</script>
 			<script type="Narb" draft="contributed">Arab Utara Lama</script>
 			<script type="Nbat" draft="contributed">Nabataean</script>
-			<script type="Newa" draft="contributed">Newa</script>
 			<script type="Nkoo">N’ko</script>
 			<script type="Nshu" draft="contributed">Nushu</script>
 			<script type="Ogam" draft="contributed">Ogham</script>
@@ -662,7 +668,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tfng">Tifinagh</script>
 			<script type="Tglg" draft="contributed">Tagalog</script>
 			<script type="Thaa">Thaana</script>
-			<script type="Thai">Thai</script>
 			<script type="Tibt">Tibet</script>
 			<script type="Tirh" draft="contributed">Tirhuta</script>
 			<script type="Ugar" draft="contributed">Ugaritic</script>
@@ -1006,51 +1011,99 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<variant type="1694ACAD">Awal Pertengahan Era Perancis</variant>
 			<variant type="1959ACAD">Akademik</variant>
 			<variant type="ABL1943">Perumusan sistem ejaan 1943</variant>
+			<variant type="AKUAPEM">AKUAPEM TWI</variant>
 			<variant type="ALALC97">Perumian ALA-LC, edisi 1997</variant>
 			<variant type="ALUKU">Dialek Aluku</variant>
 			<variant type="AO1990">Perjanjian Sistem Ejaan Bahasa Portugis 1990</variant>
+			<variant type="ARANES">ARAN</variant>
+			<variant type="ASANTE">ASANTE TWI</variant>
+			<variant type="AUVERN">AUVERGNAT</variant>
 			<variant type="BAKU1926">Abjad Latin Turki Disatukan</variant>
 			<variant type="BALANKA">Dialek Balanka Anii</variant>
 			<variant type="BARLA">Kumpulan dialek Barlavento Kabuverdianu</variant>
+			<variant type="BASICENG">ASAS INGGERIS</variant>
+			<variant type="BAUDDHA">BUDDHA</variant>
+			<variant type="BISCAYAN">BISCAYAN BISQUE</variant>
 			<variant type="BISKE">Dialek San Giorgio/Bila</variant>
 			<variant type="BOHORIC">Abjad Bohoric</variant>
 			<variant type="BOONT">Boontling</variant>
+			<variant type="CISAUP">CISALPINE</variant>
 			<variant type="COLB1945">Konvensyen Sistem Ejaan Portugis-Brazil 1945</variant>
+			<variant type="CORNU">INGGERIS CORNISH</variant>
+			<variant type="CREISS">OCCITAN CROISSANT</variant>
 			<variant type="DAJNKO">Abjad Dajnko</variant>
 			<variant type="EKAVSK">Serbia dengan sebutan Ekavia</variant>
 			<variant type="EMODENG">Inggeris Moden Awal</variant>
 			<variant type="FONIPA">Fonetik IPA</variant>
+			<variant type="FONKIRSH">ABJAD FONETIK ANTARABANGSA</variant>
+			<variant type="FONNAPA">ABJAD FONETIK AMERIKA UTARA</variant>
 			<variant type="FONUPA">Fonetik UPA</variant>
+			<variant type="FONXSAMP">TRANSKRIP X-SAMPA</variant>
+			<variant type="GASCON">OCCITAN GASCON</variant>
+			<variant type="GRCLASS">OCCITAN KLASIK</variant>
+			<variant type="GRITAL">ORTOGRAFI OCCITAN-ITALI</variant>
+			<variant type="GRMISTR">ORTOGRAFI MISTRALIA</variant>
 			<variant type="HEPBURN">Perumian Hepburn</variant>
+			<variant type="HOGNORSK">NORWAY TINGGI</variant>
+			<variant type="HSISTEMO">SERBIA IJEKAVIAN</variant>
 			<variant type="IJEKAVSK">Fon Serbia dengan sebutan Ijekavia</variant>
+			<variant type="ITIHASA">SANSKRIT EPIK</variant>
+			<variant type="IVANCHOV">ORTOGRAFI BULGARIA 1899</variant>
+			<variant type="JAUER">ROMANSH JAUER</variant>
+			<variant type="JYUTPING">KANTONIS ROMAN</variant>
 			<variant type="KKCOR">Sistem Ejaan Lazim</variant>
+			<variant type="KOCIEWIE">POLAND KOCIEWIE</variant>
 			<variant type="KSCOR">Sistem Ejaan Standard</variant>
+			<variant type="LAUKIKA">SANSKRIT KLASIK</variant>
+			<variant type="LEMOSIN">PERANCIS LIMOUSIN</variant>
+			<variant type="LENGADOC">OCCITAN LANGUEDOC</variant>
 			<variant type="LIPAW">Dialek Lipovaz Resia</variant>
+			<variant type="LUNA1918">ORTOGRAFI RUSIA SELEPAS 1917</variant>
 			<variant type="METELKO">Abjad Metelko</variant>
 			<variant type="MONOTON">Ekanada</variant>
 			<variant type="NDYUKA">Dialek Ndyuka</variant>
 			<variant type="NEDIS">Dialek Natisone</variant>
+			<variant type="NEWFOUND">INGGERIS NEWFOUNDLAND</variant>
+			<variant type="NICARD">OCCITAN NICARD</variant>
 			<variant type="NJIVA">Dialek Gniva/Njiva</variant>
 			<variant type="NULIK">Volapuk Moden</variant>
 			<variant type="OSOJS">Dialek Oseacco/Osojane</variant>
 			<variant type="OXENDICT">Ejaan Kamus Inggeris Oxford</variant>
+			<variant type="PAHAWH2">PAHAWH HMONG PERINGKAT KE-2</variant>
+			<variant type="PAHAWH3">PAHAWH HMONG PERINGKAT KE-3</variant>
+			<variant type="PAHAWH4">PAHAWH HMONG VERSI AKHIR</variant>
 			<variant type="PAMAKA">Dialek Pamaka</variant>
+			<variant type="PETR1708">ORTOGRAFI PETRINE</variant>
 			<variant type="PINYIN">Perumian Pinyin</variant>
 			<variant type="POLYTON">Banyak Nada</variant>
 			<variant type="POSIX">Komputer</variant>
+			<variant type="PROVENC">OCCITAN PROVENCE</variant>
+			<variant type="PUTER">ROMANSH PUTER</variant>
 			<variant type="REVISED">Sistem Ejaan Semakan</variant>
 			<variant type="RIGIK">Vopaluk Klasik</variant>
 			<variant type="ROZAJ">Resia</variant>
+			<variant type="RUMGR">RUMANTSCH GRISCHUN</variant>
 			<variant type="SAAHO">Saho</variant>
 			<variant type="SCOTLAND">Inggeris Standard Scotland</variant>
+			<variant type="SCOUSE">INGGERIS LIVERPOOL</variant>
+			<variant type="SIMPLE">RINGKAS</variant>
 			<variant type="SOLBA">Dialek Stolvizza/Solbica</variant>
 			<variant type="SOTAV">Kumpulan dialek Sotavento Kabuverdianu</variant>
+			<variant type="SPANGLIS">iNGGERIS SEPANYOL</variant>
+			<variant type="SURMIRAN">ROMANSH SURMIRAN</variant>
+			<variant type="SURSILV">ROMANSH SURSILVAN</variant>
+			<variant type="SUTSILV">ROMANSH SUTSILVAN</variant>
 			<variant type="TARASK">Sistem ejaan Taraskievica</variant>
 			<variant type="UCCOR">Sistem Ejaan Bersatu</variant>
 			<variant type="UCRCOR">Sistem Ejaan Semakan Bersatu</variant>
+			<variant type="ULSTER">SCOTS ULSTER</variant>
 			<variant type="UNIFON">Abjad fonetik Unifon</variant>
+			<variant type="VAIDIKA">VEDIC SANSKRIT</variant>
 			<variant type="VALENCIA">Valencia</variant>
+			<variant type="VALLADER">ROMANSH VALLADER</variant>
+			<variant type="VIVARAUP">VIVARO-ALPINE</variant>
 			<variant type="WADEGILE">Perumian Wade-Giles</variant>
+			<variant type="XSISTEMO">X-SISTEM ESPERANTO</variant>
 		</variants>
 		<keys>
 			<key type="calendar">Kalendar</key>
@@ -1084,7 +1137,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">Kalendar Kebangsaan India</type>
 			<type key="calendar" type="islamic">Kalendar Islam</type>
 			<type key="calendar" type="islamic-civil">Kalendar Sivil Islam</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">Kalendar Islam (Arab Saudi, cerapan)</type>
+			<type key="calendar" type="islamic-rgsa">Kalendar Islam (Arab Saudi, cerapan)</type>
 			<type key="calendar" type="islamic-tbla">Kalendar Islam (jadual, zaman astronomi)</type>
 			<type key="calendar" type="islamic-umalqura">Kalendar Islam (Umm Al-Quran)</type>
 			<type key="calendar" type="iso8601">Kalendar ISO-8601</type>
@@ -1243,7 +1296,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -1676,10 +1729,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="evening1">petang</dayPeriod>
 							<dayPeriod type="night1">malam</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a</dayPeriod>
-							<dayPeriod type="pm">p</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="morning1">tengah malam</dayPeriod>
 							<dayPeriod type="morning2">pagi</dayPeriod>
@@ -1697,8 +1746,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="night1">malam</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a</dayPeriod>
-							<dayPeriod type="pm">p</dayPeriod>
 							<dayPeriod type="morning1">pagi</dayPeriod>
 							<dayPeriod type="morning2">pagi</dayPeriod>
 							<dayPeriod type="afternoon1">tengah hari</dayPeriod>
@@ -1808,6 +1855,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'minggu' W 'daripada' MMMM</dateFormatItem>
 						<dateFormatItem id="yM">M-y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
@@ -1817,6 +1865,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'minggu' w 'daripada' Y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Gy">
@@ -2160,6 +2209,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} mgu lalu</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="weekOfMonth">
+				<displayName>Minggu dalam Bulan</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>Minggu dlm bulan</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>Minggu dalam Bulan</displayName>
+			</field>
 			<field type="day">
 				<displayName>hari</displayName>
 				<relative type="-2">kelmarin</relative>
@@ -2184,8 +2242,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">hari ini</relative>
 				<relative type="1">esok</relative>
 			</field>
+			<field type="dayOfYear">
+				<displayName>Hari dalam Tahun</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>Hari dlm Thn</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>Hari dlm Thn</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>Hari dalam Minggu</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>Hari dalam Bulan</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>Hari dlm bln</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>Hari dlm bln</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">Ahad lalu</relative>
@@ -2424,6 +2500,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Waktu {0}</regionFormat>
 			<regionFormat type="daylight">Waktu Siang {0}</regionFormat>
 			<regionFormat type="standard">Waktu Piawai {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Waktu Universal Selaras</standard>
@@ -2486,9 +2565,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<metazone type="Acre">
 				<long>
@@ -2740,13 +2816,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Waktu Siang China</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Waktu Choibalsan</generic>
-					<standard>Waktu Piawai Choibalsan</standard>
-					<daylight>Waktu Musim Panas Choibalsan</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Waktu Pulau Christmas</standard>
@@ -2993,6 +3062,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Waktu Petropavlovsk-Kamchatski</generic>
 					<standard>Waktu Piawai Petropavlovsk-Kamchatski</standard>
 					<daylight>Waktu Musim Panas Petropavlovsk-Kamchatski</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Waktu Kazakhstan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3445,7 +3519,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</dates>
 	<numbers>
 		<symbols numberSystem="arabext">
-			<decimal draft="contributed">.</decimal>
+			<decimal>.</decimal>
 		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
@@ -3515,7 +3589,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other" alt="alphaNextToNumber">¤ 000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -4797,6 +4870,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>kuart Imp.</displayName>
 				<unitPattern count="other">{0} kuart Imp.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>cahaya</displayName>
+				<unitPattern count="other">{0} cahaya</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>bahagian per bilion</displayName>
+				<unitPattern count="other">{0} bahagian per bilion</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>malam</displayName>
+				<unitPattern count="other">{0} malam</unitPattern>
+				<perUnitPattern>{0} setiap malam</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>arah mata angin</displayName>
 				<coordinateUnitPattern type="east">{0} timur</coordinateUnitPattern>
@@ -5124,6 +5210,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>cubit</displayName>
 				<unitPattern count="other">{0} cubit</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>cahaya</displayName>
+				<unitPattern count="other">{0} cahaya</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>bahagian/bilion</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>malam</displayName>
+				<unitPattern count="other">{0} malam</unitPattern>
+				<perUnitPattern>{0}/malam</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>arah</displayName>
 			</coordinateUnit>
@@ -5211,9 +5309,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-year">
 				<displayName>thn</displayName>
-			</unit>
-			<unit type="duration-quarter">
-				<unitPattern count="other">{0}q</unitPattern>
 			</unit>
 			<unit type="duration-day">
 				<unitPattern count="other">{0} h</unitPattern>
@@ -5392,6 +5487,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-dram">
 				<unitPattern count="other">{0}dr.fl.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>cahaya</displayName>
+				<unitPattern count="other">{0} cahaya</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>malam</displayName>
+				<unitPattern count="other">{0} malam</unitPattern>
+				<perUnitPattern>{0}/malam</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>
