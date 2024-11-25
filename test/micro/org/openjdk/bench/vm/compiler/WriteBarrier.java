@@ -24,6 +24,7 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -125,6 +126,7 @@ public class WriteBarrier {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realReferencesSmall[indicesSmall[i]];
@@ -132,6 +134,7 @@ public class WriteBarrier {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullReferencesSmall[indicesSmall[i]];
@@ -139,6 +142,7 @@ public class WriteBarrier {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realReferencesLarge[indicesLarge[i]];
@@ -146,6 +150,7 @@ public class WriteBarrier {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullReferencesLarge[indicesLarge[i]];
