@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 7080156 7094245
  * @summary Tests beans with public arrays
- * @run main/othervm -Djava.security.manager=allow Test7080156
+ * @run main/othervm Test7080156
  * @author Sergey Malenkov
  */
 
 public class Test7080156 extends AbstractTest {
     public static void main(String[] args) {
-        new Test7080156().test(true);
+        new Test7080156().test();
     }
 
     protected Object getObject() {

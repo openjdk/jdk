@@ -984,7 +984,7 @@ int awt_getPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
                                  0, y, w,
                                  maxLines, jdata, jdatabuffer);
 
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->DeleteLocalRef(env, jdata);
             return -1;
         }
@@ -1104,7 +1104,7 @@ int awt_setPixels(JNIEnv *env, RasterS_t *rasterP, void *bufferP) {
                                0, y, w,
                                maxLines, jdata, jdatabuffer);
 
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->DeleteLocalRef(env, jdata);
             return -1;
         }

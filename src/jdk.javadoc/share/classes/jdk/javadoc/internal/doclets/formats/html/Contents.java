@@ -172,6 +172,7 @@ public class Contents {
     public final Content relatedPackages;
     public final Content returns;
     public final Content searchLabel;
+    public final Content searchTagsLabel;
     public final Content seeAlso;
     public final Content serializedForm;
     public final Content servicesLabel;
@@ -325,6 +326,7 @@ public class Contents {
         relatedPackages = getContent("doclet.Related_Packages");
         returns = getContent("doclet.Returns");
         searchLabel = getContent("doclet.search");
+        searchTagsLabel = getContent("doclet.searchTags");
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");

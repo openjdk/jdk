@@ -364,7 +364,7 @@ Java_sun_awt_CGraphicsDevice_nativeGetDisplayModes
         if (cRef != NULL) {
             jobject oneMode = createJavaDisplayMode(cRef, env);
             (*env)->SetObjectArrayElement(env, jreturnArray, n, oneMode);
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionDescribe(env);
                 (*env)->ExceptionClear(env);
                 continue;
