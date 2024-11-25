@@ -37,8 +37,8 @@ public class UDivINodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "identity", "identityAgain", "identityThird",
-            "retainDenominator", "divByPow2" })
+    @Run(test = {"constant", "identity", "identityAgain", "identityAgainButBig", "identityThird",
+            "retainDenominator", "divByPow2", "divByPow2Big" })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         a = (a == 0) ? 1 : a;
@@ -80,6 +80,8 @@ public class UDivINodeIdealizationTests {
         Asserts.assertEQ(Integer.divideUnsigned(a, 1), identity(a));
         Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned(13, 13)), identityAgain(a));
         Asserts.assertEQ(Integer.divideUnsigned(a, 8), divByPow2(a), "divByPow2 " + a);
+        Asserts.assertEQ(Integer.divideUnsigned(a, -2147483648), divByPow2Big(a));
+        Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned(-2129457054, -2129457054)), identityAgainButBig(a));
     }
 
     @Test
@@ -106,6 +108,13 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.DIV})
+    // Checks x / (c / c) => x
+    public int identityAgainButBig(int x) {
+        return Integer.divideUnsigned(x, Integer.divideUnsigned(-2129457054, -2129457054));  // Integer.parseUnsignedInt("2165510242") = -2129457054
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / (y / y) => x
     public int identityThird(int x, int y) {
@@ -124,11 +133,16 @@ public class UDivINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.DIV})
-    @IR(counts = {
-            IRNode.URSHIFT, "1",
-    })
+    @IR(counts = {IRNode.URSHIFT, "1"})
     // Dividing an unsigned number by 8 is a trivial right shift by 3
     public int divByPow2(int x) {
         return Integer.divideUnsigned(x, 8);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.URSHIFT, "1"})
+    public int divByPow2Big(int x) {
+        return Integer.divideUnsigned(x, -2147483648);  // -2147483648 = Integer.parseUnsignedInt("2147483648")
     }
 }

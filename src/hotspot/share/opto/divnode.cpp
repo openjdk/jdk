@@ -473,7 +473,7 @@ Node* make_urshift<TypeInt>(Node* a, Node* b) {
   return new URShiftINode(a, b);
 }
 
-template <typename TypeClass, typename Signed>
+template <typename TypeClass, typename Unsigned>
 Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   // Check for dead control input
   if (div->in(0) && div->remove_dead_region(phase, can_reshape)) {
@@ -504,14 +504,10 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   if (!tl->is_con()) {
     return nullptr;
   }
-  Signed l = tl->get_con(); // Get divisor
+  Unsigned l = static_cast<Unsigned>(tl->get_con()); // Get divisor
 
   if (l == 0) {
     return nullptr; // Dividing by zero constant does not idealize
-  }
-
-  if (l == min_jint) {
-    return nullptr;
   }
 
   if (is_power_of_2(l)) {
@@ -948,7 +944,7 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return unsigned_div_ideal<TypeInt, jint>(phase, can_reshape, this);
+  return unsigned_div_ideal<TypeInt, juint>(phase, can_reshape, this);
 }
 
 //=============================================================================
@@ -984,7 +980,7 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return unsigned_div_ideal<TypeLong, jlong>(phase, can_reshape, this);
+  return unsigned_div_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
 
 //=============================================================================

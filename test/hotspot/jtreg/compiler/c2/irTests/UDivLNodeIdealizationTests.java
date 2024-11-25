@@ -37,8 +37,8 @@ public class UDivLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "identity", "identityAgain", "identityThird",
-            "retainDenominator", "divByPow2"})
+    @Run(test = {"constant", "identity", "identityAgain", "identityAgainButBig", "identityThird",
+            "retainDenominator", "divByPow2", "divByPow2Big"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         a = (a == 0) ? 1 : a;
@@ -80,6 +80,8 @@ public class UDivLNodeIdealizationTests {
         Asserts.assertEQ(Long.divideUnsigned(a, 1), identity(a));
         Asserts.assertEQ(Long.divideUnsigned(a, Long.divideUnsigned(13, 13)), identityAgain(a));
         Asserts.assertEQ(Long.divideUnsigned(a, 8), divByPow2(a));
+        Asserts.assertEQ(Long.divideUnsigned(a, -9223372036854775808L), divByPow2Big(a));
+        Asserts.assertEQ(Long.divideUnsigned(a, Long.divideUnsigned(-9214294468834361176L, -9214294468834361176L)), identityAgainButBig(a));
     }
 
     @Test
@@ -106,6 +108,13 @@ public class UDivLNodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.DIV})
+    // Checks x / (c / c) => x
+    public long identityAgainButBig(long x) {
+        return Long.divideUnsigned(x, Long.divideUnsigned(-9214294468834361176L, -9214294468834361176L));  // Long.parseUnsignedLong("9232449604875190440") = -9214294468834361176L
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / (y / y) => x
     public long identityThird(long x, long y) {
@@ -128,5 +137,12 @@ public class UDivLNodeIdealizationTests {
     // Dividing an unsigned number by 8 is a trivial right shift by 3
     public long divByPow2(long x) {
         return Long.divideUnsigned(x, 8L);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.URSHIFT, "1"})
+    public long divByPow2Big(long x) {
+        return Long.divideUnsigned(x, -9223372036854775808L);  // -9223372036837998592 = Long.parseUnsignedLong("9223372036854775808")
     }
 }
