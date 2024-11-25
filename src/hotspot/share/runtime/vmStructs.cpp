@@ -373,9 +373,9 @@
   /* CompressedOops */                                                                                                               \
   /******************/                                                                                                               \
                                                                                                                                      \
-     static_field(CompressedOops,              _narrow_oop._base,                             address)                               \
-     static_field(CompressedOops,              _narrow_oop._shift,                            int)                                   \
-     static_field(CompressedOops,              _narrow_oop._use_implicit_null_checks,         bool)                                  \
+     static_field(CompressedOops,              _base,                                         address)                               \
+     static_field(CompressedOops,              _shift,                                        int)                                   \
+     static_field(CompressedOops,              _use_implicit_null_checks,                     bool)                                  \
                                                                                                                                      \
   /***************************/                                                                                                      \
   /* CompressedKlassPointers */                                                                                                      \
@@ -563,6 +563,12 @@
                                                                                                                                      \
   nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
                                                                                                                                      \
+  /*****************************************************/                                                                            \
+  /* UpcallStubs (NOTE: incomplete, but only a little) */                                                                            \
+  /*****************************************************/                                                                            \
+                                                                                                                                     \
+  nonstatic_field(UpcallStub,                  _frame_data_offset,                            ByteSize)                              \
+                                                                                                                                     \
   /**************************************************/                                                                               \
   /* NMethods (NOTE: incomplete, but only a little) */                                                                               \
   /**************************************************/                                                                               \
@@ -659,6 +665,7 @@
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _active_handles,                               JNIHandleBlock*)                       \
+  nonstatic_field(JavaThread,                  _lock_id,                                      int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
@@ -779,7 +786,8 @@
                                                                                                                                      \
   volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
-  unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
+  volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
+  volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
   volatile_nonstatic_field(BasicLock,          _metadata,                                     uintptr_t)                             \
   nonstatic_field(ObjectMonitor,               _contentions,                                  int)                                   \
@@ -1012,7 +1020,9 @@
   nonstatic_field(AccessFlags,                 _flags,                                        jint)                                  \
   nonstatic_field(elapsedTimer,                _counter,                                      jlong)                                 \
   nonstatic_field(elapsedTimer,                _active,                                       bool)                                  \
-  nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)
+  nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
+                                                                                                                                     \
+  nonstatic_field(UpcallStub::FrameData,       jfa,                                           JavaFrameAnchor)
 
 //--------------------------------------------------------------------------------
 // VM_TYPES
@@ -1306,6 +1316,7 @@
   declare_type(nmethod,                  CodeBlob)                        \
   declare_type(RuntimeStub,              RuntimeBlob)                     \
   declare_type(SingletonBlob,            RuntimeBlob)                     \
+  declare_type(UpcallStub,               RuntimeBlob)                     \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
   declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
@@ -1581,7 +1592,6 @@
   declare_c2_type(StorePNode, StoreNode)                                  \
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreNKlassNode, StoreNode)                             \
-  declare_c2_type(StoreCMNode, StoreNode)                                 \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
   declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
@@ -1900,6 +1910,7 @@
   declare_integer_type(BasicType)   /* FIXME: wrong type (not integer) */ \
                                                                           \
   declare_integer_type(CompLevel)                                         \
+  declare_integer_type(ByteSize)                                          \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
@@ -1948,6 +1959,7 @@
   declare_type(FileMapInfo, CHeapObj<mtInternal>)                         \
   declare_toplevel_type(FileMapHeader)                                    \
   declare_toplevel_type(CDSFileMapRegion)                                 \
+  declare_toplevel_type(UpcallStub::FrameData)                            \
                                                                           \
   /************/                                                          \
   /* GC types */                                                          \
@@ -1993,8 +2005,6 @@
   declare_constant(LogBytesPerWord)                                       \
   declare_constant(BytesPerWord)                                          \
   declare_constant(BytesPerLong)                                          \
-                                                                          \
-  declare_constant(LogKlassAlignmentInBytes)                              \
                                                                           \
   declare_constant(HeapWordSize)                                          \
   declare_constant(LogHeapWordSize)                                       \
@@ -2500,6 +2510,7 @@
   declare_constant(markWord::lock_shift)                                  \
   declare_constant(markWord::age_shift)                                   \
   declare_constant(markWord::hash_shift)                                  \
+  LP64_ONLY(declare_constant(markWord::klass_shift))                      \
                                                                           \
   declare_constant(markWord::lock_mask)                                   \
   declare_constant(markWord::lock_mask_in_place)                          \
@@ -2523,7 +2534,9 @@
   declare_constant(InvocationCounter::count_shift)                        \
                                                                           \
   /* ObjectMonitor constants */                                           \
+  declare_constant(ObjectMonitor::NO_OWNER)                               \
   declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
+  declare_constant(ObjectMonitor::DEFLATER_MARKER)                        \
 
 //--------------------------------------------------------------------------------
 //

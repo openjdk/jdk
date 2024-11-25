@@ -28,6 +28,7 @@
 #include "memory/universe.hpp"
 
 #include "gc/shared/classUnloadingContext.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -53,7 +54,6 @@
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
@@ -252,7 +252,7 @@ jint ShenandoahHeap::initialize() {
                                           bitmap_size_orig, bitmap_page_size,
                                           bitmap.base(),
                                           bitmap.size(), bitmap.page_size());
-  MemTracker::record_virtual_memory_type(bitmap.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(bitmap.base(), mtGC);
   _bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   _bitmap_region_special = bitmap.special();
 
@@ -276,7 +276,7 @@ jint ShenandoahHeap::initialize() {
       os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
                                 "Cannot commit verification bitmap memory");
     }
-    MemTracker::record_virtual_memory_type(verify_bitmap.base(), mtGC);
+    MemTracker::record_virtual_memory_tag(verify_bitmap.base(), mtGC);
     MemRegion verify_bitmap_region = MemRegion((HeapWord *) verify_bitmap.base(), verify_bitmap.size() / HeapWordSize);
     _verification_bit_map.initialize(_heap_region, verify_bitmap_region);
     _verifier = new ShenandoahVerifier(this, &_verification_bit_map);
@@ -290,7 +290,7 @@ jint ShenandoahHeap::initialize() {
                                           bitmap_size_orig, aux_bitmap_page_size,
                                           aux_bitmap.base(),
                                           aux_bitmap.size(), aux_bitmap.page_size());
-  MemTracker::record_virtual_memory_type(aux_bitmap.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(aux_bitmap.base(), mtGC);
   _aux_bitmap_region = MemRegion((HeapWord*) aux_bitmap.base(), aux_bitmap.size() / HeapWordSize);
   _aux_bitmap_region_special = aux_bitmap.special();
   _aux_bit_map.initialize(_heap_region, _aux_bitmap_region);
@@ -308,7 +308,7 @@ jint ShenandoahHeap::initialize() {
                                           region_storage_size_orig, region_page_size,
                                           region_storage.base(),
                                           region_storage.size(), region_storage.page_size());
-  MemTracker::record_virtual_memory_type(region_storage.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(region_storage.base(), mtGC);
   if (!region_storage.special()) {
     os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
                               "Cannot commit region memory");
@@ -421,6 +421,8 @@ jint ShenandoahHeap::initialize() {
   _control_thread = new ShenandoahControlThread();
 
   ShenandoahInitLogger::print();
+
+  FullGCForwarding::initialize(_heap_region);
 
   return JNI_OK;
 }
@@ -693,7 +695,7 @@ void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
   if (ShenandoahPacing) {
     control_thread()->pacing_notify_alloc(words);
     if (waste) {
-      pacer()->claim_for_alloc(words, true);
+      pacer()->claim_for_alloc<true>(words);
     }
   }
 }
@@ -1130,7 +1132,7 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
+  size_t size = ShenandoahForwarding::size(p);
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
@@ -2012,8 +2014,8 @@ void ShenandoahHeap::stw_process_weak_roots(bool full_gc) {
   // Cleanup weak roots
   if (has_forwarded_objects()) {
     ShenandoahForwardedIsAliveClosure is_alive;
-    ShenandoahUpdateRefsClosure keep_alive;
-    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahUpdateRefsClosure>
+    ShenandoahNonConcUpdateRefsClosure keep_alive;
+    ShenandoahParallelWeakRootsCleaningTask<ShenandoahForwardedIsAliveClosure, ShenandoahNonConcUpdateRefsClosure>
       cleaning_task(timing_phase, &is_alive, &keep_alive, num_workers);
     _workers->run_task(&cleaning_task);
   } else {
@@ -2197,7 +2199,7 @@ public:
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
       ShenandoahParallelWorkerSession worker_session(worker_id);
-      do_work<ShenandoahSTWUpdateRefsClosure>(worker_id);
+      do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
     }
   }
 

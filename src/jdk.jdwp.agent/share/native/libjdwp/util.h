@@ -386,6 +386,15 @@ jvmtiError allNestedClasses(jclass clazz, jclass **ppnested, jint *pcount);
 
 void setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue);
 
+#ifdef DEBUG
+// APIs that can be called when debugging the debug agent
+char* translateThreadState(jint flags);
+char* getThreadName(jthread thread);
+char* getMethodName(jmethodID method);
+void printStackTrace(jthread thread);
+void printThreadInfo(jthread thread);
+#endif
+
 void *jvmtiAllocate(jint numBytes);
 void jvmtiDeallocate(void *buffer);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,8 @@ public class ToolProvider {
      * @implSpec This implementation always returns {@code null}.
      * @deprecated This method is subject to removal in a future version of
      * Java SE.
-     * Use the {@link java.util.spi.ToolProvider system tool provider} or
-     * {@link java.util.ServiceLoader service loader} mechanisms to
+     * Use the {@linkplain java.util.spi.ToolProvider system tool provider} or
+     * {@linkplain java.util.ServiceLoader service loader} mechanisms to
      * locate system tools as well as user-installed tools.
      * @return a class loader, or {@code null}
      */

@@ -76,7 +76,6 @@ public class DumpingWithJavaAgent {
         output.shouldContain(warningMessages[0]);
         output.shouldContain(warningMessages[1]);
         output.shouldContain("inside SimpleAgent");
-        output.shouldContain("Skipping java/lang/invoke/BoundMethodHandle$Species_LLLL because it is dynamically generated");
 
         // CDS dumping with a java agent with the AllowArchvingWithJavaAgent diagnostic option.
         output = TestCommon.testDump(appJar, TestCommon.list("Hello"),

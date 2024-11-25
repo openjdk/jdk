@@ -633,9 +633,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // set the correct thread state
-  osthread->set_thread_type(thr_type);
-
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
 
@@ -1509,7 +1506,7 @@ void os::jvm_path(char *buf, jint buflen) {
   assert(ret, "cannot locate libjvm");
   char *rp = nullptr;
   if (ret && dli_fname[0] != '\0') {
-    rp = os::Posix::realpath(dli_fname, buf, buflen);
+    rp = os::realpath(dli_fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
@@ -1541,7 +1538,7 @@ void os::jvm_path(char *buf, jint buflen) {
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        rp = os::Posix::realpath(java_home_var, buf, buflen);
+        rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
           return;
         }
@@ -1575,7 +1572,7 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
         } else {
           // Fall back to path of current library
-          rp = os::Posix::realpath(dli_fname, buf, buflen);
+          rp = os::realpath(dli_fname, buf, buflen);
           if (rp == nullptr) {
             return;
           }
@@ -2151,13 +2148,12 @@ jint os::init_2(void) {
 
       // On macOS according to setrlimit(2), OPEN_MAX must be used instead
       // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
-      // we can, in fact, use even RLIM_INFINITY, so try the max value
-      // that the system claims can be used first, same as other BSD OSes.
-      // However, some terminals (ksh) will internally use "int" type
-      // to store this value and since RLIM_INFINITY overflows an "int"
-      // we might end up with a negative value, so cap the system limit max
-      // at INT_MAX instead, just in case, for everyone.
-      nbr_files.rlim_cur = MIN(INT_MAX, nbr_files.rlim_max);
+      // we can, in fact, use even RLIM_INFINITY.
+      // However, we need to limit the value to 0x100000 (which is the max value
+      // allowed on Linux) so that any existing code that iterates over all allowed
+      // file descriptors, finishes in a reasonable time, without appearing
+      // to hang.
+      nbr_files.rlim_cur = MIN(0x100000, nbr_files.rlim_max);
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
@@ -2398,16 +2394,6 @@ int os::open(const char *path, int oflag, int mode) {
   }
 
   return fd;
-}
-
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
-// move file pointer to the specified offset
-jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)

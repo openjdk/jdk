@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.util.HashSet;

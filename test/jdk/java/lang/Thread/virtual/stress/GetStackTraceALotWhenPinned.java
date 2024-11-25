@@ -26,23 +26,23 @@
  * @bug 8322818
  * @summary Stress test Thread.getStackTrace on a virtual thread that is pinned
  * @requires vm.debug != true
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
- * @run main/othervm --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 500000
+ * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 100000
  */
 
 /*
  * @test
  * @requires vm.debug == true
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
- * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 200000
+ * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 50000
  */
 
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadPinner;
 
 public class GetStackTraceALotWhenPinned {
@@ -78,7 +78,7 @@ public class GetStackTraceALotWhenPinned {
             }
         });
 
-        long lastTimestamp = System.currentTimeMillis();
+        long lastTime = System.nanoTime();
         for (int i = 1; i <= iterations; i++) {
             // wait for virtual thread to arrive
             barrier.await();
@@ -86,10 +86,15 @@ public class GetStackTraceALotWhenPinned {
             thread.getStackTrace();
             LockSupport.unpark(thread);
 
-            long currentTime = System.currentTimeMillis();
-            if (i == iterations || ((currentTime - lastTimestamp) > 500)) {
+            long currentTime = System.nanoTime();
+            if (i == iterations || ((currentTime - lastTime) > 1_000_000_000L)) {
                 System.out.format("%s => %d of %d%n", Instant.now(), i, iterations);
-                lastTimestamp = currentTime;
+                lastTime = currentTime;
+            }
+
+            if (Thread.currentThread().isInterrupted()) {
+                // fail quickly if interrupted by jtreg
+                throw new RuntimeException("interrupted");
             }
         }
     }

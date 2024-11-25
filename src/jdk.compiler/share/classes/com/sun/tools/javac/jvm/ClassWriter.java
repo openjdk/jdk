@@ -329,7 +329,7 @@ public class ClassWriter extends ClassFile {
         int alenIdx = writeAttr(attributeName);
         ClassSymbol enclClass = c.owner.enclClass();
         MethodSymbol enclMethod =
-            (c.owner.type == null // local to init block
+            ((c.owner.flags() & BLOCK) != 0 // local to init block
              || c.owner.kind != MTH) // or member init
             ? null
             : ((MethodSymbol)c.owner).originalEnclosingMethod();
@@ -649,8 +649,16 @@ public class ClassWriter extends ClassFile {
         databuf.appendChar(poolWriter.putDescriptor(c.type));
         databuf.appendChar(c.values.length());
         for (Pair<Symbol.MethodSymbol,Attribute> p : c.values) {
+            checkAnnotationArraySizeInternal(p);
             databuf.appendChar(poolWriter.putName(p.fst.name));
             p.snd.accept(awriter);
+        }
+    }
+
+    private void checkAnnotationArraySizeInternal(Pair<Symbol.MethodSymbol, Attribute> p) {
+        if (p.snd instanceof Attribute.Array arrAttr &&
+                arrAttr.values.length > ClassFile.MAX_ANNOTATIONS) {
+            log.error(Errors.AnnotationArrayTooLarge(p.fst.owner));
         }
     }
 

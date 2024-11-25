@@ -105,28 +105,28 @@ public class TypePollution {
     int probe = 99;
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchLinearNoSCC() {
         return parallelInstanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchLinearSCC() {
         return parallelInstanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchTableNoSCC() {
         return parallelInstanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchTableSCC() {
         return parallelInstanceOfInterfaceSwitch();
@@ -149,25 +149,25 @@ public class TypePollution {
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchLinearNoSCC() {
         return instanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchLinearSCC() {
         return instanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchTableNoSCC() {
         return instanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchTableSCC() {
         return instanceOfInterfaceSwitch();
     }

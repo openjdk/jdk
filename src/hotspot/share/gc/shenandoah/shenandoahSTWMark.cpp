@@ -31,38 +31,10 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-
-template<ShenandoahGenerationType GENERATION>
-class ShenandoahInitMarkRootsClosure : public OopClosure {
-private:
-  ShenandoahObjToScanQueue* const _queue;
-  ShenandoahMarkingContext* const _mark_context;
-
-  template <class T>
-  inline void do_oop_work(T* p);
-public:
-  ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q);
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(oop* p)       { do_oop_work(p); }
-};
-
-template <ShenandoahGenerationType GENERATION>
-ShenandoahInitMarkRootsClosure<GENERATION>::ShenandoahInitMarkRootsClosure(ShenandoahObjToScanQueue* q) :
-  _queue(q),
-  _mark_context(ShenandoahHeap::heap()->marking_context()) {
-}
-
-template <ShenandoahGenerationType GENERATION>
-template <class T>
-void ShenandoahInitMarkRootsClosure<GENERATION>::do_oop_work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _mark_context, false);
-}
 
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:
@@ -133,13 +105,13 @@ void ShenandoahSTWMark::mark() {
   ShenandoahCodeRoots::disarm_nmethods();
 
   assert(task_queues()->is_empty(), "Should be empty");
-  TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  ShenandoahInitMarkRootsClosure<NON_GEN>  init_mark(task_queues()->queue(worker_id));
-  _root_scanner.roots_do(&init_mark, worker_id);
+  ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
+  ShenandoahMarkRefsClosure<NON_GEN> cl(task_queues()->queue(worker_id), rp);
+  _root_scanner.roots_do(&cl, worker_id);
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {

@@ -29,12 +29,12 @@ import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribu
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
-import jdk.internal.classfile.impl.AnnotationImpl;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
-
 import java.lang.constant.ClassDesc;
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
+
+import jdk.internal.classfile.impl.AnnotationImpl;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models an {@code annotation} structure (JVMS {@jvms 4.7.16}) or part of a {@code
@@ -62,9 +62,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see RuntimeVisibleParameterAnnotationsAttribute
  * @see RuntimeInvisibleParameterAnnotationsAttribute
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Annotation
         permits AnnotationImpl {
 
@@ -78,7 +77,7 @@ public sealed interface Annotation
      * {@return the annotation interface, as a symbolic descriptor}
      */
     default ClassDesc classSymbol() {
-        return ClassDesc.ofDescriptor(className().stringValue());
+        return Util.fieldTypeSymbol(className());
     }
 
     /**
@@ -115,7 +114,7 @@ public sealed interface Annotation
      */
     static Annotation of(ClassDesc annotationClass,
                          List<AnnotationElement> elements) {
-        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass.descriptorString()), elements);
+        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass), elements);
     }
 
     /**
@@ -125,6 +124,6 @@ public sealed interface Annotation
      */
     static Annotation of(ClassDesc annotationClass,
                          AnnotationElement... elements) {
-        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass.descriptorString()), elements);
+        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass), elements);
     }
 }

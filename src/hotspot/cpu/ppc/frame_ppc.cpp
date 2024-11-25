@@ -117,9 +117,9 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
-    common_abi* sender_abi = (common_abi*) fp;
+    volatile common_abi* sender_abi = (common_abi*) fp; // May get updated concurrently by deoptimization!
     intptr_t* sender_sp = (intptr_t*) fp;
-    address   sender_pc = (address) sender_abi->lr;;
+    address   sender_pc = (address) sender_abi->lr;
 
     if (Continuation::is_return_barrier_entry(sender_pc)) {
       // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
@@ -134,9 +134,18 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
+    intptr_t* unextended_sender_sp = is_interpreted_frame() ? interpreter_frame_sender_sp() : sender_sp;
+
+    // If the sender is a deoptimized nmethod we need to check if the original pc is valid.
+    nmethod* sender_nm = sender_blob->as_nmethod_or_null();
+    if (sender_nm != nullptr && sender_nm->is_deopt_pc(sender_pc)) {
+      address orig_pc = *(address*)((address)unextended_sender_sp + sender_nm->orig_pc_offset());
+      if (!sender_nm->insts_contains_inclusive(orig_pc)) return false;
+    }
+
     // It should be safe to construct the sender though it might not be valid.
 
-    frame sender(sender_sp, sender_pc, nullptr /* unextended_sp */, nullptr /* fp */, sender_blob);
+    frame sender(sender_sp, sender_pc, unextended_sender_sp, nullptr /* fp */, sender_blob);
 
     // Do we have a valid fp?
     address sender_fp = (address) sender.fp();
@@ -232,6 +241,11 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   frame fr(jfa->last_Java_sp(), jfa->last_Java_pc(), kind::code_blob);
 
   return fr;
+}
+
+JavaThread** frame::saved_thread_address(const frame& f) {
+  // The current thread (JavaThread*) is never stored on the stack
+  return nullptr;
 }
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {

@@ -96,7 +96,7 @@ public abstract class Snippet {
          * <P>
          * A type declaration is {@linkplain Kind#isPersistent() persistent}.
          *
-         * @jls 7.6 Top Level Type Declarations
+         * @jls 7.6 Top Level Class and Interface Declarations
          */
         TYPE_DECL(true),
 
@@ -241,14 +241,14 @@ public abstract class Snippet {
         /**
          * An enum declaration.
          * A {@code SubKind} of {@link Kind#TYPE_DECL}.
-         * @jls 8.9 Enum Types
+         * @jls 8.9 Enum Classes
          */
         ENUM_SUBKIND(Kind.TYPE_DECL),
 
         /**
          * A record declaration.
          * A {@code SubKind} of {@link Kind#TYPE_DECL}.
-         * @jls 8.10 Record Types
+         * @jls 8.10 Record Classes
          *
          * @since 17
          */
@@ -257,7 +257,7 @@ public abstract class Snippet {
         /**
          * An annotation interface declaration. A {@code SubKind} of
          * {@link Kind#TYPE_DECL}.
-         * @jls 9.6 Annotation Types
+         * @jls 9.6 Annotation Interfaces
          */
         ANNOTATION_TYPE_SUBKIND(Kind.TYPE_DECL),
 

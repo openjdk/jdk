@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,19 @@
  */
 package java.lang.classfile.components;
 
-import java.lang.constant.ClassDesc;
-import java.util.Map;
-import java.util.function.Function;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.FieldTransform;
 import java.lang.classfile.MethodTransform;
+import java.lang.constant.ClassDesc;
+import java.util.Map;
+import java.util.function.Function;
+
 import jdk.internal.classfile.impl.ClassRemapperImpl;
-import jdk.internal.javac.PreviewFeature;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * {@code ClassRemapper} is a {@link ClassTransform}, {@link FieldTransform},
@@ -52,9 +54,8 @@ import jdk.internal.javac.PreviewFeature;
  * Arrays of reference types are always decomposed, mapped as the base reference
  * types and composed back to arrays.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassRemapper extends ClassTransform permits ClassRemapperImpl {
 
     /**
@@ -64,6 +65,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Map<ClassDesc, ClassDesc> classMap) {
+        requireNonNull(classMap);
         return of(desc -> classMap.getOrDefault(desc, desc));
     }
 
@@ -75,7 +77,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Function<ClassDesc, ClassDesc> mapFunction) {
-        return new ClassRemapperImpl(mapFunction);
+        return new ClassRemapperImpl(requireNonNull(mapFunction));
     }
 
     /**

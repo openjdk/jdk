@@ -71,7 +71,7 @@ public interface TypeVariable extends ReferenceType {
      * non-trivial lower bound.  Type variables otherwise have a
      * lower bound of {@link NullType}.
      *
-     * @jls 18.1.3. Bounds
+     * @jls 18.1.3 Bounds
      */
     TypeMirror getLowerBound();
 }

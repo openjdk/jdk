@@ -71,6 +71,16 @@ public class Double512VectorTests extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 512);
 
+    static void assertArraysStrictlyEquals(double[] r, double[] a) {
+        for (int i = 0; i < a.length; i++) {
+            long ir = Double.doubleToRawLongBits(r[i]);
+            long ia = Double.doubleToRawLongBits(a[i]);
+            if (ir != ia) {
+                Assert.fail(String.format("at index #%d, expected = %016X, actual = %016X", i, ia, ir));
+            }
+        }
+    }
+
     interface FUnOp {
         double apply(double a);
     }
@@ -248,25 +258,6 @@ relativeError));
         }
     }
 
-    static void assertInsertArraysEquals(double[] r, double[] a, double element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
-        }
-    }
-
     static void assertRearrangeArraysEquals(double[] r, double[] a, int[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -327,6 +318,25 @@ relativeError));
             } else {
                 Assert.assertEquals(r[idx], (double)0, "at index #" + idx);
             }
+        }
+    }
+
+    static void assertSelectFromTwoVectorEquals(double[] r, double[] order, double[] a, double[] b, int vector_len) {
+        int i = 0, j = 0;
+        boolean is_exceptional_idx = false;
+        int idx = 0, wrapped_index = 0, oidx = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    idx = i + j;
+                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    is_exceptional_idx = wrapped_index >= vector_len;
+                    oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
@@ -795,21 +805,6 @@ relativeError));
         }
     }
 
-    interface FBinArrayOp {
-        double apply(double[] a, int b);
-    }
-
-    static void assertArraysEquals(double[] r, double[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
-        }
-    }
-
     interface FGatherScatterOp {
         double[] apply(double[] a, int ix, int[] b, int iy);
     }
@@ -1132,6 +1127,18 @@ relativeError));
                 flatMap(pair -> DOUBLE_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<double[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("double[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (double)(RAND.nextInt()));
+            })
+    );
+
+    static final List<List<IntFunction<double[]>>> DOUBLE_GENERATOR_SELECT_FROM_TRIPLES =
+        DOUBLE_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] doubleBinaryOpProvider() {
         return DOUBLE_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -1156,6 +1163,12 @@ relativeError));
     @DataProvider
     public Object[][] doubleTernaryOpProvider() {
         return DOUBLE_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] doubleSelectFromTwoVectorOpProvider() {
+        return DOUBLE_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -1356,26 +1369,16 @@ relativeError));
     }
 
     static double cornerCaseValue(int i) {
-        switch(i % 7) {
-            case 0:
-                return Double.MAX_VALUE;
-            case 1:
-                return Double.MIN_VALUE;
-            case 2:
-                return Double.NEGATIVE_INFINITY;
-            case 3:
-                return Double.POSITIVE_INFINITY;
-            case 4:
-                return Double.NaN;
-            case 5:
-                return (double)0.0;
-            default:
-                return (double)-0.0;
-        }
-    }
-
-    static double get(double[] a, int i) {
-        return (double) a[i];
+        return switch(i % 8) {
+            case 0  -> Double.MAX_VALUE;
+            case 1  -> Double.MIN_VALUE;
+            case 2  -> Double.NEGATIVE_INFINITY;
+            case 3  -> Double.POSITIVE_INFINITY;
+            case 4  -> Double.NaN;
+            case 5  -> Double.longBitsToDouble(0x7FF123456789ABCDL);
+            case 6  -> (double)0.0;
+            default -> (double)-0.0;
+        };
     }
 
     static final IntFunction<double[]> fr = (vl) -> {
@@ -2602,22 +2605,23 @@ relativeError));
                 Double512VectorTests::FIRST_NONZEROReduceMasked, Double512VectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
-    @Test(dataProvider = "doubleUnaryOpProvider")
-    static void withDouble512VectorTests(IntFunction<double []> fa) {
+    @Test(dataProvider = "doubleBinaryOpProvider")
+    static void withDouble512VectorTests(IntFunction<double []> fa, IntFunction<double []> fb) {
         double[] a = fa.apply(SPECIES.length());
+        double[] b = fb.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (double)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (double)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(double a) {
@@ -3507,7 +3511,7 @@ relativeError));
             }
         }
 
-        assertArraysEquals(r, a, Double512VectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")
@@ -4830,6 +4834,24 @@ relativeError));
         }
 
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
+    }
+
+    @Test(dataProvider = "doubleSelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVectorDouble512VectorTests(IntFunction<double[]> fa, IntFunction<double[]> fb, IntFunction<double[]> fc) {
+        double[] a = fa.apply(SPECIES.length());
+        double[] b = fb.apply(SPECIES.length());
+        double[] idx = fc.apply(SPECIES.length());
+        double[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
+                DoubleVector bv = DoubleVector.fromArray(SPECIES, b, i);
+                DoubleVector idxv = DoubleVector.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
     }
 
     @Test(dataProvider = "doubleUnaryOpSelectFromMaskProvider")

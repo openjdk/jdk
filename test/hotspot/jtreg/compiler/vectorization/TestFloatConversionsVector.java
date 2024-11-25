@@ -26,9 +26,6 @@
  * @bug 8294588
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs
  * @requires vm.compiler2.enabled
- * @requires (os.simpleArch == "x64" & (vm.cpu.features ~= ".*avx512f.*" | vm.cpu.features ~= ".*f16c.*")) |
- *           os.arch == "aarch64" |
- *           (os.arch == "riscv64" & vm.cpu.features ~= ".*zvfh.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestFloatConversionsVector
  */
@@ -53,7 +50,9 @@ public class TestFloatConversionsVector {
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"},
+                  applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+                  applyIfCPUFeatureOr = {"f16c", "true", "avx512f", "true", "zvfh", "true", "asimd", "true", "sve", "true"})
     public void test_float_float16(short[] sout, float[] finp) {
         for (int i = 0; i < finp.length; i++) {
             sout[i] = Float.floatToFloat16(finp[i]);
@@ -67,7 +66,16 @@ public class TestFloatConversionsVector {
         }
     }
 
-    @Run(test = {"test_float_float16", "test_float_float16_strided"}, mode = RunMode.STANDALONE)
+    @Test
+    public void test_float_float16_short_vector(short[] sout, float[] finp) {
+        for (int i = 0; i < finp.length; i+= 4) {
+            sout[i+0] = Float.floatToFloat16(finp[i+0]);
+            sout[i+1] = Float.floatToFloat16(finp[i+1]);
+        }
+    }
+
+    @Run(test = {"test_float_float16", "test_float_float16_strided",
+                 "test_float_float16_short_vector"}, mode = RunMode.STANDALONE)
     public void kernel_test_float_float16() {
         finp = new float[ARRLEN];
         sout = new short[ARRLEN];
@@ -93,10 +101,21 @@ public class TestFloatConversionsVector {
         for (int i = 0; i < ARRLEN/2; i++) {
             Asserts.assertEquals(Float.floatToFloat16(finp[i*2]), sout[i*2]);
         }
+
+        for (int i = 0; i < ITERS; i++) {
+            test_float_float16_short_vector(sout, finp);
+        }
+
+        // Verifying the result
+        for (int i = 0; i < ARRLEN; i++) {
+            Asserts.assertEquals(Float.floatToFloat16(finp[i]), sout[i]);
+        }
     }
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"})
+    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE + "min(max_float, max_short)", "> 0"},
+                  applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"},
+                  applyIfCPUFeatureOr = {"f16c", "true", "avx512f", "true", "zvfh", "true", "asimd", "true", "sve", "true"})
     public void test_float16_float(float[] fout, short[] sinp) {
         for (int i = 0; i < sinp.length; i++) {
             fout[i] = Float.float16ToFloat(sinp[i]);

@@ -46,40 +46,47 @@ import javax.imageio.ImageIO;
 public class CheckboxCheckerScalingTest {
     private static Frame frame;
     private static Checkbox checkbox;
-    private static BufferedImage imageAfterChecked;
-    private static volatile boolean checkmarkFound = false;
+    private static volatile Point point;
+    private static boolean checkmarkFound = false;
+    private static final int TOLERANCE = 5;
+    private static final int COLOR_CHECK_THRESHOLD = 8;
+    private static int colorCounter = 0;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("sun.java2d.uiScale", "2");
         Robot robot = new Robot();
+
         try {
             EventQueue.invokeAndWait(() -> {
-                frame = new Frame("ComboBox checker scaling test");
+                frame = new Frame("CheckBox checker scaling test");
                 checkbox = new Checkbox("one");
                 checkbox.setState(true);
                 frame.add(checkbox);
+                frame.setLocationRelativeTo(null);
                 frame.pack();
                 frame.setVisible(true);
             });
 
             robot.waitForIdle();
             robot.delay(100);
-            EventQueue.invokeAndWait(() -> {
-                Point point = checkbox.getLocationOnScreen();
-                Rectangle rect = new Rectangle(point.x + 5, point.y + 7, 8, 8);
-                imageAfterChecked = robot.createScreenCapture(rect);
-
-                check: {
-                    for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
-                        for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
-                            if (Color.black.getRGB() == imageAfterChecked.getRGB(i, j)) {
+            EventQueue.invokeAndWait(() -> point = checkbox.getLocationOnScreen());
+            Rectangle rect = new Rectangle(point.x + 5, point.y + 7, 8, 8);
+            BufferedImage imageAfterChecked = robot.createScreenCapture(rect);
+            check:
+            {
+                for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
+                    for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
+                        Color pixelColor = new Color(imageAfterChecked.getRGB(i, j));
+                        if (compareColor(pixelColor)) {
+                            if (++colorCounter >= COLOR_CHECK_THRESHOLD) {
                                 checkmarkFound = true;
                                 break check;
                             }
                         }
+
                     }
                 }
-            });
+            }
 
             if (!checkmarkFound) {
                 try {
@@ -98,5 +105,11 @@ public class CheckboxCheckerScalingTest {
                 }
             });
         }
+    }
+
+    private static boolean compareColor(Color c) {
+        return Math.abs(Color.black.getRed() - c.getRed()) < TOLERANCE &&
+                Math.abs(Color.black.getGreen() - c.getGreen()) < TOLERANCE &&
+                Math.abs(Color.black.getBlue() - c.getBlue()) < TOLERANCE;
     }
 }

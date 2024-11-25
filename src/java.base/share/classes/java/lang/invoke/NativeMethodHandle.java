@@ -108,7 +108,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         final int GET_NEP = nameCursor++;
         final int LINKER_CALL = nameCursor++;
 
-        LambdaForm.Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        LambdaForm.Name[] names = invokeArguments(nameCursor - ARG_LIMIT, mtype);
         assert (names.length == nameCursor);
 
         names[GET_NEP] = new LambdaForm.Name(Lazy.NF_internalNativeEntryPoint, names[NMH_THIS]);

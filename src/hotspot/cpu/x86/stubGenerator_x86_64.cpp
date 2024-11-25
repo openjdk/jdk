@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -34,6 +35,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -1557,7 +1559,7 @@ address StubGenerator::generate_sha256_implCompress(bool multi_block, const char
 
 address StubGenerator::generate_sha512_implCompress(bool multi_block, const char *name) {
   assert(VM_Version::supports_avx2(), "");
-  assert(VM_Version::supports_bmi2(), "");
+  assert(VM_Version::supports_bmi2() || VM_Version::supports_sha512(), "");
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();
@@ -1567,22 +1569,24 @@ address StubGenerator::generate_sha512_implCompress(bool multi_block, const char
   Register ofs = c_rarg2;
   Register limit = c_rarg3;
 
-  const XMMRegister msg = xmm0;
-  const XMMRegister state0 = xmm1;
-  const XMMRegister state1 = xmm2;
-  const XMMRegister msgtmp0 = xmm3;
-  const XMMRegister msgtmp1 = xmm4;
-  const XMMRegister msgtmp2 = xmm5;
-  const XMMRegister msgtmp3 = xmm6;
-  const XMMRegister msgtmp4 = xmm7;
-
-  const XMMRegister shuf_mask = xmm8;
-
   __ enter();
 
-  __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
-  buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+  if (VM_Version::supports_sha512()) {
+      __ sha512_update_ni_x1(state, buf, ofs, limit, multi_block);
+  } else {
+    const XMMRegister msg = xmm0;
+    const XMMRegister state0 = xmm1;
+    const XMMRegister state1 = xmm2;
+    const XMMRegister msgtmp0 = xmm3;
+    const XMMRegister msgtmp1 = xmm4;
+    const XMMRegister msgtmp2 = xmm5;
+    const XMMRegister msgtmp3 = xmm6;
+    const XMMRegister msgtmp4 = xmm7;
 
+    const XMMRegister shuf_mask = xmm8;
+    __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+      buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+  }
   __ vzeroupper();
   __ leave();
   __ ret(0);
@@ -3573,6 +3577,9 @@ void StubGenerator::generate_libm_stubs() {
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
       StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtanh)) {
+      StubRoutines::_dtanh = generate_libmTanh(); // from stubGenerator_x86_64_tanh.cpp
+    }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
       StubRoutines::_dexp = generate_libmExp(); // from stubGenerator_x86_64_exp.cpp
     }
@@ -3775,6 +3782,36 @@ address StubGenerator::generate_cont_returnBarrier_exception() {
   return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
 }
 
+address StubGenerator::generate_cont_preempt_stub() {
+  if (!Continuations::enabled()) return nullptr;
+  StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+  address start = __ pc();
+
+  __ reset_last_Java_frame(true);
+
+  // Set rsp to enterSpecial frame, i.e. remove all frames copied into the heap.
+  __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+
+  Label preemption_cancelled;
+  __ movbool(rscratch1, Address(r15_thread, JavaThread::preemption_cancelled_offset()));
+  __ testbool(rscratch1);
+  __ jcc(Assembler::notZero, preemption_cancelled);
+
+  // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+  SharedRuntime::continuation_enter_cleanup(_masm);
+  __ pop(rbp);
+  __ ret(0);
+
+  // We acquired the monitor after freezing the frames so call thaw to continue execution.
+  __ bind(preemption_cancelled);
+  __ movbool(Address(r15_thread, JavaThread::preemption_cancelled_offset()), false);
+  __ lea(rbp, Address(rsp, checked_cast<int32_t>(ContinuationEntry::size())));
+  __ movptr(rscratch1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
+  __ jmp(rscratch1);
+
+  return start;
+}
+
 // exception handler for upcall stubs
 address StubGenerator::generate_upcall_stub_exception_handler() {
   StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
@@ -3793,6 +3830,28 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
   return start;
 }
 
+// load Method* target of MethodHandle
+// j_rarg0 = jobject receiver
+// rbx = result
+address StubGenerator::generate_upcall_stub_load_target() {
+  StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+  address start = __ pc();
+
+  __ resolve_global_jobject(j_rarg0, r15_thread, rscratch1);
+    // Load target method from receiver
+  __ load_heap_oop(rbx, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_MemberName::method_offset()), rscratch1);
+  __ access_load_at(T_ADDRESS, IN_HEAP, rbx,
+                    Address(rbx, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                    noreg, noreg);
+  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
+
+  __ ret(0);
+
+  return start;
+}
+
 address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
   StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
 
@@ -3803,10 +3862,10 @@ address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klas
       r_sub_klass   = rsi,
       result        = rdi;
 
-  __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                   rdx, rcx, rbx, r11, // temps
-                                   result,
-                                   super_klass_index);
+  __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                         rdx, rcx, rbx, r11, // temps
+                                         result,
+                                         super_klass_index);
   __ ret(0);
 
   return start;
@@ -3925,6 +3984,7 @@ void StubGenerator::generate_continuation_stubs() {
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+  StubRoutines::_cont_preempt_stub = generate_cont_preempt_stub();
 }
 
 void StubGenerator::generate_final_stubs() {
@@ -3952,6 +4012,7 @@ void StubGenerator::generate_final_stubs() {
   }
 
   StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+  StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 }
 
 void StubGenerator::generate_compiler_stubs() {
@@ -4002,6 +4063,8 @@ void StubGenerator::generate_compiler_stubs() {
   generate_ghash_stubs();
 
   generate_chacha_stubs();
+
+  generate_sha3_stubs();
 
 #ifdef COMPILER2
   if ((UseAVX == 2) && EnableX86ECoreOpts) {
@@ -4157,41 +4220,41 @@ void StubGenerator::generate_compiler_stubs() {
 
     log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "jsvml" JNI_LIB_SUFFIX, p2i(libjsvml));
     if (UseAVX > 2) {
-      for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
-        int vop = VectorSupport::VECTOR_OP_SVML_START + op;
+      for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+        int vop = VectorSupport::VECTOR_OP_MATH_START + op;
         if ((!VM_Version::supports_avx512dq()) &&
             (vop == VectorSupport::VECTOR_OP_LOG || vop == VectorSupport::VECTOR_OP_LOG10 || vop == VectorSupport::VECTOR_OP_POW)) {
           continue;
         }
-        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf16_ha_z0", VectorSupport::svmlname[op]);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf16_ha_z0", VectorSupport::mathname[op]);
         StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s8_ha_z0", VectorSupport::svmlname[op]);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s8_ha_z0", VectorSupport::mathname[op]);
         StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
       }
     }
     const char* avx_sse_str = (UseAVX >= 2) ? "l9" : ((UseAVX == 1) ? "e9" : "ex");
-    for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
-      int vop = VectorSupport::VECTOR_OP_SVML_START + op;
+    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
       if (vop == VectorSupport::VECTOR_OP_POW) {
         continue;
       }
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf8_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf8_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s1_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s1_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s2_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s2_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
   }

@@ -52,8 +52,8 @@ public class StubQueue extends VMObject {
   private static CIntegerField queueEndField;
   private static CIntegerField numberOfStubsField;
 
-  // The type of the contained stubs (i.e., InterpreterCodelet,
-  // ICStub). Must be a subclass of type Stub.
+  // The type of the contained stubs (i.e., InterpreterCodelet).
+  // Must be a subclass of type Stub.
   private Class<?> stubType;
 
   static {

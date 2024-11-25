@@ -259,6 +259,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
+    }
   }
 
   if (UseCryptoPmullForCRC32 && (!VM_Version::supports_pmull() || !VM_Version::supports_sha3() || !VM_Version::supports_crc32())) {
@@ -573,6 +576,10 @@ void VM_Version::initialize() {
 
   if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
 #endif
 

@@ -79,18 +79,20 @@ private:
   const Register _new_zpointer;
   const bool     _is_native;
   const bool     _is_atomic;
+  const bool     _is_nokeepalive;
 
 protected:
-  ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic);
+  ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive);
 
 public:
-  static ZStoreBarrierStubC2* create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic);
+  static ZStoreBarrierStubC2* create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive);
 
   Address ref_addr() const;
   Register new_zaddress() const;
   Register new_zpointer() const;
   bool is_native() const;
   bool is_atomic() const;
+  bool is_nokeepalive() const;
 
   virtual void emit_code(MacroAssembler& masm);
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,20 @@ final class StatusResponseManager {
                     }
 
                     if (!task.isCancelled()) {
-                        StatusInfo info = task.get();
+                        StatusInfo info;
+                        try {
+                            info = task.get();
+                        } catch (ExecutionException exc) {
+                            // Check for an underlying cause available and log
+                            // that, otherwise just log the ExecutionException
+                            Throwable cause = Optional.ofNullable(
+                                    exc.getCause()).orElse(exc);
+                            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                                SSLLogger.fine("Exception during OCSP fetch: " +
+                                        cause);
+                            }
+                            continue;
+                        }
                         if (info != null && info.responseData != null) {
                             responseMap.put(info.cert,
                                     info.responseData.ocspBytes);
@@ -272,10 +285,12 @@ final class StatusResponseManager {
                         }
                     }
                 }
-            } catch (InterruptedException | ExecutionException exc) {
-                // Not sure what else to do here
+            } catch (InterruptedException intex) {
+                // Log and reset the interrupt state
+                Thread.currentThread().interrupt();
                 if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
-                    SSLLogger.fine("Exception when getting data: ", exc);
+                    SSLLogger.fine("Interrupt occurred while fetching: " +
+                            intex);
                 }
             }
         }
@@ -582,8 +597,7 @@ final class StatusResponseManager {
 
     }
 
-    static final StaplingParameters processStapling(
-            ServerHandshakeContext shc) {
+    static StaplingParameters processStapling(ServerHandshakeContext shc) {
         StaplingParameters params = null;
         SSLExtension ext = null;
         CertStatusRequestType type = null;

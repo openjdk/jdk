@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/upcallLinker.hpp"
@@ -116,7 +117,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
 
 static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16; // arg save & restore + move
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -206,7 +207,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("on_entry {");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry));
   __ z_aghik(Z_ARG1, Z_SP, frame_data_offset);
-  __ load_const_optimized(Z_ARG2, (intptr_t)receiver);
   __ call(call_target_address);
   __ z_lgr(Z_thread, Z_RET);
   __ block_comment("} on_entry");
@@ -216,12 +216,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, frame::z_jit_out_preserve_size);
   __ block_comment("} argument_shuffle");
 
-  __ block_comment("receiver {");
-  __ get_vm_result(Z_ARG1);
-  __ block_comment("} receiver");
-
-  __ load_const_optimized(Z_method, (intptr_t)entry);
-  __ z_stg(Z_method, Address(Z_thread, in_bytes(JavaThread::callee_target_offset())));
+  __ block_comment("load_target {");
+  __ load_const_optimized(Z_ARG1, (intptr_t)receiver);
+  __ load_const_optimized(call_target_address, StubRoutines::upcall_stub_load_target());
+  __ call(call_target_address); // load taget Method* into Z_method
+  __ block_comment("} load_target");
 
   __ z_lg(call_target_address, Address(Z_method, in_bytes(Method::from_compiled_offset())));
   __ call(call_target_address);
@@ -274,7 +273,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char* name = _masm->code_string(ss.as_string());
 #else // PRODUCT
   const char* name = "upcall_stub";

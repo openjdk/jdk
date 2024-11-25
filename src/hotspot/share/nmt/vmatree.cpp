@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "logging/log.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -34,7 +35,9 @@ const char* VMATree::statetype_strings[3] = {
 };
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
-                                               const RegionData& metadata) {
+                                               const RegionData& metadata, bool use_tag_inplace) {
+  assert(!use_tag_inplace || metadata.mem_tag == mtNone,
+         "If using use_tag_inplace, then the supplied tag should be mtNone, was instead: %s", NMTUtil::tag_to_name(metadata.mem_tag));
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
     return SummaryDiff();
@@ -55,6 +58,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   AddressState LEQ_A;
   TreapNode* leqA_n = _tree.closest_leq(A);
   if (leqA_n == nullptr) {
+    assert(!use_tag_inplace, "Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
+    if (use_tag_inplace) {
+      log_debug(nmt)("Cannot use the tag inplace if no pre-existing tag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
+    }
     // No match. We add the A node directly, unless it would have no effect.
     if (!stA.is_noop()) {
       _tree.upsert(A, stA);
@@ -62,6 +69,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   } else {
     LEQ_A_found = true;
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
+    StateType leqA_state = leqA_n->val().out.type();
+    StateType new_state = stA.out.type();
+    // If we specify use_tag_inplace then the new region takes over the current tag instead of the tag in metadata.
+    // This is important because the VirtualMemoryTracker API doesn't require supplying the tag for some operations.
+    if (use_tag_inplace) {
+      assert(leqA_n->val().out.type() != StateType::Released, "Should not use inplace the tag of a released region");
+      MemTag tag = leqA_n->val().out.mem_tag();
+      stA.out.set_tag(tag);
+      stB.in.set_tag(tag);
+    }
+
     // Unless we know better, let B's outgoing state be the outgoing state of the node at or preceding A.
     // Consider the case where the found node is the start of a region enclosing [A,B)
     stB.out = leqA_n->val().out;
@@ -83,8 +101,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       } else {
         // If the state is not matching then we have different operations, such as:
         // reserve [x1, A); ... commit [A, x2); or
-        // reserve [x1, A), flag1; ... reserve [A, x2), flag2; or
-        // reserve [A, x1), flag1; ... reserve [A, x2), flag2;
+        // reserve [x1, A), mem_tag1; ... reserve [A, x2), mem_tag2; or
+        // reserve [A, x1), mem_tag1; ... reserve [A, x2), mem_tag2;
         // then we re-use the existing out node, overwriting its old metadata.
         leqA_n->val() = stA;
       }
@@ -147,7 +165,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C
-    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
+    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(LEQ_A.out().mem_tag())];
     if (LEQ_A.out().type() == StateType::Reserved) {
       rescom.reserve -= B - A;
     } else if (LEQ_A.out().type() == StateType::Committed) {
@@ -163,7 +181,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     _tree.remove(delete_me.address);
 
     // Perform summary accounting
-    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];
+    SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(delete_me.in().mem_tag())];
     if (delete_me.in().type() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
     } else if (delete_me.in().type() == StateType::Committed) {
@@ -178,17 +196,17 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     // A - prev - B - (some node >= B)
     // It might be that prev.address == B == (some node >= B), this is fine.
     if (prev.out().type() == StateType::Reserved) {
-      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+      SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.reserve -= B - prev.address;
     } else if (prev.out().type() == StateType::Committed) {
-      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+      SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.commit -= B - prev.address;
       rescom.reserve -= B - prev.address;
     }
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(metadata.flag)];
+  SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(metadata.mem_tag)];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {

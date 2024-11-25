@@ -27,7 +27,7 @@
 #define SHARE_SERVICES_MALLOCLIMIT_HPP
 
 #include "memory/allStatic.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -46,18 +46,18 @@ class outputStream;
 
 class MallocLimitSet {
   malloclimit _glob;                    // global limit
-  malloclimit _cat[mt_number_of_types]; // per-category limit
+  malloclimit _cat[mt_number_of_tags]; // per-category limit
 public:
   MallocLimitSet();
 
   void reset();
   bool parse_malloclimit_option(const char* optionstring, const char** err);
 
-  void set_global_limit(size_t s, MallocLimitMode flag);
-  void set_category_limit(MEMFLAGS f, size_t s, MallocLimitMode flag);
+  void set_global_limit(size_t s, MallocLimitMode type);
+  void set_category_limit(MemTag mem_tag, size_t s, MallocLimitMode mode);
 
   const malloclimit* global_limit() const             { return &_glob; }
-  const malloclimit* category_limit(MEMFLAGS f) const { return &_cat[(int)f]; }
+  const malloclimit* category_limit(MemTag mem_tag) const { return &_cat[(int)mem_tag]; }
 
   void print_on(outputStream* st) const;
 };
@@ -69,7 +69,7 @@ class MallocLimitHandler : public AllStatic {
 public:
 
   static const malloclimit* global_limit()             { return _limits.global_limit(); }
-  static const malloclimit* category_limit(MEMFLAGS f) { return _limits.category_limit(f); }
+  static const malloclimit* category_limit(MemTag mem_tag) { return _limits.category_limit(mem_tag); }
 
   static void initialize(const char* options);
   static void print_on(outputStream* st);
