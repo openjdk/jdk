@@ -101,7 +101,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     /**
      * The offset of the graph to the border of the window showing it.
      */
-    public static final int BORDER_SIZE = 100;
+    public static final int BORDER_SIZE = 50;
     public static final int UNDOREDO_LIMIT = 100;
     public static final int SCROLL_UNIT_INCREMENT = 80;
     public static final int SCROLL_BLOCK_INCREMENT = 400;
@@ -331,14 +331,18 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
         getActions().addAction(selectAction);
 
+        Border emptyBorder = BorderFactory.createEmptyBorder(BORDER_SIZE, BORDER_SIZE, BORDER_SIZE, BORDER_SIZE);
+
         blockLayer = new LayerWidget(this);
+        blockLayer.setBorder(emptyBorder);
         addChild(blockLayer);
 
         connectionLayer = new LayerWidget(this);
-        connectionLayer.setBorder( BorderFactory.createEmptyBorder(50, 50, 50, 50));
+        connectionLayer.setBorder(emptyBorder);
         addChild(connectionLayer);
 
         mainLayer = new LayerWidget(this);
+        mainLayer.setBorder(emptyBorder);
         addChild(mainLayer);
 
         pointerWidget = new Widget(DiagramScene.this);
@@ -347,7 +351,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         shadowWidget = new Widget(DiagramScene.this);
         addChild(shadowWidget);
 
-        setBorder(BorderFactory.createLineBorder(Color.white, BORDER_SIZE));
         setLayout(LayoutFactory.createAbsoluteLayout());
         getActions().addAction(mouseZoomAction);
         getActions().addAction(ActionFactory.createPopupMenuAction((widget, localLocation) -> createPopupMenu()));
