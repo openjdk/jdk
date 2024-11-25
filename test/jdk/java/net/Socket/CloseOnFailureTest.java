@@ -57,6 +57,8 @@ class CloseOnFailureTest {
 
     private static final VarHandle SOCKET_IMPL_FACTORY_HANDLE = createSocketImplFactoryHandle();
 
+    private static final int DEAD_SERVER_PORT = 0xDEAD;
+
     private static VarHandle createSocketImplFactoryHandle() {
         try {
             Field field = Socket.class.getDeclaredField("factory");
@@ -64,8 +66,8 @@ class CloseOnFailureTest {
             return MethodHandles
                     .privateLookupIn(Socket.class, MethodHandles.lookup())
                     .findStaticVarHandle(Socket.class, "factory", SocketImplFactory.class);
-        } catch (NoSuchFieldException | IllegalAccessException error) {
-            throw new RuntimeException(error);
+        } catch (NoSuchFieldException | IllegalAccessException exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -82,13 +84,13 @@ class CloseOnFailureTest {
 
         private final AtomicInteger closeInvocationCounter = new AtomicInteger(0);
 
-        private final Exception bindError;
+        private final Exception bindException;
 
-        private final Exception connectError;
+        private final Exception connectException;
 
-        private MockSocketImpl(Exception bindError, Exception connectError) {
-            this.bindError = bindError;
-            this.connectError = connectError;
+        private MockSocketImpl(Exception bindException, Exception connectException) {
+            this.bindException = bindException;
+            this.connectException = connectException;
         }
 
         @Override
@@ -96,21 +98,21 @@ class CloseOnFailureTest {
 
         @Override
         protected void bind(InetAddress host, int port) throws IOException {
-            throwIfPresent(bindError);
+            throwIfPresent(bindException);
         }
 
         @Override
         protected void connect(SocketAddress address, int timeoutMillis) throws IOException {
-            throwIfPresent(connectError);
+            throwIfPresent(connectException);
         }
 
-        private void throwIfPresent(Exception connectError) throws IOException {
-            if (connectError != null) {
-                switch (connectError) {
+        private void throwIfPresent(Exception exception) throws IOException {
+            if (exception != null) {
+                switch (exception) {
                     case IOException error -> throw error;
                     case RuntimeException error -> throw error;
                     default -> throw new IllegalStateException(
-                            "unknown connectError type: " + connectError.getClass().getCanonicalName());
+                            "unknown exception type: " + exception.getClass().getCanonicalName());
                 }
             }
         }
@@ -131,17 +133,16 @@ class CloseOnFailureTest {
         withSocketImplFactory(() -> testCase.socketImpl, () -> {
 
             // Trigger the failure
-            Exception error = assertThrows(Exception.class, () -> {
+            Exception exception = assertThrows(Exception.class, () -> {
                 // Address and port are mostly ineffective.
                 // They just need to be _valid enough_ to reach to the point where both `SocketImpl#bind()` and `SocketImpl#connect()` are invoked.
                 // Failure will be triggered by the injected `SocketImpl`.
                 InetAddress serverAddress = InetAddress.getLoopbackAddress();
-                int deadServerPort = 0xDEAD;
-                new Socket(serverAddress, deadServerPort, null, 0);
+                new Socket(serverAddress, DEAD_SERVER_PORT, null, 0);
             });
 
             // Run verifications
-            testCase.caughtErrorVerifier.accept(error);
+            testCase.caughtExceptionVerifier.accept(exception);
             testCase.socketImplVerifier.run();
 
         });
@@ -159,7 +160,7 @@ class CloseOnFailureTest {
     void connectShouldCloseOnUnresolvedAddress() throws IOException {
         MockSocketImpl socketImpl = new MockSocketImpl(null, null);
         try (Socket socket = new Socket(socketImpl) {}) {
-            InetSocketAddress address = InetSocketAddress.createUnresolved("no.such.host", 0xBEEF);
+            InetSocketAddress address = InetSocketAddress.createUnresolved("no.such.host", DEAD_SERVER_PORT);
             assertTrue(address.isUnresolved());
             assertThrows(
                     UnknownHostException.class,
@@ -176,7 +177,7 @@ class CloseOnFailureTest {
         try (Socket socket = new Socket(testCase.socketImpl) {}) {
 
             // Trigger the failure
-            Exception error = assertThrows(Exception.class, () -> {
+            Exception exception = assertThrows(Exception.class, () -> {
                 SocketAddress address = Utils.refusingEndpoint();
                 // Address and timeout are mostly ineffective.
                 // They just need to be _valid enough_ to reach to the `SocketImpl#connect()` invocation.
@@ -185,7 +186,7 @@ class CloseOnFailureTest {
             });
 
             // Run verifications
-            testCase.caughtErrorVerifier.accept(error);
+            testCase.caughtExceptionVerifier.accept(exception);
             testCase.socketImplVerifier.run();
             testCase.socketVerifier.accept(socket);
 
@@ -202,25 +203,25 @@ class CloseOnFailureTest {
     private record TestCase(
             String description,
             MockSocketImpl socketImpl,
-            ThrowingConsumer<Exception> caughtErrorVerifier,
+            ThrowingConsumer<Exception> caughtExceptionVerifier,
             ThrowingRunnable socketImplVerifier,
             ThrowingConsumer<Socket> socketVerifier) {
 
-        private static final String ERROR_MESSAGE = "intentional test failure";
+        private static final String EXCEPTION_MESSAGE = "intentional test failure";
 
         private static final class BindFailureFactory {
 
             private static TestCase iOExceptionTestCase() {
-                Exception bindError = new IOException(ERROR_MESSAGE);
-                MockSocketImpl socketImpl = new MockSocketImpl(bindError, null);
+                Exception bindException = new IOException(EXCEPTION_MESSAGE);
+                MockSocketImpl socketImpl = new MockSocketImpl(bindException, null);
                 String description = String.format(
                         "%s.%s",
                         BindFailureFactory.class.getSimpleName(),
-                        bindError.getClass().getSimpleName());
+                        bindException.getClass().getSimpleName());
                 return new TestCase(
                         description,
                         socketImpl,
-                        caughtError -> assertSame(bindError, caughtError),
+                        caughtException -> assertSame(bindException, caughtException),
                         () -> assertEquals(1, socketImpl.closeInvocationCounter.get()),
                         _ -> {});
             }
@@ -230,31 +231,31 @@ class CloseOnFailureTest {
         private static final class ConnectFailureFactory {
 
             private static TestCase iOExceptionTestCase() {
-                Exception connectError = new IOException(ERROR_MESSAGE);
-                MockSocketImpl socketImpl = new MockSocketImpl(null, connectError);
+                Exception connectException = new IOException(EXCEPTION_MESSAGE);
+                MockSocketImpl socketImpl = new MockSocketImpl(null, connectException);
                 String description = String.format(
                         "%s.%s",
                         ConnectFailureFactory.class.getSimpleName(),
-                        connectError.getClass().getSimpleName());
+                        connectException.getClass().getSimpleName());
                 return new TestCase(
                         description,
                         socketImpl,
-                        caughtError -> assertSame(connectError, caughtError),
+                        caughtException -> assertSame(connectException, caughtException),
                         () -> assertEquals(1, socketImpl.closeInvocationCounter.get()),
                         _ -> {});
             }
 
             private static TestCase illegalArgumentExceptionTestCase(int expectedCloseInvocationCount) {
-                Exception connectError = new IllegalArgumentException(ERROR_MESSAGE);
-                MockSocketImpl socketImpl = new MockSocketImpl(null, connectError);
+                Exception connectException = new IllegalArgumentException(EXCEPTION_MESSAGE);
+                MockSocketImpl socketImpl = new MockSocketImpl(null, connectException);
                 String description = String.format(
                         "%s.%s",
                         ConnectFailureFactory.class.getSimpleName(),
-                        connectError.getClass().getSimpleName());
+                        connectException.getClass().getSimpleName());
                 return new TestCase(
                         description,
                         socketImpl,
-                        caughtError -> assertSame(connectError, caughtError),
+                        caughtException -> assertSame(connectException, caughtException),
                         () -> assertEquals(expectedCloseInvocationCount, socketImpl.closeInvocationCounter.get()),
                         _ -> {
                         });
