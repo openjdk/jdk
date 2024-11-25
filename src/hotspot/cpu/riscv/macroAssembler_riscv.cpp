@@ -36,6 +36,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
@@ -226,6 +227,36 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   bind(done);
 }
 
+void MacroAssembler::inc_held_monitor_count(Register tmp) {
+  Address dst(xthread, JavaThread::held_monitor_count_offset());
+  ld(tmp, dst);
+  addi(tmp, tmp, 1);
+  sd(tmp, dst);
+#ifdef ASSERT
+  Label ok;
+  test_bit(tmp, tmp, 63);
+  beqz(tmp, ok);
+  STOP("assert(held monitor count overflow)");
+  should_not_reach_here();
+  bind(ok);
+#endif
+}
+
+void MacroAssembler::dec_held_monitor_count(Register tmp) {
+  Address dst(xthread, JavaThread::held_monitor_count_offset());
+  ld(tmp, dst);
+  addi(tmp, tmp, -1);
+  sd(tmp, dst);
+#ifdef ASSERT
+  Label ok;
+  test_bit(tmp, tmp, 63);
+  beqz(tmp, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#endif
+}
+
 int MacroAssembler::align(int modulus, int extra_offset) {
   CompressibleRegion cr(this);
   intptr_t before = offset();
@@ -407,6 +438,10 @@ void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
   sd(zr, Address(xthread, JavaThread::last_Java_pc_offset()));
 }
 
+static bool is_preemptable(address entry_point) {
+  return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter);
+}
+
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register java_thread,
                                   Register last_java_sp,
@@ -436,7 +471,12 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(last_java_sp != fp, "can't use fp");
 
   Label l;
-  set_last_Java_frame(last_java_sp, fp, l, t0);
+  if (is_preemptable(entry_point)) {
+    // skip setting last_pc since we already set it to desired value.
+    set_last_Java_frame(last_java_sp, fp, noreg);
+  } else {
+    set_last_Java_frame(last_java_sp, fp, l, t0);
+  }
 
   // do the call, remove parameters
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments, &l);
@@ -925,26 +965,6 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
       addiw(Rd, hi_Rd, lower);
     }
   }
-}
-
-void MacroAssembler::load_link_jump(const address source, Register temp) {
-  assert(temp != noreg && temp != x0, "expecting a register");
-  assert(temp != x5, "temp register must not be x5.");
-  assert_cond(source != nullptr);
-  int64_t distance = source - pc();
-  assert(is_simm32(distance), "Must be");
-  auipc(temp, (int32_t)distance + 0x800);
-  ld(temp, Address(temp, ((int32_t)distance << 20) >> 20));
-  jalr(temp);
-}
-
-void MacroAssembler::jump_link(const address dest, Register temp) {
-  assert(UseTrampolines, "Must be");
-  assert_cond(dest != nullptr);
-  int64_t distance = dest - pc();
-  assert(is_simm21(distance), "Must be");
-  assert((distance % 2) == 0, "Must be");
-  jal(x1, distance);
 }
 
 void MacroAssembler::j(const address dest, Register temp) {
@@ -2503,20 +2523,19 @@ void MacroAssembler::orptr(Address adr, RegisterOrConstant src, Register tmp1, R
   sd(tmp1, adr);
 }
 
-void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L) {
-  assert_different_registers(oop, trial_klass, tmp1, tmp2);
-  if (UseCompressedClassPointers) {
-    lwu(tmp1, Address(oop, oopDesc::klass_offset_in_bytes()));
-    if (CompressedKlassPointers::base() == nullptr) {
-      slli(tmp1, tmp1, CompressedKlassPointers::shift());
-      beq(trial_klass, tmp1, L);
-      return;
-    }
-    decode_klass_not_null(tmp1, tmp2);
+void MacroAssembler::cmp_klass_compressed(Register oop, Register trial_klass, Register tmp, Label &L, bool equal) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp, oop);
+  } else if (UseCompressedClassPointers) {
+    lwu(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
   } else {
-    ld(tmp1, Address(oop, oopDesc::klass_offset_in_bytes()));
+    ld(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
   }
-  beq(trial_klass, tmp1, L);
+  if (equal) {
+    beq(trial_klass, tmp, L);
+  } else {
+    bne(trial_klass, tmp, L);
+  }
 }
 
 // Move an oop into a register.
@@ -2722,10 +2741,19 @@ void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
   }
 }
 
+void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
+  assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
+  ld(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  srli(dst, dst, markWord::klass_shift);
+}
+
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+    decode_klass_not_null(dst, tmp);
+  } else if (UseCompressedClassPointers) {
     lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst, tmp);
   } else {
@@ -2736,6 +2764,7 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   // FIXME: Should this be a store release? concurrent gcs assumes
   // klass length is valid if klass field is not null.
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     encode_klass_not_null(src, tmp);
     sw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
@@ -2745,6 +2774,7 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
 }
 
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     // Store to klass gap in destination
     sw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
@@ -2761,8 +2791,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      slli(dst, src, LogKlassAlignmentInBytes);
+      slli(dst, src, CompressedKlassPointers::shift());
     } else {
       mv(dst, src);
     }
@@ -2778,9 +2807,9 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    assert_different_registers(t0, xbase);
-    shadd(dst, src, xbase, t0, LogKlassAlignmentInBytes);
+    Register t = src == dst ? dst : t0;
+    assert_different_registers(t, xbase);
+    shadd(dst, src, xbase, t, CompressedKlassPointers::shift());
   } else {
     add(dst, xbase, src);
   }
@@ -2796,8 +2825,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
 
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
-      assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-      srli(dst, src, LogKlassAlignmentInBytes);
+      srli(dst, src, CompressedKlassPointers::shift());
     } else {
       mv(dst, src);
     }
@@ -2819,8 +2847,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
   mv(xbase, (uintptr_t)CompressedKlassPointers::base());
   sub(dst, src, xbase);
   if (CompressedKlassPointers::shift() != 0) {
-    assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift(), "decode alg wrong");
-    srli(dst, dst, LogKlassAlignmentInBytes);
+    srli(dst, dst, CompressedKlassPointers::shift());
   }
 }
 
@@ -3439,6 +3466,17 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
 
+  // NOTE:
+  // Register _result_ may be the same register as _new_val_ or _expected_.
+  // Hence do NOT use _result_ until after 'cas'.
+  //
+  // Register _expected_ may be the same register as _new_val_ and is assumed to be preserved.
+  // Hence do NOT change _expected_ or _new_val_.
+  //
+  // Having _expected_ and _new_val_ being the same register is a very puzzling cas.
+  //
+  // TODO: Address these issues.
+
   if (UseZacas) {
     if (result_as_bool) {
       mv(t0, expected);
@@ -3446,8 +3484,9 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
       xorr(t0, t0, expected);
       seqz(result, t0);
     } else {
-      mv(result, expected);
-      atomic_cas(result, new_val, addr, size, acquire, release);
+      mv(t0, expected);
+      atomic_cas(t0, new_val, addr, size, acquire, release);
+      mv(result, t0);
     }
     return;
   }
@@ -3483,14 +3522,15 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-  if (UseZacas) {
-    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
-    return;
-  }
 
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
+
+  if (UseZacas) {
+    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
+    return;
+  }
 
   Label fail, done;
   load_reserved(t0, addr, size, acquire);
@@ -3554,83 +3594,18 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 
 #undef ATOMIC_XCHGU
 
-#define ATOMIC_CAS(OP, AOP, ACQUIRE, RELEASE)                                        \
-void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) {      \
-  assert(UseZacas, "invariant");                                                     \
-  prev = prev->is_valid() ? prev : zr;                                               \
-  AOP(prev, addr, newv, (Assembler::Aqrl)(ACQUIRE | RELEASE));                       \
-  return;                                                                            \
-}
-
-ATOMIC_CAS(cas, amocas_d, Assembler::relaxed, Assembler::relaxed)
-ATOMIC_CAS(casw, amocas_w, Assembler::relaxed, Assembler::relaxed)
-ATOMIC_CAS(casl, amocas_d, Assembler::relaxed, Assembler::rl)
-ATOMIC_CAS(caslw, amocas_w, Assembler::relaxed, Assembler::rl)
-ATOMIC_CAS(casal, amocas_d, Assembler::aq, Assembler::rl)
-ATOMIC_CAS(casalw, amocas_w, Assembler::aq, Assembler::rl)
-
-#undef ATOMIC_CAS
-
-#define ATOMIC_CASU(OP1, OP2)                                                        \
-void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
-  atomic_##OP2(prev, newv, addr);                                                    \
-  zero_extend(prev, prev, 32);                                                       \
-  return;                                                                            \
-}
-
-ATOMIC_CASU(caswu, casw)
-ATOMIC_CASU(caslwu, caslw)
-ATOMIC_CASU(casalwu, casalw)
-
-#undef ATOMIC_CASU
-
-void MacroAssembler::atomic_cas(
-    Register prev, Register newv, Register addr, enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
+                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_cas(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_casl(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casal(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     case int32:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_casw(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_caslw(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casalw(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     case uint32:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_caswu(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_caslwu(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casalwu(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
+      zero_extend(prev, prev, 32);
       break;
     default:
       ShouldNotReachHere();
@@ -4235,46 +4210,7 @@ void  MacroAssembler::set_narrow_klass(Register dst, Klass* k) {
   zero_extend(dst, dst, 32);
 }
 
-// Maybe emit a call via a trampoline. If the code cache is small
-// trampolines won't be emitted.
-address MacroAssembler::trampoline_call(Address entry) {
-  assert(entry.rspec().type() == relocInfo::runtime_call_type ||
-         entry.rspec().type() == relocInfo::opt_virtual_call_type ||
-         entry.rspec().type() == relocInfo::static_call_type ||
-         entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
-
-  address target = entry.target();
-
-  // We need a trampoline if branches are far.
-  if (!in_scratch_emit_size()) {
-    if (entry.rspec().type() == relocInfo::runtime_call_type) {
-      assert(CodeBuffer::supports_shared_stubs(), "must support shared stubs");
-      code()->share_trampoline_for(entry.target(), offset());
-    } else {
-      address stub = emit_trampoline_stub(offset(), target);
-      if (stub == nullptr) {
-        postcond(pc() == badAddress);
-        return nullptr; // CodeCache is full
-      }
-    }
-  }
-  target = pc();
-
-  address call_pc = pc();
-#ifdef ASSERT
-  if (entry.rspec().type() != relocInfo::runtime_call_type) {
-    assert_alignment(call_pc);
-  }
-#endif
-  relocate(entry.rspec(), [&] {
-    jump_link(target, t0);
-  });
-
-  postcond(pc() != badAddress);
-  return call_pc;
-}
-
-address MacroAssembler::load_and_call(Address entry) {
+address MacroAssembler::reloc_call(Address entry, Register tmp) {
   assert(entry.rspec().type() == relocInfo::runtime_call_type ||
          entry.rspec().type() == relocInfo::opt_virtual_call_type ||
          entry.rspec().type() == relocInfo::static_call_type ||
@@ -4283,7 +4219,7 @@ address MacroAssembler::load_and_call(Address entry) {
   address target = entry.target();
 
   if (!in_scratch_emit_size()) {
-    address stub = emit_address_stub(offset(), target);
+    address stub = emit_reloc_call_address_stub(offset(), target);
     if (stub == nullptr) {
       postcond(pc() == badAddress);
       return nullptr; // CodeCache is full
@@ -4296,8 +4232,13 @@ address MacroAssembler::load_and_call(Address entry) {
     assert_alignment(call_pc);
   }
 #endif
+
+  // The relocation created while emitting the stub will ensure this
+  // call instruction is subsequently patched to call the stub.
   relocate(entry.rspec(), [&] {
-    load_link_jump(target, t1);
+    auipc(tmp, 0);
+    ld(tmp, Address(tmp, 0));
+    jalr(tmp);
   });
 
   postcond(pc() != badAddress);
@@ -4315,7 +4256,7 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
 int MacroAssembler::ic_check_size() {
   // No compressed
   return (MacroAssembler::instruction_size * (2 /* 2 loads */ + 1 /* branch */)) +
-          far_branch_size();
+          far_branch_size() + (UseCompactObjectHeaders ? MacroAssembler::instruction_size * 1 : 0);
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
@@ -4335,7 +4276,10 @@ int MacroAssembler::ic_check(int end_alignment) {
   align(end_alignment, ic_check_size());
   int uep_offset = offset();
 
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp1, receiver);
+    lwu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+  } else if (UseCompressedClassPointers) {
     lwu(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
     lwu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
   } else {
@@ -4354,8 +4298,21 @@ int MacroAssembler::ic_check(int end_alignment) {
   return uep_offset;
 }
 
-address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, address dest) {
-  address stub = start_a_stub(max_reloc_call_stub_size());
+// Emit an address stub for a call to a target which is too far away.
+// Note that we only put the target address of the call in the stub.
+//
+// code sequences:
+//
+// call-site:
+//   load target address from stub
+//   jump-and-link target address
+//
+// Related address stub for this call site in the stub section:
+//   alignment nop
+//   target address
+
+address MacroAssembler::emit_reloc_call_address_stub(int insts_call_instruction_offset, address dest) {
+  address stub = start_a_stub(max_reloc_call_address_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
@@ -4382,67 +4339,9 @@ address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, add
   return stub_start_addr;
 }
 
-// Emit a trampoline stub for a call to a target which is too far away.
-//
-// code sequences:
-//
-// call-site:
-//   branch-and-link to <destination> or <trampoline stub>
-//
-// Related trampoline stub for this call site in the stub section:
-//   load the call target from the constant pool
-//   branch (RA still points to the call site above)
-
-address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
-                                             address dest) {
-  // Max stub size: alignment nop, TrampolineStub.
-  address stub = start_a_stub(max_reloc_call_stub_size());
-  if (stub == nullptr) {
-    return nullptr;  // CodeBuffer::expand failed
-  }
-
-  assert(UseTrampolines, "Must be using trampos.");
-
-  // We are always 4-byte aligned here.
-  assert_alignment(pc());
-
-  // Create a trampoline stub relocation which relates this trampoline stub
-  // with the call instruction at insts_call_instruction_offset in the
-  // instructions code-section.
-
-  // Make sure the address of destination 8-byte aligned after 3 instructions.
-  align(wordSize, MacroAssembler::NativeShortCall::trampoline_data_offset);
-
-  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
-                                                         insts_call_instruction_offset);
-  const int stub_start_offset = offset();
-  relocate(rh, [&] {
-    // Now, create the trampoline stub's code:
-    // - load the call
-    // - call
-    Label target;
-    ld(t1, target);  // auipc + ld
-    jr(t1);          // jalr
-    bind(target);
-    assert(offset() - stub_start_offset == MacroAssembler::NativeShortCall::trampoline_data_offset,
-           "should be");
-    assert(offset() % wordSize == 0, "bad alignment");
-    emit_int64((int64_t)dest);
-  });
-
-  const address stub_start_addr = addr_at(stub_start_offset);
-
-  end_a_stub();
-
-  return stub_start_addr;
-}
-
-int MacroAssembler::max_reloc_call_stub_size() {
-  // Max stub size: alignment nop, TrampolineStub.
-  if (UseTrampolines) {
-    return instruction_size + MacroAssembler::NativeShortCall::trampoline_size;
-  }
-  return instruction_size + wordSize;
+int MacroAssembler::max_reloc_call_address_stub_size() {
+  // Max stub size: alignment nop, target address.
+  return 1 * instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 5023557
  * @summary Tests complex references
- * @run main/othervm -Djava.security.manager=allow Test5023557
+ * @run main/othervm Test5023557
  * @author Sergey Malenkov
  */
 
@@ -36,7 +36,7 @@ import java.beans.XMLEncoder;
 
 public class Test5023557 extends AbstractTest {
     public static void main(String[] args) {
-        new Test5023557().test(true);
+        new Test5023557().test();
     }
 
     @Override

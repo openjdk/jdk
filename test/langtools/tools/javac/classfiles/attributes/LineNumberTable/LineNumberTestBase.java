@@ -138,7 +138,7 @@ public class LineNumberTestBase extends TestBase {
     private <T extends Attribute<T>> int countAttributes(AttributeMapper<T> attr, AttributedElement attributedElement) {
         int i = 0;
         for (Attribute<?> attribute : attributedElement.attributes()) {
-            if (attribute.attributeName().equals(attr.name())) {
+            if (attribute.attributeName().equalsString(attr.name())) {
                 i++;
             }
         }

@@ -2854,6 +2854,26 @@ void Assembler::leal(Register dst, Address src) {
   emit_operand(dst, src, 0);
 }
 
+#ifdef _LP64
+void Assembler::lea(Register dst, Label& L) {
+  emit_prefix_and_int8(get_prefixq(Address(), dst), (unsigned char)0x8D);
+  if (!L.is_bound()) {
+    // Patch @0x8D opcode
+    L.add_patch_at(code(), CodeBuffer::locator(offset() - 1, sect()));
+    // Register and [rip+disp] operand
+    emit_modrm(0b00, raw_encode(dst), 0b101);
+    emit_int32(0);
+  } else {
+    // Register and [rip+disp] operand
+    emit_modrm(0b00, raw_encode(dst), 0b101);
+    // Adjust displacement by sizeof lea instruction
+    int32_t disp = checked_cast<int32_t>(target(L) - (pc() + sizeof(int32_t)));
+    assert(is_simm32(disp), "must be 32bit offset [rip+offset]");
+    emit_int32(disp);
+  }
+}
+#endif
+
 void Assembler::lfence() {
   emit_int24(0x0F, (unsigned char)0xAE, (unsigned char)0xE8);
 }

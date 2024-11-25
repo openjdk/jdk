@@ -171,6 +171,7 @@ class RegisterSaver {
   static int rax_offset_in_bytes(void)    { return BytesPerInt * rax_off; }
   static int rdx_offset_in_bytes(void)    { return BytesPerInt * rdx_off; }
   static int rbx_offset_in_bytes(void)    { return BytesPerInt * rbx_off; }
+  static int r15_offset_in_bytes(void)    { return BytesPerInt * r15_off; }
   static int xmm0_offset_in_bytes(void)   { return BytesPerInt * xmm0_off; }
   static int return_offset_in_bytes(void) { return BytesPerInt * return_off; }
 
@@ -1420,7 +1421,7 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 // Kills:
 //   rbx
 //
-void static continuation_enter_cleanup(MacroAssembler* masm) {
+static void continuation_enter_cleanup(MacroAssembler* masm) {
 #ifdef ASSERT
   Label L_good_sp;
   __ cmpptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
@@ -1610,6 +1611,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bind(L_thaw);
 
+  ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
   __ call(RuntimeAddress(StubRoutines::cont_thaw()));
 
   ContinuationEntry::_return_pc_offset = __ pc() - start;
@@ -1619,7 +1621,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // --- Normal exit (resolve/thawing)
 
   __ bind(L_exit);
-
+  ContinuationEntry::_cleanup_offset = __ pc() - start;
   continuation_enter_cleanup(masm);
   __ pop(rbp);
   __ ret(0);
@@ -1710,6 +1712,10 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   __ leave();
   __ ret(0);
+}
+
+void SharedRuntime::continuation_enter_cleanup(MacroAssembler* masm) {
+  ::continuation_enter_cleanup(masm);
 }
 
 static void gen_special_dispatch(MacroAssembler* masm,
@@ -2180,11 +2186,16 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // points into the right code segment. It does not have to be the correct return pc.
   // We use the same pc/oopMap repeatedly when we call out
 
-  intptr_t the_pc = (intptr_t) __ pc();
-  oop_maps->add_gc_map(the_pc - start, map);
+  Label native_return;
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // For convenience we use the pc we want to resume to in case of preemption on Object.wait.
+    __ set_last_Java_frame(rsp, noreg, native_return, rscratch1);
+  } else {
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
 
-  __ set_last_Java_frame(rsp, noreg, (address)the_pc, rscratch1);
-
+    __ set_last_Java_frame(rsp, noreg, __ pc(), rscratch1);
+  }
 
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
@@ -2271,12 +2282,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       // Save the test result, for recursive case, the result is zero
       __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
       __ jcc(Assembler::notEqual, slow_path_lock);
+
+      __ bind(count_mon);
+      __ inc_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ lightweight_lock(lock_reg, obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
     }
-    __ bind(count_mon);
-    __ inc_held_monitor_count();
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -2367,6 +2379,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
   __ bind(after_transition);
 
+  if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
+    // Check preemption for Object.wait()
+    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    __ cmpptr(rscratch1, NULL_WORD);
+    __ jccb(Assembler::equal, native_return);
+    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    __ jmp(rscratch1);
+    __ bind(native_return);
+
+    intptr_t the_pc = (intptr_t) __ pc();
+    oop_maps->add_gc_map(the_pc - start, map);
+  }
+
+
   Label reguard;
   Label reguard_done;
   __ cmpl(Address(r15_thread, JavaThread::stack_guard_state_offset()), StackOverflow::stack_guard_yellow_reserved_disabled);
@@ -2416,7 +2442,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
       __ lightweight_unlock(obj_reg, swap_reg, r15_thread, lock_reg, slow_path_unlock);
-      __ dec_held_monitor_count();
     }
 
     // slow path re-enters here
@@ -2490,8 +2515,14 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov(c_rarg1, lock_reg);
     __ mov(c_rarg2, r15_thread);
 
-    // Not a leaf but we have last_Java_frame setup as we want
+    // Not a leaf but we have last_Java_frame setup as we want.
+    // We don't want to unmount in case of contention since that would complicate preserving
+    // the arguments that had already been marshalled into the native convention. So we force
+    // the freeze slow path to find this native wrapper frame (see recurse_freeze_native_frame())
+    // and pin the vthread. Otherwise the fast path won't find it since we don't walk the stack.
+    __ push_cont_fastpath();
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C), 3);
+    __ pop_cont_fastpath();
     restore_args(masm, total_c_args, c_arg, out_regs);
 
 #ifdef ASSERT
@@ -2604,6 +2635,10 @@ uint SharedRuntime::out_preserve_stack_slots() {
 // return address.
 uint SharedRuntime::in_preserve_stack_slots() {
   return 4 + 2 * VerifyStackAtCalls;
+}
+
+VMReg SharedRuntime::thread_register() {
+  return r15_thread->as_VMReg();
 }
 
 //------------------------------generate_deopt_blob----------------------------

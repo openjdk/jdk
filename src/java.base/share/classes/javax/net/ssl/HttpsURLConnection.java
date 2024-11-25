@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,9 +219,6 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
      * @param v the default host name verifier
      * @throws IllegalArgumentException if the <code>HostnameVerifier</code>
      *          parameter is null.
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkPermission</code> method does not allow
-     *         <code>SSLPermission("setHostnameVerifier")</code>
      * @see #getDefaultHostnameVerifier()
      */
     public static void setDefaultHostnameVerifier(HostnameVerifier v) {
@@ -230,11 +227,6 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no default HostnameVerifier specified");
         }
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SSLPermission("setHostnameVerifier"));
-        }
         defaultHostnameVerifier = v;
     }
 
@@ -301,9 +293,6 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
      * @param sf the default SSL socket factory
      * @throws IllegalArgumentException if the SSLSocketFactory
      *          parameter is null.
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkSetFactory</code> method does not allow
-     *         a socket factory to be specified.
      * @see #getDefaultSSLSocketFactory()
      */
     public static void setDefaultSSLSocketFactory(SSLSocketFactory sf) {
@@ -312,11 +301,6 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no default SSLSocketFactory specified");
         }
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkSetFactory();
-        }
         defaultSSLSocketFactory = sf;
     }
 
@@ -351,9 +335,6 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
      * @param sf the SSL socket factory
      * @throws IllegalArgumentException if the <code>SSLSocketFactory</code>
      *          parameter is null.
-     * @throws SecurityException if a security manager exists and its
-     *         <code>checkSetFactory</code> method does not allow
-     *         a socket factory to be specified.
      * @see #getSSLSocketFactory()
      */
     public void setSSLSocketFactory(SSLSocketFactory sf) {
@@ -362,11 +343,6 @@ public abstract class HttpsURLConnection extends HttpURLConnection {
                 "no SSLSocketFactory specified");
         }
 
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkSetFactory();
-        }
         sslSocketFactory = sf;
     }
 

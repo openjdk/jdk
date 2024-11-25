@@ -599,6 +599,9 @@ void Modules::serialize(SerializeClosure* soc) {
     }
     log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+
+    // Don't hold onto the pointer, in case we might decide to unmap the archive.
+    _archived_main_module_name = nullptr;
   }
 }
 
@@ -641,6 +644,9 @@ void Modules::serialize_addmods_names(SerializeClosure* soc) {
     }
     log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+
+    // Don't hold onto the pointer, in case we might decide to unmap the archive.
+    _archived_addmods_names = nullptr;
   }
 }
 

@@ -67,6 +67,8 @@ class TraceTime: public StackObj {
             TraceTimerLogPrintFunc ttlpf);
 
   ~TraceTime();
+
+  const char* title() const { return _title; }
 };
 
 
