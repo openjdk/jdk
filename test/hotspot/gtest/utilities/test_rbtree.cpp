@@ -421,14 +421,15 @@ TEST_VM_F(RBTreeTest, SplitVerify) {
         tree.insert(i, i);
       }
 
-      RBTreeCHeap<int, int, Cmp>& tree_left = tree;
       RBTreeCHeap<int, int, Cmp> tree_right;
 
       tree.split(tree, tree_right, k);
       for (int i = 0; i <= k; i++) {
         EXPECT_NOT_NULL(tree.find(i));
+        EXPECT_NULL(tree_right.find(i));
       }
       for (int i = k+1; i < n_t; i++) {
+        EXPECT_NULL(tree.find(i));
         EXPECT_NOT_NULL(tree_right.find(i));
       }
       verify_it(tree);
@@ -449,8 +450,10 @@ TEST_VM_F(RBTreeTest, SplitVerify) {
       tree.split(tree_left, tree_right, k);
       for (int i = 0; i < k; i += 2) {
         EXPECT_NOT_NULL(tree_left.find(i));
+        EXPECT_NULL(tree_right.find(i));
       }
       for (int i = k + 1; i < n_t; i += 2) {
+        EXPECT_NULL(tree_left.find(i));
         EXPECT_NOT_NULL(tree_right.find(i));
       }
       verify_it(tree_left);
@@ -475,16 +478,23 @@ TEST_VM_F(RBTreeTest, SplitMergeVerify) {
 
         RBTreeCHeap<int, int, Cmp> tree_middle;
         RBTreeCHeap<int, int, Cmp> tree_right2;
-        tree_right1.split(tree_middle, tree_right2, k2, RBTreeCHeap<int, int, Cmp>::LT);
+        tree_right1.split(tree_middle, tree_right2, k2,
+                          RBTreeCHeap<int, int, Cmp>::LT);
 
         RBTreeCHeap<int, int, Cmp>& tree_merged =
             RBTreeCHeap<int, int, Cmp>::merge(tree_left, tree_right2);
 
         for (int i = 0; i <= k1; i++) {
           EXPECT_NOT_NULL(tree_merged.find(i));
+          EXPECT_NULL(tree_middle.find(i));
+        }
+        for (int i = k1 + 1; i < k2; i++) {
+          EXPECT_NOT_NULL(tree_middle.find(i));
+          EXPECT_NULL(tree_merged.find(i));
         }
         for (int i = k2; i < n_t; i++) {
           EXPECT_NOT_NULL(tree_merged.find(i));
+          EXPECT_NULL(tree_middle.find(i));
         }
         verify_it(tree_merged);
       }
