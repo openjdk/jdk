@@ -118,13 +118,13 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                 maxY = Math.max(maxY, to.y + toControlYOffset);
             } else { // reversed edges
                 if (from.x - to.x > 0) {
-                    minX = Math.min(minX, from.x - 150);
-                    maxX = Math.max(maxX, to.x + 150);
+                    minX = Math.min(minX, from.x);
+                    maxX = Math.max(maxX, to.x);
                     minY = Math.min(minY, from.y + fromControlYOffset);
                     maxY = Math.max(maxY, to.y + toControlYOffset);
                 } else {
-                    minX = Math.min(minX, from.x + 150);
-                    maxX = Math.max(maxX, to.x - 150);
+                    minX = Math.min(minX, from.x);
+                    maxX = Math.max(maxX, to.x);
                     minY = Math.min(minY, from.y + fromControlYOffset);
                     maxY = Math.max(maxY, to.y + toControlYOffset);
                 }
