@@ -89,7 +89,7 @@ public class ClassPathUnusableURLs {
             jaros.write("hello".getBytes(US_ASCII));
             jaros.closeEntry();
         }
-        // Even if the resource is located in more than one classpath element,
+        // Even if the resource is present in more than one classpath element,
         // we expect it to be found by the URLClassPath only in the path which has just ascii
         // characters. URLClassPath currently doesn't have the ability to serve resources
         // from paths containing emoji character(s).
@@ -171,6 +171,9 @@ public class ClassPathUnusableURLs {
     }
 
     private static String[] getClassPathElements() {
+        // Maintain the order - in context of this test, paths with emojis
+        // or those which can't serve the resource should come before the
+        // path that can serve the resource.
         return new String[]{
                 // non-existent dir
                 ASCII_DIR.resolve("non-existent").toString(),
