@@ -23,25 +23,37 @@
 
 import jdk.test.lib.Utils;
 import org.junit.function.ThrowingRunnable;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketImplFactory;
 import java.net.UnknownHostException;
+import java.nio.channels.AlreadyConnectedException;
+import java.nio.channels.SocketChannel;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,6 +70,8 @@ class CloseOnFailureTest {
     private static final VarHandle SOCKET_IMPL_FACTORY_HANDLE = createSocketImplFactoryHandle();
 
     private static final int DEAD_SERVER_PORT = 0xDEAD;
+
+    private static final InetSocketAddress REFUSING_SOCKET_ADDRESS = Utils.refusingEndpoint();
 
     private static VarHandle createSocketImplFactoryHandle() {
         try {
@@ -178,11 +192,10 @@ class CloseOnFailureTest {
 
             // Trigger the failure
             Exception exception = assertThrows(Exception.class, () -> {
-                SocketAddress address = Utils.refusingEndpoint();
                 // Address and timeout are mostly ineffective.
                 // They just need to be _valid enough_ to reach to the `SocketImpl#connect()` invocation.
                 // Failure will be triggered by the injected `SocketImpl`.
-                socket.connect(address, 10_000);
+                socket.connect(REFUSING_SOCKET_ADDRESS, 10_000);
             });
 
             // Run verifications
@@ -266,6 +279,186 @@ class CloseOnFailureTest {
         @Override
         public String toString() {
             return description;
+        }
+
+    }
+
+    private static abstract class AbstractRealSocketTest {
+
+        private static final InetSocketAddress UNRESOLVED_ADDRESS =
+                InetSocketAddress.createUnresolved("no.such.host", DEAD_SERVER_PORT);
+
+        @Test
+        void verifyUnresolvedAddress() {
+            assertTrue(UNRESOLVED_ADDRESS.isUnresolved());
+        }
+
+        @Test
+        void verifyUnboundSocket() throws IOException {
+            try (Socket socket = createUnboundSocket()) {
+                assertFalse(socket.isBound());
+                assertFalse(socket.isConnected());
+            }
+        }
+
+        @Test
+        void verifyBoundSocket() throws IOException {
+            try (Socket socket = createBoundSocket()) {
+                assertTrue(socket.isBound());
+                assertFalse(socket.isConnected());
+            }
+        }
+
+        @Test
+        @SuppressWarnings("resource")
+        void verifyConnectedSocket() throws IOException {
+            SocketAddress serverSocketAddress = serverSocket().getLocalSocketAddress();
+            try (Socket socket = createConnectedSocket(serverSocketAddress)) {
+                assertTrue(socket.isBound());
+                assertTrue(socket.isConnected());
+            }
+        }
+
+        @Test
+        void socketShouldBeClosedWhenConnectFailsUsingUnboundSocket() throws IOException {
+            try (Socket socket = createUnboundSocket()) {
+                assertThrows(IOException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
+                assertTrue(socket.isClosed());
+            }
+        }
+
+        @Test
+        void socketShouldBeClosedWhenConnectFailsUsingBoundSocket() throws IOException {
+            try (Socket socket = createBoundSocket()) {
+                assertThrows(IOException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
+                assertTrue(socket.isClosed());
+            }
+        }
+
+        @Test
+        @SuppressWarnings("resource")
+        void socketShouldNotBeClosedWhenConnectFailsUsingConnectedSocket() throws IOException {
+            SocketAddress serverSocketAddress = serverSocket().getLocalSocketAddress();
+            try (Socket socket = createConnectedSocket(serverSocketAddress)) {
+                assertThrows(AlreadyConnectedException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
+                assertFalse(socket.isClosed());
+            }
+        }
+
+        @Test
+        void socketShouldBeClosedWhenConnectWithUnresolvedAddressFailsUsingUnboundSocket() throws IOException {
+            try (Socket socket = createUnboundSocket()) {
+                assertThrows(IOException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
+                assertTrue(socket.isClosed());
+            }
+        }
+
+        @Test
+        void socketShouldBeClosedWhenConnectWithUnresolvedAddressFailsUsingBoundSocket() throws IOException {
+            try (Socket socket = createBoundSocket()) {
+                assertThrows(IOException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
+                assertTrue(socket.isClosed());
+            }
+        }
+
+        @Test
+        @SuppressWarnings("resource")
+        void socketShouldNotBeClosedWhenConnectWithUnresolvedAddressFailsUsingConnectedSocket() throws IOException {
+            SocketAddress serverSocketAddress = serverSocket().getLocalSocketAddress();
+            try (Socket socket = createConnectedSocket(serverSocketAddress)) {
+                assertThrows(IOException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
+                assertFalse(socket.isClosed());
+            }
+        }
+
+        abstract ServerSocket serverSocket();
+
+        abstract Socket createUnboundSocket() throws IOException;
+
+        abstract Socket createBoundSocket() throws IOException;
+
+        abstract Socket createConnectedSocket(SocketAddress address) throws IOException;
+
+    }
+
+    @Nested
+    @SuppressWarnings("resource")
+    class RealSocketUsingSocketChannelTest extends AbstractRealSocketTest {
+
+        @RegisterExtension
+        static final ServerSocketExtension SERVER_SOCKET_EXTENSION = new ServerSocketExtension();
+
+        @Override
+        ServerSocket serverSocket() {
+            return SERVER_SOCKET_EXTENSION.serverSocket;
+        }
+
+        Socket createUnboundSocket() throws IOException {
+            return SocketChannel.open().socket();
+        }
+
+        Socket createBoundSocket() throws IOException {
+            SocketChannel channel = SocketChannel.open();
+            channel.bind(new InetSocketAddress(0));
+            return channel.socket();
+        }
+
+        Socket createConnectedSocket(SocketAddress address) throws IOException {
+            return SocketChannel.open(address).socket();
+        }
+
+    }
+
+    private static final class ServerSocketExtension implements BeforeAllCallback, AfterAllCallback {
+
+        private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+
+        private ServerSocket serverSocket;
+
+        @Override
+        public void beforeAll(ExtensionContext extensionContext) throws Exception {
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(0));
+            // Avoid blocking the JUnit pipeline; accept connections on a separate thread
+            executorService.submit(() -> acceptConnections(executorService, serverSocket));
+        }
+
+        @SuppressWarnings({"ResultOfMethodCallIgnored"})
+        private static void acceptConnections(ExecutorService executorService, ServerSocket serverSocket) {
+            System.err.println("Accepting connections");
+            while (true) {
+                try {
+
+                    Socket clientSocket = serverSocket.accept();
+                    System.err.format(
+                            "Accepted port %d to port %d%n",
+                            ((InetSocketAddress) clientSocket.getRemoteSocketAddress()).getPort(),
+                            clientSocket.getLocalPort());
+
+                    // Server is shared by multiple tests, hence don't block the `accept()` loop.
+                    // Consume the established connections on a separate thread.
+                    executorService.submit(() -> {
+                        try (clientSocket; InputStream inputStream = clientSocket.getInputStream()) {
+                            // Instead of directly closing the socket, we try to read some to block. Directly closing
+                            // the socket will invalidate the client socket tests checking the established connection
+                            // status.
+                            inputStream.read();
+                        } catch (IOException _) {
+                            // Do nothing
+                        }
+                        // Do nothing
+                    });
+
+                } catch (IOException _) {
+                    break;
+                }
+            }
+        }
+
+        @Override
+        public void afterAll(ExtensionContext extensionContext) throws Exception {
+            executorService.shutdownNow();
+            serverSocket.close();
         }
 
     }
