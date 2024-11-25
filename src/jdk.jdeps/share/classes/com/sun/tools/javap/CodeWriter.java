@@ -25,16 +25,13 @@
 
 package com.sun.tools.javap;
 
+import java.lang.classfile.*;
 import java.util.ArrayList;
 import java.util.List;
 
 import java.util.Locale;
 import java.util.stream.Collectors;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.*;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.MethodModel;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.instruction.*;
 
@@ -75,6 +72,19 @@ public class CodeWriter extends BasicWriter {
 
     void writeMinimal(CodeAttribute attr) {
         writeInternal(attr, true);
+    }
+
+    void writeLineAndLocalVariableTables(CodeAttribute attr, boolean indent) {
+        if (indent) {
+            indent(+1);
+        }
+        attr.findAttribute(Attributes.lineNumberTable())
+            .ifPresent(a -> attrWriter.write(a, attr));
+        attr.findAttribute(Attributes.localVariableTable())
+            .ifPresent(a -> attrWriter.write(a, attr));
+        if (indent) {
+            indent(-1);
+        }
     }
 
     public void writeVerboseHeader(CodeAttribute attr) {
