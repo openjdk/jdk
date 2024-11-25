@@ -52,7 +52,7 @@ void InterpreterMacroAssembler::narrow(Register result) {
 
   // Get method->_constMethod->_result_type
   ldr(rscratch1, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
-  ldr(rscratch1, Address(rscratch1, Method::const_offset()));
+  ldr(rscratch1, Address(rscratch1, create_imm_offset(Method, const_offset)));
   ldrb(rscratch1, Address(rscratch1, ConstMethod::result_type_offset()));
 
   Label done, notBool, notByte, notChar;
@@ -113,7 +113,7 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) 
 
 
 void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
-  ldr(r2, Address(rthread, JavaThread::jvmti_thread_state_offset()));
+  ldr(r2, Address(rthread, create_imm_offset(JavaThread, jvmti_thread_state_offset)));
   const Address tos_addr(r2, JvmtiThreadState::earlyret_tos_offset());
   const Address oop_addr(r2, JvmtiThreadState::earlyret_oop_offset());
   const Address val_addr(r2, JvmtiThreadState::earlyret_value_offset());
@@ -142,7 +142,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
 void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) {
   if (JvmtiExport::can_force_early_return()) {
     Label L;
-    ldr(rscratch1, Address(rthread, JavaThread::jvmti_thread_state_offset()));
+    ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, jvmti_thread_state_offset)));
     cbz(rscratch1, L); // if (thread->jvmti_thread_state() == nullptr) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
@@ -154,7 +154,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
     // Call Interpreter::remove_activation_early_entry() to get the address of the
     // same-named entrypoint in the generated interpreter code.
-    ldr(rscratch1, Address(rthread, JavaThread::jvmti_thread_state_offset()));
+    ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, jvmti_thread_state_offset)));
     ldrw(rscratch1, Address(rscratch1, JvmtiThreadState::earlyret_tos_offset()));
     call_VM_leaf(CAST_FROM_FN_PTR(address, Interpreter::remove_activation_early_entry), rscratch1);
     br(r0);
@@ -200,11 +200,11 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
 void InterpreterMacroAssembler::get_method_counters(Register method,
                                                     Register mcs, Label& skip) {
   Label has_counters;
-  ldr(mcs, Address(method, Method::method_counters_offset()));
+  ldr(mcs, Address(method, create_imm_offset(Method, method_counters_offset)));
   cbnz(mcs, has_counters);
   call_VM(noreg, CAST_FROM_FN_PTR(address,
           InterpreterRuntime::build_method_counters), method);
-  ldr(mcs, Address(method, Method::method_counters_offset()));
+  ldr(mcs, Address(method, create_imm_offset(Method, method_counters_offset)));
   cbz(mcs, skip); // No MethodCounters allocated, OutOfMemory
   bind(has_counters);
 }
@@ -216,8 +216,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   get_constant_pool(result);
   // load pointer for resolved_references[] objArray
-  ldr(result, Address(result, ConstantPool::cache_offset()));
-  ldr(result, Address(result, ConstantPoolCache::resolved_references_offset()));
+  ldr(result, Address(result, create_imm_offset(ConstantPool, cache_offset)));
+  ldr(result, Address(result, create_imm_offset(ConstantPoolCache, resolved_references_offset)));
   resolve_oop_handle(result, tmp, rscratch2);
   // Add in the index
   add(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
@@ -228,9 +228,9 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(
                              Register cpool, Register index, Register klass, Register temp) {
   add(temp, cpool, index, LSL, LogBytesPerWord);
   ldrh(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
-  ldr(klass, Address(cpool,  ConstantPool::resolved_klasses_offset())); // klass = cpool->_resolved_klasses
+  ldr(klass, Address(cpool,  create_imm_offset(ConstantPool, resolved_klasses_offset))); // klass = cpool->_resolved_klasses
   add(klass, klass, temp, LSL, LogBytesPerWord);
-  ldr(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
+  ldr(klass, Address(klass, create_imm_offset(Array<Klass*>, base_offset_in_bytes)));
 }
 
 // Generate a subtype check: branch to ok_is_subtype if sub_klass is a
@@ -370,12 +370,12 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register 
     // interp_only_mode if these events CAN be enabled.
     ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
     cbzw(rscratch1, run_compiled_code);
-    ldr(rscratch1, Address(method, Method::interpreter_entry_offset()));
+    ldr(rscratch1, Address(method, create_imm_offset(Method, interpreter_entry_offset)));
     br(rscratch1);
     bind(run_compiled_code);
   }
 
-  ldr(rscratch1, Address(method, Method::from_interpreted_offset()));
+  ldr(rscratch1, Address(method, create_imm_offset(Method, from_interpreted_offset)));
   br(rscratch1);
 }
 
@@ -411,7 +411,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
   if (needs_thread_local_poll) {
     NOT_PRODUCT(block_comment("Thread-local Safepoint poll"));
-    ldr(rscratch2, Address(rthread, JavaThread::polling_word_offset()));
+    ldr(rscratch2, Address(rthread, create_imm_offset(JavaThread, polling_word_offset)));
     tbnz(rscratch2, exact_log2(SafepointMechanism::poll_bit()), safepoint);
   }
 
@@ -503,7 +503,7 @@ void InterpreterMacroAssembler::remove_activation(
 
  // get method access flags
   ldr(r1, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
-  ldr(r2, Address(r1, Method::access_flags_offset()));
+  ldr(r2, Address(r1, create_imm_offset(Method, access_flags_offset)));
   tbz(r2, exact_log2(JVM_ACC_SYNCHRONIZED), unlocked);
 
   // Don't unlock anything if the _do_not_unlock_if_synchronized flag
@@ -522,7 +522,7 @@ void InterpreterMacroAssembler::remove_activation(
   // register for unlock_object to pass to VM directly
   lea(c_rarg1, monitor); // address of first monitor
 
-  ldr(r0, Address(c_rarg1, BasicObjectLock::obj_offset()));
+  ldr(r0, Address(c_rarg1, create_imm_offset(BasicObjectLock, obj_offset)));
   cbnz(r0, unlock);
 
   pop(state);
@@ -601,7 +601,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(loop);
     // check if current entry is used
-    ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset()));
+    ldr(rscratch1, Address(c_rarg1, create_imm_offset(BasicObjectLock, obj_offset)));
     cbnz(rscratch1, exception);
 
     add(c_rarg1, c_rarg1, entry_size); // otherwise advance to next entry
@@ -635,7 +635,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     // look for an overflow into the stack reserved zone, i.e.
     // interpreter_frame_sender_sp <= JavaThread::reserved_stack_activation
-    ldr(rscratch1, Address(rthread, JavaThread::reserved_stack_activation_offset()));
+    ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, reserved_stack_activation_offset)));
     cmp(rscratch2, rscratch1);
     br(Assembler::LS, no_reserved_zone_enabling);
 
@@ -706,7 +706,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       b(done);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
-      ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      ldr(rscratch1, Address(obj_reg, create_imm_offset(oopDesc, mark_offset_in_bytes)));
       orr(swap_reg, rscratch1, 1);
 
       // Save (object->mark() | 1) into BasicLock's displaced header
@@ -805,10 +805,10 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     }
 
     // Load oop into obj_reg(%c_rarg3)
-    ldr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
+    ldr(obj_reg, Address(lock_reg, create_imm_offset(BasicObjectLock, obj_offset)));
 
     // Free entry
-    str(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
+    str(zr, Address(lock_reg, create_imm_offset(BasicObjectLock, obj_offset)));
 
     Label slow_case;
     if (LockingMode == LM_LIGHTWEIGHT) {
@@ -832,7 +832,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     bind(slow_case);
     // Call the runtime routine for slow case.
-    str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
+    str(obj_reg, Address(lock_reg, create_imm_offset(BasicObjectLock, obj_offset))); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
     bind(done);
     restore_bcp();
@@ -853,13 +853,13 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   stp(r0, r1, Address(pre(sp, -2 * wordSize)));
 
   // Test MDO to avoid the call if it is null.
-  ldr(r0, Address(rmethod, in_bytes(Method::method_data_offset())));
+  ldr(r0, Address(rmethod, create_imm_offset(Method, method_data_offset)));
   cbz(r0, set_mdp);
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::bcp_to_di), rmethod, rbcp);
   // r0: mdi
   // mdo is guaranteed to be non-zero here, we checked for it before the call.
-  ldr(r1, Address(rmethod, in_bytes(Method::method_data_offset())));
-  lea(r1, Address(r1, in_bytes(MethodData::data_offset())));
+  ldr(r1, Address(rmethod, create_imm_offset(Method, method_data_offset)));
+  lea(r1, Address(r1, create_imm_offset(MethodData, data_offset)));
   add(r0, r1, r0);
   str(r0, Address(rfp, frame::interpreter_frame_mdp_offset * wordSize));
   bind(set_mdp);
@@ -878,7 +878,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
   // If the mdp is valid, it will point to a DataLayout header which is
   // consistent with the bcp.  The converse is highly probable also.
   ldrsh(r2, Address(r3, in_bytes(DataLayout::bci_offset())));
-  ldr(rscratch1, Address(r1, Method::const_offset()));
+  ldr(rscratch1, Address(r1, create_imm_offset(Method, const_offset)));
   add(r2, r2, rscratch1, Assembler::LSL);
   lea(r2, Address(r2, ConstMethod::codes_offset()));
   cmp(r2, rbcp);
@@ -1546,7 +1546,7 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
 #ifdef ASSERT
   {
     Label L;
-    ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, preempt_alternate_return_offset)));
     cbz(rscratch1, L);
     stop("Should not have alternate return address set");
     bind(L);
@@ -1558,15 +1558,15 @@ void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
 
   // Make VM call. In case of preemption set last_pc to the one we want to resume to.
   adr(rscratch1, resume_pc);
-  str(rscratch1, Address(rthread, JavaThread::last_Java_pc_offset()));
+  str(rscratch1, Address(rthread, create_imm_offset(JavaThread, last_Java_pc_offset)));
   call_VM_base(oop_result, noreg, noreg, entry_point, 1, false /*check_exceptions*/);
 
   pop_cont_fastpath();
 
   // Check if preempted.
-  ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, preempt_alternate_return_offset)));
   cbz(rscratch1, not_preempted);
-  str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+  str(zr, Address(rthread, create_imm_offset(JavaThread, preempt_alternate_return_offset)));
   br(rscratch1);
 
   // In case of preemption, this is where we will resume once we finally acquire the monitor.
@@ -1659,13 +1659,13 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       for (int i = 0; i < TypeProfileArgsLimit; i++) {
         if (i > 0 || MethodData::profile_return()) {
           // If return value type is profiled we may have no argument to profile
-          ldr(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())));
+          ldr(tmp, Address(mdp, create_imm_offset(TypeEntriesAtCall, cell_count_offset)));
           sub(tmp, tmp, i*TypeStackSlotEntries::per_arg_count());
           cmp(tmp, (u1)TypeStackSlotEntries::per_arg_count());
           add(rscratch1, mdp, off_to_args);
           br(Assembler::LT, done);
         }
-        ldr(tmp, Address(callee, Method::const_offset()));
+        ldr(tmp, Address(callee, create_imm_offset(Method, const_offset)));
         load_unsigned_short(tmp, Address(tmp, ConstMethod::size_of_parameters_offset()));
         // stack offset o (zero based) from the start of the argument
         // list, for n arguments translates into offset n - o - 1 from
@@ -1684,7 +1684,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
       }
 
       if (MethodData::profile_return()) {
-        ldr(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())));
+        ldr(tmp, Address(mdp, create_imm_offset(TypeEntriesAtCall, cell_count_offset)));
         sub(tmp, tmp, TypeProfileArgsLimit*TypeStackSlotEntries::per_arg_count());
       }
 
@@ -1768,7 +1768,7 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     // parameters. Collect profiling from last parameter down.
     // mdo start + parameters offset + array length - 1
     add(mdp, mdp, tmp1);
-    ldr(tmp1, Address(mdp, ArrayData::array_len_offset()));
+    ldr(tmp1, Address(mdp, create_imm_offset(ArrayData, array_len_offset)));
     sub(tmp1, tmp1, TypeStackSlotEntries::per_arg_count());
 
     Label loop;
@@ -1804,7 +1804,7 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
   get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
-  ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  ldr(cache, Address(rcpool, create_imm_offset(ConstantPoolCache, invokedynamic_entries_offset)));
   // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   lsl(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
@@ -1822,7 +1822,7 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
     mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
   }
   // Get address of field entries array
-  ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));
+  ldr(cache, Address(rcpool, create_imm_offset(ConstantPoolCache, field_entries_offset)));
   add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
   // Prevents stale data from being read after the bytecode is patched to the fast bytecode
@@ -1836,7 +1836,7 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
   mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
 
   // Get address of field entries array
-  ldr(cache, Address(rcpool, ConstantPoolCache::method_entries_offset()));
+  ldr(cache, Address(rcpool, create_imm_offset(ConstantPoolCache, method_entries_offset)));
   add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
 }

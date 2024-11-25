@@ -51,7 +51,7 @@ void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_
   if (VerifyMethodHandles)
     verify_klass(_masm, klass_reg, VM_CLASS_ID(java_lang_Class),
                  "MH argument is a Class");
-  __ ldr(klass_reg, Address(klass_reg, java_lang_Class::klass_offset()));
+  __ ldr(klass_reg, Address(klass_reg, create_imm_offset(java_lang_Class, klass_offset)));
 }
 
 #ifdef ASSERT
@@ -111,7 +111,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
 
     __ ldrw(rscratch1, Address(rthread, JavaThread::interp_only_mode_offset()));
     __ cbzw(rscratch1, run_compiled_code);
-    __ ldr(rscratch1, Address(method, Method::interpreter_entry_offset()));
+    __ ldr(rscratch1, Address(method, create_imm_offset(Method, interpreter_entry_offset)));
     __ br(rscratch1);
     __ BIND(run_compiled_code);
   }
@@ -147,7 +147,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
-    __ ldr(temp2, Address(method_temp, Method::const_offset()));
+    __ ldr(temp2, Address(method_temp, create_imm_offset(Method, const_offset)));
     __ load_sized_value(temp2,
                         Address(temp2, ConstMethod::size_of_parameters_offset()),
                         sizeof(u2), /*is_signed*/ false);
@@ -222,7 +222,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
   int ref_kind = signature_polymorphic_intrinsic_ref_kind(iid);
   assert(ref_kind != 0 || iid == vmIntrinsics::_invokeBasic, "must be _invokeBasic or a linkTo intrinsic");
   if (ref_kind == 0 || MethodHandles::ref_kind_has_receiver(ref_kind)) {
-    __ ldr(argp, Address(rmethod, Method::const_offset()));
+    __ ldr(argp, Address(rmethod, create_imm_offset(Method, const_offset)));
     __ load_sized_value(argp,
                         Address(argp, ConstMethod::size_of_parameters_offset()),
                         sizeof(u2), /*is_signed*/ false);

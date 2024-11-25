@@ -245,7 +245,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   __ push_cont_fastpath(rthread);
 
-  __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+  __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, from_compiled_offset)));
   __ blr(rscratch1);
 
   __ pop_cont_fastpath(rthread);

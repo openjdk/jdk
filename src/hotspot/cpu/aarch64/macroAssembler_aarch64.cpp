@@ -559,7 +559,7 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
     lea(tmp, Address(rthread, JavaThread::polling_word_offset()));
     ldar(tmp, tmp);
   } else {
-    ldr(tmp, Address(rthread, JavaThread::polling_word_offset()));
+    ldr(tmp, Address(rthread, create_imm_offset(JavaThread, polling_word_offset)));
   }
   if (at_return) {
     // Note that when in_nmethod is set, the stack pointer is incremented before the poll. Therefore,
@@ -584,36 +584,36 @@ void MacroAssembler::rt_call(address dest, Register tmp) {
 void MacroAssembler::push_cont_fastpath(Register java_thread) {
   if (!Continuations::enabled()) return;
   Label done;
-  ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  ldr(rscratch1, Address(java_thread, create_imm_offset(JavaThread, cont_fastpath_offset)));
   cmp(sp, rscratch1);
   br(Assembler::LS, done);
   mov(rscratch1, sp); // we can't use sp as the source in str
-  str(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  str(rscratch1, Address(java_thread, create_imm_offset(JavaThread, cont_fastpath_offset)));
   bind(done);
 }
 
 void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   if (!Continuations::enabled()) return;
   Label done;
-  ldr(rscratch1, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  ldr(rscratch1, Address(java_thread, create_imm_offset(JavaThread, cont_fastpath_offset)));
   cmp(sp, rscratch1);
   br(Assembler::LO, done);
-  str(zr, Address(java_thread, JavaThread::cont_fastpath_offset()));
+  str(zr, Address(java_thread, create_imm_offset(JavaThread, cont_fastpath_offset)));
   bind(done);
 }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
   // we must set sp to zero to clear frame
-  str(zr, Address(rthread, JavaThread::last_Java_sp_offset()));
+  str(zr, Address(rthread, create_imm_offset(JavaThread, last_Java_sp_offset)));
 
   // must clear fp, so that compiled frames are not confused; it is
   // possible that we need it only for debugging
   if (clear_fp) {
-    str(zr, Address(rthread, JavaThread::last_Java_fp_offset()));
+    str(zr, Address(rthread, create_imm_offset(JavaThread, last_Java_fp_offset)));
   }
 
   // Always clear the pc because it could have been set by make_walkable()
-  str(zr, Address(rthread, JavaThread::last_Java_pc_offset()));
+  str(zr, Address(rthread, create_imm_offset(JavaThread, last_Java_pc_offset)));
 }
 
 // Calls to C land
@@ -640,11 +640,11 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     last_java_sp = esp;
   }
 
-  str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
+  str(last_java_sp, Address(rthread, create_imm_offset(JavaThread, last_Java_sp_offset)));
 
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {
-    str(last_java_fp, Address(rthread, JavaThread::last_Java_fp_offset()));
+    str(last_java_fp, Address(rthread, create_imm_offset(JavaThread, last_Java_fp_offset)));
   }
 }
 
@@ -732,7 +732,7 @@ void MacroAssembler::reserved_stack_check() {
     // testing if reserved zone needs to be enabled
     Label no_reserved_zone_enabling;
 
-    ldr(rscratch1, Address(rthread, JavaThread::reserved_stack_activation_offset()));
+    ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, reserved_stack_activation_offset)));
     cmp(sp, rscratch1);
     br(Assembler::LO, no_reserved_zone_enabling);
 
@@ -840,7 +840,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   if (check_exceptions) {
     // check for pending exceptions (java_thread is set upon return)
-    ldr(rscratch1, Address(java_thread, in_bytes(Thread::pending_exception_offset())));
+    ldr(rscratch1, Address(java_thread, create_imm_offset(Thread, pending_exception_offset)));
     Label ok;
     cbz(rscratch1, ok);
     lea(rscratch1, RuntimeAddress(StubRoutines::forward_exception_entry()));
@@ -1043,8 +1043,8 @@ int MacroAssembler::ic_check(int end_alignment) {
     ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
     cmpw(tmp1, tmp2);
   } else {
-    ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
-    ldr(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    ldr(tmp1, Address(receiver, create_imm_offset(oopDesc, klass_offset_in_bytes)));
+    ldr(tmp2, Address(data, create_imm_offset(CompiledICData, speculated_klass_offset)));
     cmp(tmp1, tmp2);
   }
 
@@ -1147,14 +1147,14 @@ void MacroAssembler::call_VM(Register oop_result,
 
 
 void MacroAssembler::get_vm_result(Register oop_result, Register java_thread) {
-  ldr(oop_result, Address(java_thread, JavaThread::vm_result_offset()));
-  str(zr, Address(java_thread, JavaThread::vm_result_offset()));
+  ldr(oop_result, Address(java_thread, create_imm_offset(JavaThread, vm_result_offset)));
+  str(zr, Address(java_thread, create_imm_offset(JavaThread, vm_result_offset)));
   verify_oop_msg(oop_result, "broken oop in call_VM_base");
 }
 
 void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thread) {
-  ldr(metadata_result, Address(java_thread, JavaThread::vm_result_2_offset()));
-  str(zr, Address(java_thread, JavaThread::vm_result_2_offset()));
+  ldr(metadata_result, Address(java_thread, create_imm_offset(JavaThread, vm_result_2_offset)));
+  str(zr, Address(java_thread, create_imm_offset(JavaThread, vm_result_2_offset)));
 }
 
 void MacroAssembler::align(int modulus) {
@@ -1235,7 +1235,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // }
   Label search, found_method;
 
-  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
+  ldr(method_result, Address(scan_temp, create_imm_offset(itableOffsetEntry, interface_offset)));
   cmp(intf_klass, method_result);
   br(Assembler::EQ, found_method);
   bind(search);
@@ -1245,7 +1245,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   cbz(method_result, L_no_such_interface);
   if (itableOffsetEntry::interface_offset() != 0) {
     add(scan_temp, scan_temp, scan_step);
-    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
+    ldr(method_result, Address(scan_temp, create_imm_offset(itableOffsetEntry, interface_offset)));
   } else {
     ldr(method_result, Address(pre(scan_temp, scan_step)));
   }
@@ -1727,7 +1727,7 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
 
   // We're going to need the bitmap in a vector reg and in a core reg,
   // so load both now.
-  ldr(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
+  ldr(r_bitmap, Address(r_sub_klass, create_imm_offset(Klass, secondary_supers_bitmap_offset)));
   if (bit != 0) {
     ldrd(vtemp, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
   }
@@ -1748,7 +1748,7 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
   // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
 
   // We will consult the secondary-super array.
-  ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+  ldr(r_array_base, Address(r_sub_klass, create_imm_offset(Klass, secondary_supers_offset)));
 
   // The value i in r_array_index is >= 1, so even though r_array_base
   // points to the length, we don't need to adjust it to point to the
@@ -1823,7 +1823,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   // Make sure that result is nonzero if the test below misses.
   mov(result, 1);
 
-  ldr(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
+  ldr(r_bitmap, Address(r_sub_klass, create_imm_offset(Klass, secondary_supers_bitmap_offset)));
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
@@ -1868,7 +1868,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
 
   // We will consult the secondary-super array.
-  ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+  ldr(r_array_base, Address(r_sub_klass, create_imm_offset(Klass, secondary_supers_offset)));
 
   ldr(result, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
   eor(result, result, r_super_klass);
@@ -1995,7 +1995,7 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
   BLOCK_COMMENT("verify_secondary_supers_table {");
 
   // We will consult the secondary-super array.
-  ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+  ldr(r_array_base, Address(r_sub_klass, create_imm_offset(Klass, secondary_supers_offset)));
 
   // Load the array length.
   ldrw(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
@@ -2046,7 +2046,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_f
   br(Assembler::EQ, *L_fast_path);
 
   // Fast path check: current thread is initializer thread
-  ldr(scratch, Address(klass, InstanceKlass::init_thread_offset()));
+  ldr(scratch, Address(klass, create_imm_offset(InstanceKlass, init_thread_offset)));
   cmp(rthread, scratch);
 
   if (L_slow_path == &L_fallthrough) {
@@ -5015,13 +5015,13 @@ void MacroAssembler::cmpoop(Register obj1, Register obj2) {
 
 void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) {
   load_method_holder(rresult, rmethod);
-  ldr(rresult, Address(rresult, InstanceKlass::class_loader_data_offset()));
+  ldr(rresult, Address(rresult, create_imm_offset(InstanceKlass, class_loader_data_offset)));
 }
 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
-  ldr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
-  ldr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
+  ldr(holder, Address(method, create_imm_offset(Method, const_offset)));                      // ConstMethod*
+  ldr(holder, Address(holder, create_imm_offset(ConstMethod, constants_offset)));             // ConstantPool*
+  ldr(holder, Address(holder, create_imm_offset(ConstantPool, pool_holder_offset)));          // InstanceKlass*
 }
 
 // Loads the obj's Klass* into dst.
@@ -5031,7 +5031,7 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 // dst - output narrow klass.
 void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
-  ldr(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  ldr(dst, Address(src, create_imm_offset(oopDesc, mark_offset_in_bytes)));
   lsr(dst, dst, markWord::klass_shift);
 }
 
@@ -5043,7 +5043,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst);
   } else {
-    ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+    ldr(dst, Address(src, create_imm_offset(oopDesc, klass_offset_in_bytes)));
   }
 }
 
@@ -5086,11 +5086,10 @@ void MacroAssembler::resolve_weak_handle(Register result, Register tmp1, Registe
 }
 
 void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, Register tmp2) {
-  const int mirror_offset = in_bytes(Klass::java_mirror_offset());
-  ldr(dst, Address(rmethod, Method::const_offset()));
-  ldr(dst, Address(dst, ConstMethod::constants_offset()));
-  ldr(dst, Address(dst, ConstantPool::pool_holder_offset()));
-  ldr(dst, Address(dst, mirror_offset));
+  ldr(dst, Address(rmethod, create_imm_offset(Method, const_offset)));
+  ldr(dst, Address(dst, create_imm_offset(ConstMethod, constants_offset)));
+  ldr(dst, Address(dst, create_imm_offset(ConstantPool, pool_holder_offset)));
+  ldr(dst, Address(dst, create_imm_offset(Klass, java_mirror_offset)));
   resolve_oop_handle(dst, tmp1, tmp2);
 }
 
@@ -5113,7 +5112,7 @@ void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
     }
     decode_klass_not_null(tmp);
   } else {
-    ldr(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp, Address(obj, create_imm_offset(oopDesc, klass_offset_in_bytes)));
   }
   cmp(klass, tmp);
 }
@@ -5128,8 +5127,8 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
     ldrw(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
     cmpw(tmp1, tmp2);
   } else {
-    ldr(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
-    ldr(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp1, Address(obj1, create_imm_offset(oopDesc, klass_offset_in_bytes)));
+    ldr(tmp2, Address(obj2, create_imm_offset(oopDesc, klass_offset_in_bytes)));
     cmp(tmp1, tmp2);
   }
 }
@@ -5142,7 +5141,7 @@ void MacroAssembler::store_klass(Register dst, Register src) {
     encode_klass_not_null(src);
     strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
   } else {
-    str(src, Address(dst, oopDesc::klass_offset_in_bytes()));
+    str(src, Address(dst, create_imm_offset(oopDesc, klass_offset_in_bytes)));
   }
 }
 
@@ -5600,16 +5599,16 @@ void MacroAssembler::verify_tlab() {
 
     stp(rscratch2, rscratch1, Address(pre(sp, -16)));
 
-    ldr(rscratch2, Address(rthread, in_bytes(JavaThread::tlab_top_offset())));
-    ldr(rscratch1, Address(rthread, in_bytes(JavaThread::tlab_start_offset())));
+    ldr(rscratch2, Address(rthread, create_imm_offset(JavaThread, tlab_top_offset)));
+    ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, tlab_start_offset)));
     cmp(rscratch2, rscratch1);
     br(Assembler::HS, next);
     STOP("assert(top >= start)");
     should_not_reach_here();
 
     bind(next);
-    ldr(rscratch2, Address(rthread, in_bytes(JavaThread::tlab_end_offset())));
-    ldr(rscratch1, Address(rthread, in_bytes(JavaThread::tlab_top_offset())));
+    ldr(rscratch2, Address(rthread, create_imm_offset(JavaThread, tlab_end_offset)));
+    ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, tlab_top_offset)));
     cmp(rscratch2, rscratch1);
     br(Assembler::HS, ok);
     STOP("assert(top <= end)");
@@ -5653,7 +5652,7 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
 
 // Move the address of the polling page into dest.
 void MacroAssembler::get_polling_page(Register dest, relocInfo::relocType rtype) {
-  ldr(dest, Address(rthread, JavaThread::polling_page_offset()));
+  ldr(dest, Address(rthread, create_imm_offset(JavaThread, polling_page_offset)));
 }
 
 // Read the polling page.  The address of the polling page must
@@ -7032,11 +7031,12 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 
   // Preload the markWord. It is important that this is the first
   // instruction emitted as it is part of C1's null check semantics.
-  ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+  ldr(mark, Address(obj, create_imm_offset(oopDesc, mark_offset_in_bytes)));
 
   if (UseObjectMonitorTable) {
     // Clear cache in case fast locking succeeds.
-    str(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
+    str(zr, Address(basic_lock, 
+      create_imm_offset(BasicObjectLock, lock_offset) + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
   }
 
   // Check if the lock-stack is full.
@@ -7114,7 +7114,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
   br(Assembler::EQ, unlocked);
 
   // Not recursive. Check header for monitor (0b10).
-  ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+  ldr(mark, Address(obj, create_imm_offset(oopDesc, mark_offset_in_bytes)));
   tbnz(mark, log2i_exact(markWord::monitor_value), push_and_slow);
 
 #ifdef ASSERT

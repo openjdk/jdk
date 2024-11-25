@@ -656,6 +656,9 @@ class Address {
 
   static bool offset_ok_for_immed(int64_t offset, uint shift);
 
+  template <int64_t immed_offset, uint shift>
+  static constexpr bool offset_ok_for_immed_compile_time();
+
   static bool offset_ok_for_sve_immed(int64_t offset, int shift, int vl /* sve vector length */) {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
@@ -668,6 +671,13 @@ class Address {
     }
     return false;
   }
+
+  #define create_imm_offset(klass, field_offset_func) \
+  ([]() { \
+    constexpr size_t max_possible_offset = sizeof(klass); \
+    static_assert(Address::offset_ok_for_immed_compile_time<max_possible_offset, 0>(), "must fit in instruction"); \
+    return klass::field_offset_func(); \
+  }())
 };
 
 // Convenience classes

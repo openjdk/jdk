@@ -249,18 +249,18 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
 
   // verify_tlab();
 
-  __ ldr(obj, Address(rthread, JavaThread::tlab_top_offset()));
+  __ ldr(obj, Address(rthread, create_imm_offset(JavaThread, tlab_top_offset)));
   if (var_size_in_bytes == noreg) {
     __ lea(end, Address(obj, con_size_in_bytes));
   } else {
     __ lea(end, Address(obj, var_size_in_bytes));
   }
-  __ ldr(rscratch1, Address(rthread, JavaThread::tlab_end_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, tlab_end_offset)));
   __ cmp(end, rscratch1);
   __ br(Assembler::HI, slow_case);
 
   // update the tlab top pointer
-  __ str(end, Address(rthread, JavaThread::tlab_top_offset()));
+  __ str(end, Address(rthread, create_imm_offset(JavaThread, tlab_top_offset)));
 
   // recover var_size_in_bytes if necessary
   if (var_size_in_bytes == end) {
@@ -380,7 +380,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 
   // Is it a weak but alive CLD?
   __ push(RegSet::of(r10), sp);
-  __ ldr(r10, Address(rscratch1, ClassLoaderData::holder_offset()));
+  __ ldr(r10, Address(rscratch1, create_imm_offset(ClassLoaderData, holder_offset)));
 
   __ resolve_weak_handle(r10, rscratch1, rscratch2);
   __ mov(rscratch1, r10);

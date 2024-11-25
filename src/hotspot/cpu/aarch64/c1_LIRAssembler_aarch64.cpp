@@ -396,9 +396,9 @@ int LIR_Assembler::emit_unwind_handler() {
   int offset = code_offset();
 
   // Fetch the exception from TLS and clear out exception related thread state
-  __ ldr(r0, Address(rthread, JavaThread::exception_oop_offset()));
-  __ str(zr, Address(rthread, JavaThread::exception_oop_offset()));
-  __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
+  __ ldr(r0, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
 
   __ bind(_unwind_handler_entry);
   __ verify_not_null_oop(r0);
@@ -1438,7 +1438,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ load_klass(klass_RInfo, value);
 
     // get instance klass (it's already uncompressed)
-    __ ldr(k_RInfo, Address(k_RInfo, ObjArrayKlass::element_klass_offset()));
+    __ ldr(k_RInfo, Address(k_RInfo, create_imm_offset(ObjArrayKlass, element_klass_offset)));
     // perform the fast part of the checking logic
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1, success_target, failure_target, nullptr);
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
@@ -2372,7 +2372,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         assert_different_registers(c_rarg2, dst);
 
         __ load_klass(c_rarg4, dst);
-        __ ldr(c_rarg4, Address(c_rarg4, ObjArrayKlass::element_klass_offset()));
+        __ ldr(c_rarg4, Address(c_rarg4, create_imm_offset(ObjArrayKlass, element_klass_offset)));
         __ ldrw(c_rarg3, Address(c_rarg4, Klass::super_check_offset_offset()));
         __ far_call(RuntimeAddress(copyfunc_addr));
 

@@ -217,7 +217,7 @@ void ShenandoahBarrierSetAssembler::resolve_forward_pointer_not_null(MacroAssemb
   assert_different_registers(tmp, dst);
 
   Label done;
-  __ ldr(tmp, Address(dst, oopDesc::mark_offset_in_bytes()));
+  __ ldr(tmp, Address(dst, create_imm_offset(oopDesc, mark_offset_in_bytes)));
   __ eon(tmp, tmp, zr);
   __ ands(zr, tmp, markWord::lock_mask_in_place);
   __ br(Assembler::NE, done);

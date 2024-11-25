@@ -156,7 +156,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   assert_different_registers(oop, box, tmp, disp_hdr, rscratch2);
 
   // Load markWord from object into displaced_header.
-  ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
+  ldr(disp_hdr, Address(oop, create_imm_offset(oopDesc, mark_offset_in_bytes)));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, oop);
@@ -177,7 +177,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
     orr(tmp, disp_hdr, markWord::unlocked_value);
 
     // Initialize the box. (Must happen before we update the object mark!)
-    str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    str(tmp, Address(box, create_imm_offset(BasicLock, displaced_header_offset_in_bytes)));
 
     // Compare object markWord with an unlocked value (tmp) and if
     // equal exchange the stack address of our box with object markWord.
@@ -199,7 +199,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
     // If condition is true we are cont and hence we can store 0 as the
     // displaced header in the box, which indicates that it is a recursive lock.
     ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-    str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    str(tmp/*==0, perhaps*/, Address(box, create_imm_offset(BasicLock, displaced_header_offset_in_bytes)));
     b(cont);
   }
 
@@ -207,7 +207,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   bind(object_has_monitor);
 
   // Try to CAS owner (no owner => current thread's _monitor_owner_id).
-  ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
+  ldr(rscratch2, Address(rthread, create_imm_offset(JavaThread, monitor_owner_id_offset)));
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
   cmpxchg(tmp, zr, rscratch2, Assembler::xword, /*acquire*/ true,
           /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
@@ -217,7 +217,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   // markWord::monitor_value so use markWord::unused_mark which has the
   // relevant bit set, and also matches ObjectSynchronizer::enter.
   mov(tmp, (address)markWord::unused_mark().value());
-  str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+  str(tmp, Address(box, create_imm_offset(BasicLock, displaced_header_offset_in_bytes)));
 
   br(Assembler::EQ, cont); // CAS success means locking succeeded
 
@@ -258,7 +258,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
 
   if (LockingMode == LM_LEGACY) {
     // Find the lock address and load the displaced header from the stack.
-    ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    ldr(disp_hdr, Address(box, create_imm_offset(BasicLock, displaced_header_offset_in_bytes)));
 
     // If the displaced header is 0, we have a recursive unlock.
     cmp(disp_hdr, zr);
@@ -266,7 +266,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   }
 
   // Handle existing monitor.
-  ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
+  ldr(tmp, Address(oop, create_imm_offset(oopDesc, mark_offset_in_bytes)));
   tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
 
   if (LockingMode == LM_MONITOR) {
@@ -290,14 +290,14 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
   add(tmp, tmp, -(int)markWord::monitor_value); // monitor
 
-  ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
+  ldr(disp_hdr, Address(tmp, create_imm_offset(ObjectMonitor, recursions_offset)));
 
   Label notRecursive;
   cbz(disp_hdr, notRecursive);
 
   // Recursive lock
   sub(disp_hdr, disp_hdr, 1u);
-  str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset()));
+  str(disp_hdr, Address(tmp, create_imm_offset(ObjectMonitor, recursions_offset)));
   cmp(disp_hdr, disp_hdr); // Sets flags for result
   b(cont);
 
@@ -314,20 +314,20 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   membar(StoreLoad);
 
   // Check if the entry lists are empty (EntryList first - by convention).
-  ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset()));
-  ldr(tmpReg, Address(tmp, ObjectMonitor::cxq_offset()));
+  ldr(rscratch1, Address(tmp, create_imm_offset(ObjectMonitor, EntryList_offset)));
+  ldr(tmpReg, Address(tmp, create_imm_offset(ObjectMonitor, cxq_offset)));
   orr(rscratch1, rscratch1, tmpReg);
   cmp(rscratch1, zr);
   br(Assembler::EQ, cont);     // If so we are done.
 
   // Check if there is a successor.
-  ldr(rscratch1, Address(tmp, ObjectMonitor::succ_offset()));
+  ldr(rscratch1, Address(tmp, create_imm_offset(ObjectMonitor, succ_offset)));
   cmp(rscratch1, zr);
   br(Assembler::NE, unlocked); // If so we are done.
 
   // Save the monitor pointer in the current thread, so we can try to
   // reacquire the lock in SharedRuntime::monitor_exit_helper().
-  str(tmp, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+  str(tmp, Address(rthread, create_imm_offset(JavaThread, unlocked_inflated_monitor_offset)));
 
   cmp(zr, rthread); // Set Flag to NE => slow path
   b(cont);
@@ -364,7 +364,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
   if (UseObjectMonitorTable) {
     // Clear cache in case fast locking succeeds.
-    str(zr, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    str(zr, Address(box, create_imm_offset(BasicLock, object_monitor_cache_offset_in_bytes)));
   }
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
@@ -396,7 +396,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     br(Assembler::EQ, push);
 
     // Relaxed normal load to check for monitor. Optimization for monitor case.
-    ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+    ldr(t1_mark, Address(obj, create_imm_offset(oopDesc, mark_offset_in_bytes)));
     tbnz(t1_mark, exact_log2(markWord::monitor_value), inflated);
 
     // Not inflated
@@ -470,7 +470,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     lea(t2_owner_addr, owner_address);
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
-    ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
+    ldr(rscratch2, Address(rthread, create_imm_offset(JavaThread, monitor_owner_id_offset)));
     cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, /*acquire*/ true,
             /*release*/ false, /*weak*/ false, t3_owner);
     br(Assembler::EQ, monitor_locked);
@@ -484,7 +484,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
-      str(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      str(t1_monitor, Address(box, create_imm_offset(BasicLock, object_monitor_cache_offset_in_bytes)));
     }
   }
 
@@ -547,7 +547,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
 
     // Not recursive.
     // Load Mark.
-    ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+    ldr(t1_mark, Address(obj, create_imm_offset(oopDesc, mark_offset_in_bytes)));
 
     // Check header for monitor (0b10).
     // Because we got here by popping (meaning we pushed in locked)
@@ -567,14 +567,14 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     // Restore lock-stack and handle the unlock in runtime.
     DEBUG_ONLY(str(obj, Address(rthread, t2_top));)
     addw(t2_top, t2_top, oopSize);
-    str(t2_top, Address(rthread, JavaThread::lock_stack_top_offset()));
+    str(t2_top, Address(rthread, create_imm_offset(JavaThread, lock_stack_top_offset)));
     b(slow_path);
   }
 
 
   { // Handle inflated monitor.
     bind(inflated_load_mark);
-    ldr(t1_mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+    ldr(t1_mark, Address(obj, create_imm_offset(oopDesc, mark_offset_in_bytes)));
 #ifdef ASSERT
     tbnz(t1_mark, exact_log2(markWord::monitor_value), inflated);
     stop("Fast Unlock not monitor");
@@ -602,7 +602,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
       // Untag the monitor.
       add(t1_monitor, t1_mark, -(int)markWord::monitor_value);
     } else {
-      ldr(t1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+      ldr(t1_monitor, Address(box, create_imm_offset(BasicLock, object_monitor_cache_offset_in_bytes)));
       // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
       cmp(t1_monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
       br(Assembler::LO, slow_path);
@@ -612,12 +612,12 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     Label not_recursive;
 
     // Check if recursive.
-    ldr(t2_recursions, Address(t1_monitor, ObjectMonitor::recursions_offset()));
+    ldr(t2_recursions, Address(t1_monitor, create_imm_offset(ObjectMonitor, recursions_offset)));
     cbz(t2_recursions, not_recursive);
 
     // Recursive unlock.
     sub(t2_recursions, t2_recursions, 1u);
-    str(t2_recursions, Address(t1_monitor, ObjectMonitor::recursions_offset()));
+    str(t2_recursions, Address(t1_monitor, create_imm_offset(ObjectMonitor, recursions_offset)));
     // Set flag == EQ
     cmp(t2_recursions, t2_recursions);
     b(unlocked);
@@ -637,20 +637,20 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     membar(StoreLoad);
 
     // Check if the entry lists are empty (EntryList first - by convention).
-    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::EntryList_offset()));
-    ldr(t3_t, Address(t1_monitor, ObjectMonitor::cxq_offset()));
+    ldr(rscratch1, Address(t1_monitor, create_imm_offset(ObjectMonitor, EntryList_offset)));
+    ldr(t3_t, Address(t1_monitor, create_imm_offset(ObjectMonitor, cxq_offset)));
     orr(rscratch1, rscratch1, t3_t);
     cmp(rscratch1, zr);
     br(Assembler::EQ, unlocked);  // If so we are done.
 
     // Check if there is a successor.
-    ldr(rscratch1, Address(t1_monitor, ObjectMonitor::succ_offset()));
+    ldr(rscratch1, Address(t1_monitor, create_imm_offset(ObjectMonitor, succ_offset)));
     cmp(rscratch1, zr);
     br(Assembler::NE, unlocked);  // If so we are done.
 
     // Save the monitor pointer in the current thread, so we can try to
     // reacquire the lock in SharedRuntime::monitor_exit_helper().
-    str(t1_monitor, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+    str(t1_monitor, Address(rthread, create_imm_offset(JavaThread, unlocked_inflated_monitor_offset)));
 
     cmp(zr, rthread); // Set Flag to NE => slow path
     b(slow_path);

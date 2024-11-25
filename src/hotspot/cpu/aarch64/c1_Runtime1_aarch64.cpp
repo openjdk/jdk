@@ -87,15 +87,15 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   // check for pending exceptions
   { Label L;
     // check for pending exceptions (java_thread is set upon return)
-    ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+    ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
     cbz(rscratch1, L);
     // exception pending => remove activation and forward to exception handler
     // make sure that the vm_results are cleared
     if (oop_result1->is_valid()) {
-      str(zr, Address(rthread, JavaThread::vm_result_offset()));
+      str(zr, Address(rthread, create_imm_offset(JavaThread, vm_result_offset)));
     }
     if (metadata_result->is_valid()) {
-      str(zr, Address(rthread, JavaThread::vm_result_2_offset()));
+      str(zr, Address(rthread, create_imm_offset(JavaThread, vm_result_2_offset)));
     }
     if (frame_size() == no_frame_size) {
       leave();
@@ -396,16 +396,16 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm)
     oop_map = generate_oop_map(sasm, 1 /*thread*/);
 
     // load and clear pending exception oop into r0
-    __ ldr(exception_oop, Address(rthread, Thread::pending_exception_offset()));
-    __ str(zr, Address(rthread, Thread::pending_exception_offset()));
+    __ ldr(exception_oop, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
+    __ str(zr, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
 
     // load issuing PC (the return address for this stub) into r3
     __ ldr(exception_pc, Address(rfp, 1*BytesPerWord));
     __ authenticate_return_address(exception_pc);
 
     // make sure that the vm_results are cleared (may be unnecessary)
-    __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
-    __ str(zr, Address(rthread, JavaThread::vm_result_2_offset()));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, vm_result_offset)));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, vm_result_2_offset)));
     break;
   case C1StubId::handle_exception_nofpu_id:
   case C1StubId::handle_exception_id:
@@ -432,13 +432,13 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm)
   // check that fields in JavaThread for exception oop and issuing pc are
   // empty before writing to them
   Label oop_empty;
-  __ ldr(rscratch1, Address(rthread, JavaThread::exception_oop_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
   __ cbz(rscratch1, oop_empty);
   __ stop("exception oop already set");
   __ bind(oop_empty);
 
   Label pc_empty;
-  __ ldr(rscratch1, Address(rthread, JavaThread::exception_pc_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
   __ cbz(rscratch1, pc_empty);
   __ stop("exception pc already set");
   __ bind(pc_empty);
@@ -446,8 +446,8 @@ OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm)
 
   // save exception oop and issuing pc into JavaThread
   // (exception handler will load it from here)
-  __ str(exception_oop, Address(rthread, JavaThread::exception_oop_offset()));
-  __ str(exception_pc, Address(rthread, JavaThread::exception_pc_offset()));
+  __ str(exception_oop, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
+  __ str(exception_pc, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
 
   // patch throwing pc into return address (has bci & oop map)
   __ protect_return_address(exception_pc);
@@ -509,13 +509,13 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
 #ifdef ASSERT
   // check that fields in JavaThread for exception oop and issuing pc are empty
   Label oop_empty;
-  __ ldr(rscratch1, Address(rthread, JavaThread::exception_oop_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
   __ cbz(rscratch1, oop_empty);
   __ stop("exception oop must be empty");
   __ bind(oop_empty);
 
   Label pc_empty;
-  __ ldr(rscratch1, Address(rthread, JavaThread::exception_pc_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
   __ cbz(rscratch1, pc_empty);
   __ stop("exception pc must be empty");
   __ bind(pc_empty);
@@ -596,13 +596,13 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 #ifdef ASSERT
   // check that fields in JavaThread for exception oop and issuing pc are empty
   Label oop_empty;
-  __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
   __ cbz(rscratch1, oop_empty);
   __ stop("exception oop must be empty");
   __ bind(oop_empty);
 
   Label pc_empty;
-  __ ldr(rscratch1, Address(rthread, JavaThread::exception_pc_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
   __ cbz(rscratch1, pc_empty);
   __ stop("exception pc must be empty");
   __ bind(pc_empty);

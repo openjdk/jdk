@@ -1785,7 +1785,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     // Pre-load the next target bytecode into rscratch1
     __ load_unsigned_byte(rscratch1, Address(rbcp, r2));
     // compute return address as bci
-    __ ldr(rscratch2, Address(rmethod, Method::const_offset()));
+    __ ldr(rscratch2, Address(rmethod, create_imm_offset(Method, const_offset)));
     __ add(rscratch2, rscratch2,
            in_bytes(ConstMethod::codes_offset()) - (is_wide ? 5 : 3));
     __ sub(r1, rbcp, rscratch2);
@@ -1816,7 +1816,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     // ECN: FIXME: This code smells
     // check if MethodCounters exists
     Label has_counters;
-    __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, method_counters_offset)));
     __ cbnz(rscratch1, has_counters);
     __ push(r0);
     __ push(r1);
@@ -1826,7 +1826,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ pop(r2);
     __ pop(r1);
     __ pop(r0);
-    __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, method_counters_offset)));
     __ cbz(rscratch1, dispatch); // No MethodCounters allocated, OutOfMemory
     __ bind(has_counters);
 
@@ -1834,7 +1834,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     int increment = InvocationCounter::count_increment;
     if (ProfileInterpreter) {
       // Are we profiling?
-      __ ldr(r1, Address(rmethod, in_bytes(Method::method_data_offset())));
+      __ ldr(r1, Address(rmethod, create_imm_offset(Method, method_data_offset)));
       __ cbz(r1, no_mdo);
       // Increment the MDO backedge counter
       const Address mdo_backedge_counter(r1, in_bytes(MethodData::backedge_counter_offset()) +
@@ -1847,7 +1847,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     }
     __ bind(no_mdo);
     // Increment backedge counter in MethodCounters*
-    __ ldr(rscratch1, Address(rmethod, Method::method_counters_offset()));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, method_counters_offset)));
     const Address mask(rscratch1, in_bytes(MethodCounters::backedge_mask_offset()));
     __ increment_mask_and_jump(Address(rscratch1, be_offset), increment, mask,
                                r0, rscratch2, false, Assembler::EQ,
@@ -1906,7 +1906,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide)
     __ andr(sp, esp, -16);
 
     // and begin the OSR nmethod
-    __ ldr(rscratch1, Address(r19, nmethod::osr_entry_point_offset()));
+    __ ldr(rscratch1, Address(r19, create_imm_offset(nmethod, osr_entry_point_offset)));
     __ br(rscratch1);
   }
 }
@@ -1976,7 +1976,7 @@ void TemplateTable::ret() {
   locals_index(r1);
   __ ldr(r1, aaddress(r1)); // get return bci, compute return bcp
   __ profile_ret(r1, r2);
-  __ ldr(rbcp, Address(rmethod, Method::const_offset()));
+  __ ldr(rbcp, Address(rmethod, create_imm_offset(Method, const_offset)));
   __ lea(rbcp, Address(rbcp, r1));
   __ add(rbcp, rbcp, in_bytes(ConstMethod::codes_offset()));
   __ dispatch_next(vtos, 0, /*generate_poll*/true);
@@ -1987,7 +1987,7 @@ void TemplateTable::wide_ret() {
   locals_index_wide(r1);
   __ ldr(r1, aaddress(r1)); // get return bci, compute return bcp
   __ profile_ret(r1, r2);
-  __ ldr(rbcp, Address(rmethod, Method::const_offset()));
+  __ ldr(rbcp, Address(rmethod, create_imm_offset(Method, const_offset)));
   __ lea(rbcp, Address(rbcp, r1));
   __ add(rbcp, rbcp, in_bytes(ConstMethod::codes_offset()));
   __ dispatch_next(vtos, 0, /*generate_poll*/true);
@@ -2209,7 +2209,7 @@ void TemplateTable::_return(TosState state)
 
   if (_desc->bytecode() != Bytecodes::_return_register_finalizer) {
     Label no_safepoint;
-    __ ldr(rscratch1, Address(rthread, JavaThread::polling_word_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, polling_word_offset)));
     __ tbz(rscratch1, log2i_exact(SafepointMechanism::poll_bit()), no_safepoint);
     __ push(state);
     __ push_cont_fastpath(rthread);
@@ -2298,7 +2298,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
 
   // Class initialization barrier for static methods
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
-    __ ldr(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
+    __ ldr(temp, Address(Rcache, create_imm_offset(ResolvedMethodEntry, method_offset)));
     __ load_method_holder(temp, temp);
     __ clinit_barrier(temp, rscratch1, nullptr, &clinit_barrier_slow);
   }
@@ -2362,7 +2362,7 @@ void TemplateTable::load_resolved_field_entry(Register obj,
 
   // Klass overwrite register
   if (is_static) {
-    __ ldr(obj, Address(cache, ResolvedFieldEntry::field_holder_offset()));
+    __ ldr(obj, Address(cache, create_imm_offset(ResolvedFieldEntry, field_holder_offset)));
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ ldr(obj, Address(obj, mirror_offset));
     __ resolve_oop_handle(obj, r5, rscratch2);
@@ -2380,7 +2380,7 @@ void TemplateTable::load_resolved_method_entry_special_or_static(Register cache,
   // determine constant pool cache field offsets
   resolve_cache_and_index_for_method(f1_byte, cache, index);
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedMethodEntry::flags_offset())));
-  __ ldr(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ ldr(method, Address(cache, create_imm_offset(ResolvedMethodEntry, method_offset)));
 }
 
 void TemplateTable::load_resolved_method_entry_handle(Register cache,
@@ -2409,7 +2409,7 @@ void TemplateTable::load_resolved_method_entry_handle(Register cache,
   __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
   __ bind(L_no_push);
 
-  __ ldr(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ ldr(method, Address(cache, create_imm_offset(ResolvedMethodEntry, method_offset)));
 }
 
 void TemplateTable::load_resolved_method_entry_interface(Register cache,
@@ -2433,7 +2433,7 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
   Label NotVirtual; Label NotVFinal; Label Done;
   __ tbz(flags, ResolvedMethodEntry::is_forced_virtual_shift, NotVirtual);
   __ tbz(flags, ResolvedMethodEntry::is_vfinal_shift, NotVFinal);
-  __ ldr(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ ldr(method_or_table_index, Address(cache, create_imm_offset(ResolvedMethodEntry,method_offset)));
   __ b(Done);
 
   __ bind(NotVFinal);
@@ -2441,8 +2441,8 @@ void TemplateTable::load_resolved_method_entry_interface(Register cache,
   __ b(Done);
 
   __ bind(NotVirtual);
-  __ ldr(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
-  __ ldr(klass, Address(cache, in_bytes(ResolvedMethodEntry::klass_offset())));
+  __ ldr(method_or_table_index, Address(cache, create_imm_offset(ResolvedMethodEntry, method_offset)));
+  __ ldr(klass, Address(cache, create_imm_offset(ResolvedMethodEntry, klass_offset)));
   __ bind(Done);
 }
 
@@ -2460,7 +2460,7 @@ void TemplateTable::load_resolved_method_entry_virtual(Register cache,
   // method_or_table_index can either be an itable index or a method depending on the virtual final flag
   Label NotVFinal; Label Done;
   __ tbz(flags, ResolvedMethodEntry::is_vfinal_shift, NotVFinal);
-  __ ldr(method_or_table_index, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
+  __ ldr(method_or_table_index, Address(cache, create_imm_offset(ResolvedMethodEntry, method_offset)));
   __ b(Done);
 
   __ bind(NotVFinal);
@@ -3647,11 +3647,11 @@ void TemplateTable::_new() {
     // initialize object header only.
     __ bind(initialize_header);
     if (UseCompactObjectHeaders) {
-      __ ldr(rscratch1, Address(r4, Klass::prototype_header_offset()));
-      __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+      __ ldr(rscratch1, Address(r4, create_imm_offset(Klass, prototype_header_offset)));
+      __ str(rscratch1, Address(r0, create_imm_offset(oopDesc, mark_offset_in_bytes)));
     } else {
       __ mov(rscratch1, (intptr_t)markWord::prototype().value());
-      __ str(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
+      __ str(rscratch1, Address(r0, create_imm_offset(oopDesc, mark_offset_in_bytes)));
       __ store_klass_gap(r0, zr);  // zero klass gap for compressed oops
       __ store_klass(r0, r4);      // store klass last
     }
@@ -3901,7 +3901,7 @@ void TemplateTable::monitorenter()
     __ bind(loop);
     // check if current entry is used
     // if not used then remember entry in c_rarg1
-    __ ldr(rscratch1, Address(c_rarg3, BasicObjectLock::obj_offset()));
+    __ ldr(rscratch1, Address(c_rarg3, create_imm_offset(BasicObjectLock, obj_offset)));
     __ cmp(zr, rscratch1);
     __ csel(c_rarg1, c_rarg3, c_rarg1, Assembler::EQ);
     // check if current entry is for same object
@@ -3967,7 +3967,7 @@ void TemplateTable::monitorenter()
   __ increment(rbcp);
 
   // store object
-  __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset()));
+  __ str(r0, Address(c_rarg1, create_imm_offset(BasicObjectLock, obj_offset)));
   __ lock_object(c_rarg1);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
@@ -4008,7 +4008,7 @@ void TemplateTable::monitorexit()
 
     __ bind(loop);
     // check if current entry is for same object
-    __ ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset()));
+    __ ldr(rscratch1, Address(c_rarg1, create_imm_offset(BasicObjectLock, obj_offset)));
     __ cmp(r0, rscratch1);
     // if same object then stop searching
     __ br(Assembler::EQ, found);

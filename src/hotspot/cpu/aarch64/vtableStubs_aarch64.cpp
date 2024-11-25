@@ -116,7 +116,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     __ cbz(rmethod, L);
-    __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, from_compiled_offset)));
     __ cbnz(rscratch1, L);
     __ stop("Vtable entry is null");
     __ bind(L);
@@ -127,7 +127,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // rmethod: Method*
   // r2: receiver
   address ame_addr = __ pc();
-  __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+  __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, from_compiled_offset)));
   __ br(rscratch1);
 
   masm->flush();
@@ -182,8 +182,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   Label L_no_such_interface;
 
-  __ ldr(resolved_klass_reg, Address(icdata_reg, CompiledICData::itable_refc_klass_offset()));
-  __ ldr(holder_klass_reg,   Address(icdata_reg, CompiledICData::itable_defc_klass_offset()));
+  __ ldr(resolved_klass_reg, Address(icdata_reg, create_imm_offset(CompiledICData, itable_refc_klass_offset)));
+  __ ldr(holder_klass_reg,   Address(icdata_reg, create_imm_offset(CompiledICData, itable_defc_klass_offset)));
 
   start_pc = __ pc();
 
@@ -207,7 +207,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   if (DebugVtables) {
     Label L2;
     __ cbz(rmethod, L2);
-    __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, from_compiled_offset)));
     __ cbnz(rscratch1, L2);
     __ stop("compiler entrypoint is null");
     __ bind(L2);
@@ -217,7 +217,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // rmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
+  __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, from_compiled_offset)));
   __ br(rscratch1);
 
   __ bind(L_no_such_interface);

@@ -161,7 +161,7 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 
   // Load address of array of frame pcs into r2 (address*)
   __ ldr(r2, Address(r4,
-                     Deoptimization::UnrollBlock::frame_pcs_offset()));
+                     create_imm_offset(Deoptimization::UnrollBlock, frame_pcs_offset)));
 
   // Load address of array of frame sizes into r5 (intptr_t*)
   __ ldr(r5, Address(r4,
@@ -304,8 +304,8 @@ void OptoRuntime::generate_exception_blob() {
   // Store exception in Thread object. We cannot pass any arguments to the
   // handle_exception call, since we do not want to make any assumption
   // about the size of the frame where the exception happened in.
-  __ str(r0, Address(rthread, JavaThread::exception_oop_offset()));
-  __ str(r3, Address(rthread, JavaThread::exception_pc_offset()));
+  __ str(r0, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
+  __ str(r3, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
 
   // This call does all the hard work.  It checks if an exception handler
   // exists in the method.
@@ -356,15 +356,15 @@ void OptoRuntime::generate_exception_blob() {
   __ mov(r8, r0);
 
   // Get the exception oop
-  __ ldr(r0, Address(rthread, JavaThread::exception_oop_offset()));
+  __ ldr(r0, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
   // Get the exception pc in case we are deoptimized
-  __ ldr(r4, Address(rthread, JavaThread::exception_pc_offset()));
+  __ ldr(r4, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
 #ifdef ASSERT
-  __ str(zr, Address(rthread, JavaThread::exception_handler_pc_offset()));
-  __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_handler_pc_offset)));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
 #endif
   // Clear the exception oop so GC no longer processes it as a root.
-  __ str(zr, Address(rthread, JavaThread::exception_oop_offset()));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
 
   // r0: exception oop
   // r8:  exception handler

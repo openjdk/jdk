@@ -362,7 +362,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
 // Patch the callers callsite with entry to compiled code if it exists.
 static void patch_callers_callsite(MacroAssembler *masm) {
   Label L;
-  __ ldr(rscratch1, Address(rmethod, in_bytes(Method::code_offset())));
+  __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, code_offset)));
   __ cbz(rscratch1, L);
 
   __ enter();
@@ -521,7 +521,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   __ mov(esp, sp); // Interp expects args on caller's expression stack
 
-  __ ldr(rscratch1, Address(rmethod, in_bytes(Method::interpreter_entry_offset())));
+  __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, interpreter_entry_offset)));
   __ br(rscratch1);
 }
 
@@ -601,16 +601,16 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 
   // Will jump to the compiled code just as if compiled code was doing it.
   // Pre-load the register-jump target early, to schedule it better.
-  __ ldr(rscratch1, Address(rmethod, in_bytes(Method::from_compiled_offset())));
+  __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, from_compiled_offset)));
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
     // check if this call should be routed towards a specific entry point
-    __ ldr(rscratch2, Address(rthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ ldr(rscratch2, Address(rthread, create_imm_offset(JavaThread, jvmci_alternate_call_target_offset)));
     Label no_alternative_target;
     __ cbz(rscratch2, no_alternative_target);
     __ mov(rscratch1, rscratch2);
-    __ str(zr, Address(rthread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, jvmci_alternate_call_target_offset)));
     __ bind(no_alternative_target);
   }
 #endif // INCLUDE_JVMCI
@@ -706,7 +706,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   // is possible. So we stash the desired callee in the thread
   // and the vm will find there should this case occur.
 
-  __ str(rmethod, Address(rthread, JavaThread::callee_target_offset()));
+  __ str(rmethod, Address(rthread, create_imm_offset(JavaThread, callee_target_offset)));
 
   __ br(rscratch1);
 }
@@ -744,9 +744,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     // interpreted; if that is the case treat it as a miss so we can get
     // the call site corrected.
     __ ic_check(1 /* end_alignment */);
-    __ ldr(rmethod, Address(data, CompiledICData::speculated_method_offset()));
+    __ ldr(rmethod, Address(data, create_imm_offset(CompiledICData, speculated_method_offset)));
 
-    __ ldr(rscratch1, Address(rmethod, in_bytes(Method::code_offset())));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, code_offset)));
     __ cbz(rscratch1, skip_fixup);
     __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
     __ block_comment("} c2i_unverified_entry");
@@ -995,10 +995,10 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) 
 
   OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize)/ VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
 
-  __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
-  __ str(rscratch1, Address(sp, ContinuationEntry::parent_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset)));
+  __ str(rscratch1, Address(sp, create_imm_offset(ContinuationEntry, parent_offset)));
   __ mov(rscratch1, sp); // we can't use sp as the source in str
-  __ str(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
+  __ str(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset)));
 
   return map;
 }
@@ -1018,13 +1018,13 @@ static void fill_continuation_entry(MacroAssembler* masm) {
   __ strw(zr,      Address(sp, ContinuationEntry::argsize_offset()));
   __ strw(zr,      Address(sp, ContinuationEntry::pin_count_offset()));
 
-  __ ldr(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ str(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ ldr(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
-  __ str(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_fastpath_offset)));
+  __ str(rscratch1, Address(sp, create_imm_offset(ContinuationEntry, parent_cont_fastpath_offset)));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, held_monitor_count_offset)));
+  __ str(rscratch1, Address(sp, create_imm_offset(ContinuationEntry, parent_held_monitor_count_offset)));
 
-  __ str(zr, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ str(zr, Address(rthread, JavaThread::held_monitor_count_offset()));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, cont_fastpath_offset)));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, held_monitor_count_offset)));
 }
 
 // on entry, sp points to the ContinuationEntry
@@ -1032,14 +1032,14 @@ static void fill_continuation_entry(MacroAssembler* masm) {
 static void continuation_enter_cleanup(MacroAssembler* masm) {
 #ifndef PRODUCT
   Label OK;
-  __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset)));
   __ cmp(sp, rscratch1);
   __ br(Assembler::EQ, OK);
   __ stop("incorrect sp1");
   __ bind(OK);
 #endif
-  __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ str(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
+  __ ldr(rscratch1, Address(sp, create_imm_offset(ContinuationEntry, parent_cont_fastpath_offset)));
+  __ str(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_fastpath_offset)));
 
   if (CheckJNICalls) {
     // Check if this is a virtual thread continuation
@@ -1050,7 +1050,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
     // If the held monitor count is > 0 and this vthread is terminating then
     // it failed to release a JNI monitor. So we issue the same log message
     // that JavaThread::exit does.
-    __ ldr(rscratch1, Address(rthread, JavaThread::jni_monitor_count_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, jni_monitor_count_offset)));
     __ cbz(rscratch1, L_skip_vthread_code);
 
     // Save return value potentially containing the exception oop in callee-saved R19.
@@ -1062,7 +1062,7 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
     // For vthreads we have to explicitly zero the JNI monitor count of the carrier
     // on termination. The held count is implicitly zeroed below when we restore from
     // the parent held count (which has to be zero).
-    __ str(zr, Address(rthread, JavaThread::jni_monitor_count_offset()));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, jni_monitor_count_offset)));
 
     __ bind(L_skip_vthread_code);
   }
@@ -1075,17 +1075,17 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 
     // See comment just above. If not checking JNI calls the JNI count is only
     // needed for assertion checking.
-    __ str(zr, Address(rthread, JavaThread::jni_monitor_count_offset()));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, jni_monitor_count_offset)));
 
     __ bind(L_skip_vthread_code);
   }
 #endif
 
-  __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ str(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
+  __ ldr(rscratch1, Address(sp, create_imm_offset(ContinuationEntry, parent_held_monitor_count_offset)));
+  __ str(rscratch1, Address(rthread, create_imm_offset(JavaThread, held_monitor_count_offset)));
 
-  __ ldr(rscratch2, Address(sp, ContinuationEntry::parent_offset()));
-  __ str(rscratch2, Address(rthread, JavaThread::cont_entry_offset()));
+  __ ldr(rscratch2, Address(sp, create_imm_offset(ContinuationEntry, parent_offset)));
+  __ str(rscratch2, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset)));
   __ add(rfp, sp, (int)ContinuationEntry::size());
 }
 
@@ -1261,14 +1261,14 @@ static void gen_continuation_yield(MacroAssembler* masm,
     __ cbnz(r0, pinned);
 
     // We've succeeded, set sp to the ContinuationEntry
-    __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset)));
     __ mov(sp, rscratch1);
     continuation_enter_cleanup(masm);
 
     __ bind(pinned); // pinned -- return to caller
 
     // handle pending exception thrown by freeze
-    __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
     Label ok;
     __ cbz(rscratch1, ok);
     __ leave();
@@ -1817,7 +1817,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ b(slow_path_lock);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg %r0
-      __ ldr(rscratch1, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      __ ldr(rscratch1, Address(obj_reg, create_imm_offset(oopDesc, mark_offset_in_bytes)));
       __ orr(swap_reg, rscratch1, 1);
 
       // Save (object->mark() | 1) into BasicLock's displaced header
@@ -1929,9 +1929,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (LockingMode != LM_LEGACY && method->is_object_wait0()) {
     // Check preemption for Object.wait()
-    __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, preempt_alternate_return_offset)));
     __ cbz(rscratch1, native_return);
-    __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, preempt_alternate_return_offset)));
     __ br(rscratch1);
     __ bind(native_return);
 
@@ -2015,17 +2015,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
-    __ str(zr, Address(rthread, JavaThread::pending_jni_exception_check_fn_offset()));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, pending_jni_exception_check_fn_offset)));
   }
 
   // reset handle block
-  __ ldr(r2, Address(rthread, JavaThread::active_handles_offset()));
-  __ str(zr, Address(r2, JNIHandleBlock::top_offset()));
+  __ ldr(r2, Address(rthread, create_imm_offset(JavaThread, active_handles_offset)));
+  __ str(zr, Address(r2, create_imm_offset(JNIHandleBlock, top_offset)));
 
   __ leave();
 
   // Any exception pending?
-  __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
   __ cbnz(rscratch1, exception_pending);
 
   // We're done
@@ -2067,7 +2067,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
 #ifdef ASSERT
     { Label L;
-      __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+      __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
       __ cbz(rscratch1, L);
       __ stop("no pending exception allowed on exit from monitorenter");
       __ bind(L);
@@ -2093,22 +2093,22 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // Save pending exception around call to VM (which contains an EXCEPTION_MARK)
     // NOTE that obj_reg == r19 currently
-    __ ldr(r19, Address(rthread, in_bytes(Thread::pending_exception_offset())));
-    __ str(zr, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+    __ ldr(r19, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
+    __ str(zr, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
 
     __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C));
 
 #ifdef ASSERT
     {
       Label L;
-      __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+      __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
       __ cbz(rscratch1, L);
       __ stop("no pending exception allowed on exit complete_monitor_unlocking_C");
       __ bind(L);
     }
 #endif /* ASSERT */
 
-    __ str(r19, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+    __ str(r19, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
 
     if (ret_type == T_FLOAT || ret_type == T_DOUBLE ) {
       restore_native_result(masm, ret_type, stack_slots);
@@ -2298,8 +2298,8 @@ void SharedRuntime::generate_deopt_blob() {
   if (EnableJVMCI) {
     implicit_exception_uncommon_trap_offset = __ pc() - start;
 
-    __ ldr(lr, Address(rthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
-    __ str(zr, Address(rthread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ ldr(lr, Address(rthread, create_imm_offset(JavaThread, jvmci_implicit_exception_pc_offset)));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, jvmci_implicit_exception_pc_offset)));
 
     uncommon_trap_offset = __ pc() - start;
 
@@ -2338,8 +2338,8 @@ void SharedRuntime::generate_deopt_blob() {
   // respectively.  Set them in TLS and fall thru to the
   // unpack_with_exception_in_tls entry point.
 
-  __ str(r3, Address(rthread, JavaThread::exception_pc_offset()));
-  __ str(r0, Address(rthread, JavaThread::exception_oop_offset()));
+  __ str(r3, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
+  __ str(r0, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
 
   int exception_in_tls_offset = __ pc() - start;
 
@@ -2370,19 +2370,19 @@ void SharedRuntime::generate_deopt_blob() {
 
   // load throwing pc from JavaThread and patch it as the return address
   // of the current frame. Then clear the field in JavaThread
-  __ ldr(r3, Address(rthread, JavaThread::exception_pc_offset()));
+  __ ldr(r3, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
   __ protect_return_address(r3);
   __ str(r3, Address(rfp, wordSize));
-  __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
 
 #ifdef ASSERT
   // verify that there is really an exception oop in JavaThread
-  __ ldr(r0, Address(rthread, JavaThread::exception_oop_offset()));
+  __ ldr(r0, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
   __ verify_oop(r0);
 
   // verify that there is no pending exception
   Label no_pending_exception;
-  __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
   __ cbz(rscratch1, no_pending_exception);
   __ stop("must not have pending exception here");
   __ bind(no_pending_exception);
@@ -2401,7 +2401,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ set_last_Java_frame(sp, noreg, retaddr, rscratch1);
 #ifdef ASSERT
   { Label L;
-    __ ldr(rscratch1, Address(rthread, JavaThread::last_Java_fp_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, last_Java_fp_offset)));
     __ cbz(rscratch1, L);
     __ stop("SharedRuntime::generate_deopt_blob: last_Java_fp not cleared");
     __ bind(L);
@@ -2432,11 +2432,11 @@ void SharedRuntime::generate_deopt_blob() {
    Label noException;
   __ cmpw(rcpool, Deoptimization::Unpack_exception);   // Was exception pending?
   __ br(Assembler::NE, noException);
-  __ ldr(r0, Address(rthread, JavaThread::exception_oop_offset()));
+  __ ldr(r0, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
   // QQQ this is useless it was null above
-  __ ldr(r3, Address(rthread, JavaThread::exception_pc_offset()));
-  __ str(zr, Address(rthread, JavaThread::exception_oop_offset()));
-  __ str(zr, Address(rthread, JavaThread::exception_pc_offset()));
+  __ ldr(r3, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_oop_offset)));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, exception_pc_offset)));
 
   __ verify_oop(r0);
 
@@ -2487,13 +2487,13 @@ void SharedRuntime::generate_deopt_blob() {
   __ bang_stack_size(r19, r2);
 #endif
   // Load address of array of frame pcs into r2
-  __ ldr(r2, Address(r5, Deoptimization::UnrollBlock::frame_pcs_offset()));
+  __ ldr(r2, Address(r5, create_imm_offset(Deoptimization::UnrollBlock, frame_pcs_offset)));
 
   // Trash the old pc
   // __ addptr(sp, wordSize);  FIXME ????
 
   // Load address of array of frame sizes into r4
-  __ ldr(r4, Address(r5, Deoptimization::UnrollBlock::frame_sizes_offset()));
+  __ ldr(r4, Address(r5, create_imm_offset(Deoptimization::UnrollBlock, frame_sizes_offset)));
 
   // Load counter into r3
   __ ldrw(r3, Address(r5, Deoptimization::UnrollBlock::number_of_frames_offset()));
@@ -2653,7 +2653,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
     // Additionally, r20 is a callee-saved register so we can look at
     // it later to determine if someone changed the return address for
     // us!
-    __ ldr(r20, Address(rthread, JavaThread::saved_exception_pc_offset()));
+    __ ldr(r20, Address(rthread, create_imm_offset(JavaThread, saved_exception_pc_offset)));
     __ protect_return_address(r20);
     __ str(r20, Address(rfp, wordSize));
   }
@@ -2677,7 +2677,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 
   __ membar(Assembler::LoadLoad | Assembler::LoadStore);
 
-  __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
   __ cbz(rscratch1, noException);
 
   // Exception pending
@@ -2786,7 +2786,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   __ reset_last_Java_frame(false);
   // check for pending exceptions
   Label pending;
-  __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
   __ cbnz(rscratch1, pending);
 
   // get the returned Method*
@@ -2809,9 +2809,9 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 
   // exception pending => remove activation and forward to exception handler
 
-  __ str(zr, Address(rthread, JavaThread::vm_result_offset()));
+  __ str(zr, Address(rthread, create_imm_offset(JavaThread, vm_result_offset)));
 
-  __ ldr(r0, Address(rthread, Thread::pending_exception_offset()));
+  __ ldr(r0, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
   // -------------
@@ -2909,7 +2909,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
   // check for pending exceptions
 #ifdef ASSERT
   Label L;
-  __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
   __ cbnz(rscratch1, L);
   __ should_not_reach_here();
   __ bind(L);

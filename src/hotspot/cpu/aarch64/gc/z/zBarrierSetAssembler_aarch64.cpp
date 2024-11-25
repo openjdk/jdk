@@ -207,7 +207,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
     assert(!is_atomic, "atomics outside of nmethods not supported");
     __ lea(rtmp, ref_addr);
     __ ldr(rtmp, rtmp);
-    __ ldr(rnew_zpointer, Address(rthread, ZThreadLocalData::store_bad_mask_offset()));
+    __ ldr(rnew_zpointer, Address(rthread, create_imm_offset(ZThreadLocalData, store_bad_mask_offset)));
     __ tst(rtmp, rnew_zpointer);
     __ br(Assembler::NE, medium_path);
     __ bind(medium_path_continuation);
@@ -219,7 +219,7 @@ void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,
 
     // Load the current good shift, and add the color bits
     __ lsl(rnew_zpointer, rnew_zpointer, ZPointerLoadShift);
-    __ ldr(rtmp, Address(rthread, ZThreadLocalData::store_good_mask_offset()));
+    __ ldr(rtmp, Address(rthread, create_imm_offset(ZThreadLocalData, store_good_mask_offset)));
     __ orr(rnew_zpointer, rnew_zpointer, rtmp);
   }
 }
@@ -235,13 +235,13 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
   __ ldr(tmp1, buffer);
 
   // Combined pointer bump and check if the buffer is disabled or full
-  __ ldr(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
+  __ ldr(tmp2, Address(tmp1, create_imm_offset(ZStoreBarrierBuffer, current_offset)));
   __ cmp(tmp2, (uint8_t)0);
   __ br(Assembler::EQ, slow_path);
 
   // Bump the pointer
   __ sub(tmp2, tmp2, sizeof(ZStoreBarrierEntry));
-  __ str(tmp2, Address(tmp1, ZStoreBarrierBuffer::current_offset()));
+  __ str(tmp2, Address(tmp1, create_imm_offset(ZStoreBarrierBuffer, current_offset)));
 
   // Compute the buffer entry address
   __ lea(tmp2, Address(tmp2, ZStoreBarrierBuffer::buffer_offset()));
@@ -249,11 +249,11 @@ static void store_barrier_buffer_add(MacroAssembler* masm,
 
   // Compute and log the store address
   __ lea(tmp1, ref_addr);
-  __ str(tmp1, Address(tmp2, in_bytes(ZStoreBarrierEntry::p_offset())));
+  __ str(tmp1, Address(tmp2, create_imm_offset(ZStoreBarrierEntry, p_offset)));
 
   // Load and log the prev value
   __ ldr(tmp1, tmp1);
-  __ str(tmp1, Address(tmp2, in_bytes(ZStoreBarrierEntry::prev_offset())));
+  __ str(tmp1, Address(tmp2, create_imm_offset(ZStoreBarrierEntry, prev_offset)));
 }
 
 void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
@@ -332,7 +332,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
     }
     // Add the color bits
     __ lsl(tmp1, tmp1, ZPointerLoadShift);
-    __ ldr(tmp2, Address(rthread, ZThreadLocalData::store_good_mask_offset()));
+    __ ldr(tmp2, Address(rthread, create_imm_offset(ZThreadLocalData, store_good_mask_offset)));
     __ orr(tmp1, tmp2, tmp1);
   } else {
     Label done;
@@ -464,7 +464,7 @@ static void copy_load_barrier(MacroAssembler* masm,
                               Register tmp) {
   Label done;
 
-  __ ldr(tmp, Address(rthread, ZThreadLocalData::load_bad_mask_offset()));
+  __ ldr(tmp, Address(rthread, create_imm_offset(ZThreadLocalData, load_bad_mask_offset)));
 
   // Test reference against bad mask. If mask bad, then we need to fix it up.
   __ tst(ref, tmp);
@@ -524,7 +524,7 @@ static void copy_store_barrier(MacroAssembler* masm,
   Label slow;
 
   // Test reference against bad mask. If mask bad, then we need to fix it up.
-  __ ldr(tmp1, Address(rthread, ZThreadLocalData::store_bad_mask_offset()));
+  __ ldr(tmp1, Address(rthread, create_imm_offset(ZThreadLocalData, store_bad_mask_offset)));
   __ tst(pre_ref, tmp1);
   __ br(Assembler::EQ, done);
 
@@ -545,7 +545,7 @@ static void copy_store_barrier(MacroAssembler* masm,
 
   if (new_ref != noreg) {
     // Set store-good color, replacing whatever color was there before
-    __ ldr(tmp1, Address(rthread, ZThreadLocalData::store_good_mask_offset()));
+    __ ldr(tmp1, Address(rthread, create_imm_offset(ZThreadLocalData, store_good_mask_offset)));
     __ bfi(new_ref, tmp1, 0, 16);
   }
 }
@@ -678,7 +678,7 @@ void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
   bool is_dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
   if (is_dest_uninitialized) {
-    __ ldr(tmp1, Address(rthread, ZThreadLocalData::store_good_mask_offset()));
+    __ ldr(tmp1, Address(rthread, create_imm_offset(ZThreadLocalData, store_good_mask_offset)));
     if (bytes == 8) {
       __ bfi(src1, tmp1, 0, 16);
     } else if (bytes == 16) {

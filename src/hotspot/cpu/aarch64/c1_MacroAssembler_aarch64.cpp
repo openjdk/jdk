@@ -69,7 +69,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   verify_oop(obj);
 
   // save object being locked into the BasicObjectLock
-  str(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  str(obj, Address(disp_hdr, create_imm_offset(BasicObjectLock, obj_offset)));
 
   null_check_offset = offset();
 
@@ -140,7 +140,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   }
 
   // load object
-  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  ldr(obj, Address(disp_hdr, create_imm_offset(BasicObjectLock, obj_offset)));
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
@@ -177,16 +177,16 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   assert_different_registers(obj, klass, len);
 
   if (UseCompactObjectHeaders) {
-    ldr(t1, Address(klass, Klass::prototype_header_offset()));
-    str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+    ldr(t1, Address(klass, create_imm_offset(Klass, prototype_header_offset)));
+    str(t1, Address(obj, create_imm_offset(oopDesc, mark_offset_in_bytes)));
   } else {
     mov(t1, checked_cast<int32_t>(markWord::prototype().value()));
-    str(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+    str(t1, Address(obj, create_imm_offset(oopDesc, mark_offset_in_bytes)));
     if (UseCompressedClassPointers) { // Take care not to kill klass
       encode_klass_not_null(t1, klass);
       strw(t1, Address(obj, oopDesc::klass_offset_in_bytes()));
     } else {
-      str(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+      str(klass, Address(obj, create_imm_offset(oopDesc, klass_offset_in_bytes)));
     }
   }
 

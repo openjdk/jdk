@@ -35,7 +35,8 @@
 // unsigned 12-bits. We favour the scaled unsigned encoding for all aligned
 // offsets (only using the signed 9-bit encoding for negative and unaligned
 // offsets). As a precondition, 0 <= shift <= 4 is the log2(size), for the
-// supported data widths, {1, 2, 4, 8, 16} bytes.
+// supported data widths, {1, 2, 4, 8, 16} bytes. The values of offset and
+// shift will be evaluated at runtime
 inline bool Address::offset_ok_for_immed(int64_t offset, uint shift) {
   precond(shift < 5);
   uint mask = (1 << shift) - 1;
@@ -45,6 +46,26 @@ inline bool Address::offset_ok_for_immed(int64_t offset, uint shift) {
   } else {
     // Scaled unsigned offset, encoded in an unsigned imm12:_ field.
     return Assembler::is_uimm12(offset >> shift);
+  }
+}
+
+// Check if an offset is within the encoding range for LDR/STR instructions
+// with an immediate offset, either using unscaled signed 9-bits or, scaled
+// unsigned 12-bits. We favour the scaled unsigned encoding for all aligned
+// offsets (only using the signed 9-bit encoding for negative and unaligned
+// offsets). As a precondition, 0 <= shift <= 4 is the log2(size), for the
+// supported data widths, {1, 2, 4, 8, 16} bytes. The values of offset and
+// shift will be evaluated at compile time
+template <int64_t immed_offset, uint shift>
+inline constexpr bool Address::offset_ok_for_immed_compile_time() {
+  static_assert(shift < 5, "precond");
+  uint mask = (1 << shift) - 1;
+  if (immed_offset < 0 || (immed_offset & mask) != 0) {
+    // Unscaled signed offset, encoded in a signed imm9 field.
+    return Assembler::is_simm9(immed_offset);
+  } else {
+    // Scaled unsigned offset, encoded in an unsigned imm12:_ field.
+    return Assembler::is_uimm12(immed_offset >> shift);
   }
 }
 

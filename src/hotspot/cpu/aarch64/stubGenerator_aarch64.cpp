@@ -278,7 +278,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure we have no pending exceptions
     {
       Label L;
-      __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
+      __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
       __ cmp(rscratch1, (u1)NULL_WORD);
       __ br(Assembler::EQ, L);
       __ stop("StubRoutines::call_stub: entered with pending exception");
@@ -448,9 +448,9 @@ class StubGenerator: public StubCodeGenerator {
     // set pending exception
     __ verify_oop(r0);
 
-    __ str(r0, Address(rthread, Thread::pending_exception_offset()));
+    __ str(r0, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
     __ mov(rscratch1, (address)__FILE__);
-    __ str(rscratch1, Address(rthread, Thread::exception_file_offset()));
+    __ str(rscratch1, Address(rthread, create_imm_offset(Thread, exception_file_offset)));
     __ movw(rscratch1, (int)__LINE__);
     __ strw(rscratch1, Address(rthread, Thread::exception_line_offset()));
 
@@ -493,7 +493,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure this code is only executed if there is a pending exception
     {
       Label L;
-      __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+      __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
       __ cbnz(rscratch1, L);
       __ stop("StubRoutines::forward exception: no pending exception (1)");
       __ bind(L);
@@ -529,8 +529,8 @@ class StubGenerator: public StubCodeGenerator {
     // setup r0 & r3 & clear pending exception
     __ mov(r3, r19);
     __ mov(r19, r0);
-    __ ldr(r0, Address(rthread, Thread::pending_exception_offset()));
-    __ str(zr, Address(rthread, Thread::pending_exception_offset()));
+    __ ldr(r0, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
+    __ str(zr, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
 
 #ifdef ASSERT
     // make sure exception is set
@@ -7345,10 +7345,10 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     if (return_barrier) {
-      __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
+      __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset)));
       __ mov(sp, rscratch1);
     }
-    assert_asm(_masm, (__ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset())), __ cmp(sp, rscratch1)), Assembler::EQ, "incorrect sp");
+    assert_asm(_masm, (__ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset))), __ cmp(sp, rscratch1)), Assembler::EQ, "incorrect sp");
 
     if (return_barrier) {
       // preserve possible return value from a method returning to the return barrier
@@ -7365,7 +7365,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ldp(rscratch1, r0, Address(__ post(sp, 2 * wordSize)));
       __ fmovd(v0, rscratch1);
     }
-    assert_asm(_masm, (__ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset())), __ cmp(sp, rscratch1)), Assembler::EQ, "incorrect sp");
+    assert_asm(_masm, (__ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset))), __ cmp(sp, rscratch1)), Assembler::EQ, "incorrect sp");
 
 
     Label thaw_success;
@@ -7474,7 +7474,7 @@ class StubGenerator: public StubCodeGenerator {
     __ reset_last_Java_frame(true);
 
     // Set sp to enterSpecial frame, i.e. remove all frames copied into the heap.
-    __ ldr(rscratch2, Address(rthread, JavaThread::cont_entry_offset()));
+    __ ldr(rscratch2, Address(rthread, create_imm_offset(JavaThread, cont_entry_offset)));
     __ mov(sp, rscratch2);
 
     Label preemption_cancelled;
@@ -7692,7 +7692,7 @@ class StubGenerator: public StubCodeGenerator {
     __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
                       Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
                       noreg, noreg);
-    __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+    __ str(rmethod, Address(rthread, create_imm_offset(JavaThread, callee_target_offset))); // just in case callee is deoptimized
 
     __ ret(lr);
 

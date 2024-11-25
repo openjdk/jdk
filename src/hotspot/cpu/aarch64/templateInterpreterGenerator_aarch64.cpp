@@ -552,7 +552,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   // handle exceptions
   {
     Label L;
-    __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
     __ cbz(rscratch1, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
@@ -659,7 +659,7 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
   Label no_mdo;
   if (ProfileInterpreter) {
     // Are we profiling?
-    __ ldr(r0, Address(rmethod, Method::method_data_offset()));
+    __ ldr(r0, Address(rmethod, create_imm_offset(Method, method_data_offset)));
     __ cbz(r0, no_mdo);
     // Increment counter in the MDO
     const Address mdo_invocation_counter(r0, in_bytes(MethodData::invocation_counter_offset()) +
@@ -823,7 +823,7 @@ void TemplateInterpreterGenerator::lock_method() {
     __ ldrw(r0, access_flags);
     __ tst(r0, JVM_ACC_STATIC);
     // get receiver (assume this is frequent case)
-    __ ldr(r0, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
+    __ ldr(r0, Address(rlocals));
     __ br(Assembler::EQ, done);
     __ load_mirror(r0, rmethod, r5, rscratch2);
 
@@ -851,7 +851,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ str(rscratch1, monitor_block_top);  // set new monitor block top
 
   // store object
-  __ str(r0, Address(esp, BasicObjectLock::obj_offset()));
+  __ str(r0, Address(esp, create_imm_offset(BasicObjectLock, obj_offset)));
   __ mov(c_rarg1, esp); // object address
   __ lock_object(c_rarg1);
 }
@@ -876,7 +876,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(zr, zr, Address(sp, 12 * wordSize));
   } else {
     __ sub(esp, sp, 12 *  wordSize);
-    __ ldr(rscratch1, Address(rmethod, Method::const_offset()));    // get ConstMethod
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, const_offset)));    // get ConstMethod
     __ add(rbcp, rscratch1, in_bytes(ConstMethod::codes_offset())); // get codebase
     __ mov(rscratch1, frame::interpreter_frame_initial_sp_offset);
     __ stp(rscratch1, rbcp, Address(__ pre(sp, -12 * wordSize)));
@@ -884,7 +884,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   if (ProfileInterpreter) {
     Label method_data_continue;
-    __ ldr(rscratch1, Address(rmethod, Method::method_data_offset()));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, method_data_offset)));
     __ cbz(rscratch1, method_data_continue);
     __ lea(rscratch1, Address(rscratch1, in_bytes(MethodData::data_offset())));
     __ bind(method_data_continue);
@@ -897,9 +897,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
 
-  __ ldr(rcpool, Address(rmethod, Method::const_offset()));
-  __ ldr(rcpool, Address(rcpool, ConstMethod::constants_offset()));
-  __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset()));
+  __ ldr(rcpool, Address(rmethod, create_imm_offset(Method, const_offset)));
+  __ ldr(rcpool, Address(rcpool, create_imm_offset(ConstMethod, constants_offset)));
+  __ ldr(rcpool, Address(rcpool, create_imm_offset(ConstantPool, cache_offset)));
   __ sub(rscratch1, rlocals, rfp);
   __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
   // Store relativized rlocals, see frame::interpreter_frame_locals().
@@ -912,7 +912,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // Get mirror
   __ load_mirror(r10, rmethod, r5, rscratch2);
   if (! native_call) {
-    __ ldr(rscratch1, Address(rmethod, Method::const_offset()));
+    __ ldr(rscratch1, Address(rmethod, create_imm_offset(Method, const_offset)));
     __ ldrh(rscratch1, Address(rscratch1, ConstMethod::max_stack_offset()));
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
     __ sub(rscratch1, sp, rscratch1, ext::uxtw, 3);
@@ -1309,7 +1309,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register result_handler = r19;
 
   // allocate space for parameters
-  __ ldr(t, Address(rmethod, Method::const_offset()));
+  __ ldr(t, Address(rmethod, create_imm_offset(Method, const_offset)));
   __ load_unsigned_short(t, Address(t, ConstMethod::size_of_parameters_offset()));
 
   __ sub(rscratch1, esp, t, ext::uxtx, Interpreter::logStackElementSize);
@@ -1319,13 +1319,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // get signature handler
   {
     Label L;
-    __ ldr(t, Address(rmethod, Method::signature_handler_offset()));
+    __ ldr(t, Address(rmethod, create_imm_offset(Method, signature_handler_offset)));
     __ cbnz(t, L);
     __ call_VM(noreg,
                CAST_FROM_FN_PTR(address,
                                 InterpreterRuntime::prepare_native_call),
                rmethod);
-    __ ldr(t, Address(rmethod, Method::signature_handler_offset()));
+    __ ldr(t, Address(rmethod, create_imm_offset(Method, signature_handler_offset)));
     __ bind(L);
   }
 
@@ -1368,7 +1368,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // get native function entry point in r10
   {
     Label L;
-    __ ldr(r10, Address(rmethod, Method::native_function_offset()));
+    __ ldr(r10, Address(rmethod, create_imm_offset(Method, native_function_offset)));
     ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
     __ lea(rscratch2, unsatisfied);
     __ ldr(rscratch2, rscratch2);
@@ -1379,7 +1379,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                                 InterpreterRuntime::prepare_native_call),
                rmethod);
     __ get_method(rmethod);
-    __ ldr(r10, Address(rmethod, Method::native_function_offset()));
+    __ ldr(r10, Address(rmethod, create_imm_offset(Method, native_function_offset)));
     __ bind(L);
   }
 
@@ -1477,9 +1477,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   if (LockingMode != LM_LEGACY) {
     // Check preemption for Object.wait()
     Label not_preempted;
-    __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, preempt_alternate_return_offset)));
     __ cbz(rscratch1, not_preempted);
-    __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, preempt_alternate_return_offset)));
     __ br(rscratch1);
     __ bind(native_return);
     __ restore_after_resume(true /* is_native */);
@@ -1496,12 +1496,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check
-    __ str(zr, Address(rthread, JavaThread::pending_jni_exception_check_fn_offset()));
+    __ str(zr, Address(rthread, create_imm_offset(JavaThread, pending_jni_exception_check_fn_offset)));
   }
 
   // reset handle block
-  __ ldr(t, Address(rthread, JavaThread::active_handles_offset()));
-  __ str(zr, Address(t, JNIHandleBlock::top_offset()));
+  __ ldr(t, Address(rthread, create_imm_offset(JavaThread, active_handles_offset)));
+  __ str(zr, Address(t, create_imm_offset(JNIHandleBlock, top_offset)));
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up
@@ -1543,12 +1543,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // restore bcp to have legal interpreter frame, i.e., bci == 0 <=>
   // rbcp == code_base()
-  __ ldr(rbcp, Address(rmethod, Method::const_offset()));   // get ConstMethod*
+  __ ldr(rbcp, Address(rmethod, create_imm_offset(Method, const_offset)));   // get ConstMethod*
   __ add(rbcp, rbcp, in_bytes(ConstMethod::codes_offset()));          // get codebase
   // handle exceptions (exception handling will handle unlocking!)
   {
     Label L;
-    __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+    __ ldr(rscratch1, Address(rthread, create_imm_offset(Thread, pending_exception_offset)));
     __ cbz(rscratch1, L);
     // Note: At some point we may want to unify this with the code
     // used in call_VM_base(); i.e., we should use the
@@ -1579,7 +1579,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                                (intptr_t)(frame::interpreter_frame_initial_sp_offset *
                                           wordSize - sizeof(BasicObjectLock))));
 
-      __ ldr(t, Address(c_rarg1, BasicObjectLock::obj_offset()));
+      __ ldr(t, Address(c_rarg1, create_imm_offset(BasicObjectLock, obj_offset)));
       __ cbnz(t, unlock);
 
       // Entry already unlocked, need to throw exception
@@ -1794,7 +1794,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_currentThread() {
   address entry_point = __ pc();
 
-  __ ldr(r0, Address(rthread, JavaThread::vthread_offset()));
+  __ ldr(r0, Address(rthread, create_imm_offset(JavaThread, vthread_offset)));
   __ resolve_oop_handle(r0, rscratch1, rscratch2);
   __ ret(lr);
 
@@ -1899,7 +1899,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // Compute size of arguments for saving when returning to
     // deoptimized caller
     __ get_method(r0);
-    __ ldr(r0, Address(r0, Method::const_offset()));
+    __ ldr(r0, Address(r0, create_imm_offset(Method, const_offset)));
     __ load_unsigned_short(r0, Address(r0, in_bytes(ConstMethod::
                                                     size_of_parameters_offset())));
     __ lsl(r0, r0, Interpreter::logStackElementSize);
@@ -1985,7 +1985,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(r0);
-  __ str(r0, Address(rthread, JavaThread::vm_result_offset()));
+  __ str(r0, Address(rthread, create_imm_offset(JavaThread, vm_result_offset)));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, false, true, false);
   // restore exception
@@ -2025,7 +2025,7 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
   __ empty_expression_stack();
   __ load_earlyret_value(state);
 
-  __ ldr(rscratch1, Address(rthread, JavaThread::jvmti_thread_state_offset()));
+  __ ldr(rscratch1, Address(rthread, create_imm_offset(JavaThread, jvmti_thread_state_offset)));
   Address cond_addr(rscratch1, JvmtiThreadState::earlyret_state_offset());
 
   // Clear the earlyret state

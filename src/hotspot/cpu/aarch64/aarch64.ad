@@ -3715,7 +3715,7 @@ encode %{
       Label retaddr;
       // Make the anchor frame walkable
       __ adr(rscratch2, retaddr);
-      __ str(rscratch2, Address(rthread, JavaThread::last_Java_pc_offset()));
+      __ str(rscratch2, Address(rthread, create_imm_offset(JavaThread, last_Java_pc_offset)));
       __ lea(rscratch1, RuntimeAddress(entry));
       __ blr(rscratch1);
       __ bind(retaddr);

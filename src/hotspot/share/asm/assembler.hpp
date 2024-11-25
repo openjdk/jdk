@@ -340,27 +340,27 @@ class AbstractAssembler : public ResourceObj  {
   enum { min_simm10 = -512 };
 
   // Test if x is within signed immediate range for width.
-  static bool is_simm(int64_t x, uint w) {
+  static constexpr bool is_simm(int64_t x, uint w) {
     precond(1 < w && w < 64);
     int64_t limes = INT64_C(1) << (w - 1);
     return -limes <= x && x < limes;
   }
 
-  static bool is_simm8(int64_t x) { return is_simm(x, 8); }
-  static bool is_simm9(int64_t x) { return is_simm(x, 9); }
-  static bool is_simm10(int64_t x) { return is_simm(x, 10); }
-  static bool is_simm16(int64_t x) { return is_simm(x, 16); }
-  static bool is_simm32(int64_t x) { return is_simm(x, 32); }
+  static constexpr bool is_simm8(int64_t x) { return is_simm(x, 8); }
+  static constexpr bool is_simm9(int64_t x) { return is_simm(x, 9); }
+  static constexpr bool is_simm10(int64_t x) { return is_simm(x, 10); }
+  static constexpr bool is_simm16(int64_t x) { return is_simm(x, 16); }
+  static constexpr bool is_simm32(int64_t x) { return is_simm(x, 32); }
 
   // Test if x is within unsigned immediate range for width.
-  static bool is_uimm(uint64_t x, uint w) {
+  static constexpr bool is_uimm(uint64_t x, uint w) {
     precond(0 < w && w < 64);
     uint64_t limes = UINT64_C(1) << w;
     return x < limes;
   }
 
-  static bool is_uimm12(uint64_t x) { return is_uimm(x, 12); }
-  static bool is_uimm32(uint64_t x) { return is_uimm(x, 32); }
+  static constexpr bool is_uimm12(uint64_t x) { return is_uimm(x, 12); }
+  static constexpr bool is_uimm32(uint64_t x) { return is_uimm(x, 32); }
 
   // Accessors
   CodeSection*  code_section() const   { return _code_section; }
