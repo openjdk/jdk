@@ -1044,7 +1044,7 @@ public final class Unsafe {
      * {@link #staticFieldOffset}, {@link #objectFieldOffset},
      * or {@link #arrayBaseOffset}.
      * <p>
-     * The static type is @code long} to emphasize that long arithmetics should
+     * The static type is @code long} to emphasize that long arithmetic should
      * always be used for offset calculations to avoid overflows.
      */
     public static final long INVALID_FIELD_OFFSET = -1;
@@ -1177,7 +1177,7 @@ public final class Unsafe {
      * given class.
      * <p>
      * The return value is in the range of a {@code int}.  The return type is
-     * {@code long} to emphasize that long arithmetics should always be used
+     * {@code long} to emphasize that long arithmetic should always be used
      * for offset calculations to avoid overflows.
      *
      * @see #getInt(Object, long)
@@ -1236,7 +1236,7 @@ public final class Unsafe {
      * as zero.
      * <p>
      * The computation of the actual memory offset should always use {@code
-     * long} arithmetics to avoid overflows.
+     * long} arithmetic to avoid overflows.
      *
      * @see #arrayBaseOffset
      * @see #getInt(Object, long)
@@ -3850,7 +3850,7 @@ public final class Unsafe {
     private native Object staticFieldBase0(Field f);
     private native boolean shouldBeInitialized0(Class<?> c);
     private native void ensureClassInitialized0(Class<?> c);
-    private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetics
+    private native int arrayBaseOffset0(Class<?> arrayClass); // public version returns long to promote correct arithmetic
     private native int arrayIndexScale0(Class<?> arrayClass);
     private native int getLoadAverage0(double[] loadavg, int nelems);
 
