@@ -71,7 +71,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     @Override
     public void moveVertex(Vertex vertex) {
-        System.out.println("moveVertex " + vertex.getPosition());
         assert prevGraph.containsVertex(vertex);
         LayoutNode layoutNode = layoutNodes.get(vertex);
         layoutNode.setX(vertex.getPosition().x);
@@ -92,12 +91,12 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     @Override
     public void doLayout(LayoutGraph graph) {
-        System.out.println("doLayout");
         prevGraph = graph;
         if (layoutNodes.isEmpty()) {
             HierarchicalLayoutManager manager = new HierarchicalLayoutManager();
             manager.doLayout(graph);
             for (LayoutNode node : graph.getLayoutNodes()) {
+                node.initSize();
                 layoutNodes.put(node.getVertex(), node);
             }
             graph.clearLayout();
@@ -109,8 +108,8 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
             for (Vertex vertex : prevGraph.getVertices()) {
                 if (!layoutNodes.containsKey(vertex)) {
                     LayoutNode addedNode = new LayoutNode(vertex);
+                    addedNode.initSize();
                     newLayoutNodes.add(addedNode);
-
                 }
             }
 
@@ -120,7 +119,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         // Write back vertices
         for (Vertex vertex : prevGraph.getVertices()) {
             LayoutNode layoutNode = layoutNodes.get(vertex);
-            assert layoutNode != null;
             vertex.setPosition(new Point(layoutNode.getLeft(), layoutNode.getTop()));
         }
 
@@ -229,8 +227,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
     private void setLinkControlPoints(Link link) {
         if (link.getFrom().getVertex() == link.getTo().getVertex()) return;
-        System.out.println("setLinkControlPoints");
-        if (!link.getControlPoints().isEmpty()) System.out.println("old link: " + link.getControlPoints().get(0));
 
         LayoutNode from = layoutNodes.get(link.getFrom().getVertex());
         LayoutNode to = layoutNodes.get(link.getTo().getVertex());
@@ -247,12 +243,10 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         List<Point> line = new ArrayList<>();
         line.add(startPoint);
         line.add(startPoint);
-
-        //line.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
-        //line.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
+        line.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
+        line.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
         line.add(endPoint);
         line.add(endPoint);
         link.setControlPoints(line);
-        if (!link.getControlPoints().isEmpty()) System.out.println("new link: " + link.getControlPoints().get(0));
     }
 }

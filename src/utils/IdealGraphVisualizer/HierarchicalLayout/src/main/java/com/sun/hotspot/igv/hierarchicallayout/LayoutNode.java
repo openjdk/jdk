@@ -317,6 +317,10 @@ public class LayoutNode {
         return topMargin + height + bottomMargin;
     }
 
+    public int getHeight() {
+        return height;
+    }
+
     /**
      * Gets the right boundary (excluding right margin) of the node.
      *
