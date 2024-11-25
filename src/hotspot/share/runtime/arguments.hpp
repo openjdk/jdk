@@ -198,8 +198,6 @@ class Arguments : AllStatic {
   static char* _java_command;
   // number of unique modules specified in the --add-modules option
   static unsigned int _addmods_count;
-  // number of unique modules specified in the --enable-native-access option
-  static unsigned int _enable_native_access_count;
 
   // Property list
   static SystemProperty* _system_properties;
