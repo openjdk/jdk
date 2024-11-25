@@ -237,12 +237,6 @@ public final class Subject implements java.io.Serializable {
      * it can not be reset to being writable again.
      */
     public void setReadOnly() {
-        @SuppressWarnings("removal")
-        java.lang.SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(AuthPermissionHolder.SET_READ_ONLY_PERMISSION);
-        }
-
         this.readOnly = true;
     }
 
@@ -305,7 +299,6 @@ public final class Subject implements java.io.Serializable {
      * @see #callAs(Subject, Callable)
      * @since 18
      */
-    @SuppressWarnings("removal")
     public static Subject current() {
         return SCOPED_SUBJECT.orElse(null);
     }
@@ -375,15 +368,9 @@ public final class Subject implements java.io.Serializable {
      *
      * @see #callAs(Subject, Callable)
      */
-    @SuppressWarnings("removal")
     @Deprecated(since="18", forRemoval=true)
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedAction<T> action) {
-
-        java.lang.SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(AuthPermissionHolder.DO_AS_PERMISSION);
-        }
 
         Objects.requireNonNull(action,
                 ResourcesMgr.getString("invalid.null.action.provided"));
@@ -441,16 +428,10 @@ public final class Subject implements java.io.Serializable {
      *
      * @see #callAs(Subject, Callable)
      */
-    @SuppressWarnings("removal")
     @Deprecated(since="18", forRemoval=true)
     public static <T> T doAs(final Subject subject,
                         final java.security.PrivilegedExceptionAction<T> action)
                         throws java.security.PrivilegedActionException {
-
-        java.lang.SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(AuthPermissionHolder.DO_AS_PERMISSION);
-        }
 
         Objects.requireNonNull(action,
                 ResourcesMgr.getString("invalid.null.action.provided"));
@@ -514,11 +495,6 @@ public final class Subject implements java.io.Serializable {
     public static <T> T doAsPrivileged(final Subject subject,
                         final java.security.PrivilegedAction<T> action,
                         final java.security.AccessControlContext acc) {
-
-        java.lang.SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(AuthPermissionHolder.DO_AS_PRIVILEGED_PERMISSION);
-        }
 
         Objects.requireNonNull(action,
                 ResourcesMgr.getString("invalid.null.action.provided"));
@@ -587,11 +563,6 @@ public final class Subject implements java.io.Serializable {
                         final java.security.AccessControlContext acc)
                         throws java.security.PrivilegedActionException {
 
-        java.lang.SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(AuthPermissionHolder.DO_AS_PRIVILEGED_PERMISSION);
-        }
-
         Objects.requireNonNull(action,
                 ResourcesMgr.getString("invalid.null.action.provided"));
 
@@ -609,25 +580,6 @@ public final class Subject implements java.io.Serializable {
                 throw new PrivilegedActionException(ce);
             }
         }
-    }
-
-    @SuppressWarnings("removal")
-    private static AccessControlContext createContext(final Subject subject,
-                                        final AccessControlContext acc) {
-
-
-        return java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction<>() {
-            public AccessControlContext run() {
-                if (subject == null) {
-                    return new AccessControlContext(acc, null);
-                } else {
-                    return new AccessControlContext
-                                        (acc,
-                                        new SubjectDomainCombiner(subject));
-            }
-            }
-        });
     }
 
     /**
@@ -715,14 +667,6 @@ public final class Subject implements java.io.Serializable {
      */
     public Set<Object> getPrivateCredentials() {
 
-        // XXX
-        // we do not need a security check for
-        // AuthPermission(getPrivateCredentials)
-        // because we already restrict access to private credentials
-        // via the PrivateCredentialPermission.  all the extra AuthPermission
-        // would do is protect the set operations themselves
-        // (like size()), which don't seem security-sensitive.
-
         // always return an empty Set instead of null
         // so LoginModules can add to the Set if necessary
         return privCredentials;
@@ -783,14 +727,6 @@ public final class Subject implements java.io.Serializable {
      *          is {@code null}.
      */
     public <T> Set<T> getPrivateCredentials(Class<T> c) {
-
-        // XXX
-        // we do not need a security check for
-        // AuthPermission(getPrivateCredentials)
-        // because we already restrict access to private credentials
-        // via the PrivateCredentialPermission.  all the extra AuthPermission
-        // would do is protect the set operations themselves
-        // (like size()), which don't seem security-sensitive.
 
         Objects.requireNonNull(c,
                 ResourcesMgr.getString("invalid.null.Class.provided"));
@@ -859,15 +795,6 @@ public final class Subject implements java.io.Serializable {
      */
     @Override
     public String toString() {
-        return toString(true);
-    }
-
-    /**
-     * package private convenience method to print out the Subject
-     * without firing off a security check when trying to access
-     * the Private Credentials
-     */
-    String toString(boolean includePrivateCredentials) {
 
         String s = ResourcesMgr.getString("Subject.");
         String suffix = "";
@@ -887,21 +814,19 @@ public final class Subject implements java.io.Serializable {
             }
         }
 
-        if (includePrivateCredentials) {
-            synchronized(privCredentials) {
-                Iterator<Object> pI = privCredentials.iterator();
-                while (pI.hasNext()) {
-                    try {
-                        Object o = pI.next();
-                        suffix += ResourcesMgr.getString
-                                        (".Private.Credential.") +
-                                        o.toString() +
-                                        ResourcesMgr.getString("NEWLINE");
-                    } catch (SecurityException se) {
-                        suffix += ResourcesMgr.getString
-                                (".Private.Credential.inaccessible.");
-                        break;
-                    }
+        synchronized(privCredentials) {
+            Iterator<Object> pI = privCredentials.iterator();
+            while (pI.hasNext()) {
+                try {
+                    Object o = pI.next();
+                    suffix += ResourcesMgr.getString
+                                    (".Private.Credential.") +
+                                    o.toString() +
+                                    ResourcesMgr.getString("NEWLINE");
+                } catch (SecurityException se) {
+                    suffix += ResourcesMgr.getString
+                            (".Private.Credential.inaccessible.");
+                    break;
                 }
             }
         }
@@ -1093,22 +1018,6 @@ public final class Subject implements java.io.Serializable {
                 }
 
                 public E next() {
-                    if (which != Subject.PRIV_CREDENTIAL_SET) {
-                        return i.next();
-                    }
-
-                    @SuppressWarnings("removal")
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null) {
-                        try {
-                            sm.checkPermission(new PrivateCredentialPermission
-                                (list.get(i.nextIndex()).getClass().getName(),
-                                subject.getPrincipals()));
-                        } catch (SecurityException se) {
-                            i.next();
-                            throw (se);
-                        }
-                    }
                     return i.next();
                 }
 
@@ -1119,21 +1028,6 @@ public final class Subject implements java.io.Serializable {
                                 ("Subject.is.read.only"));
                     }
 
-                    @SuppressWarnings("removal")
-                    java.lang.SecurityManager sm = System.getSecurityManager();
-                    if (sm != null) {
-                        switch (which) {
-                        case Subject.PRINCIPAL_SET:
-                            sm.checkPermission(AuthPermissionHolder.MODIFY_PRINCIPALS_PERMISSION);
-                            break;
-                        case Subject.PUB_CREDENTIAL_SET:
-                            sm.checkPermission(AuthPermissionHolder.MODIFY_PUBLIC_CREDENTIALS_PERMISSION);
-                            break;
-                        default:
-                            sm.checkPermission(AuthPermissionHolder.MODIFY_PRIVATE_CREDENTIALS_PERMISSION);
-                            break;
-                        }
-                    }
                     i.remove();
                 }
             };
@@ -1147,22 +1041,6 @@ public final class Subject implements java.io.Serializable {
             if (subject.isReadOnly()) {
                 throw new IllegalStateException
                         (ResourcesMgr.getString("Subject.is.read.only"));
-            }
-
-            @SuppressWarnings("removal")
-            java.lang.SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                switch (which) {
-                case Subject.PRINCIPAL_SET:
-                    sm.checkPermission(AuthPermissionHolder.MODIFY_PRINCIPALS_PERMISSION);
-                    break;
-                case Subject.PUB_CREDENTIAL_SET:
-                    sm.checkPermission(AuthPermissionHolder.MODIFY_PUBLIC_CREDENTIALS_PERMISSION);
-                    break;
-                default:
-                    sm.checkPermission(AuthPermissionHolder.MODIFY_PRIVATE_CREDENTIALS_PERMISSION);
-                    break;
-                }
             }
 
             switch (which) {
@@ -1185,7 +1063,6 @@ public final class Subject implements java.io.Serializable {
         }
         }
 
-        @SuppressWarnings("removal")
         public boolean remove(Object o) {
 
             Objects.requireNonNull(o,
@@ -1193,17 +1070,7 @@ public final class Subject implements java.io.Serializable {
 
             final Iterator<E> e = iterator();
             while (e.hasNext()) {
-                E next;
-                if (which != Subject.PRIV_CREDENTIAL_SET) {
-                    next = e.next();
-                } else {
-                    next = java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction<E>() {
-                        public E run() {
-                            return e.next();
-                        }
-                    });
-                }
+                E next = e.next();
 
                 if (next.equals(o)) {
                     e.remove();
@@ -1213,7 +1080,6 @@ public final class Subject implements java.io.Serializable {
             return false;
         }
 
-        @SuppressWarnings("removal")
         public boolean contains(Object o) {
 
             Objects.requireNonNull(o,
@@ -1221,30 +1087,7 @@ public final class Subject implements java.io.Serializable {
 
             final Iterator<E> e = iterator();
             while (e.hasNext()) {
-                E next;
-                if (which != Subject.PRIV_CREDENTIAL_SET) {
-                    next = e.next();
-                } else {
-
-                    // For private credentials:
-                    // If the caller does not have read permission
-                    // for o.getClass(), we throw a SecurityException.
-                    // Otherwise, we check the private cred set to see whether
-                    // it contains the Object
-
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null) {
-                        sm.checkPermission(new PrivateCredentialPermission
-                                                (o.getClass().getName(),
-                                                subject.getPrincipals()));
-                    }
-                    next = java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction<E>() {
-                        public E run() {
-                            return e.next();
-                        }
-                    });
-                }
+                E next = e.next();
 
                 if (next.equals(o)) {
                     return true;
@@ -1265,24 +1108,13 @@ public final class Subject implements java.io.Serializable {
             return result;
         }
 
-        @SuppressWarnings("removal")
         public boolean removeAll(Collection<?> c) {
             c = collectionNullClean(c);
 
             boolean modified = false;
             final Iterator<E> e = iterator();
             while (e.hasNext()) {
-                E next;
-                if (which != Subject.PRIV_CREDENTIAL_SET) {
-                    next = e.next();
-                } else {
-                    next = java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction<E>() {
-                        public E run() {
-                            return e.next();
-                        }
-                    });
-                }
+                E next = e.next();
 
                 for (Object o : c) {
                     if (next.equals(o)) {
@@ -1307,24 +1139,13 @@ public final class Subject implements java.io.Serializable {
             return true;
         }
 
-        @SuppressWarnings("removal")
         public boolean retainAll(Collection<?> c) {
             c = collectionNullClean(c);
 
             boolean modified = false;
             final Iterator<E> e = iterator();
             while (e.hasNext()) {
-                E next;
-                if (which != Subject.PRIV_CREDENTIAL_SET) {
-                    next = e.next();
-                } else {
-                    next = java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction<E>() {
-                        public E run() {
-                            return e.next();
-                        }
-                    });
-                }
+                E next = e.next();
 
                 if (c.contains(next) == false) {
                     e.remove();
@@ -1335,21 +1156,10 @@ public final class Subject implements java.io.Serializable {
             return modified;
         }
 
-        @SuppressWarnings("removal")
         public void clear() {
             final Iterator<E> e = iterator();
             while (e.hasNext()) {
-                E next;
-                if (which != Subject.PRIV_CREDENTIAL_SET) {
-                    next = e.next();
-                } else {
-                    next = java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction<E>() {
-                        public E run() {
-                            return e.next();
-                        }
-                    });
-                }
+                E next = e.next();
                 e.remove();
             }
         }
@@ -1359,30 +1169,10 @@ public final class Subject implements java.io.Serializable {
         }
 
         public Object[] toArray() {
-            final Iterator<E> e = iterator();
-            while (e.hasNext()) {
-                // The next() method performs a security manager check
-                // on each element in the SecureSet.  If we make it all
-                // the way through we should be able to simply return
-                // element's toArray results.  Otherwise, we'll let
-                // the SecurityException pass up the call stack.
-                e.next();
-            }
-
             return elements.toArray();
         }
 
         public <T> T[] toArray(T[] a) {
-            final Iterator<E> e = iterator();
-            while (e.hasNext()) {
-                // The next() method performs a security manager check
-                // on each element in the SecureSet.  If we make it all
-                // the way through we should be able to simply return
-                // element's toArray results.  Otherwise, we'll let
-                // the SecurityException pass up the call stack.
-                e.next();
-            }
-
             return elements.toArray(a);
         }
 
@@ -1433,13 +1223,6 @@ public final class Subject implements java.io.Serializable {
         private void writeObject(java.io.ObjectOutputStream oos)
                 throws java.io.IOException {
 
-            if (which == Subject.PRIV_CREDENTIAL_SET) {
-                // check permissions before serializing
-                Iterator<E> i = iterator();
-                while (i.hasNext()) {
-                    i.next();
-                }
-            }
             ObjectOutputStream.PutField fields = oos.putFields();
             fields.put("this$0", subject);
             fields.put("elements", elements);
@@ -1498,7 +1281,7 @@ public final class Subject implements java.io.Serializable {
             }
         }
 
-        @SuppressWarnings({"removal","unchecked"})     /*To suppress warning from line 1374*/
+        @SuppressWarnings("unchecked")
         private void populateSet() {
             final Iterator<?> iterator;
             switch(which) {
@@ -1513,34 +1296,10 @@ public final class Subject implements java.io.Serializable {
                 break;
             }
 
-            // Check whether the caller has permission to get
-            // credentials of Class c
-
             while (iterator.hasNext()) {
-                Object next;
-                if (which == Subject.PRIV_CREDENTIAL_SET) {
-                    next = java.security.AccessController.doPrivileged
-                        (new java.security.PrivilegedAction<>() {
-                        public Object run() {
-                            return iterator.next();
-                        }
-                    });
-                } else {
-                    next = iterator.next();
-                }
+                Object next = iterator.next();
                 if (c.isAssignableFrom(next.getClass())) {
-                    if (which != Subject.PRIV_CREDENTIAL_SET) {
-                        set.add((T)next);
-                    } else {
-                        // Check permission for private creds
-                        SecurityManager sm = System.getSecurityManager();
-                        if (sm != null) {
-                            sm.checkPermission(new PrivateCredentialPermission
-                                                (next.getClass().getName(),
-                                                Subject.this.getPrincipals()));
-                        }
-                        set.add((T)next);
-                    }
+                    set.add((T)next);
                 }
             }
         }
@@ -1567,28 +1326,5 @@ public final class Subject implements java.io.Serializable {
 
             return set.add(o);
         }
-    }
-
-    static final class AuthPermissionHolder {
-        static final AuthPermission DO_AS_PERMISSION =
-            new AuthPermission("doAs");
-
-        static final AuthPermission DO_AS_PRIVILEGED_PERMISSION =
-            new AuthPermission("doAsPrivileged");
-
-        static final AuthPermission SET_READ_ONLY_PERMISSION =
-            new AuthPermission("setReadOnly");
-
-        static final AuthPermission GET_SUBJECT_PERMISSION =
-            new AuthPermission("getSubject");
-
-        static final AuthPermission MODIFY_PRINCIPALS_PERMISSION =
-            new AuthPermission("modifyPrincipals");
-
-        static final AuthPermission MODIFY_PUBLIC_CREDENTIALS_PERMISSION =
-            new AuthPermission("modifyPublicCredentials");
-
-        static final AuthPermission MODIFY_PRIVATE_CREDENTIALS_PERMISSION =
-            new AuthPermission("modifyPrivateCredentials");
     }
 }
