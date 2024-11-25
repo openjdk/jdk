@@ -31,7 +31,6 @@
 
 package sun.security.krb5.internal.ktab;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
@@ -211,12 +210,10 @@ public class KeyTab implements KeyTabConstants {
             }
 
             if (kname == null) {
-                String user_home = GetPropertyAction
-                        .privilegedGetProperty("user.home");
+                String user_home = System.getProperty("user.home");
 
                 if (user_home == null) {
-                    user_home = GetPropertyAction
-                            .privilegedGetProperty("user.dir");
+                    user_home = System.getProperty("user.dir");
                 }
 
                 kname = user_home + File.separator  + "krb5.keytab";

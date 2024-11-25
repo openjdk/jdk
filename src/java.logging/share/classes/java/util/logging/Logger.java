@@ -26,8 +26,6 @@
 package java.util.logging;
 
 import java.lang.ref.WeakReference;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Locale;
@@ -579,7 +577,7 @@ public class Logger {
             // should never come here
             throw new InternalError("invalid logger merge");
         }
-        checkPermission();
+        ensureManagerInitialized();
         final ConfigurationData cfg = config;
         if (cfg != system.config) {
             config = cfg.merge(system);
@@ -614,13 +612,12 @@ public class Logger {
         this.manager = manager;
     }
 
-    private void checkPermission() throws SecurityException {
+    private void ensureManagerInitialized() {
         if (!anonymous) {
             if (manager == null) {
                 // Complete initialization of the global Logger.
                 manager = LogManager.getLogManager();
             }
-            manager.checkPermission();
         }
     }
 
@@ -633,17 +630,8 @@ public class Logger {
     // These system loggers only set the resource bundle to the given
     // resource bundle name (rather than the default system resource bundle).
     private static class SystemLoggerHelper {
-        static boolean disableCallerCheck = getBooleanProperty("sun.util.logging.disableCallerCheck");
-        private static boolean getBooleanProperty(final String key) {
-            @SuppressWarnings("removal")
-            String s = AccessController.doPrivileged(new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty(key);
-                }
-            });
-            return Boolean.parseBoolean(s);
-        }
+        static boolean disableCallerCheck =
+                Boolean.getBoolean("sun.util.logging.disableCallerCheck");
     }
 
     private static Logger demandLogger(String name, String resourceBundleName, Class<?> caller) {
@@ -930,7 +918,7 @@ public class Logger {
      * @param   newFilter  a filter object (may be null)
      */
     public void setFilter(Filter newFilter) {
-        checkPermission();
+        ensureManagerInitialized();
         config.setFilter(newFilter);
     }
 
@@ -1990,7 +1978,7 @@ public class Logger {
      * @param newLevel   the new value for the log level (may be null)
      */
     public void setLevel(Level newLevel) {
-        checkPermission();
+        ensureManagerInitialized();
         synchronized (treeLock) {
             config.setLevelObject(newLevel);
             updateEffectiveLevel();
@@ -2047,7 +2035,7 @@ public class Logger {
      */
     public void addHandler(Handler handler) {
         Objects.requireNonNull(handler);
-        checkPermission();
+        ensureManagerInitialized();
         config.addHandler(handler);
     }
 
@@ -2059,7 +2047,7 @@ public class Logger {
      * @param   handler a logging Handler
      */
     public void removeHandler(Handler handler) {
-        checkPermission();
+        ensureManagerInitialized();
         if (handler == null) {
             return;
         }
@@ -2091,7 +2079,7 @@ public class Logger {
      *          logger's parent.
      */
     public void setUseParentHandlers(boolean useParentHandlers) {
-        checkPermission();
+        ensureManagerInitialized();
         config.setUseParentHandlers(useParentHandlers);
     }
 
@@ -2187,11 +2175,8 @@ public class Logger {
                     try {
                         // We are called by an unnamed module: try with the
                         // unnamed module class loader:
-                        PrivilegedAction<ClassLoader> getModuleClassLoader =
-                                () -> callerModule.getClassLoader();
-                        @SuppressWarnings("removal")
-                        ClassLoader moduleCL =
-                                AccessController.doPrivileged(getModuleClassLoader);
+                        ClassLoader moduleCL = callerModule.getClassLoader();
+
                         // moduleCL can be null if the logger is created by a class
                         // appended to the bootclasspath.
                         // If moduleCL is null we would use cl, but we already tried
@@ -2267,7 +2252,7 @@ public class Logger {
         setCallerModuleRef(callerModule);
 
         if (isSystemLogger && (callerModule != null && !isSystem(callerModule))) {
-            checkPermission();
+            ensureManagerInitialized();
         }
 
         if (name.equals(SYSTEM_LOGGER_RB_NAME)) {
@@ -2300,7 +2285,7 @@ public class Logger {
      * @since 1.8
      */
     public void setResourceBundle(ResourceBundle bundle) {
-        checkPermission();
+        ensureManagerInitialized();
 
         // Will throw NPE if bundle is null.
         final String baseName = bundle.getBaseBundleName();
@@ -2359,11 +2344,7 @@ public class Logger {
             throw new NullPointerException();
         }
 
-        // check permission for all loggers, including anonymous loggers
-        if (manager == null) {
-            manager = LogManager.getLogManager();
-        }
-        manager.checkPermission();
+        ensureManagerInitialized();
 
         doSetParent(parent);
     }

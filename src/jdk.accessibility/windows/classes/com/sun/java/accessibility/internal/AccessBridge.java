@@ -160,44 +160,23 @@ public final class AccessBridge {
         initStatic();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void initStatic() {
         // Load the appropriate DLLs
         boolean is32on64 = false;
         if (System.getProperty("os.arch").equals("x86")) {
             // 32 bit JRE
             // Load jabsysinfo.dll so can determine Win bitness
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("jabsysinfo");
-                        return null;
-                    }
-                }, null, new java.lang.RuntimePermission("loadLibrary.jabsysinfo")
-            );
+            System.loadLibrary("jabsysinfo");
             if (isSysWow()) {
                 // 32 bit JRE on 64 bit OS
                 is32on64 = true;
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<Void>() {
-                        public Void run() {
-                            System.loadLibrary("javaaccessbridge-32");
-                            return null;
-                        }
-                    }, null, new java.lang.RuntimePermission("loadLibrary.javaaccessbridge-32")
-                );
+                System.loadLibrary("javaaccessbridge-32");
             }
         }
         if (!is32on64) {
             // 32 bit JRE on 32 bit OS or 64 bit JRE on 64 bit OS
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        System.loadLibrary("javaaccessbridge");
-                        return null;
-                    }
-                }, null, new java.lang.RuntimePermission("loadLibrary.javaaccessbridge")
-            );
+            System.loadLibrary("javaaccessbridge");
         }
     }
 
