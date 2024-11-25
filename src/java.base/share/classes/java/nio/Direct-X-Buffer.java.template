@@ -76,16 +76,14 @@ class Direct$Type$Buffer$RW$$BO$
 
     private @Stable boolean temporary; // defaults to false
 
-    private record Deallocator(long address, long size, int capacity,
-                               boolean temporary) implements Runnable {
+    private record Deallocator(long address, long size, int capacity) implements Runnable {
         private Deallocator {
             assert address != 0;
         }
 
         public void run() {
             UNSAFE.freeMemory(address);
-            if (!temporary)
-                Bits.unreserveMemory(size, capacity);
+            Bits.unreserveMemory(size, capacity);
         }
     }
 
@@ -130,14 +128,16 @@ class Direct$Type$Buffer$RW$$BO$
         } else {
             address = base;
         }
-        try {
-            cleaner = Cleaner.create(this, new Deallocator(base, size, cap, temporary));
-        } catch (Throwable t) {
-            // Prevent leak if the Deallocator or Cleaner fail for any reason
-            UNSAFE.freeMemory(base);
-            if (!temporary)
-                Bits.unreserveMemory(size, cap);
-            throw t;
+        if (!temporary) {
+            try {
+                cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+            } catch (Throwable t) {
+                // Prevent leak if the Deallocator or Cleaner fail for any reason
+                UNSAFE.freeMemory(base);
+                throw t;
+            }
+        } else { // temporary
+            cleaner = null;
         }
         att = null;
 #else[rw]

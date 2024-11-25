@@ -325,7 +325,7 @@ public class Util {
      * Frees the memory for the given direct buffer
      */
     private static void free(ByteBuffer buf) {
-        ((DirectBuffer)buf).cleaner().clean();
+        unsafe.freeMemory(((DirectBuffer)buf).address());
     }
 
 
