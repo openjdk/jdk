@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(value = 3)
+@Fork(value = 3, jvmArgs = {"-XX:LoopUnrollLimit=1"})
 public class WriteBarrier {
 
     // For array references
