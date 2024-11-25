@@ -62,7 +62,7 @@ final class TestSegmentBulkOperationsContentHash {
     @MethodSource("sizes")
     void testOutOfBounds(int len) {
         try (var arena = Arena.ofConfined()) {
-            var segment = arena.allocate(10);
+            var segment = arena.allocate(len);
             assertThrows(IndexOutOfBoundsException.class,
                     () -> hash(segment, 0, segment.byteSize() + 1));
             assertThrows(IndexOutOfBoundsException.class,
@@ -74,7 +74,7 @@ final class TestSegmentBulkOperationsContentHash {
     @MethodSource("sizes")
     void testConfinement(int len) {
         try (var arena = Arena.ofConfined()) {
-            var segment = arena.allocate(10);
+            var segment = arena.allocate(len);
             AtomicReference<RuntimeException> ex = new AtomicReference<>();
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
