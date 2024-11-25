@@ -235,7 +235,8 @@ public class ForkJoinWorkerThread extends Thread {
      }
 
     /**
-     * Peforms any associated cleanup on resetThreadLocals
+     * Performs any further cleanup after ThreadLocals are cleared in
+     * method resetThreadLocals
      */
     void onThreadLocalReset() {
     }

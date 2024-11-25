@@ -917,8 +917,10 @@ public class ForkJoinPool extends AbstractExecutorService {
      * direct false-sharing and indirect cases due to GC bookkeeping
      * (cardmarks etc), and reduce the number of resizes, which are
      * not especially fast because they require atomic transfers.
-     * Currently, arrays are initialized to be just large enough to
-     * avoid resizing in most tree-structured tasks. (Maintenance note:
+     * Currently, arrays for workers are initialized to be just large
+     * enough to avoid resizing in most tree-structured tasks, but
+     * larger for external queues where both false-sharing problems
+     * and the need for resizing are more common. (Maintenance note:
      * any changes in fields, queues, or their uses, or JVM layout
      * policies, must be accompanied by re-evaluation of these
      * placement and sizing decisions.)
@@ -1006,6 +1008,12 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Must be a power of two, at least 2. See above.
      */
     static final int INITIAL_QUEUE_CAPACITY = 1 << 6;
+
+    /**
+     * Initial capacity of work-stealing queue array for external queues.
+     * Must be a power of two, at least 2. See above.
+     */
+    static final int INITIAL_EXTERNAL_QUEUE_CAPACITY = 1 << 9;
 
     // conversions among short, int, long
     static final int  SMASK           = 0xffff;      // (unsigned) short bits
@@ -1182,7 +1190,9 @@ public class ForkJoinPool extends AbstractExecutorService {
          */
         WorkQueue(ForkJoinWorkerThread owner, int id, int cfg,
                   boolean clearThreadLocals) {
-            array = new ForkJoinTask<?>[INITIAL_QUEUE_CAPACITY];
+            array = new ForkJoinTask<?>[owner == null ?
+                                        INITIAL_EXTERNAL_QUEUE_CAPACITY :
+                                        INITIAL_QUEUE_CAPACITY];
             this.owner = owner;
             this.config = (clearThreadLocals) ? cfg | CLEAR_TLS : cfg;
         }
