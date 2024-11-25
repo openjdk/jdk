@@ -1627,6 +1627,11 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
     return false;
   }
 
+  Node* ctrl = x->in(LoopNode::EntryControl);
+  if (!ctrl->is_IfTrue() || !ctrl->in(0)->is_ParsePredicate()) { // impossible to insert loop limit check
+    return false;
+  }
+
   BoolTest::mask bt = BoolTest::illegal;
   float cl_prob = 0;
   Node* incr = nullptr;
@@ -1636,8 +1641,6 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   if (iv_bt != T_INT || cmp == nullptr || cmp->Opcode() != Op_CmpL || incr == nullptr || incr->Opcode() != Op_ConvI2L) {
     return false;
   }
-
-  Node* ctrl = x->in(LoopNode::EntryControl);
 
   Node* new_incr = incr->in(1);
 
