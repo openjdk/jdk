@@ -77,7 +77,7 @@ import java.util.Objects;
  *     PrivateKey priKey = pd.decode(PriKeyPEM);
  * </pre>
  *
- * @since 24
+ * @since 25
  */
 
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
@@ -134,18 +134,20 @@ public final class PEMDecoder {
                     d = kf.generatePrivate(
                         new PKCS8EncodedKeySpec(p8key.getEncoded(),
                             p8key.getAlgorithm()));
-                    // If a public key is available in the private key encoding.
-                    if (d instanceof PKCS8Key p8 &&
+                    // Check if this is a OneAsymmetricKey encoding, then check
+                    // if this could be a SEC1-v2 EC encoding, otherwise return
+                    // the private key
+                    if (p8key.getPubKeyEncoded() != null) {
+                        X509EncodedKeySpec spec = new X509EncodedKeySpec(
+                            p8key.getPubKeyEncoded(), p8key.getAlgorithm());
+                        yield new KeyPair(getKeyFactory(p8key.getAlgorithm()).
+                            generatePublic(spec), (PrivateKey) d);
+                    } else if (d instanceof PKCS8Key p8 &&
                         p8.getPubKeyEncoded() != null) {
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
                             p8.getPubKeyEncoded(), p8.getAlgorithm());
                         yield new KeyPair(getKeyFactory(p8.getAlgorithm()).
                             generatePublic(spec), p8);
-                    } else if (p8key.getPubKeyEncoded() != null) {
-                        X509EncodedKeySpec spec = new X509EncodedKeySpec(
-                            p8key.getPubKeyEncoded(), p8key.getAlgorithm());
-                        yield new KeyPair(getKeyFactory(p8key.getAlgorithm()).
-                            generatePublic(spec), (PrivateKey) d);
                     } else {
                         yield d;
                     }

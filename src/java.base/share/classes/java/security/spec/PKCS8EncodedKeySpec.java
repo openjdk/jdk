@@ -66,6 +66,8 @@ import java.security.DEREncodable;
  * @see EncodedKeySpec
  * @see X509EncodedKeySpec
  *
+ * @spec https://www.rfc-editor.org/info/rfc5958
+ *     RFC 5958: Asymmetric Key Packages
  * @since 1.2
  */
 
@@ -109,9 +111,9 @@ public final class PKCS8EncodedKeySpec extends EncodedKeySpec implements DEREnco
     }
 
     /**
-     * Returns the key bytes, encoded according to the PKCS #8 standard.
+     * Returns the private key bytes, encoded according to the PKCS #8 standard.
      *
-     * @return the PKCS #8 encoding of the key. Returns a new array
+     * @return the PKCS #8 encoding of the private key. Returns a new array
      * each time this method is called.
      */
     public byte[] getEncoded() {

@@ -62,7 +62,8 @@ public class PEMEncoderTest {
         System.out.println("Same instance Encoder testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, encoder));
         System.out.println("New instance Encoder testToString:");
-        keymap.keySet().stream().forEach(key -> testToString(key, PEMEncoder.of()));
+        keymap.keySet().stream().forEach(key -> testToString(key,
+            PEMEncoder.of()));
 
         keymap = generateObjKeyMap(PEMData.encryptedList);
         System.out.println("Same instance Encoder match test:");
@@ -92,10 +93,12 @@ public class PEMEncoderTest {
                     keymap.put(entry.name(), pemd.withDecryption(
                         entry.password()).decode(entry.pem()));
                 } else {
-                    keymap.put(entry.name(), pemd.decode(entry.pem(), entry.clazz()));
+                    keymap.put(entry.name(), pemd.decode(entry.pem(),
+                        entry.clazz()));
                 }
             } catch (Exception e) {
-                System.err.println("Verify PEMDecoderTest passes before debugging this test.");
+                System.err.println("Verify PEMDecoderTest passes before " +
+                    "debugging this test.");
                 throw new AssertionError("Failed to initialize map on" +
                     " entry \"" + entry.name() + "\"", e);
             }

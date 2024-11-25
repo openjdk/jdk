@@ -150,18 +150,15 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
                 InvalidKeySpecException::new, publicKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
             return new EdDSAPublicKeyImpl(params, publicKeySpec.getPoint());
-        } else if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8Key p8key = null;
-            try {
-                p8key = new EdDSAPrivateKeyImpl(
-                    ((PKCS8EncodedKeySpec)keySpec).getEncoded());
-            } catch (Exception e) {
-                throw new InvalidKeyException(e);
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            PKCS8Key p8key = new EdDSAPrivateKeyImpl(p8.getEncoded());
+            if (!p8key.hasPublicKey()) {
+                throw new InvalidKeySpecException("No public key found.");
             }
             return new EdDSAPublicKeyImpl(p8key.getPubKeyEncoded());
         } else {
             throw new InvalidKeySpecException(keySpec.getClass().getName() +
-                "not supported");
+                " not supported.");
         }
     }
 

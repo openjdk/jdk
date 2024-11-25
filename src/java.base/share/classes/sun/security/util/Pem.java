@@ -55,11 +55,7 @@ public class Pem {
     private static ObjectIdentifier PBES2OID;
 
     static {
-        @SuppressWarnings("removal")
-        String d = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () ->
-                Security.getProperty("jdk.epkcs8.defaultAlgorithm"));
-        DEFAULT_ALGO = d;
+        DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
         pbePattern = Pattern.compile("^PBEWith.*And.*");
     }
 

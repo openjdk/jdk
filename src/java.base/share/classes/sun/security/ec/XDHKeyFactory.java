@@ -158,17 +158,19 @@ public class XDHKeyFactory extends KeyFactorySpi {
                 InvalidKeySpecException::new, publicKeySpec.getParams());
             checkLockedParams(InvalidKeySpecException::new, params);
             return new XDHPublicKeyImpl(params, publicKeySpec.getU());
-        } else if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8Key p8key = (PKCS8Key) XDHPrivateKeyImpl.parseKey((
-                    (PKCS8EncodedKeySpec)keySpec).getEncoded());
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            PKCS8Key p8key = new XDHPrivateKeyImpl(p8.getEncoded());
+            if (!p8key.hasPublicKey()) {
+                throw new InvalidKeySpecException("No public key found.");
+            }
             XDHPublicKeyImpl result =
                 new XDHPublicKeyImpl(p8key.getPubKeyEncoded());
             checkLockedParams(InvalidKeySpecException::new,
                 result.getParams());
             return result;
         } else {
-            throw new InvalidKeySpecException(
-                "Only X509EncodedKeySpec and XECPublicKeySpec are supported");
+            throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                " not supported.");
         }
     }
 

@@ -334,12 +334,10 @@ public class RSAKeyFactory extends KeyFactorySpi {
             } catch (ProviderException e) {
                 throw new InvalidKeySpecException(e);
             }
-        } else if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8Key p8key;
-            try {
-                p8key = new PKCS8Key(((PKCS8EncodedKeySpec)keySpec).getEncoded());
-            } catch (Exception e) {
-                throw new GeneralSecurityException(e);
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            PKCS8Key p8key = new PKCS8Key(p8.getEncoded());
+            if (!p8key.hasPublicKey()) {
+                throw new InvalidKeySpecException("No public key found.");
             }
             return RSAPublicKeyImpl.newKey(type, "X.509",
                 p8key.getPubKeyEncoded());

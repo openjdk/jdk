@@ -227,19 +227,16 @@ public final class ECKeyFactory extends KeyFactorySpi {
         } else if (keySpec instanceof ECPublicKeySpec ecSpec) {
             return new ECPublicKeyImpl(ecSpec.getW(), ecSpec.getParams());
 
-        } else if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8Key p8key;
-            try {
-                p8key = new ECPrivateKeyImpl(
-                    ((PKCS8EncodedKeySpec)keySpec).getEncoded());
-            } catch (Exception e) {
-                throw new GeneralSecurityException(e);
+        } else if (keySpec instanceof PKCS8EncodedKeySpec p8) {
+            PKCS8Key p8key = new ECPrivateKeyImpl(p8.getEncoded());
+            if (p8key.hasPublicKey()) {
+                throw new InvalidKeySpecException("No public key found.");
             }
             return new ECPublicKeyImpl(p8key.getPubKeyEncoded());
 
         } else {
-            throw new InvalidKeySpecException("Only ECPublicKeySpec "
-                + "and X509EncodedKeySpec supported for EC public keys");
+            throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                " not supported.");
         }
     }
 

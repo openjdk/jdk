@@ -64,6 +64,8 @@ public class PEMDecoderTest {
         testClass(PEMData.getEntry("rsapriv"), RSAPrivateKey.class);
         System.out.println("Decoder test rsaOpenSSL P1 PEM asking for RSAPublicKey.class returned:");
         testFailure(PEMData.getEntry(PEMData.privList, "rsaOpenSSL"), RSAPublicKey.class);
+        System.out.println("Decoder test rsapub PEM asking X509EKS.class returned:");
+        testClass(PEMData.getEntry("rsapub"), X509EncodedKeySpec.class, true);
         System.out.println("Decoder test rsapriv PEM asking X509EKS.class returned:");
         testClass(PEMData.getEntry("rsapriv"), X509EncodedKeySpec.class, false);
         System.out.println("Decoder test RSAcert PEM asking X509EKS.class returned:");

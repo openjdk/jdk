@@ -76,7 +76,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * @since 24
+ * @since 25
  */
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMEncoder {
@@ -236,7 +236,7 @@ public final class PEMEncoder {
      * {@link #encode(DEREncodable)}.
      *
      * @param password sets the encryption password.  The array is cloned and
-     *                stored in the new instance. {@null} is a valid entry.
+     *                stored in the new instance. {@code null} is a valid entry.
      * @return a new PEMEncoder
      */
     public PEMEncoder withEncryption(char[] password) {
@@ -330,7 +330,7 @@ public final class PEMEncoder {
                 privateBytes));
         }
 
-        // OAS
+        // OneAsymmetricKey
         try {
             if (privateBytes.length == 0) {
                 throw new IllegalArgumentException("No private key encoding " +
