@@ -104,8 +104,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
 
         final ClassLoader dcl = defaultClassLoader;
         ClassLoaderRepository repository = mbeanServer.getClassLoaderRepository();
-        this.classLoaderWithRepository = new ClassLoaderWithRepository(repository, dcl);
-        this.defaultContextClassLoader = new CombinedClassLoader(Thread.currentThread().getContextClassLoader(), dcl);
+        classLoaderWithRepository = new ClassLoaderWithRepository(repository, dcl);
+        defaultContextClassLoader = new CombinedClassLoader(Thread.currentThread().getContextClassLoader(), dcl);
         serverCommunicatorAdmin = new RMIServerCommunicatorAdmin(EnvHelp.getServerConnectionTimeout(env));
         this.env = env;
     }
@@ -1228,7 +1228,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             if (subject == null) {
                 return getServerNotifFwd().fetchNotifs(clientSequenceNumber, timeout, maxNotifications);
             } else {
-                return Subject.callAs(subject, () -> getServerNotifFwd().fetchNotifs(clientSequenceNumber, timeout, maxNotifications));
+                try {
+                    return Subject.callAs(subject, () -> getServerNotifFwd().fetchNotifs(clientSequenceNumber, timeout, maxNotifications));
+                } catch (CompletionException ce) {
+                    Throwable thr = ce.getCause();
+                    if (thr instanceof SecurityException se) {
+                        throw se;
+                    } else if (thr instanceof IOException ioe) {
+                        throw ioe;
+                    } else {
+                        throw new RuntimeException(thr);
+                    }
+                }
             }
         } finally {
             serverCommunicatorAdmin.rspOutgoing();
@@ -1308,13 +1319,15 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                 try {
                     return Subject.callAs(subject, () -> doOperation(operation, params));
                 } catch (CompletionException ce) {
-                    Throwable e = ce.getCause();
-                    if (e instanceof SecurityException) {
-                        throw (SecurityException) e;
-                    } else if (e instanceof Exception) {
-                        throw new PrivilegedActionException((Exception) e);
+                    Throwable thr = ce.getCause();
+                    if (thr instanceof SecurityException se) {
+                        throw se;
+                    } else if (thr instanceof IOException ioe) {
+                        throw ioe;
+                    } else if (thr instanceof Exception e1) {
+                        throw new PrivilegedActionException(e1);
                     } else {
-                        throw new RuntimeException(e);
+                        throw new RuntimeException(thr);
                     }
                 }
             }
@@ -1474,7 +1487,16 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
             ClassLoader old = setCcl(cl);
             try {
                 if (subject != null) {
-                    return Subject.callAs(subject, () -> wrappedClass.cast(mo.get()));
+                    try {
+                        return Subject.callAs(subject, () -> wrappedClass.cast(mo.get()));
+                    } catch (CompletionException ce) {
+                        Throwable thr = ce.getCause();
+                        if (thr instanceof Exception e) {
+                            throw e;
+                        } else {
+                            throw new RuntimeException(thr);
+                        }
+                    }
                 } else {
                     return wrappedClass.cast(mo.get());
                 }
