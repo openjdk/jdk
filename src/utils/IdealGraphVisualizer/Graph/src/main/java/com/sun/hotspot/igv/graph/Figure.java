@@ -148,7 +148,12 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public Color getColor() {
-        return color;
+        Color customColor = inputNode.getCustomColor();
+        if (customColor != null) {
+            return customColor;
+        } else {
+            return color;
+        }
     }
 
     public void setWarning(String warning) {
@@ -421,5 +426,9 @@ public class Figure extends Properties.Entity implements Vertex {
         } else {
             return 1;
         }
+    }
+
+    public void setCustomColor(Color color) {
+        inputNode.setCustomColor(color);
     }
 }

@@ -268,6 +268,7 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
 
     @Override
     protected void paintChildren() {
+        refreshColor();
         Composite oldComposite = null;
         if (boundary) {
             oldComposite = getScene().getGraphics().getComposite();

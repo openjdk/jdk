@@ -230,7 +230,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     public void colorSelectedFigures(Color color) {
         for (Figure figure : model.getSelectedFigures()) {
-            figure.setColor(color);
+            figure.setCustomColor(color);
             FigureWidget figureWidget = getWidget(figure);
             if (figureWidget != null) {
                 figureWidget.refreshColor();

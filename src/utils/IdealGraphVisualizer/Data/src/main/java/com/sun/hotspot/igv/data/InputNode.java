@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.data;
 
+import java.awt.Color;
 import java.util.Objects;
 
 /**
@@ -66,5 +67,28 @@ public class InputNode extends Properties.Entity {
     @Override
     public String toString() {
         return "Node " + id + " " + getProperties().toString();
+    }
+
+    public void setCustomColor(Color color) {
+        if (color != null) {
+            String hexColor = String.format("#%08X", color.getRGB());
+            getProperties().setProperty("color", hexColor);
+        } else {
+            getProperties().setProperty("color", null);
+        }
+    }
+
+    public Color getCustomColor() {
+        String hexColor = getProperties().get("color");
+        if (hexColor != null) {
+            try {
+                String hex = hexColor.startsWith("#") ? hexColor.substring(1) : hexColor;
+                int argb = (int) Long.parseLong(hex, 16);
+                return new Color(argb, true);
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 }
