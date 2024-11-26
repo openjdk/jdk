@@ -79,7 +79,7 @@ final class TestErrnoUtil {
 
     // Dummy method that is just using the provided parameters
     private static int dummy(MemorySegment segment, int result, int errno) {
-        if (result <= 0) {
+        if (result < 0) {
             ERRNO_HANDLE.set(segment, 0, errno);
         }
         return result;
