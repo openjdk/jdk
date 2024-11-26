@@ -2298,6 +2298,26 @@ bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_AddHF:
+    case Op_SubHF:
+    case Op_MulHF:
+    case Op_DivHF:
+    case Op_MinHF:
+    case Op_MaxHF:
+    case Op_SqrtHF:
+      // Half-precision floating point scalar operations require FEAT_FP16
+      // to be available. FEAT_FP16 is enabled if both "fphp" and "asimdhp"
+      // features are supported.
+      if (!is_feat_fp16_supported()) {
+        return false;
+      }
+      break;
+    case Op_FmaHF:
+      // UseFMA flag also needs to be checked along with FEAT_FP16
+      if (!UseFMA || !is_feat_fp16_supported()) {
+        return false;
+      }
+      break;
   }
 
   return true; // Per default match rules are supported.
@@ -4567,6 +4587,15 @@ operand immDPacked()
 operand immF()
 %{
   match(ConF);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Half Float Immediate
+operand immH()
+%{
+  match(ConH);
   op_cost(0);
   format %{ %}
   interface(CONST_INTER);
@@ -6887,6 +6916,24 @@ instruct loadConF(vRegF dst, immF con) %{
 
   format %{
     "ldrs $dst, [$constantaddress]\t# load from constant table: float=$con\n\t"
+  %}
+
+  ins_encode %{
+    __ ldrs(as_FloatRegister($dst$$reg), $constantaddress($con));
+  %}
+
+  ins_pipe(fp_load_constant_s);
+%}
+
+// Load Half Float Constant
+// ldr instruction has 32/64/128 bit variants but not a 16-bit variant. This
+// loads the 16-bit value from constant pool into a 32-bit register but only
+// the bottom half will be populated.
+instruct loadConH(vRegF dst, immH con) %{
+  match(Set dst con);
+
+  format %{
+    "ldrs $dst, [$constantaddress]\t# load from constant table: half float=$con\n\t"
   %}
 
   ins_encode %{
@@ -13590,6 +13637,18 @@ instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
 // ============================================================================
 // Floating Point Arithmetic Instructions
 
+instruct addHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (AddHF src1 src2));
+  format %{ "faddh   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ faddh(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
 instruct addF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
   match(Set dst (AddF src1 src2));
 
@@ -13620,6 +13679,18 @@ instruct addD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   ins_pipe(fp_dop_reg_reg_d);
 %}
 
+instruct subHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (SubHF src1 src2));
+  format %{ "fsubh   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fsubh(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
 instruct subF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
   match(Set dst (SubF src1 src2));
 
@@ -13648,6 +13719,18 @@ instruct subD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   %}
 
   ins_pipe(fp_dop_reg_reg_d);
+%}
+
+instruct mulHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MulHF src1 src2));
+  format %{ "fmulh   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmulh(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_dop_reg_reg_s);
 %}
 
 instruct mulF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
@@ -13709,6 +13792,21 @@ instruct maddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
              as_FloatRegister($src1$$reg),
              as_FloatRegister($src2$$reg),
              as_FloatRegister($src3$$reg));
+  %}
+
+  ins_pipe(pipe_class_default);
+%}
+
+// src1 * src2 + src3 (half-precision float)
+instruct maddHF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
+  match(Set dst (FmaHF src3 (Binary src1 src2)));
+  format %{ "fmaddh   $dst, $src1, $src2, $src3" %}
+  ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
+    __ fmaddh(as_FloatRegister($dst$$reg),
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg),
+              as_FloatRegister($src3$$reg));
   %}
 
   ins_pipe(pipe_class_default);
@@ -13821,6 +13919,29 @@ instruct mnsubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3, immD0 zer
   ins_pipe(pipe_class_default);
 %}
 
+// Math.max(HF)
+instruct maxHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MaxHF src1 src2));
+  format %{ "fmaxh   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fmaxh(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
+
+// Math.min(HF)
+instruct minHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (MinHF src1 src2));
+  format %{ "fminh   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fminh(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(fp_dop_reg_reg_s);
+%}
 
 // Math.max(FF)F
 instruct maxF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
@@ -13878,6 +13999,17 @@ instruct minD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   ins_pipe(fp_dop_reg_reg_d);
 %}
 
+instruct divHF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
+  match(Set dst (DivHF src1  src2));
+  format %{ "fdivh   $dst, $src1, $src2" %}
+  ins_encode %{
+    __ fdivh(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg));
+  %}
+
+  ins_pipe(fp_div_s);
+%}
 
 instruct divF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{
   match(Set dst (DivF src1  src2));
@@ -14049,6 +14181,17 @@ instruct sqrtF_reg(vRegF dst, vRegF src) %{
   %}
 
   ins_pipe(fp_div_d);
+%}
+
+instruct sqrtHF_reg(vRegF dst, vRegF src) %{
+  match(Set dst (SqrtHF src));
+  format %{ "fsqrth  $dst, $src" %}
+  ins_encode %{
+    __ fsqrth(as_FloatRegister($dst$$reg),
+              as_FloatRegister($src$$reg));
+  %}
+
+  ins_pipe(fp_div_s);
 %}
 
 // Math.rint, floor, ceil
@@ -17095,6 +17238,28 @@ instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
     __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
     __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
     __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+//----------------------------- Reinterpret ----------------------------------
+
+// Move a half-precision float value from a floating point register to a general purpose register
+instruct reinterpretHF2S(iRegINoSp dst, vRegF src) %{
+  match(Set dst (ReinterpretHF2S src));
+  format %{ "reinterpretHF2S $dst, $src" %}
+  ins_encode %{
+    __ smov($dst$$Register, $src$$FloatRegister, __ H, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Move a half-precision float value from a general purpose register to a floating point register
+instruct reinterpretS2HF(vRegF dst, iRegINoSp src) %{
+  match(Set dst (ReinterpretS2HF src));
+  format %{ "reinterpretS2HF $dst, $src" %}
+  ins_encode %{
+    __ mov($dst$$FloatRegister, __ H, 0, $src$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

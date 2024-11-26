@@ -43,6 +43,8 @@ public class TestFloat16VectorConvChain {
     @IR(applyIfCPUFeatureAnd = {"avx512_fp16", "false", "avx512vl", "true"}, counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
     @IR(applyIfCPUFeatureAnd = {"avx512_fp16", "false", "f16c", "true"}, counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
     @IR(applyIfCPUFeatureAnd = {"avx512_fp16", "false", "zvfh", "true"}, counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
+    @IR(applyIfCPUFeatureAnd = {"asimd", "true", "fphp", "false", "asimdhp", "false", "sve", "false"},
+        counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
     public static void test(short [] res, short [] src1, short [] src2) {
         for (int i = 0; i < res.length; i++) {
             res[i] = (short)Float.float16ToFloat(Float.floatToFloat16(Float.float16ToFloat(src1[i]) + Float.float16ToFloat(src2[i])));

@@ -221,6 +221,25 @@ source %{
           return false;
         }
         break;
+      case Op_AddVHF:
+      case Op_SubVHF:
+      case Op_MulVHF:
+      case Op_DivVHF:
+      case Op_MinVHF:
+      case Op_MaxVHF:
+      case Op_SqrtVHF:
+        // FEAT_FP16 is enabled if both "fphp" and "asimdhp" features are supported.
+        // Only the Neon instructions need this check. SVE supports half-precision floats
+        // by default.
+        if (UseSVE > 0 || is_feat_fp16_supported()) {
+          break;
+        }
+        return false;
+      case Op_FmaVHF:
+        // UseFMA flag needs to be checked along with FEAT_FP16
+        if (UseFMA && (UseSVE > 0 || is_feat_fp16_supported())) {
+          break;
+        }
       default:
         break;
     }
@@ -503,20 +522,22 @@ dnl
 // ------------------------------ Vector add -----------------------------------
 
 // vector add
-BINARY_OP(vaddB, AddVB, addv, sve_add,  B)
-BINARY_OP(vaddS, AddVS, addv, sve_add,  H)
-BINARY_OP(vaddI, AddVI, addv, sve_add,  S)
-BINARY_OP(vaddL, AddVL, addv, sve_add,  D)
-BINARY_OP(vaddF, AddVF, fadd, sve_fadd, S)
-BINARY_OP(vaddD, AddVD, fadd, sve_fadd, D)
+BINARY_OP(vaddB,  AddVB,  addv, sve_add,  B)
+BINARY_OP(vaddS,  AddVS,  addv, sve_add,  H)
+BINARY_OP(vaddI,  AddVI,  addv, sve_add,  S)
+BINARY_OP(vaddL,  AddVL,  addv, sve_add,  D)
+BINARY_OP(vaddHF, AddVHF, fadd, sve_fadd, H)
+BINARY_OP(vaddF,  AddVF,  fadd, sve_fadd, S)
+BINARY_OP(vaddD,  AddVD,  fadd, sve_fadd, D)
 
 // vector add - predicated
-BINARY_OP_PREDICATE(vaddB, AddVB, sve_add,  B)
-BINARY_OP_PREDICATE(vaddS, AddVS, sve_add,  H)
-BINARY_OP_PREDICATE(vaddI, AddVI, sve_add,  S)
-BINARY_OP_PREDICATE(vaddL, AddVL, sve_add,  D)
-BINARY_OP_PREDICATE(vaddF, AddVF, sve_fadd, S)
-BINARY_OP_PREDICATE(vaddD, AddVD, sve_fadd, D)
+BINARY_OP_PREDICATE(vaddB,  AddVB,  sve_add,  B)
+BINARY_OP_PREDICATE(vaddS,  AddVS,  sve_add,  H)
+BINARY_OP_PREDICATE(vaddI,  AddVI,  sve_add,  S)
+BINARY_OP_PREDICATE(vaddL,  AddVL,  sve_add,  D)
+BINARY_OP_PREDICATE(vaddHF, AddVHF, sve_fadd, H)
+BINARY_OP_PREDICATE(vaddF,  AddVF,  sve_fadd, S)
+BINARY_OP_PREDICATE(vaddD,  AddVD,  sve_fadd, D)
 
 // vector add reg imm (unpredicated)
 VADD_IMM(B, immBAddSubV, B)
@@ -527,20 +548,22 @@ VADD_IMM(L, immLAddSubV, D)
 // ------------------------------ Vector sub -----------------------------------
 
 // vector sub
-BINARY_OP(vsubB, SubVB, subv, sve_sub,  B)
-BINARY_OP(vsubS, SubVS, subv, sve_sub,  H)
-BINARY_OP(vsubI, SubVI, subv, sve_sub,  S)
-BINARY_OP(vsubL, SubVL, subv, sve_sub,  D)
-BINARY_OP(vsubF, SubVF, fsub, sve_fsub, S)
-BINARY_OP(vsubD, SubVD, fsub, sve_fsub, D)
+BINARY_OP(vsubB,  SubVB,  subv, sve_sub,  B)
+BINARY_OP(vsubS,  SubVS,  subv, sve_sub,  H)
+BINARY_OP(vsubI,  SubVI,  subv, sve_sub,  S)
+BINARY_OP(vsubL,  SubVL,  subv, sve_sub,  D)
+BINARY_OP(vsubHF, SubVHF, fsub, sve_fsub, H)
+BINARY_OP(vsubF,  SubVF,  fsub, sve_fsub, S)
+BINARY_OP(vsubD,  SubVD,  fsub, sve_fsub, D)
 
 // vector sub - predicated
-BINARY_OP_PREDICATE(vsubB, SubVB, sve_sub,  B)
-BINARY_OP_PREDICATE(vsubS, SubVS, sve_sub,  H)
-BINARY_OP_PREDICATE(vsubI, SubVI, sve_sub,  S)
-BINARY_OP_PREDICATE(vsubL, SubVL, sve_sub,  D)
-BINARY_OP_PREDICATE(vsubF, SubVF, sve_fsub, S)
-BINARY_OP_PREDICATE(vsubD, SubVD, sve_fsub, D)
+BINARY_OP_PREDICATE(vsubB,  SubVB,  sve_sub,  B)
+BINARY_OP_PREDICATE(vsubS,  SubVS,  sve_sub,  H)
+BINARY_OP_PREDICATE(vsubI,  SubVI,  sve_sub,  S)
+BINARY_OP_PREDICATE(vsubL,  SubVL,  sve_sub,  D)
+BINARY_OP_PREDICATE(vsubHF, SubVHF, sve_fsub, H)
+BINARY_OP_PREDICATE(vsubF,  SubVF,  sve_fsub, S)
+BINARY_OP_PREDICATE(vsubD,  SubVD,  sve_fsub, D)
 
 dnl
 dnl BINARY_OP_NEON_SVE_PAIRWISE($1,        $2,      $3,        $4,       $5  )
@@ -607,26 +630,30 @@ instruct vmulL_sve(vReg dst_src1, vReg src2) %{
 %}
 
 // vector mul - floating-point
-BINARY_OP(vmulF, MulVF, fmul, sve_fmul, S)
-BINARY_OP(vmulD, MulVD, fmul, sve_fmul, D)
+BINARY_OP(vmulHF, MulVHF, fmul, sve_fmul, H)
+BINARY_OP(vmulF,  MulVF,  fmul, sve_fmul, S)
+BINARY_OP(vmulD,  MulVD,  fmul, sve_fmul, D)
 
 // vector mul - predicated
-BINARY_OP_PREDICATE(vmulB, MulVB, sve_mul,  B)
-BINARY_OP_PREDICATE(vmulS, MulVS, sve_mul,  H)
-BINARY_OP_PREDICATE(vmulI, MulVI, sve_mul,  S)
-BINARY_OP_PREDICATE(vmulL, MulVL, sve_mul,  D)
-BINARY_OP_PREDICATE(vmulF, MulVF, sve_fmul, S)
-BINARY_OP_PREDICATE(vmulD, MulVD, sve_fmul, D)
+BINARY_OP_PREDICATE(vmulB,  MulVB,  sve_mul,  B)
+BINARY_OP_PREDICATE(vmulS,  MulVS,  sve_mul,  H)
+BINARY_OP_PREDICATE(vmulI,  MulVI,  sve_mul,  S)
+BINARY_OP_PREDICATE(vmulL,  MulVL,  sve_mul,  D)
+BINARY_OP_PREDICATE(vmulHF, MulVHF, sve_fmul, H)
+BINARY_OP_PREDICATE(vmulF,  MulVF,  sve_fmul, S)
+BINARY_OP_PREDICATE(vmulD,  MulVD,  sve_fmul, D)
 
 // ------------------------------ Vector float div -----------------------------
 
 // vector float div
-BINARY_OP_NEON_SVE_PAIRWISE(vdivF, DivVF, fdiv, sve_fdiv, S)
-BINARY_OP_NEON_SVE_PAIRWISE(vdivD, DivVD, fdiv, sve_fdiv, D)
+BINARY_OP_NEON_SVE_PAIRWISE(vdivHF, DivVHF, fdiv, sve_fdiv, H)
+BINARY_OP_NEON_SVE_PAIRWISE(vdivF,  DivVF,  fdiv, sve_fdiv, S)
+BINARY_OP_NEON_SVE_PAIRWISE(vdivD,  DivVD,  fdiv, sve_fdiv, D)
 
 // vector float div - predicated
-BINARY_OP_PREDICATE(vdivF, DivVF, sve_fdiv, S)
-BINARY_OP_PREDICATE(vdivD, DivVD, sve_fdiv, D)
+BINARY_OP_PREDICATE(vdivHF, DivVHF, sve_fdiv, H)
+BINARY_OP_PREDICATE(vdivF,  DivVF,  sve_fdiv, S)
+BINARY_OP_PREDICATE(vdivD,  DivVD,  sve_fdiv, D)
 dnl
 dnl BITWISE_OP_IMM($1,        $2,   $3,      $4,   $5,   $6        )
 dnl BITWISE_OP_IMM(rule_name, type, op_name, insn, size, basic_type)
@@ -952,12 +979,14 @@ UNARY_OP_PREDICATE_WITH_SIZE(vnegD, NegVD, sve_fneg, D)
 // ------------------------------ Vector sqrt ----------------------------------
 
 // vector sqrt
-UNARY_OP(vsqrtF, SqrtVF, fsqrt, sve_fsqrt, S)
-UNARY_OP(vsqrtD, SqrtVD, fsqrt, sve_fsqrt, D)
+UNARY_OP(vsqrtHF, SqrtVHF, fsqrt, sve_fsqrt, H)
+UNARY_OP(vsqrtF,  SqrtVF,  fsqrt, sve_fsqrt, S)
+UNARY_OP(vsqrtD,  SqrtVD,  fsqrt, sve_fsqrt, D)
 
 // vector sqrt - predicated
-UNARY_OP_PREDICATE_WITH_SIZE(vsqrtF, SqrtVF, sve_fsqrt, S)
-UNARY_OP_PREDICATE_WITH_SIZE(vsqrtD, SqrtVD, sve_fsqrt, D)
+UNARY_OP_PREDICATE_WITH_SIZE(vsqrtHF, SqrtVHF, sve_fsqrt, H)
+UNARY_OP_PREDICATE_WITH_SIZE(vsqrtF,  SqrtVF,  sve_fsqrt, S)
+UNARY_OP_PREDICATE_WITH_SIZE(vsqrtD,  SqrtVD,  sve_fsqrt, D)
 
 dnl
 dnl VMINMAX_L_NEON($1,   $2     )
@@ -1010,6 +1039,21 @@ instruct v$1_neon(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
+dnl VHFMINMAX_NEON($1,   $2,      $3     )
+dnl VHFMINMAX_NEON(type, op_name, insn_fp)
+define(`VHFMINMAX_NEON', `
+instruct vhf$1_neon(vReg dst, vReg src1, vReg src2) %{
+  predicate(VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst ($2 src1 src2));
+  format %{ "vhf$1_neon $dst, $src1, $src2\t# Half float" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ $3($dst$$FloatRegister, get_arrangement(this),
+            $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
 dnl VMINMAX_SVE($1,   $2,      $3,      $4           )
 dnl VMINMAX_SVE(type, op_name, insn_fp, insn_integral)
 define(`VMINMAX_SVE', `
@@ -1029,6 +1073,22 @@ instruct v$1_sve(vReg dst_src1, vReg src2) %{
       __ $4($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
                   ptrue, $src2$$FloatRegister);
     }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+dnl VHFMINMAX_SVE($1,   $2,      $3     )
+dnl VHFMINMAX_SVE(type, op_name, insn_fp)
+define(`VHFMINMAX_SVE', `
+instruct vhf$1_sve(vReg dst_src1, vReg src2) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  match(Set dst_src1 ($2 dst_src1 src2));
+  format %{ "vhf$1_sve $dst_src1, $dst_src1, $src2\t# Half float" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ $3($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                ptrue, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -1054,6 +1114,21 @@ instruct v$1_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
+dnl VHFMINMAX_PREDICATE($1,   $2,      $3     )
+dnl VHFMINMAX_PREDICATE(type, op_name, insn_fp)
+define(`VHFMINMAX_PREDICATE', `
+instruct vhf$1_masked(vReg dst_src1, vReg src2, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst_src1 ($2 (Binary dst_src1 src2) pg));
+  format %{ "vhf$1_masked $dst_src1, $pg, $dst_src1, $src2" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ $3($dst_src1$$FloatRegister, __ elemType_to_regVariant(bt),
+                $pg$$PRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
 // ------------------------------ Vector min -----------------------------------
 
 // vector min - LONG
@@ -1063,9 +1138,12 @@ VMINMAX_L_SVE(min, MinV, sve_smin)
 // vector min - B/S/I/F/D
 VMINMAX_NEON(min, MinV, fmin, minv)
 VMINMAX_SVE(min, MinV, sve_fmin, sve_smin)
+VHFMINMAX_NEON(min, MinVHF, fmin)
+VHFMINMAX_SVE(min, MinVHF, sve_fmin)
 
 // vector min - predicated
 VMINMAX_PREDICATE(min, MinV, sve_fmin, sve_smin)
+VHFMINMAX_PREDICATE(min, MinVHF, sve_fmin)
 
 // ------------------------------ Vector max -----------------------------------
 
@@ -1076,9 +1154,12 @@ VMINMAX_L_SVE(max, MaxV, sve_smax)
 // vector max - B/S/I/F/D
 VMINMAX_NEON(max, MaxV, fmax, maxv)
 VMINMAX_SVE(max, MaxV, sve_fmax, sve_smax)
+VHFMINMAX_NEON(max, MaxVHF, fmax)
+VHFMINMAX_SVE(max, MaxVHF, sve_fmax)
 
 // vector max - predicated
 VMINMAX_PREDICATE(max, MaxV, sve_fmax, sve_smax)
+VHFMINMAX_PREDICATE(max, MaxVHF, sve_fmax)
 
 // ------------------------------ MLA RELATED ----------------------------------
 
@@ -1136,6 +1217,7 @@ instruct vmla_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
 // dst_src1 = src2 * src3 + dst_src1
 
 instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
+  match(Set dst_src1 (FmaVHF dst_src1 (Binary src2 src3)));
   match(Set dst_src1 (FmaVF dst_src1 (Binary src2 src3)));
   match(Set dst_src1 (FmaVD dst_src1 (Binary src2 src3)));
   format %{ "vfmla $dst_src1, $src2, $src3" %}
@@ -1160,6 +1242,7 @@ instruct vfmla(vReg dst_src1, vReg src2, vReg src3) %{
 
 instruct vfmad_masked(vReg dst_src1, vReg src2, vReg src3, pRegGov pg) %{
   predicate(UseSVE > 0);
+  match(Set dst_src1 (FmaVHF (Binary dst_src1 src2) (Binary src3 pg)));
   match(Set dst_src1 (FmaVF (Binary dst_src1 src2) (Binary src3 pg)));
   match(Set dst_src1 (FmaVD (Binary dst_src1 src2) (Binary src3 pg)));
   format %{ "vfmad_masked $dst_src1, $pg, $src2, $src3" %}
@@ -2865,6 +2948,23 @@ instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     __ sve_dup($dst$$FloatRegister, __ D, (int)($con$$constant));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// Replicate a 16-bit half precision float value
+
+instruct replicateH(vReg dst, immH con) %{
+  match(Set dst (Replicate con));
+  format %{ "replicateH $dst, $con\t# replicate half-precision float" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ mov($dst$$FloatRegister, __ T8H, (int)($con$$constant));
+    } else { // length_in_bytes must be > 16 and SVE should be enabled
+      assert(UseSVE > 0, "must be sve");
+      __ sve_dup($dst$$FloatRegister, __ H, (int)($con$$constant));
+    }
   %}
   ins_pipe(pipe_slow);
 %}
