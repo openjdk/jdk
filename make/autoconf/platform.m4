@@ -668,7 +668,7 @@ AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
   if test "x$OPENJDK_TARGET_CPU" = xx86; then
     if test "x$enable_deprecated_ports" = "xyes"; then
-      AC_MSG_WARN([The x86 port is deprecated and may be removed in a future release.])
+      AC_MSG_WARN([The 32-bit x86 port is deprecated and may be removed in a future release.])
     else
       AC_MSG_ERROR(m4_normalize([The 32-bit x86 port is deprecated and may be removed in a future release.
         Use --enable-deprecated-ports=yes to suppress this error.]))
