@@ -43,7 +43,6 @@ import java.net.ProxySelector;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.security.Permission;
-import java.util.Properties;
 import sun.net.NetworkClient;
 import sun.net.util.IPAddressUtil;
 import sun.net.www.MessageHeader;
@@ -53,7 +52,6 @@ import sun.net.www.protocol.http.HttpURLConnection;
 import sun.net.ftp.FtpClient;
 import sun.net.ftp.FtpProtocolException;
 import sun.net.www.ParseUtil;
-import sun.security.action.GetPropertyAction;
 
 
 /**
@@ -227,12 +225,7 @@ public class FtpURLConnection extends URLConnection {
              * Do we have to use a proxy?
              */
             @SuppressWarnings("removal")
-            ProxySelector sel = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<ProxySelector>() {
-                        public ProxySelector run() {
-                            return ProxySelector.getDefault();
-                        }
-                    });
+            ProxySelector sel = ProxySelector.getDefault();
             if (sel != null) {
                 URI uri = sun.net.www.ParseUtil.toURI(url);
                 final List<Proxy> proxies;
@@ -293,10 +286,8 @@ public class FtpURLConnection extends URLConnection {
 
         if (user == null) {
             user = "anonymous";
-            Properties props = GetPropertyAction.privilegedGetProperties();
-            String vers = props.getProperty("java.version");
-            password = props.getProperty("ftp.protocol.user",
-                    "Java" + vers + "@");
+            String vers = System.getProperty("java.version");
+            password = System.getProperty("ftp.protocol.user", "Java" + vers + "@");
         }
         try {
             ftp = FtpClient.create();
