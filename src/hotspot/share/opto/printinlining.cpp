@@ -56,11 +56,21 @@ void InlinePrinter::print_on(outputStream* tty) {
 }
 
 InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* callee) {
-  if (state == nullptr) {
-    return _root;
+  auto growableArray = new GrowableArrayCHeap<JVMState*, mtCompiler>(2);
+
+  while (state != nullptr) {
+    growableArray->push(state);
+    state = state->caller();
   }
 
-  return locate(state->caller(), nullptr)->at_bci(state->bci(), callee);
+  IPInlineSite *site = _root;
+  for (int i = growableArray->length() - 1; i >= 0; i--) {
+    site = site->at_bci(growableArray->at(i)->bci(), i == 0 ? callee : nullptr);
+  }
+
+  delete growableArray;
+
+  return site;
 }
 
 InlinePrinter::IPInlineSite* InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* callee) {
