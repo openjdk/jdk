@@ -59,6 +59,7 @@ public class WriteBarrier {
     private int[] indicesLarge;
 
     private Object nullRef;
+    private Object realRef;
 
     // For field update tests
     public Referencer head = null;
@@ -106,6 +107,8 @@ public class WriteBarrier {
             realReferencesLarge[i] = new Object();
         }
 
+        realRef = realReferencesLarge[42];
+
         // Build a small linked structure
         this.head = new Referencer();
         this.tail = new Referencer();
@@ -144,6 +147,14 @@ public class WriteBarrier {
     public void testArrayWriteBarrierFastPathRealLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realReferencesLarge[indicesLarge[i]];
+        }
+    }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void testArrayWriteBarrierFastPathRealLargeFixed() {
+        for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
+            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realRef;
         }
     }
 
