@@ -509,7 +509,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(StubGenStubId stub_id,
     dest_uninitialized = false;
     break;
   case jlong_disjoint_arraycopy_id:
-    shift = 0;
+    shift = 3;
     is_oop = false;
     dest_uninitialized = false;
     break;
@@ -847,7 +847,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(StubGenStubId stub_id,
     dest_uninitialized = false;
     break;
   case jlong_arraycopy_id:
-    shift = 0;
+    shift = 3;
     is_oop = false;
     dest_uninitialized = false;
     break;
