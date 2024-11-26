@@ -38,7 +38,7 @@ import org.junit.jupiter.api.Test;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.abort;
 
 /*
  * @test
@@ -68,8 +68,7 @@ public class ClassPathUnusableURLs {
             iae.printStackTrace(); // for debug purpose
             // if we can't create a directory with an emoji in its path name,
             // then skip the entire test
-            assumeTrue(false, "Skipping test since emoji directory couldn't be created: "
-                    + iae);
+            abort("Skipping test since emoji directory couldn't be created: " + iae);
         }
         // successful creation of the dir, continue with the test
         Files.writeString(EMOJI_DIR.resolve(RESOURCE_NAME), "hello");
