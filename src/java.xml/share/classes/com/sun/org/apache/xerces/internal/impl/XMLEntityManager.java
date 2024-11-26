@@ -1462,7 +1462,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         if( fSecurityManager != null && fSecurityManager.isOverLimit(entityExpansionIndex, fLimitAnalyzer)){
             fSecurityManager.debugPrint(fLimitAnalyzer);
             fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"EntityExpansionLimit",
-                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex)},
+                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex),
+                    Limit.ENTITY_EXPANSION_LIMIT.systemProperty()},
                     XMLErrorReporter.SEVERITY_FATAL_ERROR );
             // is there anything better to do than reset the counter?
             // at least one can envision debugging applications where this might
