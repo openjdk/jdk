@@ -504,6 +504,13 @@ final class Byte512Vector extends ByteVector {
                                      Byte512Mask.class, (Byte512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte512Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte512Vector)
+            super.selectFromTemplate((Byte512Vector) v1, (Byte512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -1034,14 +1041,9 @@ final class Byte512Vector extends ByteVector {
             int length = indices.length;
             for (byte si : indices) {
                 if (si >= (byte)length || si < (byte)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

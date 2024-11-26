@@ -276,7 +276,6 @@ class ImageFetcher extends Thread {
     /**
       * Create and start ImageFetcher threads in the appropriate ThreadGroup.
       */
-    @SuppressWarnings("removal")
     private static void createFetchers(final FetcherInfo info) {
        // We need to instantiate a new ImageFetcher thread.
        // First, figure out which ThreadGroup we'll put the
@@ -310,25 +309,18 @@ class ImageFetcher extends Thread {
        }
        final ThreadGroup fetcherGroup = fetcherThreadGroup;
 
-       java.security.AccessController.doPrivileged(
-           new java.security.PrivilegedAction<Object>() {
-               public Object run() {
-                   for (int i = 0; i < info.fetchers.length; i++) {
-                       if (info.fetchers[i] == null) {
-                           ImageFetcher f = new ImageFetcher(fetcherGroup, i);
-                       try {
-                           f.start();
-                           info.fetchers[i] = f;
-                           info.numFetchers++;
-                           break;
-                       } catch (Error e) {
-                       }
-                   }
-                 }
-                 return null;
+       for (int i = 0; i < info.fetchers.length; i++) {
+           if (info.fetchers[i] == null) {
+               ImageFetcher f = new ImageFetcher(fetcherGroup, i);
+               try {
+                   f.start();
+                   info.fetchers[i] = f;
+                   info.numFetchers++;
+                   break;
+               } catch (Error e) {
                }
-           });
-       return;
+           }
+        }
    }
 
 }

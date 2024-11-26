@@ -504,6 +504,13 @@ final class Byte128Vector extends ByteVector {
                                      Byte128Mask.class, (Byte128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte128Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte128Vector)
+            super.selectFromTemplate((Byte128Vector) v1, (Byte128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -938,14 +945,9 @@ final class Byte128Vector extends ByteVector {
             int length = indices.length;
             for (byte si : indices) {
                 if (si >= (byte)length || si < (byte)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

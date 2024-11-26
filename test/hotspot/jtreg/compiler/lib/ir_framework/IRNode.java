@@ -119,13 +119,13 @@ public class IRNode {
     public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
     public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
 
-    private static final String TYPE_BYTE   = "byte";
-    private static final String TYPE_CHAR   = "char";
-    private static final String TYPE_SHORT  = "short";
-    private static final String TYPE_INT    = "int";
-    private static final String TYPE_LONG   = "long";
-    private static final String TYPE_FLOAT  = "float";
-    private static final String TYPE_DOUBLE = "double";
+    private static final String TYPE_BYTE   = "B";
+    private static final String TYPE_CHAR   = "C";
+    private static final String TYPE_SHORT  = "S";
+    private static final String TYPE_INT    = "I";
+    private static final String TYPE_LONG   = "J";
+    private static final String TYPE_FLOAT  = "F";
+    private static final String TYPE_DOUBLE = "D";
 
     /**
      * IR placeholder string to regex-for-compile-phase map.
@@ -219,6 +219,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_L, "AddL");
     }
 
+    public static final String ADD_P = PREFIX + "ADD_P" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_P, "AddP");
+    }
+
     public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
         vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
@@ -272,6 +277,12 @@ public class IRNode {
     public static final String ADD_REDUCTION_VL = PREFIX + "ADD_REDUCTION_VL" + POSTFIX;
     static {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
+    }
+
+    public static final String ADD_P_OF = COMPOSITE_PREFIX + "ADD_P_OF" + POSTFIX;
+    static {
+        String regex = START + "addP_" + IS_REPLACED + MID + ".*" + END;
+        machOnly(ADD_P_OF, regex);
     }
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;

@@ -504,6 +504,13 @@ final class ByteMaxVector extends ByteVector {
                                      ByteMaxMask.class, (ByteMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public ByteMaxVector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (ByteMaxVector)
+            super.selectFromTemplate((ByteMaxVector) v1, (ByteMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -908,14 +915,9 @@ final class ByteMaxVector extends ByteVector {
             int length = indices.length;
             for (byte si : indices) {
                 if (si >= (byte)length || si < (byte)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

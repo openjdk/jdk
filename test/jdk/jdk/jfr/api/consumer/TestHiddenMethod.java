@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertFalse;
 import static jdk.test.lib.Asserts.assertTrue;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.List;
 
@@ -51,37 +49,38 @@ import jdk.test.lib.jfr.Events;
  */
 public final class TestHiddenMethod {
 
-    // Must call in separate thread because JTREG uses reflection
+    // Must emit events in separate threads, because JTREG uses reflection
     // to invoke main method, which uses hidden methods.
-    public static class TestThread extends Thread {
-        public void run() {
-            // doPrivileged calls a method that has the @Hidden
-            // annotation
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    MyEvent event = new MyEvent();
-                    event.commit();
-                    return null;
-                }
-            });
-
-            MyEvent event = new MyEvent();
-            event.commit();
-        }
-    }
-
     public static void main(String[] args) throws Throwable {
         try (Recording recording = new Recording()) {
             recording.enable(MyEvent.class).withThreshold(Duration.ofMillis(0));
             recording.start();
-            Thread t = new TestThread();
-            t.start();
-            t.join();
+            Thread t1 = new Thread(() -> {
+                // Runs in hidden lambda frame
+                MyEvent event = new MyEvent();
+                event.hidden = true;
+                event.commit();
+            });
+            t1.start();
+            t1.join();
+            Thread t2 = new Thread() {
+                public void run() {
+                    MyEvent event = new MyEvent();
+                    event.hidden = false;
+                    event.commit();
+                }
+            };
+            t2.start();
+            t2.join();
             recording.stop();
 
             List<RecordedEvent> events = Events.fromRecording(recording);
             assertEquals(2, events.size(), "Expected two events");
+            // Swap events if they come out of order.
+            boolean hidden = events.get(0).getBoolean("hidden");
+            if (!hidden) {
+                events = events.reversed();
+            }
             RecordedEvent hiddenEvent = events.get(0);
             RecordedEvent visibleEvent = events.get(1);
 
@@ -106,5 +105,6 @@ public final class TestHiddenMethod {
     }
 
     public static class MyEvent extends Event {
+        public boolean hidden;
     }
 }

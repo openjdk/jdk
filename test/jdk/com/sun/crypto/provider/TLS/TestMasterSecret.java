@@ -49,7 +49,8 @@ public class TestMasterSecret extends Utils {
     private static int PREFIX_LENGTH = "m-premaster:  ".length();
 
     public static void main(String[] args) throws Exception {
-        Provider provider = Security.getProvider("SunJCE");
+        Provider provider = Security.getProvider(
+                System.getProperty("test.provider.name", "SunJCE"));
 
         InputStream in = new FileInputStream(new File(BASE, "masterdata.txt"));
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));

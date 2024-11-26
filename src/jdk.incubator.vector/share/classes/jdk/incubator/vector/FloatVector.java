@@ -525,6 +525,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return r;
     }
 
+    static FloatVector selectFromTwoVectorHelper(Vector<Float> indexes, Vector<Float> src1, Vector<Float> src2) {
+        int vlen = indexes.length();
+        float[] res = new float[vlen];
+        float[] vecPayload1 = ((FloatVector)indexes).vec();
+        float[] vecPayload2 = ((FloatVector)src1).vec();
+        float[] vecPayload3 = ((FloatVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((FloatVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2334,7 +2347,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final <F>
     VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
-        assert(dsp.elementSize() == vspecies().elementSize());
         IntVector idx = convert(VectorOperators.F2I, 0).reinterpretAsInts();
         IntVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
         if (!wrap) {
@@ -2418,6 +2430,22 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    FloatVector selectFrom(Vector<Float> v1, Vector<Float> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -3533,7 +3561,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

@@ -42,6 +42,7 @@ final class ImplicitSession extends SharedSession {
 
     public ImplicitSession(Cleaner cleaner) {
         super();
+        this.state = NONCLOSEABLE;
         cleaner.register(this, resourceList);
     }
 
@@ -53,11 +54,6 @@ final class ImplicitSession extends SharedSession {
     @Override
     public void acquire0() {
         // do nothing
-    }
-
-    @Override
-    public boolean isCloseable() {
-        return false;
     }
 
     @Override

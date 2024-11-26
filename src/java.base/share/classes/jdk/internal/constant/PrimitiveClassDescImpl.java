@@ -94,6 +94,31 @@ public final class PrimitiveClassDescImpl
     }
 
     @Override
+    public boolean isPrimitive() {
+        return true;
+    }
+
+    @Override
+    public ClassDesc arrayType(int rank) {
+        ConstantUtils.validateArrayRank(rank);
+        if (this == CD_void)
+            throw new IllegalArgumentException("not a valid reference type descriptor: " + "[".repeat(rank) + "V");
+        return ArrayClassDescImpl.ofValidated(this, rank);
+    }
+
+    @Override
+    public ClassDesc arrayType() {
+        if (this == CD_void)
+            throw new IllegalArgumentException("not a valid reference type descriptor: [V");
+        return ArrayClassDescImpl.ofValidated(this, 1);
+    }
+
+    @Override
+    public String displayName() {
+        return wrapper().primitiveSimpleName();
+    }
+
+    @Override
     public String descriptorString() {
         return descriptor;
     }

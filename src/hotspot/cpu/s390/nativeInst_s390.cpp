@@ -658,8 +658,8 @@ void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
 
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
   assert(((intptr_t)instr_addr & (BytesPerWord-1)) == 0, "requirement for mt safe patching");
-  // Bytes_after_jump cannot change, because we own the Patching_lock.
-  assert(Patching_lock->owned_by_self(), "must hold lock to patch instruction");
+  // Bytes_after_jump cannot change, because we own the CodeCache_lock.
+  assert(CodeCache_lock->owned_by_self(), "must hold lock to patch instruction");
   intptr_t bytes_after_jump = (*(intptr_t*)instr_addr)  & 0x000000000000ffffL; // 2 bytes after jump.
   intptr_t load_const_bytes = (*(intptr_t*)code_buffer) & 0xffffffffffff0000L;
   *(intptr_t*)instr_addr = load_const_bytes | bytes_after_jump;

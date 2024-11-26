@@ -491,6 +491,13 @@ final class Float64Vector extends FloatVector {
                                      Float64Mask.class, (Float64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float64Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float64Vector)
+            super.selectFromTemplate((Float64Vector) v1, (Float64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -886,14 +893,9 @@ final class Float64Vector extends FloatVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

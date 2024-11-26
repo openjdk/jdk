@@ -65,6 +65,7 @@ void ShenandoahPacer::setup_for_mark() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * live / taxable; // base tax for available free space
   tax *= 1;                          // mark can succeed with immediate garbage, claim all available space
@@ -88,6 +89,7 @@ void ShenandoahPacer::setup_for_evac() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 2;                          // evac is followed by update-refs, claim 1/2 of remaining free
@@ -112,6 +114,7 @@ void ShenandoahPacer::setup_for_updaterefs() {
 
   size_t non_taxable = free * ShenandoahPacingCycleSlack / 100;
   size_t taxable = free - non_taxable;
+  taxable = MAX2<size_t>(1, taxable);
 
   double tax = 1.0 * used / taxable; // base tax for available free space
   tax *= 1;                          // update-refs is the last phase, claim the remaining free
@@ -250,9 +253,9 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     return;
   }
 
-  jlong const max_delay = ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC;
-  jlong const start_time = os::elapsed_counter();
-  while (!claimed && (os::elapsed_counter() - start_time) < max_delay) {
+  jlong const start_time = os::javaTimeNanos();
+  jlong const deadline = start_time + (ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC);
+  while (!claimed && os::javaTimeNanos() < deadline) {
     // We could instead assist GC, but this would suffice for now.
     wait(1);
     claimed = claim_for_alloc<false>(words);
@@ -264,7 +267,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     claimed = claim_for_alloc<true>(words);
     assert(claimed, "Should always succeed");
   }
-  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / NANOSECS_PER_SEC);
+  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::javaTimeNanos() - start_time) / NANOSECS_PER_SEC);
 }
 
 void ShenandoahPacer::wait(size_t time_ms) {
@@ -273,7 +276,7 @@ void ShenandoahPacer::wait(size_t time_ms) {
   assert(time_ms > 0, "Should not call this with zero argument, as it would stall until notify");
   assert(time_ms <= LONG_MAX, "Sanity");
   MonitorLocker locker(_wait_monitor);
-  _wait_monitor->wait((long)time_ms);
+  _wait_monitor->wait(time_ms);
 }
 
 void ShenandoahPacer::notify_waiters() {

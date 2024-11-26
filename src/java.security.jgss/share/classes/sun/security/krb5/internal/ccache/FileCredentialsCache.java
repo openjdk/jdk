@@ -34,13 +34,11 @@
 package sun.security.krb5.internal.ccache;
 
 import jdk.internal.util.OperatingSystem;
-import sun.security.action.GetPropertyAction;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.util.SecurityProperties;
 
 import java.nio.charset.StandardCharsets;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -452,17 +450,12 @@ public class FileCredentialsCache extends CredentialsCache
 
         // The env var can start with TYPE:, we only support FILE: here.
         // http://docs.oracle.com/cd/E19082-01/819-2252/6n4i8rtr3/index.html
-        @SuppressWarnings("removal")
-        String name = java.security.AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> {
-                    String cache = System.getenv("KRB5CCNAME");
-                    if (cache != null &&
-                            (cache.length() >= 5) &&
-                            cache.regionMatches(true, 0, "FILE:", 0, 5)) {
-                        cache = cache.substring(5);
-                    }
-                    return cache;
-                });
+        String name = System.getenv("KRB5CCNAME");
+        if (name != null &&
+                (name.length() >= 5) &&
+                name.regionMatches(true, 0, "FILE:", 0, 5)) {
+            name = name.substring(5);
+        }
         if (name != null) {
             if (DEBUG != null) {
                 DEBUG.println(">>>KinitOptions cache name is " + name);
@@ -502,12 +495,12 @@ public class FileCredentialsCache extends CredentialsCache
 
         // we did not get the uid;
 
-        String user_name = GetPropertyAction.privilegedGetProperty("user.name");
+        String user_name = System.getProperty("user.name");
 
-        String user_home = GetPropertyAction.privilegedGetProperty("user.home");
+        String user_home = System.getProperty("user.home");
 
         if (user_home == null) {
-            user_home = GetPropertyAction.privilegedGetProperty("user.dir");
+            user_home = System.getProperty("user.dir");
         }
 
         if (user_name != null) {
@@ -556,19 +549,14 @@ public class FileCredentialsCache extends CredentialsCache
         }
         final String[] command = v.toArray(new String[0]);
         try {
-            @SuppressWarnings("removal")
-            Process p =
-                java.security.AccessController.doPrivileged
-                ((PrivilegedAction<Process>) () -> {
-                    try {
-                        return (Runtime.getRuntime().exec(command));
-                    } catch (IOException e) {
-                        if (DEBUG != null) {
-                            e.printStackTrace(DEBUG.getPrintStream());
-                        }
-                        return null;
-                    }
-                });
+            Process p = null;
+            try {
+                p = Runtime.getRuntime().exec(command);
+            } catch (IOException e) {
+                if (DEBUG != null) {
+                    e.printStackTrace(DEBUG.getPrintStream());
+                }
+            }
             if (p == null) {
                 // exception occurred during executing the command
                 return null;

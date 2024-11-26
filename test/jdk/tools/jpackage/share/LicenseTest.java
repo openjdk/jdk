@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,10 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage with --license-file
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile LicenseTest.java
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCommon
  */
@@ -75,13 +74,12 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary jpackage with --license-file
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @compile LicenseTest.java
  * @requires (os.family == "linux")
  * @requires (jpackage.test.SQETest == null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=LicenseTest.testCustomDebianCopyright
  *  --jpt-run=LicenseTest.testCustomDebianCopyrightSubst

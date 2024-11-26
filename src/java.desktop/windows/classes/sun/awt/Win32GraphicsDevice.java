@@ -41,6 +41,7 @@ import java.awt.image.ColorModel;
 import java.awt.peer.WindowPeer;
 import java.util.ArrayList;
 
+import sun.awt.image.SurfaceManager;
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.WGLGraphicsConfig;
@@ -90,6 +91,8 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     private float scaleX;
     private float scaleY;
 
+    final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
+
     static {
 
         // 4455041 - Even when ddraw is disabled, ddraw.dll is loaded when
@@ -97,9 +100,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         // is run as an NT service.  To prevent the loading of ddraw.dll
         // completely, sun.awt.nopixfmt should be set as well.  Apps which use
         // OpenGL w/ Java probably don't want to set this.
-        @SuppressWarnings("removal")
-        String nopixfmt = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.awt.nopixfmt"));
+        String nopixfmt = System.getProperty("sun.awt.nopixfmt");
         pfDisabled = (nopixfmt != null);
         initIDs();
     }

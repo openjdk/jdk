@@ -504,6 +504,13 @@ final class Int256Vector extends IntVector {
                                      Int256Mask.class, (Int256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Int256Vector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (Int256Vector)
+            super.selectFromTemplate((Int256Vector) v1, (Int256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -909,14 +916,9 @@ final class Int256Vector extends IntVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

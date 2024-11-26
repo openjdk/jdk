@@ -397,8 +397,13 @@ void Universe::genesis(TRAPS) {
   HandleMark   hm(THREAD);
 
   // Explicit null checks are needed if these offsets are not smaller than the page size
-  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
-         "Klass offset is expected to be less than the page size");
+  if (UseCompactObjectHeaders) {
+    assert(oopDesc::mark_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+           "Mark offset is expected to be less than the page size");
+  } else {
+    assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+           "Klass offset is expected to be less than the page size");
+  }
   assert(arrayOopDesc::length_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
          "Array length offset is expected to be less than the page size");
 
@@ -454,10 +459,8 @@ void Universe::genesis(TRAPS) {
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
     }
 
-    if (UseSecondarySupersTable) {
-      Universe::_the_array_interfaces_bitmap = Klass::compute_secondary_supers_bitmap(_the_array_interfaces_array);
-      Universe::_the_empty_klass_bitmap      = Klass::compute_secondary_supers_bitmap(_the_empty_klass_array);
-    }
+    _the_array_interfaces_bitmap = Klass::compute_secondary_supers_bitmap(_the_array_interfaces_array);
+    _the_empty_klass_bitmap      = Klass::compute_secondary_supers_bitmap(_the_empty_klass_array);
 
     initialize_basic_type_klass(_fillerArrayKlass, CHECK);
 

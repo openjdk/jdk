@@ -52,6 +52,10 @@ public class TestMergeStoresUnsafeArrayPointer {
     static final long ANCHOR = BYTE_SIZE / 2;
 
     static int four = 4;
+    static int max_int = Integer.MAX_VALUE;
+    static int min_int = Integer.MIN_VALUE;
+    static int val_2_to_30 = (1 << 30);
+    static int large_by_53 = (int)((1L << 31) / 53L + 1L);
 
     public static void main(String[] args) {
         System.out.println("Allocate big array of SIZE = " + SIZE);
@@ -95,6 +99,103 @@ public class TestMergeStoresUnsafeArrayPointer {
             }
         }
 
+        val = 0;
+        System.out.println("test3");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test3(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test3 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
+        val = 0;
+        System.out.println("test4");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test4(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test4 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
+        val = 0;
+        System.out.println("test5");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test5(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test5 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
+        val = 0;
+        System.out.println("test6");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test6(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test6 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
+        val = 0;
+        System.out.println("test7");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test7(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test7 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
+        // No result verification here. We only want to make sure we do not hit asserts.
+        System.out.println("test8 and test9");
+        for (int i = 0; i < 100_000; i++) {
+            test8a(big, ANCHOR);
+            test8b(big, ANCHOR);
+            test8c(big, ANCHOR);
+            test8d(big, ANCHOR);
+            test9a(big, ANCHOR);
+            test9b(big, ANCHOR);
+            test9c(big, ANCHOR);
+        }
+
         if (errors > 0) {
             throw new RuntimeException("ERRORS: " + errors);
         }
@@ -128,5 +229,96 @@ public class TestMergeStoresUnsafeArrayPointer {
         long base = UNSAFE.ARRAY_INT_BASE_OFFSET + ANCHOR;
         UNSAFE.putInt(a, base + 0                 + (long)(four + Integer.MAX_VALUE), 0x42424242);
         UNSAFE.putInt(a, base + Integer.MAX_VALUE + (long)(four + 4                ), 0x66666666);
+    }
+
+    // Test: if MergeStores is applied this can lead to wrong results
+    //  -> AddI needs overflow check.
+    static void test3(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base + (long)(max_int + 0), 0x42424242);
+        UNSAFE.putInt(a, base + (long)(max_int + 4), 0x66666666);
+    }
+
+    // Test: "max_int - four" cannot be parsed further, but would not make a difference here.
+    static void test4(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base + (long)(min_int - four) + 0, 0x42424242);
+        UNSAFE.putInt(a, base + (long)(min_int - four) + 4, 0x66666666);
+    }
+
+    // Test: if MergeStores is applied this can lead to wrong results
+    //  -> SubI needs overflow check.
+    static void test5(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base + (long)(min_int) - (long)(four) + 0, 0x42424242); // no overflow
+        UNSAFE.putInt(a, base + (long)(min_int - four)         + 4, 0x66666666); // overflow
+    }
+
+    // Test: if MergeStores is applied this can lead to wrong results
+    //  -> LShiftI needs overflow check.
+    static void test6(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base +  (long)(2 * val_2_to_30) + 0, 0x42424242); // overflow
+        UNSAFE.putInt(a, base + 2L * (long)(val_2_to_30) + 4, 0x66666666); // no overflow
+    }
+
+    // Test: if MergeStores is applied this can lead to wrong results
+    //  -> MulI needs overflow check.
+    static void test7(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base +  (long)(53 * large_by_53) + 0, 0x42424242); // overflow
+        UNSAFE.putInt(a, base + 53L * (long)(large_by_53) + 4, 0x66666666); // no overflow
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8a(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base + (1L << 11) + 0,          (byte)42);
+        UNSAFE.putByte(a, base + (1L << 11) + (1L << 30), (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8b(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base + (1L << 11) + (1L << 30), (byte)11);
+        UNSAFE.putByte(a, base + (1L << 11) + 0,          (byte)42);
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8c(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - (1L << 11) - 0,          (byte)42);
+        UNSAFE.putByte(a, base - (1L << 11) - (1L << 30), (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    static void test8d(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - (1L << 11) - (1L << 30), (byte)11);
+        UNSAFE.putByte(a, base - (1L << 11) - 0,          (byte)42);
+    }
+
+    // Test: check if large distance leads to assert
+    //       case: bad distance: NaN
+    static void test9a(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - 100,               (byte)42);
+        UNSAFE.putByte(a, base - 100  + (1L << 31), (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    //       case: just before NaN, it is still a valid distance for MemPointer aliasing.
+    static void test9b(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base - 100,                   (byte)42);
+        UNSAFE.putByte(a, base - 100  + (1L << 31) - 1, (byte)11);
+    }
+
+    // Test: check if large distance leads to assert
+    //       case: constant too large
+    static void test9c(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putByte(a, base,               (byte)42);
+        UNSAFE.putByte(a, base  + (1L << 31), (byte)11);
     }
 }

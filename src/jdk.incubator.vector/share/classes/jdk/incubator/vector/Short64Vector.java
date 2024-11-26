@@ -504,6 +504,13 @@ final class Short64Vector extends ShortVector {
                                      Short64Mask.class, (Short64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Short64Vector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (Short64Vector)
+            super.selectFromTemplate((Short64Vector) v1, (Short64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -908,14 +915,9 @@ final class Short64Vector extends ShortVector {
             int length = indices.length;
             for (short si : indices) {
                 if (si >= (short)length || si < (short)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

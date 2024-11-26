@@ -491,6 +491,13 @@ final class DoubleMaxVector extends DoubleVector {
                                      DoubleMaxMask.class, (DoubleMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public DoubleMaxVector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2) {
+        return (DoubleMaxVector)
+            super.selectFromTemplate((DoubleMaxVector) v1, (DoubleMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -907,14 +914,9 @@ final class DoubleMaxVector extends DoubleVector {
             int length = indices.length;
             for (long si : indices) {
                 if (si >= (long)length || si < (long)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

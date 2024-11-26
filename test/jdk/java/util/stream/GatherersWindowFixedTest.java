@@ -36,7 +36,6 @@ import static org.junit.jupiter.api.Assumptions.*;
 /**
  * @test
  * @summary Tests the API and contract of Gatherers.windowFixed
- * @enablePreview
  * @run junit GatherersWindowFixedTest
  */
 

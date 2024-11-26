@@ -46,11 +46,20 @@ public class TestUnalignedAccess {
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
     static void sink(int x) {}
 
+    public static long lseed = 1;
+    public static int iseed = 2;
+    public static short sseed = 3;
+    public static byte bseed = 4;
+    public static long lres = lseed;
+    public static int ires = iseed;
+    public static short sres = sseed;
+    public static byte bres = bseed;
+
     public static class TestLong {
 
         private static final byte[] BYTES = new byte[LEN];
         private static final long rawdata = 0xbeef;
-        private static final long lseed = 1;
+        private static final long data;
 
         static {
             sink(2);
@@ -60,10 +69,13 @@ public class TestUnalignedAccess {
 
             // 1030 can't be encoded as "base + offset" mode into the instruction field.
             UNSAFE.putLongUnaligned(BYTES, 1030, rawdata);
+            lres += UNSAFE.getLongUnaligned(BYTES, 1030);
             // 127 can be encoded into simm9 field.
-            UNSAFE.putLongUnaligned(BYTES, 127, rawdata+lseed);
+            UNSAFE.putLongUnaligned(BYTES, 127, lres);
+            lres += UNSAFE.getLongUnaligned(BYTES, 127);
             // 1096 can be encoded into uimm12 field.
-            UNSAFE.putLongUnaligned(BYTES, 1096, rawdata-lseed);
+            UNSAFE.putLongUnaligned(BYTES, 1096, lres);
+            data = UNSAFE.getLongUnaligned(BYTES, 1096);
         }
 
     }
@@ -72,7 +84,7 @@ public class TestUnalignedAccess {
 
         private static final byte[] BYTES = new byte[LEN];
         private static final int rawdata = 0xbeef;
-        private static final int iseed = 2;
+        private static final int data;
         static {
             sink(2);
             // Signed immediate byte offset: range -256 to 255
@@ -81,10 +93,13 @@ public class TestUnalignedAccess {
 
             // 274 can't be encoded as "base + offset" mode into the instruction field.
             UNSAFE.putIntUnaligned(BYTES, 274, rawdata);
+            ires += UNSAFE.getIntUnaligned(BYTES, 274);
             // 255 can be encoded into simm9 field.
-            UNSAFE.putIntUnaligned(BYTES, 255, rawdata + iseed);
+            UNSAFE.putIntUnaligned(BYTES, 255, ires);
+            ires += UNSAFE.getIntUnaligned(BYTES, 255);
             // 528 can be encoded into uimm12 field.
-            UNSAFE.putIntUnaligned(BYTES, 528, rawdata - iseed);
+            UNSAFE.putIntUnaligned(BYTES, 528, ires);
+            data = UNSAFE.getIntUnaligned(BYTES, 528);
         }
 
     }
@@ -93,7 +108,7 @@ public class TestUnalignedAccess {
 
         private static final byte[] BYTES = new byte[LEN];
         private static final short rawdata = (short)0xbeef;
-        private static final short sseed = 3;
+        private static final short data;
         static {
             sink(2);
             // Signed immediate byte offset: range -256 to 255
@@ -102,10 +117,13 @@ public class TestUnalignedAccess {
 
             // 257 can't be encoded as "base + offset" mode into the instruction field.
             UNSAFE.putShortUnaligned(BYTES, 257, rawdata);
+            sres = (short) (sres + UNSAFE.getShortUnaligned(BYTES, 257));
             // 253 can be encoded into simm9 field.
-            UNSAFE.putShortUnaligned(BYTES, 253, (short) (rawdata + sseed));
+            UNSAFE.putShortUnaligned(BYTES, 253, sres);
+            sres = (short) (sres + UNSAFE.getShortUnaligned(BYTES, 253));
             // 272 can be encoded into uimm12 field.
-            UNSAFE.putShortUnaligned(BYTES, 272, (short) (rawdata - sseed));
+            UNSAFE.putShortUnaligned(BYTES, 272, sres);
+            data = UNSAFE.getShortUnaligned(BYTES, 272);
         }
 
     }
@@ -114,7 +132,7 @@ public class TestUnalignedAccess {
 
         private static final byte[] BYTES = new byte[LEN];
         private static final byte rawdata = (byte)0x3f;
-        private static final byte bseed = 4;
+        private static final byte data;
         static {
             sink(2);
             // Signed immediate byte offset: range -256 to 255
@@ -123,34 +141,29 @@ public class TestUnalignedAccess {
 
             // 272 can be encoded into simm9 field.
             UNSAFE.putByte(BYTES, 272, rawdata);
+            bres = (byte) (bres + UNSAFE.getByte(BYTES, 272));
             // 53 can be encoded into simm9 field.
-            UNSAFE.putByte(BYTES, 53, (byte) (rawdata + bseed));
+            UNSAFE.putByte(BYTES, 53, bres);
+            bres = (byte) (bres + UNSAFE.getByte(BYTES, 53));
             // 1027 can be encoded into uimm12 field.
-            UNSAFE.putByte(BYTES, 1027, (byte) (rawdata - bseed));
+            UNSAFE.putByte(BYTES, 1027, bres);
+            data = UNSAFE.getByte(BYTES, 1027);
         }
 
     }
 
     static void test() {
         TestLong ta = new TestLong();
-        Asserts.assertEquals(UNSAFE.getLongUnaligned(ta.BYTES, 1030), ta.rawdata, "putUnaligned long failed!");
-        Asserts.assertEquals(UNSAFE.getLongUnaligned(ta.BYTES, 127), ta.rawdata + ta.lseed, "putUnaligned long failed!");
-        Asserts.assertEquals(UNSAFE.getLongUnaligned(ta.BYTES, 1096), ta.rawdata - ta.lseed, "putUnaligned long failed!");
+        Asserts.assertEquals(ta.data, (ta.rawdata + lseed) * 2, "putUnaligned long failed!");
 
         TestInt tb = new TestInt();
-        Asserts.assertEquals(UNSAFE.getIntUnaligned(tb.BYTES, 274), tb.rawdata, "putUnaligned int failed!");
-        Asserts.assertEquals(UNSAFE.getIntUnaligned(tb.BYTES, 255), tb.rawdata + tb.iseed, "putUnaligned int failed!");
-        Asserts.assertEquals(UNSAFE.getIntUnaligned(tb.BYTES, 528), tb.rawdata - tb.iseed, "putUnaligned int failed!");
+        Asserts.assertEquals(tb.data, (tb.rawdata + iseed) * 2, "putUnaligned int failed!");
 
         TestShort tc = new TestShort();
-        Asserts.assertEquals(UNSAFE.getShortUnaligned(tc.BYTES, 257), tc.rawdata, "putUnaligned short failed!");
-        Asserts.assertEquals(UNSAFE.getShortUnaligned(tc.BYTES, 253), (short) (tc.rawdata + tc.sseed), "putUnaligned short failed!");
-        Asserts.assertEquals(UNSAFE.getShortUnaligned(tc.BYTES, 272), (short) (tc.rawdata - tc.sseed), "putUnaligned short failed!");
+        Asserts.assertEquals(tc.data, (short) (((short) (tc.rawdata + sseed)) * 2), "putUnaligned short failed!");
 
         TestByte td = new TestByte();
-        Asserts.assertEquals(UNSAFE.getByte(td.BYTES, 272), td.rawdata, "put byte failed!");
-        Asserts.assertEquals(UNSAFE.getByte(td.BYTES, 53), (byte) (td.rawdata + td.bseed), "put byte failed!");
-        Asserts.assertEquals(UNSAFE.getByte(td.BYTES, 1027), (byte) (td.rawdata - td.bseed), "put byte failed!");
+        Asserts.assertEquals(td.data, (byte) (((byte) (td.rawdata + bseed)) * 2), "put byte failed!");
     }
 
     public static void main(String[] strArr) {

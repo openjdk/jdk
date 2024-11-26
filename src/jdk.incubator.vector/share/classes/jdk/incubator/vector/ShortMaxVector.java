@@ -504,6 +504,13 @@ final class ShortMaxVector extends ShortVector {
                                      ShortMaxMask.class, (ShortMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public ShortMaxVector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (ShortMaxVector)
+            super.selectFromTemplate((ShortMaxVector) v1, (ShortMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -902,14 +909,9 @@ final class ShortMaxVector extends ShortVector {
             int length = indices.length;
             for (short si : indices) {
                 if (si >= (short)length || si < (short)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

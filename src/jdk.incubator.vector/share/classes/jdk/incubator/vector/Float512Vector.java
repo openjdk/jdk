@@ -491,6 +491,13 @@ final class Float512Vector extends FloatVector {
                                      Float512Mask.class, (Float512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float512Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float512Vector)
+            super.selectFromTemplate((Float512Vector) v1, (Float512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -914,14 +921,9 @@ final class Float512Vector extends FloatVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

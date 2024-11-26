@@ -504,6 +504,13 @@ final class IntMaxVector extends IntVector {
                                      IntMaxMask.class, (IntMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public IntMaxVector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (IntMaxVector)
+            super.selectFromTemplate((IntMaxVector) v1, (IntMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -906,14 +913,9 @@ final class IntMaxVector extends IntVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

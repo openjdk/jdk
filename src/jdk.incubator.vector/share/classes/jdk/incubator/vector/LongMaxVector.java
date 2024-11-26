@@ -494,6 +494,13 @@ final class LongMaxVector extends LongVector {
                                      LongMaxMask.class, (LongMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public LongMaxVector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2) {
+        return (LongMaxVector)
+            super.selectFromTemplate((LongMaxVector) v1, (LongMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -909,14 +916,9 @@ final class LongMaxVector extends LongVector {
             int length = indices.length;
             for (long si : indices) {
                 if (si >= (long)length || si < (long)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

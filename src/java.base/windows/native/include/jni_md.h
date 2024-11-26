@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
   #define JNIEXPORT __declspec(dllexport)
 #endif
 #define JNIIMPORT __declspec(dllimport)
-#define JNICALL __stdcall
 
 typedef int jint;
 typedef long long jlong;

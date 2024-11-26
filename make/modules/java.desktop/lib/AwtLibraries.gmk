@@ -85,11 +85,7 @@ LIBAWT_EXTRA_HEADER_DIRS := \
 LIBAWT_CFLAGS := -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES -DMLIB_NO_LIBSUNMATH
 
 ifeq ($(call isTargetOs, windows), true)
-  LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE
-  ifeq ($(call isTargetCpuBits, 64), true)
-    LIBAWT_CFLAGS += -DMLIB_OS64BIT
-  endif
-
+  LIBAWT_CFLAGS += -EHsc -DUNICODE -D_UNICODE -DMLIB_OS64BIT
   LIBAWT_RCFLAGS ?= -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
   LIBAWT_VERSIONINFO_RESOURCE := \
       $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc

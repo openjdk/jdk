@@ -24,47 +24,18 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.*;
 import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.lang.classfile.Instruction;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.instruction.SwitchCase;
-import java.lang.classfile.constantpool.FieldRefEntry;
-import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
-import java.lang.classfile.constantpool.InvokeDynamicEntry;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.instruction.ArrayLoadInstruction;
-import java.lang.classfile.instruction.ArrayStoreInstruction;
-import java.lang.classfile.instruction.BranchInstruction;
-import java.lang.classfile.instruction.ConstantInstruction;
-import java.lang.classfile.instruction.ConvertInstruction;
-import java.lang.classfile.instruction.DiscontinuedInstruction;
-import java.lang.classfile.instruction.FieldInstruction;
-import java.lang.classfile.instruction.IncrementInstruction;
-import java.lang.classfile.instruction.InvokeDynamicInstruction;
-import java.lang.classfile.instruction.InvokeInstruction;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.LookupSwitchInstruction;
-import java.lang.classfile.instruction.MonitorInstruction;
-import java.lang.classfile.instruction.NewMultiArrayInstruction;
-import java.lang.classfile.instruction.NewObjectInstruction;
-import java.lang.classfile.instruction.NewPrimitiveArrayInstruction;
-import java.lang.classfile.instruction.NewReferenceArrayInstruction;
-import java.lang.classfile.instruction.NopInstruction;
-import java.lang.classfile.instruction.OperatorInstruction;
-import java.lang.classfile.instruction.ReturnInstruction;
-import java.lang.classfile.instruction.StackInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
-import java.lang.classfile.instruction.TableSwitchInstruction;
-import java.lang.classfile.instruction.ThrowInstruction;
-import java.lang.classfile.instruction.TypeCheckInstruction;
-import java.lang.classfile.Label;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
+
+import static java.util.Objects.requireNonNull;
 
 public abstract sealed class AbstractInstruction
         extends AbstractElement
@@ -247,6 +218,9 @@ public abstract sealed class AbstractInstruction
 
     public record SwitchCaseImpl(int caseValue, Label target)
             implements SwitchCase {
+        public SwitchCaseImpl {
+            requireNonNull(target);
+        }
     }
 
     public static final class BoundLookupSwitchInstruction
@@ -699,7 +673,8 @@ public abstract sealed class AbstractInstruction
             if (writer.canWriteDirect(code.constantPool()))
                 super.writeTo(writer);
             else
-                writer.writeLoadConstant(op, constantEntry());
+                // We have writer.canWriteDirect(constantEntry().constantPool()) == false
+                writer.writeAdaptLoadConstant(op, constantEntry());
         }
 
         @Override
@@ -801,7 +776,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -832,7 +812,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            var op = this.op;
+            if (op.sizeIfFixed() == 1) {
+                writer.writeBytecode(op);
+            } else {
+                writer.writeLocalVar(op, slot);
+            }
         }
 
         @Override
@@ -882,7 +867,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundBranchInstruction(Opcode op, Label target) {
             super(op);
-            this.target = target;
+            this.target = requireNonNull(target);
         }
 
         @Override
@@ -909,7 +894,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundLookupSwitchInstruction(Label defaultTarget, List<SwitchCase> cases) {
             super(Opcode.LOOKUPSWITCH);
-            this.defaultTarget = defaultTarget;
+            this.defaultTarget = requireNonNull(defaultTarget);
             this.cases = List.copyOf(cases);
         }
 
@@ -945,7 +930,7 @@ public abstract sealed class AbstractInstruction
             super(Opcode.TABLESWITCH);
             this.lowValue = lowValue;
             this.highValue = highValue;
-            this.defaultTarget = defaultTarget;
+            this.defaultTarget = requireNonNull(defaultTarget);
             this.cases = List.copyOf(cases);
         }
 
@@ -1020,7 +1005,7 @@ public abstract sealed class AbstractInstruction
         public UnboundFieldInstruction(Opcode op,
                                        FieldRefEntry fieldEntry) {
             super(op);
-            this.fieldEntry = fieldEntry;
+            this.fieldEntry = requireNonNull(fieldEntry);
         }
 
         @Override
@@ -1045,7 +1030,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundInvokeInstruction(Opcode op, MemberRefEntry methodEntry) {
             super(op);
-            this.methodEntry = methodEntry;
+            this.methodEntry = requireNonNull(methodEntry);
         }
 
         @Override
@@ -1085,7 +1070,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundInvokeDynamicInstruction(InvokeDynamicEntry indyEntry) {
             super(Opcode.INVOKEDYNAMIC);
-            this.indyEntry = indyEntry;
+            this.indyEntry = requireNonNull(indyEntry);
         }
 
         @Override
@@ -1110,7 +1095,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundNewObjectInstruction(ClassEntry classEntry) {
             super(Opcode.NEW);
-            this.classEntry = classEntry;
+            this.classEntry = requireNonNull(classEntry);
         }
 
         @Override
@@ -1135,7 +1120,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundNewPrimitiveArrayInstruction(TypeKind typeKind) {
             super(Opcode.NEWARRAY);
-            this.typeKind = typeKind;
+            this.typeKind = requireNonNull(typeKind);
         }
 
         @Override
@@ -1160,7 +1145,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundNewReferenceArrayInstruction(ClassEntry componentTypeEntry) {
             super(Opcode.ANEWARRAY);
-            this.componentTypeEntry = componentTypeEntry;
+            this.componentTypeEntry = requireNonNull(componentTypeEntry);
         }
 
         @Override
@@ -1187,7 +1172,7 @@ public abstract sealed class AbstractInstruction
         public UnboundNewMultidimensionalArrayInstruction(ClassEntry arrayTypeEntry,
                                                           int dimensions) {
             super(Opcode.MULTIANEWARRAY);
-            this.arrayTypeEntry = arrayTypeEntry;
+            this.arrayTypeEntry = requireNonNull(arrayTypeEntry);
             this.dimensions = dimensions;
         }
 
@@ -1245,7 +1230,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundTypeCheckInstruction(Opcode op, ClassEntry typeEntry) {
             super(op);
-            this.typeEntry = typeEntry;
+            this.typeEntry = requireNonNull(typeEntry);
         }
 
         @Override
@@ -1347,7 +1332,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundLoadConstantInstruction(Opcode op, LoadableConstantEntry constant) {
             super(op);
-            this.constant = constant;
+            this.constant = requireNonNull(constant);
         }
 
         @Override
@@ -1362,7 +1347,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLoadConstant(op, constant);
+            var constant = this.constant;
+            if (writer.canWriteDirect(constant.constantPool()))
+                // Allows writing ldc_w small index constants upon user request
+                writer.writeDirectLoadConstant(op, constant);
+            else
+                writer.writeAdaptLoadConstant(op, constant);
         }
 
         @Override
@@ -1395,7 +1385,7 @@ public abstract sealed class AbstractInstruction
 
         public UnboundJsrInstruction(Opcode op, Label target) {
             super(op);
-            this.target = target;
+            this.target = requireNonNull(target);
         }
 
         @Override

@@ -1912,9 +1912,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity draft="unconfirmed">Ułan Bator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity draft="unconfirmed">Czojbalsan</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity draft="unconfirmed">Makau</exemplarCity>
 			</zone>
@@ -2393,13 +2390,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="unconfirmed">Chiny</generic>
 					<standard draft="unconfirmed">Chiny (sztandardowy czas)</standard>
 					<daylight draft="unconfirmed">Chiny (latowy czas)</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic draft="unconfirmed">Czojbalsan</generic>
-					<standard draft="unconfirmed">Czojbalsan (sztandardowy czas)</standard>
-					<daylight draft="unconfirmed">Czojbalsan (latowy czas)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

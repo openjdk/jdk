@@ -494,6 +494,13 @@ final class Long64Vector extends LongVector {
                                      Long64Mask.class, (Long64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Long64Vector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2) {
+        return (Long64Vector)
+            super.selectFromTemplate((Long64Vector) v1, (Long64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -909,14 +916,9 @@ final class Long64Vector extends LongVector {
             int length = indices.length;
             for (long si : indices) {
                 if (si >= (long)length || si < (long)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

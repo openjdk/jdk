@@ -176,8 +176,8 @@ address StubRoutines::_dtanh = nullptr;
 address StubRoutines::_f2hf = nullptr;
 address StubRoutines::_hf2f = nullptr;
 
-address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
-address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
+address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
+address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 
 address StubRoutines::_method_entry_barrier = nullptr;
 address StubRoutines::_array_sort = nullptr;
@@ -186,6 +186,7 @@ address StubRoutines::_array_partition  = nullptr;
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
+address StubRoutines::_cont_preempt_stub = nullptr;
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
 address StubRoutines::_upcall_stub_load_target = nullptr;

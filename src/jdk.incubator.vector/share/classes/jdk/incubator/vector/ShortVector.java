@@ -536,6 +536,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return r;
     }
 
+    static ShortVector selectFromTwoVectorHelper(Vector<Short> indexes, Vector<Short> src1, Vector<Short> src2) {
+        int vlen = indexes.length();
+        short[] res = new short[vlen];
+        short[] vecPayload1 = ((ShortVector)indexes).vec();
+        short[] vecPayload2 = ((ShortVector)src1).vec();
+        short[] vecPayload3 = ((ShortVector)src2).vec();
+        for (int i = 0; i < vlen; i++) {
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
+        }
+        return ((ShortVector)src1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -871,6 +884,18 @@ public abstract class ShortVector extends AbstractVector<Short> {
                     v0.bOp(v1, vm, (i, a, n) -> rotateLeft(a, (int)n));
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
+            case VECTOR_OP_UMAX: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)VectorMath.maxUnsigned(a, b));
+            case VECTOR_OP_UMIN: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)VectorMath.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMath.subSaturatingUnsigned(a, b)));
             default: return null;
         }
     }
@@ -2475,6 +2500,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @Override
     @ForceInline
     final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+        assert(dsp.elementSize() == vspecies().elementSize());
         short[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2486,7 +2512,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     final <F>
     VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
-        assert(dsp.elementSize() == vspecies().elementSize());
         ShortVector idx = this;
         ShortVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
         if (!wrap) {
@@ -2570,6 +2595,22 @@ public abstract class ShortVector extends AbstractVector<Short> {
                                                         length(), this, v, m,
                                                         (v1, v2, _m) ->
                                                          v2.rearrange(v1.toShuffle(), _m));
+    }
+
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ShortVector selectFrom(Vector<Short> v1, Vector<Short> v2);
+
+
+    /*package-private*/
+    @ForceInline
+    final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
@@ -4047,7 +4088,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     @ForceInline
     static long byteArrayAddress(byte[] a, int index) {
-        return Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
+        return (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index;
     }
 
     // ================================================

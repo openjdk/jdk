@@ -504,6 +504,13 @@ final class Int128Vector extends IntVector {
                                      Int128Mask.class, (Int128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Int128Vector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (Int128Vector)
+            super.selectFromTemplate((Int128Vector) v1, (Int128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -901,14 +908,9 @@ final class Int128Vector extends IntVector {
             int length = indices.length;
             for (int si : indices) {
                 if (si >= (int)length || si < (int)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;

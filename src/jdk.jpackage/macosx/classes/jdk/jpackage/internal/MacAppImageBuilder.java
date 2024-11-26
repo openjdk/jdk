@@ -57,7 +57,6 @@ import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacAppBundler.APP_IMAGE_SIGN_IDENTITY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
-import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.INSTALLER_SIGN_IDENTITY;
 import static jdk.jpackage.internal.OverridableResource.createResource;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
@@ -76,8 +75,6 @@ import static jdk.jpackage.internal.StandardBundlerParam.ADD_LAUNCHERS;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.StandardBundlerParam.APP_CONTENT;
-import static jdk.jpackage.internal.StandardBundlerParam.getPredefinedAppImage;
-import static jdk.jpackage.internal.StandardBundlerParam.hasPredefinedAppImage;
 
 public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
@@ -754,6 +751,14 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         "message.codesign.failed.reason.app.content"));
                 }
 
+                // Signing might not work without Xcode with command line
+                // developer tools. Show user if Xcode is missing as possible
+                // reason.
+                if (!isXcodeDevToolsInstalled()) {
+                    Log.info(I18N.getString(
+                        "message.codesign.failed.reason.xcode.tools"));
+                }
+
                 // Log "codesign" output
                 Log.info(MessageFormat.format(I18N.getString(
                          "error.tool.failed.with.output"), "codesign"));
@@ -762,6 +767,16 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                 throw ioe;
             }
         }
+    }
+
+    private static boolean isXcodeDevToolsInstalled() {
+        try {
+            Executor.of("/usr/bin/xcrun", "--help").executeExpectSuccess();
+        } catch (IOException e) {
+            return false;
+        }
+
+        return true;
     }
 
     static void signAppBundle(

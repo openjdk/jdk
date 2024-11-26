@@ -491,6 +491,13 @@ final class Double256Vector extends DoubleVector {
                                      Double256Mask.class, (Double256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Double256Vector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2) {
+        return (Double256Vector)
+            super.selectFromTemplate((Double256Vector) v1, (Double256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -914,14 +921,9 @@ final class Double256Vector extends DoubleVector {
             int length = indices.length;
             for (long si : indices) {
                 if (si >= (long)length || si < (long)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
+                    String msg = ("index "+si+"out of range ["+length+"] in "+
                                   java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
+                    throw new AssertionError(msg);
                 }
             }
             return true;
