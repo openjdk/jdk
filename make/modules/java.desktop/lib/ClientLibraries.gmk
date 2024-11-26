@@ -155,15 +155,9 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBJPEG), false)
     LIBSPLASHSCREEN_EXTRA_SRC += libjavajpeg
-    LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += jcapimin.o jcapistd.o \
-        jccoefct.o jccolor.o jcdctmgr.o jchuff.o jcinit.o jcmainct.o \
-        jcmarker.o jcmaster.o jcomapi.o jcparam.o jcphuff.o jcprepct.o \
-        jcsample.o jctrans.o jdapimin.o jdapistd.o jdcoefct.o jdcolor.o \
-        jddctmgr.o jdhuff.o jdinput.o jdmainct.o jdmarker.o jdmaster.o \
-        jdmerge.o jdphuff.o jdpostct.o jdsample.o jdtrans.o jerror.o \
-        jfdctflt.o jfdctfst.o jfdctint.o jidctflt.o jidctfst.o jidctint.o \
-        jidctred.o jmemmgr.o jmemnobs.o jpegdecoder.o jquant1.o jquant2.o \
-        jutils.o
+    LIBJAVA_JPEG_OBJS := $(sort $(patsubst %.c,%.o, $(filter-out imageioJPEG.c, \
+        $(notdir $(wildcard $(TOPDIR)/src/java.desktop/share/native/libjavajpeg/*.c)))))
+    LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += $(LIBJAVA_JPEG_OBJS)
   endif
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
