@@ -408,8 +408,8 @@ void ConstantPool::add_dumped_interned_strings() {
   InstanceKlass* ik = pool_holder();
   if (!ik->is_linked()) {
     // resolved_references() doesn't exist yet, so we have no resolved CONSTANT_String entries. However,
-    // Some static final fields may have default values that were initialized when the class was parsed.
-    // We need to enter those into the CDS archived strings table.
+    // some static final fields may have default values that were initialized when the class was parsed.
+    // We need to enter those into the CDS archive strings table.
     for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
       if (fs.access_flags().is_static()) {
         fieldDescriptor& fd = fs.field_descriptor();

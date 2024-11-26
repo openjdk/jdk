@@ -24,6 +24,8 @@
 
 /*
 
+// Compiled from this source, but we want the version to be 49.0 to use the old verifier.
+
 class OldClassWithStaticString {
     static final String s = "xxxx123yyyy456";
     static final String t = "OldClassWithStaticString";
