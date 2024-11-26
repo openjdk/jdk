@@ -133,6 +133,9 @@ public:
   {}
 
   int size() const { assert(_size != -1, "not calculated yet"); return _size; }
+
+  // The minimum alignment requirement of the constant table, must be a power of 2. The constant
+  // section of the nmethod must satisfy this value.
   int alignment() const;
 
   int calculate_table_base_offset() const;  // AD specific
