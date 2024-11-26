@@ -48,10 +48,10 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import jdk.test.lib.Container;
 import jdk.test.lib.Platform;
@@ -67,7 +67,6 @@ public class TestJcmdWithSideCar {
     private static final String IMAGE_NAME = Common.imageName("jfr-jcmd");
     private static final int TIME_TO_RUN_MAIN_PROCESS = (int) (30 * Utils.TIMEOUT_FACTOR); // seconds
     private static final long TIME_TO_WAIT_FOR_MAIN_METHOD_START = 50 * 1000; // milliseconds
-    private static final String MAIN_CONTAINER_NAME = "test-container-main";
 
     private static final String UID = "uid";
     private static final String GID = "gid";
@@ -115,19 +114,19 @@ public class TestJcmdWithSideCar {
                         // Elevated attach via proc/root not yet supported.
                         continue;
                     }
-                    long mainProcPid = testCase01(attachStrategy, elevated);
+                    long mainProcPid = testCase01(mainContainer, attachStrategy, elevated);
 
                     // Excluding the test case below until JDK-8228850 is fixed
                     // JDK-8228850: jhsdb jinfo fails with ClassCastException:
                     // s.j.h.oops.TypeArray cannot be cast to s.j.h.oops.Instance
                     // mainContainer.assertIsAlive();
-                    // testCase02(mainProcPid, attachStrategy, elevated);
+                    // testCase02(mainContainer, mainProcPid, attachStrategy, elevated);
 
                     mainContainer.assertIsAlive();
-                    testCase03(mainProcPid, attachStrategy, elevated);
+                    testCase03(mainContainer, mainProcPid, attachStrategy, elevated);
                 }
 
-                mainContainer.waitForAndCheck(TIME_TO_RUN_MAIN_PROCESS * 1000);
+                mainContainer.stop();
             }
         } finally {
             DockerTestUtils.removeDockerImage(IMAGE_NAME);
@@ -136,8 +135,8 @@ public class TestJcmdWithSideCar {
 
 
     // Run "jcmd -l" in a sidecar container, find a target process.
-    private static long testCase01(AttachStrategy attachStrategy, boolean elevated) throws Exception {
-        OutputAnalyzer out = runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jcmd", "-l")
+    private static long testCase01(MainContainer mainContainer, AttachStrategy attachStrategy, boolean elevated) throws Exception {
+        OutputAnalyzer out = runSideCar(mainContainer, attachStrategy, elevated, "/jdk/bin/jcmd", "-l")
             .shouldHaveExitValue(0)
             .shouldContain("sun.tools.jcmd.JCmd");
         long pid = findProcess(out, "EventGeneratorLoop");
@@ -149,8 +148,8 @@ public class TestJcmdWithSideCar {
     }
 
     // run jhsdb jinfo <PID> (jhsdb uses PTRACE)
-    private static void testCase02(long pid, AttachStrategy attachStrategy, boolean elevated) throws Exception {
-        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jhsdb", "jinfo", "--pid", "" + pid)
+    private static void testCase02(MainContainer mainContainer, long pid, AttachStrategy attachStrategy, boolean elevated) throws Exception {
+        runSideCar(mainContainer, attachStrategy, elevated, "/jdk/bin/jhsdb", "jinfo", "--pid", "" + pid)
             .shouldHaveExitValue(0)
             .shouldContain("Java System Properties")
             .shouldContain("VM Flags");
@@ -158,11 +157,11 @@ public class TestJcmdWithSideCar {
 
     // test jcmd with some commands (help, start JFR recording)
     // JCMD will use signal mechanism and Unix Socket
-    private static void testCase03(long pid, AttachStrategy attachStrategy, boolean elevated) throws Exception {
-        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jcmd", "" + pid, "help")
+    private static void testCase03(MainContainer mainContainer, long pid, AttachStrategy attachStrategy, boolean elevated) throws Exception {
+        runSideCar(mainContainer, attachStrategy, elevated, "/jdk/bin/jcmd", "" + pid, "help")
             .shouldHaveExitValue(0)
             .shouldContain("VM.version");
-        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jcmd", "" + pid, "JFR.start")
+        runSideCar(mainContainer, attachStrategy, elevated, "/jdk/bin/jcmd", "" + pid, "JFR.start")
             .shouldHaveExitValue(0)
             .shouldContain("Started recording");
     }
@@ -174,18 +173,18 @@ public class TestJcmdWithSideCar {
     // we have two options:
     // 1. mount /tmp from the main container using --volumes-from.
     // 2. access /tmp from the main container via /proc/<pid>/root/tmp.
-    private static OutputAnalyzer runSideCar(String mainContainerName, AttachStrategy attachStrategy, boolean elevated,  String whatToRun, String... args) throws Exception {
+    private static OutputAnalyzer runSideCar(MainContainer mainContainer, AttachStrategy attachStrategy, boolean elevated,  String whatToRun, String... args) throws Exception {
         System.out.println("Attach strategy " + attachStrategy);
 
         List<String> initialCommands = List.of(
             Container.ENGINE_COMMAND, "run",
             "--tty=true", "--rm",
             "--cap-add=SYS_PTRACE", "--sig-proxy=true",
-            "--pid=container:" + mainContainerName
+            "--pid=container:" + mainContainer.name()
         );
 
         List<String> attachStrategyCommands = switch (attachStrategy) {
-            case TMP_MOUNTED_INTO_SIDECAR -> List.of("--volumes-from", mainContainerName);
+            case TMP_MOUNTED_INTO_SIDECAR -> List.of("--volumes-from", mainContainer.name());
             case ACCESS_TMP_VIA_PROC_ROOT -> List.of();
         };
 
@@ -209,11 +208,11 @@ public class TestJcmdWithSideCar {
         List<String> l = out.asLines()
             .stream()
             .filter(s -> s.contains(name))
-            .collect(Collectors.toList());
+            .toList();
         if (l.isEmpty()) {
             return -1;
         }
-        String psInfo = l.get(0);
+        String psInfo = l.getFirst();
         System.out.println("findProcess(): psInfo: " + psInfo);
         String pid = psInfo.substring(0, psInfo.indexOf(' '));
         System.out.println("findProcess(): pid: " + pid);
@@ -236,6 +235,10 @@ public class TestJcmdWithSideCar {
 
 
     static class MainContainer {
+        private static final String MAIN_CONTAINER_NAME_PREFIX = "test-container-main";
+        private static final Random RANDOM = Utils.getRandomInstance();
+
+        String name;
         boolean mainMethodStarted;
         Process p;
 
@@ -255,8 +258,11 @@ public class TestJcmdWithSideCar {
                 opts.addDockerOpts(NET_BIND_SERVICE);
             }
 
+            name = MAIN_CONTAINER_NAME_PREFIX + "-elevated-" + elevated + "-" + RANDOM.nextInt();
+
             opts.addDockerOpts("--cap-add=SYS_PTRACE")
-                .addDockerOpts("--name", MAIN_CONTAINER_NAME)
+                .addDockerOpts("--init")
+                .addDockerOpts("--name", name)
                 .addDockerOpts("--volume", "/tmp")
                 .addDockerOpts("--volume", Paths.get(".").toAbsolutePath() + ":/workdir/")
                 .addJavaOpts("-XX:+UsePerfData")
@@ -296,25 +302,18 @@ public class TestJcmdWithSideCar {
             p.waitFor(timeout, TimeUnit.MILLISECONDS);
         }
 
-        public void waitForAndCheck(long timeout) throws Exception {
-            int exitValue = -1;
-            int retryCount = 3;
-
-            do {
-                waitFor(timeout);
-                try {
-                    exitValue = p.exitValue();
-                } catch(IllegalThreadStateException ex) {
-                    System.out.println("IllegalThreadStateException occurred when calling exitValue()");
-                    retryCount--;
-                }
-            } while (exitValue == -1 && retryCount > 0);
-
-            if (exitValue != 0) {
-                throw new RuntimeException("DockerThread stopped unexpectedly, non-zero exit value is " + exitValue);
+        public void stop() throws Exception {
+            OutputAnalyzer out = DockerTestUtils.execute(Container.ENGINE_COMMAND, "ps")
+                    .shouldHaveExitValue(0);
+            if (out.contains(name)) {
+                DockerTestUtils.execute(Container.ENGINE_COMMAND, "stop", name)
+                        .shouldHaveExitValue(0);
             }
         }
 
+        public String name() {
+            return name;
+        }
     }
 
     private enum AttachStrategy {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,13 +230,7 @@ final class PredefinedDHParameterSpecs {
     static final Map<Integer, DHParameterSpec> ffdheParams;
 
     static {
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return Security.getProperty(PROPERTY_NAME);
-                }
-            });
+        String property = Security.getProperty(PROPERTY_NAME);
 
         if (property != null && !property.isEmpty()) {
             // remove double quote marks from beginning/end of the property

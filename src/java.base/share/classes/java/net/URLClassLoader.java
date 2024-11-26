@@ -26,13 +26,11 @@
 package java.net;
 
 import java.io.Closeable;
-import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.CodeSigner;
 import java.security.CodeSource;
-import java.security.Permission;
+import java.security.Permissions;
 import java.security.PermissionCollection;
 import java.security.SecureClassLoader;
 import java.util.Enumeration;
@@ -50,8 +48,6 @@ import jdk.internal.loader.Resource;
 import jdk.internal.loader.URLClassPath;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.perf.PerfCounter;
-import sun.net.www.ParseUtil;
-import sun.security.util.SecurityConstants;
 
 /**
  * This class loader is used to load classes and resources from a search
@@ -573,84 +569,15 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     }
 
     /**
-     * Returns the permissions for the given codesource object.
-     * The implementation of this method first calls super.getPermissions
-     * and then adds permissions based on the URL of the codesource.
-     * <p>
-     * If the protocol of this URL is "jar", then the permission returned
-     * is based on the permission that is required by the URL of the Jar
-     * file.
-     * <p>
-     * If the protocol is "file" and there is an authority component, then
-     * permission to connect to and accept connections from that authority
-     * may be returned. If the protocol is "file"
-     * and the path specifies a file, then permission to read that
-     * file is returned. If protocol is "file" and the path is
-     * a directory, then permission is returned to read all files
-     * and (recursively) all files and subdirectories contained in
-     * that directory.
-     * <p>
-     * If the protocol is not "file", then permission
-     * to connect to and accept connections from the URL's host is returned.
-     * @param codesource the codesource
-     * @throws    NullPointerException if {@code codesource} is {@code null}.
-     * @return the permissions for the codesource
+     * {@return an {@linkplain PermissionCollection empty Permission collection}}
+     *
+     * @param codesource the {@code CodeSource}
+     * @throws NullPointerException if {@code codesource} is {@code null}.
      */
-    protected PermissionCollection getPermissions(CodeSource codesource)
-    {
-        PermissionCollection perms = super.getPermissions(codesource);
-
-        URL url = codesource.getLocation();
-
-        Permission p;
-        URLConnection urlConnection;
-
-        try {
-            urlConnection = url.openConnection();
-            p = urlConnection.getPermission();
-        } catch (java.io.IOException ioe) {
-            p = null;
-            urlConnection = null;
-        }
-
-        if (p instanceof FilePermission) {
-            // if the permission has a separator char on the end,
-            // it means the codebase is a directory, and we need
-            // to add an additional permission to read recursively
-            String path = p.getName();
-            if (path.endsWith(File.separator)) {
-                path += "-";
-                p = new FilePermission(path, SecurityConstants.FILE_READ_ACTION);
-            }
-        } else if ((p == null) && (url.getProtocol().equals("file"))) {
-            String path = url.getFile().replace('/', File.separatorChar);
-            path = ParseUtil.decode(path);
-            if (path.endsWith(File.separator))
-                path += "-";
-            p = new FilePermission(path, SecurityConstants.FILE_READ_ACTION);
-        } else {
-            /**
-             * Not loading from a 'file:' URL so we want to give the class
-             * permission to connect to and accept from the remote host
-             * after we've made sure the host is the correct one and is valid.
-             */
-            URL locUrl = url;
-            if (urlConnection instanceof JarURLConnection) {
-                locUrl = ((JarURLConnection)urlConnection).getJarFileURL();
-            }
-            String host = locUrl.getHost();
-            if (host != null && !host.isEmpty())
-                p = new SocketPermission(host,
-                        SecurityConstants.SOCKET_CONNECT_ACCEPT_ACTION);
-        }
-
-        // make sure the person that created this class loader
-        // would have this permission
-
-        if (p != null) {
-            perms.add(p);
-        }
-        return perms;
+    @Override
+    protected PermissionCollection getPermissions(CodeSource codesource) {
+        Objects.requireNonNull(codesource);
+        return new Permissions();
     }
 
     /**
