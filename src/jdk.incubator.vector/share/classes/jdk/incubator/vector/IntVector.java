@@ -2484,7 +2484,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @Override
     @ForceInline
     final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
-        assert(dsp.elementSize() == vspecies().elementSize());
+        assert(dsp.length() == vspecies().length());
         int[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2496,6 +2496,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @ForceInline
     final <F>
     VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
         IntVector idx = this;
         IntVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
         if (!wrap) {

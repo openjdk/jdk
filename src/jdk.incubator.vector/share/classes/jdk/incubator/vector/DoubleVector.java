@@ -2335,6 +2335,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     final <F>
     VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
         LongVector idx = convert(VectorOperators.D2L, 0).reinterpretAsLongs();
         LongVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
         if (!wrap) {

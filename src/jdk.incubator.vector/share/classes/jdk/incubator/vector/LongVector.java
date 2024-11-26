@@ -2350,7 +2350,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     @Override
     @ForceInline
     final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
-        assert(dsp.elementSize() == vspecies().elementSize());
+        assert(dsp.length() == vspecies().length());
         long[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2362,6 +2362,7 @@ public abstract class LongVector extends AbstractVector<Long> {
     @ForceInline
     final <F>
     VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
         LongVector idx = this;
         LongVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
         if (!wrap) {

@@ -2347,6 +2347,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final <F>
     VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
         IntVector idx = convert(VectorOperators.F2I, 0).reinterpretAsInts();
         IntVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
         if (!wrap) {

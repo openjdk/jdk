@@ -2879,6 +2879,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
 #if[FP]
         throw new AssertionError();
 #else[FP]
+        assert(dsp.length() == vspecies().length());
         $type$[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
