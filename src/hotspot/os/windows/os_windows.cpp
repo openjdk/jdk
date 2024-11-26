@@ -72,6 +72,7 @@
 #include "services/runtimeService.hpp"
 #include "symbolengine.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -1317,7 +1318,7 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
   }
 }
 
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
   MINIDUMP_EXCEPTION_INFORMATION* pmei;
@@ -2112,7 +2113,17 @@ bool os::signal_sent_by_kill(const void* siginfo) {
 }
 
 void os::print_siginfo(outputStream *st, const void* siginfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  // If we are here because of an assert/guarantee, we suppress
+  // printing the siginfo, because it is only an implementation
+  // detail capturing the context for said assert/guarantee.
+  if (VMError::was_assert_poison_crash(siginfo)) {
+    return;
+  }
+#endif
+
   const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
+
   st->print("siginfo:");
 
   char tmp[64];
@@ -2623,6 +2634,14 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
 #endif
+#endif
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (VMError::was_assert_poison_crash(exception_record)) {
+    if (handle_assert_poison_fault(exceptionInfo)) {
+      return EXCEPTION_CONTINUE_EXECUTION;
+    }
+  }
 #endif
 
   if (t != nullptr && t->is_Java_thread()) {
@@ -6164,4 +6183,27 @@ void os::print_user_info(outputStream* st) {
 
 void os::print_active_locale(outputStream* st) {
   // not implemented yet
+}
+
+static CONTEXT _saved_assert_context;
+static EXCEPTION_RECORD _saved_exception_record;
+static bool _has_saved_context = false;
+
+void os::save_assert_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  const EXCEPTION_POINTERS* ep = static_cast<const EXCEPTION_POINTERS*>(ucVoid);
+  memcpy(&_saved_assert_context, ep->ContextRecord, sizeof(CONTEXT));
+  memcpy(&_saved_exception_record, ep->ExceptionRecord, sizeof(EXCEPTION_RECORD));
+  _has_saved_context = true;
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+  assert(sigInfo != nullptr, "invariant");
+  if (_has_saved_context) {
+    *sigInfo = &_saved_exception_record;
+    return &_saved_assert_context;
+  }
+  *sigInfo = nullptr;
+  return nullptr;
 }
