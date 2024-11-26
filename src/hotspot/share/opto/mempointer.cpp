@@ -475,3 +475,32 @@ bool MemPointerDecomposedForm::is_adjacent_to_and_before(const MemPointerDecompo
 
   return is_adjacent;
 }
+
+bool MemPointerDecomposedForm::never_overlaps_with(const MemPointerDecomposedForm& other) const {
+  const MemPointerAliasing aliasing = get_aliasing_with(other NOT_PRODUCT( COMMA _trace ));
+
+  // The aliasing tries to compute:
+  //   distance = other - this
+  //
+  // We know that we have no overlap if we can prove:
+  //   this >= other + other.size      ||  this + this.size <= other
+  //
+  // Which we can restate as:
+  //   distance <= -other.size    ||  this.size <= distance
+  //
+  const jint distance_lo = -other.size();
+  const jint distance_hi = size();
+  bool is_never_overlap = aliasing.is_never_in_distance_range(distance_lo, distance_hi);
+
+#ifndef PRODUCT
+  if (_trace.is_trace_overlap()) {
+    tty->print("Never Overlap: %s, distance_lo: %d, distance_hi: %d, aliasing: ",
+               is_never_overlap ? "true" : "false", distance_lo, distance_hi);
+    aliasing.print_on(tty);
+    tty->cr();
+  }
+#endif
+
+  return is_never_overlap;
+}
+

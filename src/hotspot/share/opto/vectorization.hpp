@@ -717,7 +717,7 @@ public:
   template<typename Callback>
   VPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _vloop(vloop),
-    _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
+    _decomposed_form(init_decomposed_form(mem, adr_node_callback, vloop)),
     _size(mem->memory_size()),
     _iv_scale(init_iv_scale()),
     _is_valid(init_is_valid())
@@ -780,10 +780,21 @@ public:
     return decomposed_form().has_same_non_base_summands_as(other.decomposed_form());
   }
 
-  // Aliasing
-  // TODO refactor together with MemPointer - should be shared code. Maybe the _size needs to be in ...Form?
-  bool is_adjacent_to_and_before(const VPointer& other) const;
-  bool never_overlaps_with(const VPointer& other) const;
+  bool is_adjacent_to_and_before(const VPointer& other) const {
+    return decomposed_form().is_adjacent_to_and_before(other.decomposed_form());
+  }
+
+  bool never_overlaps_with(const VPointer& other) const {
+    if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_overlap()) {
+        tty->print_cr("Never Overlap: false, because of invalid VPointer.");
+      }
+#endif
+      return false;
+    }
+    return decomposed_form().never_overlaps_with(other.decomposed_form());
+  }
 
   bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
     MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
@@ -800,17 +811,14 @@ public:
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
-  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem, Callback& adr_node_callback) {
+  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem,
+                                                             Callback& adr_node_callback,
+                                                             const VLoop& vloop) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
     ResourceMark rm;
-    // TODO wire in
-#ifndef PRODUCT
-    const TraceMemPointer trace(false,
-                                false,
-                                false,
-                                true);
-#endif
-    MemPointerDecomposedFormParser parser(mem, adr_node_callback NOT_PRODUCT(COMMA trace));
+    MemPointerDecomposedFormParser parser(mem,
+                                          adr_node_callback
+                                          NOT_PRODUCT(COMMA vloop.mptrace()));
     return parser.decomposed_form();
   }
 

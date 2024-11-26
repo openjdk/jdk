@@ -705,6 +705,7 @@ public:
   }
 
   bool is_adjacent_to_and_before(const MemPointerDecomposedForm& other) const;
+  bool never_overlaps_with(const MemPointerDecomposedForm& other) const;
 
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {
