@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.security.spec.InvalidKeySpecException;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
-import sun.security.action.GetPropertyAction;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.X509Authentication.X509Possession;
 import sun.security.util.KeyUtil;
@@ -261,8 +260,7 @@ final class DHKeyExchange {
         private final boolean exportable;
 
         static {
-            String property = GetPropertyAction.privilegedGetProperty(
-                    "jdk.tls.ephemeralDHKeySize");
+            String property = System.getProperty("jdk.tls.ephemeralDHKeySize");
             if (property == null || property.isEmpty()) {
                 useLegacyEphemeralDHKeys = false;
                 useSmartEphemeralDHKeys = false;

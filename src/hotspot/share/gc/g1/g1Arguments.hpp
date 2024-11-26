@@ -39,7 +39,6 @@ class G1Arguments : public GCArguments {
   static void parse_verification_type(const char* type);
 
   virtual void initialize_alignments();
-  virtual void initialize_heap_flags_and_sizes();
 
   virtual void initialize();
   virtual size_t conservative_max_heap_alignment();

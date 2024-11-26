@@ -44,7 +44,6 @@ import javax.accessibility.AccessibleStateSet;
 import javax.accessibility.AccessibleText;
 import javax.swing.text.AttributeSet;
 
-import sun.awt.AWTPermissions;
 import sun.awt.InputMethodSupport;
 
 /**
@@ -742,20 +741,6 @@ public sealed class TextComponent extends Component implements Accessible
             str += ",editable";
         }
         return str + ",selection=" + getSelectionStart() + "-" + getSelectionEnd();
-    }
-
-    /**
-     * Assigns a valid value to the canAccessClipboard instance variable.
-     */
-    private boolean canAccessClipboard() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) return true;
-        try {
-            sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-            return true;
-        } catch (SecurityException e) {}
-        return false;
     }
 
     /*

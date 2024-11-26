@@ -438,7 +438,7 @@ The `jpackage` tool will take as input a Java application and a Java run-time im
 
 <a id="option-linux-app-category">`--linux-app-category` *category-value*</a>
 
-:   Group value of the RPM /<name/>.spec file or
+:   Group value of the RPM \<name\>.spec file or
     Section value of DEB control file
 
 <a id="option-linux-shortcut">`--linux-shortcut`</a>
@@ -495,6 +495,14 @@ Sign the predefined application image (on macOS):
 
     Note: the only additional options that are permitted in this mode are:
           the set of additional mac signing options and --verbose
+
+
+## jpackage and jlink
+
+jpackage will use jlink to create Java Runtime unless the `--runtime-image` option is used.
+The created Java Runtime image on Windows will include MS runtime libraries bundled with the JDK.
+If MS runtime libraries of a different version are needed for the application, the user will need
+to add/replace those themselves.
 
 
 ## jpackage resource directory
