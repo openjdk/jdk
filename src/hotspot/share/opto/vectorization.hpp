@@ -718,7 +718,7 @@ private:
 //
 class VPointer : public ArenaObj {
 private:
-  typedef MemPointerParser::Callback Callback;
+  typedef MemPointerParser::DecomposedNodeCallback DecomposedNodeCallback;
 
   const VLoop& _vloop;
   const MemPointer _mem_pointer;
@@ -730,11 +730,10 @@ private:
   const bool _is_valid;
 
 public:
-  template<typename Callback>
-  VPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
+  VPointer(const MemNode* mem, const VLoop& vloop, DecomposedNodeCallback& callback) :
     _vloop(vloop),
     _mem_pointer(MemPointerParser::parse(mem,
-                                         adr_node_callback
+                                         callback
                                          NOT_PRODUCT(COMMA vloop.mptrace()))),
     _size(mem->memory_size()),
     _iv_scale(init_iv_scale()),
@@ -814,7 +813,7 @@ public:
   }
 
   bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
-    MemPointerParser::Callback empty_callback; // TODO rm?
+    MemPointerParser::DecomposedNodeCallback empty_callback; // TODO rm?
     for (int i = 0; i < nodes.length(); i++) {
       MemNode* mem = nodes.at(i)->as_Mem();
       VPointer mem_p(mem->as_Mem(), _vloop, empty_callback);
@@ -1210,7 +1209,6 @@ class AlignmentSolver {
 private:
   const VPointer& _vpointer;
 
-  // TODO rm?
   const MemNode* _mem_ref;       // first element
   const int      _vector_width;  // in bytes
 

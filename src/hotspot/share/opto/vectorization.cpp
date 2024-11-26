@@ -190,7 +190,7 @@ void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    MemPointerParser::Callback empty_callback; // TODO rm?
+    MemPointerParser::DecomposedNodeCallback empty_callback; // TODO rm?
     ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, empty_callback);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;

@@ -29,7 +29,7 @@
 
 // Recursively parse the pointer expression with a DFS all-path traversal
 // (i.e. with node repetitions), starting at the pointer.
-MemPointer MemPointerParser::parse(Callback& adr_node_callback) {
+MemPointer MemPointerParser::parse(DecomposedNodeCallback& callback) {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
@@ -47,7 +47,7 @@ MemPointer MemPointerParser::parse(Callback& adr_node_callback) {
     if (traversal_count++ > 1000) {
       return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA _trace));
     }
-    parse_sub_expression(_worklist.pop(), adr_node_callback);
+    parse_sub_expression(_worklist.pop(), callback);
   }
 
   // Bail out if there is a constant overflow.
@@ -88,7 +88,7 @@ MemPointer MemPointerParser::parse(Callback& adr_node_callback) {
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
 // current node, and see if it can be decomposed into further summands, or if the current
 // summand is terminal.
-void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Callback& adr_node_callback) {
+void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, DecomposedNodeCallback& callback) {
   Node* n = summand.variable();
   const NoOverflowInt scale = summand.scale();
   const NoOverflowInt one(1);
@@ -114,7 +114,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Ca
         Node* b = n->in((opc == Op_AddP) ? 3 : 2);
         _worklist.push(MemPointerSummand(a, scale));
         _worklist.push(MemPointerSummand(b, scale));
-        adr_node_callback.callback(n);
+        callback.callback(n);
         return;
       }
       case Op_SubL:
@@ -128,7 +128,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Ca
 
         _worklist.push(MemPointerSummand(a, scale));
         _worklist.push(MemPointerSummand(b, sub_scale));
-        adr_node_callback.callback(n);
+        callback.callback(n);
         return;
       }
       case Op_MulL:
@@ -163,7 +163,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Ca
         NoOverflowInt new_scale = scale * factor;
 
         _worklist.push(MemPointerSummand(variable, new_scale));
-        adr_node_callback.callback(n);
+        callback.callback(n);
         return;
       }
       case Op_CastII:
@@ -181,7 +181,7 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, Ca
         // Decompose: look through.
         Node* a = n->in(1);
         _worklist.push(MemPointerSummand(a, scale));
-        adr_node_callback.callback(n);
+        callback.callback(n);
         return;
       }
       case Op_CastX2P:

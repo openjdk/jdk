@@ -2947,7 +2947,7 @@ bool MergePrimitiveStores::is_adjacent_pair(const StoreNode* use_store, const St
                               is_trace_pointer_adjacency(),
                               true);
 #endif
-  MemPointerParser::Callback empty_callback; // TODO rm?
+  MemPointerParser::DecomposedNodeCallback empty_callback; // TODO rm?
   const MemPointer pointer_use(MemPointerParser::parse(use_store, empty_callback NOT_PRODUCT( COMMA trace )));
   const MemPointer pointer_def(MemPointerParser::parse(def_store, empty_callback NOT_PRODUCT( COMMA trace )));
   return pointer_def.is_adjacent_to_and_before(pointer_use);

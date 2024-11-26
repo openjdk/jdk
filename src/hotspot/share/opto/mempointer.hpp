@@ -724,14 +724,16 @@ public:
 
 class MemPointerParser : public StackObj {
 public:
-  class Callback : public StackObj {
+  // Parsing calls the callback on every decomposed node. These are all the
+  // nodes on the paths from the pointer to the summand variables, i.e. the
+  // "inner" nodes of the pointer expression. This callback allows collecting
+  // all such nodes of a pointer expression.
+  class DecomposedNodeCallback : public StackObj {
   public:
     virtual void callback(Node* n) { /* do nothing by default */ }
   };
 
 private:
-  Callback _empty_callback;
-
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
   const MemNode* _mem;
@@ -745,29 +747,20 @@ private:
   MemPointer _mem_pointer;
 
 public:
-  // No callback.
-  MemPointerParser(const MemNode* mem
-                   NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
-    NOT_PRODUCT(_trace(trace) COMMA)
-    _mem(mem),
-    _con(NoOverflowInt(0)),
-    _mem_pointer(parse(_empty_callback)) {}
-
-  // With callback.
   MemPointerParser(const MemNode* mem,
-                   Callback& adr_node_callback
+                   DecomposedNodeCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
     _con(NoOverflowInt(0)),
-    _mem_pointer(parse(adr_node_callback)) {}
+    _mem_pointer(parse(callback)) {}
 
   static MemPointer parse(const MemNode* mem,
-                          Callback& adr_node_callback
+                          DecomposedNodeCallback& callback
                           NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are allowed");
     ResourceMark rm;
-    MemPointerParser parser(mem NOT_PRODUCT(COMMA trace));
+    MemPointerParser parser(mem, callback NOT_PRODUCT(COMMA trace));
 
 #ifndef PRODUCT
     if (trace.is_trace_parsing()) {
@@ -784,9 +777,9 @@ public:
 private:
   const MemPointer& mem_pointer() const { return _mem_pointer; }
 
-  MemPointer parse(Callback& adr_node_callback);
+  MemPointer parse(DecomposedNodeCallback& callback);
 
-  void parse_sub_expression(const MemPointerSummand& summand, Callback& adr_node_callback);
+  void parse_sub_expression(const MemPointerSummand& summand, DecomposedNodeCallback& callback);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
 };
