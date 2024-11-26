@@ -22,8 +22,8 @@
  */
 
 import java.awt.Frame;
-import java.awt.Panel;
 import java.awt.GridLayout;
+import java.awt.Panel;
 import java.awt.TextArea;
 
 /*
@@ -57,7 +57,6 @@ public class HoveringAndDraggingTest {
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
                 .testUI(HoveringAndDraggingTest::initialize)
                 .build()
