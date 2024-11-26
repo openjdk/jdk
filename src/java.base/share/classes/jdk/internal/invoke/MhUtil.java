@@ -63,6 +63,15 @@ public final class MhUtil {
         }
     }
 
+    public static MethodHandle findStatic(MethodHandles.Lookup lookup,
+                                          String name,
+                                          MethodType type) {
+        try {
+            return lookup.findStatic(lookup.lookupClass(), name, type);
+        } catch (ReflectiveOperationException e) {
+            throw new InternalError(e);
+        }
+    }
 
     public static MethodHandle findVirtual(MethodHandles.Lookup lookup,
                                            Class<?> refc,
