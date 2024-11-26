@@ -577,13 +577,6 @@ private:
   Base _base;
   jint _size;
 
-public:
-  // Empty - TODO why?
-  MemPointerDecomposedForm(NOT_PRODUCT(const TraceMemPointer& trace)) :
-    NOT_PRODUCT(_trace(trace) COMMA)
-    _con(NoOverflowInt::make_NaN()) {}
-
-private:
   // Default / trivial: pointer = 0 + 1 * pointer
   MemPointerDecomposedForm(Node* pointer,
                            const jint size
@@ -656,11 +649,10 @@ public:
     }
   }
 
-  // TODO make private?
+private:
   MemPointerAliasing get_aliasing_with(const MemPointerDecomposedForm& other
                                        NOT_PRODUCT(COMMA const TraceMemPointer& trace)) const;
 
-private:
   bool has_same_summands_as(const MemPointerDecomposedForm& other, uint start) const;
   bool has_same_summands_as(const MemPointerDecomposedForm& other) const { return has_same_summands_as(other, 0); }
   bool has_different_base_but_otherwise_same_summands_as(const MemPointerDecomposedForm& other) const;
