@@ -1592,8 +1592,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     /**
      * package private so SocketPermission can call it
      */
-    static InetAddress[] getAllByName0(String host)
-        throws UnknownHostException  {
+    static InetAddress[] getAllByName0(String host) throws UnknownHostException {
         return getAllByName0(host, true);
     }
 

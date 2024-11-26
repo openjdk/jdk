@@ -81,18 +81,6 @@ public final class InetAddressCachePolicy {
     private static volatile int negativeCachePolicy = NEVER;
 
     /*
-     * Whether or not the cache policy for successful lookups was set
-     * using a property (cmd line).
-     */
-    private static boolean propertySet;
-
-    /*
-     * Whether or not the cache policy for negative lookups was set
-     * using a property (cmd line).
-     */
-    private static boolean propertyNegativeSet;
-
-    /*
      * Initialize
      */
     static {
@@ -102,14 +90,12 @@ public final class InetAddressCachePolicy {
         Integer tmp = getProperty(cachePolicyProp, cachePolicyPropFallback);
         if (tmp != null) {
             cachePolicy = tmp < 0 ? FOREVER : tmp;
-            propertySet = true;
         }
         tmp = getProperty(negativeCachePolicyProp,
                           negativeCachePolicyPropFallback);
 
         if (tmp != null) {
             negativeCachePolicy = tmp < 0 ? FOREVER : tmp;
-            propertyNegativeSet = true;
         }
         if (cachePolicy > 0) {
             tmp = getProperty(cacheStalePolicyProp,
@@ -122,10 +108,8 @@ public final class InetAddressCachePolicy {
 
     private static Integer getProperty(String cachePolicyProp,
                                        String cachePolicyPropFallback) {
-
         try {
-            String tmpString = Security.getProperty(
-                    cachePolicyProp);
+            String tmpString = Security.getProperty(cachePolicyProp);
             if (tmpString != null) {
                 return Integer.valueOf(tmpString);
             }
@@ -134,8 +118,7 @@ public final class InetAddressCachePolicy {
         }
 
         try {
-            String tmpString = System.getProperty(
-                    cachePolicyPropFallback);
+            String tmpString = System.getProperty(cachePolicyPropFallback);
             if (tmpString != null) {
                 return Integer.decode(tmpString);
             }
@@ -155,64 +138,5 @@ public final class InetAddressCachePolicy {
 
     public static int getNegative() {
         return negativeCachePolicy;
-    }
-
-    /**
-     * Sets the cache policy for successful lookups if the user has not
-     * already specified a cache policy for it using a
-     * command-property.
-     * @param newPolicy the value in seconds for how long the lookup
-     * should be cached
-     */
-    public static synchronized void setIfNotSet(int newPolicy) {
-        /*
-         * When setting the new value we may want to signal that the
-         * cache should be flushed, though this doesn't seem strictly
-         * necessary.
-         */
-        if (!propertySet) {
-            checkValue(newPolicy, cachePolicy);
-            cachePolicy = newPolicy;
-        }
-    }
-
-    /**
-     * Sets the cache policy for negative lookups if the user has not
-     * already specified a cache policy for it using a
-     * command-property.
-     * @param newPolicy the value in seconds for how long the lookup
-     * should be cached
-     */
-    public static void setNegativeIfNotSet(int newPolicy) {
-        /*
-         * When setting the new value we may want to signal that the
-         * cache should be flushed, though this doesn't seem strictly
-         * necessary.
-         */
-        if (!propertyNegativeSet) {
-            // Negative caching does not seem to have any security
-            // implications.
-            // checkValue(newPolicy, negativeCachePolicy);
-            // but we should normalize negative policy
-            negativeCachePolicy = newPolicy < 0 ? FOREVER : newPolicy;
-        }
-    }
-
-    private static void checkValue(int newPolicy, int oldPolicy) {
-        /*
-         * If malicious code gets a hold of this method, prevent
-         * setting the cache policy to something laxer or some
-         * invalid negative value.
-         */
-        if (newPolicy == FOREVER)
-            return;
-
-        if ((oldPolicy == FOREVER) ||
-            (newPolicy < oldPolicy) ||
-            (newPolicy < FOREVER)) {
-
-            throw new
-                SecurityException("can't make InetAddress cache more lax");
-        }
     }
 }
