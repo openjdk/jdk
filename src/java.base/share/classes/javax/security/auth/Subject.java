@@ -1418,12 +1418,6 @@ public final class Subject implements java.io.Serializable {
         /**
          * Writes this object out to a stream (i.e., serializes it).
          *
-         * @serialData If this is a private credential set,
-         *      a security check is performed to ensure that
-         *      the caller has permission to access each credential
-         *      in the set.  If the security check passes,
-         *      the set is serialized.
-         *
          * @param  oos the {@code ObjectOutputStream} to which data is written
          * @throws IOException if an I/O error occurs
          */
