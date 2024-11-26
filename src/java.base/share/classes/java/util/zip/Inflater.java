@@ -49,23 +49,23 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * thrown.
  * <p>
  * This class inflates sequences of ZLIB compressed bytes. The input byte
- * sequence is provided in either byte array or byte buffer, via one of the
+ * sequence is provided in either byte array or {@link ByteBuffer}, via one of the
  * {@code setInput()} methods. The output byte sequence is written to the
- * output byte array or byte buffer passed to the {@code inflate()} methods.
+ * output byte array or {@code ByteBuffer} passed to the {@code inflate()} methods.
  * <p>
- * The following code fragment demonstrates a trivial compression
- * and decompression of a string using {@code Deflater} and
- * {@code Inflater}.
- * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
+ * To release resources used by the {@code Inflater}, applications must call the
+ * {@link #end()} method. After {@code end()} has been called, subsequent calls
+ * to several methods of the {@code Inflater} will throw an {@link IllegalStateException}.
  *
  * @apiNote
- * The {@code Inflater} cleans up its resources in its {@link #end()} method. To facilitate
- * usage with try-with-resources, this class implements {@link AutoCloseable}. The
- * {@link #close()} method of this class calls {@code end()} to clean up its
- * resources. Subclasses are responsible for the cleanup of resources
- * acquired by the subclass. Subclasses that override {@link #finalize()} in order
- * to perform cleanup should be modified to use alternative cleanup mechanisms such
- * as {@link java.lang.ref.Cleaner} and remove the overriding {@code finalize} method.
+ * This class implements {@link AutoCloseable} to facilitate its usage with
+ * {@code try}-with-resources statement. The {@linkplain Inflater#close() close() method} simply
+ * calls {@code end()}.
+ *
+ * <p>
+ * The following code fragment demonstrates a trivial compression
+ * and decompression of a string using {@code Deflater} and {@code Inflater}.
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @see         Deflater
  * @author      David Connelly
