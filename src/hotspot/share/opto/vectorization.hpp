@@ -717,7 +717,9 @@ public:
   template<typename Callback>
   VPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _vloop(vloop),
-    _mem_pointer(init_mem_pointer(mem, adr_node_callback, vloop)),
+    _mem_pointer(MemPointerParser::parse(mem,
+                                         adr_node_callback
+                                         NOT_PRODUCT(COMMA vloop.mptrace()))),
     _size(mem->memory_size()),
     _iv_scale(init_iv_scale()),
     _is_valid(init_is_valid())
@@ -811,17 +813,6 @@ public:
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
-  static const MemPointer init_mem_pointer(const MemNode* mem,
-                                           Callback& adr_node_callback,
-                                           const VLoop& vloop) {
-    assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
-    ResourceMark rm;
-    MemPointerParser parser(mem,
-                                          adr_node_callback
-                                          NOT_PRODUCT(COMMA vloop.mptrace()));
-    return parser.mem_pointer();
-  }
-
   jint init_iv_scale() const {
     for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _mem_pointer.summands_at(i);

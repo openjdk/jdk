@@ -348,7 +348,6 @@
 //        This shows that p1 and p2 have a distance greater than the array size, and hence at least one of the two
 //        pointers must be out of bounds. This contradicts our assumption (S1) and we are done.
 
-
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
@@ -749,7 +748,7 @@ private:
 public:
   // No callback.
   MemPointerParser(const MemNode* mem
-                                 NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+                   NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
     _con(NoOverflowInt(0)),
@@ -764,6 +763,16 @@ public:
     _con(NoOverflowInt(0)),
     _mem_pointer(parse(adr_node_callback)) {}
 
+  static MemPointer parse(const MemNode* mem,
+                          Callback& adr_node_callback
+                          NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
+    assert(mem->is_Store() || mem->is_Load(), "only stores and loads are allowed");
+    ResourceMark rm;
+    MemPointerParser parser(mem NOT_PRODUCT(COMMA trace));
+    return parser.mem_pointer();
+  }
+
+  // TODO rm / private?
   const MemPointer& mem_pointer() const { return _mem_pointer; }
 
 private:
