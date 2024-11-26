@@ -185,6 +185,22 @@ public:
     return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
   }
 
+  // Some nodes must be pre-loop invariant, so that they can be used for conditions
+  // before or inside the pre-loop. For example, alignment of main-loop vector
+  // memops must be acheived in the pre-loop, via the exit check in the pre-loop.
+  bool is_pre_loop_invariant(Node* n) const {
+    assert(cl()->is_main_loop(), "must be");
+    Node* ctrl = phase()->get_ctrl(n);
+
+    // Quick test: is it in the main-loop?
+    if (lpt()->is_member(phase()->get_loop(ctrl))) {
+      return false;
+    }
+
+    // Is it before the pre-loop?
+    return phase()->is_dominator(ctrl, pre_loop_head());
+  }
+
   // Check if the loop passes some basic preconditions for vectorization.
   // Return indicates if analysis succeeded.
   bool check_preconditions();
@@ -745,7 +761,7 @@ public:
     mem_pointer().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
       Node* variable = s.variable();
       if (variable != mem_pointer().base().object_or_native() &&
-          is_invariant(variable, _vloop)) {
+          _vloop.is_pre_loop_invariant(variable)) {
         callback(s);
       }
     });
@@ -825,19 +841,33 @@ private:
   }
 
   // Check that all variables are either the iv, or else invariants.
-  // TODO why pre-loop
   bool init_is_valid() const {
     if (!_mem_pointer.base().is_known()) {
       // VPointer needs to know if it is native (off-heap) or object (on-heap).
       // We may for example have failed to fully decompose the MemPointer, possibly
       // because such a decomposition is not considered safe.
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_parsing()) {
+        tty->print_cr("VPointer::init_is_valid: base not known.");
+      }
+#endif
       return false;
     }
 
+    // All summands, except the iv-summand must be pre-loop invariant. This is necessary
+    // so that we can use the variables in checks inside or before the pre-loop, e.g. for
+    // alignment.
     for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _mem_pointer.summands_at(i);
       Node* variable = summand.variable();
-      if (variable != nullptr && variable != _vloop.iv() && !is_invariant(variable, _vloop)) {
+      if (variable != nullptr && variable != _vloop.iv() && !_vloop.is_pre_loop_invariant(variable)) {
+#ifndef PRODUCT
+        if (_vloop.mptrace().is_trace_parsing()) {
+          tty->print("VPointer::init_is_valid: summand is not pre-loop invariant: ");
+          summand.print_on(tty);
+          tty->cr();
+        }
+#endif
         return false;
       }
     }
@@ -857,27 +887,15 @@ private:
     if (abs(long_iv_scale) >= max_val ||
         abs(long_iv_stride) >= max_val ||
         abs(long_iv_scale * long_iv_stride) >= max_val) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_parsing()) {
+        tty->print_cr("VPointer::init_is_valid: scale or stride too large.");
+      }
+#endif
       return false;
     }
 
     return true;
-  }
-
-  // TODO refactor to VLoop?
-  // Is it invariant of the loop, i.e. the main-loop and even the pre-loop?
-  // The invariants are used for alignment, in the exit check of the pre-loop,
-  // this is why we need invariance of even the pre-loop.
-  static bool is_invariant(Node* n, const VLoop& vloop) {
-    assert(vloop.cl()->is_main_loop(), "must be");
-    Node* ctrl = vloop.phase()->get_ctrl(n);
-
-    // Quick test: is it in the main-loop?
-    if (vloop.lpt()->is_member(vloop.phase()->get_loop(ctrl))) {
-      return false;
-    }
-
-    // Is it before the pre-loop?
-    return vloop.phase()->is_dominator(ctrl, vloop.pre_loop_head());
   }
 };
 
