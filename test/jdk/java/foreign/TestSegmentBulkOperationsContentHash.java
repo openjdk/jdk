@@ -30,9 +30,7 @@
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.SegmentBulkOperations;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -93,7 +91,13 @@ final class TestSegmentBulkOperationsContentHash {
             assertThrows(IndexOutOfBoundsException.class,
                     () -> hash(segment, 0, segment.byteSize() + 1));
             assertThrows(IndexOutOfBoundsException.class,
+                    () -> hash(segment, 0, -1));
+            assertThrows(IndexOutOfBoundsException.class,
                     () -> hash(segment, -1, 0));
+            if (len > 2) {
+                assertThrows(IndexOutOfBoundsException.class,
+                        () -> hash(segment, 2, 1));
+            }
         }
     }
 

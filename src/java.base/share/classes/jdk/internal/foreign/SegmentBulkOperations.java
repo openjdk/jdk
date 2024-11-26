@@ -162,16 +162,36 @@ public final class SegmentBulkOperations {
             0x0000001f, 0x000003c1, 0x0000745f, 0x000e1781,
             0x01b4d89f, 0x34e63b41, 0x67e12cdf, 0x94446f01};
 
-    /* A polynomial 32-bit hash code method roughly equivalent to:
-
-        final long length = toOffset - fromOffset;
-        segment.checkBounds(fromOffset, length);
-        int result = 1;
-        for (long i = fromOffset; i < toOffset; i++) {
-            result = 31 * result + nativeSegment.get(JAVA_BYTE, i);
-        }
-        return result;
-    */
+    /**
+     * {@return a 32-bit hash value calculated from the content in the provided
+     *          {@code segment} between the provided offsets}
+     * <p>
+     * The method is implemented as a 32-bit polynomial hash function equivalent to:
+     * {@snippet lang=java :
+     *     final long length = toOffset - fromOffset;
+     *     segment.checkBounds(fromOffset, length);
+     *     int result = 1;
+     *     for (long i = fromOffset; i < toOffset; i++) {
+     *         result = 31 * result + segment.get(JAVA_BYTE, i);
+     *     }
+     *     return result;
+     * }
+     * but is potentially more performant.
+     *
+     * @param segment    from which a content hash should be computed
+     * @param fromOffset starting offset (inclusive) in the segment
+     * @param toOffset   ending offset (non-inclusive) in the segment
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code srcSegment.isAccessibleBy(T) == false}
+     * @throws IllegalStateException if the {@linkplain MemorySegment#scope() scope}
+     *         associated with {@code segment} is not
+     *         {@linkplain MemorySegment.Scope#isAlive() alive}
+     * @throws IndexOutOfBoundsException if either {@code fromOffset} or {@code toOffset}
+     *                                   are {@code > segment.byteSize}
+     * @throws IndexOutOfBoundsException if either {@code fromOffset} or {@code toOffset}
+     *                                   are {@code < 0}
+     * @throws IndexOutOfBoundsException if {@code toOffset - fromOffset} is {@code < 0}
+     */
     @ForceInline
     public static int contentHash(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
