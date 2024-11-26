@@ -1146,10 +1146,9 @@ public:
                     enum operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
-  void cmpxchg_narrow_value_helper(Register addr, Register expected,
-                                   Register new_val,
+  void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    enum operand_size size,
-                                   Register tmp1, Register tmp2, Register tmp3);
+                                   Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             enum operand_size size,

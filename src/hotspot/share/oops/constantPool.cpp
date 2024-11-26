@@ -1266,6 +1266,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                  cp_index,
                  callee->is_interface() ? "CONSTANT_MethodRef" : "CONSTANT_InterfaceMethodRef",
                  callee->is_interface() ? "CONSTANT_InterfaceMethodRef" : "CONSTANT_MethodRef");
+        // Names are all known to be < 64k so we know this formatted message is not excessively large.
         Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), "%s", ss.as_string());
         save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
       }
