@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.layout.*;
+import com.sun.hotspot.igv.layout.Cluster;
+import com.sun.hotspot.igv.layout.Link;
+import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.*;
 import java.util.*;
 
@@ -33,6 +35,8 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
     private final HierarchicalLayoutManager manager;
     private final Set<? extends Cluster> clusters;
     private final Set<? extends Link> clusterLinks;
+    Map<Cluster, ClusterNode> clusterNodesMap;
+    Map<Link, ClusterEdge> clusterEdgesMap;
 
     public HierarchicalCFGLayoutManager(Set<? extends Link> clusterLinks, Set<? extends Cluster> clusters) {
         this.clusterLinks = clusterLinks;
@@ -41,29 +45,13 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         Canvas canvas = new Canvas();
         Font font = new Font("Arial", Font.BOLD, 14);
         fontMetrics = canvas.getFontMetrics(font);
-    }
-
-    @Override
-    public void setCutEdges(boolean enable) {
-        subManager.setCutEdges(enable);
-        manager.setCutEdges(enable);
-    }
-
-    public void setSubManager(LayoutManager manager) {
-        this.subManager = manager;
-    }
-
-    public void setManager(LayoutManager manager) {
-        this.manager = manager;
+        manager = new HierarchicalLayoutManager();
     }
 
     @Override
     public void setCutEdges(boolean enable) {
         manager.setCutEdges(enable);
     }
-
-    Map<Cluster, ClusterNode> clusterNodesMap;
-    Map<Link, ClusterEdge> clusterEdgesMap;
 
     private static void doLinearLayout(ClusterNode clusterNode) {
         Cluster cluster = clusterNode.getCluster();
