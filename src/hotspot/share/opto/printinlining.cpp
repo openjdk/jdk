@@ -63,7 +63,7 @@ InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* ca
     state = state->caller();
   }
 
-  IPInlineSite *site = _root;
+  IPInlineSite* site = _root;
   for (int i = growableArray->length() - 1; i >= 0; i--) {
     site = site->at_bci(growableArray->at(i)->bci(), i == 0 ? callee : nullptr);
   }
