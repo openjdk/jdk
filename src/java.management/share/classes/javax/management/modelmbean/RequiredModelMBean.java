@@ -958,13 +958,11 @@ public class RequiredModelMBean
 
             if (opClassName != null) {
                 try {
-                    final Object obj = targetObject;
-                    final String className = opClassName;
                     final ClassNotFoundException[] caughtException = new ClassNotFoundException[1];
 
-                    final ClassLoader targetClassLoader = obj.getClass().getClassLoader();
+                    final ClassLoader targetClassLoader = targetObject.getClass().getClassLoader();
                     try {
-                        targetClass = Class.forName(className, false, targetClassLoader);
+                        targetClass = Class.forName(opClassName, false, targetClassLoader);
                     } catch (ClassNotFoundException e) {
                         caughtException[0] = e;
                     }
@@ -1095,15 +1093,14 @@ public class RequiredModelMBean
         if (opClassName == null)
             targetClass = rmmbClass;
         else {
-            final String className = opClassName;
             final ClassLoader targetClassLoader = rmmbClass.getClassLoader();
             try {
-                Class<?> clz = Class.forName(className, false,
-                                             targetClassLoader);
-                if (!rmmbClass.isAssignableFrom(clz))
+                Class<?> clz = Class.forName(opClassName, false, targetClassLoader);
+                if (!rmmbClass.isAssignableFrom(clz)) {
                     targetClass = null;
-                else
+                } else {
                     targetClass = clz;
+                }
             } catch (ClassNotFoundException e) {
             }
         }
@@ -2607,7 +2604,7 @@ public class RequiredModelMBean
             final ClassLoaderRepository clr = getClassLoaderRepository();
             try {
                 if (clr == null) throw new ClassNotFoundException(className);
-                    return clr.loadClass(className);
+                return clr.loadClass(className);
             } catch (ClassNotFoundException ex) {
                 caughtException[0] = ex;
             }
