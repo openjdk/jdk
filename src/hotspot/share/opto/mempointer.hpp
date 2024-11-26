@@ -351,8 +351,7 @@
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
-  // TODO rename and possibly extend, also rename tags, check where apply
-  const bool _is_trace_parsing; // TODO parse pointer? and check where to add!
+  const bool _is_trace_parsing;
   const bool _is_trace_aliasing;
   const bool _is_trace_adjacency;
   const bool _is_trace_overlap;
@@ -769,6 +768,16 @@ public:
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are allowed");
     ResourceMark rm;
     MemPointerParser parser(mem NOT_PRODUCT(COMMA trace));
+
+#ifndef PRODUCT
+    if (trace.is_trace_parsing()) {
+      tty->print_cr("\nMemPointerParser::parse:");
+      tty->print("  mem: "); mem->dump();
+      parser.mem_pointer().print_on(tty);
+      mem->in(MemNode::Address)->dump_bfs(7, 0, "d");
+    }
+#endif
+
     return parser.mem_pointer();
   }
 

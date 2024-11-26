@@ -729,7 +729,6 @@ public:
       tty->print_cr("VPointer::VPointer:");
       tty->print("mem: "); mem->dump();
       print_on(tty);
-      mem->in(MemNode::Address)->dump_bfs(7, 0, "d");
     }
 #endif
   }
