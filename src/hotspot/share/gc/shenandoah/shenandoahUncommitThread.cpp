@@ -133,7 +133,6 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
   const char* msg = "Concurrent uncommit";
   EventMark em("%s", msg);
   double start = os::elapsedTime();
-  size_t committed_start = _heap->committed();
   log_info(gc, start)("%s", msg);
 
   _uncommit_in_progress.set();
@@ -174,10 +173,9 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
     _heap->notify_heap_changed();
   }
 
-  size_t committed_end = _heap->committed();
   double elapsed = os::elapsedTime() - start;
-  log_info(gc)("%s " PROPERFMT "(" PROPERFMT ") %.3fms",
-               msg, PROPERFMTARGS(committed_start - committed_end), PROPERFMTARGS(_heap->capacity()),
+  log_info(gc)("%s " PROPERFMT " (" PROPERFMT ") %.3fms",
+               msg, PROPERFMTARGS(count * ShenandoahHeapRegion::region_size_bytes()), PROPERFMTARGS(_heap->capacity()),
                elapsed * MILLIUNITS);
 }
 
