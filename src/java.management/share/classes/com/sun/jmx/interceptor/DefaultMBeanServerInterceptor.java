@@ -1379,48 +1379,6 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
         }
     }
 
-    /**
-     * Applies the specified queries to the set of ObjectInstances.
-     */
-    private Set<ObjectInstance>
-            filterListOfObjectInstances(Set<ObjectInstance> list,
-                                        QueryExp query) {
-        // Null query.
-        //
-        if (query == null) {
-            return list;
-        } else {
-            Set<ObjectInstance> result = new HashSet<>();
-            // Access the filter.
-            //
-            for (ObjectInstance oi : list) {
-                boolean res = false;
-                MBeanServer oldServer = QueryEval.getMBeanServer();
-                query.setMBeanServer(server);
-                try {
-                    res = query.apply(oi.getObjectName());
-                } catch (Exception e) {
-                    res = false;
-                } finally {
-                    /*
-                     * query.setMBeanServer is probably
-                     * QueryEval.setMBeanServer so put back the old
-                     * value.  Since that method uses a ThreadLocal
-                     * variable, this code is only needed for the
-                     * unusual case where the user creates a custom
-                     * QueryExp that calls a nested query on another
-                     * MBeanServer.
-                     */
-                    query.setMBeanServer(oldServer);
-                }
-                if (res) {
-                    result.add(oi);
-                }
-            }
-            return result;
-        }
-    }
-
     /*
      * Get the existing wrapper for this listener, name, and mbean, if
      * there is one.  Otherwise, if "create" is true, create and
