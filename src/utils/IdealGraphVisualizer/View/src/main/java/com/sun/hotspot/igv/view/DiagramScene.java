@@ -644,6 +644,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 widget.bringToFront();
                 startLayerY = widget.getLocation().y;
                 hasMoved = false; // Reset the movement flag
+                if (layoutMover.isFreeForm()) return;
                 Set<Figure> selectedFigures = model.getSelectedFigures();
                 if (selectedFigures.size() == 1) {
                     Figure selectedFigure = selectedFigures.iterator().next();
@@ -754,7 +755,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     ActionFactory.createDefaultMoveProvider().setNewLocation(fw, newLocation);
                 }
 
-                if (selectedFigures.size() == 1) {
+                if (selectedFigures.size() == 1 && !layoutMover.isFreeForm()) {
                     FigureWidget fw = getWidget(selectedFigures.iterator().next());
                     pointerWidget.setVisible(true);
                     Point newLocation = new Point(fw.getLocation().x + shiftX -3, fw.getLocation().y + shiftY);
