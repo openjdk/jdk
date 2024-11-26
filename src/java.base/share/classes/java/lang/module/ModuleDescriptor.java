@@ -1312,7 +1312,7 @@ public final class ModuleDescriptor
      * Creates a module descriptor from its components.
      * The arguments are pre-validated and sets are unmodifiable sets.
      */
-    private ModuleDescriptor(String name,
+    ModuleDescriptor(String name,
                      Version version,
                      Set<Modifier> modifiers,
                      Set<Requires> requires,

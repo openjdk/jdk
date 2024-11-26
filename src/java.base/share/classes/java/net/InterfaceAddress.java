@@ -45,7 +45,7 @@ public final class InterfaceAddress {
      * Package private constructor. Can't be built directly, instances are
      * obtained through the NetworkInterface class.
      */
-    private InterfaceAddress() {
+    InterfaceAddress() {
     }
 
     /**
