@@ -24,7 +24,6 @@
 package com.sun.hotspot.igv.graph;
 
 import java.awt.Point;
-import java.util.Objects;
 
 /**
  *
@@ -55,23 +54,11 @@ public class OutputSlot extends Slot {
         }
         double gapRatio = (double)gap / (double)(getFigure().getOutputSlots().size() + 1);
         int gapAmount = (int)((getPosition() + 1)*gapRatio);
-        return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getOutputSlots(), this)) + getWidth()/2, 0);
+        return new Point(gapAmount + Figure.getSlotsWidth(Figure.getAllBefore(getFigure().getOutputSlots(), this)) + getWidth()/2, Figure.SLOT_START);
     }
 
     @Override
     public String toString() {
         return "OutputSlot[figure=" + this.getFigure().toString() + ", position=" + getPosition() + "]";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        return super.equals(o);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode());
     }
 }

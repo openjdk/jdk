@@ -40,6 +40,8 @@ public interface Link {
 
     Cluster getToCluster();
 
+    boolean isVIP();
+
     List<Point> getControlPoints();
 
     void setControlPoints(List<Point> list);

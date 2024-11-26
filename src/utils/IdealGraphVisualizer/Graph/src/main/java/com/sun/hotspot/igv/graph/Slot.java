@@ -34,7 +34,10 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  *
@@ -42,13 +45,14 @@ import java.util.*;
  */
 public abstract class Slot implements Port, Source.Provider, Properties.Provider {
 
-    private final int wantedIndex;
-    private final Source source;
+    private int wantedIndex;
+    private Source source;
     protected List<FigureConnection> connections;
+    private InputNode associatedNode;
     private Color color;
     private String text;
     private String shortName;
-    private final Figure figure;
+    private Figure figure;
 
     protected Slot(Figure figure, int wantedIndex) {
         this.figure = figure;
@@ -76,10 +80,13 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
     public static final Comparator<Slot> slotIndexComparator = Comparator.comparingInt(o -> o.wantedIndex);
 
+    public void setAssociatedNode(InputNode node) {
+        associatedNode = node;
+    }
+
     public int getWidth() {
-        assert shortName != null;
-        if (shortName.isEmpty()) {
-            return 0;
+        if (shortName == null || shortName.length() <= 1) {
+            return Figure.SLOT_WIDTH;
         } else {
             BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
             Graphics g = image.getGraphics();
@@ -89,8 +96,8 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
         }
     }
 
-    public int getHeight() {
-        return Figure.SLOT_HEIGHT;
+    public int getWantedIndex() {
+        return wantedIndex;
     }
 
     @Override
@@ -104,6 +111,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
 
     public void setShortName(String s) {
         assert s != null;
+//        assert s.length() <= 2;
         this.shortName = s;
 
     }
@@ -130,7 +138,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public boolean shouldShowName() {
-        return getShortName() != null && !getShortName().isEmpty();
+        return getShortName() != null && getShortName().length() > 0;
     }
 
     public boolean hasSourceNodes() {
@@ -145,6 +153,7 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     }
 
     public Figure getFigure() {
+        assert figure != null;
         return figure;
     }
 
@@ -175,23 +184,5 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     public abstract int getPosition();
 
     public abstract void setPosition(int position);
-
-    @Override
-    public boolean equals(Object o) {
-        // Reference equality check
-        if (this == o) return true;
-
-        // Type check
-        if (!(o instanceof Slot other)) return false;
-
-        // Compare immutable and identity-defining fields
-        return this.wantedIndex == other.wantedIndex &&
-                Objects.equals(this.figure, other.figure);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(figure, wantedIndex);
-    }
 }
 

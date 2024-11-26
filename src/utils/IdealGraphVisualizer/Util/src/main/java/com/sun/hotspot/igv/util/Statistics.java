@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,25 +21,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-package com.sun.hotspot.igv.hierarchicallayout;
 
-import java.awt.Font;
+package com.sun.hotspot.igv.util;
 
-/**
- * @author Thomas Wuerthinger
- */
-public abstract class LayoutManager {
+import java.util.Arrays;
 
-    public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
-    public static final int SWEEP_ITERATIONS = 10;
-    public static final int CROSSING_ITERATIONS = 20;
-    public static final int NODE_OFFSET = 8;
-    public static final int LAYER_OFFSET = 8;
-    public static final double SCALE_LAYER_PADDING = 1.5;
+public class Statistics {
 
-    public abstract void setCutEdges(boolean enable);
-
-    public abstract void doLayout(LayoutGraph graph);
+    public static int median(int[] values) {
+        Arrays.sort(values);
+        if (values.length % 2 == 0) {
+            return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
+        } else {
+            return values[values.length / 2];
+        }
+    }
 }

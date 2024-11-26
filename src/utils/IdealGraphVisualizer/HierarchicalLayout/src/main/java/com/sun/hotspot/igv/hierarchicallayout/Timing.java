@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,47 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.view.actions;
+package com.sun.hotspot.igv.hierarchicallayout;
 
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.beans.PropertyChangeEvent;
+/**
+ *
+ * @author Thomas Wuerthinger
+ */
+public class Timing {
 
-public class EnableFreeLayoutAction extends EnableLayoutAction {
+    private long lastValue;
+    private long sum;
+    private final String name;
 
-    public EnableFreeLayoutAction(EditorTopComponent etc) {
-        super(etc);
+    public Timing(String name) {
+        this.name = name;
     }
 
     @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/dynamic.png";
+    public String toString() {
+        long val = sum;
+        if (lastValue != 0) {
+            // Timer running
+            long newValue = System.nanoTime();
+            val += (newValue - lastValue);
+        }
+        return "Timing for " + name + " is: " + val / 1000000 + " ms";
     }
 
-    @Override
-    protected String getDescription() {
-        return "Show dynamic free layout";
+    public void print() {
+        System.out.println();
     }
 
-    @Override
-    public void propertyChange(PropertyChangeEvent evt) {
-        editor.getModel().setShowFreeInteractive(this.isSelected());
+    public void start() {
+        lastValue = System.nanoTime();
+    }
+
+    public void stop() {
+        if (lastValue == 0) {
+            throw new IllegalStateException("You must call start before stop");
+        }
+        long newValue = System.nanoTime();
+        sum += newValue - lastValue;
+        lastValue = 0;
     }
 }

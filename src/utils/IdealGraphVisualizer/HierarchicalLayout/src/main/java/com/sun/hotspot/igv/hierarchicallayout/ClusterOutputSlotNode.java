@@ -30,17 +30,31 @@ import java.awt.Dimension;
 import java.awt.Point;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public class ClusterOutputSlotNode implements Vertex {
 
+    private Point position;
     private final Port inputSlot;
     private final Port outputSlot;
     private final ClusterNode blockNode;
-    private final String id;
-    private Point position;
     private Cluster cluster;
     private ClusterOutgoingConnection conn;
+    private final String id;
+
+    public void setOutgoingConnection(ClusterOutgoingConnection c) {
+        this.conn = c;
+    }
+
+    public ClusterOutgoingConnection getOutgoingConnection() {
+        return conn;
+    }
+
+    @Override
+    public String toString() {
+        return id;
+    }
 
     public ClusterOutputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
@@ -49,6 +63,7 @@ public class ClusterOutputSlotNode implements Vertex {
         n.addSubNode(this);
 
         final Vertex thisNode = this;
+        final ClusterNode thisBlockNode = blockNode;
 
         inputSlot = new Port() {
 
@@ -70,13 +85,13 @@ public class ClusterOutputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += ClusterNode.PADDING;
+                p.x += blockNode.getBorder();
                 p.y = 0;
                 return p;
             }
 
             public Vertex getVertex() {
-                return blockNode;
+                return thisBlockNode;
             }
 
             @Override
@@ -86,29 +101,16 @@ public class ClusterOutputSlotNode implements Vertex {
         };
     }
 
-    public ClusterOutgoingConnection getOutgoingConnection() {
-        return conn;
-    }
-
-    public void setOutgoingConnection(ClusterOutgoingConnection c) {
-        this.conn = c;
-    }
-
-    @Override
-    public String toString() {
-        return id;
-    }
-
     public Dimension getSize() {
         return new Dimension(0, 0);
     }
 
-    public Point getPosition() {
-        return position;
-    }
-
     public void setPosition(Point p) {
         this.position = p;
+    }
+
+    public Point getPosition() {
+        return position;
     }
 
     public Port getInputSlot() {
@@ -119,17 +121,12 @@ public class ClusterOutputSlotNode implements Vertex {
         return outputSlot;
     }
 
-    public Cluster getCluster() {
-        return cluster;
-    }
-
     public void setCluster(Cluster c) {
         cluster = c;
     }
 
-    @Override
-    public int getPriority() {
-        return 1;
+    public Cluster getCluster() {
+        return cluster;
     }
 
     public boolean isRoot() {

@@ -24,13 +24,11 @@
 package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.layout.Cluster;
-import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  *
@@ -43,7 +41,7 @@ public class FigureConnection implements Connection {
     private Color color;
     private ConnectionStyle style;
     private List<Point> controlPoints;
-    private final String label;
+    private String label;
 
     protected FigureConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
         this.inputSlot = inputSlot;
@@ -123,14 +121,6 @@ public class FigureConnection implements Connection {
         return outputSlot;
     }
 
-    public Figure getFromFigure() {
-        return outputSlot.getFigure();
-    }
-
-    public Figure getToFigure() {
-        return inputSlot.getFigure();
-    }
-
     @Override
     public Cluster getFromCluster() {
         return getFrom().getVertex().getCluster();
@@ -144,6 +134,11 @@ public class FigureConnection implements Connection {
     @Override
     public Cluster getToCluster() {
         return getTo().getVertex().getCluster();
+    }
+
+    @Override
+    public boolean isVIP() {
+        return style == ConnectionStyle.BOLD;
     }
 
     @Override
@@ -163,19 +158,15 @@ public class FigureConnection implements Connection {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true; // Reference equality check
-        if (!(o instanceof FigureConnection)) return false; // Type check
+        if (!(o instanceof FigureConnection)) {
+            return false;
+        }
 
-        FigureConnection that = (FigureConnection) o;
-
-        // Compare source and target ports using their own equals() methods
-        return Objects.equals(this.outputSlot, that.outputSlot) &&
-                Objects.equals(this.inputSlot, that.inputSlot);
+        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure())
+                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure())
+                && getInputSlot().getPosition() == ((FigureConnection)o).getInputSlot().getPosition()
+                && getOutputSlot().getPosition() == ((FigureConnection) o).getOutputSlot().getPosition();
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(outputSlot, inputSlot);
-    }
 }
 

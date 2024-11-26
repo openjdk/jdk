@@ -23,7 +23,6 @@
  */
 package com.sun.hotspot.igv.view.widgets;
 
-import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
@@ -45,11 +44,11 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
     public static final Color BACKGROUND_COLOR = new Color(235, 235, 255);
     private static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
     public static final Color TITLE_COLOR = new Color(42, 42, 171);
-    private final Block block;
+    private final InputBlock blockNode;
 
-    public BlockWidget(Scene scene, Block block) {
+    public BlockWidget(Scene scene, InputBlock blockNode) {
         super(scene);
-        this.block = block;
+        this.blockNode = blockNode;
         this.setBackground(BACKGROUND_COLOR);
         this.setOpaque(true);
         this.setCheckClipping(true);
@@ -72,7 +71,7 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
         g.setColor(TITLE_COLOR);
         g.setFont(TITLE_FONT);
 
-        String s = "B" + getBlockNode().getName();
+        String s = "B" + blockNode.getName();
         Rectangle2D r1 = g.getFontMetrics().getStringBounds(s, g);
         g.drawString(s, r.x + 5, r.y + (int) r1.getHeight());
         g.setStroke(old);
@@ -84,16 +83,8 @@ public class BlockWidget extends Widget implements DoubleClickHandler {
             if (!additiveSelection) {
                 graphProvider.clearSelectedNodes();
             }
-            graphProvider.addSelectedNodes(blockWidget.getBlockNode().getNodes(), false);
+            graphProvider.addSelectedNodes(blockWidget.blockNode.getNodes(), false);
         }
-    }
-
-    public void updatePosition() {
-        setPreferredLocation(block.getPosition());
-    }
-
-    public InputBlock getBlockNode() {
-        return block.getInputBlock();
     }
 
     private int getModifierMask () {

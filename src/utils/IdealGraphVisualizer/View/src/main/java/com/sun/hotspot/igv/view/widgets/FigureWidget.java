@@ -26,15 +26,12 @@ package com.sun.hotspot.igv.view.widgets;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.graph.Diagram;
 import com.sun.hotspot.igv.graph.Figure;
-import com.sun.hotspot.igv.graph.Slot;
 import com.sun.hotspot.igv.util.DoubleClickAction;
 import com.sun.hotspot.igv.util.DoubleClickHandler;
 import com.sun.hotspot.igv.util.PropertiesConverter;
 import com.sun.hotspot.igv.util.PropertiesSheet;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
-import java.awt.geom.Path2D;
-import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,8 +39,6 @@ import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
-import javax.swing.border.Border;
-import javax.swing.border.LineBorder;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 import org.netbeans.api.visual.action.PopupMenuProvider;
@@ -72,6 +67,8 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
     private ArrayList<LabelWidget> labelWidgets;
     private DiagramScene diagramScene;
     private boolean boundary;
+    private final Node node;
+    private Widget dummyTop;
     private static final Image warningSign = ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/warning.png");
 
     public void setBoundary(boolean b) {
@@ -120,17 +117,34 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.setCheckClipping(true);
         this.diagramScene = scene;
 
+        Widget outer = new Widget(scene);
+        outer.setBackground(f.getColor());
+        outer.setLayout(LayoutFactory.createOverlayLayout());
+
         middleWidget = new Widget(scene);
-        middleWidget.setPreferredBounds(new Rectangle(0, 0, f.getWidth(), f.getHeight()));
-        middleWidget.setLayout(LayoutFactory.createHorizontalFlowLayout(SerialAlignment.CENTER, 0));
+        SerialAlignment textAlign = scene.getModel().getShowCFG() ?
+            LayoutFactory.SerialAlignment.LEFT_TOP :
+            LayoutFactory.SerialAlignment.CENTER;
+        middleWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
         middleWidget.setOpaque(true);
         middleWidget.getActions().addAction(new DoubleClickAction(this));
         middleWidget.setCheckClipping(false);
-        this.addChild(middleWidget);
+
+        dummyTop = new Widget(scene);
+        int extraTopHeight =
+            getFigure().getDiagram().isCFG() && getFigure().hasNamedInputSlot() ?
+            Figure.TOP_CFG_HEIGHT : 0;
+        dummyTop.setMinimumSize(new Dimension(Figure.INSET / 2, 1 + extraTopHeight));
+        middleWidget.addChild(dummyTop);
+
+        // This widget includes the node text and possibly a warning sign to the right.
+        Widget nodeInfoWidget = new Widget(scene);
+        nodeInfoWidget.setLayout(LayoutFactory.createAbsoluteLayout());
+        middleWidget.addChild(nodeInfoWidget);
 
         Widget textWidget = new Widget(scene);
-        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(SerialAlignment.CENTER, 0));
-        middleWidget.addChild(textWidget);
+        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
+        nodeInfoWidget.addChild(textWidget);
 
         String[] strings = figure.getLines();
         labelWidgets = new ArrayList<>(strings.length);
@@ -143,32 +157,32 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
             lw.setFont(Diagram.FONT);
             lw.setAlignment(LabelWidget.Alignment.CENTER);
             lw.setVerticalAlignment(LabelWidget.VerticalAlignment.CENTER);
+            lw.setBorder(BorderFactory.createEmptyBorder());
             lw.setCheckClipping(false);
         }
         formatExtraLabel(false);
         refreshColor();
 
-        for (int i=1; i < labelWidgets.size(); i++) {
-            labelWidgets.get(i).setFont(Diagram.FONT.deriveFont(Font.ITALIC));
-            labelWidgets.get(i).setForeground(Color.DARK_GRAY);
-        }
-
-
-        int textHeight = f.getHeight() - 2 * Figure.PADDING - f.getSlotsHeight();
         if (getFigure().getWarning() != null) {
             ImageWidget warningWidget = new ImageWidget(scene, warningSign);
+            Point warningLocation = new Point(getFigure().getWidth() - Figure.WARNING_WIDTH - Figure.INSET / 2, 0);
+            warningWidget.setPreferredLocation(warningLocation);
             warningWidget.setToolTipText(getFigure().getWarning());
-            middleWidget.addChild(warningWidget);
-            int textWidth = f.getWidth() - 4 * Figure.BORDER;
-            textWidth -= Figure.WARNING_WIDTH + Figure.PADDING;
-            textWidget.setPreferredBounds(new Rectangle(0, 0, textWidth, textHeight));
-        } else {
-            int textWidth = f.getWidth() - 4 * Figure.BORDER;
-            textWidget.setPreferredBounds(new Rectangle(0, 0, textWidth, textHeight));
+            nodeInfoWidget.addChild(warningWidget);
         }
 
+        Widget dummyBottom = new Widget(scene);
+        int extraBottomHeight =
+            getFigure().getDiagram().isCFG() && getFigure().hasNamedOutputSlot() ?
+            Figure.BOTTOM_CFG_HEIGHT : 0;
+        dummyBottom.setMinimumSize(new Dimension(Figure.INSET / 2, 1  + extraBottomHeight));
+        middleWidget.addChild(dummyBottom);
+
+        middleWidget.setPreferredBounds(new Rectangle(0, Figure.getVerticalOffset(), f.getWidth(), f.getHeight()));
+        this.addChild(middleWidget);
+
         // Initialize node for property sheet
-        Node node = new AbstractNode(Children.LEAF) {
+        node = new AbstractNode(Children.LEAF) {
 
             @Override
             protected Sheet createSheet() {
@@ -180,42 +194,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         node.setDisplayName(getName());
 
         this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
-    }
-
-    public void updatePosition() {
-        setPreferredLocation(figure.getPosition());
-    }
-
-    public int getFigureHeight() {
-        return middleWidget.getPreferredBounds().height;
-    }
-
-    public static class RoundedBorder extends LineBorder {
-
-        final float RADIUS = 3f;
-
-        public RoundedBorder(Color color, int thickness)  {
-            super(color, thickness);
-        }
-
-        @Override
-        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            if ((this.thickness > 0) && (g instanceof Graphics2D)) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                Color oldColor = g2d.getColor();
-                g2d.setColor(this.lineColor);
-                int offs = this.thickness;
-                int size = offs + offs;
-                Shape outer = new RoundRectangle2D.Float(x, y, width, height, RADIUS, RADIUS);
-                Shape inner = new RoundRectangle2D.Float(x + offs, y + offs, width - size, height - size, RADIUS, RADIUS);
-                Path2D path = new Path2D.Float(Path2D.WIND_EVEN_ODD);
-                path.append(outer, false);
-                path.append(inner, false);
-                g2d.fill(path);
-                g2d.setColor(oldColor);
-            }
-        }
     }
 
     public void refreshColor() {
@@ -230,22 +208,19 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         super.notifyStateChanged(previousState, state);
 
         Font font = Diagram.FONT;
-        Color borderColor = Color.BLACK;
-        Color innerBorderColor = getFigure().getColor();
+        int thickness = 1;
         if (state.isSelected()) {
             font = Diagram.BOLD_FONT;
-            innerBorderColor = Color.BLACK;
+            thickness = 2;
         }
 
+        Color borderColor = Color.BLACK;
+        Color innerBorderColor = getFigure().getColor();
         if (state.isHighlighted()) {
             innerBorderColor = borderColor = Color.BLUE;
         }
 
-        Border innerBorder = new RoundedBorder(borderColor, Figure.BORDER);
-        Border outerBorder = new RoundedBorder(innerBorderColor, Figure.BORDER);
-        Border roundedBorder = BorderFactory.createCompoundBorder(innerBorder, outerBorder);
-        middleWidget.setBorder(roundedBorder);
-
+        middleWidget.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(borderColor, thickness), BorderFactory.createLineBorder(innerBorderColor, 1)));
         for (LabelWidget labelWidget : labelWidgets) {
             labelWidget.setFont(font);
         }

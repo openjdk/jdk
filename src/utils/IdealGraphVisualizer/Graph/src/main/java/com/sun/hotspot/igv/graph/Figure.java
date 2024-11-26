@@ -33,11 +33,13 @@ import java.util.*;
 
 public class Figure extends Properties.Entity implements Vertex {
 
+    public static final int INSET = 8;
     public static final int SLOT_WIDTH = 10;
-    public static final int SLOT_HEIGHT = 10;
-    public static final int BORDER = 1;
-    public static final int PADDING = 4;
-    public static final int SLOT_OFFSET = 16;
+    public static final int OVERLAPPING = 6;
+    public static final int SLOT_START = 4;
+    public static final int SLOT_OFFSET = 8;
+    public static final int TOP_CFG_HEIGHT = 7;
+    public static final int BOTTOM_CFG_HEIGHT = 6;
     public static final int WARNING_WIDTH = 16;
     public static final double BOLD_LINE_FACTOR = 1.06;
     protected List<InputSlot> inputSlots;
@@ -65,16 +67,23 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     private void updateHeight() {
-        heightCash = getLines().length * metrics.getHeight() + 2 * PADDING;
-        heightCash += getSlotsHeight();
-    }
-
-    public int getSlotsHeight() {
-        int slotHeight = 0;
-        if (hasNamedInputSlot() || hasNamedOutputSlot()) {
-            slotHeight += diagram.isCFG() ? 2 * Figure.SLOT_HEIGHT : Figure.SLOT_HEIGHT;
+        String nodeText = diagram.getNodeText();
+        int lines = nodeText.split("\n").length;
+        if (hasInputList() && lines > 1) {
+            lines++;
         }
-        return slotHeight;
+        if (getProperties().get("extra_label") != null) {
+            lines++;
+        }
+        heightCash = lines * metrics.getHeight() + INSET;
+        if (diagram.isCFG()) {
+            if (hasNamedInputSlot()) {
+                heightCash += TOP_CFG_HEIGHT;
+            }
+            if (hasNamedOutputSlot()) {
+                heightCash += BOTTOM_CFG_HEIGHT;
+            }
+        }
     }
 
     public static <T> List<T> getAllBefore(List<T> inputList, T tIn) {
@@ -108,20 +117,19 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     private void updateWidth() {
-        widthCash = 0;
-        for (String s : getLines()) {
-            int cur = metrics.stringWidth(s);
-            if (cur > widthCash) {
-                widthCash = cur;
+            int max = 0;
+            for (String s : getLines()) {
+                int cur = metrics.stringWidth(s);
+                if (cur > max) {
+                    max = cur;
+                }
             }
-        }
-        widthCash += 2 * PADDING;
-        if (getWarning() != null) {
-            widthCash += WARNING_WIDTH + PADDING;
-        }
-        widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
-        widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
-        widthCash = (int)(widthCash * BOLD_LINE_FACTOR);
+            widthCash = (int)(max * BOLD_LINE_FACTOR) + INSET;
+            if (getWarning() != null) {
+                widthCash += WARNING_WIDTH;
+            }
+            widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
+            widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
     }
 
     protected Figure(Diagram diagram, int id, InputNode node) {
@@ -223,9 +231,10 @@ public class Figure extends Properties.Entity implements Vertex {
         return inputNode;
     }
 
-    public void createInputSlot() {
+    public InputSlot createInputSlot() {
         InputSlot slot = new InputSlot(this, -1);
         inputSlots.add(slot);
+        return slot;
     }
 
     public void removeSlot(Slot s) {
@@ -332,6 +341,7 @@ public class Figure extends Properties.Entity implements Vertex {
                     }
                     inputLabel = nodeTinyLabel;
                 }
+                assert(inputLabel != null);
                 int gapSize = is.gapSize();
                 if (gapSize == 1) {
                     inputs.add("_");
@@ -369,14 +379,31 @@ public class Figure extends Properties.Entity implements Vertex {
 
     @Override
     public Dimension getSize() {
-        int width = getWidth();
-        int height = getHeight();
+        int width = Math.max(getWidth(), Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1));
+        int height = getHeight() + (diagram.isCFG() ? 0 : 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING);
         return new Dimension(width, height);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Figure)) {
+            return false;
+        }
+        return getInputNode().equals(((Figure) o).getInputNode());
+    }
+
+    @Override
+    public int hashCode() {
+        return getInputNode().hashCode();
     }
 
     @Override
     public String toString() {
         return idString;
+    }
+
+    public static int getVerticalOffset() {
+        return Figure.SLOT_WIDTH - Figure.OVERLAPPING;
     }
 
     public Cluster getCluster() {
@@ -395,31 +422,5 @@ public class Figure extends Properties.Entity implements Vertex {
     @Override
     public int compareTo(Vertex f) {
         return toString().compareTo(f.toString());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Figure other)) {
-            return false;
-        }
-        return Objects.equals(this.getInputNode(), other.getInputNode());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getInputNode());
-    }
-
-    @Override
-    public int getPriority() {
-        String category = getInputNode().getProperties().get("category");
-        if (category.equals("control")) {
-            return 2;
-        } else if (category.equals("mixed")) {
-            return 2;
-        } else {
-            return 1;
-        }
     }
 }

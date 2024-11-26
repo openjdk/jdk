@@ -30,15 +30,22 @@ import java.awt.Dimension;
 import java.awt.Point;
 
 /**
+ *
  * @author Thomas Wuerthinger
  */
 public class ClusterInputSlotNode implements Vertex {
 
+    private Point position;
     private final Port inputSlot;
     private final Port outputSlot;
     private final ClusterNode blockNode;
+
     private final String id;
-    private Point position;
+
+    @Override
+    public String toString() {
+        return id;
+    }
 
     public ClusterInputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
@@ -47,6 +54,7 @@ public class ClusterInputSlotNode implements Vertex {
         n.addSubNode(this);
 
         final Vertex thisNode = this;
+        final ClusterNode thisBlockNode = blockNode;
 
         outputSlot = new Port() {
 
@@ -68,13 +76,13 @@ public class ClusterInputSlotNode implements Vertex {
 
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
-                p.x += ClusterNode.PADDING;
+                p.x += blockNode.getBorder();
                 p.y = 0;
                 return p;
             }
 
             public Vertex getVertex() {
-                return blockNode;
+                return thisBlockNode;
             }
 
             @Override
@@ -82,11 +90,6 @@ public class ClusterInputSlotNode implements Vertex {
                 return "InPort of " + thisNode;
             }
         };
-    }
-
-    @Override
-    public String toString() {
-        return id;
     }
 
     public Port getInputSlot() {
@@ -101,21 +104,16 @@ public class ClusterInputSlotNode implements Vertex {
         return new Dimension(0, 0);
     }
 
-    public Point getPosition() {
-        return position;
-    }
-
     public void setPosition(Point p) {
         this.position = p;
     }
 
-    public Cluster getCluster() {
-        return null;
+    public Point getPosition() {
+        return position;
     }
 
-    @Override
-    public int getPriority() {
-        return 1;
+    public Cluster getCluster() {
+        return null;
     }
 
     public boolean isRoot() {

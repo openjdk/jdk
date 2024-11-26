@@ -34,7 +34,7 @@ import java.util.*;
  */
 public class Diagram {
 
-    private final Map<InputNode, Figure> figures;
+    private List<Figure> figures;
     private final Map<InputBlock, Block> blocks;
     private final String nodeText;
     private final String shortNodeText;
@@ -63,7 +63,7 @@ public class Diagram {
         this.nodeText = nodeText;
         this.shortNodeText = shortNodeText;
         this.tinyNodeText = tinyNodeText;
-        this.figures = new LinkedHashMap<>();
+        this.figures = new ArrayList<>();
         this.blocks = new LinkedHashMap<>(8);
         this.blockConnections = new HashSet<>();
         this.cfg = false;
@@ -81,7 +81,7 @@ public class Diagram {
             f.getProperties().add(n.getProperties());
             f.setBlock(blocks.get(graph.getBlock(n)));
             figureHash.put(n.getId(), f);
-            this.figures.put(n, f);
+            this.figures.add(f);
         }
 
         for (InputEdge e : graph.getEdges()) {
@@ -113,7 +113,7 @@ public class Diagram {
             }
         }
 
-        for (Figure f : figures.values()) {
+        for (Figure f : figures) {
             int i = 0;
             for (InputSlot inputSlot : f.getInputSlots()) {
                 inputSlot.setOriginalIndex(i);
@@ -131,11 +131,6 @@ public class Diagram {
     public Block getBlock(InputBlock b) {
         assert blocks.containsKey(b);
         return blocks.get(b);
-    }
-
-    public Figure getFigure(InputNode n) {
-        assert figures.containsKey(n);
-        return figures.get(n);
     }
 
     public boolean hasBlock(InputBlock b) {
@@ -163,7 +158,7 @@ public class Diagram {
     }
 
     public List<Figure> getFigures() {
-        return Collections.unmodifiableList(new ArrayList<>(figures.values()));
+        return Collections.unmodifiableList(figures);
     }
 
     public FigureConnection createConnection(InputSlot inputSlot, OutputSlot outputSlot, String label) {
@@ -172,7 +167,7 @@ public class Diagram {
         return new FigureConnection(inputSlot, outputSlot, label);
     }
 
-    public void removeAllBlocks(Collection<Block> blocksToRemove) {
+    public void removeAllBlocks(Set<Block> blocksToRemove) {
         Set<Figure> figuresToRemove = new HashSet<>();
         for (Block b : blocksToRemove) {
             for (Figure f : getFigures()) {
@@ -187,12 +182,18 @@ public class Diagram {
         }
     }
 
-    public void removeAllFigures(Collection<Figure> figuresToRemove) {
+    public void removeAllFigures(Set<Figure> figuresToRemove) {
         for (Figure f : figuresToRemove) {
             freeFigure(f);
-            figures.remove(f.getInputNode());
-
         }
+
+        ArrayList<Figure> newFigures = new ArrayList<>();
+        for (Figure f : this.figures) {
+            if (!figuresToRemove.contains(f)) {
+                newFigures.add(f);
+            }
+        }
+        figures = newFigures;
     }
 
     private void freeFigure(Figure succ) {
@@ -214,14 +215,15 @@ public class Diagram {
 
     }
 
-    public void removeFigure(Figure figure) {
-        freeFigure(figure);
-        this.figures.remove(figure.getInputNode());
+    public void removeFigure(Figure succ) {
+        assert this.figures.contains(succ);
+        freeFigure(succ);
+        this.figures.remove(succ);
     }
 
     public Set<FigureConnection> getConnections() {
         Set<FigureConnection> connections = new HashSet<>();
-        for (Figure f : figures.values()) {
+        for (Figure f : figures) {
             for (InputSlot s : f.getInputSlots()) {
                 connections.addAll(s.getConnections());
             }
@@ -244,7 +246,7 @@ public class Diagram {
         System.out.println("=============================================================");
         System.out.println("Diagram statistics");
 
-        Collection<Figure> tmpFigures = getFigures();
+        List<Figure> tmpFigures = getFigures();
         Set<FigureConnection> connections = getConnections();
 
         System.out.println("Number of figures: " + tmpFigures.size());
@@ -276,7 +278,7 @@ public class Diagram {
     }
 
     public Figure getRootFigure() {
-        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures.values());
+        Properties.PropertySelector<Figure> selector = new Properties.PropertySelector<>(figures);
         Figure root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Root"));
         if (root == null) {
             root = selector.selectSingle(new Properties.StringPropertyMatcher("name", "Start"));
