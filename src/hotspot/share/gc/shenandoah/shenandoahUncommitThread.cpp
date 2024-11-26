@@ -44,35 +44,35 @@ ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
 void ShenandoahUncommitThread::run_service() {
   assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled");
 
-  // Shrink period avoids constantly polling regions for shrinking.
-  // Having a period 10x lower than the delay would mean we hit the
+  // poll_interval avoids constantly polling regions for shrinking.
+  // Having an interval 10x lower than the delay would mean we hit the
   // shrinking with lag of less than 1/10-th of true delay.
   // ShenandoahUncommitDelay is in millis, but shrink_period is in seconds.
-  double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
-  double last_shrink_time = os::elapsedTime();
+  const int64_t poll_interval = int64_t(ShenandoahUncommitDelay) / 10;
+  const double shrink_period = double(ShenandoahUncommitDelay) / 1000;
+  bool timed_out = false;
   while (!should_terminate()) {
-    double current = os::elapsedTime();
     bool soft_max_changed = _soft_max_changed.try_unset();
     bool explicit_gc_requested = _explicit_gc_requested.try_unset();
 
-    if (soft_max_changed || explicit_gc_requested || current - last_shrink_time > shrink_period) {
+    if (soft_max_changed || explicit_gc_requested || timed_out) {
+      double current = os::elapsedTime();
       size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
       double shrink_before = (soft_max_changed || explicit_gc_requested) ?
               current :
-              current - ((double) ShenandoahUncommitDelay / 1000.0);
+              current - shrink_period;
 
       // Explicit GC tries to uncommit everything down to min capacity.
       // Soft max change tries to uncommit everything down to target capacity.
       // Periodic uncommit tries to uncommit suitable regions down to min capacity.
       if (should_uncommit(shrink_before, shrink_until)) {
         uncommit(shrink_before, shrink_until);
-        last_shrink_time = current;
       }
     }
     {
       MonitorLocker locker(&_stop_lock, Mutex::_no_safepoint_check_flag);
       if (!_stop_requested.is_set()) {
-        locker.wait((int64_t)shrink_period);
+        timed_out = locker.wait(poll_interval);
       }
     }
   }
