@@ -109,7 +109,6 @@ public class DiagnosticCommandImpl extends NotificationEmitterSupport
             this.name = name;
             this.cmd = cmd;
             this.info = info;
-            Exception cause = null;
         }
 
         public String execute(String[] args) {
