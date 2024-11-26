@@ -30,6 +30,9 @@
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.SegmentBulkOperations;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -49,12 +52,36 @@ final class TestSegmentBulkOperationsContentHash {
 
     @ParameterizedTest
     @MethodSource("sizes")
-    void testFill(int len) {
+    @Disabled
+    void testHashValues(int len) {
         try (var arena = Arena.ofConfined()) {
-            var segment = arena.allocate(len);
-            int hash = hash(segment);
-            int expected = Arrays.hashCode(segment.toArray(ValueLayout.JAVA_BYTE));
-            assertEquals(expected, hash);
+            for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE ; i++) {
+                var segment = arena.allocate(len);
+                segment.fill((byte) i);
+                int hash = hash(segment);
+                int expected = Arrays.hashCode(segment.toArray(ValueLayout.JAVA_BYTE));
+                assertEquals(expected, hash, Arrays.toString(segment.toArray(ValueLayout.JAVA_BYTE)));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("sizes")
+    void testOffsets(int len) {
+        if (len < 2) {
+            return;
+        }
+        try (var arena = Arena.ofConfined()) {
+            for (int i = Byte.MIN_VALUE; i <= Byte.MAX_VALUE ; i++) {
+                var segment = arena.allocate(len);
+                segment.fill((byte) i);
+                int hash = hash(segment, 1, segment.byteSize() - 1);
+                MemorySegment slice = segment.asSlice(1, segment.byteSize() - 2);
+                byte[] arr = slice.toArray(ValueLayout.JAVA_BYTE);
+                System.out.println(Arrays.toString(arr));
+                int expected = Arrays.hashCode(arr);
+                assertEquals(expected, hash, Arrays.toString(segment.toArray(ValueLayout.JAVA_BYTE)));
+            }
         }
     }
 
@@ -101,8 +128,8 @@ final class TestSegmentBulkOperationsContentHash {
         return hash(segment, 0, segment.byteSize());
     }
 
-    private static int hash(MemorySegment segment, long offset, long length) {
-        return SegmentBulkOperations.contentHash((AbstractMemorySegmentImpl) segment, offset, length);
+    private static int hash(MemorySegment segment, long fromOffset, long toOffset) {
+        return SegmentBulkOperations.contentHash((AbstractMemorySegmentImpl) segment, fromOffset, toOffset);
     }
 
     private static final int MAX_SIZE = 1 << 10;

@@ -28,7 +28,9 @@ package jdk.internal.foreign;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.MemorySegment;
 
@@ -156,17 +158,70 @@ public final class SegmentBulkOperations {
         }
     }
 
+    private static final @Stable int[] POWERS_OF_31 = new int[]{
+            0x0000001f, 0x000003c1, 0x0000745f, 0x000e1781,
+            0x01b4d89f, 0x34e63b41, 0x67e12cdf, 0x94446f01};
+
+    /* A polynomial 32-bit hash code method roughly equivalent to:
+
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        int result = 1;
+        for (long i = fromOffset; i < toOffset; i++) {
+            result = 31 * result + nativeSegment.get(JAVA_BYTE, i);
+        }
+        return result;
+    */
     @ForceInline
     public static int contentHash(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
         segment.checkBounds(fromOffset, length);
-        // The state has to be checked explicitly for zero-length segments
-        segment.scope.checkValidState();
+        if (length == 0) {
+            // The state has to be checked explicitly for zero-length segments
+            segment.scope.checkValidState();
+            return 1;
+        }
         int result = 1;
-        final long begin = segment.unsafeGetOffset() + fromOffset;
-        final long end = begin + length;
-        for (long i = begin; i < end; i++) {
-            result = 31 * result + SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), i);
+        final long longBytes = length & ((1L << 62) - 8);
+        final long limit = fromOffset + longBytes;
+        for (; fromOffset < limit; fromOffset += 8) {
+            long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
+            result = result * POWERS_OF_31[7]
+                    + ((byte) (val >>> 56)) * POWERS_OF_31[6]
+                    + ((byte) (val >>> 48)) * POWERS_OF_31[5]
+                    + ((byte) (val >>> 40)) * POWERS_OF_31[4]
+                    + ((byte) (val >>> 32)) * POWERS_OF_31[3]
+                    + ((byte) (val >>> 24)) * POWERS_OF_31[2]
+                    + ((byte) (val >>> 16)) * POWERS_OF_31[1]
+                    + ((byte) (val >>> 8)) * POWERS_OF_31[0]
+                    + ((byte) val);
+        }
+        int remaining = (int) (length - longBytes);
+        // 0...0X00
+        if (remaining >= 4) {
+            int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
+            result = result * POWERS_OF_31[3]
+                    + ((byte) (val >>> 24)) * POWERS_OF_31[2]
+                    + ((byte) (val >>> 16)) * POWERS_OF_31[1]
+                    + ((byte) (val >>> 8)) * POWERS_OF_31[0]
+                    + ((byte) val);
+            fromOffset += 4;
+            remaining -= 4;
+        }
+        // 0...00X0
+        if (remaining >= 2) {
+            short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
+            result = result * POWERS_OF_31[1]
+                    + ((byte) (val >>> 8)) * POWERS_OF_31[0]
+                    + ((byte) val);
+            fromOffset += 2;
+            remaining -= 2;
+        }
+        // 0...000X
+        if (remaining == 1) {
+            byte val = SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset);
+            result = result * POWERS_OF_31[0]
+                    + val;
         }
         return result;
     }

@@ -51,10 +51,10 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED", "--enable-native-access=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED"})
 public class SegmentBulkHash {
 
-    @Param({"64"})
+    @Param({"8", "64"})
     public int ELEM_SIZE;
 
     byte[] array;
