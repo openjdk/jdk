@@ -730,7 +730,9 @@ private:
   const bool _is_valid;
 
 public:
-  VPointer(const MemNode* mem, const VLoop& vloop, DecomposedNodeCallback& callback) :
+  VPointer(const MemNode* mem,
+           const VLoop& vloop,
+           DecomposedNodeCallback& callback = DecomposedNodeCallback::empty()) :
     _vloop(vloop),
     _mem_pointer(MemPointerParser::parse(NOT_PRODUCT(vloop.mptrace() COMMA)
                                          mem,
@@ -813,10 +815,9 @@ public:
   }
 
   bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
-    MemPointerParser::DecomposedNodeCallback empty_callback; // TODO rm?
     for (int i = 0; i < nodes.length(); i++) {
       MemNode* mem = nodes.at(i)->as_Mem();
-      VPointer mem_p(mem->as_Mem(), _vloop, empty_callback);
+      VPointer mem_p(mem->as_Mem(), _vloop);
       if (!never_overlaps_with(mem_p)) {
         return true; // possible overlap
       }

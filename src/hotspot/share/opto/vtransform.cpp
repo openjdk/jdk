@@ -581,8 +581,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   // does not have any memory dependency.
   while (mem->is_StoreVector()) {
     // TODO refactor with VPointer for this vector load!
-    MemPointerParser::DecomposedNodeCallback empty_callback; // TODO rm?
-    VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop(), empty_callback);
+    VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop());
     if (store_p.overlap_possible_with_any_in(nodes())) {
       break;
     } else {
