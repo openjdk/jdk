@@ -3252,6 +3252,8 @@ bool os::Linux::libnuma_init() {
                                               libnuma_dlsym(handle, "numa_set_bind_policy")));
       set_numa_bitmask_isbitset(CAST_TO_FN_PTR(numa_bitmask_isbitset_func_t,
                                                libnuma_dlsym(handle, "numa_bitmask_isbitset")));
+      set_numa_bitmask_equal(CAST_TO_FN_PTR(numa_bitmask_equal_func_t,
+                                            libnuma_dlsym(handle, "numa_bitmask_equal")));
       set_numa_distance(CAST_TO_FN_PTR(numa_distance_func_t,
                                        libnuma_dlsym(handle, "numa_distance")));
       set_numa_get_membind(CAST_TO_FN_PTR(numa_get_membind_func_t,
@@ -3262,6 +3264,8 @@ bool os::Linux::libnuma_init() {
                                          libnuma_dlsym(handle, "numa_move_pages")));
       set_numa_set_preferred(CAST_TO_FN_PTR(numa_set_preferred_func_t,
                                             libnuma_dlsym(handle, "numa_set_preferred")));
+      set_numa_get_run_node_mask(CAST_TO_FN_PTR(numa_get_run_node_mask_func_t,
+                                                libnuma_v2_dlsym(handle, "numa_get_run_node_mask")));
 
       if (numa_available() != -1) {
         set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
@@ -3269,6 +3273,7 @@ bool os::Linux::libnuma_init() {
         set_numa_nodes_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_nodes_ptr"));
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
+	set_numa_cpunodebind_bitmask(_numa_get_run_node_mask());
         // Create an index -> node mapping, since nodes are not always consecutive
         _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
@@ -3445,9 +3450,11 @@ os::Linux::numa_interleave_memory_func_t os::Linux::_numa_interleave_memory;
 os::Linux::numa_interleave_memory_v2_func_t os::Linux::_numa_interleave_memory_v2;
 os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 os::Linux::numa_bitmask_isbitset_func_t os::Linux::_numa_bitmask_isbitset;
+os::Linux::numa_bitmask_equal_func_t os::Linux::_numa_bitmask_equal;
 os::Linux::numa_distance_func_t os::Linux::_numa_distance;
 os::Linux::numa_get_membind_func_t os::Linux::_numa_get_membind;
 os::Linux::numa_get_interleave_mask_func_t os::Linux::_numa_get_interleave_mask;
+os::Linux::numa_get_run_node_mask_func_t os::Linux::_numa_get_run_node_mask;
 os::Linux::numa_move_pages_func_t os::Linux::_numa_move_pages;
 os::Linux::numa_set_preferred_func_t os::Linux::_numa_set_preferred;
 os::Linux::NumaAllocationPolicy os::Linux::_current_numa_policy;
@@ -3456,6 +3463,7 @@ struct bitmask* os::Linux::_numa_all_nodes_ptr;
 struct bitmask* os::Linux::_numa_nodes_ptr;
 struct bitmask* os::Linux::_numa_interleave_bitmask;
 struct bitmask* os::Linux::_numa_membind_bitmask;
+struct bitmask* os::Linux::_numa_cpunodebind_bitmask;
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
@@ -4478,20 +4486,29 @@ void os::Linux::numa_init() {
   // numa_all_nodes_ptr holds bitmask of all nodes.
   // numa_get_interleave_mask(v2) and numa_get_membind(v2) APIs returns correct
   // bitmask when externally configured to run on all or fewer nodes.
+  // TBD Add notes about other policies and cpunodebind.
 
   if (!Linux::libnuma_init()) {
     FLAG_SET_ERGO(UseNUMA, false);
     FLAG_SET_ERGO(UseNUMAInterleaving, false); // Also depends on libnuma.
   } else {
-    if ((Linux::numa_max_node() < 1) || Linux::is_bound_to_single_node()) {
+    Linux::set_configured_numa_policy(Linux::identify_numa_policy());
+    if ((Linux::numa_max_node() < 1) || Linux::is_bound_to_single_node() ||
+        (!Linux::is_running_in_interleave_mode() && Linux::_numa_membind_bitmask != nullptr &&
+	Linux::_numa_cpunodebind_bitmask != nullptr &&
+	!_numa_bitmask_equal(Linux::_numa_membind_bitmask, Linux::_numa_cpunodebind_bitmask)) ||
+	(Linux::is_running_in_interleave_mode() && Linux::_numa_interleave_bitmask != nullptr &&
+	Linux::_numa_cpunodebind_bitmask != nullptr &&
+	!_numa_bitmask_equal(Linux::_numa_interleave_bitmask, Linux::_numa_cpunodebind_bitmask))) {
       // If there's only one node (they start from 0) or if the process
       // is bound explicitly to a single node using membind, disable NUMA
-      UseNUMA = false;
+      if (UseNUMA && FLAG_IS_CMDLINE(UseNUMA))
+	warning("UseNUMA is disabled as the process bound to a single numa node"
+		" or cpu and memory nodes are not aligned");
+      FLAG_SET_ERGO(UseNUMA, false);
     } else {
       LogTarget(Info,os) log;
       LogStream ls(log);
-
-      Linux::set_configured_numa_policy(Linux::identify_numa_policy());
 
       struct bitmask* bmp = Linux::_numa_membind_bitmask;
       const char* numa_mode = "membind";
