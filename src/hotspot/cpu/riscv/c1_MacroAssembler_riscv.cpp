@@ -83,8 +83,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     // displaced header address in the object header - if it is not the same, get the
     // object header instead
     la(temp, Address(obj, hdr_offset));
-    cmpxchgptr(hdr, disp_hdr, temp, t1, done, /*fallthough*/nullptr);
     // if the object header was the same, we're done
+    cmpxchgptr(hdr, disp_hdr, temp, t1, done, /*fallthough*/nullptr);
     // if the object header was not the same, it is now in the hdr register
     // => test if it is a stack pointer into the same stack (recursive locking), i.e.:
     //
@@ -106,11 +106,12 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     sd(hdr, Address(disp_hdr, 0));
     // otherwise we don't care about the result and handle locking via runtime call
     bnez(hdr, slow_case, /* is_far */ true);
+
     // done
     bind(done);
+    inc_held_monitor_count(t0);
   }
 
-  increment(Address(xthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -146,11 +147,11 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
     } else {
       cmpxchgptr(disp_hdr, hdr, obj, t1, done, &slow_case);
     }
+
     // done
     bind(done);
+    dec_held_monitor_count(t0);
   }
-
-  decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 }
 
 // Defines obj, preserves var_size_in_bytes

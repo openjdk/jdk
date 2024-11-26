@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4733558 6471539
  * @summary Tests Date encoding
- * @run main/othervm -Djava.security.manager=allow java_util_Date
+ * @run main/othervm java_util_Date
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.util.Date;
 
 public final class java_util_Date extends AbstractTest<Date> {
     public static void main(String[] args) {
-        new java_util_Date().test(true);
+        new java_util_Date().test();
     }
 
     protected Date getObject() {

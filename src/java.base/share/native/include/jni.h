@@ -48,6 +48,8 @@
 extern "C" {
 #endif
 
+#define JNICALL
+
 /*
  * JNI Types
  */

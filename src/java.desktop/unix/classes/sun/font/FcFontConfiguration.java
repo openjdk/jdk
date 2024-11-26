@@ -363,11 +363,6 @@ public class FcFontConfiguration extends FontConfiguration {
 
     private File getFcInfoFile() {
         if (fcInfoFileName == null) {
-            // NB need security permissions to get true IP address, and
-            // we should have those as the whole initialisation is in a
-            // doPrivileged block. But in this case no exception is thrown,
-            // and it returns the loop back address, and so we end up with
-            // "localhost"
             String hostname;
             try {
                 hostname = InetAddress.getLocalHost().getHostName();

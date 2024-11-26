@@ -22,9 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,14 +45,13 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.test.Functional.ThrowingBiConsumer;
-import static jdk.jpackage.test.Functional.ThrowingBiConsumer.toBiConsumer;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.test.Functional.rethrowUnchecked;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.LINUX_DEB;
 import static jdk.jpackage.test.PackageType.LINUX_RPM;
@@ -788,7 +785,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, PackageHandlers> packageHandlers;
     private boolean ignoreBundleOutputDir;
 
-    private static final File BUNDLE_OUTPUT_DIR;
+    private static final Path BUNDLE_OUTPUT_DIR;
 
     static {
         final String propertyName = "output";
@@ -796,9 +793,9 @@ public final class PackageTest extends RunnablePackageTest {
         if (val == null) {
             BUNDLE_OUTPUT_DIR = null;
         } else {
-            BUNDLE_OUTPUT_DIR = new File(val).getAbsoluteFile();
+            BUNDLE_OUTPUT_DIR = Path.of(val).toAbsolutePath();
 
-            if (!BUNDLE_OUTPUT_DIR.isDirectory()) {
+            if (!Files.isDirectory(BUNDLE_OUTPUT_DIR)) {
                 throw new IllegalArgumentException(String.format("Invalid value of %s sytem property: [%s]. Should be existing directory",
                         TKit.getConfigPropertyName(propertyName),
                         BUNDLE_OUTPUT_DIR));

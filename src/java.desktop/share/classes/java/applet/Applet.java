@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,13 +123,8 @@ public class Applet extends Panel {
 
     /**
      * Sets this applet's stub. This is done automatically by the system.
-     * <p>
-     * If there is a security manager, its {@code checkPermission} method is
-     * called with the {@code AWTPermission("setAppletStub")} permission if a
-     * stub has already been set.
      *
      * @param  stub the new stub
-     * @throws SecurityException if the caller cannot set the stub
      */
     public final void setStub(AppletStub stub) {
         if (this.stub != null) {

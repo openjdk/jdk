@@ -95,7 +95,7 @@ static CGAffineTransform sInverseTX = { 1, 0, 0, -1, 0, 0 };
         _fontThrowJavaException = YES;                                  \
         goto cleanup;                                                   \
     }                                                                   \
-    if ((*env)->ExceptionCheck(env) == JNI_TRUE) {                      \
+    if ((*env)->ExceptionCheck(env)) {                                  \
         goto cleanup;                                                   \
     }
 
