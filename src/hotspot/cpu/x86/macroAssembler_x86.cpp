@@ -5117,6 +5117,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   const Register r_array_base = *available_regs++;
 
   // Get the first array index that can contain super_klass into r_array_index.
+  // Note: Clobbers r_array_base and slot.
   population_count(r_array_index, r_array_index, /*temp2*/r_array_base, /*temp3*/slot);
 
   // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
