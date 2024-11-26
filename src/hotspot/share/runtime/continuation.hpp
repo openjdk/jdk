@@ -56,7 +56,8 @@ enum freeze_result {
   freeze_pinned_monitor = 4,
   freeze_exception = 5,
   freeze_not_mounted = 6,
-  freeze_unsupported = 7
+  freeze_unsupported = 7,
+  freeze_initialized = 8
 };
 
 class Continuation : AllStatic {

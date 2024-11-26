@@ -1677,8 +1677,9 @@ static freeze_result freeze_epilog(JavaThread* thread, ContinuationWrapper& cont
   return freeze_epilog(cont);
 }
 
-static freeze_result preempt_epilog(ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
+static freeze_result preempt_epilog(JavaThread* thread, ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
   if (UNLIKELY(res != freeze_ok)) {
+    JFR_ONLY(thread->set_last_freeze_fail_result(res);)
     verify_continuation(cont.continuation());
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     return res;
@@ -1722,6 +1723,7 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
     verify_continuation(cont.continuation());
     freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    JFR_ONLY(current->set_last_freeze_fail_result(res);)
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     // Avoid Thread.yield() loops without safepoint polls.
     if (SafepointMechanism::should_process(current) && !preempt) {
@@ -1738,7 +1740,7 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
     CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
-    return !preempt ? freeze_epilog(cont) : preempt_epilog(cont, freeze_ok, freeze.last_frame());
+    return !preempt ? freeze_epilog(cont) : preempt_epilog(current, cont, freeze_ok, freeze.last_frame());
   }
 
   if (preempt) {
@@ -1748,7 +1750,7 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
     freeze_result res = fast ? freeze.try_freeze_fast() : freeze.freeze_slow();
 
     CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
-    preempt_epilog(cont, res, freeze.last_frame());
+    preempt_epilog(current, cont, res, freeze.last_frame());
     return res;
   }
 
