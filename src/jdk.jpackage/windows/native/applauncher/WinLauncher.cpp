@@ -339,13 +339,13 @@ void launchApp() {
 
 #ifndef JP_LAUNCHERW
 
-int __cdecl  wmain() {
+int wmain() {
     return app::launch(std::nothrow, launchApp);
 }
 
 #else
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
+int wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int) {
     return app::wlaunch(std::nothrow, launchApp);
 }
 

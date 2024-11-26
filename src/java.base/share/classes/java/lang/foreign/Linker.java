@@ -241,50 +241,40 @@ import java.util.stream.Stream;
  * </tbody>
  * </table></blockquote>
  * <p>
- * All native linker implementations support a well-defined subset of layouts. More formally,
- * a layout {@code L} is supported by a native linker {@code NL} if:
+ * A native linker only supports function descriptors whose argument/return layouts are
+ * <em>well-formed</em> layouts. More formally, a layout `L` is well-formed if:
  * <ul>
- * <li>{@code L} is a value layout {@code V} and {@code V.withoutName()} is a canonical layout</li>
+ * <li>{@code L} is a value layout and {@code L} is derived from a canonical layout
+ *     {@code C} such that {@code L.byteAlignment() <= C.byteAlignment()}</li>
  * <li>{@code L} is a sequence layout {@code S} and all the following conditions hold:
  * <ol>
- * <li>the alignment constraint of {@code S} is set to its
- *     <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
- * <li>{@code S.elementLayout()} is a layout supported by {@code NL}.</li>
+ * <li>{@code L.byteAlignment()} is equal to the sequence layout's <em>natural alignment</em>
+ *     , and</li>
+ * <li>{@code S.elementLayout()} is a well-formed layout.</li>
  * </ol>
  * </li>
  * <li>{@code L} is a group layout {@code G} and all the following conditions hold:
  * <ol>
- * <li>the alignment constraint of {@code G} is set to its
- *     <a href="MemoryLayout.html#layout-align">natural alignment</a>;</li>
- * <li>the size of {@code G} is a multiple of its alignment constraint;</li>
- * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or
- *     a layout supported by {@code NL}, and</li>
- * <li>{@code G} does not contain padding other than what is strictly required to align
- *      its non-padding layout elements, or to satisfy (2).</li>
+ * <li>{@code G.byteAlignment()} is equal to the group layout's <em>natural alignment</em></li>
+ * <li>{@code G.byteSize()} is a multiple of {@code G.byteAlignment()}</li>
+ * <li>Each member layout in {@code G.memberLayouts()} is either a padding layout or a
+ *     well-formed layout</li>
+ * <li>Each non-padding member layout {@code E} in {@code G.memberLayouts()} follows an
+ *     optional padding member layout, whose size is the minimum size required to
+ *     align {@code E}</li>
+ * <li>{@code G} contains an optional trailing padding member layout, whose size is the
+ *     minimum size that satisfies (2)</li>
  * </ol>
  * </li>
  * </ul>
- *
- * Linker implementations may optionally support additional layouts, such as
- * <em>packed</em> struct layouts. A packed struct is a struct in which there is
- * at least one member layout {@code L} that has an alignment constraint less strict
- * than its natural alignment. This allows to avoid padding between member layouts,
- * as well as avoiding padding at the end of the struct layout. For example:
-
- * {@snippet lang = java:
- * // No padding between the 2 element layouts:
- * MemoryLayout noFieldPadding = MemoryLayout.structLayout(
- *         ValueLayout.JAVA_INT,
- *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4));
- *
- * // No padding at the end of the struct:
- * MemoryLayout noTrailingPadding = MemoryLayout.structLayout(
- *         ValueLayout.JAVA_DOUBLE.withByteAlignment(4),
- *         ValueLayout.JAVA_INT);
- * }
  * <p>
- * A native linker only supports function descriptors whose argument/return layouts are
- * layouts supported by that linker and are not sequence layouts.
+ * A function descriptor is well-formed if its argument and return layouts are
+ * well-formed and are not sequence layouts. A native linker is guaranteed to reject
+ * function descriptors that are not well-formed. However, a native linker can still
+ * reject well-formed function descriptors, according to platform-specific rules.
+ * For example, some native linkers may reject <em>packed</em> struct layouts -- struct
+ * layouts whose member layouts feature relaxed alignment constraints, to avoid
+ * the insertion of additional padding.
  *
  * <h3 id="function-pointers">Function pointers</h3>
  *

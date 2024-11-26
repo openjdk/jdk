@@ -35,14 +35,8 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.StreamCorruptedException;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
-
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.DecimalDigits;
 
 /**
  * Immutable, arbitrary-precision signed decimal numbers.  A {@code
@@ -334,8 +328,6 @@ import jdk.internal.util.DecimalDigits;
  * @since 1.1
  */
 public class BigDecimal extends Number implements Comparable<BigDecimal> {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
-
     /*
      * Let l = log_2(10).
      * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
@@ -4172,6 +4164,103 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return BigDecimal.valueOf(1, this.scale(), 1);
     }
 
+    // Private class to build a string representation for BigDecimal object. The
+    // StringBuilder field acts as a buffer to hold the temporary representation
+    // of BigDecimal. The cmpCharArray holds all the characters for the compact
+    // representation of BigDecimal (except for '-' sign' if it is negative) if
+    // its intCompact field is not INFLATED.
+    static class StringBuilderHelper {
+        final StringBuilder sb;    // Placeholder for BigDecimal string
+        final char[] cmpCharArray; // character array to place the intCompact
+
+        StringBuilderHelper() {
+            sb = new StringBuilder(32);
+            // All non negative longs can be made to fit into 19 character array.
+            cmpCharArray = new char[19];
+        }
+
+        // Accessors.
+        StringBuilder getStringBuilder() {
+            sb.setLength(0);
+            return sb;
+        }
+
+        char[] getCompactCharArray() {
+            return cmpCharArray;
+        }
+
+        /**
+         * Places characters representing the intCompact in {@code long} into
+         * cmpCharArray and returns the offset to the array where the
+         * representation starts.
+         *
+         * @param intCompact the number to put into the cmpCharArray.
+         * @return offset to the array where the representation starts.
+         * Note: intCompact must be greater or equal to zero.
+         */
+        int putIntCompact(long intCompact) {
+            assert intCompact >= 0;
+
+            long q;
+            int r;
+            // since we start from the least significant digit, charPos points to
+            // the last character in cmpCharArray.
+            int charPos = cmpCharArray.length;
+
+            // Get 2 digits/iteration using longs until quotient fits into an int
+            while (intCompact > Integer.MAX_VALUE) {
+                q = intCompact / 100;
+                r = (int)(intCompact - q * 100);
+                intCompact = q;
+                cmpCharArray[--charPos] = DIGIT_ONES[r];
+                cmpCharArray[--charPos] = DIGIT_TENS[r];
+            }
+
+            // Get 2 digits/iteration using ints when i2 >= 100
+            int q2;
+            int i2 = (int)intCompact;
+            while (i2 >= 100) {
+                q2 = i2 / 100;
+                r  = i2 - q2 * 100;
+                i2 = q2;
+                cmpCharArray[--charPos] = DIGIT_ONES[r];
+                cmpCharArray[--charPos] = DIGIT_TENS[r];
+            }
+
+            cmpCharArray[--charPos] = DIGIT_ONES[i2];
+            if (i2 >= 10)
+                cmpCharArray[--charPos] = DIGIT_TENS[i2];
+
+            return charPos;
+        }
+
+        static final char[] DIGIT_TENS = {
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
+            '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
+            '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
+            '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
+            '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
+            '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
+            '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
+            '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
+            '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
+        };
+
+        static final char[] DIGIT_ONES = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        };
+    }
+
     /**
      * Lay out this {@code BigDecimal} into a {@code char[]} array.
      * The Java 1.2 equivalent to this was called {@code getValueString}.
@@ -4182,8 +4271,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *         {@code BigDecimal}
      */
     private String layoutChars(boolean sci) {
-        long intCompact = this.intCompact;
-        int scale = this.scale;
         if (scale == 0)                      // zero scale is trivial
             return (intCompact != INFLATED) ?
                 Long.toString(intCompact):
@@ -4193,24 +4280,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // currency fast path
             int lowInt = (int)intCompact % 100;
             int highInt = (int)intCompact / 100;
-            int highIntSize = DecimalDigits.stringSize(highInt);
-            byte[] buf = new byte[highIntSize + 3];
-            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
-            buf[highIntSize] = '.';
-            DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
-            try {
-                return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-            } catch (CharacterCodingException cce) {
-                throw new AssertionError(cce);
-            }
+            return (Integer.toString(highInt) + '.' +
+                    StringBuilderHelper.DIGIT_TENS[lowInt] +
+                    StringBuilderHelper.DIGIT_ONES[lowInt]) ;
         }
 
+        StringBuilderHelper sbHelper = new StringBuilderHelper();
         char[] coeff;
         int offset;  // offset is the starting index for coeff array
         // Get the significand as an absolute value
         if (intCompact != INFLATED) {
-            coeff = new char[19];
-            offset = DecimalDigits.getChars(Math.abs(intCompact), coeff.length, coeff);
+            offset = sbHelper.putIntCompact(Math.abs(intCompact));
+            coeff  = sbHelper.getCompactCharArray();
         } else {
             offset = 0;
             coeff  = intVal.abs().toString().toCharArray();
@@ -4220,7 +4301,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // If E-notation is needed, length will be: +1 if negative, +1
         // if '.' needed, +2 for "E+", + up to 10 for adjusted exponent.
         // Otherwise it could have +1 if negative, plus leading "0.00000"
-        StringBuilder buf = new StringBuilder(32);;
+        StringBuilder buf = sbHelper.getStringBuilder();
         if (signum() < 0)             // prefix '-' if negative
             buf.append('-');
         int coeffLen = coeff.length - offset;
