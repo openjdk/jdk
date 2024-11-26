@@ -61,6 +61,7 @@ public class SquareRootTests {
         failures += nearOne();
         failures += halfWay();
         failures += exactResultTests();
+        failures += scaleOverflowTest();
 
         if (failures > 0 ) {
             throw new RuntimeException("Incurred " + failures + " failures" +
@@ -197,7 +198,7 @@ public class SquareRootTests {
 
             // mc.roundingMode != RoundingMode.UNNECESSARY && mc.precision == 0
             try {
-                result = BigDecimal.TEN.sqrt(arbitrary);
+                result = input.sqrt(arbitrary);
                 System.err.println("Unexpected sqrt with mc.precision == 0: (" + input + ").sqrt() = " + result);
                 failures += 1;
             } catch (ArithmeticException e) {
@@ -211,7 +212,8 @@ public class SquareRootTests {
         try {
             BigDecimal input = BigDecimal.valueOf(121);
             BigDecimal result = input.sqrt(unnecessary);
-            System.err.println("Unexpected sqrt with result.precision() > mc.precision: (" + input + ").sqrt() = " + result);
+            System.err.println("Unexpected sqrt with result.precision() > mc.precision: ("
+                    + input + ").sqrt() = " + result);
             failures += 1;
         } catch (ArithmeticException e) {
             // Expected
@@ -237,7 +239,22 @@ public class SquareRootTests {
         for (Object[] testCase : cases) {
             BigDecimal expected = (BigDecimal) testCase[2];
             BigDecimal result = ((BigDecimal) testCase[0]).sqrt((MathContext) testCase[1]);
-            failures += equalNumerically(expected, result, "Exact results");
+            failures += compare(expected, result, true, "Exact results");
+        }
+
+        return failures;
+    }
+
+    private static int scaleOverflowTest() {
+        int failures = 0;
+
+        try {
+            BigDecimal.valueOf(1, -1).sqrt(new MathContext((1 << 30) + 1, RoundingMode.UP));
+            System.err.println("ArithmeticException expected: possible overflow undetected "
+                    + "or the range of supported values for the algorithm has extended.");
+            failures += 1;
+        } catch (ArithmeticException e) {
+            // Expected
         }
 
         return failures;
