@@ -573,9 +573,9 @@ public:
 private:
   NOT_PRODUCT( const TraceMemPointer& _trace; )
   MemPointerSummand _summands[SUMMANDS_SIZE];
-  NoOverflowInt _con;
-  Base _base;
-  jint _size;
+  const NoOverflowInt _con;
+  const Base _base;
+  const jint _size;
 
   // Default / trivial: pointer = 0 + 1 * pointer
   MemPointerDecomposedForm(Node* pointer,
@@ -591,6 +591,7 @@ private:
     assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "valid size");
   }
 
+  // pointer = SUM(SUMMANDS) + con
   MemPointerDecomposedForm(Node* pointer,
                            const GrowableArray<MemPointerSummand>& summands,
                            const NoOverflowInt& con,
