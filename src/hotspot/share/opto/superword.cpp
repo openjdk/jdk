@@ -50,7 +50,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
 }
 
 // Collect ignored loop nodes during VPointer parsing.
-class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerDecomposedFormParser::Callback {
+class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerParser::Callback {
 private:
   const VLoop&     _vloop;
   const Node_List& _body;
@@ -513,8 +513,8 @@ int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
 
   // VPointer summands
-  return MemPointerDecomposedForm::cmp_summands(a->vpointer().decomposed_form(),
-                                                b->vpointer().decomposed_form());
+  return MemPointer::cmp_summands(a->vpointer().decomposed_form(),
+                                  b->vpointer().decomposed_form());
 }
 
 int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {

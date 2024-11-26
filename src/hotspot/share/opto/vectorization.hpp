@@ -677,7 +677,7 @@ private:
   VStatus setup_submodules_helper();
 };
 
-// VPointer adapts the MemPointerDecomposedForm to the use in a loop:
+// VPointer adapts the MemPointer to the use in a loop:
 //
 //   pointer = SUM(summands) + con
 //
@@ -702,10 +702,10 @@ private:
 //
 class VPointer : public ArenaObj {
 private:
-  typedef MemPointerDecomposedFormParser::Callback Callback;
+  typedef MemPointerParser::Callback Callback;
 
   const VLoop& _vloop;
-  const MemPointerDecomposedForm _decomposed_form;
+  const MemPointer _decomposed_form;
   const jint _size;
 
   // Derived, for quicker use.
@@ -734,7 +734,7 @@ public:
 
   // Accessors
   bool is_valid() const { return _is_valid; }
-  const MemPointerDecomposedForm& decomposed_form() const { assert(_is_valid, ""); return _decomposed_form; }
+  const MemPointer& decomposed_form() const { assert(_is_valid, ""); return _decomposed_form; }
   jint size()                                       const { assert(_is_valid, ""); return _size; }
   jint iv_scale()                                   const { assert(_is_valid, ""); return _iv_scale; }
   jint con()                                        const { return decomposed_form().con().value(); }
@@ -797,7 +797,7 @@ public:
   }
 
   bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
-    MemPointerDecomposedFormParser::Callback empty_callback; // TODO rm?
+    MemPointerParser::Callback empty_callback; // TODO rm?
     for (int i = 0; i < nodes.length(); i++) {
       MemNode* mem = nodes.at(i)->as_Mem();
       VPointer mem_p(mem->as_Mem(), _vloop, empty_callback);
@@ -811,19 +811,19 @@ public:
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
-  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem,
-                                                             Callback& adr_node_callback,
-                                                             const VLoop& vloop) {
+  static const MemPointer init_decomposed_form(const MemNode* mem,
+                                               Callback& adr_node_callback,
+                                               const VLoop& vloop) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
     ResourceMark rm;
-    MemPointerDecomposedFormParser parser(mem,
+    MemPointerParser parser(mem,
                                           adr_node_callback
                                           NOT_PRODUCT(COMMA vloop.mptrace()));
     return parser.decomposed_form();
   }
 
   jint init_iv_scale() const {
-    for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
+    for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _decomposed_form.summands_at(i);
       Node* variable = summand.variable();
       if (variable == _vloop.iv()) {
@@ -844,7 +844,7 @@ private:
       return false;
     }
 
-    for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
+    for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _decomposed_form.summands_at(i);
       Node* variable = summand.variable();
       if (variable != nullptr && variable != _vloop.iv() && !is_invariant(variable, _vloop)) {
@@ -1265,7 +1265,7 @@ public:
   AlignmentSolution* solve() const;
 
 private:
-  MemPointerDecomposedForm::Base base() const { return _vpointer.decomposed_form().base();}
+  MemPointer::Base base() const { return _vpointer.decomposed_form().base();}
   jint iv_scale() const { return _vpointer.iv_scale(); }
 
   class EQ4 {

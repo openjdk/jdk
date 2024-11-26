@@ -153,7 +153,7 @@
 //
 // -----------------------------------------------------------------------------------------
 //
-// MemPointerDecomposedForm:
+// MemPointer:
 //   When the pointer is parsed, it is decomposed into a SUM of summands plus a constant:
 //
 //     pointer = SUM(summands) + con
@@ -171,17 +171,6 @@
 //   On 64-bit systems, this decomposed form is computed with long-add/mul, on 32-bit systems
 //   it is computed with int-add/mul.
 //
-// MemPointerAliasing:
-//   The decomposed form allows us to determine the aliasing between two pointers easily. For
-//   example, if two pointers are identical, except for their constant:
-//
-//     pointer1 = SUM(summands) + con1
-//     pointer2 = SUM(summands) + con2
-//
-//   then we can easily compute the distance between the pointers (distance = con2 - con1),
-//   and determine if they are adjacent.
-//
-// MemPointerDecomposedFormParser:
 //   Any pointer can be parsed into this (default / trivial) decomposed form:
 //
 //     pointer = 1       * pointer    + 0
@@ -204,11 +193,20 @@
 //
 //     This allows us to easily see that these two pointers are adjacent (distance = 4).
 //
-//   Hence, in MemPointerDecomposedFormParser::parse_decomposed_form, we start with the pointer as
-//   a trivial summand. A summand can either be decomposed further or it is terminal (cannot
-//   be decomposed further). We decompose the summands recursively until all remaining summands
-//   are terminal, see MemPointerDecomposedFormParser::parse_sub_expression. This effectively parses
-//   the pointer expression recursively.
+//   Hence, in MemPointerParser::parse_decomposed_form, we start with the pointer as a trivial summand.
+//   A summand can either be decomposed further or it is terminal (cannot be decomposed further).
+//   We decompose the summands recursively until all remaining summands are terminal, see
+//   MemPointerParser::parse_sub_expression. This effectively parses the pointer expression recursively.
+//
+// MemPointerAliasing:
+//   The decomposed form allows us to determine the aliasing between two pointers easily. For
+//   example, if two pointers are identical, except for their constant:
+//
+//     pointer1 = SUM(summands) + con1
+//     pointer2 = SUM(summands) + con2
+//
+//   then we can easily compute the distance between the pointers (distance = con2 - con1),
+//   and determine if they are adjacent.
 //
 // -----------------------------------------------------------------------------------------
 //
@@ -269,12 +267,11 @@
 //    mp1 and mp2:
 //      p1 - p2 = mp1 - mp2
 //
-//    Note: MemPointerDecomposedForm::get_aliasing_with relies on this MemPointer Lemma to
-//          prove the correctness of its aliasing computation between two MemPointers.
+//    Note: MemPointer::get_aliasing_with relies on this MemPointer Lemma to prove the correctness of its
+//          aliasing computation between two MemPointers.
 //
 //
-//    Note: MemPointerDecomposedFormParser::is_safe_to_decompose_op checks that all
-//          decompositions we apply are safe.
+//    Note: MemPointerParser::is_safe_to_decompose_op checks that all decompositions we apply are safe.
 //
 //
 //  Proof of the "MemPointer Lemma":
@@ -445,7 +442,7 @@ public:
 #endif
 };
 
-// Summand of a MemPointerDecomposedForm:
+// Summand of a MemPointer:
 //
 //   summand = scale * variable
 //
@@ -519,7 +516,7 @@ public:
 // Node: if the base is known, then it is in the 0th summand. A base can be:
 //       - on-heap  / object: base().object()
 //       - off-heap / native: base().native()
-class MemPointerDecomposedForm : public StackObj {
+class MemPointer : public StackObj {
 public:
   // We limit the number of summands to 10. This is just a best guess, and not at this
   // point supported by evidence. But I think it is reasonable: usually, a pointer
@@ -578,9 +575,9 @@ private:
   const jint _size;
 
   // Default / trivial: pointer = 0 + 1 * pointer
-  MemPointerDecomposedForm(Node* pointer,
-                           const jint size
-                           NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+  MemPointer(Node* pointer,
+             const jint size
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _con(NoOverflowInt(0)),
     _base(Base()),
@@ -592,11 +589,11 @@ private:
   }
 
   // pointer = SUM(SUMMANDS) + con
-  MemPointerDecomposedForm(Node* pointer,
-                           const GrowableArray<MemPointerSummand>& summands,
-                           const NoOverflowInt& con,
-                           const jint size
-                           NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+  MemPointer(Node* pointer,
+             const GrowableArray<MemPointerSummand>& summands,
+             const NoOverflowInt& con,
+             const jint size
+             NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _con(con),
     _base(Base::make(pointer, summands)),
@@ -632,34 +629,34 @@ private:
   }
 
 public:
-  static MemPointerDecomposedForm make_trivial(Node* pointer,
-                                               const jint size
-                                               NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
-    return MemPointerDecomposedForm(pointer, size NOT_PRODUCT(COMMA trace));
+  static MemPointer make_trivial(Node* pointer,
+                                 const jint size
+                                 NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
+    return MemPointer(pointer, size NOT_PRODUCT(COMMA trace));
   }
 
-  static MemPointerDecomposedForm make(Node* pointer,
-                                       const GrowableArray<MemPointerSummand>& summands,
-                                       const NoOverflowInt& con,
-                                       const jint size
-                                       NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
+  static MemPointer make(Node* pointer,
+                         const GrowableArray<MemPointerSummand>& summands,
+                         const NoOverflowInt& con,
+                         const jint size
+                         NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
     if (summands.length() <= SUMMANDS_SIZE) {
-      return MemPointerDecomposedForm(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
+      return MemPointer(pointer, summands, con, size NOT_PRODUCT(COMMA trace));
     } else {
-      return MemPointerDecomposedForm::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
+      return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
     }
   }
 
 private:
-  MemPointerAliasing get_aliasing_with(const MemPointerDecomposedForm& other
+  MemPointerAliasing get_aliasing_with(const MemPointer& other
                                        NOT_PRODUCT(COMMA const TraceMemPointer& trace)) const;
 
-  bool has_same_summands_as(const MemPointerDecomposedForm& other, uint start) const;
-  bool has_same_summands_as(const MemPointerDecomposedForm& other) const { return has_same_summands_as(other, 0); }
-  bool has_different_base_but_otherwise_same_summands_as(const MemPointerDecomposedForm& other) const;
+  bool has_same_summands_as(const MemPointer& other, uint start) const;
+  bool has_same_summands_as(const MemPointer& other) const { return has_same_summands_as(other, 0); }
+  bool has_different_base_but_otherwise_same_summands_as(const MemPointer& other) const;
 
 public:
-  bool has_same_non_base_summands_as(const MemPointerDecomposedForm& other) const {
+  bool has_same_non_base_summands_as(const MemPointer& other) const {
     if (!base().is_known() || !other.base().is_known()) {
       assert(false, "unknonw base case is not answered optimally");
       return false;
@@ -677,7 +674,7 @@ public:
   const Base& base() const { return _base; }
   jint size() const { return _size; }
 
-  static int cmp_summands(const MemPointerDecomposedForm& a, const MemPointerDecomposedForm& b) {
+  static int cmp_summands(const MemPointer& a, const MemPointer& b) {
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& s_a = a.summands_at(i);
       const MemPointerSummand& s_b = b.summands_at(i);
@@ -697,8 +694,8 @@ public:
     }
   }
 
-  bool is_adjacent_to_and_before(const MemPointerDecomposedForm& other) const;
-  bool never_overlaps_with(const MemPointerDecomposedForm& other) const;
+  bool is_adjacent_to_and_before(const MemPointer& other) const;
+  bool never_overlaps_with(const MemPointer& other) const;
 
 #ifndef PRODUCT
   void print_form_on(outputStream* st) const {
@@ -717,7 +714,7 @@ public:
   }
 
   void print_on(outputStream* st, bool end_with_cr = true) const {
-    st->print("MemPointerDecomposedForm[base: ");
+    st->print("MemPointer[base: ");
     _base.print_on(st);
     st->print(", form: ");
     print_form_on(st);
@@ -727,7 +724,7 @@ public:
 #endif
 };
 
-class MemPointerDecomposedFormParser : public StackObj {
+class MemPointerParser : public StackObj {
 public:
   class Callback : public StackObj {
   public:
@@ -747,11 +744,11 @@ private:
   GrowableArray<MemPointerSummand> _summands;
 
   // Resulting decomposed-form.
-  MemPointerDecomposedForm _decomposed_form;
+  MemPointer _decomposed_form;
 
 public:
   // No callback.
-  MemPointerDecomposedFormParser(const MemNode* mem
+  MemPointerParser(const MemNode* mem
                                  NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
@@ -759,18 +756,18 @@ public:
     _decomposed_form(parse_decomposed_form(_empty_callback)) {}
 
   // With callback.
-  MemPointerDecomposedFormParser(const MemNode* mem,
-                                 Callback& adr_node_callback
-                                 NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+  MemPointerParser(const MemNode* mem,
+                   Callback& adr_node_callback
+                   NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
     _con(NoOverflowInt(0)),
     _decomposed_form(parse_decomposed_form(adr_node_callback)) {}
 
-  const MemPointerDecomposedForm& decomposed_form() const { return _decomposed_form; }
+  const MemPointer& decomposed_form() const { return _decomposed_form; }
 
 private:
-  MemPointerDecomposedForm parse_decomposed_form(Callback& adr_node_callback);
+  MemPointer parse_decomposed_form(Callback& adr_node_callback);
 
   void parse_sub_expression(const MemPointerSummand& summand, Callback& adr_node_callback);
 
@@ -780,15 +777,15 @@ private:
 // TODO maybe merge with decomposed form?
 // Facility to parse the pointer of a Load or Store, so that aliasing between two such
 // memory operations can be determined (e.g. adjacency).
-class MemPointer : public StackObj {
+class MemPointerX : public StackObj {
 private:
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
   const MemNode* _mem;
-  const MemPointerDecomposedForm _decomposed_form;
+  const MemPointer _decomposed_form;
 
 public:
-  MemPointer(const MemNode* mem NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
+  MemPointerX(const MemNode* mem NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
     _decomposed_form(init_decomposed_form())
@@ -803,17 +800,17 @@ public:
 #endif
   }
 
-  const MemNode* mem() const { return _mem; }
-  const MemPointerDecomposedForm decomposed_form() const { return _decomposed_form; }
-  bool is_adjacent_to_and_before(const MemPointer& other) const {
+  bool is_adjacent_to_and_before(const MemPointerX& other) const {
     return decomposed_form().is_adjacent_to_and_before(other.decomposed_form());
   }
 
 private:
-  const MemPointerDecomposedForm init_decomposed_form() {
+  const MemPointer decomposed_form() const { return _decomposed_form; }
+
+  const MemPointer init_decomposed_form() {
     assert(_mem->is_Store(), "only stores are supported");
     ResourceMark rm;
-    MemPointerDecomposedFormParser parser(_mem NOT_PRODUCT(COMMA _trace));
+    MemPointerParser parser(_mem NOT_PRODUCT(COMMA _trace));
     return parser.decomposed_form();
   }
 };
