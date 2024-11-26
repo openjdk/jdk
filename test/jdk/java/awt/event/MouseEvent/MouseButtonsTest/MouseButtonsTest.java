@@ -194,7 +194,7 @@ public class MouseButtonsTest implements MouseListener {
             Point center = new Point(xc, yc);
 
             robot.delay(robotDelay);
-            robot.glide(origin, center);
+            robot.glide(origin.x, origin.y, center.x, center.y);
             robot.click();
             robot.delay(robotDelay);
 

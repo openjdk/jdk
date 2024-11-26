@@ -80,7 +80,7 @@ public class TaskUndJFrameProperties extends Task<GUIUndFrame> {
         //click on the jbutton2 in jframe2
         SwingUtilities.invokeAndWait(gui.jframe2::toFront);
         robot.waitForIdle(1000);
-        robot.glide(button2Origin, button2Center);
+        robot.glide(button2Origin.x, button2Origin.y, button2Center.x, button2Center.y);
         robot.waitForIdle(1000);
         robot.click();
         //After Show

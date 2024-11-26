@@ -825,19 +825,6 @@ public class Robot {
 
     /**
      * A convenience method that moves the mouse in multiple steps
-     * from its current location to the destination point with a
-     * 2 pixel step-length and a 20-millisecond delay.
-     *
-     * @param   dest    Destination point
-     * @see     #glide(int, int)
-     * @since   25
-     */
-    public void glide(Point dest) {
-        glide(dest.x, dest.y);
-    }
-
-    /**
-     * A convenience method that moves the mouse in multiple steps
      * from source coordinates to the destination coordinates with
      * a 2 pixel step-length and a 20-millisecond delay.
      *
@@ -850,20 +837,6 @@ public class Robot {
      */
     public void glide(int fromX, int fromY, int toX, int toY) {
         glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
-    }
-
-    /**
-     * A convenience method that moves the mouse in multiple
-     * steps from source point to the destination point with a
-     * 2 pixel step-length and a 20-millisecond delay.
-     *
-     * @param   src     Source point
-     * @param   dest    Destination point
-     * @see     #glide(int, int, int, int, int, int)
-     * @since   25
-     */
-    public void glide(Point src, Point dest) {
-        glide(src.x, src.y, dest.x, dest.y, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
     }
 
     /**
@@ -953,31 +926,5 @@ public class Robot {
      */
     public synchronized void type(char c) {
         type(KeyEvent.getExtendedKeyCodeForChar(c));
-    }
-
-    /**
-     * Types given array of characters one by one
-     *
-     * @param   symbols Array of characters to type
-     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
-     * @see     #type(char)
-     * @since   25
-     */
-    public synchronized void type(char[] symbols) {
-        for (int i = 0; i < symbols.length; i++) {
-            type(symbols[i]);
-        }
-    }
-
-    /**
-     * Types given string
-     *
-     * @param   s   String to type
-     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
-     * @see     #type(char[])
-     * @since   25
-     */
-    public synchronized void type(String s) {
-        type(s.toCharArray());
     }
 }

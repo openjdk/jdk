@@ -164,7 +164,7 @@ public class IndependenceSwingTest {
             Point ttf1Center = tf1.getLocationOnScreen();
             ttf1Center.translate(tf1.getWidth()/2, tf1.getHeight()/2);
 
-            robot.glide(new Point(0, 0), ttf1Center);
+            robot.glide(0, 0, ttf1Center.x, ttf1Center.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle(20);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);

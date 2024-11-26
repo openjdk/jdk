@@ -223,7 +223,7 @@ public class ExtendedModifiersTest implements KeyListener {
             Point center = new Point(xc, yc);
 
             robot.waitForIdle();
-            robot.glide(origin, center);
+            robot.glide(origin.x, origin.y, center.x, center.y);
             robot.click();
             robot.waitForIdle();
 
