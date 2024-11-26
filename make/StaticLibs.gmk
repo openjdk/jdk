@@ -74,7 +74,7 @@ endif
 
 $(foreach module, $(STATIC_LIB_MODULES), \
     $(eval LIBS_$(module) := $(filter-out $(BROKEN_STATIC_LIBS), $(shell cat \
-    $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(module)/module-libs.txt))) \
+    $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(module)/module-included-libs.txt))) \
 )
 
 STATIC_LIB_FILES := $(foreach module, $(STATIC_LIB_MODULES), \

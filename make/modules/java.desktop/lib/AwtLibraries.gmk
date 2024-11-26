@@ -170,14 +170,14 @@ ifeq ($(call isTargetOs, windows macosx), false)
 
   ifneq ($(ENABLE_HEADLESS_ONLY), true)
     # We cannot link with both awt_headless and awt_xawt at the same time
-    LIBAWT_HEADLESS_EXCLUDE_FROM_STATIC_LIBS := true
+    LIBAWT_HEADLESS_ONLY_EXPORTED := true
   endif
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
       EXCLUDES := medialib, \
-      EXCLUDE_FROM_STATIC_LIBS := $(LIBAWT_HEADLESS_EXCLUDE_FROM_STATIC_LIBS), \
+      ONLY_EXPORTED := $(LIBAWT_HEADLESS_ONLY_EXPORTED), \
       OPTIMIZATION := LOW, \
       CFLAGS := -DHEADLESS=true $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) \
           $(X_CFLAGS), \

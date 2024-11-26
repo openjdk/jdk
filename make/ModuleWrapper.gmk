@@ -48,15 +48,15 @@ include $(MAKEFILE_PREFIX).gmk
 ifeq ($(MAKEFILE_PREFIX), Lib)
   # We need to keep track of what libraries are generated/needed by this
   # module. This information is required when doing static linking, to know
-  # which static library files to include. The variable ($(MODULE)_JDK_LIBS is
-  # added to for each call to SetupJdkLibrary. The file module-libs.txt is then
+  # which static library files to include. The variable $(MODULE)_INCLUDED_LIBS is
+  # added to for each call to SetupJdkLibrary. The file module-included-libs.txt is then
   # read in StaticLibs.gmk.
   ifneq ($($(MODULE)_JDK_LIBS), )
-    LIBLIST := $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(MODULE)/module-libs.txt
+    LIBLIST := $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(MODULE)/module-included-libs.txt
 
     $(LIBLIST): $(TARGETS)
 	$(call MakeDir, $(@D))
-	$(ECHO) $($(MODULE)_JDK_LIBS) > $@
+	$(ECHO) $($(MODULE)_INCLUDED_LIBS) > $@
 
     TARGETS += $(LIBLIST)
   endif
