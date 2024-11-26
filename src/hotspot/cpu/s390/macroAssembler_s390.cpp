@@ -3419,8 +3419,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
                                                        Register temp3,
                                                        Register temp4,
                                                        Register result) {
-  assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result, Z_R1_scratch, Z_R0_scratch);
-  // Z_R0 will be only used in debug builds for slot value varification.
+  assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result, Z_R1_scratch);
 
   Label L_done, L_failure;
 
@@ -3442,9 +3441,6 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
-#ifdef ASSERT
-  z_lgr(Z_R0, slot);
-#endif // ASSERT
   z_xilf(slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1)); // slot ^ 63 === 63 - slot (mod 64)
   z_sllg(r_array_index, r_bitmap, /*d2 = */ 0, /* b2 = */ slot);
 
@@ -3474,24 +3470,24 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   z_cg(r_super_klass, Address(r_array_base, r_array_index));
   branch_optimized(bcondEqual, L_done); // found a match
 
-  // restore the value of slot
-  z_xilf(slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1)); // slot ^ 63 === 63 - slot (mod 64)
-#ifdef ASSERT
-  NearLabel ok;
-  z_cgr(slot, Z_R0);
-  z_bre(ok);
-  stop("slot value got corrupted");
-  bind(ok);
-#endif // ASSERT
+  // Note: this is a small hack:
+  //
+  // The operation "(slot ^ 63) === 63 - slot (mod 64)" has already been performed above.
+  // Since we lack a rotate-right instruction, we achieve the same effect by rotating left
+  // by "64 - slot" positions. This produces the result equivalent to a right rotation by "slot" positions.
+  //
+  // => initial slot value
+  // => slot = 63 - slot        // done above with that z_xilf instruction
+  // => slot = 64 - slot        // need to do for rotating right by "slot" positions
+  // => slot = 64 - (63 - slot)
+  // => slot = slot - 63 + 64
+  // => slot = slot + 1
+  //
+  // So instead of rotating-left by 64-slot times, we can, for now, just rotate left by slot+1 and it would be fine.
 
   // Linear probe. Rotate the bitmap so that the next bit to test is
   // in Bit 1.
-
-  // below, we just want to subtract slot from 64, because we don't have a rotate right instruction.
-  // Oh, also we don't have instruction to do : 64 - slot
-  // So, negate slot and add 64 to it. i.e. 64 + (-slot)
-  z_lngr(slot, slot); // slot = -slot
-  z_aghi(slot, 64); // slot = slot + 64
+  z_aghi(slot, 1); // slot = slot + 1
 
   z_rllg(r_bitmap, r_bitmap, /*d2=*/ 0, /*b2=*/ slot);
   testbit(r_bitmap, 1);
