@@ -57,7 +57,7 @@ public class EnableNativeAccessCDS {
             "--enable-native-access", module0,
             "-version");
         oa.shouldHaveExitValue(0)
-        .shouldContain("use_full_module_graph = true");
+          .shouldContain("use_full_module_graph = true");
 
         // different module specified during runtime
         oa = TestCommon.execCommon(
@@ -65,16 +65,16 @@ public class EnableNativeAccessCDS {
             "--enable-native-access", module1,
             "-version");
         oa.shouldHaveExitValue(0)
-        .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime jdk.httpserver dump time java.base")
-        .shouldContain(disabledOptimizedModule);
+          .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime jdk.httpserver dump time java.base")
+          .shouldContain(disabledOptimizedModule);
 
         // no module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
             "-version");
         oa.shouldHaveExitValue(0)
-        .shouldContain("Value for property jdk.module.enable.native.access: java.base specified during dump time but not during runtime")
-        .shouldContain(disabledOptimizedModule);
+          .shouldContain("Mismatched values for property jdk.module.enable.native.access: java.base specified during dump time but not during runtime")
+          .shouldContain(disabledOptimizedModule);
 
         // dump an archive without --enable-native-access option
         archiveName = TestCommon.getNewArchiveName("no-native-access-modules");
@@ -91,7 +91,7 @@ public class EnableNativeAccessCDS {
             "--enable-native-access", module0,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Value for property jdk.module.enable.native.access: java.base specified during runtime but not during dump time")
+          .shouldContain("Mismatched values for property jdk.module.enable.native.access: java.base specified during runtime but not during dump time")
           .shouldContain(disabledOptimizedModule);
 
         // dump an archive with multiple modules with native access
@@ -127,7 +127,7 @@ public class EnableNativeAccessCDS {
             "--enable-native-access", module0,
             "-version");
         oa.shouldHaveExitValue(0)
-            .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime java.base dump time java.base,jdk.httpserver")
-            .shouldContain(disabledOptimizedModule);
+          .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime java.base dump time java.base,jdk.httpserver")
+          .shouldContain(disabledOptimizedModule);
     }
 }

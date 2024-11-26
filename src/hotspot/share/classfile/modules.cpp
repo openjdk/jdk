@@ -577,12 +577,12 @@ void Modules::check_archived_flag_consistency(char* archived_flag, const char* r
   bool disable = false;
   if (runtime_flag == nullptr) {
     if (archived_flag != nullptr) {
-      log_info(cds)("Value for property %s: %s specified during dump time but not during runtime", property, archived_flag);
+      log_info(cds)("Mismatched values for property %s: %s specified during dump time but not during runtime", property, archived_flag);
       disable = true;
     }
   } else {
     if (archived_flag == nullptr) {
-      log_info(cds)("Value for property %s: %s specified during runtime but not during dump time", property, runtime_flag);
+      log_info(cds)("Mismatched values for property %s: %s specified during runtime but not during dump time", property, runtime_flag);
       disable = true;
     } else if (strcmp(runtime_flag, archived_flag) != 0) {
       log_info(cds)("Mismatched values for property %s: runtime %s dump time %s", property, runtime_flag, archived_flag);

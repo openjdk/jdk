@@ -325,7 +325,7 @@ bool Arguments::is_internal_module_property(const char* property) {
 
 // Returns true if property is one of those recognized by is_internal_module_property() but
 // is not supported by CDS archived full module graph.
-bool Arguments::is_non_cds_compatible_internal_module_property(const char* property) {
+bool Arguments::is_incompatible_cds_internal_module_property(const char* property) {
   return internal_module_property_helper(property, true);
 }
 

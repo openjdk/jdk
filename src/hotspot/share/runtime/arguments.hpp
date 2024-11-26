@@ -364,6 +364,8 @@ class Arguments : AllStatic {
   static const char* handle_aliases_and_deprecation(const char* arg);
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
 
+  static bool internal_module_property_helper(const char* property, bool check_for_cds);
+
  public:
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
@@ -462,8 +464,7 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
-  static bool is_non_cds_compatible_internal_module_property(const char* property);
-  static bool internal_module_property_helper(const char* property, bool check_for_cds);
+  static bool is_incompatible_cds_internal_module_property(const char* property);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
