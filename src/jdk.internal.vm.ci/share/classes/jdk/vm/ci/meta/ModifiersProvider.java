@@ -137,9 +137,9 @@ public interface ModifiersProvider {
     }
 
     /**
-     * Returns true if a method is with a real implementation, or if a type can
-     * be instantiated. For example, array types return true for both
-     * {@link #isAbstract()} and this method.
+     * Returns true if this element is a method with a concrete implementation, or a type that can
+     * be instantiated. For example, array types return true for both {@link #isAbstract()} and this
+     * method.
      *
      * @see ResolvedJavaType#isConcrete()
      */

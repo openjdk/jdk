@@ -197,7 +197,7 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
-    public void isConcreteClassTest() {
+    public void isConcreteTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             boolean expected = c.isArray() || !isAbstract(c.getModifiers());
