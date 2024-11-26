@@ -2713,9 +2713,6 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
   oop obj = result.get_oop();
   assert(obj != nullptr, "ClassLoader.getResourceAsByteArray should not return null");
 
-  // The result should be a [B
-  assert(obj->is_typeArray(), "just checking");
-
   // copy from byte[] to a buffer
   typeArrayOop ba = typeArrayOop(obj);
   jint len = ba->length();
