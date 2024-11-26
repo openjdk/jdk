@@ -1999,7 +1999,7 @@ bool LibraryCallKit::inline_vector_select_from() {
   // cast index vector from elem_bt vector to byte vector
   const TypeVect* shuffle_vt = TypeVect::make(shuffle_bt, num_elem);
   Node* shuffle = v1;
-  
+
   if (shuffle_bt != elem_bt) {
     shuffle = gvn().transform(VectorCastNode::make(cast_vopc, v1, shuffle_bt, num_elem));
   }
