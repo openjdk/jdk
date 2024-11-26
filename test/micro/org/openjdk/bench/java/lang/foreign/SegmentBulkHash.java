@@ -58,19 +58,19 @@ public class SegmentBulkHash {
     public int ELEM_SIZE;
 
     byte[] array;
-    MemorySegment heapSegment;
-    MemorySegment nativeSegment;
+    AbstractMemorySegmentImpl heapSegment;
+    AbstractMemorySegmentImpl nativeSegment;
 
     @Setup
     public void setup() {
         // Always use the same alignment regardless of size
-        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE,16);
+        nativeSegment = (AbstractMemorySegmentImpl) Arena.ofAuto().allocate(ELEM_SIZE, 16);
         var rnd = new Random(42);
         for (int i = 0; i < ELEM_SIZE; i++) {
             nativeSegment.set(JAVA_BYTE, i, (byte) rnd.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE));
         }
         array = nativeSegment.toArray(JAVA_BYTE);
-        heapSegment = MemorySegment.ofArray(array);
+        heapSegment = (AbstractMemorySegmentImpl) MemorySegment.ofArray(array);
     }
 
     @Benchmark
@@ -80,12 +80,12 @@ public class SegmentBulkHash {
 
     @Benchmark
     public int heapSegment() {
-        return SegmentBulkOperations.contentHash((AbstractMemorySegmentImpl) heapSegment, 0, ELEM_SIZE);
+        return SegmentBulkOperations.contentHash(heapSegment, 0, ELEM_SIZE);
     }
 
     @Benchmark
     public int nativeSegment() {
-        return SegmentBulkOperations.contentHash((AbstractMemorySegmentImpl) nativeSegment, 0, ELEM_SIZE);
+        return SegmentBulkOperations.contentHash(nativeSegment, 0, ELEM_SIZE);
     }
 
     @Benchmark
