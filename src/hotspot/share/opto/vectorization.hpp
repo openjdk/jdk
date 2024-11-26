@@ -108,10 +108,10 @@ public:
 #ifndef PRODUCT
     COMMA
     _mptrace(TraceMemPointer(
-      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER),
-      _vtrace.is_trace(TraceAutoVectorizationTag::ALIASING),
-      _vtrace.is_trace(TraceAutoVectorizationTag::ADJACENCY),
-      _vtrace.is_trace(TraceAutoVectorizationTag::OVERLAP)
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_PARSING),
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ALIASING),
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ADJACENCY),
+      _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_OVERLAP)
     ))
 #endif
     {}
@@ -725,7 +725,7 @@ public:
     _is_valid(init_is_valid())
   {
 #ifndef PRODUCT
-    if (vloop.mptrace().is_trace_pointer()) {
+    if (vloop.mptrace().is_trace_parsing()) {
       tty->print_cr("VPointer::VPointer:");
       tty->print("mem: "); mem->dump();
       print_on(tty);

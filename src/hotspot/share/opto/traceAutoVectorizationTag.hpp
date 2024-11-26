@@ -29,10 +29,10 @@
 #include "utilities/stringUtils.hpp"
 
 #define COMPILER_TRACE_AUTO_VECTORIZATION_TAG(flags) \
-  flags(POINTER,              "Trace VPointer construction / parsing") \
-  flags(ALIASING,             "Trace VPointer aliasing") \
-  flags(ADJACENCY,            "Trace VPointer adjacency") \
-  flags(OVERLAP,              "Trace VPointer overlap") \
+  flags(POINTER_PARSING,      "Trace VPointer/MemPointer parsing") \
+  flags(POINTER_ALIASING,     "Trace VPointer/MemPointer aliasing") \
+  flags(POINTER_ADJACENCY,    "Trace VPointer/MemPointer adjacency") \
+  flags(POINTER_OVERLAP,      "Trace VPointer/MemPointer overlap") \
   flags(PRECONDITIONS,        "Trace VLoop::check_preconditions") \
   flags(LOOP_ANALYZER,        "Trace VLoopAnalyzer::setup_submodules") \
   flags(MEMORY_SLICES,        "Trace VLoopMemorySlices") \

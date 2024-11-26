@@ -352,23 +352,23 @@
 class TraceMemPointer : public StackObj {
 private:
   // TODO rename and possibly extend, also rename tags, check where apply
-  const bool _is_trace_pointer; // TODO parse pointer? and check where to add!
+  const bool _is_trace_parsing; // TODO parse pointer? and check where to add!
   const bool _is_trace_aliasing;
   const bool _is_trace_adjacency;
   const bool _is_trace_overlap;
 
 public:
-  TraceMemPointer(const bool is_trace_pointer,
+  TraceMemPointer(const bool is_trace_parsing,
                   const bool is_trace_aliasing,
                   const bool is_trace_adjacency,
                   const bool is_trace_overlap) :
-    _is_trace_pointer(  is_trace_pointer),
+    _is_trace_parsing(  is_trace_parsing),
     _is_trace_aliasing( is_trace_aliasing),
     _is_trace_adjacency(is_trace_adjacency),
     _is_trace_overlap(is_trace_overlap)
     {}
 
-  bool is_trace_pointer()   const { return _is_trace_pointer; }
+  bool is_trace_parsing()   const { return _is_trace_parsing; }
   bool is_trace_aliasing()  const { return _is_trace_aliasing; }
   bool is_trace_adjacency() const { return _is_trace_adjacency; }
   bool is_trace_overlap()   const { return _is_trace_overlap; }
