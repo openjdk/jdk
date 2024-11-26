@@ -51,9 +51,19 @@ public class LogKeyStorePathVerifier {
     static String pathToStores = "../../../javax/net/ssl/etc/";
     static String keyStoreFile = "keystore";
     static String passwd = "passphrase";
+    static String defaultCACertsName = "cacerts";
     static String fisKeyStoreName = "FileInputStreamKeyStore";
     static String bisKeyStoreName = "BufferedInputStreamKeyStore";
     static String bbisKeyStoreName = "BufferedBufferedInputStreamKeyStore";
+    // JDK-8344924: Introduced a new behavior where default CA certificates
+    // are loaded even when a custom keystore is specified during the first
+    // TrustManagerFactory.init() call.
+    // This test validates the behavior by first loading and verifying the
+    // default certificates in the initial instance, followed by checking the
+    // custom keystore in subsequent initialization.
+    static String defaultCACerts
+            = System.getProperty("java.home") + File.separator + "lib"
+            + File.separator + "security" + File.separator + defaultCACertsName;
     static Path keyStorePath = Path.of (System.getProperty("test.src", "."),
             pathToStores, keyStoreFile);
 
@@ -64,15 +74,17 @@ public class LogKeyStorePathVerifier {
                             StandardCopyOption.REPLACE_EXISTING);
         Files.copy(keyStorePath, Path.of(bbisKeyStoreName),
                             StandardCopyOption.REPLACE_EXISTING);
-        try (FileInputStream fis = new FileInputStream(fisKeyStoreName);
-             BufferedInputStream bis = new BufferedInputStream(
-             new FileInputStream(bisKeyStoreName));
-             BufferedInputStream bbis = new BufferedInputStream(
-             new BufferedInputStream(new FileInputStream(bbisKeyStoreName)))) {
-            loadAndTestKeyStore(fis);
-            loadAndTestKeyStore(bis);
-            // Test nested wrappers on FileInputStream with BufferedInputStream
-            loadAndTestKeyStore(bbis);
+        try (FileInputStream dfis = new FileInputStream(defaultCACerts);
+            FileInputStream fis = new FileInputStream(fisKeyStoreName);
+            BufferedInputStream bis = new BufferedInputStream(
+            new FileInputStream(bisKeyStoreName));
+            BufferedInputStream bbis = new BufferedInputStream(
+            new BufferedInputStream(new FileInputStream(bbisKeyStoreName)))) {
+                loadAndTestKeyStore(dfis);
+                loadAndTestKeyStore(fis);
+                loadAndTestKeyStore(bis);
+                // Test nested wrappers on FIStream with BIStream
+                loadAndTestKeyStore(bbis);
         }
     }
 
@@ -98,23 +110,25 @@ public class LogKeyStorePathVerifier {
         } else {
             var output = ProcessTools.executeTestJava(
                     "-Djavax.net.debug=trustmanager",
-                    "-Djava.security.debug=keystore,pkcs12",
+                    "-Djava.security.debug=pkcs12",
                     "-Dtest.src=" + System.getProperty("test.src", "."),
                     "LogKeyStorePathVerifier");
             // Check for the presence of new message and verify
             // the keystore name in debug logs
-            output.shouldContain("PKCS12KeyStore: loading " +
-                                    "\"" + fisKeyStoreName +"\" keystore")
+            output.shouldContain("PKCS12KeyStore: loading "
+                                + "\"" + defaultCACertsName +"\" keystore")
+                .shouldContain("PKCS12KeyStore: loading "
+                                + "\"" + fisKeyStoreName +"\" keystore")
                 .shouldContain("Initializing with the keystore: \""
                                 + fisKeyStoreName + "\""
                                 + " in pkcs12 format from SunJSSE provider")
-                .shouldContain("PKCS12KeyStore: loading " +
-                                     "\"" + bisKeyStoreName +"\" keystore")
+                .shouldContain("PKCS12KeyStore: loading "
+                                + "\"" + bisKeyStoreName +"\" keystore")
                 .shouldContain("Initializing with the keystore: \""
                                 + bisKeyStoreName + "\""
                                 + " in pkcs12 format from SunJSSE provider")
-                .shouldContain("PKCS12KeyStore: loading " +
-                        "\"" + bbisKeyStoreName +"\" keystore")
+                .shouldContain("PKCS12KeyStore: loading "
+                                + "\"" + bbisKeyStoreName +"\" keystore")
                 .shouldContain("Initializing with the keystore: \""
                                 + bbisKeyStoreName +"\""
                                 + " in pkcs12 format from SunJSSE provider");

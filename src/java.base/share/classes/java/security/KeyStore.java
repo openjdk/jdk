@@ -213,8 +213,8 @@ public class KeyStore {
      */
     private static final String KEYSTORE_TYPE = "keystore.type";
 
-    // The keystore full path
-    private static String keystorePath;
+    // The keystore's InputStream
+    private static InputStream inputStream;
 
     // The keystore type
     private final String type;
@@ -812,8 +812,8 @@ public class KeyStore {
     static {
         SharedSecrets.setJavaSecurityKeyStoreAccess(
                 new JavaSecurityKeyStoreAccess() {
-                    public String getPath(KeyStore ks) {
-                        return keystorePath;
+                    public InputStream getInputStream(KeyStore ks) {
+                        return inputStream;
                     }
                 }
         );
@@ -1512,11 +1512,7 @@ public class KeyStore {
     public final void load(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        if (kdebug != null) {
-            keystorePath = SharedSecrets
-                    .getJavaIOFileInputStreamAccess()
-                    .getPath(stream);
-        }
+        inputStream = stream;
         keyStoreSpi.engineLoad(stream, password);
         initialized = true;
     }

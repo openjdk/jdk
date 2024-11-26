@@ -24,8 +24,9 @@
  */
 package jdk.internal.access;
 
+import java.io.InputStream;
 import java.security.KeyStore;
 
 public interface JavaSecurityKeyStoreAccess {
-    public String getPath(KeyStore fis);
+    public InputStream getInputStream(KeyStore fis);
 }

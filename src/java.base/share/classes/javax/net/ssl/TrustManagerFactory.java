@@ -25,6 +25,7 @@
 
 package javax.net.ssl;
 
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.Security;
 import java.security.*;
@@ -279,14 +280,19 @@ public class TrustManagerFactory {
     public final void init(KeyStore ks) throws KeyStoreException {
         factorySpi.engineInit(ks);
         if (ks != null && SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
-            String keystorePath = SharedSecrets
+            InputStream is = SharedSecrets
                     .getJavaSecurityKeyStoreAccess()
-                    .getPath(ks);
-            if (keystorePath != null) {
-                SSLLogger.fine("Initializing with the keystore: \"" + Path.of(
-                                keystorePath).getFileName().toString()
+                    .getInputStream(ks);
+            if (is != null) {
+                String keystorePath = SharedSecrets
+                                    .getJavaIOFileInputStreamAccess()
+                                    .getPath(is);
+                if (keystorePath != null) {
+                    SSLLogger.fine("Initializing with the keystore: \"" +
+                                Path.of(keystorePath).getFileName().toString()
                                 + "\" in " + ks.getType() + " format from "
                                 + provider.getName() + " provider");
+                }
             }
         }
     }

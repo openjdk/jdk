@@ -680,7 +680,8 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
                     storeName = Path.of(keystorePath).getFileName()
                                 .toString();
                     debug.println("JavaKeyStore: loading \""
-                        + ((storeName != null) ? storeName : ""));
+                        + ((storeName != null) ? storeName : "")
+                        + "\" keystore");
                 }
             }
             // Body format: see store method
