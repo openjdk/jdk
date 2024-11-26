@@ -59,6 +59,7 @@ define_pd_global(bool, UseCISCSpill,                 false);
 define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoRegScheduling,            false);
 define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
+define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 // GL:
 // Detected a problem with unscaled compressed oops and
 // narrow_oop_use_complex_address() == false.

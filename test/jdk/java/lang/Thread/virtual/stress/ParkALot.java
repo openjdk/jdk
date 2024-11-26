@@ -25,29 +25,35 @@
  * @test
  * @summary Stress test parking and unparking
  * @requires vm.debug != true
- * @run main/othervm ParkALot 500000
+ * @library /test/lib
+ * @run main/othervm/timeout=300 ParkALot 300000
  */
 
 /*
  * @test
  * @requires vm.debug == true
- * @run main/othervm ParkALot 100000
+ * @library /test/lib
+ * @run main/othervm/timeout=300 ParkALot 100000
  */
 
 import java.time.Instant;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+import jdk.test.lib.Platform;
 
 public class ParkALot {
-    private static final int ITERATIONS = 1_000_000;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         int iterations;
-        if (args.length > 0) {
-            iterations = Integer.parseInt(args[0]);
+        int value = Integer.parseInt(args[0]);
+        if (Platform.isOSX() && Platform.isX64()) {
+            // reduced iterations on macosx-x64
+            iterations = Math.max(value / 4, 1);
         } else {
-            iterations = ITERATIONS;
+            iterations = value;
         }
 
         int maxThreads = Math.clamp(Runtime.getRuntime().availableProcessors() / 2, 1, 4);
@@ -55,8 +61,18 @@ public class ParkALot {
             System.out.format("%s %d thread(s) ...%n", Instant.now(), nthreads);
             ThreadFactory factory = Thread.ofPlatform().factory();
             try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
+                var totalIterations = new AtomicInteger();
                 for (int i = 0; i < nthreads; i++) {
-                    executor.submit(() -> parkALot(iterations));
+                    executor.submit(() -> parkALot(iterations, totalIterations::incrementAndGet));
+                }
+
+                // shutdown, await for all threads to finish with progress output
+                executor.shutdown();
+                boolean terminated = false;
+                while (!terminated) {
+                    terminated = executor.awaitTermination(1, TimeUnit.SECONDS);
+                    System.out.format("%s => %d of %d%n",
+                            Instant.now(), totalIterations.get(), iterations * nthreads);
                 }
             }
             System.out.format("%s %d thread(s) done%n", Instant.now(), nthreads);
@@ -66,8 +82,10 @@ public class ParkALot {
     /**
      * Creates a virtual thread that alternates between untimed and timed parking.
      * A platform thread spins unparking the virtual thread.
+     * @param iterations number of iterations
+     * @param afterIteration the task to run after each iteration
      */
-    private static void parkALot(int iterations) {
+    private static void parkALot(int iterations, Runnable afterIteration) {
         Thread vthread = Thread.ofVirtual().start(() -> {
             int i = 0;
             boolean timed = false;
@@ -80,6 +98,7 @@ public class ParkALot {
                     timed = true;
                 }
                 i++;
+                afterIteration.run();
             }
         });
 

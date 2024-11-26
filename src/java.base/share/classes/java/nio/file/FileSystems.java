@@ -25,12 +25,10 @@
 
 package java.nio.file;
 
-import java.nio.file.spi.FileSystemProvider;
-import java.net.URI;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.lang.reflect.Constructor;
+import java.net.URI;
+import java.nio.file.spi.FileSystemProvider;
 import java.util.Collections;
 import java.util.Map;
 import java.util.ServiceConfigurationError;
@@ -96,13 +94,7 @@ public final class FileSystems {
         // returns default file system
         private static FileSystem defaultFileSystem() {
             // load default provider
-            @SuppressWarnings("removal")
-            FileSystemProvider provider = AccessController
-                .doPrivileged(new PrivilegedAction<>() {
-                    public FileSystemProvider run() {
-                        return getDefaultProvider();
-                    }
-                });
+            FileSystemProvider provider = getDefaultProvider();
 
             // return file system
             return provider.getFileSystem(URI.create("file:///"));

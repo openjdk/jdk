@@ -25,8 +25,6 @@
 
 package java.io;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
@@ -35,7 +33,6 @@ import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.javac.PreviewFeature;
 import sun.nio.cs.UTF_8;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Methods to access the character-based console device, if any, associated
@@ -648,7 +645,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     private static final boolean istty = istty();
     static final Charset CHARSET =
-        Charset.forName(GetPropertyAction.privilegedGetProperty("stdout.encoding"), UTF_8.INSTANCE);
+        Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {
         // Set up JavaIOAccess in SharedSecrets
@@ -659,9 +656,8 @@ public sealed class Console implements Flushable permits ProxyingConsole {
         });
     }
 
-    @SuppressWarnings("removal")
     private static Console instantiateConsole() {
-        Console c;
+        Console c = null;
 
         try {
             /*
@@ -673,25 +669,19 @@ public sealed class Console implements Flushable permits ProxyingConsole {
              * If no providers are available, or instantiation failed, java.base built-in
              * Console implementation is used.
              */
-            c = AccessController.doPrivileged(new PrivilegedAction<Console>() {
-                public Console run() {
-                    var consModName = System.getProperty("jdk.console",
-                            JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
+            var consModName = System.getProperty("jdk.console",
+                    JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
 
-                    for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
-                        if (consModName.equals(jcp.getClass().getModule().getName())) {
-                            var jc = jcp.console(istty, CHARSET);
-                            if (jc != null) {
-                                return new ProxyingConsole(jc);
-                            }
-                            break;
-                        }
+            for (var jcp : ServiceLoader.load(ModuleLayer.boot(), JdkConsoleProvider.class)) {
+                if (consModName.equals(jcp.getClass().getModule().getName())) {
+                    var jc = jcp.console(istty, CHARSET);
+                    if (jc != null) {
+                        c = new ProxyingConsole(jc);
                     }
-                    return null;
+                    break;
                 }
-            });
+            }
         } catch (ServiceConfigurationError _) {
-            c = null;
         }
 
         // If not found, default to built-in Console

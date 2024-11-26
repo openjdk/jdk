@@ -50,8 +50,6 @@ import javax.swing.plaf.ColorUIResource;
 
 import sun.swing.PrintColorUIResource;
 
-import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
-
 /*
  * Like the {@code Introspector}, the {@code MetaData} class
  * contains <em>meta</em> objects that describe the way
@@ -749,7 +747,7 @@ static final class java_awt_AWTKeyStroke_PersistenceDelegate extends Persistence
 
 static class StaticFieldsPersistenceDelegate extends PersistenceDelegate {
     protected void installFields(Encoder out, Class<?> cls) {
-        if (Modifier.isPublic(cls.getModifiers()) && isPackageAccessible(cls)) {
+        if (Modifier.isPublic(cls.getModifiers())) {
             Field[] fields = cls.getFields();
             for(int i = 0; i < fields.length; i++) {
                 Field field = fields[i];

@@ -34,6 +34,10 @@
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 
+// None of the error routines below take in a free-form, potentially unbounded
+// string, and names are all limited to < 64K, so we know that all formatted
+// strings passed to fthrow will not be excessively large.
+
 void ClassFileParser::classfile_parse_error(const char* msg, TRAPS) const {
   assert(_class_name != nullptr, "invariant");
   ResourceMark rm(THREAD);

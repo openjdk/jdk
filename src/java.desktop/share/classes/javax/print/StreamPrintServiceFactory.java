@@ -183,43 +183,23 @@ public abstract class StreamPrintServiceFactory {
      *
      * @return all factories
      */
-    @SuppressWarnings("removal")
     private static ArrayList<StreamPrintServiceFactory> getAllFactories() {
         synchronized (StreamPrintServiceFactory.class) {
 
-          ArrayList<StreamPrintServiceFactory> listOfFactories = getListOfFactories();
-            if (listOfFactories != null) {
-                return listOfFactories;
-            } else {
-                listOfFactories = initListOfFactories();
-            }
+              ArrayList<StreamPrintServiceFactory> listOfFactories = getListOfFactories();
+              if (listOfFactories != null) {
+                  return listOfFactories;
+              } else {
+                  listOfFactories = initListOfFactories();
+              }
 
-            try {
-                java.security.AccessController.doPrivileged(
-                     new java.security.PrivilegedExceptionAction<Object>() {
-                        public Object run() {
-                            Iterator<StreamPrintServiceFactory> iterator =
-                                ServiceLoader.load
-                                (StreamPrintServiceFactory.class).iterator();
-                            ArrayList<StreamPrintServiceFactory> lof = getListOfFactories();
-                            while (iterator.hasNext()) {
-                                try {
-                                    lof.add(iterator.next());
-                                }  catch (ServiceConfigurationError err) {
-                                     /* In the applet case, we continue */
-                                    if (System.getSecurityManager() != null) {
-                                        err.printStackTrace();
-                                    } else {
-                                        throw err;
-                                    }
-                                }
-                            }
-                            return null;
-                        }
-                });
-            } catch (java.security.PrivilegedActionException e) {
-            }
-            return listOfFactories;
+              Iterator<StreamPrintServiceFactory> iterator =
+                  ServiceLoader.load(StreamPrintServiceFactory.class).iterator();
+              ArrayList<StreamPrintServiceFactory> lof = getListOfFactories();
+              while (iterator.hasNext()) {
+                  lof.add(iterator.next());
+              }
+              return listOfFactories;
         }
     }
 
