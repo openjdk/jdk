@@ -71,10 +71,10 @@ public class ClassPathUnusableURLs {
             abort("Skipping test since emoji directory couldn't be created: " + iae);
         }
         // successful creation of the dir, continue with the test
-        Files.writeString(EMOJI_DIR.resolve(RESOURCE_NAME), "hello");
+        Files.createFile(EMOJI_DIR.resolve(RESOURCE_NAME));
 
         ASCII_DIR = Files.createTempDirectory(SCRATCH_DIR, "test-urlclasspath");
-        Files.writeString(ASCII_DIR.resolve(RESOURCE_NAME), "hello");
+        Files.createFile(ASCII_DIR.resolve(RESOURCE_NAME));
 
         // create a jar file containing the resource
         JAR_FILE_IN_EMOJI_DIR = Files.createTempDirectory(SCRATCH_DIR, SMILEY_EMOJI)
