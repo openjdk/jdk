@@ -92,7 +92,6 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.font.FontDesignMetrics;
