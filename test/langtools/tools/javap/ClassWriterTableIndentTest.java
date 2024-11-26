@@ -40,43 +40,27 @@ public class ClassWriterTableIndentTest {
     }
 
     public void run() {
-        runJavapWithCodeBlock();
-        runJavapWithoutCodeBlock();
-
-        if (errors > 0) {
-            throw new Error(errors + " found.");
-        }
-    }
-
-    private void runJavapWithCodeBlock() {
         /*
          * Partial expected output within a larger file. There exists another "Code: " section above, and thus we
          * select the second occurrence in `findNthMatchPrecedingSpaces(output, "Code:", 1);`
          * ...
          *  public void emptyLoop();
          *    Code:
-         *         0: iconst_0
-         *         ...
-         *         14: return
+         *       ...
          *      LineNumberTable:
          *        line 143: 0
          *        line 145: 14
          * ...
          */
-        List<String[]> runArgsList = List.of(new String[] {"-c", "-l"}, new String[] {"-v"});
-        for (String[] runArgs: runArgsList) {
+        List<String[]> runArgsList = List.of(new String[]{"-c", "-l"}, new String[]{"-v"}, new String[]{"-l"});
+        for (String[] runArgs : runArgsList) {
             String output = javap(runArgs);
             int methodIntent = findNthMatchPrecedingSpaces(output, "public void emptyLoop();", 0);
             int codeHeaderIndent = findNthMatchPrecedingSpaces(output, "Code:", 1);
             int detailIndent = findNthMatchPrecedingSpaces(output, "LineNumberTable:", 1);
-            int bytecodeIndent = findNthMatchPrecedingSpaces(output, "0: iconst_0", 0);
 
             if (codeHeaderIndent - methodIntent != 2) {
                 indentError(2, codeHeaderIndent - methodIntent, "Code block", "method header", runArgs);
-            }
-
-            if (bytecodeIndent - codeHeaderIndent != 5) {
-                indentError(5, bytecodeIndent - codeHeaderIndent, "Bytecode", "code header", runArgs);
             }
 
             if (detailIndent - codeHeaderIndent != 2) {
@@ -87,25 +71,8 @@ public class ClassWriterTableIndentTest {
                 indentError(4, detailIndent - methodIntent, "LineNumberTable", "method header");
             }
         }
-    }
-
-    private void runJavapWithoutCodeBlock() {
-        /*
-         * Partial expected output within a larger file. There exists another "LineNumberTable: " section above, and
-         * thus we select the second occurrence in `findNthMatchPrecedingSpaces(output, "LineNumberTable:", 1);`
-         * ...
-         *  public void emptyLoop();
-         *    LineNumberTable:
-         *      line 143: 0
-         *      line 145: 14
-         * ...
-         */
-        String output = javap("-l");
-        int methodIntent = findNthMatchPrecedingSpaces(output, "public void emptyLoop();", 0);
-        int detailIndent = findNthMatchPrecedingSpaces(output, "LineNumberTable:", 1);
-
-        if (detailIndent - methodIntent != 2) {
-            indentError(2, detailIndent - methodIntent, "LineNumberTable", "method header");
+        if (errors > 0) {
+            throw new Error(errors + " found.");
         }
     }
 

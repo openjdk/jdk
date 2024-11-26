@@ -74,19 +74,6 @@ public class CodeWriter extends BasicWriter {
         writeInternal(attr, true);
     }
 
-    void writeLineAndLocalVariableTables(CodeAttribute attr, boolean indent) {
-        if (indent) {
-            indent(+1);
-        }
-        attr.findAttribute(Attributes.lineNumberTable())
-            .ifPresent(a -> attrWriter.write(a, attr));
-        attr.findAttribute(Attributes.localVariableTable())
-            .ifPresent(a -> attrWriter.write(a, attr));
-        if (indent) {
-            indent(-1);
-        }
-    }
-
     public void writeVerboseHeader(CodeAttribute attr) {
         MethodModel method = attr.parent().get();
         int n = method.methodTypeSymbol().parameterCount();
@@ -270,15 +257,37 @@ public class CodeWriter extends BasicWriter {
     private void writeInternal(CodeAttribute attr, boolean minimal) {
         println("Code:");
         indent(+1);
-        if (!minimal) {
-            writeVerboseHeader(attr);
-        }
-        writeInstrs(attr);
-        writeExceptionTable(attr);
-        if (!minimal) {
-            attrWriter.write(attr.attributes(), attr);
+        if (minimal) {
+            writeMinimalMode(attr);
+        } else {
+            writeVerboseMode(attr);
         }
         indent(-1);
+    }
+
+    private void writeMinimalMode(CodeAttribute attr) {
+        if (options.showDisassembled) {
+            writeInstrs(attr);
+            writeExceptionTable(attr);
+        }
+
+        if (options.showLineAndLocalVariableTables) {
+            writeLineAndLocalVariableTables(attr);
+        }
+    }
+
+    private void writeVerboseMode(CodeAttribute attr) {
+        writeVerboseHeader(attr);
+        writeInstrs(attr);
+        writeExceptionTable(attr);
+        attrWriter.write(attr.attributes(), attr);
+    }
+
+    private void writeLineAndLocalVariableTables(CodeAttribute attr) {
+        attr.findAttribute(Attributes.lineNumberTable())
+            .ifPresent(a -> attrWriter.write(a, attr));
+        attr.findAttribute(Attributes.localVariableTable())
+            .ifPresent(a -> attrWriter.write(a, attr));
     }
 
     private AttributeWriter attrWriter;
