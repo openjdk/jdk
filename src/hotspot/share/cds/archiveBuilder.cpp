@@ -1297,7 +1297,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         // Don't print the requested addr again as we have just printed it at the beginning of the line.
         // Example:
         // 0x00000007ffd27938: @@ Object (0xfffa4f27) java.util.HashMap
-        print_oop_addr_and_type_cr(&st, source_oop, /*print_requested_addr=*/false);
+        print_oop_info_cr(&st, source_oop, /*print_requested_addr=*/false);
         byte_size = source_oop->size() * BytesPerWord;
       } else if ((byte_size = ArchiveHeapWriter::get_filler_size_at(start)) > 0) {
         // We have a filler oop, which also does not exist in BufferOffsetToSourceObjectTable.
@@ -1320,7 +1320,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
   // ArchivedFieldPrinter is used to print the fields of archived objects. We can't
   // use _source_obj->print_on(), because we want to print the oop fields
-  // in _source_obj with their requested addresses using print_oop_addr_and_type_cr().
+  // in _source_obj with their requested addresses using print_oop_info_cr().
   class ArchivedFieldPrinter : public FieldClosure {
     ArchiveHeapInfo* _heap_info;
     outputStream* _st;
@@ -1342,7 +1342,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           if (java_lang_Class::is_instance(obj)) {
             obj = HeapShared::scratch_java_mirror(obj);
           }
-          print_oop_addr_and_type_cr(_st, obj);
+          print_oop_info_cr(_st, obj);
         }
         break;
       default:
@@ -1403,7 +1403,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           if (java_lang_Class::is_instance(obj)) {
             obj = HeapShared::scratch_java_mirror(obj);
           }
-          print_oop_addr_and_type_cr(&st, obj);
+          print_oop_info_cr(&st, obj);
         }
       } else {
         st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
@@ -1420,7 +1420,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           if (src_klass != nullptr && src_klass->is_instance_klass()) {
             oop rr = HeapShared::scratch_resolved_references(InstanceKlass::cast(src_klass)->constants());
             st.print(" - archived_resolved_references: ");
-            print_oop_addr_and_type_cr(&st, rr);
+            print_oop_info_cr(&st, rr);
 
             // We need to print the fields in the scratch_mirror, not the original mirror.
             // (if a class is not aot-initialized, static fields in its scratch mirror will be cleared).
@@ -1454,7 +1454,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     if (st.is_enabled()) {
       for (int i = 0; i < HeapShared::pending_roots()->length(); i++) {
         st.print("roots[%4d]: ", i);
-        print_oop_addr_and_type_cr(&st, HeapShared::pending_roots()->at(i));
+        print_oop_info_cr(&st, HeapShared::pending_roots()->at(i));
       }
     }
   }
@@ -1464,8 +1464,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   // - The second number is the narrowOop version of the requested address (if UseCompressedOops == true)
   //     0x00000007ffc7e840 (0xfff8fd08) java.lang.Class Ljava/util/Array;
   //     0x00000007ffc000f8 (0xfff8001f) [B length: 11
-  static void print_oop_addr_and_type_cr(outputStream* st, oop source_oop,
-                                         bool print_requested_addr = true) {
+  static void print_oop_info_cr(outputStream* st, oop source_oop, bool print_requested_addr = true) {
     if (source_oop == nullptr) {
       st->print_cr("null");
     } else {
