@@ -60,7 +60,7 @@ void run_cmov_tests() {
   CmovTester::test(&MacroAssembler::cmov_eq, 42, 42, 66, 77, 77);
   // If 41(a0) eq 42(a1): assign dest(a2/66) the src(a3/77), expect result: 66
   CmovTester::test(&MacroAssembler::cmov_eq, 41, 42, 66, 77, 66);
-  
+
   CmovTester::test(&MacroAssembler::cmov_ne, 41, 42, 66, 77, 77);
   CmovTester::test(&MacroAssembler::cmov_ne, 42, 42, 66, 77, 66);
 
@@ -79,7 +79,7 @@ void run_cmov_tests() {
   CmovTester::test(&MacroAssembler::cmov_geu, 43, 42, 66, 77, 77);
   CmovTester::test(&MacroAssembler::cmov_geu, 42, 42, 66, 77, 77);
   CmovTester::test(&MacroAssembler::cmov_geu, 42, -1, 66, 77, 66);
-  
+
   CmovTester::test(&MacroAssembler::cmov_lt, 41, 42, 66, 77, 77);
   CmovTester::test(&MacroAssembler::cmov_lt, 42, 42, 66, 77, 66);
   CmovTester::test(&MacroAssembler::cmov_lt, 42, -1, 66, 77, 66);
