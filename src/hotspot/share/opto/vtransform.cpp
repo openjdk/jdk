@@ -170,7 +170,7 @@ public:
   VMemoryRegion() : _vpointer(nullptr) {} // empty constructor for GrowableArray
   VMemoryRegion(const VPointer& vpointer, int iv_offset, int vector_length, bool is_load, uint schedule_order) :
     _vpointer(&vpointer),
-    _base(   vpointer.decomposed_form().base().object_or_native()),
+    _base(   vpointer.mem_pointer().base().object_or_native()),
     _scale(  vpointer.iv_scale()),
     _invar(  nullptr), // TODO
     _offset( vpointer.con() + _scale * iv_offset),
@@ -225,7 +225,7 @@ public:
   void print() const {
     tty->print("VMemoryRegion[%s %dbytes, schedule_order(%4d), ",
                _is_load ? "load " : "store", _memory_size, _schedule_order);
-    _vpointer->decomposed_form().print_on(tty, false);
+    _vpointer->mem_pointer().print_on(tty, false);
     tty->print_cr("]");
   }
 #endif

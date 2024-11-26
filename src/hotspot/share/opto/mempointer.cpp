@@ -29,7 +29,7 @@
 
 // Recursively parse the pointer expression with a DFS all-path traversal
 // (i.e. with node repetitions), starting at the pointer.
-MemPointer MemPointerParser::parse_decomposed_form(Callback& adr_node_callback) {
+MemPointer MemPointerParser::parse(Callback& adr_node_callback) {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 

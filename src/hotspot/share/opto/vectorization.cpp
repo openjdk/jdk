@@ -403,9 +403,9 @@ void VPointer::print_on(outputStream* st) const {
   }
 
   st->print("size: %2d, base: ", _size);
-  _decomposed_form.base().print_on(st);
+  _mem_pointer.base().print_on(st);
   st->print(", form: ");
-  _decomposed_form.print_form_on(st);
+  _mem_pointer.print_form_on(st);
   st->print(", invar_summands: ");
   for_each_invar_summand([&] (const MemPointerSummand& s) {
     s.print_on(tty);

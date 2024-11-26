@@ -705,7 +705,7 @@ private:
   typedef MemPointerParser::Callback Callback;
 
   const VLoop& _vloop;
-  const MemPointer _decomposed_form;
+  const MemPointer _mem_pointer;
   const jint _size;
 
   // Derived, for quicker use.
@@ -717,7 +717,7 @@ public:
   template<typename Callback>
   VPointer(const MemNode* mem, const VLoop& vloop, Callback& adr_node_callback) :
     _vloop(vloop),
-    _decomposed_form(init_decomposed_form(mem, adr_node_callback, vloop)),
+    _mem_pointer(init_mem_pointer(mem, adr_node_callback, vloop)),
     _size(mem->memory_size()),
     _iv_scale(init_iv_scale()),
     _is_valid(init_is_valid())
@@ -733,17 +733,17 @@ public:
   }
 
   // Accessors
-  bool is_valid() const { return _is_valid; }
-  const MemPointer& decomposed_form() const { assert(_is_valid, ""); return _decomposed_form; }
-  jint size()                                       const { assert(_is_valid, ""); return _size; }
-  jint iv_scale()                                   const { assert(_is_valid, ""); return _iv_scale; }
-  jint con()                                        const { return decomposed_form().con().value(); }
+  bool is_valid()                 const { return _is_valid; }
+  const MemPointer& mem_pointer() const { assert(_is_valid, ""); return _mem_pointer; }
+  jint size()                     const { assert(_is_valid, ""); return _size; }
+  jint iv_scale()                 const { assert(_is_valid, ""); return _iv_scale; }
+  jint con()                      const { return mem_pointer().con().value(); }
 
   template<typename Callback>
   void for_each_invar_summand(Callback callback) const {
-    decomposed_form().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
+    mem_pointer().for_each_non_empty_summand([&] (const MemPointerSummand& s) {
       Node* variable = s.variable();
-      if (variable != decomposed_form().base().object_or_native() &&
+      if (variable != mem_pointer().base().object_or_native() &&
           is_invariant(variable, _vloop)) {
         callback(s);
       }
@@ -777,11 +777,11 @@ public:
   bool has_same_invar_and_iv_scale_as(const VPointer& other) const {
     // If we have the same invar_summands, and the same iv summand with the same iv_scale,
     // then all summands except the base must be the same.
-    return decomposed_form().has_same_non_base_summands_as(other.decomposed_form());
+    return mem_pointer().has_same_non_base_summands_as(other.mem_pointer());
   }
 
   bool is_adjacent_to_and_before(const VPointer& other) const {
-    return decomposed_form().is_adjacent_to_and_before(other.decomposed_form());
+    return mem_pointer().is_adjacent_to_and_before(other.mem_pointer());
   }
 
   bool never_overlaps_with(const VPointer& other) const {
@@ -793,7 +793,7 @@ public:
 #endif
       return false;
     }
-    return decomposed_form().never_overlaps_with(other.decomposed_form());
+    return mem_pointer().never_overlaps_with(other.mem_pointer());
   }
 
   bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
@@ -811,20 +811,20 @@ public:
   NOT_PRODUCT( void print_on(outputStream* st) const; )
 
 private:
-  static const MemPointer init_decomposed_form(const MemNode* mem,
-                                               Callback& adr_node_callback,
-                                               const VLoop& vloop) {
+  static const MemPointer init_mem_pointer(const MemNode* mem,
+                                           Callback& adr_node_callback,
+                                           const VLoop& vloop) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
     ResourceMark rm;
     MemPointerParser parser(mem,
                                           adr_node_callback
                                           NOT_PRODUCT(COMMA vloop.mptrace()));
-    return parser.decomposed_form();
+    return parser.mem_pointer();
   }
 
   jint init_iv_scale() const {
     for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
-      const MemPointerSummand& summand = _decomposed_form.summands_at(i);
+      const MemPointerSummand& summand = _mem_pointer.summands_at(i);
       Node* variable = summand.variable();
       if (variable == _vloop.iv()) {
         return summand.scale().value();
@@ -837,7 +837,7 @@ private:
   // Check that all variables are either the iv, or else invariants.
   // TODO why pre-loop
   bool init_is_valid() const {
-    if (!_decomposed_form.base().is_known()) {
+    if (!_mem_pointer.base().is_known()) {
       // VPointer needs to know if it is native (off-heap) or object (on-heap).
       // We may for example have failed to fully decompose the MemPointer, possibly
       // because such a decomposition is not considered safe.
@@ -845,7 +845,7 @@ private:
     }
 
     for (uint i = 0; i < MemPointer::SUMMANDS_SIZE; i++) {
-      const MemPointerSummand& summand = _decomposed_form.summands_at(i);
+      const MemPointerSummand& summand = _mem_pointer.summands_at(i);
       Node* variable = summand.variable();
       if (variable != nullptr && variable != _vloop.iv() && !is_invariant(variable, _vloop)) {
         return false;
@@ -1265,7 +1265,7 @@ public:
   AlignmentSolution* solve() const;
 
 private:
-  MemPointer::Base base() const { return _vpointer.decomposed_form().base();}
+  MemPointer::Base base() const { return _vpointer.mem_pointer().base();}
   jint iv_scale() const { return _vpointer.iv_scale(); }
 
   class EQ4 {

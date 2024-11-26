@@ -193,10 +193,10 @@
 //
 //     This allows us to easily see that these two pointers are adjacent (distance = 4).
 //
-//   Hence, in MemPointerParser::parse_decomposed_form, we start with the pointer as a trivial summand.
-//   A summand can either be decomposed further or it is terminal (cannot be decomposed further).
-//   We decompose the summands recursively until all remaining summands are terminal, see
-//   MemPointerParser::parse_sub_expression. This effectively parses the pointer expression recursively.
+//   Hence, in MemPointerParser::parse, we start with the pointer as a trivial summand. A summand can either
+//   be decomposed further or it is terminal (cannot be decomposed further). We decompose the summands
+//   recursively until all remaining summands are terminal, see MemPointerParser::parse_sub_expression.
+//   This effectively parses the pointer expression recursively.
 //
 // MemPointerAliasing:
 //   The decomposed form allows us to determine the aliasing between two pointers easily. For
@@ -744,7 +744,7 @@ private:
   GrowableArray<MemPointerSummand> _summands;
 
   // Resulting decomposed-form.
-  MemPointer _decomposed_form;
+  MemPointer _mem_pointer;
 
 public:
   // No callback.
@@ -753,7 +753,7 @@ public:
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
     _con(NoOverflowInt(0)),
-    _decomposed_form(parse_decomposed_form(_empty_callback)) {}
+    _mem_pointer(parse(_empty_callback)) {}
 
   // With callback.
   MemPointerParser(const MemNode* mem,
@@ -762,12 +762,12 @@ public:
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
     _con(NoOverflowInt(0)),
-    _decomposed_form(parse_decomposed_form(adr_node_callback)) {}
+    _mem_pointer(parse(adr_node_callback)) {}
 
-  const MemPointer& decomposed_form() const { return _decomposed_form; }
+  const MemPointer& mem_pointer() const { return _mem_pointer; }
 
 private:
-  MemPointer parse_decomposed_form(Callback& adr_node_callback);
+  MemPointer parse(Callback& adr_node_callback);
 
   void parse_sub_expression(const MemPointerSummand& summand, Callback& adr_node_callback);
 
@@ -782,36 +782,36 @@ private:
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
   const MemNode* _mem;
-  const MemPointer _decomposed_form;
+  const MemPointer _mem_pointer;
 
 public:
   MemPointerX(const MemNode* mem NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
-    _decomposed_form(init_decomposed_form())
+    _mem_pointer(init_mem_pointer())
   {
 #ifndef PRODUCT
     if (_trace.is_trace_pointer()) {
       tty->print_cr("MemPointer::MemPointer:");
       tty->print("mem: "); mem->dump();
       _mem->in(MemNode::Address)->dump_bfs(5, 0, "d");
-      _decomposed_form.print_on(tty);
+      _mem_pointer.print_on(tty);
     }
 #endif
   }
 
   bool is_adjacent_to_and_before(const MemPointerX& other) const {
-    return decomposed_form().is_adjacent_to_and_before(other.decomposed_form());
+    return mem_pointer().is_adjacent_to_and_before(other.mem_pointer());
   }
 
 private:
-  const MemPointer decomposed_form() const { return _decomposed_form; }
+  const MemPointer mem_pointer() const { return _mem_pointer; }
 
-  const MemPointer init_decomposed_form() {
+  const MemPointer init_mem_pointer() {
     assert(_mem->is_Store(), "only stores are supported");
     ResourceMark rm;
     MemPointerParser parser(_mem NOT_PRODUCT(COMMA _trace));
-    return parser.decomposed_form();
+    return parser.mem_pointer();
   }
 };
 

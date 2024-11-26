@@ -513,8 +513,8 @@ int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a->mem()->Opcode(),  b->mem()->Opcode());
 
   // VPointer summands
-  return MemPointer::cmp_summands(a->vpointer().decomposed_form(),
-                                  b->vpointer().decomposed_form());
+  return MemPointer::cmp_summands(a->vpointer().mem_pointer(),
+                                  b->vpointer().mem_pointer());
 }
 
 int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
@@ -523,8 +523,8 @@ int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
   if (cmp_group != 0) { return cmp_group; }
 
   // VPointer con
-  jint a_con = a->vpointer().decomposed_form().con().value();
-  jint b_con = b->vpointer().decomposed_form().con().value();
+  jint a_con = a->vpointer().mem_pointer().con().value();
+  jint b_con = b->vpointer().mem_pointer().con().value();
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a_con, b_con);
 
   return 0;
@@ -2840,8 +2840,8 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const int iv_stride = this->iv_stride();
   const int iv_scale  = p.iv_scale();
   const int con       = p.con();
-  Node* base          = p.decomposed_form().base().object_or_native();
-  bool is_base_native = p.decomposed_form().base().is_native();
+  Node* base          = p.mem_pointer().base().object_or_native();
+  bool is_base_native = p.mem_pointer().base().is_native();
 
 #ifdef ASSERT
   if (_trace._align_vector) {
