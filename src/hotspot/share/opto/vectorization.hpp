@@ -719,8 +719,8 @@ public:
     _vloop(vloop),
     _decomposed_form(init_decomposed_form(mem, adr_node_callback)),
     _size(mem->memory_size()),
-    _iv_scale(init_iv_scale(_decomposed_form, _vloop)),
-    _is_valid(init_is_valid(_decomposed_form, _vloop))
+    _iv_scale(init_iv_scale()),
+    _is_valid(init_is_valid())
   {
 #ifndef PRODUCT
     if (vloop.mptrace().is_trace_pointer()) {
@@ -807,11 +807,11 @@ private:
     return parser.decomposed_form();
   }
 
-  static jint init_iv_scale(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
+  jint init_iv_scale() const {
     for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
-      const MemPointerSummand& summand = decomposed_form.summands_at(i);
+      const MemPointerSummand& summand = _decomposed_form.summands_at(i);
       Node* variable = summand.variable();
-      if (variable == vloop.iv()) {
+      if (variable == _vloop.iv()) {
         return summand.scale().value();
       }
     }
@@ -821,8 +821,8 @@ private:
 
   // Check that all variables are either the iv, or else invariants.
   // TODO why pre-loop
-  static bool init_is_valid(const MemPointerDecomposedForm& decomposed_form, const VLoop& vloop) {
-    if (!decomposed_form.base().is_known()) {
+  bool init_is_valid() const {
+    if (!_decomposed_form.base().is_known()) {
       // VPointer needs to know if it is native (off-heap) or object (on-heap).
       // We may for example have failed to fully decompose the MemPointer, possibly
       // because such a decomposition is not considered safe.
@@ -830,12 +830,31 @@ private:
     }
 
     for (uint i = 0; i < MemPointerDecomposedForm::SUMMANDS_SIZE; i++) {
-      const MemPointerSummand& summand = decomposed_form.summands_at(i);
+      const MemPointerSummand& summand = _decomposed_form.summands_at(i);
       Node* variable = summand.variable();
-      if (variable != nullptr && variable != vloop.iv() && !is_invariant(variable, vloop)) {
+      if (variable != nullptr && variable != _vloop.iv() && !is_invariant(variable, _vloop)) {
         return false;
       }
     }
+
+    // In the pointer analysis, and especially the AlignVector, analysis we assume that
+    // stride and scale are not too large. For example, we multiply "iv_scale * iv_stride",
+    // and assume that this does not overflow the int range. We also take "abs(iv_scale)"
+    // and "abs(iv_stride)", which would overflow for min_int = -(2^31). Still, we want
+    // to at least allow small and moderately large stride and scale. Therefore, we
+    // allow values up to 2^30, which is only a factor 2 smaller than the max/min int.
+    // Normal performance relevant code will have much lower values. And the restriction
+    // allows us to keep the rest of the autovectorization code much simpler, since we
+    // do not have to deal with overflows.
+    jlong long_iv_scale  = _iv_scale;
+    jlong long_iv_stride = _vloop.iv_stride();
+    jlong max_val = 1 << 30;
+    if (abs(long_iv_scale) >= max_val ||
+        abs(long_iv_stride) >= max_val ||
+        abs(long_iv_scale * long_iv_stride) >= max_val) {
+      return false;
+    }
+
     return true;
   }
 
