@@ -62,10 +62,22 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
     } else {
       // containers with cgroupns=host, default setting is _root==cgroup_path
       if (strcmp(_root, cgroup_path) != 0) {
-        if (strcmp(cgroup_path,"/") != 0) {
+        if (*cgroup_path != '\0' && strcmp(cgroup_path, "/") != 0) {
           // When moved to a subgroup, between subgroups, the path suffix will change.
-          // Rely on path adjustment that determines the actual suffix.
-          ss.print_raw(cgroup_path);
+          const char *suffix = cgroup_path;
+          while (suffix != nullptr) {
+            stringStream pp;
+            pp.print_raw(_mount_point);
+            pp.print_raw(suffix);
+            if (os::file_exists(pp.base())) {
+              ss.print_raw(suffix);
+              if (suffix != cgroup_path) {
+                log_trace(os, container)("set_subsystem_path: cgroup v1 path reduced to: %s.", suffix);
+              }
+              break;
+            }
+            suffix = strchr(suffix+1, '/');
+          }
         }
       }
     }
