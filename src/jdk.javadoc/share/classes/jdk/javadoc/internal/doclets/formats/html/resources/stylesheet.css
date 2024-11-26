@@ -144,6 +144,7 @@ code, tt {
 }
 :not(h1, h2, h3, h4, h5, h6, sup, sub, small, big) > :is(code, tt) {
     font-size:var(--code-font-size);
+    line-height:1.4em;
 }
 dt code {
     font-family:var(--code-font-family);
