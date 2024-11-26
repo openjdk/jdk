@@ -2843,8 +2843,6 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* base          = p.decomposed_form().base().object_or_native();
   bool is_base_native = p.decomposed_form().base().is_native();
 
-  // TODO: maybe use NoOverflowInt here, and for solver?
-
 #ifdef ASSERT
   if (_trace._align_vector) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
@@ -2876,7 +2874,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 #endif
 
   if (iv_stride == 0 || !is_power_of_2(abs(iv_stride)) ||
-      iv_scale  == 0 || !is_power_of_2(abs(iv_scale))  || // TODO abs ok?
+      iv_scale  == 0 || !is_power_of_2(abs(iv_scale))  ||
       abs(iv_scale) >= aw) {
 #ifdef ASSERT
     if (_trace._align_vector) {

@@ -711,7 +711,7 @@ private:
   // Derived, for quicker use.
   const jint  _iv_scale;
 
-  const bool _is_valid; // TODO any accessor should assert if not valid!
+  const bool _is_valid;
 
 public:
   template<typename Callback>
