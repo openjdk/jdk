@@ -732,9 +732,9 @@ private:
 public:
   VPointer(const MemNode* mem, const VLoop& vloop, DecomposedNodeCallback& callback) :
     _vloop(vloop),
-    _mem_pointer(MemPointerParser::parse(mem,
-                                         callback
-                                         NOT_PRODUCT(COMMA vloop.mptrace()))),
+    _mem_pointer(MemPointerParser::parse(NOT_PRODUCT(vloop.mptrace() COMMA)
+                                         mem,
+                                         callback)),
     _size(mem->memory_size()),
     _iv_scale(init_iv_scale()),
     _is_valid(init_is_valid())

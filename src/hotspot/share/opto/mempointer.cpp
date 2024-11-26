@@ -27,6 +27,8 @@
 #include "opto/addnode.hpp"
 #include "utilities/resourceHash.hpp"
 
+NOT_PRODUCT(MemPointerParser::DecomposedNodeCallback MemPointerParser::DecomposedNodeCallback::_empty;)
+
 // Recursively parse the pointer expression with a DFS all-path traversal
 // (i.e. with node repetitions), starting at the pointer.
 MemPointer MemPointerParser::parse(DecomposedNodeCallback& callback) {

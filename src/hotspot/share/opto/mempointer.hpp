@@ -729,8 +729,14 @@ public:
   // "inner" nodes of the pointer expression. This callback allows collecting
   // all such nodes of a pointer expression.
   class DecomposedNodeCallback : public StackObj {
+  private:
+    static DecomposedNodeCallback _empty;
+
   public:
     virtual void callback(Node* n) { /* do nothing by default */ }
+
+    // Singleton for default arguments.
+    static DecomposedNodeCallback& empty() { return _empty; }
   };
 
 private:
@@ -755,9 +761,9 @@ public:
     _con(NoOverflowInt(0)),
     _mem_pointer(parse(callback)) {}
 
-  static MemPointer parse(const MemNode* mem,
-                          DecomposedNodeCallback& callback
-                          NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
+  static MemPointer parse(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
+                          const MemNode* mem,
+                          DecomposedNodeCallback& callback = DecomposedNodeCallback::empty()) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are allowed");
     ResourceMark rm;
     MemPointerParser parser(mem, callback NOT_PRODUCT(COMMA trace));
