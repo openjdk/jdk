@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.net.SocketAddress;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import sun.security.util.SecurityProperties;
 
@@ -83,22 +81,16 @@ public final class SocketExceptions {
     // return a new instance of the same type with the given detail
     // msg, or if the type doesn't support detail msgs, return given
     // instance.
-
-    @SuppressWarnings("removal")
-    private static IOException create(IOException e, String msg) {
-        return AccessController.doPrivileged(new PrivilegedAction<IOException>() {
-            public IOException run() {
-                try {
-                    Class<?> clazz = e.getClass();
-                    Constructor<?> ctor = clazz.getConstructor(String.class);
-                    IOException e1 = (IOException)(ctor.newInstance(msg));
-                    e1.setStackTrace(e.getStackTrace());
-                    return e1;
-                } catch (Exception e0) {
-                    // Some eg AsynchronousCloseException have no detail msg
-                    return e;
-                }
-            }
-        });
+    private static IOException create(final IOException e, final String msg) {
+        try {
+            Class<?> clazz = e.getClass();
+            Constructor<?> ctor = clazz.getConstructor(String.class);
+            IOException e1 = (IOException)(ctor.newInstance(msg));
+            e1.setStackTrace(e.getStackTrace());
+            return e1;
+        } catch (Exception e0) {
+            // Some eg AsynchronousCloseException have no detail msg
+            return e;
+        }
     }
 }

@@ -723,6 +723,8 @@ class SerializeClosure;
   template(dumpSharedArchive_signature,                     "(ZLjava/lang/String;)Ljava/lang/String;")            \
   template(generateLambdaFormHolderClasses,                 "generateLambdaFormHolderClasses")                    \
   template(generateLambdaFormHolderClasses_signature,       "([Ljava/lang/String;)[Ljava/lang/Object;")           \
+  template(getResourceAsByteArray_name,                     "getResourceAsByteArray")                             \
+  template(getResourceAsByteArray_signature,                "(Ljava/lang/String;)[B")                             \
   template(java_lang_Enum,                                  "java/lang/Enum")                                     \
   template(java_lang_invoke_Invokers_Holder,                "java/lang/invoke/Invokers$Holder")                   \
   template(java_lang_invoke_DirectMethodHandle_Holder,      "java/lang/invoke/DirectMethodHandle$Holder")         \

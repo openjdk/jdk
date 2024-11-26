@@ -528,12 +528,7 @@ public class BasicInternalFrameTitlePane extends JComponent
     protected void postClosingEvent(JInternalFrame frame) {
         InternalFrameEvent e = new InternalFrameEvent(
             frame, InternalFrameEvent.INTERNAL_FRAME_CLOSING);
-        // Try posting event, unless there's a SecurityManager.
-        try {
-            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(e);
-        } catch (SecurityException se) {
-            frame.dispatchEvent(e);
-        }
+        Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(e);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ class NewInstance {
      *
      * Package private so this code is not exposed at the API level.
      */
-    @SuppressWarnings("removal")
     static <T> T newInstance (Class<T> type, ClassLoader loader, String clsName)
         throws ClassNotFoundException, IllegalAccessException,
             InstantiationException
@@ -65,15 +64,8 @@ class NewInstance {
         }
 
         // make sure we have access to restricted packages
-        boolean internal = false;
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                internal = true;
-            }
-        }
-
         Class<?> driverClass;
-        if (classLoader == null || internal) {
+        if (classLoader == null) {
             driverClass = Class.forName(className);
         } else {
             driverClass = classLoader.loadClass(className);
@@ -81,7 +73,7 @@ class NewInstance {
 
         try {
             return type.cast(driverClass.getConstructor().newInstance());
-        } catch (NoSuchMethodException | SecurityException | InvocationTargetException ex) {
+        } catch (NoSuchMethodException | InvocationTargetException ex) {
             throw new InstantiationException(ex.getMessage());
         }
     }

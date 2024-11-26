@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -36,12 +36,12 @@ import jdk.xml.internal.SecuritySupport;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  * @author Sandy Gao, IBM
  *
- * @LastModified: Apr 2019
+ * @LastModified: Nov 2024
  */
 public abstract class TypeValidator {
 
     private static final boolean USE_CODE_POINT_COUNT_FOR_STRING_LENGTH =
-            Boolean.parseBoolean(SecuritySupport.getSystemProperty(
+            Boolean.parseBoolean(System.getProperty(
                     "com.sun.org.apache.xerces.internal.impl.dv.xs.useCodePointCountForStringLength", "false"));
 
     // which facets are allowed for this type
