@@ -947,27 +947,29 @@ void os::naked_yield() {
 char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
                                     bool is_absolute_path) {
   char *agent_entry_name;
-  size_t len;
+  size_t len = 0;
   size_t name_len;
   size_t prefix_len = strlen(JNI_LIB_PREFIX);
   size_t suffix_len = strlen(JNI_LIB_SUFFIX);
   const char *start;
 
   if (lib_name != nullptr) {
-    name_len = strlen(lib_name);
+    len = name_len = strlen(lib_name);
     if (is_absolute_path) {
       // Need to strip path, prefix and suffix
       if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
         lib_name = ++start;
       }
-      if (strlen(lib_name) <= (prefix_len + suffix_len)) {
+      if (len <= (prefix_len + suffix_len)) {
         return nullptr;
       }
       lib_name += prefix_len;
       name_len = strlen(lib_name) - suffix_len;
     }
+    name_len += 1;  // for conjoining underscore
+    len = name_len;
   }
-  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
+  len += (strlen(sym_name) + 1);  // need +1 for null terminator
   agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
   if (agent_entry_name == nullptr) {
     return nullptr;
