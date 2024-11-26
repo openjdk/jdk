@@ -30,7 +30,7 @@
  */
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.spec.*;
+import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 import java.util.TreeSet;
 
@@ -57,7 +57,7 @@ public class TestNamedParameterSpec {
 
     public static String[] getSortedConstNames(Class<?> clazz) {
         TreeSet<String> names = new TreeSet<String>();
-        for(Field field : clazz.getDeclaredFields()){
+        for (Field field : clazz.getDeclaredFields()) {
             int mods = field.getModifiers();
             if (Modifier.isPublic(mods) && Modifier.isStatic(mods)
                     && Modifier.isFinal(mods)){
