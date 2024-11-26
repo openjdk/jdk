@@ -165,7 +165,7 @@ class frame {
 
   // Every frame needs to return a unique id which distinguishes it from all other frames.
   // No real frame should have an id() of null so it is a distinguishing value for an unmatchable frame.
-  // We also have relationals which allow comparing a frame to another frame's id() allow
+  // We also have relationals which allow comparing a frame to another frame's id() allowing
   // us to distinguish younger (more recent activation) from older (less recent activations)
   // A null id is only valid when comparing for equality.
 
