@@ -70,13 +70,11 @@ public class CodeWriter extends BasicWriter {
     }
 
     void write(CodeAttribute attr) {
-        println("Code:");
-        indent(+1);
-        writeVerboseHeader(attr);
-        writeInstrs(attr);
-        writeExceptionTable(attr);
-        attrWriter.write(attr.attributes(), attr);
-        indent(-1);
+        writeInternal(attr, false);
+    }
+
+    void writeMinimal(CodeAttribute attr) {
+        writeInternal(attr, true);
     }
 
     public void writeVerboseHeader(CodeAttribute attr) {
@@ -257,6 +255,20 @@ public class CodeWriter extends BasicWriter {
         }
 
         return detailWriters;
+    }
+
+    private void writeInternal(CodeAttribute attr, boolean minimal) {
+        println("Code:");
+        indent(+1);
+        if (!minimal) {
+            writeVerboseHeader(attr);
+        }
+        writeInstrs(attr);
+        writeExceptionTable(attr);
+        if (!minimal) {
+            attrWriter.write(attr.attributes(), attr);
+        }
+        indent(-1);
     }
 
     private AttributeWriter attrWriter;

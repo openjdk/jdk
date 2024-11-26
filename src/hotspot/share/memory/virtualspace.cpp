@@ -369,6 +369,9 @@ ReservedSpace ReservedSpace::space_for_range(char* base, size_t size, size_t ali
   return space;
 }
 
+// Compressed oop support is not relevant in 32bit builds.
+#ifdef _LP64
+
 static size_t noaccess_prefix_size(size_t alignment) {
   return lcm(os::vm_page_size(), alignment);
 }
@@ -594,8 +597,8 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // Try to attach at addresses that are aligned to OopEncodingHeapMax. Disjointbase mode.
     char** addresses = get_attach_addresses_for_disjoint_mode();
     int i = 0;
-    while (addresses[i] &&                                 // End of array not yet reached.
-           ((_base == nullptr) ||                             // No previous try succeeded.
+    while ((addresses[i] != nullptr) &&                    // End of array not yet reached.
+           ((_base == nullptr) ||                          // No previous try succeeded.
             (_base + size >  (char *)OopEncodingHeapMax && // Not zerobased or unscaled address.
              !CompressedOops::is_disjoint_heap_base_address((address)_base)))) {  // Not disjoint address.
       char* const attach_point = addresses[i];
@@ -611,6 +614,8 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     }
   }
 }
+
+#endif // _LP64
 
 ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_size, const char* heap_allocation_directory) : ReservedSpace() {
 
@@ -636,6 +641,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   guarantee(is_aligned(size, alignment), "set by caller");
 
   if (UseCompressedOops) {
+#ifdef _LP64
     initialize_compressed_heap(size, alignment, page_size);
     if (_size > size) {
       // We allocated heap with noaccess prefix.
@@ -643,6 +649,9 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
       // if we had to try at arbitrary address.
       establish_noaccess_prefix();
     }
+#else
+    ShouldNotReachHere();
+#endif // _LP64
   } else {
     initialize(size, alignment, page_size, nullptr, false);
   }

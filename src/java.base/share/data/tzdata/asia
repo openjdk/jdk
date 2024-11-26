@@ -106,8 +106,8 @@ Rule RussiaAsia	1996	2010	-	Oct	lastSun	 2:00s	0	-
 # Afghanistan
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Kabul	4:36:48 -	LMT	1890
-			4:00	-	+04	1945
-			4:30	-	+0430
+			4:00	-	%z	1945
+			4:30	-	%z
 
 # Armenia
 # From Paul Eggert (2006-03-22):
@@ -139,12 +139,12 @@ Rule Armenia	2011	only	-	Mar	lastSun	 2:00s	1:00	-
 Rule Armenia	2011	only	-	Oct	lastSun	 2:00s	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Yerevan	2:58:00 -	LMT	1924 May  2
-			3:00	-	+03	1957 Mar
-			4:00 RussiaAsia +04/+05	1991 Mar 31  2:00s
-			3:00 RussiaAsia	+03/+04	1995 Sep 24  2:00s
-			4:00	-	+04	1997
-			4:00 RussiaAsia	+04/+05	2011
-			4:00	Armenia	+04/+05
+			3:00	-	%z	1957 Mar
+			4:00 RussiaAsia %z	1991 Mar 31  2:00s
+			3:00 RussiaAsia	%z	1995 Sep 24  2:00s
+			4:00	-	%z	1997
+			4:00 RussiaAsia	%z	2011
+			4:00	Armenia	%z
 
 # Azerbaijan
 
@@ -165,12 +165,12 @@ Rule	Azer	1997	2015	-	Mar	lastSun	 4:00	1:00	-
 Rule	Azer	1997	2015	-	Oct	lastSun	 5:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Baku	3:19:24 -	LMT	1924 May  2
-			3:00	-	+03	1957 Mar
-			4:00 RussiaAsia +04/+05	1991 Mar 31  2:00s
-			3:00 RussiaAsia	+03/+04	1992 Sep lastSun  2:00s
-			4:00	-	+04	1996
-			4:00	EUAsia	+04/+05	1997
-			4:00	Azer	+04/+05
+			3:00	-	%z	1957 Mar
+			4:00 RussiaAsia %z	1991 Mar 31  2:00s
+			3:00 RussiaAsia	%z	1992 Sep lastSun  2:00s
+			4:00	-	%z	1996
+			4:00	EUAsia	%z	1997
+			4:00	Azer	%z
 
 # Bangladesh
 # From Alexander Krivenyshev (2009-05-13):
@@ -251,17 +251,17 @@ Rule	Dhaka	2009	only	-	Dec	31	24:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dhaka	6:01:40 -	LMT	1890
 			5:53:20	-	HMT	1941 Oct    # Howrah Mean Time?
-			6:30	-	+0630	1942 May 15
-			5:30	-	+0530	1942 Sep
-			6:30	-	+0630	1951 Sep 30
-			6:00	-	+06	2009
-			6:00	Dhaka	+06/+07
+			6:30	-	%z	1942 May 15
+			5:30	-	%z	1942 Sep
+			6:30	-	%z	1951 Sep 30
+			6:00	-	%z	2009
+			6:00	Dhaka	%z
 
 # Bhutan
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Thimphu	5:58:36 -	LMT	1947 Aug 15 # or Thimbu
-			5:30	-	+0530	1987 Oct
-			6:00	-	+06
+			5:30	-	%z	1987 Oct
+			6:00	-	%z
 
 # British Indian Ocean Territory
 # Whitman and the 1995 CIA time zone map say 5:00, but the
@@ -271,8 +271,8 @@ Zone	Asia/Thimphu	5:58:36 -	LMT	1947 Aug 15 # or Thimbu
 # then contained the Chagos Archipelago).
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Chagos	4:49:40	-	LMT	1907
-			5:00	-	+05	1996
-			6:00	-	+06
+			5:00	-	%z	1996
+			6:00	-	%z
 
 # Cocos (Keeling) Islands
 # Myanmar (Burma)
@@ -288,9 +288,9 @@ Zone	Indian/Chagos	4:49:40	-	LMT	1907
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Yangon	6:24:47 -	LMT	1880        # or Rangoon
 			6:24:47	-	RMT	1920        # Rangoon local time
-			6:30	-	+0630	1942 May
-			9:00	-	+09	1945 May  3
-			6:30	-	+0630
+			6:30	-	%z	1942 May
+			9:00	-	%z	1945 May  3
+			6:30	-	%z
 
 # China
 
@@ -679,7 +679,7 @@ Zone	Asia/Shanghai	8:05:43	-	LMT	1901
 # Xinjiang time, used by many in western China; represented by Ürümqi / Ürümchi
 # / Wulumuqi.  (Please use Asia/Shanghai if you prefer Beijing time.)
 Zone	Asia/Urumqi	5:50:20	-	LMT	1928
-			6:00	-	+06
+			6:00	-	%z
 
 # Hong Kong
 
@@ -1137,7 +1137,7 @@ Rule	Macau	1979	only	-	Oct	Sun>=16	03:30	0	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Macau	7:34:10 -	LMT	1904 Oct 30
 			8:00	-	CST	1941 Dec 21 23:00
-			9:00	Macau	+09/+10	1945 Sep 30 24:00
+			9:00	Macau	%z	1945 Sep 30 24:00
 			8:00	Macau	C%sT
 
 
@@ -1180,7 +1180,7 @@ Zone	Asia/Nicosia	2:13:28 -	LMT	1921 Nov 14
 Zone	Asia/Famagusta	2:15:48	-	LMT	1921 Nov 14
 			2:00	Cyprus	EE%sT	1998 Sep
 			2:00	EUAsia	EE%sT	2016 Sep  8
-			3:00	-	+03	2017 Oct 29 1:00u
+			3:00	-	%z	2017 Oct 29 1:00u
 			2:00	EUAsia	EE%sT
 
 # Georgia
@@ -1221,17 +1221,24 @@ Zone	Asia/Famagusta	2:15:48	-	LMT	1921 Nov 14
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tbilisi	2:59:11 -	LMT	1880
 			2:59:11	-	TBMT	1924 May  2 # Tbilisi Mean Time
-			3:00	-	+03	1957 Mar
-			4:00 RussiaAsia +04/+05	1991 Mar 31  2:00s
-			3:00 RussiaAsia +03/+04	1992
-			3:00 E-EurAsia	+03/+04	1994 Sep lastSun
-			4:00 E-EurAsia	+04/+05	1996 Oct lastSun
-			4:00	1:00	+05	1997 Mar lastSun
-			4:00 E-EurAsia	+04/+05	2004 Jun 27
-			3:00 RussiaAsia	+03/+04	2005 Mar lastSun  2:00
-			4:00	-	+04
+			3:00	-	%z	1957 Mar
+			4:00 RussiaAsia %z	1991 Mar 31  2:00s
+			3:00 RussiaAsia %z	1992
+			3:00 E-EurAsia	%z	1994 Sep lastSun
+			4:00 E-EurAsia	%z	1996 Oct lastSun
+			4:00	1:00	%z	1997 Mar lastSun
+			4:00 E-EurAsia	%z	2004 Jun 27
+			3:00 RussiaAsia	%z	2005 Mar lastSun  2:00
+			4:00	-	%z
 
 # East Timor
+
+# From Tim Parenti (2024-07-01):
+# The 1912-01-01 transition occurred at 00:00 new time, per the 1911-05-24
+# Portuguese decree (see Europe/Lisbon).  A provision in article 5(c) of the
+# decree prescribed that Timor "will keep counting time in harmony with
+# neighboring foreign colonies, [for] as long as they do not adopt the time
+# that belongs to them in [the Washington Convention] system."
 
 # See Indonesia for the 1945 transition.
 
@@ -1256,11 +1263,11 @@ Zone	Asia/Tbilisi	2:59:11 -	LMT	1880
 # midnight on Saturday, September 16.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Asia/Dili	8:22:20 -	LMT	1912 Jan  1
-			8:00	-	+08	1942 Feb 21 23:00
-			9:00	-	+09	1976 May  3
-			8:00	-	+08	2000 Sep 17  0:00
-			9:00	-	+09
+Zone	Asia/Dili	8:22:20 -	LMT	1911 Dec 31 16:00u
+			8:00	-	%z	1942 Feb 21 23:00
+			9:00	-	%z	1976 May  3
+			8:00	-	%z	2000 Sep 17  0:00
+			9:00	-	%z
 
 # India
 
@@ -1326,9 +1333,9 @@ Zone	Asia/Kolkata	5:53:28 -	LMT	1854 Jun 28 # Kolkata
 			5:53:20	-	HMT	1870	    # Howrah Mean Time?
 			5:21:10	-	MMT	1906 Jan  1 # Madras local time
 			5:30	-	IST	1941 Oct
-			5:30	1:00	+0630	1942 May 15
+			5:30	1:00	%z	1942 May 15
 			5:30	-	IST	1942 Sep
-			5:30	1:00	+0630	1945 Oct 15
+			5:30	1:00	%z	1945 Oct 15
 			5:30	-	IST
 # Since 1970 the following are like Asia/Kolkata:
 #	Andaman Is
@@ -1380,33 +1387,33 @@ Zone Asia/Jakarta	7:07:12 -	LMT	1867 Aug 10
 # Shanks & Pottenger say the next transition was at 1924 Jan 1 0:13,
 # but this must be a typo.
 			7:07:12	-	BMT	1923 Dec 31 16:40u # Batavia
-			7:20	-	+0720	1932 Nov
-			7:30	-	+0730	1942 Mar 23
-			9:00	-	+09	1945 Sep 23
-			7:30	-	+0730	1948 May
-			8:00	-	+08	1950 May
-			7:30	-	+0730	1964
+			7:20	-	%z	1932 Nov
+			7:30	-	%z	1942 Mar 23
+			9:00	-	%z	1945 Sep 23
+			7:30	-	%z	1948 May
+			8:00	-	%z	1950 May
+			7:30	-	%z	1964
 			7:00	-	WIB
 # west and central Borneo
 Zone Asia/Pontianak	7:17:20	-	LMT	1908 May
 			7:17:20	-	PMT	1932 Nov    # Pontianak MT
-			7:30	-	+0730	1942 Jan 29
-			9:00	-	+09	1945 Sep 23
-			7:30	-	+0730	1948 May
-			8:00	-	+08	1950 May
-			7:30	-	+0730	1964
+			7:30	-	%z	1942 Jan 29
+			9:00	-	%z	1945 Sep 23
+			7:30	-	%z	1948 May
+			8:00	-	%z	1950 May
+			7:30	-	%z	1964
 			8:00	-	WITA	1988 Jan  1
 			7:00	-	WIB
 # Sulawesi, Lesser Sundas, east and south Borneo
 Zone Asia/Makassar	7:57:36 -	LMT	1920
 			7:57:36	-	MMT	1932 Nov    # Macassar MT
-			8:00	-	+08	1942 Feb  9
-			9:00	-	+09	1945 Sep 23
+			8:00	-	%z	1942 Feb  9
+			9:00	-	%z	1945 Sep 23
 			8:00	-	WITA
 # Maluku Islands, West Papua, Papua
 Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
-			9:00	-	+09	1944 Sep  1
-			9:30	-	+0930	1964
+			9:00	-	%z	1944 Sep  1
+			9:30	-	%z	1964
 			9:00	-	WIT
 
 # Iran
@@ -1642,9 +1649,9 @@ Rule	Iran	2021	2022	-	Sep	21	24:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tehran	3:25:44	-	LMT	1916
 			3:25:44	-	TMT	1935 Jun 13 # Tehran Mean Time
-			3:30	Iran	+0330/+0430 1977 Oct 20 24:00
-			4:00	Iran	+04/+05	1979
-			3:30	Iran	+0330/+0430
+			3:30	Iran	%z	1977 Oct 20 24:00
+			4:00	Iran	%z	1979
+			3:30	Iran	%z
 
 
 # Iraq
@@ -1687,8 +1694,8 @@ Rule	Iraq	1991	2007	-	Oct	 1	3:00s	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Baghdad	2:57:40	-	LMT	1890
 			2:57:36	-	BMT	1918     # Baghdad Mean Time?
-			3:00	-	+03	1982 May
-			3:00	Iraq	+03/+04
+			3:00	-	%z	1982 May
+			3:00	Iraq	%z
 
 
 ###############################################################################
@@ -2285,7 +2292,7 @@ Rule	Jordan	2022	only	-	Feb	lastThu	24:00	1:00	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Amman	2:23:44 -	LMT	1931
 			2:00	Jordan	EE%sT	2022 Oct 28 0:00s
-			3:00	-	+03
+			3:00	-	%z
 
 
 # Kazakhstan
@@ -2496,88 +2503,88 @@ Zone	Asia/Amman	2:23:44 -	LMT	1931
 # Almaty (formerly Alma-Ata), representing most locations in Kazakhstan
 # This includes Abai/Abay (ISO 3166-2 code KZ-10), Aqmola/Akmola (KZ-11),
 # Almaty (KZ-19), Almaty city (KZ-75), Astana city (KZ-71),
-# East Kazkhstan (KZ-63), Jambyl/Zhambyl (KZ-31), Jetisu/Zhetysu (KZ-33),
+# East Kazakhstan (KZ-63), Jambyl/Zhambyl (KZ-31), Jetisu/Zhetysu (KZ-33),
 # Karaganda (KZ-35), North Kazakhstan (KZ-59), Pavlodar (KZ-55),
-# Shyumkent city (KZ-79), Turkistan (KZ-61), and Ulytau (KZ-62).
+# Shymkent city (KZ-79), Turkistan (KZ-61), and Ulytau (KZ-62).
 Zone	Asia/Almaty	5:07:48 -	LMT	1924 May  2 # or Alma-Ata
-			5:00	-	+05	1930 Jun 21
-			6:00 RussiaAsia +06/+07	1991 Mar 31  2:00s
-			5:00 RussiaAsia	+05/+06	1992 Jan 19  2:00s
-			6:00 RussiaAsia	+06/+07	2004 Oct 31  2:00s
-			6:00	-	+06	2024 Mar  1  0:00
-			5:00	-	+05
+			5:00	-	%z	1930 Jun 21
+			6:00 RussiaAsia %z	1991 Mar 31  2:00s
+			5:00 RussiaAsia	%z	1992 Jan 19  2:00s
+			6:00 RussiaAsia	%z	2004 Oct 31  2:00s
+			6:00	-	%z	2024 Mar  1  0:00
+			5:00	-	%z
 # Qyzylorda (aka Kyzylorda, Kizilorda, Kzyl-Orda, etc.) (KZ-43)
 Zone	Asia/Qyzylorda	4:21:52 -	LMT	1924 May  2
-			4:00	-	+04	1930 Jun 21
-			5:00	-	+05	1981 Apr  1
-			5:00	1:00	+06	1981 Oct  1
-			6:00	-	+06	1982 Apr  1
-			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
-			4:00 RussiaAsia	+04/+05	1991 Sep 29  2:00s
-			5:00 RussiaAsia	+05/+06	1992 Jan 19  2:00s
-			6:00 RussiaAsia	+06/+07	1992 Mar 29  2:00s
-			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
-			6:00	-	+06	2018 Dec 21  0:00
-			5:00	-	+05
+			4:00	-	%z	1930 Jun 21
+			5:00	-	%z	1981 Apr  1
+			5:00	1:00	%z	1981 Oct  1
+			6:00	-	%z	1982 Apr  1
+			5:00 RussiaAsia	%z	1991 Mar 31  2:00s
+			4:00 RussiaAsia	%z	1991 Sep 29  2:00s
+			5:00 RussiaAsia	%z	1992 Jan 19  2:00s
+			6:00 RussiaAsia	%z	1992 Mar 29  2:00s
+			5:00 RussiaAsia	%z	2004 Oct 31  2:00s
+			6:00	-	%z	2018 Dec 21  0:00
+			5:00	-	%z
 # Qostanay (aka Kostanay, Kustanay) (KZ-39)
 # The 1991/2 rules are unclear partly because of the 1997 Turgai
 # reorganization.
 Zone	Asia/Qostanay	4:14:28 -	LMT	1924 May  2
-			4:00	-	+04	1930 Jun 21
-			5:00	-	+05	1981 Apr  1
-			5:00	1:00	+06	1981 Oct  1
-			6:00	-	+06	1982 Apr  1
-			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
-			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
-			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
-			6:00	-	+06	2024 Mar  1  0:00
-			5:00	-	+05
+			4:00	-	%z	1930 Jun 21
+			5:00	-	%z	1981 Apr  1
+			5:00	1:00	%z	1981 Oct  1
+			6:00	-	%z	1982 Apr  1
+			5:00 RussiaAsia	%z	1991 Mar 31  2:00s
+			4:00 RussiaAsia	%z	1992 Jan 19  2:00s
+			5:00 RussiaAsia	%z	2004 Oct 31  2:00s
+			6:00	-	%z	2024 Mar  1  0:00
+			5:00	-	%z
 # Aqtöbe (aka Aktobe, formerly Aktyubinsk) (KZ-15)
 Zone	Asia/Aqtobe	3:48:40	-	LMT	1924 May  2
-			4:00	-	+04	1930 Jun 21
-			5:00	-	+05	1981 Apr  1
-			5:00	1:00	+06	1981 Oct  1
-			6:00	-	+06	1982 Apr  1
-			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
-			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
-			5:00 RussiaAsia	+05/+06	2004 Oct 31  2:00s
-			5:00	-	+05
+			4:00	-	%z	1930 Jun 21
+			5:00	-	%z	1981 Apr  1
+			5:00	1:00	%z	1981 Oct  1
+			6:00	-	%z	1982 Apr  1
+			5:00 RussiaAsia	%z	1991 Mar 31  2:00s
+			4:00 RussiaAsia	%z	1992 Jan 19  2:00s
+			5:00 RussiaAsia	%z	2004 Oct 31  2:00s
+			5:00	-	%z
 # Mangghystaū (KZ-47)
 # Aqtau was not founded until 1963, but it represents an inhabited region,
 # so include timestamps before 1963.
 Zone	Asia/Aqtau	3:21:04	-	LMT	1924 May  2
-			4:00	-	+04	1930 Jun 21
-			5:00	-	+05	1981 Oct  1
-			6:00	-	+06	1982 Apr  1
-			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
-			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
-			5:00 RussiaAsia	+05/+06	1994 Sep 25  2:00s
-			4:00 RussiaAsia	+04/+05	2004 Oct 31  2:00s
-			5:00	-	+05
+			4:00	-	%z	1930 Jun 21
+			5:00	-	%z	1981 Oct  1
+			6:00	-	%z	1982 Apr  1
+			5:00 RussiaAsia	%z	1991 Mar 31  2:00s
+			4:00 RussiaAsia	%z	1992 Jan 19  2:00s
+			5:00 RussiaAsia	%z	1994 Sep 25  2:00s
+			4:00 RussiaAsia	%z	2004 Oct 31  2:00s
+			5:00	-	%z
 # Atyraū (KZ-23) is like Mangghystaū except it switched from
 # +04/+05 to +05/+06 in spring 1999, not fall 1994.
 Zone	Asia/Atyrau	3:27:44	-	LMT	1924 May  2
-			3:00	-	+03	1930 Jun 21
-			5:00	-	+05	1981 Oct  1
-			6:00	-	+06	1982 Apr  1
-			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00s
-			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
-			5:00 RussiaAsia	+05/+06	1999 Mar 28  2:00s
-			4:00 RussiaAsia	+04/+05	2004 Oct 31  2:00s
-			5:00	-	+05
+			3:00	-	%z	1930 Jun 21
+			5:00	-	%z	1981 Oct  1
+			6:00	-	%z	1982 Apr  1
+			5:00 RussiaAsia	%z	1991 Mar 31  2:00s
+			4:00 RussiaAsia	%z	1992 Jan 19  2:00s
+			5:00 RussiaAsia	%z	1999 Mar 28  2:00s
+			4:00 RussiaAsia	%z	2004 Oct 31  2:00s
+			5:00	-	%z
 # West Kazakhstan (KZ-27)
 # From Paul Eggert (2016-03-18):
 # The 1989 transition is from USSR act No. 227 (1989-03-14).
 Zone	Asia/Oral	3:25:24	-	LMT	1924 May  2 # or Ural'sk
-			3:00	-	+03	1930 Jun 21
-			5:00	-	+05	1981 Apr  1
-			5:00	1:00	+06	1981 Oct  1
-			6:00	-	+06	1982 Apr  1
-			5:00 RussiaAsia	+05/+06	1989 Mar 26  2:00s
-			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00s
-			5:00 RussiaAsia	+05/+06	1992 Mar 29  2:00s
-			4:00 RussiaAsia	+04/+05	2004 Oct 31  2:00s
-			5:00	-	+05
+			3:00	-	%z	1930 Jun 21
+			5:00	-	%z	1981 Apr  1
+			5:00	1:00	%z	1981 Oct  1
+			6:00	-	%z	1982 Apr  1
+			5:00 RussiaAsia	%z	1989 Mar 26  2:00s
+			4:00 RussiaAsia	%z	1992 Jan 19  2:00s
+			5:00 RussiaAsia	%z	1992 Mar 29  2:00s
+			4:00 RussiaAsia	%z	2004 Oct 31  2:00s
+			5:00	-	%z
 
 # Kyrgyzstan (Kirgizstan)
 # Transitions through 1991 are from Shanks & Pottenger.
@@ -2598,11 +2605,11 @@ Rule	Kyrgyz	1997	2005	-	Mar	lastSun	2:30	1:00	-
 Rule	Kyrgyz	1997	2004	-	Oct	lastSun	2:30	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Bishkek	4:58:24 -	LMT	1924 May  2
-			5:00	-	+05	1930 Jun 21
-			6:00 RussiaAsia +06/+07	1991 Mar 31  2:00s
-			5:00 RussiaAsia	+05/+06	1991 Aug 31  2:00
-			5:00	Kyrgyz	+05/+06	2005 Aug 12
-			6:00	-	+06
+			5:00	-	%z	1930 Jun 21
+			6:00 RussiaAsia %z	1991 Mar 31  2:00s
+			5:00 RussiaAsia	%z	1991 Aug 31  2:00
+			5:00	Kyrgyz	%z	2005 Aug 12
+			6:00	-	%z
 
 ###############################################################################
 
@@ -2809,16 +2816,16 @@ Rule	NBorneo	1935	1941	-	Dec	14	0:00	0	-
 # and 1982 transition dates are from Mok Ly Yng.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone Asia/Kuching	7:21:20	-	LMT	1926 Mar
-			7:30	-	+0730	1933
-			8:00 NBorneo  +08/+0820	1942 Feb 16
-			9:00	-	+09	1945 Sep 12
-			8:00	-	+08
+			7:30	-	%z	1933
+			8:00 NBorneo	%z	1942 Feb 16
+			9:00	-	%z	1945 Sep 12
+			8:00	-	%z
 
 # Maldives
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Malé
 			4:54:00	-	MMT	1960 # Malé Mean Time
-			5:00	-	+05
+			5:00	-	%z
 
 # Mongolia
 
@@ -2920,9 +2927,37 @@ Zone	Indian/Maldives	4:54:00 -	LMT	1880 # Malé
 
 # From Arthur David Olson (2008-05-19):
 # Assume that Choibalsan is indeed offset by 8:00.
-# XXX--in the absence of better information, assume that transition
-# was at the start of 2008-03-31 (the day of Steffen Thorsen's report);
-# this is almost surely wrong.
+
+# From Heitor David Pinto (2024-06-23):
+# Sources about time zones in Mongolia seem to list one of two conflicting
+# configurations.  The first configuration, mentioned in a comment to the TZ
+# database in 1999, citing a Mongolian government website, lists the provinces
+# of Bayan-Ölgii, Khovd and Uvs in UTC+7, and the rest of the country in
+# UTC+8.  The second configuration, mentioned in a comment to the database in
+# 2001, lists Bayan-Ölgii, Khovd, Uvs, Govi-Altai and Zavkhan in UTC+7, Dornod
+# and Sükhbaatar in UTC+9, and the rest of the country in UTC+8.
+#
+# The first configuration is still mentioned by several Mongolian travel
+# agencies:
+# https://www.adventurerider.mn/en/page/about_mongolia
+# http://www.naturetours.mn/nt/mongolia.php
+# https://www.newjuulchin.mn/web/content/7506?unique=fa24a0f6e96e022a3578ee5195ac879638c734ce
+#
+# It also matches these flight schedules in 2013:
+# http://web.archive.org/web/20130722023600/https://www.hunnuair.com/en/timetabled
+# The flight times imply that the airports of Uliastai (Zavkhan), Choibalsan
+# (Dornod) and Altai (Govi-Altai) are in the same time zone as Ulaanbaatar,
+# and Khovd is one hour behind....
+#
+# The second configuration was mentioned by an official of the Mongolian
+# standards agency in an interview in 2014: https://ikon.mn/n/9v6
+# And it's still listed by the Mongolian aviation agency:
+# https://ais.mn/files/aip/eAIP/2023-12-25/html/eSUP/ZM-eSUP-23-04-en-MN.html
+#
+# ... I believe that the first configuration is what is actually observed in
+# Mongolia and has been so all along, at least since 1999.  The second
+# configuration closely matches the ideal time zone boundaries at 97.5° E and
+# 112.5° E but it doesn't seem to be used in practice.
 
 # From Ganbold Tsagaankhuu (2015-03-10):
 # It seems like yesterday Mongolian Government meeting has concluded to use
@@ -2961,25 +2996,18 @@ Rule	Mongol	2015	2016	-	Sep	lastSat	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 # Hovd, a.k.a. Chovd, Dund-Us, Dzhargalant, Khovd, Jirgalanta
 Zone	Asia/Hovd	6:06:36 -	LMT	1905 Aug
-			6:00	-	+06	1978
-			7:00	Mongol	+07/+08
+			6:00	-	%z	1978
+			7:00	Mongol	%z
 # Ulaanbaatar, a.k.a. Ulan Bataar, Ulan Bator, Urga
 Zone	Asia/Ulaanbaatar 7:07:32 -	LMT	1905 Aug
-			7:00	-	+07	1978
-			8:00	Mongol	+08/+09
-# Choibalsan, a.k.a. Bajan Tümen, Bajan Tumen, Chojbalsan,
-# Choybalsan, Sanbejse, Tchoibalsan
-Zone	Asia/Choibalsan	7:38:00 -	LMT	1905 Aug
-			7:00	-	+07	1978
-			8:00	-	+08	1983 Apr
-			9:00	Mongol	+09/+10	2008 Mar 31
-			8:00	Mongol	+08/+09
+			7:00	-	%z	1978
+			8:00	Mongol	%z
 
 # Nepal
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Kathmandu	5:41:16 -	LMT	1920
-			5:30	-	+0530	1986
-			5:45	-	+0545
+			5:30	-	%z	1986
+			5:45	-	%z
 
 # Pakistan
 
@@ -3125,10 +3153,10 @@ Rule Pakistan	2009	only	-	Apr	15	0:00	1:00	S
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Karachi	4:28:12 -	LMT	1907
-			5:30	-	+0530	1942 Sep
-			5:30	1:00	+0630	1945 Oct 15
-			5:30	-	+0530	1951 Sep 30
-			5:00	-	+05	1971 Mar 26
+			5:30	-	%z	1942 Sep
+			5:30	1:00	%z	1945 Oct 15
+			5:30	-	%z	1951 Sep 30
+			5:00	-	%z	1971 Mar 26
 			5:00 Pakistan	PK%sT	# Pakistan Time
 
 # Palestine
@@ -3676,14 +3704,14 @@ Zone	Asia/Hebron	2:20:23	-	LMT	1900 Oct
 # Philippine Star 2014-08-05
 # http://www.philstar.com/headlines/2014/08/05/1354152/pnoy-urged-declare-use-daylight-saving-time
 
-# From Paul Goyette (2018-06-15):
+# From Paul Goyette (2018-06-15) with URLs updated by Guy Harris (2024-02-15):
 # In the Philippines, there is a national law, Republic Act No. 10535
 # which declares the official time here as "Philippine Standard Time".
 # The act [1] even specifies use of PST as the abbreviation, although
 # the FAQ provided by PAGASA [2] uses the "acronym PhST to distinguish
 # it from the Pacific Standard Time (PST)."
-# [1] http://www.officialgazette.gov.ph/2013/05/15/republic-act-no-10535/
-# [2] https://www1.pagasa.dost.gov.ph/index.php/astronomy/philippine-standard-time#republic-act-10535
+# [1] https://www.officialgazette.gov.ph/2013/05/15/republic-act-no-10535/
+# [2] https://prsd.pagasa.dost.gov.ph/index.php/28-astronomy/302-philippine-standard-time
 #
 # From Paul Eggert (2018-06-19):
 # I surveyed recent news reports, and my impression is that "PST" is
@@ -3716,8 +3744,8 @@ Zone	Asia/Manila	-15:56:00 -	LMT	1844 Dec 31
 # Qatar
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Qatar	3:26:08 -	LMT	1920     # Al Dawhah / Doha
-			4:00	-	+04	1972 Jun
-			3:00	-	+03
+			4:00	-	%z	1972 Jun
+			3:00	-	%z
 
 # Kuwait
 # Saudi Arabia
@@ -3767,7 +3795,7 @@ Zone	Asia/Qatar	3:26:08 -	LMT	1920     # Al Dawhah / Doha
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Riyadh	3:06:52 -	LMT	1947 Mar 14
-			3:00	-	+03
+			3:00	-	%z
 
 # Singapore
 # taken from Mok Ly Yng (2003-10-30)
@@ -3775,13 +3803,13 @@ Zone	Asia/Riyadh	3:06:52 -	LMT	1947 Mar 14
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Singapore	6:55:25 -	LMT	1901 Jan  1
 			6:55:25	-	SMT	1905 Jun  1 # Singapore M.T.
-			7:00	-	+07	1933 Jan  1
-			7:00	0:20	+0720	1936 Jan  1
-			7:20	-	+0720	1941 Sep  1
-			7:30	-	+0730	1942 Feb 16
-			9:00	-	+09	1945 Sep 12
-			7:30	-	+0730	1981 Dec 31 16:00u
-			8:00	-	+08
+			7:00	-	%z	1933 Jan  1
+			7:00	0:20	%z	1936 Jan  1
+			7:20	-	%z	1941 Sep  1
+			7:30	-	%z	1942 Feb 16
+			9:00	-	%z	1945 Sep 12
+			7:30	-	%z	1981 Dec 31 16:00u
+			8:00	-	%z
 
 # Spratly Is
 # no information
@@ -3839,13 +3867,13 @@ Zone	Asia/Singapore	6:55:25 -	LMT	1901 Jan  1
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Colombo	5:19:24 -	LMT	1880
 			5:19:32	-	MMT	1906        # Moratuwa Mean Time
-			5:30	-	+0530	1942 Jan  5
-			5:30	0:30	+06	1942 Sep
-			5:30	1:00	+0630	1945 Oct 16  2:00
-			5:30	-	+0530	1996 May 25  0:00
-			6:30	-	+0630	1996 Oct 26  0:30
-			6:00	-	+06	2006 Apr 15  0:30
-			5:30	-	+0530
+			5:30	-	%z	1942 Jan  5
+			5:30	0:30	%z	1942 Sep
+			5:30	1:00	%z	1945 Oct 16  2:00
+			5:30	-	%z	1996 May 25  0:00
+			6:30	-	%z	1996 Oct 26  0:30
+			6:00	-	%z	2006 Apr 15  0:30
+			5:30	-	%z
 
 # Syria
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
@@ -4016,16 +4044,16 @@ Rule	Syria	2009	2022	-	Oct	lastFri	0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Damascus	2:25:12 -	LMT	1920 # Dimashq
 			2:00	Syria	EE%sT	2022 Oct 28 0:00
-			3:00	-	+03
+			3:00	-	%z
 
 # Tajikistan
 # From Shanks & Pottenger.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dushanbe	4:35:12 -	LMT	1924 May  2
-			5:00	-	+05	1930 Jun 21
-			6:00 RussiaAsia +06/+07	1991 Mar 31  2:00s
-			5:00	1:00	+06	1991 Sep  9  2:00s
-			5:00	-	+05
+			5:00	-	%z	1930 Jun 21
+			6:00 RussiaAsia %z	1991 Mar 31  2:00s
+			5:00	1:00	%z	1991 Sep  9  2:00s
+			5:00	-	%z
 
 # Cambodia
 # Christmas I
@@ -4035,16 +4063,16 @@ Zone	Asia/Dushanbe	4:35:12 -	LMT	1924 May  2
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Bangkok	6:42:04	-	LMT	1880
 			6:42:04	-	BMT	1920 Apr # Bangkok Mean Time
-			7:00	-	+07
+			7:00	-	%z
 
 # Turkmenistan
 # From Shanks & Pottenger.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Ashgabat	3:53:32 -	LMT	1924 May  2 # or Ashkhabad
-			4:00	-	+04	1930 Jun 21
-			5:00 RussiaAsia	+05/+06	1991 Mar 31  2:00
-			4:00 RussiaAsia	+04/+05	1992 Jan 19  2:00
-			5:00	-	+05
+			4:00	-	%z	1930 Jun 21
+			5:00 RussiaAsia	%z	1991 Mar 31  2:00
+			4:00 RussiaAsia	%z	1992 Jan 19  2:00
+			5:00	-	%z
 
 # Oman
 # Réunion
@@ -4054,25 +4082,25 @@ Zone	Asia/Ashgabat	3:53:32 -	LMT	1924 May  2 # or Ashkhabad
 # The Crozet Is also observe Réunion time; see the 'antarctica' file.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Dubai	3:41:12 -	LMT	1920
-			4:00	-	+04
+			4:00	-	%z
 
 # Uzbekistan
 # Byalokoz 1919 says Uzbekistan was 4:27:53.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Samarkand	4:27:53 -	LMT	1924 May  2
-			4:00	-	+04	1930 Jun 21
-			5:00	-	+05	1981 Apr  1
-			5:00	1:00	+06	1981 Oct  1
-			6:00	-	+06	1982 Apr  1
-			5:00 RussiaAsia	+05/+06	1992
-			5:00	-	+05
+			4:00	-	%z	1930 Jun 21
+			5:00	-	%z	1981 Apr  1
+			5:00	1:00	%z	1981 Oct  1
+			6:00	-	%z	1982 Apr  1
+			5:00 RussiaAsia	%z	1992
+			5:00	-	%z
 # Milne says Tashkent was 4:37:10.8.
 		#STDOFF	4:37:10.8
 Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
-			5:00	-	+05	1930 Jun 21
-			6:00 RussiaAsia	+06/+07	1991 Mar 31  2:00
-			5:00 RussiaAsia	+05/+06	1992
-			5:00	-	+05
+			5:00	-	%z	1930 Jun 21
+			6:00 RussiaAsia	%z	1991 Mar 31  2:00
+			5:00 RussiaAsia	%z	1992
+			5:00	-	%z
 
 # Vietnam (southern)
 
@@ -4130,7 +4158,7 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 # Võ Nguyên Giáp, Việt Nam Dân Quốc Công Báo, No. 1 (1945-09-29), page 13
 # http://baochi.nlv.gov.vn/baochi/cgi-bin/baochi?a=d&d=JwvzO19450929.2.5&dliv=none
 # It says that on 1945-09-01 at 24:00, Vietnam moved back two hours, to +07.
-# It also mentions a 1945-03-29 decree (by a Japanese Goveror-General)
+# It also mentions a 1945-03-29 decree (by a Japanese Governor-General)
 # to set the time zone to +09, but does not say whether that decree
 # merely legalized an earlier change to +09.
 #
@@ -4151,14 +4179,14 @@ Zone	Asia/Tashkent	4:37:11 -	LMT	1924 May  2
 		#STDOFF	7:06:30.13
 Zone Asia/Ho_Chi_Minh	7:06:30 -	LMT	1906 Jul  1
 			7:06:30	-	PLMT	1911 May  1 # Phù Liễn MT
-			7:00	-	+07	1942 Dec 31 23:00
-			8:00	-	+08	1945 Mar 14 23:00
-			9:00	-	+09	1945 Sep  1 24:00
-			7:00	-	+07	1947 Apr  1
-			8:00	-	+08	1955 Jul  1 01:00
-			7:00	-	+07	1959 Dec 31 23:00
-			8:00	-	+08	1975 Jun 13
-			7:00	-	+07
+			7:00	-	%z	1942 Dec 31 23:00
+			8:00	-	%z	1945 Mar 14 23:00
+			9:00	-	%z	1945 Sep  1 24:00
+			7:00	-	%z	1947 Apr  1
+			8:00	-	%z	1955 Jul  1 01:00
+			7:00	-	%z	1959 Dec 31 23:00
+			8:00	-	%z	1975 Jun 13
+			7:00	-	%z
 
 # From Paul Eggert (2019-02-19):
 #

@@ -360,10 +360,10 @@ TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
   EXPECT_TRUE(os::commit_memory(heap, size, false));
 
   {
-    auto pretouch = [heap](Thread*, int) {
+    auto pretouch = [&](Thread*, int) {
       os::pretouch_memory(heap, heap + size, os::vm_page_size());
     };
-    auto useMemory = [heap](Thread*, int) {
+    auto useMemory = [&](Thread*, int) {
       int* iptr = reinterpret_cast<int*>(heap);
       for (int i = 0; i < 1000; i++) *iptr++ = i;
     };

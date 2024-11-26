@@ -543,7 +543,7 @@ public:
 
 // ---------- CDS archive support
 
-  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 
@@ -660,7 +660,7 @@ public:
   inline void conc_update_with_forwarded(T* p);
 
   template <class T>
-  inline void update_with_forwarded(T* p);
+  inline void non_conc_update_with_forwarded(T* p);
 
   static inline void atomic_update_oop(oop update,       oop* addr,       oop compare);
   static inline void atomic_update_oop(oop update, narrowOop* addr,       oop compare);

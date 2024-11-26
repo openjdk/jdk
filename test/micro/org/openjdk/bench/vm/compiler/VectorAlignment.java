@@ -293,22 +293,22 @@ public abstract class VectorAlignment {
         }
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord", "-XX:CompileCommand=Option,*::*,Vectorize"
     })
     public static class VectorAlignmentSuperWordWithVectorize extends VectorAlignment {}
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord", "-XX:+AlignVector"
     })
     public static class VectorAlignmentSuperWordAlignVector extends VectorAlignment {}
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:+UseSuperWord"
     })
     public static class VectorAlignmentSuperWord extends VectorAlignment {}
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 1, jvmArgs = {
         "-XX:-UseSuperWord"
     })
     public static class VectorAlignmentNoSuperWord extends VectorAlignment {}

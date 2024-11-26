@@ -445,6 +445,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
         AC_MSG_ERROR([User supplied compiler $1=[$]$1 does not exist])
       fi
     fi
+    $1_IS_USER_SUPPLIED=true
   else
     # No user supplied value. Locate compiler ourselves.
 
@@ -462,6 +463,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
       HELP_MSG_MISSING_DEPENDENCY([devkit])
       AC_MSG_ERROR([Could not find a $COMPILER_NAME compiler. $HELP_MSG])
     fi
+    $1_IS_USER_SUPPLIED=false
   fi
 
   # Now we have a compiler binary in $1. Make sure it's okay.

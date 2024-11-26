@@ -25,6 +25,7 @@
 package jdk.internal.module;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
@@ -43,19 +44,22 @@ class ArchivedModuleGraph {
     private final Configuration configuration;
     private final Function<String, ClassLoader> classLoaderFunction;
     private final String mainModule;
+    private final Set<String> addModules;
 
     private ArchivedModuleGraph(boolean hasSplitPackages,
                                 boolean hasIncubatorModules,
                                 ModuleFinder finder,
                                 Configuration configuration,
                                 Function<String, ClassLoader> classLoaderFunction,
-                                String mainModule) {
+                                String mainModule,
+                                Set<String> addModules) {
         this.hasSplitPackages = hasSplitPackages;
         this.hasIncubatorModules = hasIncubatorModules;
         this.finder = finder;
         this.configuration = configuration;
         this.classLoaderFunction = classLoaderFunction;
         this.mainModule = mainModule;
+        this.addModules = addModules;
     }
 
     ModuleFinder finder() {
@@ -78,12 +82,24 @@ class ArchivedModuleGraph {
         return hasIncubatorModules;
     }
 
+    static boolean sameAddModules(Set<String> addModules) {
+        if (archivedModuleGraph.addModules == null || addModules == null) {
+            return false;
+        }
+
+        if (archivedModuleGraph.addModules.size() != addModules.size()) {
+            return false;
+        }
+
+        return archivedModuleGraph.addModules.containsAll(addModules);
+    }
+
     /**
      * Returns the ArchivedModuleGraph for the given initial module.
      */
-    static ArchivedModuleGraph get(String mainModule) {
+    static ArchivedModuleGraph get(String mainModule, Set<String> addModules) {
         ArchivedModuleGraph graph = archivedModuleGraph;
-        if ((graph != null) && Objects.equals(graph.mainModule, mainModule)) {
+        if ((graph != null) && Objects.equals(graph.mainModule, mainModule) && sameAddModules(addModules)) {
             return graph;
         } else {
             return null;
@@ -98,13 +114,15 @@ class ArchivedModuleGraph {
                         ModuleFinder finder,
                         Configuration configuration,
                         Function<String, ClassLoader> classLoaderFunction,
-                        String mainModule) {
+                        String mainModule,
+                        Set<String> addModules) {
         archivedModuleGraph = new ArchivedModuleGraph(hasSplitPackages,
                                                       hasIncubatorModules,
                                                       finder,
                                                       configuration,
                                                       classLoaderFunction,
-                                                      mainModule);
+                                                      mainModule,
+                                                      addModules);
     }
 
     static {

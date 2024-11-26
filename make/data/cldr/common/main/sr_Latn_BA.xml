@@ -795,13 +795,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Kina, ljetnje vrijeme</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Čojbalsan vrijeme</generic>
-					<standard>Čojbalsan, standardno vrijeme</standard>
-					<daylight>Čojbalsan, ljetnje vrijeme</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Božićno ostrvo vrijeme</standard>
@@ -1033,6 +1026,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Japansko vrijeme</generic>
 					<standard>Japansko standardno vrijeme</standard>
 					<daylight>Japansko ljetnje vrijeme</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazahstansko vrijeme</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -1450,9 +1448,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencies>
 			<currency type="BAM">
 				<displayName>Bosanskohercegovačka konvertibilna marka</displayName>
-				<displayName count="one">bosanskohercegovačka konvertibilna marka</displayName>
-				<displayName count="few">bosanskohercegovačke konvertibilne marke</displayName>
-				<displayName count="other">bosanskohercegovačkih konvertibilnih maraka</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName>Bjeloruska rublja</displayName>
@@ -1585,6 +1580,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} gal Imp.</unitPattern>
 				<unitPattern count="other">{0} imp. galona</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svjetlo</displayName>
+				<unitPattern count="one">{0} svjetlo</unitPattern>
+				<unitPattern count="one" case="accusative">{0} svjetlo</unitPattern>
+				<unitPattern count="one" case="genitive">{0} svjetla</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} svjetlom</unitPattern>
+				<unitPattern count="few">{0} svjetla</unitPattern>
+				<unitPattern count="few" case="accusative">{0} svjetla</unitPattern>
+				<unitPattern count="few" case="genitive">{0} svjetla</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} svjetla</unitPattern>
+				<unitPattern count="other">{0} svjetla</unitPattern>
+				<unitPattern count="other" case="accusative">{0} svjetla</unitPattern>
+				<unitPattern count="other" case="genitive">{0} svjetala</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} svjetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dijelovi na milijardu</displayName>
+				<unitPattern count="one">{0} dio na milijardu</unitPattern>
+				<unitPattern count="one" case="accusative">{0} dio na milijardu</unitPattern>
+				<unitPattern count="one" case="genitive">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} dijelom na milijardu</unitPattern>
+				<unitPattern count="few">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="few" case="accusative">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="few" case="genitive">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} dijela na milijardu</unitPattern>
+				<unitPattern count="other">{0} dijelova na milijardu</unitPattern>
+				<unitPattern count="other" case="accusative">{0} dijelova na milijardu</unitPattern>
+				<unitPattern count="other" case="genitive">{0} dijelova na milijardu</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} dijelova na milijardu</unitPattern>
+			</unit>
 		</unitLength>
 		<unitLength type="short">
 			<unit type="duration-month">
@@ -1606,6 +1631,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">B {0}</unitPattern>
 				<unitPattern count="few">B {0}</unitPattern>
 				<unitPattern count="other">B {0}</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svjetlo</displayName>
+				<unitPattern count="one">{0} svjetlo</unitPattern>
+				<unitPattern count="few">{0} svjetla</unitPattern>
+				<unitPattern count="other">{0} svjetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dijelovi/milijarda</displayName>
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -1661,6 +1695,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0} i. d. k.</unitPattern>
 				<unitPattern count="few">{0} i. d. k.</unitPattern>
 				<unitPattern count="other">{0} i. d. k.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>svjetlo</displayName>
+				<unitPattern count="one">{0} svjetlo</unitPattern>
+				<unitPattern count="few">{0} svjetla</unitPattern>
+				<unitPattern count="other">{0} svjetala</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dijelovi/milijarda</displayName>
 			</unit>
 		</unitLength>
 	</units>

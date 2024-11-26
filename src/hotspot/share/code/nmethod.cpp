@@ -708,7 +708,8 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
 
   // handle the case of an anchor explicitly set in continuation code that doesn't have a callee
   JavaThread* thread = reg_map->thread();
-  if (thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp()) {
+  if ((thread->has_last_Java_frame() && fr.sp() == thread->last_Java_sp())
+      JVMTI_ONLY(|| (method()->is_continuation_enter_intrinsic() && thread->on_monitor_waited_event()))) {
     return;
   }
 
@@ -1298,7 +1299,7 @@ nmethod::nmethod(
     _comp_level              = CompLevel_none;
     _compiler_type           = type;
     _orig_pc_offset          = 0;
-    _num_stack_arg_slots     = _method->constMethod()->num_stack_arg_slots();
+    _num_stack_arg_slots     = 0;
 
     if (offsets->value(CodeOffsets::Exceptions) != -1) {
       // Continuation enter intrinsic
@@ -2048,7 +2049,7 @@ bool nmethod::make_not_entrant() {
   } // leave critical region under NMethodState_lock
 
 #if INCLUDE_JVMCI
-  // Invalidate can't occur while holding the Patching lock
+  // Invalidate can't occur while holding the NMethodState_lock
   JVMCINMethodData* nmethod_data = jvmci_nmethod_data();
   if (nmethod_data != nullptr) {
     nmethod_data->invalidate_nmethod_mirror(this);

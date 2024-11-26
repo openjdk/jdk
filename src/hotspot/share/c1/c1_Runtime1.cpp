@@ -887,7 +887,7 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 //             movl reg, [reg1 + <const>]  (for field offsets)
 //             jmp continue
 //             <being_init offset> <bytes to copy> <bytes to skip>
-// patch_stub: jmp Runtim1::patch_code (through a runtime stub)
+// patch_stub: jmp Runtime1::patch_code (through a runtime stub)
 //             jmp patch_site
 //
 // If the class is being initialized the patch body is rewritten and
@@ -1103,7 +1103,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
   // Now copy code back
 
   {
-    MutexLocker ml_patch (current, Patching_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker ml_code (current, CodeCache_lock, Mutex::_no_safepoint_check_flag);
     //
     // Deoptimization may have happened while we waited for the lock.
     // In that case we don't bother to do any patching we just return
@@ -1268,12 +1268,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
         }
       }
     }
-  }
-
-  // If we are patching in a non-perm oop, make sure the nmethod
-  // is on the right list.
-  {
-    MutexLocker ml_code (current, CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    // If we are patching in a non-perm oop, make sure the nmethod
+    // is on the right list.
     nmethod* nm = CodeCache::find_nmethod(caller_frame.pc());
     guarantee(nm != nullptr, "only nmethods can contain non-perm oops");
 

@@ -35,14 +35,26 @@ inline bool is_FloatRegister() {
          value() < ConcreteRegisterImpl::max_fpr;
 }
 
+inline bool is_VectorRegister() {
+  return value() >= ConcreteRegisterImpl::max_fpr &&
+         value() < ConcreteRegisterImpl::max_vr;
+}
+
 inline Register as_Register() {
   assert(is_Register() && is_even(value()), "even-aligned GPR name");
-  return ::as_Register(value() >> 1);
+  return ::as_Register(value() / Register::max_slots_per_register);
 }
 
 inline FloatRegister as_FloatRegister() {
   assert(is_FloatRegister() && is_even(value()), "must be");
-  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> 1);
+  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) /
+                                       FloatRegister::max_slots_per_register);
+}
+
+inline VectorRegister as_VectorRegister() {
+  assert(is_VectorRegister(), "must be");
+  return ::as_VectorRegister((value() - ConcreteRegisterImpl::max_fpr) /
+                                        VectorRegister::max_slots_per_register);
 }
 
 inline bool is_concrete() {

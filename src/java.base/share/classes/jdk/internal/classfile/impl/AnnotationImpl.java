@@ -24,9 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.*;
-import java.lang.classfile.constantpool.*;
-
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;

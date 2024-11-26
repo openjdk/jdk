@@ -371,10 +371,10 @@ extern jclass jc_CDropTargetContextPeer;
     (*env)->ReleaseByteArrayElements(env, gbyteArray, jbytes, 0);
 
     // In case of an error make sure to return nil:
-    if ((*env)->ExceptionOccurred(env)) {
-                (*env)->ExceptionDescribe(env);
+    if ((*env)->ExceptionCheck(env)) {
+        (*env)->ExceptionDescribe(env);
         gbyteArray = nil;
-        }
+    }
 
     return gbyteArray;
 }

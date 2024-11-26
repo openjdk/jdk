@@ -39,6 +39,9 @@ import static com.sun.crypto.provider.KWUtil.*;
  * <a href=https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf>
  * "Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping"</a>
  * and represents AES cipher in KWP mode.
+ *
+ * @spec https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38F.pdf
+ *      Recommendation for Block Cipher Modes of Operation: Methods for Key Wrapping
  */
 class AESKeyWrapPadded extends FeedbackCipher {
 
