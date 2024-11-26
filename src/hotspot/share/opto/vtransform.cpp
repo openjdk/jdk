@@ -178,6 +178,7 @@ public:
     _is_load(is_load),
     _schedule_order(schedule_order) {}
 
+    const VPointer& vpointer() const { return *_vpointer; }
     Node* base()          const { return _base; }
     int scale()           const { return _scale; }
     Node* invar()         const { return _invar; }
@@ -187,19 +188,17 @@ public:
     uint schedule_order() const { return _schedule_order; }
 
     static int cmp_for_sort_by_group(VMemoryRegion* r1, VMemoryRegion* r2) {
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->base()->_idx, r2->base()->_idx);
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->scale(),      r2->scale());
-      int r1_invar_idx = r1->invar() == nullptr ? 0 : r1->invar()->_idx;
-      int r2_invar_idx = r2->invar() == nullptr ? 0 : r2->invar()->_idx;
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1_invar_idx,      r2_invar_idx);
-      return 0; // equal
+      // Sort by mem_pointer (base, invar, iv_scale), except for the con.
+      return MemPointer::cmp_summands(r1->vpointer().mem_pointer(),
+                                      r2->vpointer().mem_pointer());
     }
 
     static int cmp_for_sort(VMemoryRegion* r1, VMemoryRegion* r2) {
       int cmp_group = cmp_for_sort_by_group(r1, r2);
       if (cmp_group != 0) { return cmp_group; }
 
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->offset(),     r2->offset());
+      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->vpointer().con(),
+                                    r2->vpointer().con());
       return 0; // equal
     }
 
