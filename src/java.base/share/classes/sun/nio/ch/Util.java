@@ -225,7 +225,8 @@ public class Util {
         // to remove the buffer from the cache (as this method does
         // below) given that we won't put the new buffer in the cache.
         if (isBufferTooLarge(size)) {
-            return NIO_ACCESS.newDirectByteBuffer(size);
+            long addr = unsafe.allocateMemory(size);
+            return NIO_ACCESS.newDirectByteBuffer(addr, size);
         }
 
         BufferCache cache = bufferCache.get();
@@ -240,7 +241,8 @@ public class Util {
                 buf = cache.removeFirst();
                 free(buf);
             }
-            return NIO_ACCESS.newDirectByteBuffer(size);
+            long addr = unsafe.allocateMemory(size);
+            return NIO_ACCESS.newDirectByteBuffer(addr, size);
         }
     }
 
@@ -251,8 +253,8 @@ public class Util {
     public static ByteBuffer getTemporaryAlignedDirectBuffer(int size,
                                                              int alignment) {
         if (isBufferTooLarge(size)) {
-            return NIO_ACCESS.newDirectByteBuffer(size + alignment - 1)
-                    .alignedSlice(alignment);
+            return getTemporaryDirectBuffer(size + alignment - 1)
+                .alignedSlice(alignment);
         }
 
         BufferCache cache = bufferCache.get();
@@ -267,8 +269,8 @@ public class Util {
                 free(buf);
             }
         }
-        return NIO_ACCESS.newDirectByteBuffer(size + alignment - 1)
-                .alignedSlice(alignment);
+        return getTemporaryDirectBuffer(size + alignment - 1)
+            .alignedSlice(alignment);
     }
 
     /**

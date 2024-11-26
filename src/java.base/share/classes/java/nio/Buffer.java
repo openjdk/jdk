@@ -848,8 +848,7 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public ByteBuffer newDirectByteBuffer(int cap) {
-                    long addr = UNSAFE.allocateMemory(cap);
+                public ByteBuffer newDirectByteBuffer(long addr, int cap) {
                     return new DirectByteBuffer(addr, cap);
                 }
 

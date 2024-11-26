@@ -70,7 +70,7 @@ public interface JavaNioAccess {
     /**
      * Used by {@code sun.nio.ch.Util}.
      */
-    ByteBuffer newDirectByteBuffer(int cap);
+    ByteBuffer newDirectByteBuffer(long addr, int cap);
 
     /**
      * Used by {@code jdk.internal.foreign.Utils}.
