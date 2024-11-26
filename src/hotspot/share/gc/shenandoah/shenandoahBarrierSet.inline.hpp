@@ -414,14 +414,11 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
 template <class T>
 void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
   if (count == 0) {
-    return;
-  }
-  int gc_state = _heap->gc_state();
-  if ((gc_state & ShenandoahHeap::YOUNG_MARKING) != 0) {
-    arraycopy_marking(src, dst, count, false);
+    // No elements to copy, no need for barrier
     return;
   }
 
+  int gc_state = _heap->gc_state();
   if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     arraycopy_evacuation(src, count);
   } else if ((gc_state & ShenandoahHeap::UPDATEREFS) != 0) {
@@ -430,12 +427,14 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
 
   if (_heap->mode()->is_generational()) {
     assert(ShenandoahSATBBarrier, "Generational mode assumes SATB mode");
+    if ((gc_state & ShenandoahHeap::YOUNG_MARKING) != 0) {
+      arraycopy_marking(src, dst, count, false);
+    }
     if ((gc_state & ShenandoahHeap::OLD_MARKING) != 0) {
-      // Note that we can't do the arraycopy marking using the 'src' array when
-      // SATB mode is enabled (so we can't do this as part of the iteration for
-      // evacuation or update references).
       arraycopy_marking(src, dst, count, true);
     }
+  } else if ((gc_state & ShenandoahHeap::MARKING) != 0) {
+    arraycopy_marking(src, dst, count, false);
   }
 }
 
