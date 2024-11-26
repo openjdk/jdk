@@ -519,7 +519,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _SleepEvent(ParkEvent::Allocate(this)),
 
 #if INCLUDE_JFR
-  _last_freeze_fail_result(freeze_initialized),
+  _last_freeze_fail_result(freeze_ok),
 #endif
 
   _lock_stack(this),
