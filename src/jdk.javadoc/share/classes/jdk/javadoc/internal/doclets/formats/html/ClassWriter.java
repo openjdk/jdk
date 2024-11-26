@@ -77,6 +77,9 @@ public class ClassWriter extends SubWriterHolderWriter {
                      "java.lang.constant.ConstantDesc",
                      "java.io.Serializable");
 
+    /* Length threshold to determine whether to insert whitespace between type parameters */
+    protected static final int LONG_TYPE_PARAM = 8;
+
     protected final TypeElement typeElement;
 
     protected final ClassTree classTree;
@@ -458,12 +461,12 @@ public class ClassWriter extends SubWriterHolderWriter {
                     .linkToSelf(false);  // Let's not link to ourselves in the header
             content.add("<");
             var first = true;
-            boolean boundTypeParams = typeParams.stream()
+            boolean longTypeParams = typeParams.stream()
                     .map(t -> getLink(linkInfo.forType(t.asType())))
-                    .anyMatch(t -> t.charCount() > 8);
+                    .anyMatch(t -> t.charCount() > ClassWriter.LONG_TYPE_PARAM);
             for (TypeParameterElement t : typeParams) {
                 if (!first) {
-                    if (boundTypeParams) {
+                    if (longTypeParams) {
                         content.add(", ");
                     } else {
                         content.add(",").add(HtmlTree.WBR());

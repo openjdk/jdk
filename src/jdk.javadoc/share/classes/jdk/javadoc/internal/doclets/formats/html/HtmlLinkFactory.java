@@ -398,12 +398,12 @@ public class HtmlLinkFactory {
             }
             links.add("<");
             boolean many = false;
-            boolean boundTypeParams = vars.stream()
+            boolean longTypeParams = vars.stream()
                     .map(t -> getLink(linkInfo.forType(t)))
-                    .anyMatch(t -> t.charCount() > 8);
+                    .anyMatch(t -> t.charCount() > ClassWriter.LONG_TYPE_PARAM);
             for (TypeMirror t : vars) {
                 if (many) {
-                    if (boundTypeParams) {
+                    if (longTypeParams) {
                         links.add(", ");
                     } else {
                         links.add(",").add(HtmlTree.WBR());
