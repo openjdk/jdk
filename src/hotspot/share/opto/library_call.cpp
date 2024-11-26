@@ -3257,7 +3257,10 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   set_all_memory(input_memory_state);
   Node* input_io_state = i_o();
 
-  Node* excluded_mask = _gvn.intcon(32768);
+  // The most significant bit of the u2 is used to denote thread exclusion
+  Node* excluded_shift = _gvn.intcon(15);
+  Node* excluded_mask = _gvn.intcon(1 << 15);
+  // The epoch generation is the range [1-32767]
   Node* epoch_mask = _gvn.intcon(32767);
 
   // TLS
@@ -3411,7 +3414,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   record_for_igvn(vthread_compare_io);
   PhiNode* tid = new PhiNode(vthread_compare_rgn, TypeLong::LONG);
   record_for_igvn(tid);
-  PhiNode* exclusion = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
+  PhiNode* exclusion = new PhiNode(vthread_compare_rgn, TypeInt::CHAR);
   record_for_igvn(exclusion);
   PhiNode* pinVirtualThread = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
   record_for_igvn(pinVirtualThread);
@@ -3476,7 +3479,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   store_to_memory(tid_is_not_equal, event_writer_pin_field, _gvn.transform(pinVirtualThread), T_BOOLEAN, MemNode::unordered);
 
   // Store the exclusion state to the event writer.
-  store_to_memory(tid_is_not_equal, event_writer_excluded_field, _gvn.transform(exclusion), T_BOOLEAN, MemNode::unordered);
+  Node* excluded_bool = _gvn.transform(new URShiftINode(_gvn.transform(exclusion), excluded_shift));
+  store_to_memory(tid_is_not_equal, event_writer_excluded_field, excluded_bool, T_BOOLEAN, MemNode::unordered);
 
   // Store the tid to the event writer.
   store_to_memory(tid_is_not_equal, event_writer_tid_field, tid, T_LONG, MemNode::unordered);
@@ -3543,7 +3547,9 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   Node* input_memory_state = reset_memory();
   set_all_memory(input_memory_state);
 
-  Node* excluded_mask = _gvn.intcon(32768);
+  // The most significant bit of the u2 is used to denote thread exclusion
+  Node* excluded_mask = _gvn.intcon(1 << 15);
+  // The epoch generation is the range [1-32767]
   Node* epoch_mask = _gvn.intcon(32767);
 
   Node* const carrierThread = generate_current_thread(jt);

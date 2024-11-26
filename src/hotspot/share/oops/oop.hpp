@@ -31,6 +31,7 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
+#include "oops/objLayout.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -324,7 +325,9 @@ class oopDesc {
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;
 
-  static bool has_klass_gap();
+  inline static bool has_klass_gap() {
+    return ObjLayout::oop_has_klass_gap();
+  }
 
   // for code generation
   static int mark_offset_in_bytes()      { return (int)offset_of(oopDesc, _mark); }
@@ -346,15 +349,7 @@ class oopDesc {
   }
 
   static int base_offset_in_bytes() {
-    if (UseCompactObjectHeaders) {
-      // With compact headers, the Klass* field is not used for the Klass*
-      // and is used for the object fields instead.
-      return sizeof(markWord);
-    } else if (UseCompressedClassPointers) {
-      return sizeof(markWord) + sizeof(narrowKlass);
-    } else {
-      return sizeof(markWord) + sizeof(Klass*);
-    }
+    return ObjLayout::oop_base_offset_in_bytes();
   }
 
   // for error reporting

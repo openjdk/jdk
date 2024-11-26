@@ -185,33 +185,33 @@ void ShenandoahPhaseTimings::flush_par_workers_to_cycle() {
   for (uint pi = 0; pi < _num_phases; pi++) {
     Phase phase = Phase(pi);
     if (is_worker_phase(phase)) {
-      double s = uninitialized();
+      double sum = uninitialized();
       for (uint i = 1; i < _num_par_phases; i++) {
         ShenandoahWorkerData* wd = worker_data(phase, ParPhase(i));
-        double ws = uninitialized();
+        double worker_sum = uninitialized();
         for (uint c = 0; c < _max_workers; c++) {
-          double v = wd->get(c);
-          if (v != ShenandoahWorkerData::uninitialized()) {
-            if (ws == uninitialized()) {
-              ws = v;
+          double worker_time = wd->get(c);
+          if (worker_time != ShenandoahWorkerData::uninitialized()) {
+            if (worker_sum == uninitialized()) {
+              worker_sum = worker_time;
             } else {
-              ws += v;
+              worker_sum += worker_time;
             }
           }
         }
-        if (ws != uninitialized()) {
+        if (worker_sum != uninitialized()) {
           // add to each line in phase
-          set_cycle_data(Phase(phase + i + 1), ws);
-          if (s == uninitialized()) {
-            s = ws;
+          set_cycle_data(Phase(phase + i + 1), worker_sum);
+          if (sum == uninitialized()) {
+            sum = worker_sum;
           } else {
-            s += ws;
+            sum += worker_sum;
           }
         }
       }
-      if (s != uninitialized()) {
+      if (sum != uninitialized()) {
         // add to total for phase
-        set_cycle_data(Phase(phase + 1), s);
+        set_cycle_data(Phase(phase + 1), sum);
       }
     }
   }
