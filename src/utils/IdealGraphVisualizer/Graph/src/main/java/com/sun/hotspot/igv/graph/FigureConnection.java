@@ -24,13 +24,11 @@
 package com.sun.hotspot.igv.graph;
 
 import com.sun.hotspot.igv.layout.Cluster;
-import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  *
@@ -163,19 +161,15 @@ public class FigureConnection implements Connection {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true; // Reference equality check
-        if (!(o instanceof FigureConnection)) return false; // Type check
+        if (!(o instanceof FigureConnection)) {
+            return false;
+        }
 
-        FigureConnection that = (FigureConnection) o;
-
-        // Compare source and target ports using their own equals() methods
-        return Objects.equals(this.outputSlot, that.outputSlot) &&
-                Objects.equals(this.inputSlot, that.inputSlot);
+        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure())
+                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure())
+                && getInputSlot().getPosition() == ((FigureConnection)o).getInputSlot().getPosition()
+                && getOutputSlot().getPosition() == ((FigureConnection) o).getOutputSlot().getPosition();
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(outputSlot, inputSlot);
-    }
 }
 

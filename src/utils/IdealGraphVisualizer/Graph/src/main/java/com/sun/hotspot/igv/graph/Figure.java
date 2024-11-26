@@ -148,12 +148,7 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public Color getColor() {
-        Color customColor = inputNode.getCustomColor();
-        if (customColor != null) {
-            return customColor;
-        } else {
-            return color;
-        }
+        return color;
     }
 
     public void setWarning(String warning) {
@@ -380,6 +375,19 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Figure)) {
+            return false;
+        }
+        return getInputNode().equals(((Figure) o).getInputNode());
+    }
+
+    @Override
+    public int hashCode() {
+        return getInputNode().hashCode();
+    }
+
+    @Override
     public String toString() {
         return idString;
     }
@@ -400,23 +408,5 @@ public class Figure extends Properties.Entity implements Vertex {
     @Override
     public int compareTo(Vertex f) {
         return toString().compareTo(f.toString());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Figure other)) {
-            return false;
-        }
-        return Objects.equals(this.getInputNode(), other.getInputNode());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getInputNode());
-    }
-
-    public void setCustomColor(Color color) {
-        inputNode.setCustomColor(color);
     }
 }

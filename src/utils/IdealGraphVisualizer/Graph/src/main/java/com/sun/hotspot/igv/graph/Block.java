@@ -100,8 +100,7 @@ public class Block implements Cluster {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (obj == null) return false;
         Block other = (Block) obj;
         return inputBlock.equals(other.inputBlock);
     }

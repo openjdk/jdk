@@ -140,7 +140,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
         centerPanel.setLayout(cardLayout);
-        centerPanel.setOpaque(true);
         centerPanel.setBackground(Color.WHITE);
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
@@ -175,11 +174,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
         toolBar.addSeparator();
         ButtonGroup layoutButtons = new ButtonGroup();
-
-        JToggleButton freeInteractiveLayoutButton = new JToggleButton(new EnableFreeLayoutAction(this));
-        freeInteractiveLayoutButton.setSelected(diagramViewModel.getShowFreeInteractive());
-        layoutButtons.add(freeInteractiveLayoutButton);
-        toolBar.add(freeInteractiveLayoutButton);
 
         JToggleButton stableSeaLayoutButton = new JToggleButton(new EnableStableSeaLayoutAction(this));
         stableSeaLayoutButton.setSelected(diagramViewModel.getShowStableSea());
