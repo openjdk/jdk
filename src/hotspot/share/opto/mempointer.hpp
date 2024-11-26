@@ -781,10 +781,9 @@ public:
     return parser.mem_pointer();
   }
 
-  // TODO rm / private?
+private:
   const MemPointer& mem_pointer() const { return _mem_pointer; }
 
-private:
   MemPointer parse(Callback& adr_node_callback);
 
   void parse_sub_expression(const MemPointerSummand& summand, Callback& adr_node_callback);

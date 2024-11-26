@@ -33,7 +33,6 @@ MemPointer MemPointerParser::parse(Callback& adr_node_callback) {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
-  // TODO maybe refactor out _mem?
   Node* pointer = _mem->in(MemNode::Address);
   const jint size = _mem->memory_size();
 
