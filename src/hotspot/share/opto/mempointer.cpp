@@ -33,7 +33,9 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form(C
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
+  // TODO maybe refactor out _mem?
   Node* pointer = _mem->in(MemNode::Address);
+  const jint size = _mem->memory_size();
 
   // Start with the trivial summand.
   _worklist.push(MemPointerSummand(pointer, NoOverflowInt(1)));
@@ -43,12 +45,16 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form(C
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
     // Bail out if the graph is too complex.
-    if (traversal_count++ > 1000) { return MemPointerDecomposedForm::make_trivial(pointer); }
+    if (traversal_count++ > 1000) {
+      return MemPointerDecomposedForm::make_trivial(pointer, size NOT_PRODUCT(COMMA _trace));
+    }
     parse_sub_expression(_worklist.pop(), adr_node_callback);
   }
 
   // Bail out if there is a constant overflow.
-  if (_con.is_NaN()) { return MemPointerDecomposedForm::make_trivial(pointer); }
+  if (_con.is_NaN()) {
+    return MemPointerDecomposedForm::make_trivial(pointer, size NOT_PRODUCT(COMMA _trace));
+  }
 
   // Sorting by variable idx means that all summands with the same variable are consecutive.
   // This simplifies the combining of summands with the same variable below.
@@ -68,7 +74,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form(C
     }
     // Bail out if scale is NaN.
     if (scale.is_NaN()) {
-      return MemPointerDecomposedForm::make_trivial(pointer);
+      return MemPointerDecomposedForm::make_trivial(pointer, size NOT_PRODUCT(COMMA _trace));
     }
     // Keep summands with non-zero scale.
     if (!scale.is_zero()) {
@@ -77,7 +83,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form(C
   }
   _summands.trunc_to(pos_put);
 
-  return MemPointerDecomposedForm::make(pointer, _summands, _con);
+  return MemPointerDecomposedForm::make(pointer, _summands, _con, size NOT_PRODUCT(COMMA _trace));
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
@@ -454,17 +460,14 @@ bool MemPointerDecomposedForm::has_different_base_but_otherwise_same_summands_as
   return has_same_summands_as(other, 1);
 }
 
-bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
-  const MemPointerDecomposedForm& s1 = decomposed_form();
-  const MemPointerDecomposedForm& s2 = other.decomposed_form();
-  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _trace ));
-  const jint size = mem()->memory_size();
-  const bool is_adjacent = aliasing.is_always_at_distance(size);
+bool MemPointerDecomposedForm::is_adjacent_to_and_before(const MemPointerDecomposedForm& other) const {
+  const MemPointerAliasing aliasing = get_aliasing_with(other NOT_PRODUCT( COMMA _trace ));
+  const bool is_adjacent = aliasing.is_always_at_distance(_size);
 
 #ifndef PRODUCT
   if (_trace.is_trace_adjacency()) {
     tty->print("Adjacent: %s, because size = %d and aliasing = ",
-               is_adjacent ? "true" : "false", size);
+               is_adjacent ? "true" : "false", _size);
     aliasing.print_on(tty);
     tty->cr();
   }

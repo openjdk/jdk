@@ -803,7 +803,14 @@ private:
   static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem, Callback& adr_node_callback) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are supported");
     ResourceMark rm;
-    MemPointerDecomposedFormParser parser(mem, adr_node_callback);
+    // TODO wire in
+#ifndef PRODUCT
+    const TraceMemPointer trace(false,
+                                false,
+                                false,
+                                true);
+#endif
+    MemPointerDecomposedFormParser parser(mem, adr_node_callback NOT_PRODUCT(COMMA trace));
     return parser.decomposed_form();
   }
 
