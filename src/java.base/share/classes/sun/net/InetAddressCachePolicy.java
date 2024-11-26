@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 
 package sun.net;
 
-import java.security.PrivilegedAction;
 import java.security.Security;
-import java.util.concurrent.TimeUnit;
 
-@SuppressWarnings("removal")
 public final class InetAddressCachePolicy {
 
     // Controls the cache policy for successful lookups only
@@ -60,11 +57,9 @@ public final class InetAddressCachePolicy {
      * -1: caching forever
      * any positive value: the number of seconds to cache an address for
      *
-     * default value is forever (FOREVER), as we let the platform do the
-     * caching. For security reasons, this caching is made forever when
-     * a security manager is set.
+     * default value is 30 seconds
      */
-    private static volatile int cachePolicy = FOREVER;
+    private static volatile int cachePolicy = DEFAULT_POSITIVE;
 
     /* The Java-level namelookup cache stale policy:
      *
@@ -101,17 +96,13 @@ public final class InetAddressCachePolicy {
      * Initialize
      */
     static {
+        /* If the cache policy property is not specified
+         *  then the default positive cache value is used.
+         */
         Integer tmp = getProperty(cachePolicyProp, cachePolicyPropFallback);
         if (tmp != null) {
             cachePolicy = tmp < 0 ? FOREVER : tmp;
             propertySet = true;
-        } else {
-            /* No properties defined for positive caching. If there is no
-             * security manager then use the default positive cache value.
-             */
-            if (System.getSecurityManager() == null) {
-                cachePolicy = DEFAULT_POSITIVE;
-            }
         }
         tmp = getProperty(negativeCachePolicyProp,
                           negativeCachePolicyPropFallback);
@@ -130,33 +121,28 @@ public final class InetAddressCachePolicy {
     }
 
     private static Integer getProperty(String cachePolicyProp,
-                                       String cachePolicyPropFallback)
-    {
-        return java.security.AccessController.doPrivileged(
-                new PrivilegedAction<Integer>() {
-                    public Integer run() {
-                        try {
-                            String tmpString = Security.getProperty(
-                                    cachePolicyProp);
-                            if (tmpString != null) {
-                                return Integer.valueOf(tmpString);
-                            }
-                        } catch (NumberFormatException ignored) {
-                            // Ignore
-                        }
+                                       String cachePolicyPropFallback) {
 
-                        try {
-                            String tmpString = System.getProperty(
-                                    cachePolicyPropFallback);
-                            if (tmpString != null) {
-                                return Integer.decode(tmpString);
-                            }
-                        } catch (NumberFormatException ignored) {
-                            // Ignore
-                        }
-                        return null;
-                    }
-                });
+        try {
+            String tmpString = Security.getProperty(
+                    cachePolicyProp);
+            if (tmpString != null) {
+                return Integer.valueOf(tmpString);
+            }
+        } catch (NumberFormatException ignored) {
+            // Ignore
+        }
+
+        try {
+            String tmpString = System.getProperty(
+                    cachePolicyPropFallback);
+            if (tmpString != null) {
+                return Integer.decode(tmpString);
+            }
+        } catch (NumberFormatException ignored) {
+            // Ignore
+        }
+        return null;
     }
 
     public static int get() {
