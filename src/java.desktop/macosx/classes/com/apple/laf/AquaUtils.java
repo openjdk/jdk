@@ -29,8 +29,6 @@ import java.awt.*;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.swing.*;
@@ -40,8 +38,6 @@ import javax.swing.plaf.UIResource;
 import sun.awt.AppContext;
 
 import sun.lwawt.macosx.CPlatformWindow;
-import sun.reflect.misc.ReflectUtil;
-import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaImageFactory.SlicedImageControl;
@@ -177,7 +173,6 @@ final class AquaUtils {
         @SuppressWarnings("deprecation")
         T getInstance() {
             try {
-                ReflectUtil.checkPackageAccess(clazz);
                 return clazz.newInstance();
             } catch (ReflectiveOperationException ignored) {
             }
@@ -205,9 +200,7 @@ final class AquaUtils {
     private static final RecyclableSingleton<Boolean> enableAnimations = new RecyclableSingleton<Boolean>() {
         @Override
         protected Boolean getInstance() {
-            @SuppressWarnings("removal")
-            final String sizeProperty = (String) AccessController.doPrivileged((PrivilegedAction<?>)new GetPropertyAction(
-                    ANIMATIONS_PROPERTY));
+            final String sizeProperty = System.getProperty(ANIMATIONS_PROPERTY);
             return !"false".equals(sizeProperty); // should be true by default
         }
     };
@@ -332,25 +325,17 @@ final class AquaUtils {
         }
     }
 
-    @SuppressWarnings("removal")
     private static final RecyclableSingleton<Method> getJComponentGetFlagMethod = new RecyclableSingleton<Method>() {
         @Override
         protected Method getInstance() {
-            return AccessController.doPrivileged(
-                new PrivilegedAction<Method>() {
-                    @Override
-                    public Method run() {
-                        try {
-                            final Method method = JComponent.class.getDeclaredMethod(
-                                    "getFlag", new Class<?>[] { int.class });
-                            method.setAccessible(true);
-                            return method;
-                        } catch (final Throwable ignored) {
-                            return null;
-                        }
-                    }
-                }
-            );
+            try {
+                final Method method = JComponent.class.getDeclaredMethod(
+                        "getFlag", new Class<?>[]{int.class});
+                method.setAccessible(true);
+                return method;
+            } catch (final Throwable ignored) {
+                return null;
+            }
         }
     };
 

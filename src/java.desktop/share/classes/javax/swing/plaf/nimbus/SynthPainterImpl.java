@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,21 @@
  */
 package javax.swing.plaf.nimbus;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.image.BufferedImage;
-import java.util.*;
-import javax.swing.*;
+import javax.swing.JDesktopPane;
+import javax.swing.JSlider;
+import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
+import javax.swing.Painter;
+import javax.swing.SwingConstants;
+import javax.swing.UIManager;
+import javax.swing.plaf.UIResource;
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.plaf.synth.SynthPainter;
 import javax.swing.plaf.synth.SynthConstants;
@@ -531,7 +540,11 @@ class SynthPainterImpl extends SynthPainter {
     public void paintDesktopPaneBackground(SynthContext context,
                                            Graphics g, int x, int y,
                                            int w, int h) {
-        paintBackground(context, g, x, y, w, h, null);
+        if (context.getComponent() instanceof JDesktopPane pane) {
+            if (pane.getBackground() instanceof UIResource) {
+                paintBackground(context, g, x, y, w, h, null);
+            }
+        }
     }
 
     /**

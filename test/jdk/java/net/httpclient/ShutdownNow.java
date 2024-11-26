@@ -30,6 +30,7 @@
  *          isTerminated.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.RandomFactory jdk.test.lib.Utils
  *        ReferenceTracker
  * @run testng/othervm
  *       -Djdk.internal.httpclient.debug=true
@@ -60,10 +61,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-
 import javax.net.ssl.SSLContext;
 
 import jdk.test.lib.RandomFactory;
+import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -229,7 +230,7 @@ public class ShutdownNow implements HttpServerAdapters {
             }
             CompletableFuture.allOf(responses.toArray(new CompletableFuture<?>[0])).get();
         } finally {
-            if (client.awaitTermination(Duration.ofMillis(2500))) {
+            if (client.awaitTermination(Duration.ofMillis(Utils.adjustTimeout(1000)))) {
                 out.println("Client terminated within expected delay");
                 assertTrue(client.isTerminated());
             } else {
@@ -302,7 +303,7 @@ public class ShutdownNow implements HttpServerAdapters {
                 }).thenCompose((c) -> c).get();
             }
        } finally {
-            if (client.awaitTermination(Duration.ofMillis(2500))) {
+            if (client.awaitTermination(Duration.ofMillis(Utils.adjustTimeout(1000)))) {
                 out.println("Client terminated within expected delay");
                 assertTrue(client.isTerminated());
             } else {

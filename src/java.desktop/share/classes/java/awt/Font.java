@@ -36,7 +36,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
@@ -44,8 +43,6 @@ import java.io.OutputStream;
 import java.io.Serial;
 import java.lang.ref.SoftReference;
 import java.nio.file.Files;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.text.CharacterIterator;
 import java.util.EventListener;
@@ -1095,7 +1092,6 @@ public class Font implements java.io.Serializable
         }
     }
 
-    @SuppressWarnings("removal")
     private static Font[] createFont0(int fontFormat, InputStream fontStream,
                                       boolean allFonts,
                                       CreatedFontTracker tracker)
@@ -1107,27 +1103,14 @@ public class Font implements java.io.Serializable
         }
         boolean copiedFontData = false;
         try {
-            final File tFile = AccessController.doPrivileged(
-                new PrivilegedExceptionAction<File>() {
-                    public File run() throws IOException {
-                        return Files.createTempFile("+~JF", ".tmp").toFile();
-                    }
-                }
-            );
+            final File tFile = Files.createTempFile("+~JF", ".tmp").toFile();
             if (tracker != null) {
                 tracker.add(tFile);
             }
 
             int totalSize = 0;
             try {
-                final OutputStream outStream =
-                    AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<OutputStream>() {
-                            public OutputStream run() throws IOException {
-                                return new FileOutputStream(tFile);
-                            }
-                        }
-                    );
+                final OutputStream outStream = new FileOutputStream(tFile);
                 if (tracker != null) {
                     tracker.set(tFile, outStream);
                 }
@@ -1181,14 +1164,7 @@ public class Font implements java.io.Serializable
                     if (tracker != null) {
                         tracker.subBytes(totalSize);
                     }
-                    AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Void>() {
-                            public Void run() {
-                                tFile.delete();
-                                return null;
-                            }
-                        }
-                    );
+                    tFile.delete();
                 }
             }
         } catch (Throwable t) {
@@ -1253,13 +1229,6 @@ public class Font implements java.io.Serializable
         if (fontFormat != Font.TRUETYPE_FONT &&
             fontFormat != Font.TYPE1_FONT) {
             throw new IllegalArgumentException ("font format not recognized");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            FilePermission filePermission =
-                new FilePermission(fontFile.getPath(), "read");
-            sm.checkPermission(filePermission);
         }
         if (!fontFile.canRead()) {
             throw new IOException("Can't read " + fontFile);

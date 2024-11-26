@@ -177,7 +177,11 @@ public:
 
   InstanceKlass* nest_host() {
     assert(!ArchiveBuilder::is_active(), "not called when dumping archive");
-    return ArchiveUtils::from_offset<InstanceKlass*>(_nest_host_offset);
+    if (_nest_host_offset == 0) {
+      return nullptr;
+    } else {
+      return ArchiveUtils::from_offset<InstanceKlass*>(_nest_host_offset);
+    }
   }
 
   RTLoaderConstraint* loader_constraints() {

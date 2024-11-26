@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,21 @@
  * @key headful
  * @bug 8041642 8079450 8140237
  * @summary Incorrect paint of JProgressBar in Nimbus LF
- * @author Semyon Sadetsky
  */
 
-import javax.swing.*;
-import java.awt.*;
+import java.io.File;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
+import javax.swing.JProgressBar;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class bug8041642 {
 
@@ -50,7 +60,8 @@ public class bug8041642 {
                 }
             });
             final Robot robot = new Robot();
-            robot.delay(300);
+            robot.waitForIdle();
+            robot.delay(1000);
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
                 public void run() {
@@ -58,9 +69,15 @@ public class bug8041642 {
                 }
             });
             Color color = robot.getPixelColor(point.x + 1, point.y + 7);
-            System.out.println(color);
+            System.out.println("point " + point + " color " + color);
             if (color.getGreen() < 150 || color.getBlue() > 30 ||
                     color.getRed() > 200) {
+                Rectangle bounds = frame.getBounds();
+                BufferedImage img = new BufferedImage(bounds.width, bounds.height, BufferedImage.TYPE_INT_ARGB);
+                Graphics g = img.getGraphics();
+                frame.paint(g);
+                g.dispose();
+                ImageIO.write(img, "png", new File("bug8041642.png"));
                 throw new RuntimeException("Bar padding color should be green");
             }
 
