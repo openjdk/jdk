@@ -773,12 +773,10 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(JvmtiAgent *agent_lib, const char *syms[],
-                                 size_t syms_len);
+  static bool find_builtin_agent(JvmtiAgent* agent_lib, const char* sym);
 
   // Find agent entry point
-  static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
-                                   const char *syms[], size_t syms_len);
+  static void* find_agent_function(JvmtiAgent* agent_lib, bool check_lib, const char* sym);
 
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
