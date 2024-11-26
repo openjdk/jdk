@@ -62,7 +62,7 @@ public class HeadlessMalfunctionTest {
         );
         final OutputAnalyzer output = ProcessTools.executeProcess(pbJava);
         // Unpatched JDK logs: "FATAL ERROR in native method: Could not allocate library name"
-        output.shouldContain("FATAL ERROR in native method: isHeadless method not found");
+        output.shouldContain("FATAL ERROR in native method: GetStaticMethodID isHeadless failed");
         output.shouldNotHaveExitValue(0);
     }
 

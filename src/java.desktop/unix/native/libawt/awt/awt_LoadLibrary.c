@@ -45,7 +45,7 @@
 
 #define CHECK_EXCEPTION_FATAL(env, message) \
     if ((*env)->ExceptionCheck(env)) { \
-        (*env)->ExceptionClear(env); \
+        (*env)->ExceptionDescribe(env); \
         (*env)->FatalError(env, message); \
     }
 
@@ -67,10 +67,10 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
         env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
         graphicsEnvClass = (*env)->FindClass(env,
                                              "java/awt/GraphicsEnvironment");
-        CHECK_EXCEPTION_FATAL(env, "java/awt/GraphicsEnvironment class not found");
+        CHECK_EXCEPTION_FATAL(env, "FindClass java/awt/GraphicsEnvironment failed");
         headlessFn = (*env)->GetStaticMethodID(env,
                                                graphicsEnvClass, "isHeadless", "()Z");
-        CHECK_EXCEPTION_FATAL(env, "isHeadless method not found");
+        CHECK_EXCEPTION_FATAL(env, "GetStaticMethodID isHeadless failed");
         isHeadless = (*env)->CallStaticBooleanMethod(env, graphicsEnvClass,
                                                      headlessFn);
         // If an exception occurred, we assume headless mode and carry on.
