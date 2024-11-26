@@ -64,12 +64,10 @@ else ifeq ($(call isTargetOs, windows), true)
   # libsplashscreen has a name conflict with libawt in the function
   # BitmapToYXBandedRectangles, so we exclude it for now.
   BROKEN_STATIC_LIBS += splashscreen
-  # windowsaccessbridge-64 has multiple collisions and conflicts
-  BROKEN_STATIC_LIBS += windowsaccessbridge-64
   # libsspi_bridge has name conflicts with sunmscapi
   BROKEN_STATIC_LIBS += sspi_bridge
   # These libs define DllMain which conflict with Hotspot
-  BROKEN_STATIC_LIBS += awt dt_shmem dt_socket javaaccessbridge
+  BROKEN_STATIC_LIBS += awt dt_shmem dt_socket
   # These libs are dependent on any of the above disabled libs
   BROKEN_STATIC_LIBS += fontmanager jawt lcms net nio
 endif

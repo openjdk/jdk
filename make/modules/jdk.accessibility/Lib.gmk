@@ -38,6 +38,7 @@ ifeq ($(call isTargetOs, windows), true)
       NAME := javaaccessbridge, \
       EXTRA_SRC := common, \
       OPTIMIZATION := LOW, \
+      EXCLUDE_FROM_STATIC_LIBS := true, \
       DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
       CXXFLAGS_FILTER_OUT := -MD, \
       CXXFLAGS := -MT -DACCESSBRIDGE_ARCH_64, \
@@ -67,6 +68,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS := -DACCESSBRIDGE_ARCH_64, \
       EXTRA_HEADER_DIRS := \
           include/bridge, \
+      EXCLUDE_FROM_STATIC_LIBS := true, \
       LDFLAGS := \
           -def:$(ACCESSIBILITY_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
       LIBS_windows := advapi32.lib comdlg32.lib gdi32.lib kernel32.lib \
@@ -74,7 +76,6 @@ ifeq ($(call isTargetOs, windows), true)
           user32.lib uuid.lib winspool.lib, \
       VERSIONINFO_RESOURCE := \
           $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
-      STATIC_LIB_EXCLUDE_OBJS := AccessBridgeDebug.obj AccessBridgeMessages.obj, \
   ))
 
   TARGETS += $(BUILD_LIBWINDOWSACCESSBRIDGE)
