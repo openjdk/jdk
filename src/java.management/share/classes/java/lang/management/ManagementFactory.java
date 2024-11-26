@@ -984,7 +984,7 @@ public class ManagementFactory {
         loadNativeLib();
     }
 
-    @SuppressWarnings({"restricted"})
+    @SuppressWarnings("restricted")
     private static void loadNativeLib() {
         System.loadLibrary("management");
     }
