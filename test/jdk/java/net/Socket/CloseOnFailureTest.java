@@ -29,6 +29,7 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,6 +44,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.net.SocketImplFactory;
 import java.net.UnknownHostException;
 import java.nio.channels.AlreadyConnectedException;
@@ -340,7 +342,7 @@ class CloseOnFailureTest {
         void socketShouldNotBeClosedWhenConnectFailsUsingConnectedSocket() throws IOException {
             SocketAddress serverSocketAddress = serverSocket().getLocalSocketAddress();
             try (Socket socket = createConnectedSocket(serverSocketAddress)) {
-                assertThrows(AlreadyConnectedException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
+                assertReconnectFailure(() -> socket.connect(REFUSING_SOCKET_ADDRESS));
                 assertFalse(socket.isClosed());
             }
         }
@@ -379,8 +381,13 @@ class CloseOnFailureTest {
 
         abstract Socket createConnectedSocket(SocketAddress address) throws IOException;
 
+        abstract void assertReconnectFailure(Executable executable);
+
     }
 
+    /**
+     * Tests using {@link Socket} instances created using {@link SocketChannel#socket()}.
+     */
     @Nested
     @SuppressWarnings("resource")
     class RealSocketUsingSocketChannelTest extends AbstractRealSocketTest {
@@ -407,6 +414,51 @@ class CloseOnFailureTest {
             return SocketChannel.open(address).socket();
         }
 
+        @Override
+        void assertReconnectFailure(Executable executable) {
+            assertThrows(AlreadyConnectedException.class, executable);
+        }
+
+    }
+
+    /**
+     * Tests using {@link Socket} instances created using {@link Socket} constructors.
+     */
+    @Nested
+    class RealSocketUsingSocketTest extends AbstractRealSocketTest {
+
+        @RegisterExtension
+        static final ServerSocketExtension SERVER_SOCKET_EXTENSION = new ServerSocketExtension();
+
+        @Override
+        ServerSocket serverSocket() {
+            return SERVER_SOCKET_EXTENSION.serverSocket;
+        }
+
+        @Override
+        Socket createUnboundSocket() {
+            return new Socket();
+        }
+
+        @Override
+        Socket createBoundSocket() throws IOException {
+            Socket socket = new Socket();
+            socket.bind(new InetSocketAddress(0));
+            return socket;
+        }
+
+        @Override
+        Socket createConnectedSocket(SocketAddress address) throws IOException {
+            InetSocketAddress inetAddress = (InetSocketAddress) address;
+            return new Socket(inetAddress.getAddress(), inetAddress.getPort());
+        }
+
+        @Override
+        void assertReconnectFailure(Executable executable) {
+            SocketException exception = assertThrows(SocketException.class, executable);
+            assertEquals("already connected", exception.getMessage());
+        }
+
     }
 
     private static final class ServerSocketExtension implements BeforeAllCallback, AfterAllCallback {
@@ -425,13 +477,13 @@ class CloseOnFailureTest {
 
         @SuppressWarnings({"ResultOfMethodCallIgnored"})
         private static void acceptConnections(ExecutorService executorService, ServerSocket serverSocket) {
-            System.err.println("Accepting connections");
+            System.err.println("[Test socket server] Accepting connections");
             while (true) {
                 try {
 
                     Socket clientSocket = serverSocket.accept();
                     System.err.format(
-                            "Accepted port %d to port %d%n",
+                            "[Test socket server] Accepted port %d to port %d%n",
                             ((InetSocketAddress) clientSocket.getRemoteSocketAddress()).getPort(),
                             clientSocket.getLocalPort());
 
@@ -457,6 +509,7 @@ class CloseOnFailureTest {
 
         @Override
         public void afterAll(ExtensionContext extensionContext) throws Exception {
+            System.err.println("[Test socket server] Shutting down");
             executorService.shutdownNow();
             serverSocket.close();
         }
