@@ -41,7 +41,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.security.GeneralSecurityException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.Status;
@@ -60,7 +59,6 @@ public class SSLSocketNoServerHelloClientShutdown
 
     private volatile Exception clientException;
     private volatile Exception serverException;
-    private final int serverReadTimeout;
     private final CountDownLatch serverLatch;
 
     public static void main(String[] args) throws Exception {
@@ -69,9 +67,6 @@ public class SSLSocketNoServerHelloClientShutdown
 
     public SSLSocketNoServerHelloClientShutdown() throws Exception {
         super();
-        float timeoutFactor = Float.parseFloat(
-                System.getProperty("test.timeout.factor", "1.0"));
-        serverReadTimeout = (int) (30000 * timeoutFactor);
         serverLatch = new CountDownLatch(1);
     }
 
@@ -92,7 +87,6 @@ public class SSLSocketNoServerHelloClientShutdown
             try {
                 // Server-side SSL socket that will read.
                 SSLSocket socket = (SSLSocket) serverSocket.accept();
-                socket.setSoTimeout(serverReadTimeout);
                 InputStream is = socket.getInputStream();
                 byte[] inbound = new byte[512];
 
@@ -171,10 +165,7 @@ public class SSLSocketNoServerHelloClientShutdown
                     log("---Client sends unencrypted alerts---");
                     int len = clientSocketChannel.write(cTOs);
 
-                    if (!serverLatch.await(serverReadTimeout,
-                                           TimeUnit.MILLISECONDS)) {
-                        log("Client: server thread not done yet, timing out");
-                    }
+                    serverLatch.await();
                 } catch (Exception e) {
                     clientException = e;
                 }
