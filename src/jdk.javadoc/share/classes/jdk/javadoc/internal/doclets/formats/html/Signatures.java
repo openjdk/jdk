@@ -48,7 +48,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -242,9 +241,10 @@ public class Signatures {
                  }
                  content.add(modifier);
                  if (previewModifiers.contains(modifier)) {
-                     content.add(HtmlTree.SUP(writer.links.createLink(
-                             configuration.htmlIds.forPreviewSection(typeElement),
-                             configuration.contents.previewMark)));
+                     content.add(HtmlTree.SUP(HtmlStyles.previewMark,
+                             writer.links.createLink(
+                                     configuration.htmlIds.forPreviewSection(typeElement),
+                                     configuration.contents.previewMark)));
                  }
                  sep = " ";
              }
