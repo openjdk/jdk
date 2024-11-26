@@ -41,6 +41,8 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for an
  * {@code invokedynamic} call site.
  *
+ * <p>This class is immutable and its behavior does not rely on object identity
+ *
  * @since 12
  */
 public final class DynamicCallSiteDesc {
