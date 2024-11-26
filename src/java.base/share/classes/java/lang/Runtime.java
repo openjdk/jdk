@@ -120,7 +120,7 @@ import jdk.internal.reflect.Reflection;
  * @since   1.0
  */
 
-public class Runtime {
+public final class Runtime {
     private static final Runtime currentRuntime = new Runtime();
 
     private static Version version;

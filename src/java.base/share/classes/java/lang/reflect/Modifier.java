@@ -52,7 +52,7 @@ import java.util.StringJoiner;
  * @author Kenneth Russell
  * @since 1.1
  */
-public class Modifier {
+public final class Modifier {
     /**
      * Do not call.
      */

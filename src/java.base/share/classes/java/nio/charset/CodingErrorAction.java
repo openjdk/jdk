@@ -40,7 +40,7 @@ package java.nio.charset;
  * @since 1.4
  */
 
-public class CodingErrorAction {
+public final class CodingErrorAction {
 
     private String name;
 

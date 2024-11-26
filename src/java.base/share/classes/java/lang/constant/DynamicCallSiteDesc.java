@@ -41,12 +41,9 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for an
  * {@code invokedynamic} call site.
  *
- * <p>Concrete subtypes of {@linkplain DynamicCallSiteDesc} should be immutable
- * and their behavior should not rely on object identity.
- *
  * @since 12
  */
-public class DynamicCallSiteDesc {
+public final class DynamicCallSiteDesc {
 
     private final DirectMethodHandleDesc bootstrapMethod;
     private final ConstantDesc[] bootstrapArgs;

@@ -33,7 +33,7 @@ package java.util;
  *
  * @since  1.5
  */
-public class FormattableFlags {
+public final class FormattableFlags {
 
     // Explicit instantiation of this class is prohibited.
     private FormattableFlags() {}

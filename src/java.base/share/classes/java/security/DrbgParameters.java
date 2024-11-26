@@ -232,7 +232,7 @@ import java.util.Objects;
  *
  * @since 9
  */
-public class DrbgParameters {
+public final class DrbgParameters {
 
     private DrbgParameters() {
         // This class should not be instantiated

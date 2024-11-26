@@ -84,7 +84,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public class MethodHandles {
+public final class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate
 

@@ -91,7 +91,7 @@ import jdk.internal.module.ModuleInfo;
  * @since 9
  */
 
-public class ModuleDescriptor
+public final class ModuleDescriptor
     implements Comparable<ModuleDescriptor>
 {
 
@@ -1312,7 +1312,7 @@ public class ModuleDescriptor
      * Creates a module descriptor from its components.
      * The arguments are pre-validated and sets are unmodifiable sets.
      */
-    ModuleDescriptor(String name,
+    private ModuleDescriptor(String name,
                      Version version,
                      Set<Modifier> modifiers,
                      Set<Requires> requires,

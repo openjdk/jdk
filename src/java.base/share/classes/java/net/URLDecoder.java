@@ -81,7 +81,7 @@ import java.util.Objects;
  * @since   1.2
  */
 
-public class URLDecoder {
+public final class URLDecoder {
 
     /**
      * Do not call.

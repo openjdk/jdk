@@ -48,7 +48,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @since 16
  */
-public class ObjectMethods {
+public final class ObjectMethods {
 
     private ObjectMethods() { }
 

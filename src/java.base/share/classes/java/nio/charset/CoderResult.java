@@ -81,7 +81,7 @@ import java.util.Map;
  * @since 1.4
  */
 
-public class CoderResult {
+public final class CoderResult {
 
     private static final int CR_UNDERFLOW  = 0;
     private static final int CR_OVERFLOW   = 1;

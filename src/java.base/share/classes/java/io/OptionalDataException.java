@@ -44,7 +44,7 @@ package java.io;
  *
  * @since   1.1
  */
-public class OptionalDataException extends ObjectStreamException {
+public final class OptionalDataException extends ObjectStreamException {
 
     @java.io.Serial
     private static final long serialVersionUID = -8011121865681257820L;

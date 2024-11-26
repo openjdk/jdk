@@ -69,7 +69,7 @@ import static jdk.internal.constant.ConstantUtils.*;
  *
  * @since 1.7
  */
-public class MethodHandleProxies {
+public final class MethodHandleProxies {
 
     private MethodHandleProxies() { }  // do not instantiate
 

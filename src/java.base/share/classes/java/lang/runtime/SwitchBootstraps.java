@@ -74,7 +74,7 @@ import sun.invoke.util.Wrapper;
  *
  * @since 21
  */
-public class SwitchBootstraps {
+public final class SwitchBootstraps {
 
     private SwitchBootstraps() {}
 

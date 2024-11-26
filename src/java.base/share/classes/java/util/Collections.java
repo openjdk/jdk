@@ -82,7 +82,7 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.2
  */
 
-public class Collections {
+public final class Collections {
     // Suppresses default constructor, ensuring non-instantiability.
     private Collections() {
     }

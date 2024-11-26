@@ -84,7 +84,7 @@ import jdk.internal.util.ImmutableBitSetPredicate;
  * @author  Herb Jellinek
  * @since   1.0
  */
-public class URLEncoder {
+public final class URLEncoder {
     private static final IntPredicate DONT_NEED_ENCODING;
 
     static {
