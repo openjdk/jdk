@@ -42,10 +42,10 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
     private final Random random = new Random(42);
 
     // Constants for offsets and displacements
-    private static final int MAX_OFFSET_AROUND_NEIGHBOR = 50; // Max offset for random positioning around a neighbor
-    private static final int MAX_OFFSET_AROUND_ORIGIN = 100; // Max offset for random positioning around origin
-    private static final int DISPLACEMENT_RANGE_BARYCENTER = 20; // Displacement range for barycenter calculation
-    private static final int DISPLACEMENT_RANGE_SINGLE = 100;
+    private static final int MAX_OFFSET_AROUND_NEIGHBOR = 200; // Max offset for random positioning around a neighbor
+    private static final int MAX_OFFSET_AROUND_ORIGIN = 200; // Max offset for random positioning around origin
+    private static final int DISPLACEMENT_RANGE_BARYCENTER = 100; // Displacement range for barycenter calculation
+    private static final int DISPLACEMENT_RANGE_SINGLE = 200;
 
     // Create a comparator to sort nodes by the number of unassigned neighbors
     private final Comparator<LayoutNode> LeastUnassignedNeighborsComparator = Comparator.comparingInt(node -> {
@@ -201,9 +201,7 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         final double REPULSION_CONSTANT = 1000;
         final double SPRING_CONSTANT = 0.2;
         final double DAMPING = 0.8;
-        final double MAX_DISPLACEMENT = 10;
-        double IDEAL_LENGTH = 50;
-        IDEAL_LENGTH = 50 / Math.log(prevGraph.getAllLinks(node.getVertex()).size() + 1);
+        final double IDEAL_LENGTH = 100;
 
         double posX = node.getX();
         double posY = node.getY();
@@ -235,8 +233,7 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
                 double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY + 0.01); // Prevent division by zero
 
                 // Attractive force (Hooke's law)
-                double idealLength = 100; // Adjust as necessary
-                double displacement = distance - idealLength;
+                double displacement = distance - IDEAL_LENGTH;
                 double attractiveForce = SPRING_CONSTANT * displacement;
                 netForceX += (deltaX / distance) * attractiveForce;
                 netForceY += (deltaY / distance) * attractiveForce;
