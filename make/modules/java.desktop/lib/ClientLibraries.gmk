@@ -168,10 +168,10 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBZ), false)
     LIBSPLASHSCREEN_EXTRA_SRC += java.base:libzip/zlib
-    LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += Adler32.o compress.o CRC32.o \
-        deflate.o Deflater.o Inflater.o gzclose.o gzlib.o gzread.o gzwrite.o \
-        infback.o inffast.o inflate.o inftrees.o trees.o uncompr.o zadler32.o \
-        zcrc32.o zip_util.o zutil.o
+    LIBZIP_SRC_PATH := $(TOPDIR)/src/java.base/share/native/libzip
+    LIBZIP_OBJS := $(sort $(patsubst %.c,%.o, $(notdir \
+        $(wildcard $(LIBZIP_SRC_PATH)/*.c $(LIBZIP_SRC_PATH)/zlib/*.c))))
+    LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += $(LIBZIP_OBJS)
   endif
 
   LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
