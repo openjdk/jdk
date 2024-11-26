@@ -2834,7 +2834,7 @@ Node* CountedLoopNode::skip_assertion_predicates_with_halt() {
     ctrl = skip_strip_mined()->in(LoopNode::EntryControl);
   }
   if (is_main_loop() || is_post_loop()) {
-    AssertionPredicatesWithHalt assertion_predicates(ctrl);
+    AssertionPredicates assertion_predicates(ctrl);
     return assertion_predicates.entry();
   }
   return ctrl;
@@ -4470,7 +4470,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
     if (profiled_loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = profiled_loop_predicate_block->parse_predicate_success_proj();
-      get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
     }
   }
 
@@ -4478,7 +4478,7 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
     const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
     if (loop_predicate_block->has_parse_predicate()) {
       ParsePredicateSuccessProj* parse_predicate_proj = loop_predicate_block->parse_predicate_success_proj();
-      get_assertion_predicates(parse_predicate_proj, useful_predicates, true);
+      get_template_assertion_predicates(parse_predicate_proj, useful_predicates, true);
     }
   }
 }

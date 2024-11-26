@@ -29,17 +29,11 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 import com.sun.beans.finder.ClassFinder;
 import com.sun.beans.finder.ConstructorFinder;
 import com.sun.beans.finder.MethodFinder;
 import sun.reflect.misc.MethodUtil;
-
-import static sun.reflect.misc.ReflectUtil.checkPackageAccess;
 
 /**
  * A {@code Statement} object represents a primitive statement
@@ -69,8 +63,6 @@ public class Statement {
         }
     };
 
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc = AccessController.getContext();
     private final Object target;
     private final String methodName;
     private final Object[] arguments;
@@ -174,28 +166,7 @@ public class Statement {
         invoke();
     }
 
-    @SuppressWarnings("removal")
     Object invoke() throws Exception {
-        AccessControlContext acc = this.acc;
-        if ((acc == null) && (System.getSecurityManager() != null)) {
-            throw new SecurityException("AccessControlContext is not set");
-        }
-        try {
-            return AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<Object>() {
-                        public Object run() throws Exception {
-                            return invokeInternal();
-                        }
-                    },
-                    acc
-            );
-        }
-        catch (PrivilegedActionException exception) {
-            throw exception.getException();
-        }
-    }
-
-    private Object invokeInternal() throws Exception {
         Object target = getTarget();
         String methodName = getMethodName();
 
@@ -216,13 +187,8 @@ public class Statement {
                 // Class.forName(String className) won't load classes outside
                 // of core from a class inside core. Special
                 // case this method.
-                // checkPackageAccess(name) will be called by ClassFinder
                 return ClassFinder.resolveClass(name, this.loader);
             }
-            // The 3 args Class.forName(String className, boolean, classloader)
-            // requires getClassLoader permission, but we will be stricter and
-            // will require access to the package as well.
-            checkPackageAccess(name);
         }
         Class<?>[] argClasses = new Class<?>[arguments.length];
         for(int i = 0; i < arguments.length; i++) {

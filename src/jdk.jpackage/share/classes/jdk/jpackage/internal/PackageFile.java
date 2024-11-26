@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class PackageFile {
+final class PackageFile {
 
     /**
      * Returns path to package file.

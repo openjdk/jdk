@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1034,10 +1034,10 @@ public class FloatingDecimal{
     static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
         boolean     isNegative;
         int         decExponent;
-        char        digits[];
+        byte[]      digits;
         int         nDigits;
 
-        ASCIIToBinaryBuffer( boolean negSign, int decExponent, char[] digits, int n)
+        ASCIIToBinaryBuffer( boolean negSign, int decExponent, byte[] digits, int n)
         {
             this.isNegative = negSign;
             this.decExponent = decExponent;
@@ -1872,7 +1872,7 @@ public class FloatingDecimal{
                 }
             }  // look for and process decimal floating-point string
 
-            char[] digits = new char[ len ];
+            byte[] digits = new byte[len];
             boolean decSeen = false;
             int nDigits = 0;
             int decPt = 0;
@@ -1903,10 +1903,10 @@ public class FloatingDecimal{
             while (i < len) {
                 c = in.charAt(i);
                 if (c >= '1' && c <= '9') {
-                    digits[nDigits++] = c;
+                    digits[nDigits++] = (byte) c;
                     nTrailZero = 0;
                 } else if (c == '0') {
-                    digits[nDigits++] = c;
+                    digits[nDigits++] = (byte) c;
                     nTrailZero++;
                 } else if (c == '.') {
                     if (decSeen) {

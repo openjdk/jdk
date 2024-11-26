@@ -62,7 +62,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
     }
   }
 
-  if (k->is_hidden()) {
+  if (k->is_hidden() && info.nest_host() != nullptr) {
     _nest_host_offset = builder->any_to_offset_u4(info.nest_host());
   }
   if (k->has_archived_enum_objs()) {
