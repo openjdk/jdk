@@ -351,8 +351,8 @@
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
-  // TODO rename and possibly extend, also rename tags
-  const bool _is_trace_pointer;
+  // TODO rename and possibly extend, also rename tags, check where apply
+  const bool _is_trace_pointer; // TODO parse pointer? and check where to add!
   const bool _is_trace_aliasing;
   const bool _is_trace_adjacency;
   const bool _is_trace_overlap;
@@ -781,47 +781,6 @@ private:
   void parse_sub_expression(const MemPointerSummand& summand, Callback& adr_node_callback);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
-};
-
-// TODO maybe merge with decomposed form?
-// Facility to parse the pointer of a Load or Store, so that aliasing between two such
-// memory operations can be determined (e.g. adjacency).
-class MemPointerX : public StackObj {
-private:
-  NOT_PRODUCT( const TraceMemPointer& _trace; )
-
-  const MemNode* _mem;
-  const MemPointer _mem_pointer;
-
-public:
-  MemPointerX(const MemNode* mem NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
-    NOT_PRODUCT(_trace(trace) COMMA)
-    _mem(mem),
-    _mem_pointer(init_mem_pointer())
-  {
-#ifndef PRODUCT
-    if (_trace.is_trace_pointer()) {
-      tty->print_cr("MemPointer::MemPointer:");
-      tty->print("mem: "); mem->dump();
-      _mem->in(MemNode::Address)->dump_bfs(5, 0, "d");
-      _mem_pointer.print_on(tty);
-    }
-#endif
-  }
-
-  bool is_adjacent_to_and_before(const MemPointerX& other) const {
-    return mem_pointer().is_adjacent_to_and_before(other.mem_pointer());
-  }
-
-private:
-  const MemPointer mem_pointer() const { return _mem_pointer; }
-
-  const MemPointer init_mem_pointer() {
-    assert(_mem->is_Store(), "only stores are supported");
-    ResourceMark rm;
-    MemPointerParser parser(_mem NOT_PRODUCT(COMMA _trace));
-    return parser.mem_pointer();
-  }
 };
 
 #endif // SHARE_OPTO_MEMPOINTER_HPP
