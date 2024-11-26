@@ -146,7 +146,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         // Code without intrinsic but, hopefully, inlined.
         CallGenerator* inline_cg = this->call_generator(callee,
               vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
-        if (failing()) return nullptr;
         if (inline_cg != nullptr) {
           cg = CallGenerator::for_predicated_intrinsic(cg, inline_cg);
         }
@@ -236,7 +235,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
           receiver_method = callee->resolve_invoke(jvms->method()->holder(),
                                                    speculative_receiver_type);
           if (receiver_method == nullptr) {
-            if (failing()) return nullptr;
             speculative_receiver_type = nullptr;
           } else {
             morphism = 1;
@@ -275,7 +273,7 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
                   // Skip if we can't inline second receiver's method
                   next_hit_cg = nullptr;
               }
-            } else if (failing()) return nullptr;
+            }
           }
           CallGenerator* miss_cg;
           Deoptimization::DeoptReason reason = (morphism == 2
@@ -314,8 +312,6 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
       }
     }
 
-    if (failing()) return nullptr;
-
     // If there is only one implementor of this interface then we
     // may be able to bind this invoke directly to the implementing
     // klass but we need both a dependence on the single interface
@@ -341,16 +337,13 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         ciMethod* cha_monomorphic_target =
             callee->find_monomorphic_target(caller->holder(), declared_interface, singleton);
 
-        if (cha_monomorphic_target == nullptr) {
-          if (failing()) return nullptr;
-        } else if (cha_monomorphic_target->holder() != env()->Object_klass()) { // subtype check against Object is useless
+        if (cha_monomorphic_target != nullptr &&
+            cha_monomorphic_target->holder() != env()->Object_klass()) { // subtype check against Object is useless
           ciKlass* holder = cha_monomorphic_target->holder();
 
           // Try to inline the method found by CHA. Inlined method is guarded by the type check.
           CallGenerator* hit_cg = call_generator(cha_monomorphic_target,
               vtable_index, !call_does_dispatch, jvms, allow_inline, prof_factor);
-
-          if (failing()) return nullptr;
 
           // Deoptimize on type check fail. The interpreter will throw ICCE for us.
           CallGenerator* miss_cg = CallGenerator::for_uncommon_trap(callee,
@@ -599,7 +592,6 @@ void Parse::do_call() {
     callee = C->optimize_virtual_call(method(), klass, holder, orig_callee,
                                       receiver_type, is_virtual,
                                       call_does_dispatch, vtable_index);  // out-parameters
-    if (failing()) return;
     speculative_receiver_type = receiver_type != nullptr ? receiver_type->speculative_type() : nullptr;
   }
 
@@ -648,8 +640,6 @@ void Parse::do_call() {
   // It decides whether inlining is desirable or not.
   CallGenerator* cg = C->call_generator(callee, vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type);
 
-  if (failing()) return;
-
   // NOTE:  Don't use orig_callee and callee after this point!  Use cg->method() instead.
   orig_callee = callee = nullptr;
 
@@ -696,7 +686,6 @@ void Parse::do_call() {
     // intrinsic was expecting to optimize. Should always be possible to
     // get a normal java call that may inline in that case
     cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type, /* allow_intrinsics= */ false);
-    if (failing()) return;
     new_jvms = cg->generate(jvms);
     if (new_jvms == nullptr) {
       guarantee(failing(), "call failed to generate:  calls should work");
@@ -1127,8 +1116,6 @@ ciMethod* Compile::optimize_virtual_call(ciMethod* caller, ciInstanceKlass* klas
   if (optimized_virtual_method != nullptr) {
     callee             = optimized_virtual_method;
     call_does_dispatch = false;
-  } else if (failing()) {
-    return nullptr;
   } else if (!UseInlineCaches && is_virtual && callee->is_loaded()) {
     // We can make a vtable call at this site
     vtable_index = callee->resolve_vtable_index(caller->holder(), holder);
@@ -1198,8 +1185,6 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
     return cha_monomorphic_target;
   }
 
-  if (failing()) return nullptr;
-
   // If the type is exact, we can still bind the method w/o a vcall.
   // (This case comes after CHA so we can see how much extra work it does.)
   if (actual_receiver_is_exact) {
@@ -1208,7 +1193,7 @@ ciMethod* Compile::optimize_inlining(ciMethod* caller, ciInstanceKlass* klass, c
     ciMethod* exact_method = callee->resolve_invoke(calling_klass, actual_receiver);
     if (exact_method != nullptr) {
       return exact_method;
-    } else if (failing()) return nullptr;
+    }
   }
 
   return nullptr;

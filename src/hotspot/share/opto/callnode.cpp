@@ -1200,7 +1200,6 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       phase->C->prepend_late_inline(cg); // MH late inlining prepends to the list, so do the same
       set_generator(nullptr);
     }
-    if (phase->C->failing()) return nullptr;
   }
   return CallNode::Ideal(phase, can_reshape);
 }

@@ -1202,13 +1202,6 @@ void ciEnv::record_method_not_compilable(const char* reason, bool all_tiers) {
     }
     _compilable = new_compilable;
 
-    if (_failure_reason.get() == reason) {
-      // Already set to same storage, so we cannot free the
-      // memory with clear() below.  This is expected for C1,
-      // which uses the ciEnv to store the failure reason.
-      return;
-    }
-
     // Reset failure reason; this one is more important.
     _failure_reason.clear();
     record_failure(reason);

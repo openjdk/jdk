@@ -1027,7 +1027,6 @@ void Parse::do_exits() {
     if (DoEscapeAnalysis && (recorded_alloc != nullptr)) {
       AllocateNode* alloc = AllocateNode::Ideal_allocation(recorded_alloc);
       alloc->compute_MemBar_redundancy(method());
-      if (failing()) return;
     }
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();

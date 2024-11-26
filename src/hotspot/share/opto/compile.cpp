@@ -796,12 +796,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == nullptr) {
       assert(failure_reason() != nullptr, "expect reason for parse failure");
-      // Some failure reasons should not prevent retry
-#ifdef ASSERT
-      if (failure_is_artificial()) return;
-#endif
-      if (strcmp(failure_reason(), ciEnv::old_method_reason()) == 0) return;
-      // Everything else marks the root method as not-compilable
       stringStream ss;
       ss.print("method parse failed: %s", failure_reason());
       record_method_not_compilable(ss.as_string() DEBUG_ONLY(COMMA true));

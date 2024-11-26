@@ -319,8 +319,6 @@ public:
   // Reason this compilation is failing, such as "too many basic blocks".
   const char* failure_reason() const { return _failure_reason.get(); }
 
-  static const char* old_method_reason() { return "method is old"; }
-
   // Return state of appropriate compatibility
   int compilable() { return _compilable; }
 
