@@ -178,8 +178,9 @@ void C1_MacroAssembler::try_allocate(
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register Rzero, Register t1) {
   assert_different_registers(obj, klass, len, t1, Rzero);
   if (UseCompactObjectHeaders) {
-    z_lg(t1, Address(klass, in_bytes(Klass::prototype_header_offset())));
-    z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));
+    z_mvc(Address(obj, oopDesc::mark_offset_in_bytes()),  /* move to */
+          Address(klass, in_bytes(Klass::prototype_header_offset())), /* move from */
+          sizeof(markWord) /* size of data to move */);
   } else {
     load_const_optimized(t1, (intx)markWord::prototype().value());
     z_stg(t1, Address(obj, oopDesc::mark_offset_in_bytes()));

@@ -3980,8 +3980,10 @@ void TemplateTable::_new() {
     // Initialize object header only.
     __ bind(initialize_header);
     if (UseCompactObjectHeaders) {
-      __ z_lg(tmp, Address(iklass, in_bytes(Klass::prototype_header_offset())));
-      __ z_stg(tmp, Address(RallocatedObject, oopDesc::mark_offset_in_bytes()));
+      __ z_mvc(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()), // move to
+               Address(iklass, in_bytes(Klass::prototype_header_offset())), // move from
+               sizeof(markWord) // how much to move
+              );
     } else {
       __ store_const(Address(RallocatedObject, oopDesc::mark_offset_in_bytes()),
                      (long) markWord::prototype().value());

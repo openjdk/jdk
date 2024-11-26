@@ -3673,8 +3673,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // Set owner to null.
   // Release to satisfy the JMM
   z_release();
-  z_lghi(temp, 0);
-  z_stg(temp, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
+  z_mvghi(Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), 0);
+
   // We need a full fence after clearing owner to avoid stranding.
   z_fence();
 
@@ -6555,8 +6555,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     // Set owner to null.
     // Release to satisfy the JMM
     z_release();
-    z_lghi(tmp2, 0);
-    z_stg(tmp2 /*=0*/, owner_address);
+    z_mvghi(owner_address, 0);
     // We need a full fence after clearing owner to avoid stranding.
     z_fence();
 

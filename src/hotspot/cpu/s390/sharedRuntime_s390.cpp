@@ -2538,8 +2538,11 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
 
   // Set the top frame's return pc.
   __ add2reg(pcs_reg, wordSize);
-  __ z_lg(Z_R0_scratch, 0, pcs_reg);
-  __ z_stg(Z_R0_scratch, _z_abi(return_pc), Z_SP);
+  __ z_mvc(
+          Address(Z_SP, _z_abi(return_pc)), /* move to */
+          Address(pcs_reg, 0), /* move from */
+          sizeof(uint64_t) /* how much, size of return_pc from z_common_abi */
+      );
   BLOCK_COMMENT("} push_skeleton_frames");
 }
 
