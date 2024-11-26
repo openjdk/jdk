@@ -55,11 +55,6 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
-    @SuppressWarnings("removal")
-    SecurityManager sm = System.getSecurityManager();
-    if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
-    }
     return instance;
   }
 
@@ -103,6 +98,8 @@ public class WhiteBox {
   // Returns the potentially abridged form of `str` as it would be
   // printed by the VM.
   public native String printString(String str, int maxLength);
+
+  public native void lockAndStuckInSafepoint();
 
   public int countAliveClasses(String name) {
     // Make sure class name is in the correct format
@@ -780,9 +777,6 @@ public class WhiteBox {
 
   // Resolved Method Table
   public native long resolvedMethodItemsCount();
-
-  // Protection Domain Table
-  public native int protectionDomainRemovedCount();
 
   public native int getKlassMetadataSize(Class<?> c);
 
