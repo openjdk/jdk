@@ -456,8 +456,10 @@ public class ManagementFactoryHelper {
 
         try {
             mbs.registerMBean(mbean, objName);
-        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException e) {
-            // ignore the exception, e.g. an instance with the object name exists
+        } catch (InstanceAlreadyExistsException iaee) {
+            // if an instance with the object name exists in the MBeanServer, ignore the exception
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -501,8 +503,10 @@ public class ManagementFactoryHelper {
 
         try {
             mbs.unregisterMBean(objName);
-        } catch (InstanceNotFoundException | MBeanRegistrationException | RuntimeOperationsException e) {
-            // ignore exception
+        } catch (InstanceNotFoundException infe) {
+            // ignore exception if not found
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
