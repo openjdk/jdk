@@ -102,12 +102,10 @@ public final class JMXPluggableAuthenticator implements JMXAuthenticator {
 
             } else {
                 // use the default JAAS login configuration (file-based)
-                final String pf = passwordFile;
-                final String hashPass = hashPasswords;
                 loginContext = new LoginContext(LOGIN_CONFIG_NAME,
                                                 null,
                                                 new JMXCallbackHandler(),
-                                                new FileLoginConfig(pf, hashPass));
+                                                new FileLoginConfig(passwordFile, hashPasswords));
             }
 
         } catch (LoginException | SecurityException e) {
