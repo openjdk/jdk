@@ -39,7 +39,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
   Klass* k = orig_obj->klass();
   Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   return k->is_instance_klass() &&
-         InstanceKlass::cast(k)->java_super() == vmClasses::Enum_klass();
+         InstanceKlass::cast(k)->is_enum_subclass();
 }
 
 // -- Handling of Enum objects

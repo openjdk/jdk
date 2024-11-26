@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 // NOTE: It's a caller responbility to free the allocated memory using delete[], just like in UnicodeToUTF8AndCopy function
-LPSTR _cdecl UnicodeToUTF8(const LPCWSTR lpAnsiStr);
+LPSTR UnicodeToUTF8(const LPCWSTR lpAnsiStr);
 
-void _cdecl UnicodeToUTF8AndCopy(LPSTR dest, LPCWSTR src, SIZE_T maxLength);
+void UnicodeToUTF8AndCopy(LPSTR dest, LPCWSTR src, SIZE_T maxLength);
 
 #ifdef __cplusplus
 }

@@ -34,7 +34,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
+
+import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -51,25 +52,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     private static final Path TMPDIR = Path.of("/tmp");
 
     private static final Path PROC     = Path.of("/proc");
-    private static final Path NS_MNT   = Path.of("ns/mnt");
-    private static final Path NS_PID   = Path.of("ns/pid");
-    private static final Path SELF     = PROC.resolve("self");
     private static final Path STATUS   = Path.of("status");
     private static final Path ROOT_TMP = Path.of("root/tmp");
-
-    private static final Optional<Path> SELF_MNT_NS;
-
-    static {
-        Path nsPath = null;
-
-        try {
-            nsPath = Files.readSymbolicLink(SELF.resolve(NS_MNT));
-        } catch (IOException _) {
-            // do nothing
-        } finally {
-            SELF_MNT_NS = Optional.ofNullable(nsPath);
-        }
-    }
 
     String socket_path;
 
@@ -97,13 +81,16 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         if (!socket_file.exists()) {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
             File f = createAttachFile(pid, ns_pid).getCanonicalFile();
+
+            boolean timedout = false;
+
             try {
-                sendQuitTo(pid);
+                checkCatchesAndSendQuitTo(pid, false);
 
                 // give the target VM time to start the attach mechanism
                 final int delay_step = 100;
                 final long timeout = attachTimeout();
-                long time_spend = 0;
+                long time_spent = 0;
                 long delay = 0;
                 do {
                     // Increase timeout on each attempt to reduce polling
@@ -112,18 +99,19 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
 
-                    time_spend += delay;
-                    if (time_spend > timeout/2 && !socket_file.exists()) {
+                    timedout = (time_spent += delay) > timeout;
+
+                    if (time_spent > timeout/2 && !socket_file.exists()) {
                         // Send QUIT again to give target VM the last chance to react
-                        sendQuitTo(pid);
+                        checkCatchesAndSendQuitTo(pid, !timedout);
                     }
-                } while (time_spend <= timeout && !socket_file.exists());
+                } while (!timedout && !socket_file.exists());
+
                 if (!socket_file.exists()) {
                     throw new AttachNotSupportedException(
                         String.format("Unable to open socket file %s: " +
                           "target process %d doesn't respond within %dms " +
-                          "or HotSpot VM not loaded", socket_path, pid,
-                                      time_spend));
+                          "or HotSpot VM not loaded", socket_path, pid, time_spent));
                 }
             } finally {
                 f.delete();
@@ -257,79 +245,32 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     }
 
     private String findTargetProcessTmpDirectory(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        // We need to handle at least 4 different cases:
-        // 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
-        //    container with both /tmp mounted between containers).
-        // 2. Caller and target processes share PID namespace and root filesystem but the target process has elevated
-        //    privileges (host to host).
-        // 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
-        // 4. Caller and target processes share neither PID namespace nor root filesystem (host to container).
+        final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
 
-        Optional<ProcessHandle> target = ProcessHandle.of(pid);
-        Optional<ProcessHandle> ph = target;
-        long nsPid = ns_pid;
-        Optional<Path> prevPidNS = Optional.empty();
+        /* We need to handle at least 4 different cases:
+         * 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
+         *    container with both /tmp mounted between containers).
+         * 2. Caller and target processes share PID namespace and root filesystem but the target process has elevated
+         *    privileges (host to host).
+         * 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
+         * 4. Caller and target processes share neither PID namespace nor root filesystem (host to container)
+         *
+         * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared
+         * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
+         * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not,
+         * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
+         * as that of the intended target (in its * pid ns).
+         *
+         * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
+         *
+         * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
+         * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to
+         * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
+         *
+         * note that if pid == ns_pid we are in a shared pid ns with the target and may (potentially) share /tmp
+         */
 
-        while (ph.isPresent()) {
-            final var curPid = ph.get().pid();
-            final var procPidPath = PROC.resolve(Long.toString(curPid));
-            Optional<Path> targetMountNS = Optional.empty();
-
-            try {
-                // attempt to read the target's mnt ns id
-                targetMountNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_MNT)));
-            } catch (IOException _) {
-                // if we fail to read the target's mnt ns id then we either don't have access or it no longer exists!
-                if (!Files.exists(procPidPath)) {
-                    throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
-                }
-                // the process still exists, but we don't have privileges to read its procfs
-            }
-
-            final var sameMountNS = SELF_MNT_NS.isPresent() && SELF_MNT_NS.equals(targetMountNS);
-
-            if (sameMountNS) {
-                return TMPDIR.toString(); // we share TMPDIR in common!
-            } else {
-                // we could not read the target's mnt ns
-                final var procPidRootTmp = procPidPath.resolve(ROOT_TMP);
-                if (Files.isReadable(procPidRootTmp)) {
-                    return procPidRootTmp.toString(); // not in the same mnt ns but tmp is accessible via /proc
-                }
-            }
-
-            // let's attempt to obtain the pid ns, best efforts to avoid crossing pid ns boundaries (as with a container)
-            Optional<Path> curPidNS = Optional.empty();
-
-            try {
-                // attempt to read the target's pid ns id
-                curPidNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_PID)));
-            } catch (IOException _) {
-                // if we fail to read the target's pid ns id then we either don't have access or it no longer exists!
-                if (!Files.exists(procPidPath)) {
-                    throw new IOException(String.format("unable to attach, %s non-existent! process: %d terminated", procPidPath, pid));
-                }
-                // the process still exists, but we don't have privileges to read its procfs
-            }
-
-            // recurse "up" the process hierarchy if appropriate. PID 1 cannot have a parent in the same namespace
-            final var havePidNSes = prevPidNS.isPresent() && curPidNS.isPresent();
-            final var ppid = ph.get().parent();
-
-            if (ppid.isPresent() && (havePidNSes && curPidNS.equals(prevPidNS)) || (!havePidNSes && nsPid > 1)) {
-                ph = ppid;
-                nsPid = getNamespacePid(ph.get().pid()); // get the ns pid of the parent
-                prevPidNS = curPidNS;
-            } else {
-                ph = Optional.empty();
-            }
-        }
-
-        if (target.orElseThrow(AttachNotSupportedException::new).isAlive()) {
-            return TMPDIR.toString(); // fallback...
-        } else {
-            throw new IOException(String.format("unable to attach, process: %d terminated", pid));
-        }
+        return (Files.isWritable(procPidRoot) ? procPidRoot : TMPDIR).toString();
     }
 
     /*
@@ -378,6 +319,70 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         }
     }
 
+    private static final String FIELD = "field";
+    private static final String MASK  = "mask";
+
+    private static final Pattern SIGNAL_MASK_PATTERN = Pattern.compile("(?<" + FIELD + ">Sig\\p{Alpha}{3}):\\s+(?<" + MASK + ">\\p{XDigit}{16}).*");
+
+    private static final long SIGQUIT = 0b100; // mask bit for SIGQUIT
+
+    private static boolean checkCatchesAndSendQuitTo(int pid, boolean throwIfNotReady) throws AttachNotSupportedException, IOException {
+        var quitIgn = false;
+        var quitBlk = false;
+        var quitCgt = false;
+
+        final var procPid = PROC.resolve(Integer.toString(pid));
+
+        var readBlk = false;
+        var readIgn = false;
+        var readCgt = false;
+
+
+        if (!Files.exists(procPid)) throw new IOException("non existent JVM pid: " + pid);
+
+        for (var line : Files.readAllLines(procPid.resolve("status"))) {
+
+            if (!line.startsWith("Sig")) continue; // to speed things up ... avoids the matcher/RE invocation...
+
+            final var m = SIGNAL_MASK_PATTERN.matcher(line);
+
+            if (!m.matches()) continue;
+
+            var       sigmask = m.group(MASK);
+            final var slen    = sigmask.length();
+
+            sigmask = sigmask.substring(slen / 2 , slen); // only really interested in the non r/t signals ...
+
+            final var sigquit = (Long.valueOf(sigmask, 16) & SIGQUIT) != 0L;
+
+            switch (m.group(FIELD)) {
+                case "SigBlk": { quitBlk = sigquit; readBlk = true; break; }
+                case "SigIgn": { quitIgn = sigquit; readIgn = true; break; }
+                case "SigCgt": { quitCgt = sigquit; readCgt = true; break; }
+            }
+
+            if (readBlk && readIgn && readCgt) break;
+        }
+
+        final boolean  okToSendQuit = (!quitIgn && quitCgt); // ignore blocked as it may be temporary ...
+
+        if (okToSendQuit) {
+            sendQuitTo(pid);
+        } else if (throwIfNotReady) {
+            final var cmdline = Files.lines(procPid.resolve("cmdline")).findFirst();
+
+            var cmd = "null"; // default
+
+            if (cmdline.isPresent()) {
+                cmd = cmdline.get();
+                cmd = cmd.substring(0, cmd.length() - 1); // remove trailing \0
+            }
+
+            throw new AttachNotSupportedException("pid: " + pid + " cmd: '" + cmd + "' state is not ready to participate in attach handshake!");
+        }
+
+        return okToSendQuit;
+    }
 
     //-- native methods
 

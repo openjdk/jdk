@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8072452 8163498
+ * @library /test/lib
  * @summary Support DHE sizes up to 8192-bits and DSA sizes up to 3072-bits
  *          This test has been split based on lower/higher key sizes in order to
  *          reduce individual execution times and run in parallel
@@ -33,14 +34,16 @@
  * @run main/timeout=300 SupportedDHParamGens 832
  * @run main/timeout=300 SupportedDHParamGens 1024
  * @run main/timeout=600 SupportedDHParamGens 2048
+ * @run main/timeout=600 SupportedDHParamGens 3072
+ * @run main/timeout=600 SupportedDHParamGens 4096
  */
-
 import java.math.BigInteger;
 
 import java.security.*;
-import javax.crypto.*;
 import javax.crypto.interfaces.*;
 import javax.crypto.spec.*;
+import jdk.test.lib.security.DiffieHellmanGroup;
+import jdk.test.lib.security.SecurityUtils;
 
 public class SupportedDHParamGens {
 
@@ -48,18 +51,29 @@ public class SupportedDHParamGens {
         int primeSize = Integer.valueOf(args[0]).intValue();
 
         System.out.println("Checking " + primeSize + " ...");
-        AlgorithmParameterGenerator apg =
-                AlgorithmParameterGenerator.getInstance("DH",
-                        System.getProperty("test.provider.name", "SunJCE"));
-        apg.init(primeSize);
-        AlgorithmParameters ap = apg.generateParameters();
-        DHParameterSpec spec = ap.getParameterSpec(DHParameterSpec.class);
+        DHParameterSpec spec = null;
+        switch (primeSize) {
+            case 2048, 3072, 4096 -> spec = getDHParameterSpec(primeSize);
+            default -> {
+                AlgorithmParameterGenerator apg =
+                        AlgorithmParameterGenerator.getInstance("DH",
+                                System.getProperty("test.provider.name", "SunJCE"));
+                apg.init(primeSize);
+                AlgorithmParameters ap = apg.generateParameters();
+                spec = ap.getParameterSpec(DHParameterSpec.class);
+            }
+        }
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH",
                         System.getProperty("test.provider.name", "SunJCE"));
         kpg.initialize(spec);
         KeyPair kp = kpg.generateKeyPair();
         checkKeyPair(kp, primeSize);
+    }
+
+    private static DHParameterSpec getDHParameterSpec(int primeSize) {
+        DiffieHellmanGroup dhGroup = SecurityUtils.getTestDHGroup(primeSize);
+        return new DHParameterSpec(dhGroup.getPrime(), dhGroup.getBase());
     }
 
     private static void checkKeyPair(KeyPair kp, int pSize) throws Exception {

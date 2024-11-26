@@ -28,6 +28,8 @@
  * with wrong mode with EncryptedPrivateKeyInfo.getKeySpec
  * (Cipher) method.
  * @author Valerie Peng
+ * @run main GetKeySpecException2 PBEWithMD5AndDES
+ * @run main GetKeySpecException2 PBEWithSHA1AndDESede
  */
 import java.security.*;
 import java.util.Arrays;
@@ -38,11 +40,10 @@ import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.*;
 
 public class GetKeySpecException2 {
-    private static final String cipherAlg = "PBEWithMD5AndDES";
     private static final char[] passwd = { 'p','a','s','s','w','d' };
 
-    public static void main(String[] argv) throws Exception {
-
+    public static void main(String[] args) throws Exception {
+        String cipherAlg = args[0];
         // use random data
         byte[] encryptedData = new byte[30];
         encryptedData[20] = (byte) 8;

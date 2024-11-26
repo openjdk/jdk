@@ -48,7 +48,7 @@ public class VerifyRangeCheckOverflow {
         PublicKey publicKey = keys.getPublic();
         byte[] sigBytes = new byte[100];
 
-        Signature signature = Signature.getInstance("SHA1withDSA");
+        Signature signature = Signature.getInstance("SHA256withDSA");
         signature.initVerify(publicKey);
         try {
             signature.verify(sigBytes, Integer.MAX_VALUE, 1);

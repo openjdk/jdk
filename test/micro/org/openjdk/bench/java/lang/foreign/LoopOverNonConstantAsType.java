@@ -37,7 +37,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -54,7 +54,7 @@ import static java.lang.foreign.ValueLayout.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgs = { "-XX:-TieredCompilation" })
+@Fork(value = 3, jvmArgs = { "-XX:-TieredCompilation", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class LoopOverNonConstantAsType extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;

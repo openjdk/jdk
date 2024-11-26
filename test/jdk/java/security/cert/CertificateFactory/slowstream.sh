@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,5 +50,5 @@ esac
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
         ${TESTSRC}${FS}SlowStream.java
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dtest.src=${TESTSRC} SlowStreamWriter | \
-        ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} SlowStreamReader
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${TESTJAVAOPTS} -Dtest.src=${TESTSRC} SlowStreamWriter | \
+        ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} ${TESTJAVAOPTS} SlowStreamReader

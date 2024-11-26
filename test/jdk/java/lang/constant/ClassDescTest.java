@@ -279,7 +279,8 @@ public class ClassDescTest extends SymbolicDescTest {
     public void testBadClassDescs() {
         List<String> badDescriptors = List.of("II", "I;", "Q", "L", "",
                                               "java.lang.String", "[]", "Ljava/lang/String",
-                                              "Ljava.lang.String;", "java/lang/String");
+                                              "Ljava.lang.String;", "java/lang/String", "L;",
+                                              "La//b;", "L/a;", "La/;");
 
         for (String d : badDescriptors) {
             try {
@@ -292,7 +293,7 @@ public class ClassDescTest extends SymbolicDescTest {
         }
 
         List<String> badBinaryNames = List.of("I;", "[]", "Ljava/lang/String",
-                "Ljava.lang.String;", "java/lang/String");
+                "Ljava.lang.String;", "java/lang/String", "");
         for (String d : badBinaryNames) {
             try {
                 ClassDesc constant = ClassDesc.of(d);
@@ -303,7 +304,7 @@ public class ClassDescTest extends SymbolicDescTest {
         }
 
         List<String> badInternalNames = List.of("I;", "[]", "[Ljava/lang/String;",
-                "Ljava.lang.String;", "java.lang.String");
+                "Ljava.lang.String;", "java.lang.String", "");
         for (String d : badInternalNames) {
             try {
                 ClassDesc constant = ClassDesc.ofInternalName(d);

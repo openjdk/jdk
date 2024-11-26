@@ -31,14 +31,13 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test jpackage signing options errors
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @library base
  * @build SigningBase
  * @build SigningCheck
  * @build jtreg.SkippedException
  * @build SigningOptionsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningOptionsTest
@@ -48,14 +47,13 @@ import jdk.jpackage.test.TKit;
 /*
  * @test
  * @summary Test jpackage signing options errors
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @library base
  * @build SigningBase
  * @build SigningCheck
  * @build jtreg.SkippedException
  * @build SigningOptionsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningOptionsTest
