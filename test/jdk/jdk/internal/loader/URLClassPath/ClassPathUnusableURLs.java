@@ -175,7 +175,7 @@ public class ClassPathUnusableURLs {
         // or those which can't serve the resource should come before the
         // path that can serve the resource.
         return new String[]{
-                // non-existent dir
+                // non-existent path
                 ASCII_DIR.resolve("non-existent").toString(),
                 // existing emoji dir
                 EMOJI_DIR.toString(),
