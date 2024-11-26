@@ -40,6 +40,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.ref.Cleaner;
 import sun.nio.ch.DirectBuffer;
 
+
 #if[rw]
 sealed
 #else[rw]
@@ -98,21 +99,19 @@ class Direct$Type$Buffer$RW$$BO$
 
     // Primary constructor
     //
-    Direct$Type$Buffer$RW$(int cap, boolean temporary) { // package-private
+    Direct$Type$Buffer$RW$(int cap) {                   // package-private
 #if[rw]
         super(-1, 0, cap, cap, null);
         boolean pa = VM.isDirectMemoryPageAligned();
         int ps = Bits.pageSize();
         long size = Math.max(1L, (long)cap + (pa ? ps : 0));
-        if (!temporary)
-            Bits.reserveMemory(size, cap);
+        Bits.reserveMemory(size, cap);
 
         long base = 0;
         try {
             base = UNSAFE.allocateMemory(size);
         } catch (OutOfMemoryError x) {
-            if (!temporary)
-                Bits.unreserveMemory(size, cap);
+            Bits.unreserveMemory(size, cap);
             throw x;
         }
         UNSAFE.setMemory(base, size, (byte) 0);
@@ -122,26 +121,19 @@ class Direct$Type$Buffer$RW$$BO$
         } else {
             address = base;
         }
-        if (!temporary) {
-            try {
-                cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
-            } catch (Throwable t) {
-                // Prevent leak if the Deallocator or Cleaner fail for any reason
-                UNSAFE.freeMemory(base);
-                throw t;
-            }
-        } else { // temporary
-            cleaner = null;
+        try {
+            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        } catch (Throwable t) {
+            // Prevent leak if the Deallocator or Cleaner fail for any reason
+            UNSAFE.freeMemory(base);
+            Bits.unreserveMemory(size, cap);
+            throw t;
         }
         att = null;
 #else[rw]
         super(cap);
         this.isReadOnly = true;
 #end[rw]
-    }
-
-    Direct$Type$Buffer$RW$(int cap) { // package-private
-        this(cap, false);
     }
 
 #if[rw]
@@ -167,9 +159,10 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
+    // and JavaNioAccess.newDirectByteBuffer(int).
     // The long-valued capacity is restricted to int range.
     //
-    private Direct$Type$Buffer(long addr, long cap) {
+    Direct$Type$Buffer(long addr, long cap) {
         super(-1, 0, checkCapacity(cap), (int)cap, null);
         address = addr;
         cleaner = null;
