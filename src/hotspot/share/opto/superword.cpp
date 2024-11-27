@@ -2658,10 +2658,9 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 
   const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
   for (int i = 0; i < vtnodes.length(); i++) {
-    VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
+    VTransformMemVectorNode* vtn = vtnodes.at(i)->isa_MemVector();
     if (vtn == nullptr) { continue; }
-    MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
-    if (p0 == nullptr) { continue; }
+    MemNode* p0 = vtn->nodes().at(0)->as_Mem();
 
     int vw = p0->memory_size() * vtn->nodes().length();
     if (vw > max_aw) {
