@@ -198,7 +198,7 @@ public class TestPreview extends JavadocTester {
         tb.writeJavaFiles(src, """
                 package p;
                 import jdk.internal.javac.PreviewFeature;
-                               
+                                               
                 /**
                  * Preview feature
                  */
@@ -207,7 +207,7 @@ public class TestPreview extends JavadocTester {
                 }
                 """, """
                 package p;
-                 
+                
                  /**
                   * Non preview feature
                   */
