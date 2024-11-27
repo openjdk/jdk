@@ -438,7 +438,7 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
     "/sys/fs/cgroup/cpu,cpuacct",                                            // mount_path
     "/system.slice/garden.service/garden/good/2f57368b-0eda-4e52-64d8-af5c", // root_path
     "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c",  // cgroup_path
-    "/sys/fs/cgroup/cpu,cpuacct/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c" // expected_path
+    "/sys/fs/cgroup/cpu,cpuacct"                                             // expected_path
   };
   TestCase container_prefix = {
     "/sys/fs/cgroup/memory",    // mount_path
