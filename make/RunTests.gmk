@@ -1035,11 +1035,11 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 
-# Read Jtreg documentation to learn on the test stats categories:
+# Read jtreg documentation to learn on the test stats categories:
 # https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
-# In Jtreg, "skipped:" category accounts for tests that throw jtreg.SkippedException at runtime.
+# In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
 # At the same time these tests contribute to "passed:" tests.
-# In here we treat "skipped:" tests as "not passed" and substract the amount from "passed:" tests.
+# In here we don't want that and so we substract number of "skipped:" from "passed:".
 
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
