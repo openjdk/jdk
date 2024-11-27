@@ -2078,6 +2078,7 @@ public class KeyStore {
                             tries++;
                             try {
                                 keyStore = getKeyStore0();
+                                break;
                             } catch (IOException e) {
                                 if ((tries < MAX_CALLBACK_TRIES)
                                         && (e.getCause() instanceof UnrecoverableKeyException)) {
