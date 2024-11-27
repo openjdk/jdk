@@ -304,12 +304,12 @@ TEST_VM(os, attempt_reserve_memory_randomization_cornercases) {
   // Zero-sized range
   test_attempt_reserve_memory_between(nullptr, nullptr, ps, ag, false, Expect::failure());
   test_attempt_reserve_memory_between((char*)(3 * G), (char*)(3 * G), ps, ag, false, Expect::dontcare(), __LINE__);
-  test_attempt_reserve_memory_between((char*)SIZE_MAX-ag, (char*)SIZE_MAX-ag, ps, ag, false, Expect::failure(), __LINE__);
+  test_attempt_reserve_memory_between((char*)SIZE_MAX, (char*)SIZE_MAX, ps, ag, false, Expect::failure(), __LINE__);
 
   test_attempt_reserve_memory_between(nullptr, nullptr, ps, ag, true, Expect::failure());
   test_attempt_reserve_memory_between((char*)(3 * G), (char*)(3 * G), ps, ag, true, Expect::dontcare(), __LINE__);
   test_attempt_reserve_memory_between((char*)(3 * G), (char*)(3 * G), ps, ag, true, Expect::dontcare(), __LINE__);
-  test_attempt_reserve_memory_between((char*)SIZE_MAX-ag, (char*)SIZE_MAX-ag, ps, ag, true, Expect::failure(), __LINE__);
+  test_attempt_reserve_memory_between((char*)SIZE_MAX, (char*)SIZE_MAX, ps, ag, true, Expect::failure(), __LINE__);
 
   // Full size
   // Note: paradoxically, success is not guaranteed here, since a significant portion of the attach points
