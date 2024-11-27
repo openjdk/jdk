@@ -115,6 +115,7 @@ JavaCallWrapper::~JavaCallWrapper() {
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
 
+  // State has been restored now make the anchor frame visible for the profiler.
   _thread->frame_anchor()->copy(&_anchor);
 
   // Release handles after we are marked as being inside the VM again, since this
