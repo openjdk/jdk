@@ -113,11 +113,12 @@ static void do_capture_state(int32_t* value_ptr, int captured_state_mask) {
 JNIEXPORT void JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclass cls, jlong cif, jlong fn, jlong rvalue,
                                                               jlong avalues,
-                                                              jarray capture_state_heap_base, jlong jcaptured_state,
+                                                              jarray capture_state_heap_base, jlong captured_state_offset,
                                                               jint captured_state_mask,
                                                               jarray heapBases, jint numArgs) {
   void** carrays;
   int capture_state_hb_offset = numArgs;
+  int32_t* captured_state_addr = jlong_to_ptr(captured_state_offset);
   if (heapBases != NULL) {
     void** aptrs = jlong_to_ptr(avalues);
     carrays = malloc(sizeof(void*) * (numArgs + 1));
@@ -137,15 +138,14 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_doDowncall(JNIEnv* env, jclas
         jboolean isCopy;
         jbyte* arrayPtr = (*env)->GetPrimitiveArrayCritical(env, capture_state_heap_base, &isCopy);
         carrays[capture_state_hb_offset] = arrayPtr;
-        jcaptured_state = ptr_to_jlong(arrayPtr + jcaptured_state);
+        captured_state_addr = (int32_t*) (arrayPtr + captured_state_offset);
     }
   }
 
   ffi_call(jlong_to_ptr(cif), jlong_to_ptr(fn), jlong_to_ptr(rvalue), jlong_to_ptr(avalues));
 
   if (captured_state_mask != 0) {
-    int32_t* captured_state = jlong_to_ptr(jcaptured_state);
-    do_capture_state(captured_state, captured_state_mask);
+    do_capture_state(captured_state_addr, captured_state_mask);
   }
 
   if (heapBases != NULL) {
