@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@ package jdk.jpackage.internal;
 
 import java.nio.file.Path;
 import jdk.internal.util.OperatingSystem;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import org.junit.jupiter.api.Test;
 
 
 public class ToolValidatorTest {
@@ -70,11 +68,10 @@ public class ToolValidatorTest {
                 new DottedVersion("8")).setVersionParser(unused -> "10").validate());
     }
 
-    private static void assertValidationFailure(ConfigException v,
-            boolean withCause) {
+    private static void assertValidationFailure(ConfigException v, boolean withCause) {
         assertNotNull(v);
-        assertThat("", is(not(v.getMessage().strip())));
-        assertThat("", is(not(v.advice.strip())));
+        assertNotEquals("", v.getMessage().strip());
+        assertNotEquals("", v.getAdvice().strip());
         if (withCause) {
             assertNotNull(v.getCause());
         } else {
@@ -82,8 +79,8 @@ public class ToolValidatorTest {
         }
     }
 
-    private final static String TOOL_JAVA;
-    private final static String TOOL_UNKNOWN = Path.of(System.getProperty(
+    private static final String TOOL_JAVA;
+    private static final String TOOL_UNKNOWN = Path.of(System.getProperty(
             "java.home"), "bin").toString();
 
     static {

@@ -38,9 +38,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -62,8 +59,6 @@ import jdk.internal.access.SharedSecrets;
  * @see ElementHandler
  */
 public final class DocumentHandler extends DefaultHandler {
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc = AccessController.getContext();
     private final Map<String, Class<? extends ElementHandler>> handlers = new HashMap<>();
     private final Map<String, Object> environment = new HashMap<>();
     private final List<Object> objects = new ArrayList<>();
@@ -367,30 +362,20 @@ public final class DocumentHandler extends DefaultHandler {
      *
      * @param input  the input source to parse
      */
-    @SuppressWarnings("removal")
     public void parse(final InputSource input) {
-        if ((this.acc == null) && (null != System.getSecurityManager())) {
-            throw new SecurityException("AccessControlContext is not set");
+        try {
+            SAXParserFactory.newInstance().newSAXParser().parse(input, DocumentHandler.this);
         }
-        AccessControlContext stack = AccessController.getContext();
-        SharedSecrets.getJavaSecurityAccess().doIntersectionPrivilege(new PrivilegedAction<Void>() {
-            public Void run() {
-                try {
-                    SAXParserFactory.newInstance().newSAXParser().parse(input, DocumentHandler.this);
-                }
-                catch (ParserConfigurationException | IOException exception) {
-                    handleException(exception);
-                }
-                catch (SAXException wrapper) {
-                    Exception exception = wrapper.getException();
-                    if (exception == null) {
-                        exception = wrapper;
-                    }
-                    handleException(exception);
-                }
-                return null;
+        catch (ParserConfigurationException | IOException exception) {
+            handleException(exception);
+        }
+        catch (SAXException wrapper) {
+            Exception exception = wrapper.getException();
+            if (exception == null) {
+                exception = wrapper;
             }
-        }, stack, this.acc);
+            handleException(exception);
+        }
     }
 
     /**
