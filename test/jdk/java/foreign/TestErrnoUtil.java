@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.StructLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -44,16 +43,16 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class TestErrnoUtil {
 
-    private static final StructLayout CAPTURE_STATE_LAYOUT = Linker.Option.captureStateLayout();
-    private static final VarHandle ERRNO_HANDLE =
-            CAPTURE_STATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("errno"));
+    private static final VarHandle ERRNO_HANDLE = Linker.Option.captureStateLayout()
+                    .varHandle(MemoryLayout.PathElement.groupElement("errno"));
 
-    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final MethodHandle DUMMY_HANDLE;
 
     static {
         try {
-            DUMMY_HANDLE = LOOKUP.findStatic(TestErrnoUtil.class, "dummy", MethodType.methodType(int.class, MemorySegment.class, int.class, int.class));
+            DUMMY_HANDLE = MethodHandles.lookup()
+                    .findStatic(TestErrnoUtil.class, "dummy",
+                            MethodType.methodType(int.class, MemorySegment.class, int.class, int.class));
         } catch (ReflectiveOperationException e) {
             throw new InternalError(e);
         }
@@ -76,11 +75,9 @@ final class TestErrnoUtil {
         assertEquals(-EACCES, r);
     }
 
-    // Dummy method that is just using the provided parameters
+    // Dummy method that is just returning the provided parameters
     private static int dummy(MemorySegment segment, int result, int errno) {
-        if (result < 0) {
-            ERRNO_HANDLE.set(segment, 0, errno);
-        }
+        ERRNO_HANDLE.set(segment, 0, errno);
         return result;
     }
 
