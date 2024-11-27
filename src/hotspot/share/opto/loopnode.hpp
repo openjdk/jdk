@@ -954,8 +954,11 @@ private:
                                                      const Node_List& old_new);
   void initialize_assertion_predicates_for_post_loop(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                                      uint first_node_index_in_cloned_loop_body);
+  void initialize_assertion_predicates_for_atomic_post(CountedLoopNode* main_loop_head, CountedLoopNode* post_loop_head,
+                                                       uint first_node_index_in_cloned_loop_body);
   void create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head, CountedLoopNode* target_loop_head,
-                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template);
+                                           const NodeInLoopBody& _node_in_loop_body, bool clone_template,
+                                           const bool is_copy_atomic_post);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
   void log_loop_tree();
@@ -1257,10 +1260,22 @@ public:
   // entire loop body.  It makes an old_new loop body mapping; with this
   // mapping you can find the new-loop equivalent to an old-loop node.  All
   // new-loop nodes are exactly equal to their old-loop counterparts, all
-  // edges are the same.  All exits from the old-loop now have a RegionNode
-  // that merges the equivalent new-loop path.  This is true even for the
-  // normal "loop-exit" condition.  All uses of loop-invariant old-loop values
-  // now come from (one or more) Phis that merge their new-loop equivalents.
+  // edges are the same.
+  //
+  // For most modes (except InsertAtomicPost):
+  // All exits from the old-loop now have a RegionNode that merges the
+  // equivalent new-loop path.  This is true even for the normal "loop-exit"
+  // condition.  All uses of loop-variant old-loop values now come from
+  // (one or more) Phis that merge their new-loop equivalents.
+  //
+  // For InsertAtomicPost mode:
+  // all control uses of exits from old-loop now should use new RegionNodes
+  // that merges RegionNode which merges exits from pre-loop and main-loop
+  // and exits from the new-loop (atomic post loop).All data uses of values
+  // from old-loop now should use new Phis that merges Phis which merges
+  // values from pre-loop and main-loop and values from the new-loop
+  // (atomic post loop) equivalents.
+  //
   // Parameter side_by_side_idom:
   //   When side_by_size_idom is null, the dominator tree is constructed for
   //      the clone loop to dominate the original.  Used in construction of
@@ -1271,10 +1286,14 @@ public:
   enum CloneLoopMode {
     IgnoreStripMined = 0,        // Only clone inner strip mined loop
     CloneIncludesStripMined = 1, // clone both inner and outer strip mined loops
-    ControlAroundStripMined = 2  // Only clone inner strip mined loop,
+    ControlAroundStripMined = 2, // Only clone inner strip mined loop,
                                  // result control flow branches
                                  // either to inner clone or outer
                                  // strip mined loop.
+    InsertAtomicPost = 3         // Only clone inner strip mined vector loop,
+                                 // result control flow branches to old post loop
+                                 // with merged exits from vector main loop and
+                                 // pre loop
   };
   void clone_loop( IdealLoopTree *loop, Node_List &old_new, int dom_depth,
                   CloneLoopMode mode, Node* side_by_side_idom = nullptr);
@@ -1283,6 +1302,9 @@ public:
                                    Node_List*& split_if_set, Node_List*& split_bool_set,
                                    Node_List*& split_cex_set, Node_List& worklist,
                                    uint new_counter, CloneLoopMode mode);
+  void handle_data_uses_for_atomic_post_loop(Node* old, Node_List& old_new,
+                                             IdealLoopTree* loop, IdealLoopTree* companion_loop,
+                                             Node_List& worklist, uint new_counter);
   void clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealLoopTree *loop,
                         IdealLoopTree* outer_loop, int dd, Node_List &old_new,
                         Node_List& extra_data_nodes);
@@ -1305,11 +1327,22 @@ public:
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
                          Node*& incr, Node* limit, CountedLoopNode*& post_head);
 
-  // Add a vector post loop between a vector main loop and the current post loop
-  void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
+  // Add an atomic vector post loop between a vector main loop and the current post loop
+  void insert_atomic_post_loop(IdealLoopTree *loop, Node_List &old_new);
+  // The main implementation of inserting atomic post loop after vector main loop.
+  void insert_atomic_post_loop_impl(IdealLoopTree* loop, Node_List& old_new,
+                                    CountedLoopNode* main_head, CountedLoopEndNode* main_end,
+                                    Node*& incr, Node* limit, CountedLoopNode*& post_head);
   // If Node n lives in the back_ctrl block, we clone a private version of n
   // in preheader_ctrl block and return that, otherwise return n.
   Node *clone_up_backedge_goo( Node *back_ctrl, Node *preheader_ctrl, Node *n, VectorSet &visited, Node_Stack &clones );
+  // If Node n lives in the back_ctrl block, we clone a private version of n
+  // in preheader_ctrl block and return that, otherwise return a phi node
+  // merging the vector main loop and the pre loop.
+  // When n is dead, return nullptr.
+  Node* clone_up_atomic_post_backedge_goo(Node* back_ctrl, Node* preheader_ctrl, Node* n,
+                                          VectorSet& visited, Node_Stack& clones,
+                                          Node* merge_point, Node* main_phi);
 
   // Take steps to maximally unroll the loop.  Peel any odd iterations, then
   // unroll to do double iterations.  The next round of major loop transforms
@@ -1759,8 +1792,12 @@ public:
   void fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
                       IdealLoopTree* parent, bool partial);
 
-  void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List &old_new, CloneLoopMode mode,
-                Node* side_by_side_idom, CloneMap* cm, Node_List &worklist);
+  void fix_ctrl_uses(const Node_List& body, const IdealLoopTree* loop, Node_List& old_new, CloneLoopMode mode,
+                     Node* side_by_side_idom, CloneMap* cm, Node_List& worklist);
+  void fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node_List& old_new,
+                                     IdealLoopTree* use_loop, Node* side_by_side_idom);
+  void fix_ctrl_uses_for_atomic_post(Node* use, Node* newuse, Node_List& old_new,
+                                     IdealLoopTree* use_loop);
 
   void fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
                      uint new_counter, Node_List& old_new, Node_List& worklist, Node_List*& split_if_set,

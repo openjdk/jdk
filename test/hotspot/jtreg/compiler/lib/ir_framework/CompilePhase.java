@@ -78,6 +78,8 @@ public enum CompilePhase {
     AFTER_RANGE_CHECK_ELIMINATION("After Range Check Elimination"),
     BEFORE_PRE_MAIN_POST("Before Pre/Main/Post Loops"),
     AFTER_PRE_MAIN_POST("After Pre/Main/Post Loops"),
+    BEFORE_ATOMIC_POST("Before Atomic Post Loops"),
+    AFTER_ATOMIC_POST("After Atomic Post Loops"),
     SUPERWORD1_BEFORE_SCHEDULE("Superword 1, Before Schedule"),
     SUPERWORD2_BEFORE_OUTPUT("Superword 2, Before Output"),
     SUPERWORD3_AFTER_OUTPUT("Superword 3, After Output"),

@@ -1299,6 +1299,93 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
   return n;
 }
 
+//------------------------------clone_up_atomic_post_backedge_goo--------------------------
+// If Node n lives in the back_ctrl block, we clone a private version of n
+// in preheader_ctrl block and return that, otherwise return a phi node
+// merging the vector main loop and the pre loop.
+// When n is dead, return nullptr.
+Node* PhaseIdealLoop::clone_up_atomic_post_backedge_goo(Node* back_ctrl, Node* preheader_ctrl,
+                                                        Node* n, VectorSet& visited,
+                                                        Node_Stack& clones, Node* merge_point,
+                                                        Node* main_phi) {
+  if (get_ctrl(n) != back_ctrl) {
+    // Make the fall-in values to the atomic post-loop come from a phi node
+    // merging the data from the vector main-loop and the pre-loop.
+
+    // We try to look up target phi from all uses of node n.
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* outn = n->fast_out(j);
+      if (has_ctrl(outn) && get_ctrl(outn) == merge_point)
+        return outn;
+    }
+
+    // We can't find target phi. There are probably several reasons.
+
+    // Reason 1: node n may be a loop invariant.
+    if (get_ctrl(n) == C->root())
+      return n;
+    // Reason 2: The output of n is passed to remaining loops by memory, which means that the
+    // output of node n is stored in memory and loaded again by post loops and there exists
+    // a memory phi node. Now, we need a new phi node merging the output from the vector
+    // main-loop and the pre-loop.
+    if (main_phi) {
+      Node* phi = PhiNode::make(merge_point, n);
+      phi->set_req(1, main_phi->in(LoopNode::EntryControl));
+      _igvn.register_new_node_with_optimizer(phi);
+      set_ctrl(phi, merge_point);
+      return phi;
+    }
+    // Reason 3: node n is dead
+    return nullptr;
+  }
+
+  // Only visit once
+  if (visited.test_set(n->_idx)) {
+    Node* x = clones.find(n->_idx);
+    return (x != nullptr) ? x : n;
+  }
+
+  Node* x = nullptr; // If required, a clone of 'n'
+  // Check for 'n' being pinned in the backedge.
+  if (n->in(0) && n->in(0) == back_ctrl) {
+    assert(clones.find(n->_idx) == nullptr, "dead loop");
+    x = n->clone(); // Clone a copy of 'n' to preheader
+    x->set_req(0, preheader_ctrl); // Fix x's control input to preheader
+  }
+
+  // Recursive fixup any other input edges into x.
+  // If there are no changes we can just return nullptr,
+  // otherwise we need to clone a private copy and change it.
+  for (uint i = 1; i < n->req(); i++) {
+    Node* g = clone_up_atomic_post_backedge_goo(back_ctrl, preheader_ctrl, n->in(i), visited, clones, merge_point, nullptr);
+    if (g) {
+      if (!x) {
+        assert(clones.find(n->_idx) == nullptr, "dead loop");
+        x = n->clone();
+      }
+      x->set_req(i, g);
+    } else {
+      // If one input of n has no use out of the main loop, we don't
+      // think n has any use out of the main loop. n is dead.
+      if (x) {
+        for (uint i = x->req()-1; i > 0; i--) {
+          x->del_req(i);
+        }
+        _igvn.register_new_node_with_optimizer(x);
+        x = nullptr;
+      }
+      break;
+    }
+  }
+
+  if (x) { // x can legally float to pre-header location
+    clones.push(x, n->_idx);
+    register_new_node(x, preheader_ctrl);
+    return x;
+  }
+  return nullptr;
+}
+
 #ifdef ASSERT
 void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) {
   assert(node->is_IfProj(), "must be the zero trip guard If node");
@@ -1534,12 +1621,11 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   C->print_method(PHASE_AFTER_PRE_MAIN_POST, 4, main_head);
 }
 
-//------------------------------insert_vector_post_loop------------------------
-// Insert a copy of the atomic unrolled vectorized main loop as a post loop,
-// unroll_policy has  already informed  us that more  unrolling is  about to
-// happen  to the  main  loop.  The  resultant  post loop  will  serve as  a
-// vectorized drain loop.
-void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new) {
+//------------------------------insert_atomic_post_loop------------------------
+// Insert a copy of the atomic vectorized main loop as a post loop, policy_unroll
+// has already informed us that more unrolling is about to happen to the main loop.
+// The resultant post loop will serve as a vectorized drain loop.
+void PhaseIdealLoop::insert_atomic_post_loop(IdealLoopTree *loop, Node_List &old_new) {
   if (!loop->_head->is_CountedLoop()) return;
 
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
@@ -1576,6 +1662,8 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // diagnostic to show loop end is not properly formed
   assert(main_end->outcnt() == 2, "1 true, 1 false path only");
 
+  C->print_method(PHASE_BEFORE_ATOMIC_POST, 4, main_head);
+
   // mark this loop as processed
   main_head->mark_has_atomic_post_loop();
 
@@ -1584,7 +1672,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
 
   // In this case we throw away the result as we are not using it to connect anything else.
   CountedLoopNode *post_head = nullptr;
-  insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
+  insert_atomic_post_loop_impl(loop, old_new, main_head, main_end, incr, limit, post_head);
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -1595,6 +1683,166 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // finds some, but we _know_ they are all useless.
   peeled_dom_test_elim(loop, old_new);
   loop->record_for_igvn();
+  C->print_method(PHASE_AFTER_ATOMIC_POST, 4, post_head);
+}
+
+//------------------------------insert_atomic_post_loop_impl-------------------------------
+// The main implementation of inserting atomic post loop after vector main loop.
+void PhaseIdealLoop::insert_atomic_post_loop_impl(IdealLoopTree* loop, Node_List& old_new,
+                                                  CountedLoopNode* main_head, CountedLoopEndNode* main_end,
+                                                  Node*& main_incr, Node* limit, CountedLoopNode*& post_head) {
+  IfNode* outer_main_end = main_end;
+  IdealLoopTree* outer_loop = loop;
+  if (main_head->is_strip_mined()) {
+    main_head->verify_strip_mined(1);
+    outer_main_end = main_head->outer_loop_end();
+    outer_loop = loop->_parent;
+    assert(outer_loop->_head == main_head->in(LoopNode::EntryControl), "broken loop tree");
+  }
+
+  Node* main_exit = outer_main_end->proj_out(false);
+  assert(main_exit->Opcode() == Op_IfFalse, "");
+  int dd_main_exit = dom_depth(main_exit);
+
+  // Step 1: Clone the loop body of vector main loop. The clone becomes the atomic post-loop.
+  const uint first_node_index_in_cloned_loop_body = C->unique();
+  clone_loop(loop, old_new, dd_main_exit, InsertAtomicPost);
+  assert(old_new[main_end->_idx]->Opcode() == Op_CountedLoopEnd, "");
+  post_head = old_new[main_head->_idx]->as_CountedLoop();
+  post_head->set_normal_loop();
+  post_head->set_post_loop(main_head);
+
+  // clone_loop() above changes the exit projection
+  main_exit = outer_main_end->proj_out(false);
+
+  // Step 2: Find some key merge points which control the execution paths.
+  // Step 2.1: Find "merge_point" which merges exits from vector main loop and pre loop.
+  Node* merge_point = main_exit->unique_ctrl_out_or_null();
+  DEBUG_ONLY (
+    // We can look up the target "merge_point" either by exit of pre loop or
+    // by exit of vector main loop.
+    Node* min_taken = main_head->skip_assertion_predicates_with_halt();
+    IfNode* min_iff = min_taken->in(0)->as_If();
+    assert(min_iff, "Minimun trip guard of main loop does exist.");
+    assert(merge_point->is_Region() &&
+           (merge_point->in(1) == min_iff->proj_out(false) ||
+            merge_point->in(1) == min_iff->proj_out(true)), "");
+  )
+
+  // Step 2.2: Find post_merge which merges exit from atomic post loop and merge_point
+  // merging exits from pre-loop and vector main loop.
+  Node* post_merge = nullptr;
+  for (uint i = 0; i < merge_point->outcnt(); i++) {
+    Node* outn = merge_point->raw_out(i);
+    if (outn != merge_point && outn->is_CFG()) {
+      assert(post_merge == nullptr,
+             "We definitely find only one valid post_merge");
+      post_merge = outn;
+    }
+  }
+  const uint idx = 2;
+  DEBUG_ONLY (
+    assert(post_merge->in(idx) == merge_point,
+           "The merge_point should be the second input");
+  )
+
+  // Step 3: Find a phi merging "main_incr" from vector main loop and "pre_incr"
+  // from pre loop.
+  Node* merge_phi = nullptr;
+  for (uint i = 0; i < main_incr->outcnt(); i++) {
+    Node* outn = main_incr->raw_out(i);
+    if (outn->in(0) == merge_point) {
+      merge_phi = outn;
+      break;
+    }
+  }
+  DEBUG_ONLY (
+    // We can look up the target merging phi node either from outputs of pre loop
+    // incr or from outputs of vector main loop incr.
+    Node* main_guard_opaq = main_head->is_canonical_loop_entry();
+    Node* cmp  = main_guard_opaq->unique_out();
+    Node* pre_incr = cmp->in(1);
+    assert(merge_phi && merge_phi->in(1) == pre_incr && merge_phi->in(2) == main_incr, "");
+  )
+
+  // Reduce the post-loop trip count.
+  CountedLoopEndNode* post_end = old_new[main_end->_idx]->as_CountedLoopEnd();
+  post_end->_prob = PROB_FAIR;
+
+  // Step 4: Build a zero-trip guard for the atomic post-loop. Whether leaving the
+  // main-loop or the pre loop, the atomic post-loop may not execute at all. We 'opaque'
+  // the incr (the previous loop trip-counter exit value) because we will be changing
+  // the exit value (via additional unrolling) so we cannot constant-fold away the zero
+  // trip guard until all unrolling is done.
+  Node* zer_opaq = new OpaqueZeroTripGuardNode(C, merge_phi, main_end->test_trip());
+  Node* zer_cmp = new CmpINode(zer_opaq, limit);
+  Node* zer_bol = new BoolNode(zer_cmp, main_end->test_trip());
+  register_new_node(zer_opaq, merge_point);
+  register_new_node(zer_cmp, merge_point);
+  register_new_node(zer_bol, merge_point);
+
+  // Build the IfNode
+  IfNode* zer_iff = new IfNode(merge_point, zer_bol, PROB_FAIR, COUNT_UNKNOWN);
+  _igvn.register_new_node_with_optimizer(zer_iff);
+  int dd_merge_point = dom_depth(merge_point);
+  set_idom(zer_iff, merge_point, dd_merge_point);
+  set_loop(zer_iff, outer_loop->_parent);
+
+  // Plug in the false-path, taken if we need to skip this atomic post-loop.
+  IfFalseNode* zer_exit = new IfFalseNode(zer_iff);
+  _igvn.register_new_node_with_optimizer(zer_exit);
+  set_idom(zer_exit, zer_iff, dd_merge_point);
+  set_loop(zer_exit, outer_loop->_parent);
+  _igvn.replace_input_of(post_merge, idx, zer_exit);
+  set_idom(post_merge, zer_exit, dd_merge_point);
+
+  // Plug in the true path, taken if we enter this atomic post loop.
+  Node* zer_taken = new IfTrueNode(zer_iff);
+  _igvn.register_new_node_with_optimizer(zer_taken);
+  set_idom(zer_taken, zer_iff, dd_main_exit);
+  set_loop(zer_taken, outer_loop->_parent);
+  _igvn.hash_delete(post_head);
+  post_head->set_req(LoopNode::EntryControl, zer_taken);
+  set_idom(post_head, zer_taken, dd_main_exit);
+
+  // Step 5: Make the fall-in values to the post-loop come from phis merging
+  // exit values from pre-loop and vector main-loop.
+  VectorSet visited;
+  Node_Stack clones(main_head->back_control()->outcnt());
+  for (DUIterator i = main_head->outs(); main_head->has_out(i); i++) {
+    Node* main_phi = main_head->out(i);
+    if (main_phi->is_Phi() && main_phi->in(0) == main_head && main_phi->outcnt() > 0) {
+      Node* cur_phi = old_new[main_phi->_idx];
+      Node* fallnew = clone_up_atomic_post_backedge_goo(main_head->back_control(),
+                                                        post_head->init_control(),
+                                                        main_phi->in(LoopNode::LoopBackControl),
+                                                        visited, clones, merge_point, main_phi);
+     if (fallnew) {
+        _igvn.hash_delete(cur_phi);
+        cur_phi->set_req(LoopNode::EntryControl, fallnew);
+     }
+    }
+  }
+
+  DEBUG_ONLY(ensure_zero_trip_guard_proj(post_head->in(LoopNode::EntryControl), false);)
+  if (UseLoopPredicate) {
+    initialize_assertion_predicates_for_atomic_post(main_head, post_head,
+                                                    first_node_index_in_cloned_loop_body);
+  }
+
+  // Step 6: 'loop_node' is a data node and part of the atomic post loop.
+  // Rewire the control to the projection of the zero-trip guard.
+  // initialize_assertion_predicates_for_atomic_post can't fix it.
+  Node* main_entry_ctrl = main_head->skip_assertion_predicates_with_halt();
+  Node* post_entry_ctrl = zer_taken;
+  for (DUIterator i = main_entry_ctrl->outs(); main_entry_ctrl->has_out(i); i++) {
+    Node* loop_node = main_entry_ctrl->out(i);
+    if (loop_node->_idx > first_node_index_in_cloned_loop_body) {
+      _igvn.replace_input_of(loop_node, 0, post_entry_ctrl);
+      --i;
+    }
+  }
+
 }
 
 //------------------------------insert_post_loop-------------------------------
@@ -1727,7 +1975,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_peeled_loop(CountedLoop
                                                                      const uint first_node_index_in_cloned_loop_body,
                                                                      const Node_List& old_new) {
   const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
-  create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, false);
+  create_assertion_predicates_at_loop(peeled_loop_head, remaining_loop_head, node_in_original_loop_body, false, false);
 }
 
 // Source Loop: Cloned   - pre_loop_head
@@ -1737,7 +1985,7 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_main_loop(CountedLoopNo
                                                                    const uint first_node_index_in_cloned_loop_body,
                                                                    const Node_List& old_new) {
   const NodeInOriginalLoopBody node_in_original_loop_body(first_node_index_in_cloned_loop_body, old_new);
-  create_assertion_predicates_at_loop(pre_loop_head, main_loop_head, node_in_original_loop_body, true);
+  create_assertion_predicates_at_loop(pre_loop_head, main_loop_head, node_in_original_loop_body, true, false);
 }
 
 // Source Loop: Original - main_loop_head
@@ -1746,19 +1994,30 @@ void PhaseIdealLoop::initialize_assertion_predicates_for_post_loop(CountedLoopNo
                                                                    CountedLoopNode* post_loop_head,
                                                                    const uint first_node_index_in_cloned_loop_body) {
   const NodeInClonedLoopBody node_in_cloned_loop_body(first_node_index_in_cloned_loop_body);
-  create_assertion_predicates_at_loop(main_loop_head, post_loop_head, node_in_cloned_loop_body, false);
+  create_assertion_predicates_at_loop(main_loop_head, post_loop_head, node_in_cloned_loop_body, false, false);
+}
+
+// Source Loop: Original - main_loop_head
+// Target Loop: Cloned   - post_loop_head
+void PhaseIdealLoop::initialize_assertion_predicates_for_atomic_post(CountedLoopNode* main_loop_head,
+                                                                     CountedLoopNode* post_loop_head,
+                                                                     const uint first_node_index_in_cloned_loop_body) {
+  const NodeInClonedLoopBody node_in_cloned_loop_body(first_node_index_in_cloned_loop_body);
+  create_assertion_predicates_at_loop(main_loop_head, post_loop_head, node_in_cloned_loop_body, false, true);
 }
 
 void PhaseIdealLoop::create_assertion_predicates_at_loop(CountedLoopNode* source_loop_head,
-                                                          CountedLoopNode* target_loop_head,
-                                                          const NodeInLoopBody& _node_in_loop_body,
-                                                          const bool clone_template) {
+                                                         CountedLoopNode* target_loop_head,
+                                                         const NodeInLoopBody& _node_in_loop_body,
+                                                         const bool clone_template,
+                                                         const bool is_copy_atomic_post) {
   Node* init = target_loop_head->init_trip();
   Node* stride = target_loop_head->stride();
   LoopNode* target_outer_loop_head = target_loop_head->skip_strip_mined();
   Node* target_loop_entry = target_outer_loop_head->in(LoopNode::EntryControl);
   CreateAssertionPredicatesVisitor create_assertion_predicates_visitor(init, stride, target_loop_entry, this,
-                                                                       _node_in_loop_body, clone_template);
+                                                                       _node_in_loop_body, clone_template,
+                                                                       is_copy_atomic_post);
   Node* source_loop_entry = source_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   PredicateIterator predicate_iterator(source_loop_entry);
   predicate_iterator.for_each(create_assertion_predicates_visitor);
@@ -3416,7 +3675,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     // peeling.
     if (should_unroll && !should_peel) {
       if (SuperWordLoopUnrollAnalysis) {
-        phase->insert_vector_post_loop(this, old_new);
+        phase->insert_atomic_post_loop(this, old_new);
       }
       phase->do_unroll(this, old_new, true);
     }

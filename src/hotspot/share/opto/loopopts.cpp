@@ -2331,6 +2331,135 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
   }
 }
 
+void PhaseIdealLoop::handle_data_uses_for_atomic_post_loop(Node* old, Node_List &old_new,
+                                                           IdealLoopTree* loop, IdealLoopTree* outer_loop,
+                                                           Node_List& worklist, uint new_counter) {
+  for (DUIterator_Fast jmax, j = old->fast_outs(jmax); j < jmax; j++)
+    worklist.push(old->fast_out(j));
+
+  while(worklist.size()) {
+    Node* use = worklist.pop();
+    if (!has_node(use)) continue; // Ignore dead nodes
+    if (use->in(0) == C->top()) continue;
+    IdealLoopTree* use_loop = get_loop( has_ctrl(use) ? get_ctrl(use) : use );
+    if (!loop->is_member(use_loop) && !outer_loop->is_member(use_loop) && (!old->is_CFG() || !use->is_CFG())) {
+
+      // Find the phi node merging the data from pre-loop and vector main-loop.
+      Node_List visit_list;
+      Node* last_in = old;
+      Node* merge_phi = use->is_Phi()? use : nullptr;
+      visit_list.push(use);
+      while (visit_list.size() && merge_phi == nullptr) {
+        Node* curr = visit_list.at(0);
+        visit_list.remove(0);
+        for (DUIterator_Fast jmax, j = curr->fast_outs(jmax); j < jmax; j++) {
+          Node* outn = curr->fast_out(j);
+          if (old_new[outn->_idx] || outn->_idx > new_counter) {
+            // The node "outn" has been already visited.
+            continue;
+          }
+          if (outn->is_Phi()) {
+            if (merge_phi == nullptr) {
+              merge_phi = outn;
+              last_in = curr;
+            } else {
+              // The node "use" has other phi uses. We need to deal with all phi uses
+              // so we need to visit "use" multiple times.
+              worklist.push(use);
+            }
+          }
+          visit_list.push(outn);
+        }
+        Node* newcurr = old_new[curr->_idx];
+        if (newcurr) {
+          continue;
+        }
+        newcurr = curr->clone();
+        if (curr->in(0)) {
+          Node* merged_ctrl = old_new[curr->in(0)->_idx];
+          assert(merged_ctrl->is_Region() && merged_ctrl->in(2)->is_Region(),
+                 "Must be a merge point of pre, main, and atomic post loops");
+          // The cloned node "newcurr" should be in the exit path of atomic post loop.
+          newcurr->set_req(0, merged_ctrl->in(1));
+        }
+        for (uint j = 1; j < newcurr->req(); j++) {
+          Node* n = newcurr->in(j);
+          if (n != nullptr && old_new[n->_idx]) {
+            newcurr->set_req(j, old_new[n->_idx]);
+          }
+        }
+        old_new.map(curr->_idx, newcurr);
+        _igvn.register_new_node_with_optimizer(newcurr);
+      }
+
+      if (merge_phi == nullptr) continue; // "use" is dead?
+
+      const uint idx = 2;
+      assert(merge_phi->in(idx) == last_in,
+             "The data from main loop should be the second data input of the phi node");
+      Node* prev = get_ctrl(merge_phi);
+      assert(!loop->is_member(get_loop(prev)) && !outer_loop->is_member(get_loop(prev)), "" );
+      Node* cfg = prev->in(idx); // NOT in block of Phi itself
+      if (cfg->is_top()) {
+        // "use" is dead?
+        _igvn.replace_input_of(merge_phi, idx, C->top());
+        continue;
+      }
+
+      while(!outer_loop->is_member(get_loop(cfg))) {
+        prev = cfg;
+        cfg = (cfg->_idx >= new_counter && cfg->is_Region()) ? cfg->in(2) : idom(cfg);
+      }
+
+      // "merge_phi" merges exits from the pre-loop and the vector main loop.
+      // NOW we do need a new Phi here which merges "merge_phi" and data from
+      // atomic post loop.
+      prev = old_new[prev->_idx];
+      assert(prev, "just made this in step 3");
+      // Make a new Phi merging data values properly
+      Node* nnn = old_new[last_in->_idx];
+      Node* phi = PhiNode::make(prev, nnn);
+      phi->set_req(2, merge_phi);
+      // If inserting a new Phi, check for prior hits
+      Node* hit = _igvn.hash_find_insert(phi);
+      if(hit == nullptr) {
+        // Register new phi
+        _igvn.register_new_node_with_optimizer(phi);
+      } else {
+        // Remove the new phi from the graph and use the hit
+        _igvn.remove_dead_node(phi);
+        phi = hit;
+      }
+      set_ctrl(phi, prev);
+      _igvn.add_users_to_worklist(merge_phi);
+
+      // We make all uses of "merge_phi", excluding the new "phi",
+      // use new "phi" instead.
+      visit_list.clear();
+      for (uint i = 0; i < merge_phi->outcnt(); i++) {
+        if (merge_phi->raw_out(i) != phi)
+          visit_list.push(merge_phi->raw_out(i));
+      }
+      while(visit_list.size()) {
+        Node* useuse = visit_list.pop();
+        _igvn.rehash_node_delayed(useuse);
+        for (uint k = 1; k < useuse->req(); k++) {
+          if (useuse->in(k) == merge_phi) {
+            _igvn.replace_input_of(useuse, k, phi);
+          }
+        }
+        if (useuse->_idx >= new_counter) {
+          Node* hit = _igvn.hash_find_insert(useuse);
+          if(hit)
+            _igvn.replace_node(useuse, hit);
+        }
+      }
+
+      old_new.map(merge_phi->_idx, phi);
+    }
+  }
+}
+
 static void collect_nodes_in_outer_loop_not_reachable_from_sfpt(Node* n, const IdealLoopTree *loop, const IdealLoopTree* outer_loop,
                                                                 const Node_List &old_new, Unique_Node_List& wq, PhaseIdealLoop* phase,
                                                                 bool check_old_new) {
@@ -2508,10 +2637,21 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
 // entire loop body.  It makes an old_new loop body mapping; with this mapping
 // you can find the new-loop equivalent to an old-loop node.  All new-loop
 // nodes are exactly equal to their old-loop counterparts, all edges are the
-// same.  All exits from the old-loop now have a RegionNode that merges the
+// same.
+//
+// For most modes (except InsertAtomicPost):
+// All exits from the old-loop now have a RegionNode that merges the
 // equivalent new-loop path.  This is true even for the normal "loop-exit"
-// condition.  All uses of loop-invariant old-loop values now come from (one
-// or more) Phis that merge their new-loop equivalents.
+// condition.  All uses of loop-variant old-loop values now come from
+// (one or more) Phis that merge their new-loop equivalents.
+//
+// For InsertAtomicPost mode:
+// all control uses of exits from old-loop now should use new RegionNodes
+// that merges RegionNode which merges exits from pre-loop and main-loop
+// and exits from the new-loop (atomic post loop).All data uses of values
+// from old-loop now should use new Phis that merges Phis which merges
+// values from pre-loop and main-loop and values from the new-loop
+// (atomic post loop) equivalents.
 //
 // This operation leaves the graph in an illegal state: there are two valid
 // control edges coming from the loop pre-header to both loop bodies.  I'll
@@ -2581,11 +2721,18 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
   Node_List *split_cex_set = nullptr;
   fix_data_uses(loop->_body, loop, mode, outer_loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
 
-  for (uint i = 0; i < extra_data_nodes.size(); i++) {
-    Node* old = extra_data_nodes.at(i);
-    clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
-                                split_bool_set, split_cex_set, worklist, new_counter,
-                                mode);
+  if (mode != InsertAtomicPost) {
+    for (uint i = 0; i < extra_data_nodes.size(); i++) {
+      Node* old = extra_data_nodes.at(i);
+      clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
+                                  split_bool_set, split_cex_set, worklist, new_counter,
+                                  mode);
+    }
+  } else {
+    for (uint i = 0; i < extra_data_nodes.size(); i++) {
+      Node* old = extra_data_nodes.at(i);
+      handle_data_uses_for_atomic_post_loop(old, old_new, loop, outer_loop, worklist, new_counter);
+    }
   }
 
   // Check for IFs that need splitting/cloning.  Happens if an IF outside of
@@ -2631,11 +2778,17 @@ void PhaseIdealLoop::finish_clone_loop(Node_List* split_if_set, Node_List* split
 void PhaseIdealLoop::fix_data_uses(Node_List& body, IdealLoopTree* loop, CloneLoopMode mode, IdealLoopTree* outer_loop,
                                    uint new_counter, Node_List &old_new, Node_List &worklist, Node_List*& split_if_set,
                                    Node_List*& split_bool_set, Node_List*& split_cex_set) {
-  for(uint i = 0; i < body.size(); i++ ) {
-    Node* old = body.at(i);
-    clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set,
-                                split_bool_set, split_cex_set, worklist, new_counter,
-                                mode);
+  if (mode != InsertAtomicPost) {
+    for (uint i = 0; i < body.size(); i++ ) {
+      Node* old = body.at(i);
+      clone_loop_handle_data_uses(old, old_new, loop, outer_loop, split_if_set, split_bool_set,
+                                  split_cex_set, worklist, new_counter, mode);
+    }
+  } else {
+    for (uint i = 0; i < body.size(); i++ ) {
+      Node* old = body.at(i);
+      handle_data_uses_for_atomic_post_loop(old, old_new, loop, outer_loop, worklist, new_counter);
+    }
   }
 }
 
@@ -2690,65 +2843,141 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
         set_loop(newuse, use_loop);
         set_idom(newuse, nnn, dom_depth(nnn) + 1 );
 
-        // We need a Region to merge the exit from the peeled body and the
-        // exit from the old loop body.
-        RegionNode *r = new RegionNode(3);
-        uint dd_r = MIN2(dom_depth(newuse), dom_depth(use));
-        assert(dd_r >= dom_depth(dom_lca(newuse, use)), "" );
-
-        // The original user of 'use' uses 'r' instead.
-        for (DUIterator_Last lmin, l = use->last_outs(lmin); l >= lmin;) {
-          Node* useuse = use->last_out(l);
-          _igvn.rehash_node_delayed(useuse);
-          uint uses_found = 0;
-          if (useuse->in(0) == use) {
-            useuse->set_req(0, r);
-            uses_found++;
-            if (useuse->is_CFG()) {
-              // This is not a dom_depth > dd_r because when new
-              // control flow is constructed by a loop opt, a node and
-              // its dominator can end up at the same dom_depth
-              assert(dom_depth(useuse) >= dd_r, "");
-              set_idom(useuse, r, dom_depth(useuse));
-            }
-          }
-          for (uint k = 1; k < useuse->req(); k++) {
-            if( useuse->in(k) == use ) {
-              useuse->set_req(k, r);
-              uses_found++;
-              if (useuse->is_Loop() && k == LoopNode::EntryControl) {
-                // This is not a dom_depth > dd_r because when new
-                // control flow is constructed by a loop opt, a node
-                // and its dominator can end up at the same dom_depth
-                assert(dom_depth(useuse) >= dd_r , "");
-                set_idom(useuse, r, dom_depth(useuse));
-              }
-            }
-          }
-          l -= uses_found;    // we deleted 1 or more copies of this edge
+        // We need to fix control uses for cloning atomic post loop and other loops
+        // in different ways.
+        if (mode != InsertAtomicPost) {
+          fix_ctrl_uses_for_common_loop(use, newuse, old_new, use_loop, side_by_side_idom);
+        } else {
+          fix_ctrl_uses_for_atomic_post(use, newuse, old_new, use_loop);
         }
 
-        assert(use->is_Proj(), "loop exit should be projection");
-        // lazy_replace() below moves all nodes that are:
-        // - control dependent on the loop exit or
-        // - have control set to the loop exit
-        // below the post-loop merge point. lazy_replace() takes a dead control as first input. To make it
-        // possible to use it, the loop exit projection is cloned and becomes the new exit projection. The initial one
-        // becomes dead and is "replaced" by the region.
-        Node* use_clone = use->clone();
-        register_control(use_clone, use_loop, idom(use), dom_depth(use));
-        // Now finish up 'r'
-        r->set_req(1, newuse);
-        r->set_req(2, use_clone);
-        _igvn.register_new_node_with_optimizer(r);
-        set_loop(r, use_loop);
-        set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
-        lazy_replace(use, r);
-        // Map the (cloned) old use to the new merge point
-        old_new.map(use_clone->_idx, r);
       } // End of if a loop-exit test
     }
   }
+}
+
+void PhaseIdealLoop::fix_ctrl_uses_for_common_loop(Node* use, Node* newuse, Node_List& old_new,
+                                                   IdealLoopTree* use_loop, Node* side_by_side_idom) {
+  // We need a Region to merge the exit from the peeled body and the
+  // exit from the old loop body.
+  RegionNode* r = new RegionNode(3);
+  uint dd_r = MIN2(dom_depth(newuse), dom_depth(use));
+  assert(dd_r >= dom_depth(dom_lca(newuse, use)), "" );
+
+  // The original user of 'use' uses 'r' instead.
+  for (DUIterator_Last lmin, l = use->last_outs(lmin); l >= lmin;) {
+    Node* useuse = use->last_out(l);
+    _igvn.rehash_node_delayed(useuse);
+    uint uses_found = 0;
+    if (useuse->in(0) == use) {
+      useuse->set_req(0, r);
+      uses_found++;
+      if (useuse->is_CFG()) {
+        // This is not a dom_depth > dd_r because when new
+        // control flow is constructed by a loop opt, a node and
+        // its dominator can end up at the same dom_depth
+        assert(dom_depth(useuse) >= dd_r, "");
+        set_idom(useuse, r, dom_depth(useuse));
+      }
+    }
+    for (uint k = 1; k < useuse->req(); k++) {
+      if( useuse->in(k) == use ) {
+        useuse->set_req(k, r);
+        uses_found++;
+        if (useuse->is_Loop() && k == LoopNode::EntryControl) {
+          // This is not a dom_depth > dd_r because when new
+          // control flow is constructed by a loop opt, a node
+          // and its dominator can end up at the same dom_depth
+          assert(dom_depth(useuse) >= dd_r , "");
+          set_idom(useuse, r, dom_depth(useuse));
+        }
+      }
+    }
+    l -= uses_found; // we deleted 1 or more copies of this edge
+  }
+
+  assert(use->is_Proj(), "loop exit should be projection");
+  // lazy_replace() below moves all nodes that are:
+  //  - control dependent on the loop exit or
+  //  - have control set to the loop exit
+  // below the post-loop merge point. lazy_replace() takes a dead control
+  // as first input. To make it possible to use it, the loop exit projection
+  // is cloned and becomes the new exit projection. The initial one becomes
+  // dead and is "replaced" by the region.
+  Node* use_clone = use->clone();
+  register_control(use_clone, use_loop, idom(use), dom_depth(use));
+  // Now finish up 'r'
+  r->set_req(1, newuse);
+  r->set_req(2, use_clone);
+  _igvn.register_new_node_with_optimizer(r);
+  set_loop(r, use_loop);
+  set_idom(r, (side_by_side_idom == nullptr) ? newuse->in(0) : side_by_side_idom, dd_r);
+  lazy_replace(use, r);
+  // Map the (cloned) old use to the new merge point
+  old_new.map(use_clone->_idx, r);
+}
+
+void PhaseIdealLoop::fix_ctrl_uses_for_atomic_post(Node* use, Node* newuse, Node_List& old_new,
+                                                   IdealLoopTree* use_loop) {
+  // We need a Region to merge the exit from the cloned body(atomic post loop)
+  // and the merge point of exits from the vector main-loop and pre-loop.
+
+  // We need to find the Region node merging exits from the vector main-loop
+  // and pre-loop first.
+  Node* merge_point = nullptr;
+  for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+    Node* outn = use->fast_out(j);
+    if (outn->is_Region()) {
+      assert(merge_point == nullptr, "We definitely find only one valid merge_point");
+      merge_point = outn;
+    }
+  }
+
+  // Now we need a new Region node.
+  RegionNode* r = new RegionNode(3);
+  uint dd_r = MIN2(dom_depth(newuse), dom_depth(merge_point));
+  assert(dd_r >= dom_depth(dom_lca(newuse, merge_point)), "" );
+  set_loop(r, use_loop);
+  set_idom(r, newuse->in(0), dd_r);
+
+  // We make all uses of "merge_point", excluding itself,
+  // use the new Region node "r" instead.
+  for (uint i = 0; i < merge_point->outcnt(); i++) {
+    Node* useuse = merge_point->raw_out(i);
+    if (useuse == merge_point || useuse->is_Phi()) {
+      continue;
+    }
+    assert(useuse->is_CFG(), "");
+    _igvn.rehash_node_delayed(useuse);
+    if (useuse->in(0) == merge_point) {
+      useuse->set_req(0, r);
+      if (useuse->is_CFG()) {
+        // This is not a dom_depth > dd_r because when new
+        // control flow is constructed by a loop opt, a node and
+        // its dominator can end up at the same dom_depth
+        assert(dom_depth(useuse) >= dd_r, "");
+        set_idom(useuse, r, dd_r+1);
+      }
+    }
+    for (uint k = 1; k < useuse->req(); k++) {
+      if( useuse->in(k) == merge_point ) {
+        useuse->set_req(k, r);
+        if (useuse->is_Loop() && k == LoopNode::EntryControl) {
+          // This is not a dom_depth > dd_r because when new
+          // control flow is constructed by a loop opt, a node
+          // and its dominator can end up at the same dom_depth
+          assert(dom_depth(useuse) >= dd_r , "");
+          set_idom(useuse, r, dom_depth(useuse));
+        }
+      }
+    }
+  }
+
+  r->set_req(1, newuse);
+  r->set_req(2, merge_point);
+  _igvn.register_new_node_with_optimizer(r);
+  // Map the (cloned) old use to the new merge point
+  old_new.map(use->_idx, r);
 }
 
 void PhaseIdealLoop::fix_body_edges(const Node_List &body, IdealLoopTree* loop, const Node_List &old_new, int dd,
