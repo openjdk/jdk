@@ -28,7 +28,7 @@
  * @build PassFailJFrame
  * @requires (os.family == "mac")
  * @summary Verify rendering artifact is not seen moving caret inside
- *          JTable with TableCellEditor having JTextField 
+ *          JTable with TableCellEditor having JTextField
  * @run main/manual TestCaretArtifact
  */
 
