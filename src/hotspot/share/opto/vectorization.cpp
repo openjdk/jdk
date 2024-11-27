@@ -401,7 +401,7 @@ void VPointer::print_on(outputStream* st) const {
     return;
   }
 
-  st->print("size: %2d, base: ", _size);
+  st->print("size: %2d, base: ", size());
   _mem_pointer.base().print_on(st);
   st->print(", form: ");
   _mem_pointer.print_form_on(st);

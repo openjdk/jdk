@@ -693,7 +693,7 @@ private:
   VStatus setup_submodules_helper();
 };
 
-// VPointer adapts the MemPointer to the use in a loop:
+// VPointer wraps the MemPointer to the use in a loop:
 //
 //   pointer = SUM(summands) + con
 //
@@ -722,7 +722,6 @@ private:
 
   const VLoop& _vloop;
   const MemPointer _mem_pointer;
-  const jint _size; // TODO rm!
 
   // Derived, for quicker use.
   const jint  _iv_scale;
@@ -733,7 +732,6 @@ private:
            const MemPointer& mem_pointer) :
     _vloop(vloop),
     _mem_pointer(mem_pointer),
-    _size(mem_pointer.size()),
     _iv_scale(init_iv_scale()),
     _is_valid(init_is_valid()) {}
 
@@ -746,7 +744,6 @@ public:
     _mem_pointer(MemPointerParser::parse(NOT_PRODUCT(vloop.mptrace() COMMA)
                                          mem,
                                          callback)),
-    _size(mem->memory_size()),
     _iv_scale(init_iv_scale()),
     _is_valid(init_is_valid())
   {
@@ -767,7 +764,7 @@ public:
   // Accessors
   bool is_valid()                 const { return _is_valid; }
   const MemPointer& mem_pointer() const { assert(_is_valid, ""); return _mem_pointer; }
-  jint size()                     const { assert(_is_valid, ""); return _size; }
+  jint size()                     const { assert(_is_valid, ""); return mem_pointer().size(); }
   jint iv_scale()                 const { assert(_is_valid, ""); return _iv_scale; }
   jint con()                      const { return mem_pointer().con().value(); }
 
