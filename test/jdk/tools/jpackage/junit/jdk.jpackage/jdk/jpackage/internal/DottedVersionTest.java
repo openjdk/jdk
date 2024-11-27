@@ -144,7 +144,7 @@ public class DottedVersionTest {
     }
 
     @Test
-    public void testEmptyGreey() {
+    public void testEmptyGreedy() {
         assertThrowsExactly(IllegalArgumentException.class, () -> DottedVersion.greedy(""), "Version may not be empty string");
     }
 
@@ -170,7 +170,7 @@ public class DottedVersionTest {
     }
 
     @Test
-    public void testEqualsLaxy() {
+    public void testEqualsLazy() {
         assertTrue(DottedVersion.lazy("3.6+67").equals(DottedVersion.lazy("3.6+67")));
         assertFalse(DottedVersion.lazy("3.6+67").equals(DottedVersion.lazy("3.6+067")));
     }
