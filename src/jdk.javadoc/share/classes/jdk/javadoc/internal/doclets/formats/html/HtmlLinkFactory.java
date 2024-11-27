@@ -43,6 +43,7 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -53,7 +54,6 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
-import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -337,16 +337,18 @@ public class HtmlLinkFactory {
                                 Element previewTarget, ExecutableElement restrictedTarget) {
         Content spacer = Text.EMPTY;
         if (flags.contains(ElementFlag.PREVIEW)) {
-            content.add(HtmlTree.SUP(getSuperscript(fileName, typeElement,
-                    m_writer.htmlIds.forPreviewSection(previewTarget),
-                    m_writer.contents.previewMark)));
+            content.add(HtmlTree.SUP(HtmlStyles.previewMark,
+                    getSuperscript(fileName, typeElement,
+                            m_writer.htmlIds.forPreviewSection(previewTarget),
+                            m_writer.contents.previewMark)));
             spacer = Entity.NO_BREAK_SPACE;
         }
         if (flags.contains(ElementFlag.RESTRICTED)) {
             content.add(spacer);
-            content.add(HtmlTree.SUP(getSuperscript(fileName, typeElement,
-                    m_writer.htmlIds.forRestrictedSection(restrictedTarget),
-                    m_writer.contents.restrictedMark)));
+            content.add(HtmlTree.SUP(HtmlStyles.restrictedMark,
+                    getSuperscript(fileName, typeElement,
+                            m_writer.htmlIds.forRestrictedSection(restrictedTarget),
+                            m_writer.contents.restrictedMark)));
         }
     }
 
