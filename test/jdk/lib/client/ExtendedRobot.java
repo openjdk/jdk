@@ -50,10 +50,9 @@ import java.awt.event.KeyEvent;
  */
 
 public class ExtendedRobot extends Robot {
-    private static int DEFAULT_SPEED = 20;       // Speed for mouse glide and click
-    private static int DEFAULT_STEP_LENGTH = 2;  // Step length (in pixels) for mouse glide
+    private static int DEFAULT_SYNC_DELAY = 500; // Default Additional delay for waitForIdle()
 
-    private final int syncDelay = DEFAULT_SPEED;
+    private final int syncDelay = DEFAULT_SYNC_DELAY;
 
     //TODO: uncomment three lines below after moving functionality to java.awt.Robot
     //{
