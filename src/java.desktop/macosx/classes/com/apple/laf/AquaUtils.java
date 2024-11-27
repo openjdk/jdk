@@ -38,7 +38,6 @@ import javax.swing.plaf.UIResource;
 import sun.awt.AppContext;
 
 import sun.lwawt.macosx.CPlatformWindow;
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaImageFactory.SlicedImageControl;
@@ -174,7 +173,6 @@ final class AquaUtils {
         @SuppressWarnings("deprecation")
         T getInstance() {
             try {
-                ReflectUtil.checkPackageAccess(clazz);
                 return clazz.newInstance();
             } catch (ReflectiveOperationException ignored) {
             }
