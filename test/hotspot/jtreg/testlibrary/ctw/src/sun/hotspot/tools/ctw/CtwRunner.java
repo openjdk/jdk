@@ -176,7 +176,7 @@ public class CtwRunner {
 
         boolean allowZeroClassCount = Boolean.getBoolean("sun.hotspot.tools.ctw.allow_zero_class_count");
         if (allowZeroClassCount && classCount == 0L) {
-            System.out.println("WARN: " + target + "(at " + targetPath + ") have not classes. Ignoring.");
+            System.out.println("WARN: " + target + "(at " + targetPath + ") has no classes. Ignoring.");
             return;
         }
 
