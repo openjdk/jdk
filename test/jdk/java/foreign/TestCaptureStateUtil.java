@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @summary Test ErrnoUtil
+ * @summary Test CaptureStateUtil
  * @modules java.base/jdk.internal.foreign
- * @run junit TestErrnoUtil
+ * @run junit TestCaptureStateUtil
  */
 
 import jdk.internal.foreign.CaptureStateUtil;
@@ -41,7 +41,7 @@ import java.lang.invoke.VarHandle;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class TestErrnoUtil {
+final class TestCaptureStateUtil {
 
     private static final String ERRNO_NAME = "errno";
 
@@ -55,10 +55,10 @@ final class TestErrnoUtil {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             INT_DUMMY_HANDLE = lookup
-                    .findStatic(TestErrnoUtil.class, "dummy",
+                    .findStatic(TestCaptureStateUtil.class, "dummy",
                             MethodType.methodType(int.class, MemorySegment.class, int.class, int.class));
             LONG_DUMMY_HANDLE = lookup
-                    .findStatic(TestErrnoUtil.class, "dummy",
+                    .findStatic(TestCaptureStateUtil.class, "dummy",
                             MethodType.methodType(long.class, MemorySegment.class, long.class, int.class));
         } catch (ReflectiveOperationException e) {
             throw new InternalError(e);
@@ -100,14 +100,14 @@ final class TestErrnoUtil {
     @Test
     void invariants() throws Throwable {
         MethodHandle noSegment = MethodHandles.lookup()
-                .findStatic(TestErrnoUtil.class, "wrongType",
+                .findStatic(TestCaptureStateUtil.class, "wrongType",
                         MethodType.methodType(long.class, long.class, int.class));
 
         var noSegEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, ERRNO_NAME));
         assertTrue(noSegEx.getMessage().contains("does not have a MemorySegment as the first parameter"));
 
         MethodHandle wrongReturnType = MethodHandles.lookup()
-                .findStatic(TestErrnoUtil.class, "wrongType",
+                .findStatic(TestCaptureStateUtil.class, "wrongType",
                         MethodType.methodType(short.class, MemorySegment.class, long.class, int.class));
 
         var wrongRetEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(wrongReturnType, ERRNO_NAME));
