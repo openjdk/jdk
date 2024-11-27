@@ -153,21 +153,24 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 // It represents a memory region:
 //   [adr, adr + memory_size)
 //   adr = base + invar + iv_scale * iv + con
-class VMemoryRegion : public StackObj {
+// TODO comment
+class VMemoryRegion : public ResourceObj {
 private:
-  const VPointer* _vpointer; // reference not possible, need empty VMemoryRegion constructor for GrowableArray
+  // Note: VPointer has no default constructor, so we cannot use VMemoryRegion
+  //       in-place in a GrowableArray. Hence, we make VMemoryRegion a resource
+  //       allocated object, so the GrowableArray of VMemoryRegion* has a default
+  //       nullptr element.
+  const VPointer _vpointer;
   bool _is_load;      // load or store?
   uint _schedule_order;
 
 public:
-  VMemoryRegion() : _vpointer(nullptr) {} // empty constructor for GrowableArray
   VMemoryRegion(const VPointer& vpointer, bool is_load, uint schedule_order) :
-    // TODO need to copy, otherwise reference item on stack!!!
-    _vpointer(&vpointer),
+    _vpointer(vpointer),
     _is_load(is_load),
     _schedule_order(schedule_order) {}
 
-    const VPointer& vpointer() const { return *_vpointer; }
+    const VPointer& vpointer() const { return _vpointer; }
     bool is_load()        const { return _is_load; }
     uint schedule_order() const { return _schedule_order; }
 
@@ -177,12 +180,12 @@ public:
                                       r2->vpointer().mem_pointer());
     }
 
-    static int cmp_for_sort(VMemoryRegion* r1, VMemoryRegion* r2) {
-      int cmp_group = cmp_for_sort_by_group(r1, r2);
+    static int cmp_for_sort(VMemoryRegion** r1, VMemoryRegion** r2) {
+      int cmp_group = cmp_for_sort_by_group(*r1, *r2);
       if (cmp_group != 0) { return cmp_group; }
 
-      RETURN_CMP_VALUE_IF_NOT_EQUAL(r1->vpointer().con(),
-                                    r2->vpointer().con());
+      RETURN_CMP_VALUE_IF_NOT_EQUAL((*r1)->vpointer().con(),
+                                    (*r2)->vpointer().con());
       return 0; // equal
     }
 
@@ -315,7 +318,8 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 
   // Collect all pointers for scalar and vector loads/stores.
   ResourceMark rm;
-  GrowableArray<VMemoryRegion> memory_regions;
+  // Use pointers because no default constructor for elements available.
+  GrowableArray<VMemoryRegion*> memory_regions;
 
   // To detect store-to-load-forwarding failures at the iteration threshold or below, we
   // simulate a super-unrolling to reach SuperWordStoreToLoadForwardingFailureDetection
@@ -342,7 +346,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
           uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
           bool is_load = vtn->is_load_in_loop();
           const VPointer iv_offset_p(p.make_with_iv_offset(iv_offset));
-          memory_regions.push(VMemoryRegion(iv_offset_p, is_load, schedule_order++));
+          memory_regions.push(new VMemoryRegion(iv_offset_p, is_load, schedule_order++));
         }
       }
     }
@@ -357,7 +361,7 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
     tty->print_cr("  simulated_unrolling_count = %d", simulated_unrolling_count);
     tty->print_cr("  simulated_super_unrolling_count = %d", simulated_super_unrolling_count);
     for (int i = 0; i < memory_regions.length(); i++) {
-      VMemoryRegion& region = memory_regions.at(i);
+      VMemoryRegion& region = *memory_regions.at(i);
       region.print();
     }
   }
@@ -365,10 +369,10 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
 
   // For all pairs of pointers in the same group, check if they have a partial overlap.
   for (int i = 0; i < memory_regions.length(); i++) {
-    VMemoryRegion& region1 = memory_regions.at(i);
+    VMemoryRegion& region1 = *memory_regions.at(i);
 
     for (int j = i + 1; j < memory_regions.length(); j++) {
-      VMemoryRegion& region2 = memory_regions.at(j);
+      VMemoryRegion& region2 = *memory_regions.at(j);
 
       const VMemoryRegion::Aliasing aliasing = region1.aliasing(region2);
       if (aliasing == VMemoryRegion::Aliasing::DIFFERENT_GROUP ||
