@@ -2267,7 +2267,11 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "--patch-module=", &tail)) {
       // --patch-module=<module>=<file>(<pathsep><file>)*
       int res = process_patch_mod_option(tail, patch_mod_javabase);
-      if (res != JNI_OK) {
+      if (res == JNI_OK) {
+        // Add jdk.patched system property when processing of args was OK
+        PropertyList_unique_add(&_system_properties, "jdk.patched", "true",
+                                AddProperty, UnwriteableProperty, ExternalProperty);
+      } else {
         return res;
       }
     } else if (match_option(option, "--sun-misc-unsafe-memory-access=", &tail)) {
@@ -2477,12 +2481,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -D
     } else if (match_option(option, "-D", &tail)) {
       const char* value;
-      if (match_option(option, "-Djdk.patched=", &value)) {
-        // ignore any explicitly set 'jdk.patched' properties. Only
-        // --patch-module changes the value to true. false otherwise.
-        // See finalize_vm_init_args()
-        continue;
-      }
       if (match_option(option, "-Djava.endorsed.dirs=", &value) &&
             *value!= '\0' && strcmp(value, "\"\"") != 0) {
         // abort if -Djava.endorsed.dirs is set
@@ -2906,12 +2904,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     os::closedir(dir);
     return JNI_ERR;
   }
-
-  // Set a read-only, non-writable 'jdk.patched' JDK property if and only if
-  // we have at least one module patch.
-  bool jdk_patched = PropertyList_get_value(_system_properties, "jdk.module.patch.0") != nullptr;
-  PropertyList_unique_add(&_system_properties, "jdk.patched", jdk_patched ? "true" : "false",
-                          AddProperty, UnwriteableProperty, ExternalProperty);
 
   // This must be done after all arguments have been processed
   // and the container support has been initialized since AggressiveHeap
