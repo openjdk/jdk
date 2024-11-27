@@ -25,7 +25,6 @@
  * @test
  * @summary Testing ClassFile Verifier.
  * @bug 8333812
- * @enablePreview
  * @run junit VerifierSelfTest
  */
 import java.io.IOException;

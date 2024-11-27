@@ -25,7 +25,6 @@
  * @test
  * @bug 7165659
  * @summary javac incorrectly sets strictfp access flag on inner-classes
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.util
  */
 

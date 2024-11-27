@@ -36,8 +36,7 @@ import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
-@Fork(value = 1, jvmArgs = {
-        "--enable-preview"})
+@Fork(value = 1)
 @Warmup(iterations = 3)
 @Measurement(iterations = 4)
 public class RepeatedModelTraversal {
