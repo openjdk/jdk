@@ -329,9 +329,9 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     {
       MutexLocker ml(Heap_lock);
       log_trace(gc, alloc)("SerialHeap::mem_allocate_work: attempting locked slow path allocation");
-      // Note that only large objects get a shot at being
-      // allocated in later generations.
-      bool first_only = !should_try_older_generation_allocation(size);
+
+      bool first_only = !should_try_older_generation_allocation(size)
+                     && is_long_enough_from_prev_gc_pause_end();
 
       result = attempt_allocation(size, is_tlab, first_only);
       if (result != nullptr) {
@@ -632,6 +632,26 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
     // unscanned objs
   } while (_young_gen_saved_top != to_space->top());
   guarantee(young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
+}
+
+bool SerialHeap::is_long_enough_from_prev_gc_pause_end() const {
+  Ticks young_gc_pause_end = _young_gen->_gc_timer->gc_end();
+  Ticks full_gc_pause_end = SerialFullGC::gc_timer()->gc_end();
+
+  Ticks prev_gc_pause_end;
+  Tickspan gc_pause;
+  if (full_gc_pause_end < young_gc_pause_end ) {
+    // Previous is young-gc
+    prev_gc_pause_end = young_gc_pause_end;
+    gc_pause = young_gc_pause_end - _young_gen->_gc_timer->gc_start();
+  } else {
+    // Previous is full-gc
+    prev_gc_pause_end = full_gc_pause_end;
+    gc_pause = full_gc_pause_end - SerialFullGC::gc_timer()->gc_start();
+  }
+  Tickspan since_end_gc_pause = Ticks::now() - prev_gc_pause_end;
+
+  return since_end_gc_pause.seconds() * 100 >= gc_pause.seconds() * GCTimeRatio;
 }
 
 void SerialHeap::try_collect_at_safepoint(bool full) {

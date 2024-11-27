@@ -120,6 +120,8 @@ public:
 
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
+  bool is_long_enough_from_prev_gc_pause_end() const;
+
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 

@@ -50,6 +50,7 @@ class STWGCTimer;
 
 class DefNewGeneration: public Generation {
   friend class VMStructs;
+  friend class SerialHeap;
 
   TenuredGeneration* _old_gen;
 
