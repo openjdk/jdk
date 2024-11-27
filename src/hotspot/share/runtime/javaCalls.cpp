@@ -115,12 +115,6 @@ JavaCallWrapper::~JavaCallWrapper() {
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
 
-  // State has been restored now make the anchor frame visible for the profiler.
-  // Do this after the transition because this allows us to put an assert
-  // the Java->vm transition which checks to see that stack is not walkable
-  // which will catch violations of the resetting of last_Java_frame
-  // invariants (i.e. _flags always cleared on return to Java)
-
   _thread->frame_anchor()->copy(&_anchor);
 
   // Release handles after we are marked as being inside the VM again, since this
