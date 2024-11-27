@@ -765,6 +765,14 @@ public:
     return p;
   }
 
+  // old_pointer = base + invar + iv_scale *  iv              + con
+  // new_pointer = base + invar + iv_scale * (iv + iv_offset) + con
+  //             = base + invar + iv_scale * iv               + (con + iv_scale * iv_offset)
+  VPointer make_with_iv_offset(const jint iv_offset) const {
+    // TODO
+    return *this;
+  }
+
   // Accessors
   bool is_valid()                 const { return _is_valid; }
   const MemPointer& mem_pointer() const { assert(_is_valid, ""); return _mem_pointer; }

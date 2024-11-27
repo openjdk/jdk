@@ -156,34 +156,18 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 class VMemoryRegion : public StackObj {
 private:
   const VPointer* _vpointer; // reference not possible, need empty VMemoryRegion constructor for GrowableArray
-
-  // TODO rm? - maybe also fix printing?
-  Node* _base;
-  int _scale;
-  Node* _invar;
-  int _offset;
-  uint _memory_size;
   bool _is_load;      // load or store?
   uint _schedule_order;
 
 public:
   VMemoryRegion() : _vpointer(nullptr) {} // empty constructor for GrowableArray
-  VMemoryRegion(const VPointer& vpointer, int iv_offset, int vector_length, bool is_load, uint schedule_order) :
+  VMemoryRegion(const VPointer& vpointer, bool is_load, uint schedule_order) :
+    // TODO need to copy, otherwise reference item on stack!!!
     _vpointer(&vpointer),
-    _base(   vpointer.mem_pointer().base().object_or_native()),
-    _scale(  vpointer.iv_scale()),
-    _invar(  nullptr), // TODO
-    _offset( vpointer.con() + _scale * iv_offset),
-    _memory_size(vpointer.size() * vector_length),
     _is_load(is_load),
     _schedule_order(schedule_order) {}
 
     const VPointer& vpointer() const { return *_vpointer; }
-    Node* base()          const { return _base; }
-    int scale()           const { return _scale; }
-    Node* invar()         const { return _invar; }
-    int offset()          const { return _offset; }
-    uint memory_size()    const { return _memory_size; }
     bool is_load()        const { return _is_load; }
     uint schedule_order() const { return _schedule_order; }
 
@@ -209,14 +193,14 @@ public:
       VMemoryRegion* p2 = &other;
       if (cmp_for_sort_by_group(p1, p2) != 0) { return DIFFERENT_GROUP; }
 
-      jlong offset1 = p1->offset();
-      jlong offset2 = p2->offset();
-      jlong memory_size1 = p1->memory_size();
-      jlong memory_size2 = p2->memory_size();
+      jlong con1 = p1->vpointer().con();
+      jlong con2 = p2->vpointer().con();
+      jlong size1 = p1->vpointer().size();
+      jlong size2 = p2->vpointer().size();
 
-      if (offset1 >= offset2 + memory_size2) { return AFTER; }
-      if (offset2 >= offset1 + memory_size1) { return BEFORE; }
-      if (offset1 == offset2 && memory_size1 == memory_size2) { return EXACT_OVERLAP; }
+      if (con1 >= con2 + size2) { return AFTER; }
+      if (con2 >= con1 + size1) { return BEFORE; }
+      if (con1 == con2 && size1 == size2) { return EXACT_OVERLAP; }
       return PARTIAL_OVERLAP;
     }
 
@@ -224,7 +208,7 @@ public:
   void print() const {
     tty->print("VMemoryRegion[%s schedule_order(%4d), ",
                _is_load ? "load, " : "store,", _schedule_order);
-    _vpointer->print_on(tty, false);
+    vpointer().print_on(tty, false);
     tty->print_cr("]");
   }
 #endif
@@ -357,7 +341,8 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
           VTransformVectorNode* vector = vtn->isa_Vector();
           uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
           bool is_load = vtn->is_load_in_loop();
-          memory_regions.push(VMemoryRegion(p, iv_offset, vector_length, is_load, schedule_order++));
+          const VPointer iv_offset_p(p.make_with_iv_offset(iv_offset));
+          memory_regions.push(VMemoryRegion(iv_offset_p, is_load, schedule_order++));
         }
       }
     }
