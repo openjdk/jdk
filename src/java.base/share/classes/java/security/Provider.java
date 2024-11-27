@@ -359,7 +359,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized void clear() {
-        check("clearProviderProperties."+name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Remove " + name + " provider properties");
         }
@@ -376,7 +376,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized void load(InputStream inStream) throws IOException {
-        check("putProviderProperty."+name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Load " + name + " provider properties");
         }
@@ -394,7 +394,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized void putAll(Map<?,?> t) {
-        check("putProviderProperty."+name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Put all " + name + " provider properties");
         }
@@ -461,7 +461,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized Object put(Object key, Object value) {
-        check("putProviderProperty."+name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Set " + name + " provider property [" +
                           key + "/" + value +"]");
@@ -478,7 +478,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized Object putIfAbsent(Object key, Object value) {
-        check("putProviderProperty."+name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Set " + name + " provider property [" +
                           key + "/" + value +"]");
@@ -494,7 +494,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized Object remove(Object key) {
-        check("removeProviderProperty."+name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Remove " + name + " provider property " + key);
         }
@@ -509,7 +509,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized boolean remove(Object key, Object value) {
-        check("removeProviderProperty."+name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Remove " + name + " provider property " + key);
         }
@@ -525,7 +525,7 @@ public abstract class Provider extends Properties {
     @Override
     public synchronized boolean replace(Object key, Object oldValue,
             Object newValue) {
-        check("putProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Replace " + name + " provider property " + key);
         }
@@ -540,7 +540,7 @@ public abstract class Provider extends Properties {
      */
     @Override
     public synchronized Object replace(Object key, Object value) {
-        check("putProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Replace " + name + " provider property " + key);
         }
@@ -558,7 +558,7 @@ public abstract class Provider extends Properties {
     @Override
     public synchronized void replaceAll(BiFunction<? super Object,
             ? super Object, ? extends Object> function) {
-        check("putProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println("ReplaceAll " + name + " provider property ");
         }
@@ -575,8 +575,7 @@ public abstract class Provider extends Properties {
     @Override
     public synchronized Object compute(Object key, BiFunction<? super Object,
             ? super Object, ? extends Object> remappingFunction) {
-        check("putProviderProperty." + name);
-        check("removeProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Compute " + name + " provider property " + key);
         }
@@ -594,8 +593,7 @@ public abstract class Provider extends Properties {
     @Override
     public synchronized Object computeIfAbsent(Object key,
             Function<? super Object, ? extends Object> mappingFunction) {
-        check("putProviderProperty." + name);
-        check("removeProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println("ComputeIfAbsent " + name + " provider property " +
                     key);
@@ -613,8 +611,7 @@ public abstract class Provider extends Properties {
     public synchronized Object computeIfPresent(Object key,
             BiFunction<? super Object, ? super Object, ? extends Object>
             remappingFunction) {
-        check("putProviderProperty." + name);
-        check("removeProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println("ComputeIfPresent " + name + " provider property " +
                     key);
@@ -635,8 +632,7 @@ public abstract class Provider extends Properties {
     public synchronized Object merge(Object key, Object value,
             BiFunction<? super Object, ? super Object, ? extends Object>
             remappingFunction) {
-        check("putProviderProperty." + name);
-        check("removeProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println("Merge " + name + " provider property " + key);
         }
@@ -691,15 +687,6 @@ public abstract class Provider extends Properties {
     private void checkInitialized() {
         if (!initialized) {
             throw new IllegalStateException();
-        }
-    }
-
-    private void check(String directive) {
-        checkInitialized();
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSecurityAccess(directive);
         }
     }
 
@@ -1239,7 +1226,7 @@ public abstract class Provider extends Properties {
      * @since 1.5
      */
     protected void putService(Service s) {
-        check("putProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println(name + ".putService(): " + s);
         }
@@ -1346,7 +1333,7 @@ public abstract class Provider extends Properties {
      * @since 1.5
      */
     protected void removeService(Service s) {
-        check("removeProviderProperty." + name);
+        checkInitialized();
         if (debug != null) {
             debug.println(name + ".removeService(): " + s);
         }

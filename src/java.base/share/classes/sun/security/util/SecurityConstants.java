@@ -30,7 +30,6 @@ import java.net.NetPermission;
 import java.net.SocketPermission;
 import java.security.AllPermission;
 import java.security.SecurityPermission;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Permission constants and string constants used to create permissions
@@ -125,7 +124,7 @@ public final class SecurityConstants {
         new SocketPermission("localhost:0", SOCKET_LISTEN_ACTION);
 
     public static final String PROVIDER_VER =
-        GetPropertyAction.privilegedGetProperty("java.specification.version");
+        System.getProperty("java.specification.version");
 
     // java.lang.reflect.AccessibleObject
     public static final ReflectPermission ACCESS_PERMISSION =
