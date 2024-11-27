@@ -105,7 +105,7 @@ public final class CaptureStateUtil {
      *       static final MethodHandle CAPTURING_OPEN = ...
      *
      *      // (MemorySegment pathname, int flags)int
-     *      static final MethodHandle OPEN = CaptureStateUtil.adaptSystemCall(CAPTURING_OPEN);
+     *      static final MethodHandle OPEN = CaptureStateUtil.adaptSystemCall(CAPTURING_OPEN, "errno");
      *
      *      try {
      *         int fh = (int)OPEN.invoke(pathName, flags);
@@ -127,9 +127,10 @@ public final class CaptureStateUtil {
      *                                  type is not {@linkplain MemorySegment}
      */
     public static MethodHandle adaptSystemCall(MethodHandle target, String stateName) {
-        Objects.requireNonNull(stateName);
         // Implicit null check
         final Class<?> returnType = target.type().returnType();
+        Objects.requireNonNull(stateName);
+
         if (!(returnType.equals(int.class) || returnType.equals(long.class))) {
             throw illegalArgNot(target, "return an int or a long");
         }
