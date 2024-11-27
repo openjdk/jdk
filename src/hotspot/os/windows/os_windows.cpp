@@ -5858,7 +5858,7 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   strcpy(agent_entry_name, sym_name);
   if (lib_name != nullptr) {
     strcat(agent_entry_name, "_");
-    strncat(agent_entry_name, lib_name, name_len);
+    strncat(agent_entry_name, lib_name, name_len - 1);
   }
   return agent_entry_name;
 }
