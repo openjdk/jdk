@@ -729,7 +729,7 @@ public:
   }
 
   void print_on(outputStream* st, bool end_with_cr = true) const {
-    st->print("MemPointer[base: ");
+    st->print("MemPointer[size: %2d, base: ", size());
     _base.print_on(st);
     st->print(", form: ");
     print_form_on(st);

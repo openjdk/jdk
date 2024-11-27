@@ -829,7 +829,7 @@ public:
     return mem_pointer().never_overlaps_with(other.mem_pointer());
   }
 
-  NOT_PRODUCT( void print_on(outputStream* st) const; )
+  NOT_PRODUCT( void print_on(outputStream* st, bool end_with_cr = true) const; )
 
 private:
   jint init_iv_scale() const {

@@ -222,9 +222,9 @@ public:
 
 #ifndef PRODUCT
   void print() const {
-    tty->print("VMemoryRegion[%s %dbytes, schedule_order(%4d), ",
-               _is_load ? "load " : "store", _memory_size, _schedule_order);
-    _vpointer->mem_pointer().print_on(tty, false);
+    tty->print("VMemoryRegion[%s schedule_order(%4d), ",
+               _is_load ? "load, " : "store,", _schedule_order);
+    _vpointer->print_on(tty, false);
     tty->print_cr("]");
   }
 #endif

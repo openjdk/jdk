@@ -393,7 +393,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
 }
 
 #ifndef PRODUCT
-void VPointer::print_on(outputStream* st) const {
+void VPointer::print_on(outputStream* st, bool end_with_cr) const {
   st->print("VPointer[");
 
   if (!is_valid()) {
@@ -410,7 +410,8 @@ void VPointer::print_on(outputStream* st) const {
     s.print_on(tty);
     st->print(",");
   });
-  st->print_cr("]");
+  st->print("]");
+  if (end_with_cr) { st->cr(); }
 }
 #endif
 
