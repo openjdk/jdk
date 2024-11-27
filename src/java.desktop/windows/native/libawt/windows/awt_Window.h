@@ -50,20 +50,15 @@ class AwtWindow : public AwtCanvas {
 public:
 
     /* java.awt.Window field ids */
-    static jfieldID warningStringID;
     static jfieldID locationByPlatformID;
     static jfieldID screenID; /* screen number passed over from WindowPeer */
     static jfieldID autoRequestFocusID;
-    static jfieldID securityWarningWidthID;
-    static jfieldID securityWarningHeightID;
 
     /* sun.awt.windows.WWindowPeer field and method IDs */
     static jfieldID windowTypeID;
     static jmethodID notifyWindowStateChangedMID;
 
     /* java.awt.Window method IDs */
-    static jmethodID getWarningStringMID;
-    static jmethodID calculateSecurityWarningPositionMID;
     static jmethodID windowTypeNameMID;
 
     AwtWindow();
@@ -240,7 +235,6 @@ public:
     static void _SetOpacity(void* param);
     static void _SetOpaque(void* param);
     static void _UpdateWindow(void* param);
-    static void _RepositionSecurityWarning(void* param);
     static void _SetFullScreenExclusiveModeState(void* param);
     static void _GetNativeWindowSize(void* param);
     static void _OverrideHandle(void *param);
@@ -256,8 +250,6 @@ public:
             COLORREF colorForeground, COLORREF colorBackground,
             jobject peer);
     virtual void DestroyHWnd();
-
-    static void FocusedWindowChanged(HWND from, HWND to);
 
     inline HWND GetOverriddenHWnd() { return m_overriddenHwnd; }
     inline void OverrideHWnd(HWND hwnd) { m_overriddenHwnd = hwnd; }
@@ -304,50 +296,8 @@ private:
     void RedrawWindow();
     void DeleteContentBitmap();
 
-    static UINT untrustedWindowsCounter;
-
-    WCHAR * warningString;
-
-    // The warning icon
-    HWND warningWindow;
-    // The tooltip that appears when hovering the icon
-    HWND securityTooltipWindow;
-
     //Allows substitute parent window with JavaFX stage to make it below a dialog
     HWND m_overriddenHwnd;
-
-    UINT warningWindowWidth;
-    UINT warningWindowHeight;
-    void InitSecurityWarningSize(JNIEnv *env);
-    HICON GetSecurityWarningIcon();
-
-    void CreateWarningWindow(JNIEnv *env);
-    void DestroyWarningWindow();
-    static LPCTSTR GetWarningWindowClassName();
-    void FillWarningWindowClassInfo(WNDCLASS *lpwc);
-    void RegisterWarningWindowClass();
-    void UnregisterWarningWindowClass();
-    static LRESULT CALLBACK WarningWindowProc(
-            HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-
-    static void PaintWarningWindow(HWND warningWindow);
-    static void PaintWarningWindow(HWND warningWindow, HDC hdc);
-    void RepaintWarningWindow();
-    void CalculateWarningWindowBounds(JNIEnv *env, LPRECT rect);
-
-    void AnimateSecurityWarning(bool enable);
-    UINT securityWarningAnimationStage;
-
-    enum AnimationKind {
-        akNone, akShow, akPreHide, akHide
-    };
-
-    AnimationKind securityAnimationKind;
-
-    void StartSecurityAnimation(AnimationKind kind);
-    void StopSecurityAnimation();
-
-    void RepositionSecurityWarning(JNIEnv *env);
 
     static void SetLayered(HWND window, bool layered);
     static bool IsLayered(HWND window);
@@ -355,7 +305,6 @@ private:
     BOOL fullScreenExclusiveModeState;
     inline void setFullScreenExclusiveModeState(BOOL isEntered) {
         fullScreenExclusiveModeState = isEntered;
-        UpdateSecurityWarningVisibility();
     }
     inline BOOL isFullScreenExclusiveMode() {
         return fullScreenExclusiveModeState;
@@ -363,8 +312,6 @@ private:
 
 
 public:
-    void UpdateSecurityWarningVisibility();
-    static bool IsWarningWindow(HWND hWnd);
 
 protected:
     BOOL m_isResizable;
@@ -373,10 +320,6 @@ protected:
     HICON m_hIconSm;          /* Small icon for this window. It can be set explicitly or inherited from the owner */
     BOOL m_iconInherited;     /* TRUE if icon is inherited from the owner */
     BOOL m_filterFocusAndActivation; /* Used in the WH_CBT hook */
-
-    inline BOOL IsUntrusted() {
-        return warningString != NULL;
-    }
 
     UINT currentWmSizeState;
 

@@ -354,12 +354,12 @@ public final class HelloApp {
 
             if (TKit.isWindows()) {
                 // When running app launchers on Windows, clear users environment (JDK-8254920)
-                removePath(true);
+                removePathEnvVar(true);
             }
         }
 
-        public AppOutputVerifier removePath(boolean v) {
-            removePath = v;
+        public AppOutputVerifier removePathEnvVar(boolean v) {
+            removePathEnvVar = v;
             return this;
         }
 
@@ -455,7 +455,7 @@ public final class HelloApp {
             Path outputFile = TKit.workDir().resolve(OUTPUT_FILENAME);
             ThrowingFunction.toFunction(Files::deleteIfExists).apply(outputFile);
 
-            final Path executablePath;
+            Path executablePath;
             if (launcherPath.isAbsolute()) {
                 executablePath = launcherPath;
             } else {
@@ -463,18 +463,27 @@ public final class HelloApp {
                 executablePath = Path.of(".").resolve(launcherPath.normalize());
             }
 
+            if (TKit.isWindows()) {
+                var absExecutablePath = executablePath.toAbsolutePath().normalize();
+                var shortPath = WindowsHelper.toShortPath(absExecutablePath);
+                if (shortPath.isPresent()) {
+                    TKit.trace(String.format("Will run [%s] as [%s]", executablePath, shortPath.get()));
+                    executablePath = shortPath.get();
+                }
+            }
+
             final List<String> launcherArgs = List.of(args);
             return new Executor()
                     .setDirectory(outputFile.getParent())
                     .saveOutput(saveOutput)
                     .dumpOutput()
-                    .setRemovePath(removePath)
+                    .setRemovePathEnvVar(removePathEnvVar)
                     .setExecutable(executablePath)
                     .addArguments(launcherArgs);
         }
 
         private boolean launcherNoExit;
-        private boolean removePath;
+        private boolean removePathEnvVar;
         private boolean saveOutput;
         private final Path launcherPath;
         private Path outputFilePath;

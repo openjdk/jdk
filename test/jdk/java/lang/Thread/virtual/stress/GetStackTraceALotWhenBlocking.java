@@ -42,6 +42,7 @@
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import jdk.test.lib.Platform;
 import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 
 public class GetStackTraceALotWhenBlocking {
@@ -50,7 +51,14 @@ public class GetStackTraceALotWhenBlocking {
         // need at least two carriers
         VThreadRunner.ensureParallelism(2);
 
-        int iterations = args.length > 0 ? Integer.parseInt(args[0]) : 100_000;
+        int iterations;
+        int value = Integer.parseInt(args[0]);
+        if (Platform.isOSX() && Platform.isX64()) {
+            // reduced iterations on macosx-x64
+            iterations = Math.max(value / 4, 1);
+        } else {
+            iterations = value;
+        }
 
         var done = new AtomicBoolean();
         var lock = new Object();

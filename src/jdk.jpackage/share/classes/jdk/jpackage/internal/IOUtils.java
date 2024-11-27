@@ -40,7 +40,7 @@ import java.util.List;
  *
  * A collection of static utility methods.
  */
-public class IOUtils {
+final class IOUtils {
 
     public static void copyFile(Path sourceFile, Path destFile)
             throws IOException {
