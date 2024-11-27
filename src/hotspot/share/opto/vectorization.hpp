@@ -189,7 +189,12 @@ public:
   // before or inside the pre-loop. For example, alignment of main-loop vector
   // memops must be acheived in the pre-loop, via the exit check in the pre-loop.
   bool is_pre_loop_invariant(Node* n) const {
-    assert(cl()->is_main_loop(), "must be");
+    // Must be in the main-loop, otherwise we can't access the pre-loop.
+    // This fails during SuperWord::unrolling_analysis, but that is ok.
+    if (!cl()->is_main_loop()) {
+      return false;
+    }
+
     Node* ctrl = phase()->get_ctrl(n);
 
     // Quick test: is it in the main-loop?
