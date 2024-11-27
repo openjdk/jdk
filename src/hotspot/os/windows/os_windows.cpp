@@ -5830,7 +5830,6 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   bool need_underscore = false;
 
   if (lib_name != nullptr) {
-    name_len = strlen(lib_name);
     if (is_absolute_path) {
       // Need to strip path, prefix and suffix
       if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
@@ -5841,11 +5840,14 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
           lib_name = ++start;
         }
       }
+      name_len = strlen(lib_name);
       if (name_len <= (prefix_len + suffix_len)) {
         return nullptr;
       }
       lib_name += prefix_len;
       name_len = strlen(lib_name) - suffix_len;
+    } else {
+      name_len = strlen(lib_name);
     }
     need_underscore = true;
   }
