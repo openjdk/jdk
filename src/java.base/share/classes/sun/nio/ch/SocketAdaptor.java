@@ -88,9 +88,9 @@ class SocketAdaptor
             throw new IllegalArgumentException("connect: The address can't be null");
         if (remote instanceof InetSocketAddress isa && isa.isUnresolved()) {
             if (!sc.isOpen())
-                    throw new SocketException("Socket is closed");
+                throw new SocketException("Socket is closed");
             if (sc.isConnected())
-                    throw new SocketException("Already connected");
+                throw new SocketException("Already connected");
             close();
             throw new UnknownHostException(remote.toString());
         }
