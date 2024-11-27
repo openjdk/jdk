@@ -23,10 +23,9 @@
 
 /**
 * @test
-* @bug 8338201
-* @summary Support new unsigned and saturating vector operators in VectorAPI
+* @bug 8342677
+* @summary Add IR validation tests for newly added saturated vector add / sub operations
 * @modules jdk.incubator.vector
-* @requires vm.compiler2.enabled
 * @library /test/lib /
 * @run driver compiler.vectorapi.VectorSaturatedOperationsTest
 */
