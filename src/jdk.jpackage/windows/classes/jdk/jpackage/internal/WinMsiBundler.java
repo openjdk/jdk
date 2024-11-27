@@ -526,9 +526,10 @@ public class WinMsiBundler  extends AbstractBundler {
                 "message.preparing-msi-config"), msiOut.toAbsolutePath()
                         .toString()));
 
-        WixPipeline wixPipeline = new WixPipeline()
-                .setToolset(wixToolset)
-                .setWixObjDir(TEMP_ROOT.fetchFrom(params).resolve("wixobj"))
+        var wixObjDir = TEMP_ROOT.fetchFrom(params).resolve("wixobj");
+
+        var wixPipeline = WixPipeline.build()
+                .setWixObjDir(wixObjDir)
                 .setWorkDir(WIN_APP_IMAGE.fetchFrom(params))
                 .addSource(CONFIG_ROOT.fetchFrom(params).resolve("main.wxs"),
                         wixVars);
@@ -605,13 +606,13 @@ public class WinMsiBundler  extends AbstractBundler {
         // Cultures from custom files and a single primary Culture are
         // included into "-cultures" list
         for (var wxl : primaryWxlFiles) {
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
         }
 
         List<String> cultures = new ArrayList<>();
         for (var wxl : customWxlFiles) {
             wxl = configDir.resolve(wxl.getFileName());
-            wixPipeline.addLightOptions("-loc", wxl.toAbsolutePath().normalize().toString());
+            wixPipeline.addLightOptions("-loc", wxl.toString());
             cultures.add(getCultureFromWxlFile(wxl));
         }
 
@@ -638,7 +639,8 @@ public class WinMsiBundler  extends AbstractBundler {
             }
         }
 
-        wixPipeline.buildMsi(msiOut.toAbsolutePath());
+        Files.createDirectories(wixObjDir);
+        wixPipeline.create(wixToolset).buildMsi(msiOut.toAbsolutePath());
 
         return msiOut;
     }
@@ -678,14 +680,14 @@ public class WinMsiBundler  extends AbstractBundler {
             if (nodes.getLength() != 1) {
                 throw new IOException(MessageFormat.format(I18N.getString(
                         "error.extract-culture-from-wix-l10n-file"),
-                        wxlPath.toAbsolutePath()));
+                        wxlPath.toAbsolutePath().normalize()));
             }
 
             return nodes.item(0).getNodeValue();
         } catch (XPathExpressionException | ParserConfigurationException
                 | SAXException ex) {
             throw new IOException(MessageFormat.format(I18N.getString(
-                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath()), ex);
+                    "error.read-wix-l10n-file"), wxlPath.toAbsolutePath().normalize()), ex);
         }
     }
 

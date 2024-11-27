@@ -61,7 +61,6 @@ public class FontManagerNativeLibrary {
      * Method acts as trigger to ensure this class is loaded
      * (and therefore initializer code is executed).
      * Actual loading is performed by static initializer.
-     * (no need to execute doPrivileged block more than once)
      */
     public static void load() {}
 }

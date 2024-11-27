@@ -59,78 +59,71 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
         initStatic();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void initStatic() {
-        java.security.AccessController.doPrivileged(
-                          new java.security.PrivilegedAction<Object>() {
-            public Object run() {
-                System.loadLibrary("awt");
+        System.loadLibrary("awt");
 
-                /*
-                 * Note: The XToolkit object depends on the static initializer
-                 * of X11GraphicsEnvironment to initialize the connection to
-                 * the X11 server.
-                 */
-                if (!isHeadless()) {
-                    // first check the OGL system property
-                    boolean glxRequested = false;
-                    String prop = System.getProperty("sun.java2d.opengl");
-                    if (prop != null) {
-                        if (prop.equals("true") || prop.equals("t")) {
-                            glxRequested = true;
-                        } else if (prop.equals("True") || prop.equals("T")) {
-                            glxRequested = true;
-                            glxVerbose = true;
-                        }
-                    }
+        /*
+         * Note: The XToolkit object depends on the static initializer
+         * of X11GraphicsEnvironment to initialize the connection to
+         * the X11 server.
+         */
+        if (!isHeadless()) {
+            // first check the OGL system property
+            boolean glxRequested = false;
+            String prop = System.getProperty("sun.java2d.opengl");
+            if (prop != null) {
+                if (prop.equals("true") || prop.equals("t")) {
+                    glxRequested = true;
+                } else if (prop.equals("True") || prop.equals("T")) {
+                    glxRequested = true;
+                    glxVerbose = true;
+                }
+            }
 
-                    // Now check for XRender system property
-                    boolean xRenderRequested = true;
-                    boolean xRenderIgnoreLinuxVersion = false;
-                    String xProp = System.getProperty("sun.java2d.xrender");
-                        if (xProp != null) {
-                        if (xProp.equals("false") || xProp.equals("f")) {
-                            xRenderRequested = false;
-                        } else if (xProp.equals("True") || xProp.equals("T")) {
-                            xRenderRequested = true;
-                            xRenderVerbose = true;
-                        }
-
-                        if(xProp.equalsIgnoreCase("t") || xProp.equalsIgnoreCase("true")) {
-                            xRenderIgnoreLinuxVersion = true;
-                        }
-                    }
-
-                    // initialize the X11 display connection
-                    initDisplay(glxRequested);
-
-                    // only attempt to initialize GLX if it was requested
-                    if (glxRequested) {
-                        glxAvailable = initGLX();
-                        if (glxVerbose && !glxAvailable) {
-                            System.out.println(
-                                "Could not enable OpenGL " +
-                                "pipeline (GLX 1.3 not available)");
-                        }
-                    }
-
-                    // only attempt to initialize Xrender if it was requested
-                    if (xRenderRequested) {
-                        xRenderAvailable = initXRender(xRenderVerbose, xRenderIgnoreLinuxVersion);
-                        if (xRenderVerbose && !xRenderAvailable) {
-                            System.out.println(
-                                         "Could not enable XRender pipeline");
-                        }
-                    }
-
-                    if (xRenderAvailable) {
-                        XRSurfaceData.initXRSurfaceData();
-                    }
+            // Now check for XRender system property
+            boolean xRenderRequested = true;
+            boolean xRenderIgnoreLinuxVersion = false;
+            String xProp = System.getProperty("sun.java2d.xrender");
+                if (xProp != null) {
+                if (xProp.equals("false") || xProp.equals("f")) {
+                    xRenderRequested = false;
+                } else if (xProp.equals("True") || xProp.equals("T")) {
+                    xRenderRequested = true;
+                    xRenderVerbose = true;
                 }
 
-                return null;
+                if (xProp.equalsIgnoreCase("t") || xProp.equalsIgnoreCase("true")) {
+                    xRenderIgnoreLinuxVersion = true;
+                }
             }
-         });
+
+            // initialize the X11 display connection
+            initDisplay(glxRequested);
+
+            // only attempt to initialize GLX if it was requested
+            if (glxRequested) {
+                glxAvailable = initGLX();
+                if (glxVerbose && !glxAvailable) {
+                    System.out.println(
+                        "Could not enable OpenGL " +
+                        "pipeline (GLX 1.3 not available)");
+                }
+            }
+
+            // only attempt to initialize Xrender if it was requested
+            if (xRenderRequested) {
+                xRenderAvailable = initXRender(xRenderVerbose, xRenderIgnoreLinuxVersion);
+                if (xRenderVerbose && !xRenderAvailable) {
+                    System.out.println(
+                                 "Could not enable XRender pipeline");
+                }
+            }
+
+            if (xRenderAvailable) {
+                XRSurfaceData.initXRSurfaceData();
+            }
+        }
 
         // Install the correct surface manager factory.
         SurfaceManagerFactory.setInstance(new UnixSurfaceManagerFactory());
@@ -299,9 +292,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
             return true;
         }
 
-        @SuppressWarnings("removal")
-        String isRemote = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("sun.java2d.remote"));
+        String isRemote = System.getProperty("sun.java2d.remote");
         if (isRemote != null) {
             return isRemote.equals("false");
         }
@@ -322,41 +313,35 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
             return true;
         }
 
-        @SuppressWarnings("removal")
-        Boolean result = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                InetAddress[] remAddr = null;
-                Enumeration<InetAddress> locals = null;
-                Enumeration<NetworkInterface> interfaces = null;
-                try {
-                    interfaces = NetworkInterface.getNetworkInterfaces();
-                    remAddr = InetAddress.getAllByName(hostName);
-                    if (remAddr == null) {
-                        return Boolean.FALSE;
-                    }
-                } catch (UnknownHostException e) {
-                    System.err.println("Unknown host: " + hostName);
-                    return Boolean.FALSE;
-                } catch (SocketException e1) {
-                    System.err.println(e1.getMessage());
-                    return Boolean.FALSE;
-                }
+        InetAddress[] remAddr = null;
+        Enumeration<InetAddress> locals = null;
+        Enumeration<NetworkInterface> interfaces = null;
+        try {
+            interfaces = NetworkInterface.getNetworkInterfaces();
+            remAddr = InetAddress.getAllByName(hostName);
+            if (remAddr == null) {
+                return false;
+            }
+        } catch (UnknownHostException e) {
+            System.err.println("Unknown host: " + hostName);
+            return false;
+        } catch (SocketException e1) {
+            System.err.println(e1.getMessage());
+            return false;
+        }
 
-                for (; interfaces.hasMoreElements();) {
-                    locals = interfaces.nextElement().getInetAddresses();
-                    for (; locals.hasMoreElements();) {
-                        final InetAddress localAddr = locals.nextElement();
-                        for (int i = 0; i < remAddr.length; i++) {
-                            if (localAddr.equals(remAddr[i])) {
-                                return Boolean.TRUE;
-                            }
-                        }
+        for (; interfaces.hasMoreElements();) {
+            locals = interfaces.nextElement().getInetAddresses();
+            for (; locals.hasMoreElements();) {
+                final InetAddress localAddr = locals.nextElement();
+                for (int i = 0; i < remAddr.length; i++) {
+                    if (localAddr.equals(remAddr[i])) {
+                        return true;
                     }
                 }
-                return Boolean.FALSE;
-            }});
-        return result.booleanValue();
+            }
+        }
+        return false;
     }
 
 

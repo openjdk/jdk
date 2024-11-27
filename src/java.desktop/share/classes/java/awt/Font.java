@@ -36,7 +36,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
@@ -1230,13 +1229,6 @@ public class Font implements java.io.Serializable
         if (fontFormat != Font.TRUETYPE_FONT &&
             fontFormat != Font.TYPE1_FONT) {
             throw new IllegalArgumentException ("font format not recognized");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            FilePermission filePermission =
-                new FilePermission(fontFile.getPath(), "read");
-            sm.checkPermission(filePermission);
         }
         if (!fontFile.canRead()) {
             throw new IOException("Can't read " + fontFile);

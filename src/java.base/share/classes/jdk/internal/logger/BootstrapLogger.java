@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
 
 package jdk.internal.logger;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -131,15 +128,8 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         @Override
         public Thread newThread(Runnable r) {
             ExecutorService owner = getExecutor();
-            @SuppressWarnings("removal")
-            Thread thread = AccessController.doPrivileged(new PrivilegedAction<Thread>() {
-                @Override
-                public Thread run() {
-                    Thread t = InnocuousThread.newThread(new BootstrapMessageLoggerTask(owner, r));
-                    t.setName("BootstrapMessageLoggerTask-"+t.getName());
-                    return t;
-                }
-            }, null, new RuntimePermission("enableContextClassLoaderOverride"));
+            Thread thread = InnocuousThread.newThread(new BootstrapMessageLoggerTask(owner, r));
+            thread.setName("BootstrapMessageLoggerTask-" + thread.getName());
             thread.setDaemon(true);
             return thread;
         }
@@ -269,8 +259,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         // the parameters etc... we need to store the context of the
         // caller who logged the message - so that we can reuse it when
         // we finally log the message.
-        @SuppressWarnings("removal")
-        final AccessControlContext acc;
 
         // The next event in the queue
         LogEvent next;
@@ -279,7 +267,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         private LogEvent(BootstrapLogger bootstrap, Level level,
                 ResourceBundle bundle, String msg,
                 Throwable thrown, Object[] params) {
-            this.acc = AccessController.getContext();
             this.timeMillis = System.currentTimeMillis();
             this.nanoAdjustment = VM.getNanoTimeAdjustment(timeMillis);
             this.level = level;
@@ -298,7 +285,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         private LogEvent(BootstrapLogger bootstrap, Level level,
                 Supplier<String> msgSupplier,
                 Throwable thrown, Object[] params) {
-            this.acc = AccessController.getContext();
             this.timeMillis = System.currentTimeMillis();
             this.nanoAdjustment = VM.getNanoTimeAdjustment(timeMillis);
             this.level = level;
@@ -319,7 +305,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
                 String sourceClass, String sourceMethod,
                 ResourceBundle bundle, String msg,
                 Throwable thrown, Object[] params) {
-            this.acc = AccessController.getContext();
             this.timeMillis = System.currentTimeMillis();
             this.nanoAdjustment = VM.getNanoTimeAdjustment(timeMillis);
             this.level = null;
@@ -340,7 +325,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
                 String sourceClass, String sourceMethod,
                 Supplier<String> msgSupplier,
                 Throwable thrown, Object[] params) {
-            this.acc = AccessController.getContext();
             this.timeMillis = System.currentTimeMillis();
             this.nanoAdjustment = VM.getNanoTimeAdjustment(timeMillis);
             this.level = null;
@@ -444,20 +428,12 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
                                 Objects.requireNonNull(level),
                                 Objects.requireNonNull(msgSupplier), null, null);
         }
-        @SuppressWarnings("removal")
+
         static void log(LogEvent log, Logger logger) {
-            final SecurityManager sm = System.getSecurityManager();
             // not sure we can actually use lambda here. We may need to create
             // an anonymous class. Although if we reach here, then it means
             // the VM is booted.
-            if (sm == null || log.acc == null) {
-                BootstrapExecutors.submit(() -> log.log(logger));
-            } else {
-                BootstrapExecutors.submit(() ->
-                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                        log.log(logger); return null;
-                    }, log.acc));
-            }
+            BootstrapExecutors.submit(() -> log.log(logger));
         }
 
         // non default methods from PlatformLogger.Bridge interface
@@ -510,20 +486,9 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
                                 Objects.requireNonNull(level), sourceClass,
                                 sourceMethod, msgSupplier, thrown, null);
         }
-        @SuppressWarnings("removal")
+
         static void log(LogEvent log, PlatformLogger.Bridge logger) {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm == null || log.acc == null) {
-                BootstrapExecutors.submit(() -> log.log(logger));
-            } else {
-                // not sure we can actually use lambda here. We may need to create
-                // an anonymous class. Although if we reach here, then it means
-                // the VM is booted.
-                BootstrapExecutors.submit(() ->
-                    AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                        log.log(logger); return null;
-                }, log.acc));
-            }
+            BootstrapExecutors.submit(() -> log.log(logger));
         }
 
         static void log(LogEvent event) {
@@ -897,37 +862,32 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     // We do not want this field to get initialized if VM.isBooted() is false.
     @SuppressWarnings("removal")
     private static final class DetectBackend {
-        static final LoggingBackend detectedBackend;
-        static {
-            detectedBackend = AccessController.doPrivileged(new PrivilegedAction<LoggingBackend>() {
-                    @Override
-                    public LoggingBackend run() {
-                        final Iterator<LoggerFinder> iterator =
-                            ServiceLoader.load(LoggerFinder.class, ClassLoader.getSystemClassLoader())
-                            .iterator();
-                        if (iterator.hasNext()) {
-                            return LoggingBackend.CUSTOM; // Custom Logger Provider is registered
-                        }
-                        // No custom logger provider: we will be using the default
-                        // backend.
-                        final Iterator<DefaultLoggerFinder> iterator2 =
-                            ServiceLoader.loadInstalled(DefaultLoggerFinder.class)
-                            .iterator();
-                        if (iterator2.hasNext()) {
-                            // LoggingProviderImpl is registered. The default
-                            // implementation is java.util.logging
-                            String cname = System.getProperty("java.util.logging.config.class");
-                            String fname = System.getProperty("java.util.logging.config.file");
-                            return (cname != null || fname != null)
-                                ? LoggingBackend.JUL_WITH_CONFIG
-                                : LoggingBackend.JUL_DEFAULT;
-                        } else {
-                            // SimpleConsoleLogger is used
-                            return LoggingBackend.NONE;
-                        }
-                    }
-                });
+        static final LoggingBackend detectedBackend = detectBackend();
 
+        static LoggingBackend detectBackend() {
+            final Iterator<LoggerFinder> iterator =
+                    ServiceLoader.load(LoggerFinder.class, ClassLoader.getSystemClassLoader())
+                            .iterator();
+            if (iterator.hasNext()) {
+                return LoggingBackend.CUSTOM; // Custom Logger Provider is registered
+            }
+            // No custom logger provider: we will be using the default
+            // backend.
+            final Iterator<DefaultLoggerFinder> iterator2 =
+                    ServiceLoader.loadInstalled(DefaultLoggerFinder.class)
+                            .iterator();
+            if (iterator2.hasNext()) {
+                // LoggingProviderImpl is registered. The default
+                // implementation is java.util.logging
+                String cname = System.getProperty("java.util.logging.config.class");
+                String fname = System.getProperty("java.util.logging.config.file");
+                return (cname != null || fname != null)
+                        ? LoggingBackend.JUL_WITH_CONFIG
+                        : LoggingBackend.JUL_DEFAULT;
+            } else {
+                // SimpleConsoleLogger is used
+                return LoggingBackend.NONE;
+            }
         }
     }
 
