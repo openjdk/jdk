@@ -444,7 +444,7 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
     "/sys/fs/cgroup/memory",    // mount_path
     "/a",                       // root_path
     "/a/b",                     // cgroup_path
-    "/sys/fs/cgroup/memory/a/b" // expected_path
+    "/sys/fs/cgroup/memory"     // expected_path
   };
   int length = 4;
   TestCase* testCases[] = { &host,
