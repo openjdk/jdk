@@ -63,7 +63,9 @@ public class Block implements Cluster {
     public List<? extends Vertex> getVertices() {
         List<Vertex> vertices = new ArrayList<>();
         for (InputNode inputNode : inputBlock.getNodes()) {
-            vertices.add(diagram.getFigure(inputNode));
+            if (diagram.hasFigure(inputNode)) {
+                vertices.add(diagram.getFigure(inputNode));
+            }
         }
         return vertices;
     }
