@@ -185,7 +185,6 @@ class ClassFileParser {
   u2 _java_fields_count;
 
   bool _need_verify;
-  bool _relax_verify;
 
   bool _has_nonstatic_concrete_methods;
   bool _declares_nonstatic_concrete_methods;
@@ -510,6 +509,10 @@ class ClassFileParser {
   bool is_hidden() const { return _is_hidden; }
   bool is_interface() const { return _access_flags.is_interface(); }
   bool is_abstract() const { return _access_flags.is_abstract(); }
+
+  // Returns true if the Klass to be generated will need to be addressable
+  // with a narrow Klass ID.
+  bool klass_needs_narrow_id() const;
 
   ClassLoaderData* loader_data() const { return _loader_data; }
   const Symbol* class_name() const { return _class_name; }

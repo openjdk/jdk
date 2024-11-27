@@ -279,6 +279,12 @@ public class IRNode {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
+    public static final String ADD_P_OF = COMPOSITE_PREFIX + "ADD_P_OF" + POSTFIX;
+    static {
+        String regex = START + "addP_" + IS_REPLACED + MID + ".*" + END;
+        machOnly(ADD_P_OF, regex);
+    }
+
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
         String optoRegex = "(.*precise .*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_instance" + END;

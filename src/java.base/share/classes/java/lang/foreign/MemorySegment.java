@@ -1307,7 +1307,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
-     *                string bytes
+     *                string bytes. The {@code charset} must be a
+     *                {@linkplain StandardCharsets standard charset}
      * @return a Java string constructed from the bytes read from the given starting
      *         address up to (but not including) the first {@code '\0'} terminator
      *         character (assuming one is found)
@@ -1375,7 +1376,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                access operation will occur, the final address of this write
      *                operation can be expressed as {@code address() + offset}
      * @param str     the Java string to be written into this segment
-     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes
+     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
+     *                string bytes. The {@code charset} must be a
+     *                {@linkplain StandardCharsets standard charset}
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + N)}, where:
      *         <ul>

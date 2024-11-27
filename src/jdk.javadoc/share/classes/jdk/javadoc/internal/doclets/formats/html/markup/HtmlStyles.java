@@ -688,6 +688,16 @@ public enum HtmlStyles implements HtmlStyle {
     permits,
 
     /**
+     * The class used for a {@code sup} element marking an element as preview feature.
+     */
+    previewMark,
+
+    /**
+     * The class used for a {@code sup} element marking a method as restricted.
+     */
+    restrictedMark,
+
+    /**
      * The class of a {@code span} containing the return type in the signature of a method element.
      */
     returnType,
@@ -856,6 +866,11 @@ public enum HtmlStyles implements HtmlStyle {
      * The class of the {@code body} element for the search page.
      */
     searchPage,
+
+    /**
+     * The class of the {@code body} element for the search tags page.
+     */
+    searchTagsPage,
 
     /**
      * The class of the {@code body} element for the serialized-forms page.

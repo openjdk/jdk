@@ -69,9 +69,9 @@ int CompiledDirectCall::to_interp_stub_size() {
 }
 
 int CompiledDirectCall::to_trampoline_stub_size() {
-  // We count instructions and an additional alignment nop.
-  // Trampoline stubs are always word aligned.
-  return MacroAssembler::max_reloc_call_stub_size();
+  // We count size of target address and an additional alignment nop.
+  // Reloc call address stubs are always word aligned.
+  return MacroAssembler::max_reloc_call_address_stub_size();
 }
 
 // Relocation entries for call stub, compiled java to interpreter.

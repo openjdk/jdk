@@ -47,6 +47,15 @@ void C2_MacroAssembler::fast_unlock_lightweight(ConditionRegister flag, Register
   compiler_fast_unlock_lightweight_object(flag, obj, box, tmp1, tmp2, tmp3);
 }
 
+void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Register obj, int disp) {
+  // Note: Don't clobber obj anywhere in that method!
+
+  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
+  // obj-start, so that we can load from the object's mark-word instead.
+  ld(dst, disp - oopDesc::klass_offset_in_bytes(), obj);
+  srdi(dst, dst, markWord::klass_shift);
+}
+
 // Intrinsics for CompactStrings
 
 // Compress char[] to byte[] by compressing 16 bytes at once.

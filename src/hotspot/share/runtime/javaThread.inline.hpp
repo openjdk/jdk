@@ -241,10 +241,20 @@ inline InstanceKlass* JavaThread::class_to_be_initialized() const {
   return _class_to_be_initialized;
 }
 
+inline void JavaThread::set_class_being_initialized(InstanceKlass* k) {
+  assert(k != nullptr || _class_being_initialized != nullptr, "incorrect usage");
+  assert(this == Thread::current(), "Only the current thread can set this field");
+  _class_being_initialized = k;
+}
+
+inline InstanceKlass* JavaThread::class_being_initialized() const {
+  return _class_being_initialized;
+}
+
 inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
   assert(UseObjectMonitorTable, "must be");
   assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
-  assert(this == current() || monitor->owner_raw() == this, "only add owned monitors for other threads");
+  assert(this == current() || monitor->has_owner(this), "only add owned monitors for other threads");
   assert(this == current() || is_obj_deopt_suspend(), "thread must not run concurrently");
 
   _om_cache.set_monitor(monitor);

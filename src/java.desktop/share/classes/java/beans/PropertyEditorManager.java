@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,17 +66,9 @@ public class PropertyEditorManager {
      * Thus this method can be used to cancel the registration.
      * The registration is canceled automatically
      * if either the target or editor class is unloaded.
-     * <p>
-     * If there is a security manager, its {@code checkPropertiesAccess}
-     * method is called. This could result in a {@linkplain SecurityException}.
      *
      * @param targetType   the class object of the type to be edited
      * @param editorClass  the class object of the editor class
-     * @throws SecurityException  if a security manager exists and
-     *                            its {@code checkPropertiesAccess} method
-     *                            doesn't allow setting of system properties
-     *
-     * @see SecurityManager#checkPropertiesAccess
      */
     public static void registerEditor(Class<?> targetType, Class<?> editorClass) {
         @SuppressWarnings("removal")
@@ -114,14 +106,7 @@ public class PropertyEditorManager {
      * Change the list of package names that will be used for
      *          finding property editors.
      *
-     * <p>First, if there is a security manager, its {@code checkPropertiesAccess}
-     * method is called. This could result in a SecurityException.
-     *
      * @param path  Array of package names.
-     * @throws  SecurityException  if a security manager exists and its
-     *             {@code checkPropertiesAccess} method doesn't allow setting
-     *              of system properties.
-     * @see SecurityManager#checkPropertiesAccess
      */
     public static void setEditorSearchPath(String[] path) {
         @SuppressWarnings("removal")

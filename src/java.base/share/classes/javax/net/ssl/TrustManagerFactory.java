@@ -27,7 +27,6 @@ package javax.net.ssl;
 
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.security.Security;
 import java.security.*;
 import java.util.Objects;
 
@@ -78,11 +77,8 @@ public class TrustManagerFactory {
      * {@code ssl.TrustManagerFactory.algorithm} security property, or an
      * implementation-specific default if no such property exists.
      */
-    @SuppressWarnings("removal")
     public static final String getDefaultAlgorithm() {
-        String type;
-        type = AccessController.doPrivileged((PrivilegedAction<String>) () ->
-            Security.getProperty( "ssl.TrustManagerFactory.algorithm"));
+        String type = Security.getProperty("ssl.TrustManagerFactory.algorithm");
         if (type == null) {
             type = "SunX509";
         }

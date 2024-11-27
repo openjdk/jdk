@@ -41,7 +41,6 @@ import java.awt.Component;
  * @see java.beans.beancontext.BeanContextSupport
  */
 
-@SuppressWarnings("removal")
 @Deprecated(since = "23", forRemoval = true)
 public interface BeanContextChildComponentProxy {
 

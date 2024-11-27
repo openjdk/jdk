@@ -43,6 +43,12 @@ public class HierarchicalClusterLayoutManager implements LayoutManager {
         this.combine = combine;
     }
 
+    @Override
+    public void setCutEdges(boolean enable) {
+        subManager.setCutEdges(enable);
+        manager.setCutEdges(enable);
+    }
+
     public void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks) {
         doLayout(graph);
     }

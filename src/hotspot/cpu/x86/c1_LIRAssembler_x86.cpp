@@ -3046,6 +3046,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register length  = op->length()->as_register();
   Register tmp = op->tmp()->as_register();
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
+  Register tmp2 = UseCompactObjectHeaders ? rscratch2 : noreg;
 
   CodeStub* stub = op->stub();
   int flags = op->flags();
@@ -3170,8 +3171,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
-  Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
-  Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
 
   // length and pos's are all sign extended at this point on 64bit
 
@@ -3237,13 +3236,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedClassPointers) {
-        __ movl(tmp, src_klass_addr);
-        __ cmpl(tmp, dst_klass_addr);
-      } else {
-        __ movptr(tmp, src_klass_addr);
-        __ cmpptr(tmp, dst_klass_addr);
-      }
+      __ cmp_klasses_from_objects(src, dst, tmp, tmp2);
       __ jcc(Assembler::notEqual, *stub->entry());
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -3302,6 +3295,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
        store_parameter(src, 4);
 
 #ifndef _LP64
+       Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
         __ movptr(tmp, dst_klass_addr);
         __ movptr(tmp, Address(tmp, ObjArrayKlass::element_klass_offset()));
         __ push(tmp);
@@ -3405,16 +3399,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 #endif
 
     if (basic_type != T_OBJECT) {
-
-      if (UseCompressedClassPointers)          __ cmpl(tmp, dst_klass_addr);
-      else                   __ cmpptr(tmp, dst_klass_addr);
+      __ cmp_klass(tmp, dst, tmp2);
       __ jcc(Assembler::notEqual, halt);
-      if (UseCompressedClassPointers)          __ cmpl(tmp, src_klass_addr);
-      else                   __ cmpptr(tmp, src_klass_addr);
+      __ cmp_klass(tmp, src, tmp2);
       __ jcc(Assembler::equal, known_ok);
     } else {
-      if (UseCompressedClassPointers)          __ cmpl(tmp, dst_klass_addr);
-      else                   __ cmpptr(tmp, dst_klass_addr);
+      __ cmp_klass(tmp, dst, tmp2);
       __ jcc(Assembler::equal, known_ok);
       __ cmpptr(src, dst);
       __ jcc(Assembler::equal, known_ok);
@@ -3511,13 +3501,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-#ifdef _LP64
-  if (UseCompressedClassPointers) {
-    __ movl(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result, rscratch1);
-  } else
-#endif
-    __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(result, obj, rscratch1);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

@@ -62,6 +62,7 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
+#include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayKlass.hpp"
@@ -397,8 +398,13 @@ void Universe::genesis(TRAPS) {
   HandleMark   hm(THREAD);
 
   // Explicit null checks are needed if these offsets are not smaller than the page size
-  assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
-         "Klass offset is expected to be less than the page size");
+  if (UseCompactObjectHeaders) {
+    assert(oopDesc::mark_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+           "Mark offset is expected to be less than the page size");
+  } else {
+    assert(oopDesc::klass_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
+           "Klass offset is expected to be less than the page size");
+  }
   assert(arrayOopDesc::length_offset_in_bytes() < static_cast<intptr_t>(os::vm_page_size()),
          "Array length offset is expected to be less than the page size");
 
@@ -862,6 +868,8 @@ jint universe_init() {
 
   // Initialize CPUTimeCounters object, which must be done before creation of the heap.
   CPUTimeCounters::initialize();
+
+  ObjLayout::initialize();
 
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();

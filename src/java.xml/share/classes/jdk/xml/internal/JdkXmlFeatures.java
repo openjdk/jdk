@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,7 +401,7 @@ public class JdkXmlFeatures {
      */
     private boolean getSystemProperty(XmlFeature feature, String sysPropertyName) {
         try {
-            String value = SecuritySupport.getSystemProperty(sysPropertyName);
+            String value = System.getProperty(sysPropertyName);
             if (value != null && !value.isEmpty()) {
                 setFeature(feature, State.SYSTEMPROPERTY, Boolean.parseBoolean(value));
                 return true;

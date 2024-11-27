@@ -24,7 +24,6 @@
  */
 package javax.swing;
 
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
@@ -40,8 +39,6 @@ import javax.accessibility.*;
 import javax.swing.event.MenuDragMouseEvent;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
-import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
 
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
@@ -75,12 +72,9 @@ public class SwingUtilities implements SwingConstants
      * Returns true if <code>setTransferHandler</code> should change the
      * <code>DropTarget</code>.
      */
-    @SuppressWarnings("removal")
     private static boolean getSuppressDropTarget() {
         if (!checkedSuppressDropSupport) {
-            suppressDropSupport = Boolean.parseBoolean(
-                AccessController.doPrivileged(
-                    new GetPropertyAction("suppressSwingDropSupport")));
+            suppressDropSupport = Boolean.getBoolean("suppressSwingDropSupport");
             checkedSuppressDropSupport = true;
         }
         return suppressDropSupport;
@@ -1976,14 +1970,6 @@ public class SwingUtilities implements SwingConstants
         public void show() {
             // This frame can never be shown
         }
-        public void dispose() {
-            try {
-                getToolkit().getSystemEventQueue();
-                super.dispose();
-            } catch (Exception e) {
-                // untrusted code not allowed to dispose
-            }
-        }
     }
 
     /**
@@ -2038,7 +2024,6 @@ public class SwingUtilities implements SwingConstants
 
 
     static Class<?> loadSystemClass(String className) throws ClassNotFoundException {
-        ReflectUtil.checkPackageAccess(className);
         return Class.forName(className, true, Thread.currentThread().
                              getContextClassLoader());
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,6 @@ import java.rmi.NoSuchObjectException;
 import java.rmi.dgc.VMID;
 import java.rmi.server.ObjID;
 import java.rmi.server.Unreferenced;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 import sun.rmi.runtime.Log;
 import sun.rmi.runtime.NewThreadAction;
@@ -58,9 +55,6 @@ public final class Target {
     /** table that maps client endpoints to sequence numbers */
     private final Hashtable<VMID, SequenceEntry> sequenceTable =
         new Hashtable<>(5);
-    /** access control context in which target was created */
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc;
     /** context class loader in which target was created */
     private final ClassLoader ccl;
     /** number of pending/executing calls */
@@ -86,7 +80,6 @@ public final class Target {
      * collection. Permanent objects do not keep a server from
      * exiting.
      */
-    @SuppressWarnings("removal")
     public Target(Remote impl, Dispatcher disp, Remote stub, ObjID id,
                   boolean permanent)
     {
@@ -94,7 +87,6 @@ public final class Target {
         this.disp = disp;
         this.stub = stub;
         this.id = id;
-        this.acc = AccessController.getContext();
 
         /*
          * Fix for 4149366: so that downloaded parameter types unmarshalled
@@ -175,11 +167,6 @@ public final class Target {
      */
     Dispatcher getDispatcher() {
         return disp;
-    }
-
-    @SuppressWarnings("removal")
-    AccessControlContext getAccessControlContext() {
-        return acc;
     }
 
     ClassLoader getContextClassLoader() {
@@ -307,7 +294,6 @@ public final class Target {
     /**
      * Remove endpoint from the reference set.
      */
-    @SuppressWarnings("removal")
     private synchronized void refSetRemove(VMID vmid) {
         // remove notification request
         DGCImpl.getDGCImpl().unregisterTarget(vmid, this);
@@ -325,17 +311,12 @@ public final class Target {
              * invoke its unreferenced callback in a separate thread.
              */
             Remote obj = getImpl();
-            if (obj instanceof Unreferenced) {
-                final Unreferenced unrefObj = (Unreferenced) obj;
-                AccessController.doPrivileged(
-                    new NewThreadAction(() -> {
-                        Thread.currentThread().setContextClassLoader(ccl);
-                        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                            unrefObj.unreferenced();
-                            return null;
-                        }, acc);
-                    }, "Unreferenced-" + nextThreadNum++, false, true)).start();
-                    // REMIND: access to nextThreadNum not synchronized; you care?
+            if (obj instanceof Unreferenced unrefObj) {
+                new NewThreadAction(() -> {
+                    Thread.currentThread().setContextClassLoader(ccl);
+                    unrefObj.unreferenced();
+                }, "Unreferenced-" + nextThreadNum++, false, true).run().start();
+                // REMIND: access to nextThreadNum not synchronized; you care?
             }
 
             unpinImpl();

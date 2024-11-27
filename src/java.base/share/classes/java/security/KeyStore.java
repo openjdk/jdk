@@ -1711,9 +1711,6 @@ public class KeyStore {
      * @throws IllegalArgumentException if file does not exist or does not
      *             refer to a normal file.
      * @throws NullPointerException if file is {@code null}.
-     * @throws SecurityException if a security manager exists and its
-     *             {@link java.lang.SecurityManager#checkRead} method denies
-     *             read access to the specified file.
      *
      * @see Provider
      *
@@ -1768,9 +1765,6 @@ public class KeyStore {
      * @throws IllegalArgumentException if file does not exist or does not
      *             refer to a normal file, or if param is not recognized.
      * @throws NullPointerException if file is {@code null}.
-     * @throws SecurityException if a security manager exists and its
-     *             {@link java.lang.SecurityManager#checkRead} method denies
-     *             read access to the specified file.
      *
      * @see Provider
      *
@@ -1987,10 +1981,6 @@ public class KeyStore {
          * object encapsulating the password that was used to invoke the
          * {@code load} method.
          *
-         * <p><em>Note</em> that the {@link #getKeyStore} method is executed
-         * within the {@link AccessControlContext} of the code invoking this
-         * method.
-         *
          * @return a new {@code Builder} object
          * @param type the type of {@code KeyStore} to be constructed
          * @param provider the provider from which the {@code KeyStore} is to
@@ -2050,10 +2040,6 @@ public class KeyStore {
          * will return a {@link KeyStore.PasswordProtection PasswordProtection}
          * object encapsulating the password that was used to invoke the
          * {@code load} method.
-         *
-         * <p><em>Note</em> that the {@link #getKeyStore} method is executed
-         * within the {@link AccessControlContext} of the code invoking this
-         * method.
          *
          * @return a new {@code Builder} object
          * @param file the File that contains the {@code KeyStore} data
@@ -2212,10 +2198,6 @@ public class KeyStore {
          *
          * <p>Calls to {@link #getProtectionParameter getProtectionParameter()}
          * will return {@code protection}.
-         *
-         * <p><em>Note</em> that the {@link #getKeyStore} method is executed
-         * within the {@link AccessControlContext} of the code invoking this
-         * method.
          *
          * @return a new {@code Builder} object
          * @param type the type of {@code KeyStore} to be constructed

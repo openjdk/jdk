@@ -401,8 +401,7 @@ bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
 // all the uses that we've seen so far to use the merge. After that we keep replacing the new defs in the same lrg
 // as they get encountered with the merge node and keep adding these defs to the merge inputs.
 void PhaseChaitin::merge_multidefs() {
-  Compile::TracePhase tp("mergeMultidefs", &timers[_t_mergeMultidefs]);
-  ResourceMark rm;
+  Compile::TracePhase tp(_t_mergeMultidefs);
   // Keep track of the defs seen in registers and collect their uses in the block.
   RegToDefUseMap reg2defuse(_max_reg, _max_reg, RegDefUse());
   for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
@@ -501,7 +500,7 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
 // When we see a use from a reg-reg Copy, we will attempt to use the copy's
 // source directly and make the copy go dead.
 void PhaseChaitin::post_allocate_copy_removal() {
-  Compile::TracePhase tp("postAllocCopyRemoval", &timers[_t_postAllocCopyRemoval]);
+  Compile::TracePhase tp(_t_postAllocCopyRemoval);
   ResourceMark rm;
 
   // Need a mapping from basic block Node_Lists.  We need a Node_List to

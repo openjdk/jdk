@@ -404,10 +404,6 @@ final class DirectAudioDevice extends AbstractMixer {
             // $$fb part of fix for 4679187: Clip.open() throws unexpected Exceptions
             Toolkit.isFullySpecifiedAudioFormat(format);
 
-            // check for record permission
-            if (!isSource) {
-                JSSecurityManager.checkRecordPermission();
-            }
             int encoding = PCM;
             if (format.getEncoding().equals(AudioFormat.Encoding.ULAW)) {
                 encoding = ULAW;
@@ -509,11 +505,6 @@ final class DirectAudioDevice extends AbstractMixer {
 
         @Override
         void implStart() {
-            // check for record permission
-            if (!isSource) {
-                JSSecurityManager.checkRecordPermission();
-            }
-
             synchronized (lockNative)
             {
                 nStart(id, isSource);
@@ -538,11 +529,6 @@ final class DirectAudioDevice extends AbstractMixer {
 
         @Override
         void implStop() {
-            // check for record permission
-            if (!isSource) {
-                JSSecurityManager.checkRecordPermission();
-            }
-
             if (monitoring) {
                 getEventDispatcher().removeLineMonitor(this);
                 monitoring = false;
@@ -565,11 +551,6 @@ final class DirectAudioDevice extends AbstractMixer {
 
         @Override
         void implClose() {
-            // check for record permission
-            if (!isSource) {
-                JSSecurityManager.checkRecordPermission();
-            }
-
             // be sure to remove this monitor
             if (monitoring) {
                 getEventDispatcher().removeLineMonitor(this);
