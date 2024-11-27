@@ -2267,11 +2267,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     } else if (match_option(option, "--patch-module=", &tail)) {
       // --patch-module=<module>=<file>(<pathsep><file>)*
       int res = process_patch_mod_option(tail, patch_mod_javabase);
-      if (res == JNI_OK) {
-        // Add jdk.patched system property when processing of args was OK
-        PropertyList_unique_add(&_system_properties, "jdk.patched", "true",
-                                AddProperty, UnwriteableProperty, ExternalProperty);
-      } else {
+      if (res != JNI_OK) {
         return res;
       }
     } else if (match_option(option, "--sun-misc-unsafe-memory-access=", &tail)) {
