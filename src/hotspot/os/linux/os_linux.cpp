@@ -3273,7 +3273,7 @@ bool os::Linux::libnuma_init() {
         set_numa_nodes_ptr((struct bitmask **)libnuma_dlsym(handle, "numa_nodes_ptr"));
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
-	set_numa_cpunodebind_bitmask(_numa_get_run_node_mask());
+        set_numa_cpunodebind_bitmask(_numa_get_run_node_mask());
         // Create an index -> node mapping, since nodes are not always consecutive
         _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
@@ -4495,16 +4495,16 @@ void os::Linux::numa_init() {
     Linux::set_configured_numa_policy(Linux::identify_numa_policy());
     if ((Linux::numa_max_node() < 1) || Linux::is_bound_to_single_node() ||
         (!Linux::is_running_in_interleave_mode() && Linux::_numa_membind_bitmask != nullptr &&
-	Linux::_numa_cpunodebind_bitmask != nullptr &&
-	!_numa_bitmask_equal(Linux::_numa_membind_bitmask, Linux::_numa_cpunodebind_bitmask)) ||
-	(Linux::is_running_in_interleave_mode() && Linux::_numa_interleave_bitmask != nullptr &&
-	Linux::_numa_cpunodebind_bitmask != nullptr &&
-	!_numa_bitmask_equal(Linux::_numa_interleave_bitmask, Linux::_numa_cpunodebind_bitmask))) {
+        Linux::_numa_cpunodebind_bitmask != nullptr &&
+        !_numa_bitmask_equal(Linux::_numa_membind_bitmask, Linux::_numa_cpunodebind_bitmask)) ||
+        (Linux::is_running_in_interleave_mode() && Linux::_numa_interleave_bitmask != nullptr &&
+        Linux::_numa_cpunodebind_bitmask != nullptr &&
+        !_numa_bitmask_equal(Linux::_numa_interleave_bitmask, Linux::_numa_cpunodebind_bitmask))) {
       // If there's only one node (they start from 0) or if the process
       // is bound explicitly to a single node using membind, disable NUMA
       if (UseNUMA && FLAG_IS_CMDLINE(UseNUMA))
-	warning("UseNUMA is disabled as the process bound to a single numa node"
-		" or cpu and memory nodes are not aligned");
+        warning("UseNUMA is disabled as the process bound to a single numa node"
+                " or cpu and memory nodes are not aligned");
       FLAG_SET_ERGO(UseNUMA, false);
     } else {
       LogTarget(Info,os) log;
