@@ -20,4 +20,4 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 
-mvn --batch-mode -f application/pom.xml nbm:run-platform >.igv.log 2>&1
+mvn --batch-mode -f application/pom.xml nbm:run-platform -Dnetbeans.run.params="-J-da" >.igv.log 2>&1
