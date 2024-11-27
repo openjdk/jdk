@@ -501,6 +501,8 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 }
 
 extern "C" {
+  // wait function, should not be inlined; and causes trouble with linktime optimization
+  NOINLINE
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
