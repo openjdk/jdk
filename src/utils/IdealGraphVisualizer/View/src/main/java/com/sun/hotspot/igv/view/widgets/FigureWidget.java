@@ -129,7 +129,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.addChild(middleWidget);
 
         Widget textWidget = new Widget(scene);
-        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(SerialAlignment.CENTER, 0));
+        SerialAlignment textAlign = scene.getModel().getShowCFG() ?
+                LayoutFactory.SerialAlignment.LEFT_TOP :
+                LayoutFactory.SerialAlignment.CENTER;
+        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
         middleWidget.addChild(textWidget);
 
         String[] strings = figure.getLines();
