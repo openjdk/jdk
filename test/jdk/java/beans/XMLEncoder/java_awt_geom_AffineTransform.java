@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4358979
  * @summary Tests AffineTransform encoding
- * @run main/othervm -Djava.security.manager=allow java_awt_geom_AffineTransform
+ * @run main/othervm java_awt_geom_AffineTransform
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.awt.geom.AffineTransform;
 
 public final class java_awt_geom_AffineTransform extends AbstractTest<AffineTransform> {
     public static void main(String[] args) {
-        new java_awt_geom_AffineTransform().test(true);
+        new java_awt_geom_AffineTransform().test();
     }
 
     protected AffineTransform getObject() {

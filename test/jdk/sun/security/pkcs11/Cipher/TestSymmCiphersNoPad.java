@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestSymmCiphersNoPad
- * @run main/othervm -Djava.security.manager=allow TestSymmCiphersNoPad sm
  */
 
 import java.io.ByteArrayInputStream;
@@ -89,7 +88,7 @@ public class TestSymmCiphersNoPad extends PKCS11Test {
                     SecretKey key = kg.generateKey();
                     Cipher c1 = Cipher.getInstance(currTest.transformation, p);
                     Cipher c2 = Cipher.getInstance(currTest.transformation,
-                                                   "SunJCE");
+                               System.getProperty("test.provider.name", "SunJCE"));
 
                     byte[] plainTxt = new byte[currTest.dataSize];
                     random.nextBytes(plainTxt);

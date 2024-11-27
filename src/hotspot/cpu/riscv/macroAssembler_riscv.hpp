@@ -195,8 +195,9 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
+  void load_narrow_klass_compact(Register dst, Register src);
   void store_klass(Register dst, Register src, Register tmp = t0);
-  void cmp_klass(Register oop, Register trial_klass, Register tmp1, Register tmp2, Label &L);
+  void cmp_klass_compressed(Register oop, Register trial_klass, Register tmp, Label &L, bool equal);
 
   void encode_klass_not_null(Register r, Register tmp = t0);
   void decode_klass_not_null(Register r, Register tmp = t0);
@@ -468,9 +469,8 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
-  address emit_address_stub(int insts_call_instruction_offset, address target);
-  address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_reloc_call_stub_size();
+  address emit_reloc_call_address_stub(int insts_call_instruction_offset, address target);
+  static int max_reloc_call_address_stub_size();
 
   void emit_static_call_stub();
   static int static_call_stub_size();
@@ -626,27 +626,48 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
- private:
-  void load_link_jump(const address source, Register temp = t0);
-  void jump_link(const address dest, Register temp);
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
   // we often need to resort to movptr, li <48imm>.
   // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
 
+  // Hotspot only use the standard calling convention using x1/ra.
+  // The alternative calling convection using x5/t0 is not used.
+  // Using x5 as a temp causes the CPU to mispredict returns.
+
+  // JALR, return address stack updates:
+  // | rd is x1/x5 | rs1 is x1/x5 | rd=rs1 | RAS action
+  // | ----------- | ------------ | ------ |-------------
+  // |     No      |      No      |   —    | None
+  // |     No      |      Yes     |   —    | Pop
+  // |     Yes     |      No      |   —    | Push
+  // |     Yes     |      Yes     |   No   | Pop, then push
+  // |     Yes     |      Yes     |   Yes  | Push
+  //
+  // JAL, return address stack updates:
+  // | rd is x1/x5 | RAS action
+  // | ----------- | ----------
+  // |     Yes     | Push
+  // |     No      | None
+  //
+  // JUMPs   uses Rd = x0/zero and Rs = x6/t1 or imm
+  // CALLS   uses Rd = x1/ra   and Rs = x6/t1 or imm (or x1/ra*)
+  // RETURNS uses Rd = x0/zero and Rs = x1/ra
+  // *use of x1/ra should not normally be used, special case only.
+
   // jump: jal x0, offset
   // For long reach uses temp register for:
   // la + jr
-  void j(const address dest, Register temp = t0);
-  void j(const Address &adr, Register temp = t0);
-  void j(Label &l, Register temp = t0);
+  void j(const address dest, Register temp = t1);
+  void j(const Address &dest, Register temp = t1);
+  void j(Label &l, Register temp = noreg);
 
   // jump register: jalr x0, offset(rs)
   void jr(Register Rd, int32_t offset = 0);
 
   // call: la + jalr x1
-  void call(const address dest, Register temp = t0);
+  void call(const address dest, Register temp = t1);
 
   // jalr: jalr x1, offset(rs)
   void jalr(Register Rs, int32_t offset = 0);
@@ -654,7 +675,8 @@ class MacroAssembler: public Assembler {
   // Emit a runtime call. Only invalidates the tmp register which
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
-  void rt_call(address dest, Register tmp = t0);
+  // Clobebrs t1
+  void rt_call(address dest, Register tmp = t1);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {
@@ -786,8 +808,11 @@ public:
   void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
+  void push_cont_fastpath(Register java_thread = xthread);
+  void pop_cont_fastpath(Register java_thread = xthread);
+
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
@@ -807,7 +832,6 @@ public:
                   compare_and_branch_insn insn,
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
-  // la will use movptr instead of GOT when not in reach for auipc.
   void la(Register Rd, Label &label);
   void la(Register Rd, const address addr);
   void la(Register Rd, const address addr, int32_t &offset);
@@ -841,8 +865,10 @@ public:
   // patched to any 48-bit constant, i.e. address.
   // If common case supply additional temp register
   // to shorten the instruction sequence.
+  void movptr(Register Rd, const Address &addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, Register tmp = noreg);
   void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
+
  private:
   void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
@@ -901,8 +927,9 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(Register Rd, address dest) {                                                           \
     assert_cond(dest != nullptr);                                                                  \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(Rd, (int32_t)distance + 0x800);                                                        \
       Assembler::NAME(Rd, Rd, ((int32_t)distance << 20) >> 20);                                    \
     } else {                                                                                       \
@@ -958,8 +985,9 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rd, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rd, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -1019,8 +1047,9 @@ public:
   void NAME(Register Rs, address dest, Register temp = t0) {                                       \
     assert_cond(dest != nullptr);                                                                  \
     assert_different_registers(Rs, temp);                                                          \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -1064,8 +1093,9 @@ public:
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \
-    int64_t distance = dest - pc();                                                                \
-    if (is_valid_32bit_offset(distance)) {                                                         \
+    if (CodeCache::contains(dest)) {                                                               \
+      int64_t distance = dest - pc();                                                              \
+      assert(is_valid_32bit_offset(distance), "Must be");                                          \
       auipc(temp, (int32_t)distance + 0x800);                                                      \
       Assembler::NAME(Rs, temp, ((int32_t)distance << 20) >> 20);                                  \
     } else {                                                                                       \
@@ -1116,10 +1146,9 @@ public:
                     enum operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
-  void cmpxchg_narrow_value_helper(Register addr, Register expected,
-                                   Register new_val,
+  void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    enum operand_size size,
-                                   Register tmp1, Register tmp2, Register tmp3);
+                                   Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             enum operand_size size,
@@ -1145,16 +1174,6 @@ public:
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
 
-  void atomic_cas(Register prev, Register newv, Register addr);
-  void atomic_casw(Register prev, Register newv, Register addr);
-  void atomic_casl(Register prev, Register newv, Register addr);
-  void atomic_caslw(Register prev, Register newv, Register addr);
-  void atomic_casal(Register prev, Register newv, Register addr);
-  void atomic_casalw(Register prev, Register newv, Register addr);
-  void atomic_caswu(Register prev, Register newv, Register addr);
-  void atomic_caslwu(Register prev, Register newv, Register addr);
-  void atomic_casalwu(Register prev, Register newv, Register addr);
-
   void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
               Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);
 
@@ -1165,8 +1184,9 @@ public:
   // - relocInfo::external_word_type
   // - relocInfo::runtime_call_type
   // - relocInfo::none
-  void far_call(const Address &entry, Register tmp = t0);
-  void far_jump(const Address &entry, Register tmp = t0);
+  // Clobbers t1 default.
+  void far_call(const Address &entry, Register tmp = t1);
+  void far_jump(const Address &entry, Register tmp = t1);
 
   static int far_branch_size() {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
@@ -1196,92 +1216,50 @@ public:
   void get_polling_page(Register dest, relocInfo::relocType rtype);
   void read_polling_page(Register r, int32_t offset, relocInfo::relocType rtype);
 
-  // RISCV64 OpenJDK uses four different types of calls:
-  //   - direct call: jal pc_relative_offset
-  //     This is the shortest and the fastest, but the offset has the range: +/-1MB.
+  // RISCV64 OpenJDK uses three different types of calls:
   //
   //   - far call: auipc reg, pc_relative_offset; jalr ra, reg, offset
-  //     This is longer than a direct call. The offset has
-  //     the range [-(2G + 2K), 2G - 2K). Addresses out of the range in the code cache
-  //     requires indirect call.
-  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset' can
-  //     be used instead.
+  //     The offset has the range [-(2G + 2K), 2G - 2K). Addresses out of the
+  //     range in the code cache requires indirect call.
+  //     If a jump is needed rather than a call, a far jump 'jalr x0, reg, offset'
+  //     can be used instead.
   //     All instructions are embedded at a call site.
   //
   //   - indirect call: movptr + jalr
-  //     This too can reach anywhere in the address space, but it cannot be
-  //     patched while code is running, so it must only be modified at a safepoint.
-  //     This form of call is most suitable for targets at fixed addresses, which
-  //     will never be patched.
+  //     This can reach anywhere in the address space, but it cannot be patched
+  //     while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses,
+  //     which will never be patched.
   //
   //   - reloc call:
-  //     This is only available in C1/C2-generated code (nmethod).
+  //     This too can reach anywhere in the address space but is only available
+  //     in C1/C2-generated code (nmethod).
   //
   //     [Main code section]
   //       auipc
   //       ld <address_from_stub_section>
   //       jalr
+  //
   //     [Stub section]
-  //     trampoline:
+  //     address stub:
   //       <64-bit destination address>
   //
   //    To change the destination we simply atomically store the new
   //    address in the stub section.
-  //
-  // - trampoline call (old reloc call / -XX:+UseTrampolines):
-  //     This is only available in C1/C2-generated code (nmethod). It is a combination
-  //     of a direct call, which is used if the destination of a call is in range,
-  //     and a register-indirect call. It has the advantages of reaching anywhere in
-  //     the RISCV address space and being patchable at runtime when the generated
-  //     code is being executed by other threads.
-  //
-  //     [Main code section]
-  //       jal trampoline
-  //     [Stub code section]
-  //     trampoline:
-  //       ld    reg, pc + 8 (auipc + ld)
-  //       jr    reg
-  //       <64-bit destination address>
-  //
-  //     If the destination is in range when the generated code is moved to the code
-  //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
-  //     is not used.
-  //     The optimization does not remove the trampoline from the stub section.
-  //
-  //     This is necessary because the trampoline may well be redirected later when
-  //     code is patched, and the new destination may not be reachable by a simple JAL
-  //     instruction.
-  //
-  // To patch a trampoline call when the JAL can't reach, we first modify
-  // the 64-bit destination address in the trampoline, then modify the
-  // JAL to point to the trampoline, then flush the instruction cache to
-  // broadcast the change to all executing threads. See
-  // NativeCall::set_destination_mt_safe for the details.
-  //
-  // There is a benign race in that the other thread might observe the
-  // modified JAL before it observes the modified 64-bit destination
-  // address. That does not matter because the destination method has been
-  // invalidated, so there will be a trap at its start.
-  // For this to work, the destination address in the trampoline is
-  // always updated, even if we're not using the trampoline.
-  // --
+  //    There is a benign race in that the other thread might observe the old
+  //    64-bit destination address before it observes the new address. That does
+  //    not matter because the destination method has been invalidated, so there
+  //    will be a trap at its start.
 
-  // Emit a direct call if the entry address will always be in range,
-  // otherwise a reloc call.
+  // Emit a reloc call and create a stub to hold the entry point address.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
   // - relocInfo::static_call_type
   // - relocInfo::virtual_call_type
   //
-  // Return: the call PC or null if CodeCache is full.
-  address reloc_call(Address entry) {
-    return UseTrampolines ? trampoline_call(entry) : load_and_call(entry);
-  }
- private:
-  address trampoline_call(Address entry);
-  address load_and_call(Address entry);
- public:
+  // Return: the call PC or nullptr if CodeCache is full.
+  address reloc_call(Address entry, Register tmp = t1);
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
@@ -1301,7 +1279,7 @@ public:
   void decrement(const Address dst, int64_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
   void decrementw(const Address dst, int32_t value = 1, Register tmp1 = t0, Register tmp2 = t1);
 
-  void cmpptr(Register src1, Address src2, Label& equal);
+  void cmpptr(Register src1, const Address &src2, Label& equal, Register tmp = t0);
 
   void clinit_barrier(Register klass, Register tmp, Label* L_fast_path = nullptr, Label* L_slow_path = nullptr);
   void load_method_holder_cld(Register result, Register method);
@@ -1587,19 +1565,6 @@ private:
 
   void repne_scan(Register addr, Register value, Register count, Register tmp);
 
-  void ld_constant(Register dest, const Address &const_addr) {
-    if (NearCpool) {
-      ld(dest, const_addr);
-    } else {
-      InternalAddress target(const_addr.target());
-      relocate(target.rspec(), [&] {
-        int32_t offset;
-        la(dest, target.target(), offset);
-        ld(dest, Address(dest, offset));
-      });
-    }
-  }
-
   int bitset_to_regs(unsigned int bitset, unsigned char* regs);
   Address add_memory_helper(const Address dst, Register tmp);
 
@@ -1616,11 +1581,6 @@ public:
     movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
     movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
     load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
-  };
-
-  enum NativeShortCall {
-    trampoline_size        = 3 * instruction_size + wordSize,
-    trampoline_data_offset = 3 * instruction_size
   };
 
   static bool is_load_pc_relative_at(address branch);
@@ -1767,23 +1727,5 @@ public:
 #ifdef ASSERT
 inline bool AbstractAssembler::pd_check_instruction_mark() { return false; }
 #endif
-
-/**
- * class SkipIfEqual:
- *
- * Instantiating this class will result in assembly code being output that will
- * jump around any code emitted between the creation of the instance and it's
- * automatic destruction at the end of a scope block, depending on the value of
- * the flag passed to the constructor, which will be checked at run-time.
- */
-class SkipIfEqual {
- private:
-  MacroAssembler* _masm;
-  Label _label;
-
- public:
-   SkipIfEqual(MacroAssembler*, const bool* flag_addr, bool value);
-   ~SkipIfEqual();
-};
 
 #endif // CPU_RISCV_MACROASSEMBLER_RISCV_HPP

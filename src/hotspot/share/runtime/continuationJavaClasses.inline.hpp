@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,6 +183,15 @@ inline void jdk_internal_vm_StackChunk::set_maxThawingSize(oop chunk, int value)
   log_develop_trace(continuations)("%s max_size: %d -> %d", value >= old ? "add" : "sub", old, value);
 #endif
   chunk->int_field_put(_maxThawingSize_offset, value);
+}
+
+// lockStackSize is read concurrently by GC threads so we use Atomic.
+inline uint8_t jdk_internal_vm_StackChunk::lockStackSize(oop chunk) {
+  return Atomic::load(chunk->field_addr<uint8_t>(_lockStackSize_offset));
+}
+
+inline void jdk_internal_vm_StackChunk::set_lockStackSize(oop chunk, uint8_t value) {
+  Atomic::store(chunk->field_addr<uint8_t>(_lockStackSize_offset), value);
 }
 
 #endif // SHARE_RUNTIME_CONTINUATIONJAVACLASSES_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,14 @@ import jdk.internal.classfile.impl.ClassHierarchyImpl.StaticClassHierarchyResolv
 import jdk.internal.classfile.impl.Util;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
-import jdk.internal.javac.PreviewFeature;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Provides class hierarchy information for generating correct stack maps
  * during code building.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 @FunctionalInterface
 public interface ClassHierarchyResolver {
 
@@ -70,9 +69,8 @@ public interface ClassHierarchyResolver {
     /**
      * Information about a resolved class.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyInfo permits ClassHierarchyImpl.ClassHierarchyInfoImpl {
 
         /**
@@ -106,6 +104,7 @@ public interface ClassHierarchyResolver {
      *           other resolver in cases where this resolver returns {@code null}.
      */
     default ClassHierarchyResolver orElse(ClassHierarchyResolver other) {
+        requireNonNull(other);
         return new ClassHierarchyResolver() {
             @Override
             public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
@@ -170,7 +169,7 @@ public interface ClassHierarchyResolver {
      * @return the {@linkplain ClassHierarchyResolver}
      */
     static ClassHierarchyResolver ofResourceParsing(Function<ClassDesc, InputStream> classStreamResolver) {
-        return new ClassHierarchyImpl.ResourceParsingClassHierarchyResolver(classStreamResolver);
+        return new ClassHierarchyImpl.ResourceParsingClassHierarchyResolver(requireNonNull(classStreamResolver));
     }
 
     /**
@@ -181,6 +180,7 @@ public interface ClassHierarchyResolver {
      * @return the {@linkplain ClassHierarchyResolver}
      */
     static ClassHierarchyResolver ofResourceParsing(ClassLoader loader) {
+        requireNonNull(loader);
         return ofResourceParsing(new Function<>() {
             @Override
             public InputStream apply(ClassDesc classDesc) {
@@ -210,6 +210,7 @@ public interface ClassHierarchyResolver {
      * @return the class hierarchy resolver
      */
     static ClassHierarchyResolver ofClassLoading(ClassLoader loader) {
+        requireNonNull(loader);
         return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
             public Class<?> apply(ClassDesc cd) {
@@ -232,6 +233,7 @@ public interface ClassHierarchyResolver {
      * @return the class hierarchy resolver
      */
     static ClassHierarchyResolver ofClassLoading(MethodHandles.Lookup lookup) {
+        requireNonNull(lookup);
         return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
             public Class<?> apply(ClassDesc cd) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,13 +42,11 @@ namespace metaspace {
 //  correctly. We currently don't hold members with a larger alignment requirement
 //  than 64-bit inside MetaData, so 8-byte alignment is enough.
 //
-// Klass* structures need to be aligned to KlassAlignmentInBytes, but since that is
-// 64-bit, we don't need special handling for allocating Klass*.
+// Klass* structures need to be aligned to Klass* alignment,
 //
 // On 64-bit platforms, we align to word size; on 32-bit, we align to two words.
 
 static const size_t AllocationAlignmentByteSize = 8;
-STATIC_ASSERT(AllocationAlignmentByteSize == (size_t)KlassAlignmentInBytes);
 
 static const size_t AllocationAlignmentWordSize = AllocationAlignmentByteSize / BytesPerWord;
 

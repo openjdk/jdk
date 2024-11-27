@@ -47,7 +47,7 @@ import static java.lang.invoke.MethodHandles.lookup;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED" })
 public class LinkUpcall extends CLayouts {
 
     static final Linker LINKER = Linker.nativeLinker();

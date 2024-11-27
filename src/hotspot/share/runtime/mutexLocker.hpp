@@ -29,9 +29,10 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/mutex.hpp"
 
+class Thread;
+
 // Mutexes used in the VM.
 
-extern Mutex*   Patching_lock;                   // a lock used to guard code patching of compiled code
 extern Mutex*   NMethodState_lock;               // a lock used to guard a compiled method state
 extern Monitor* SystemDictionary_lock;           // a lock on the system dictionary
 extern Mutex*   InvokeMethodTypeTable_lock;
@@ -169,11 +170,6 @@ extern Mutex*   tty_lock;                          // lock to synchronize output
 // order*.  And that their destructors do a release and unlock, in *that*
 // order.  If their implementations change such that these assumptions
 // are violated, a whole lot of code will break.
-
-// Print all mutexes/monitors that are currently owned by a thread; called
-// by fatal error handler.
-void print_owned_locks_on_error(outputStream* st);
-void print_lock_ranks(outputStream* st);
 
 // for debugging: check that we're already owning this lock (or are at a safepoint / handshake)
 #ifdef ASSERT

@@ -25,6 +25,8 @@
 
 package java.lang.invoke;
 
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
@@ -50,7 +52,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.constant.MethodTypeDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
@@ -59,7 +60,6 @@ import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import static jdk.internal.constant.ConstantUtils.concat;
 import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
 
 /**
@@ -69,16 +69,16 @@ import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
  */
 class InvokerBytecodeGenerator {
     /** Define class names for convenience. */
-    private static final ClassDesc CD_CasesHolder = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$CasesHolder;");
-    private static final ClassDesc CD_DirectMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/DirectMethodHandle;");
-    private static final ClassDesc CD_MemberName = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MemberName;");
-    private static final ClassDesc CD_MethodHandleImpl = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl;");
-    private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
-    private static final ClassDesc CD_LambdaForm_Name = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Name;");
-    private static final ClassDesc CD_LoopClauses = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
-    private static final ClassDesc CD_Object_array  = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
-    private static final ClassDesc CD_MethodHandle_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/invoke/MethodHandle;");
-    private static final ClassDesc CD_MethodHandle_array2 = ReferenceClassDescImpl.ofValidated("[[Ljava/lang/invoke/MethodHandle;");
+    private static final ClassDesc CD_CasesHolder = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$CasesHolder;");
+    private static final ClassDesc CD_DirectMethodHandle = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/DirectMethodHandle;");
+    private static final ClassDesc CD_MemberName = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MemberName;");
+    private static final ClassDesc CD_MethodHandleImpl = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl;");
+    private static final ClassDesc CD_LambdaForm = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
+    private static final ClassDesc CD_LambdaForm_Name = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Name;");
+    private static final ClassDesc CD_LoopClauses = ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/MethodHandleImpl$LoopClauses;");
+    private static final ClassDesc CD_Object_array = ConstantUtils.CD_Object_array;
+    private static final ClassDesc CD_MethodHandle_array = CD_MethodHandle.arrayType();
+    private static final ClassDesc CD_MethodHandle_array2 = CD_MethodHandle_array.arrayType();
 
     private static final MethodTypeDesc MTD_boolean_Object = MethodTypeDescImpl.ofValidated(CD_boolean, CD_Object);
     private static final MethodTypeDesc MTD_Object_int = MethodTypeDescImpl.ofValidated(CD_Object, CD_int);
@@ -133,7 +133,7 @@ class InvokerBytecodeGenerator {
         this.name = name;
         this.className = CLASS_PREFIX.concat(name);
         validateInternalClassName(name);
-        this.classEntry = pool.classEntry(ReferenceClassDescImpl.ofValidated(concat("L", className, ";")));
+        this.classEntry = pool.classEntry(ConstantUtils.internalNameToDesc(className));
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
         this.invokerType = invokerType;
@@ -517,16 +517,18 @@ class InvokerBytecodeGenerator {
         return true;
     }
 
-    static final Annotation DONTINLINE      = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljdk/internal/vm/annotation/DontInline;"));
-    static final Annotation FORCEINLINE     = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljdk/internal/vm/annotation/ForceInline;"));
-    static final Annotation HIDDEN          = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljdk/internal/vm/annotation/Hidden;"));
-    static final Annotation INJECTEDPROFILE = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/InjectedProfile;"));
-    static final Annotation LF_COMPILED     = Annotation.of(ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Compiled;"));
+    static final Annotation DONTINLINE      = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljdk/internal/vm/annotation/DontInline;"));
+    static final Annotation FORCEINLINE     = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljdk/internal/vm/annotation/ForceInline;"));
+    static final Annotation HIDDEN          = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljdk/internal/vm/annotation/Hidden;"));
+    static final Annotation INJECTEDPROFILE = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/InjectedProfile;"));
+    static final Annotation LF_COMPILED     = Annotation.of(ClassOrInterfaceDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm$Compiled;"));
 
     // Suppress method in backtraces displayed to the user, mark this method as
     // a compiled LambdaForm, then either force or prohibit inlining.
     public static final RuntimeVisibleAnnotationsAttribute LF_DONTINLINE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, DONTINLINE);
+    public static final RuntimeVisibleAnnotationsAttribute LF_DONTINLINE_PROFILE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, DONTINLINE, INJECTEDPROFILE);
     public static final RuntimeVisibleAnnotationsAttribute LF_FORCEINLINE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, FORCEINLINE);
+    public static final RuntimeVisibleAnnotationsAttribute LF_FORCEINLINE_PROFILE_ANNOTATIONS = RuntimeVisibleAnnotationsAttribute.of(HIDDEN, LF_COMPILED, FORCEINLINE, INJECTEDPROFILE);
 
     /**
      * Generate an invoker method for the passed {@link LambdaForm}.
@@ -586,7 +588,11 @@ class InvokerBytecodeGenerator {
                                     if (PROFILE_GWT) {
                                         assert(name.arguments[0] instanceof Name n &&
                                                 n.refersTo(MethodHandleImpl.class, "profileBoolean"));
-                                        mb.with(RuntimeVisibleAnnotationsAttribute.of(List.of(INJECTEDPROFILE)));
+                                        if (lambdaForm.forceInline) {
+                                            mb.with(LF_FORCEINLINE_PROFILE_ANNOTATIONS);
+                                        } else {
+                                            mb.with(LF_DONTINLINE_PROFILE_ANNOTATIONS);
+                                        }
                                     }
                                     onStack = emitSelectAlternative(cob, name, lambdaForm.names[i+1]);
                                     i++;  // skip MH.invokeBasic of the selectAlternative result
@@ -1649,7 +1655,7 @@ class InvokerBytecodeGenerator {
              : cls == MemberName.class ? CD_MemberName
              : cls == MethodType.class ? CD_MethodType
              : cls.isPrimitive() ? Wrapper.forPrimitiveType(cls).basicClassDescriptor()
-             : ReferenceClassDescImpl.ofValidated(cls.descriptorString());
+             : ConstantUtils.referenceClassDesc(cls.descriptorString());
     }
 
     static MethodTypeDesc methodDesc(MethodType mt) {

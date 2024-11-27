@@ -16,6 +16,7 @@ compiler.err.limit.code                                 # Code
 compiler.err.limit.code.too.large.for.try.stmt          # Gen
 compiler.err.limit.dimensions                           # Gen
 compiler.err.limit.locals                               # Code
+compiler.err.annotation.array.too.large                 # Code
 compiler.err.limit.parameters                           # Gen
 compiler.err.limit.pool                                 # Gen,JavaCompiler
 compiler.err.limit.pool.in.class                        # UNUSED?

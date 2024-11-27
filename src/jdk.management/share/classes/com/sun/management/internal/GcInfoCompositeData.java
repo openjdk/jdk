@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.OpenDataException;
 import com.sun.management.GcInfo;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import sun.management.LazyCompositeData;
 import static sun.management.LazyCompositeData.getLong;
 import sun.management.MappedMXBeanType;
@@ -71,32 +69,24 @@ public class GcInfoCompositeData extends LazyCompositeData {
     }
 
     public static CompositeData toCompositeData(final GcInfo info) {
-        @SuppressWarnings("removal")
-        final GcInfoBuilder builder = AccessController.doPrivileged (new PrivilegedAction<GcInfoBuilder>() {
-                        public GcInfoBuilder run() {
-                            try {
-                                Class<?> cl = Class.forName("com.sun.management.GcInfo");
-                                Field f = cl.getDeclaredField("builder");
-                                f.setAccessible(true);
-                                return (GcInfoBuilder)f.get(info);
-                            } catch(ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-                                return null;
-                            }
-                        }
-                    });
-        @SuppressWarnings("removal")
-        final Object[] extAttr = AccessController.doPrivileged (new PrivilegedAction<Object[]>() {
-                        public Object[] run() {
-                            try {
-                                Class<?> cl = Class.forName("com.sun.management.GcInfo");
-                                Field f = cl.getDeclaredField("extAttributes");
-                                f.setAccessible(true);
-                                return (Object[])f.get(info);
-                            } catch(ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-                                return null;
-                            }
-                        }
-                    });
+        GcInfoBuilder builder = null;
+        try {
+            Class<?> cl = Class.forName("com.sun.management.GcInfo");
+            Field f = cl.getDeclaredField("builder");
+            f.setAccessible(true);
+            builder = (GcInfoBuilder)f.get(info);
+        } catch(ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            // ignore
+        }
+        Object[] extAttr = null;
+        try {
+            Class<?> cl = Class.forName("com.sun.management.GcInfo");
+            Field f = cl.getDeclaredField("extAttributes");
+            f.setAccessible(true);
+            extAttr = (Object[])f.get(info);
+        } catch(ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            // ignore
+        }
         GcInfoCompositeData gcicd =
             new GcInfoCompositeData(info,builder,extAttr);
         return gcicd.getCompositeData();

@@ -35,7 +35,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations=5, time=1)
 @Threads(2)
 @Fork(value = 1,
-      jvmArgsPrepend = {"-Djmh.blackhole.mode=COMPILER",
+      jvmArgs = {"-Djmh.blackhole.mode=COMPILER",
                         "--enable-preview"})
 @State(Scope.Thread)
 @SuppressWarnings("preview")

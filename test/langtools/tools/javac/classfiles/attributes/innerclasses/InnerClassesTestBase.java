@@ -206,7 +206,7 @@ public abstract class InnerClassesTestBase extends TestResult {
             if (!checkNotNull(innerClasses, "InnerClasses attribute should not be null")) {
                 return;
             }
-            checkEquals(innerClasses.attributeName(), "InnerClasses",
+            checkEquals(innerClasses.attributeName().stringValue(), "InnerClasses",
                     "innerClasses.attribute_name_index");
             // Inner Classes attribute consists of length (2 bytes)
             // and 8 bytes for each inner class's entry.

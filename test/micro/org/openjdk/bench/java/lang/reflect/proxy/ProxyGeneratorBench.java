@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Warmup(iterations = 5, time = 2)
 @Measurement(iterations = 5, time = 2)
-@Fork(value = 1, jvmArgsPrepend = "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED")
+@Fork(value = 1, jvmArgs = "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED")
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)

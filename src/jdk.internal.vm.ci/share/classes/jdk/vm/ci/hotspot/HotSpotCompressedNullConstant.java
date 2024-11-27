@@ -52,8 +52,13 @@ public final class HotSpotCompressedNullConstant implements JavaConstant, HotSpo
     }
 
     @Override
+    public boolean isCompressible() {
+        return false;
+    }
+
+    @Override
     public Constant compress() {
-        throw new IllegalArgumentException();
+        throw new IllegalArgumentException("not compressible");
     }
 
     @Override

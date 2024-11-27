@@ -104,49 +104,44 @@ static int clock_tics_per_sec = 100;
 size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
-void os::check_dump_limit(char* buffer, size_t bufferSize) {
+void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
     VMError::record_coredump_status(buffer, false);
-    return;
-  }
-
-  int n;
-  struct rlimit rlim;
-  bool success;
-
-  char core_path[PATH_MAX];
-  n = get_core_path(core_path, PATH_MAX);
-
-  if (n <= 0) {
-    jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
-    success = true;
-#ifdef LINUX
-  } else if (core_path[0] == '"') { // redirect to user process
-    jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
-    success = true;
-#endif
-  } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
-    jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
-    success = true;
   } else {
-    switch(rlim.rlim_cur) {
-      case RLIM_INFINITY:
-        jio_snprintf(buffer, bufferSize, "%s", core_path);
-        success = true;
-        break;
-      case 0:
-        jio_snprintf(buffer, bufferSize, "Core dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again");
-        success = false;
-        break;
-      default:
-        jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
-        success = true;
-        break;
+    struct rlimit rlim;
+    bool success = true;
+    bool warn = true;
+    char core_path[PATH_MAX];
+    if (get_core_path(core_path, PATH_MAX) <= 0) {
+      jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
+#ifdef LINUX
+    } else if (core_path[0] == '"') { // redirect to user process
+      jio_snprintf(buffer, bufferSize, "Core dumps may be processed with %s", core_path);
+#endif
+    } else if (getrlimit(RLIMIT_CORE, &rlim) != 0) {
+      jio_snprintf(buffer, bufferSize, "%s (may not exist)", core_path);
+    } else {
+      switch(rlim.rlim_cur) {
+        case RLIM_INFINITY:
+          jio_snprintf(buffer, bufferSize, "%s", core_path);
+          warn = false;
+          break;
+        case 0:
+          jio_snprintf(buffer, bufferSize, "Core dumps have been disabled. To enable core dumping, try \"ulimit -c unlimited\" before starting Java again");
+          success = false;
+          break;
+        default:
+          jio_snprintf(buffer, bufferSize, "%s (max size " UINT64_FORMAT " k). To ensure a full core dump, try \"ulimit -c unlimited\" before starting Java again", core_path, uint64_t(rlim.rlim_cur) / K);
+          break;
+      }
+    }
+    if (!check_only) {
+      VMError::record_coredump_status(buffer, success);
+    } else if (warn) {
+      warning("CreateCoredumpOnCrash specified, but %s", buffer);
     }
   }
-
-  VMError::record_coredump_status(buffer, success);
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
@@ -346,6 +341,16 @@ int os::create_file_for_heap(const char* dir) {
   }
 
   return fd;
+}
+
+// return current position of file pointer
+jlong os::current_file_offset(int fd) {
+  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
+}
+
+// move file pointer to the specified offset
+jlong os::seek_to_file_offset(int fd, jlong offset) {
+  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // Is a (classpath) directory empty?
@@ -691,14 +696,6 @@ void os::print_active_locale(outputStream* st) {
   }
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   int retcode = uname(&name);
@@ -811,7 +808,7 @@ void* os::dll_lookup(void* handle, const char* name) {
   void* ret = ::dlsym(handle, name);
   if (ret == nullptr) {
     const char* tmp = ::dlerror();
-    // It is possible that we found a NULL symbol, hence no error.
+    // It is possible that we found a null symbol, hence no error.
     if (tmp != nullptr) {
       log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
     }
@@ -934,10 +931,6 @@ void os::_exit(int num) {
   ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
 }
 
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
 void os::naked_yield() {
   sched_yield();
 }
@@ -1024,10 +1017,10 @@ char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_a
   return buf;
 }
 
-char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
 
   if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
-    assert(false, "os::Posix::realpath: invalid arguments.");
+    assert(false, "os::realpath: invalid arguments.");
     errno = EINVAL;
     return nullptr;
   }
@@ -1062,7 +1055,6 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
     }
   }
   return result;
-
 }
 
 int os::stat(const char *path, struct stat *sbuf) {
@@ -2119,7 +2111,7 @@ void os::shutdown() {
 // easily trigger secondary faults in those threads. To reduce the likelihood
 // of that we use _exit rather than exit, so that no atexit hooks get run.
 // But note that os::shutdown() could also trigger secondary faults.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
     LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
@@ -2194,3 +2186,43 @@ char* os::pd_map_memory(int fd, const char* unused,
 bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
 }
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+static ucontext_t _saved_assert_context;
+static bool _has_saved_context = false;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+void os::save_assert_context(const void* ucVoid) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  memcpy(&_saved_assert_context, ucVoid, sizeof(ucontext_t));
+  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
+  //  after copying the context (see comment in sys/ucontext.h):
+#if defined(PPC64)
+  *((void**)&_saved_assert_context.uc_mcontext.regs) = &(_saved_assert_context.uc_mcontext.gp_regs);
+#elif defined(AMD64)
+  // In the copied version, fpregs should point to the copied contents.
+  // Sanity check: fpregs should point into the context.
+  if ((address)((const ucontext_t*)ucVoid)->uc_mcontext.fpregs > (address)ucVoid) {
+    size_t fpregs_offset = pointer_delta(((const ucontext_t*)ucVoid)->uc_mcontext.fpregs, ucVoid, 1);
+    if (fpregs_offset < sizeof(ucontext_t)) {
+      // Preserve the offset.
+      *((void**)&_saved_assert_context.uc_mcontext.fpregs) = (void*)((address)(void*)&_saved_assert_context + fpregs_offset);
+    }
+  }
+#endif
+  _has_saved_context = true;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(sigInfo != nullptr, "invariant");
+  *sigInfo = nullptr;
+  return _has_saved_context ? &_saved_assert_context : nullptr;
+#endif
+  *sigInfo = nullptr;
+  return nullptr;
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,6 @@ public class TestProvider extends RMIClassLoaderSpi {
         ClassLoader defaultLoader = URLClassLoader.newInstance(new URL[0]);
         String[] interfaces = new String[] { "Bar", "Baz" };
         Class dummyClass = (new Object() { }).getClass();
-
-        TestLibrary.suggestSecurityManager(null);
 
         String testcase;
         Object ret;

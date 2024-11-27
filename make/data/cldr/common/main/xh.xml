@@ -12,8 +12,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="af" draft="contributed">isiBhulu</language>
-			<language type="am" draft="unconfirmed">Isi-Amharic</language>
+			<language type="af">IsiBhulu</language>
+			<language type="am">IsiAmharic</language>
 			<language type="ar">Isi-Arabhu</language>
 			<language type="ar_001">Isi-Arabhu (Sale mihla)</language>
 			<language type="as" draft="unconfirmed">isiAssamese</language>
@@ -111,7 +111,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sk" draft="unconfirmed">Isi-Slovak</language>
 			<language type="sl" draft="unconfirmed">Isi-Slovenian</language>
 			<language type="so" draft="unconfirmed">IsiSomaliya</language>
-			<language type="sq" draft="unconfirmed">Isi-Albania</language>
+			<language type="sq">IsiAlbania</language>
 			<language type="sr" draft="unconfirmed">Isi-Serbia</language>
 			<language type="st" draft="unconfirmed">Sesotho</language>
 			<language type="su" draft="unconfirmed">Isi-Sudanese</language>
@@ -745,7 +745,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">Tht</day>
 							<day type="thu">Sin</day>
 							<day type="fri">Hl</day>
-							<day type="sat">Mgq</day>
+							<day type="sat">Mg</day>
 						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">Cawe</day>
@@ -774,7 +774,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="wed">St</day>
 							<day type="thu">Sin</day>
 							<day type="fri">Hl</day>
-							<day type="sat">Mgq</day>
+							<day type="sat">Mg</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1143,12 +1143,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Unknown City</exemplarCity>
 			</zone>
-			<zone type="America/St_Barthelemy">
-				<exemplarCity>St. Barthélemy</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
-			</zone>
 			<zone type="Europe/London">
 				<long>
 					<daylight>British Summer Time</daylight>
@@ -1170,15 +1164,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Cancun">
 				<exemplarCity>Cancun</exemplarCity>
-			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
-			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh City</exemplarCity>
@@ -1396,13 +1381,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>China Time</generic>
 					<standard>China Standard Time</standard>
 					<daylight>China Daylight Time</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibalsan Time</generic>
-					<standard>Choibalsan Standard Time</standard>
-					<daylight>Choibalsan Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -1641,6 +1619,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Japan Time</generic>
 					<standard>Japan Standard Time</standard>
 					<daylight>Japan Daylight Time</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazakhstan Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -2070,8 +2053,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern alt="alphaNextToNumber" draft="provisional">¤ #,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -2100,9 +2081,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Netherlands Antillean guilders</displayName>
 			</currency>
 			<currency type="AOA">
-				<displayName>I-Kwanza yase-Angola</displayName>
-				<displayName count="one">I-kwanza yase-Angola</displayName>
-				<displayName count="other">Ii-kwanza zase-Angola</displayName>
+				<displayName>IKwanza yaseAngola</displayName>
+				<displayName count="one">Ikwanza yaseAngola</displayName>
+				<displayName count="other">Iikwanza zaseAngola</displayName>
 			</currency>
 			<currency type="ARS">
 				<displayName>IPeso yase-Argentina</displayName>
@@ -2205,14 +2186,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Canadian dollars</displayName>
 			</currency>
 			<currency type="CDF">
-				<displayName>I-Franc yaseCongo</displayName>
-				<displayName count="one">I-franc yaseCongo</displayName>
-				<displayName count="other">Ii-franc zaseCongo</displayName>
+				<displayName>IFranc yaseCongo</displayName>
+				<displayName count="one">Ifranc yaseCongo</displayName>
+				<displayName count="other">Iifranc zaseCongo</displayName>
 			</currency>
 			<currency type="CHF">
-				<displayName>I-Franc yaseSwitzerland</displayName>
-				<displayName count="one">I-franc yaseSwitzerland</displayName>
-				<displayName count="other">Ii-francs zaseSitzerland</displayName>
+				<displayName>IFranc yaseSwirtzeland</displayName>
+				<displayName count="one">Ifranc yaseSwitzerland</displayName>
+				<displayName count="other">Iifranc zaseSwitzerland</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName>I-Peso yaseChile</displayName>
@@ -2306,7 +2287,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Iidola zaseFiji</displayName>
 			</currency>
 			<currency type="FKP">
-				<displayName>Iponti yaseFalkland Islands</displayName>
+				<displayName>IPonti yaseFalkland Islands</displayName>
 				<displayName count="one">IPonti yaseFalkland Islands</displayName>
 				<displayName count="other">Iiponti zaseFalkland Islands</displayName>
 			</currency>
@@ -2321,9 +2302,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Ii-lari zaseGeorgia</displayName>
 			</currency>
 			<currency type="GHS">
-				<displayName>I-Cedi yaseGhana</displayName>
-				<displayName count="one">I-cedi yaseGhana</displayName>
-				<displayName count="other">Ii-cedi zaseGhana</displayName>
+				<displayName>ICedi yaseGhana</displayName>
+				<displayName count="one">Icedi yaseGhana</displayName>
+				<displayName count="other">Iicedi zaseGhana</displayName>
 			</currency>
 			<currency type="GIP">
 				<displayName>IPonti yaseGilbraltar</displayName>
@@ -2331,14 +2312,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Iiponti zaseGibraltar</displayName>
 			</currency>
 			<currency type="GMD">
-				<displayName>I-Dalasi yaseGambia</displayName>
-				<displayName count="one">I-dalasi yaseGambia</displayName>
-				<displayName count="other">Ii-dalasi zaseGambia</displayName>
+				<displayName>IDalasi yaseGambia</displayName>
+				<displayName count="one">Idalasi yaseGambia</displayName>
+				<displayName count="other">Iidalasi zaseGambia</displayName>
 			</currency>
 			<currency type="GNF">
-				<displayName>I-Franc yaseGuinea</displayName>
-				<displayName count="one">I-franc yaseGuinea</displayName>
-				<displayName count="other">Ii-franc zaseGuinea</displayName>
+				<displayName>IFranc yaseGuinea</displayName>
+				<displayName count="one">ifranc yaseGuinea</displayName>
+				<displayName count="other">Iifranc zaseGuinea</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName>Guatemalan Quetzal</displayName>
@@ -2401,9 +2382,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Ii-rial zase-Iran</displayName>
 			</currency>
 			<currency type="ISK">
-				<displayName>I-Króna yase-Iceland</displayName>
-				<displayName count="one">I-króna yase-Iceland</displayName>
-				<displayName count="other">Ii-krónur zase-Iceland</displayName>
+				<displayName>IKróna yaseIceland</displayName>
+				<displayName count="one">Ikróna yaseIceland</displayName>
+				<displayName count="other">Iikrónur zaseIceland</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName>Jamaican Dollar</displayName>
@@ -2572,9 +2553,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Iidola zaseNamibia</displayName>
 			</currency>
 			<currency type="NGN">
-				<displayName>I-Naira yaseNigeria</displayName>
-				<displayName count="one">I-naira yaseNigeria</displayName>
-				<displayName count="other">Ii-naira zaseNigeria</displayName>
+				<displayName>INaira yaseNigeria</displayName>
+				<displayName count="one">Inaira yaseNigeria</displayName>
+				<displayName count="other">Iinaira zaseNigeria</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName>Nicaraguan Córdoba</displayName>
@@ -2582,9 +2563,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Nicaraguan córdobas</displayName>
 			</currency>
 			<currency type="NOK">
-				<displayName>I-Krone yaseNorway</displayName>
-				<displayName count="one">I-krone yaseNorway</displayName>
-				<displayName count="other">Ii-kroner zaseNorway</displayName>
+				<displayName>IKrone yaseNorway</displayName>
+				<displayName count="one">Ikrone yaseNorway</displayName>
+				<displayName count="other">Iikroner zaseNorway</displayName>
 			</currency>
 			<currency type="NPR">
 				<displayName>I-Rupee yaseNepal</displayName>
@@ -2682,9 +2663,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Iiponti zaseSudan</displayName>
 			</currency>
 			<currency type="SEK">
-				<displayName>I-Krona yaseSweden</displayName>
-				<displayName count="one">I-krona yaseSweden</displayName>
-				<displayName count="other">Ii-kronor zaseSweden</displayName>
+				<displayName>IKrona yaseSweden</displayName>
+				<displayName count="one">Ikrona yaseSweden</displayName>
+				<displayName count="other">Iikronor zaseSweden</displayName>
 			</currency>
 			<currency type="SGD">
 				<displayName>IDola yaseSingapore</displayName>
@@ -2722,9 +2703,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">Iiponti zaseSouth Sudan</displayName>
 			</currency>
 			<currency type="STN">
-				<displayName>I-Dobra yaseSão Tomé &amp; Príncipe</displayName>
-				<displayName count="one">I-dobra yaseSão Tomé &amp; Príncipe</displayName>
-				<displayName count="other">Ii-dobra zaseSão Tomé &amp; Príncipe</displayName>
+				<displayName>IDobra yaseSão Tomé &amp; Príncipe</displayName>
+				<displayName count="one">Idobra yaseSão Tomé &amp; Príncipe</displayName>
+				<displayName count="other">Iidobra zaseSão Tomé &amp; Príncipe</displayName>
 			</currency>
 			<currency type="SYP">
 				<displayName>IPonti yaseSiriya</displayName>
@@ -2828,9 +2809,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">I-tala yaseSamoa</displayName>
 			</currency>
 			<currency type="XAF">
-				<displayName>Central African CFA Franc</displayName>
-				<displayName count="one">I-CFA franc yaseCentral Africa</displayName>
-				<displayName count="other">Ii-CFA francs zaseCentral Africa</displayName>
+				<displayName>ICFA Franc yaseCentral Africa</displayName>
+				<displayName count="one">ICFA franc yaseCentral Africa</displayName>
+				<displayName count="other">IiCFA franc zaseCentral Africa</displayName>
 			</currency>
 			<currency type="XCD">
 				<displayName>East Caribbean Dollar</displayName>
@@ -2838,9 +2819,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other">East Caribbean dollars</displayName>
 			</currency>
 			<currency type="XOF">
-				<displayName>West African CFA Franc</displayName>
-				<displayName count="one">I-CFA franc yaseWest Africa</displayName>
-				<displayName count="other">Ii-CFA franc zaseWest Africa</displayName>
+				<displayName>ICFA Franc yaseWest Africa</displayName>
+				<displayName count="one">ICFA franc yaseWest Africa</displayName>
+				<displayName count="other">IiCFA franc zaseWest Africa</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName>I-Franc yaseCFP</displayName>
@@ -2849,7 +2830,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="XXX">
 				<displayName>Ikharensi Engaziwayo</displayName>
-				<displayName count="one">(ikharensi exabiso lingaziwayo)</displayName>
+				<displayName count="one">ikharensi engaziwayo</displayName>
 				<displayName count="other">(ikharensi engaziwayo)</displayName>
 			</currency>
 			<currency type="YER">
