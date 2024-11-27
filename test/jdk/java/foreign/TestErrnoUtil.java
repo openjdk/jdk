@@ -29,7 +29,6 @@
  */
 
 import jdk.internal.foreign.ErrnoUtil;
-import jdk.internal.foreign.ResultErrno;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Linker;
@@ -62,19 +61,19 @@ final class TestErrnoUtil {
 
     @Test
     void successful() throws Throwable {
-        MethodHandle adapted = ErrnoUtil.adapt(DUMMY_HANDLE);
-        ResultErrno r = (ResultErrno) adapted.invoke(1, 0);
-        assertEquals(new ResultErrno(1, 0), r);
+        MethodHandle adapted = ErrnoUtil.adaptSystemCall(DUMMY_HANDLE);
+        int r = (int) adapted.invoke(1, 0);
+        assertEquals(1, r);
     }
 
     private static final int EACCES = 13; /* Permission denied */
 
     @Test
     void error() throws Throwable {
-        MethodHandle adapted = ErrnoUtil.adapt(DUMMY_HANDLE);
+        MethodHandle adapted = ErrnoUtil.adaptSystemCall(DUMMY_HANDLE);
 
-        ResultErrno r = (ResultErrno) adapted.invoke(-1, EACCES);
-        assertEquals(new ResultErrno(-1, EACCES), r);
+        int r = (int) adapted.invoke(-1, EACCES);
+        assertEquals(-EACCES, r);
     }
 
     // Dummy method that is just using the provided parameters
