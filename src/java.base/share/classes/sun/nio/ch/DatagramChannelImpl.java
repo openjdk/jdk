@@ -73,7 +73,6 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.invoke.MhUtil;
-import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
 
@@ -194,7 +193,6 @@ class DatagramChannelImpl
         FileDescriptor fd = null;
         NativeSocketAddress[] sockAddrs = null;
 
-        ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
             this.interruptible = interruptible;
@@ -217,7 +215,6 @@ class DatagramChannelImpl
             if (!initialized) {
                 if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
                 if (fd != null) nd.close(fd);
-                ResourceManager.afterUdpClose();
             }
         }
 
@@ -232,7 +229,6 @@ class DatagramChannelImpl
 
         NativeSocketAddress[] sockAddrs = null;
 
-        ResourceManager.beforeUdpCreate();
         boolean initialized = false;
         try {
             this.interruptible = true;
@@ -257,7 +253,6 @@ class DatagramChannelImpl
             if (!initialized) {
                 if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
                 nd.close(fd);
-                ResourceManager.afterUdpClose();
             }
         }
 
@@ -1909,8 +1904,7 @@ class DatagramChannelImpl
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             } finally {
-                // decrement socket count and release memory
-                ResourceManager.afterUdpClose();
+                // release memory
                 NativeSocketAddress.freeAll(sockAddrs);
             }
         };

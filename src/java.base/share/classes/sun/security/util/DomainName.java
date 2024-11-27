@@ -45,6 +45,7 @@ import java.util.zip.ZipInputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import jdk.internal.util.StaticProperty;
 import sun.security.ssl.SSLLogger;
 
 /**

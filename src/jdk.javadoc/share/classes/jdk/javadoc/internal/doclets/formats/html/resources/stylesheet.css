@@ -30,10 +30,11 @@
     /* Text colors for body and block elements */
     --body-text-color: #282828;
     --block-text-color: #282828;
-    /* Background colors for various structural elements */
+    /* Background colors for various elements */
     --body-background-color: #ffffff;
     --section-background-color: #f8f8f8;
     --detail-background-color: #ffffff;
+    --mark-background-color: #f7f7f7;
     /* Colors for navigation bar and table captions */
     --navbar-background-color: #4D7A97;
     --navbar-text-color: #ffffff;
@@ -141,8 +142,7 @@ ul {
 code, tt {
     font-family:var(--code-font-family);
 }
-:not(h1, h2, h3, h4, h5, h6) > code,
-:not(h1, h2, h3, h4, h5, h6) > tt {
+:not(h1, h2, h3, h4, h5, h6, sup, sub, small, big) > :is(code, tt) {
     font-size:var(--code-font-size);
     line-height:1.4em;
 }
@@ -156,9 +156,6 @@ dt code {
     font-size:1em;
     vertical-align:top;
     padding-top:4px;
-}
-sup {
-    font-size:8px;
 }
 button {
     font-family: var(--body-font-family);
@@ -822,6 +819,19 @@ div.block {
 .deprecated-label, .description-from-type-label, .implementation-label, .member-name-link,
 .package-hierarchy-label, .type-name-label, .type-name-link, .search-tag-link, .preview-label, .restricted-label {
     font-weight:bold;
+}
+sup.preview-mark,
+sup.restricted-mark {
+    font-family: var(--code-font-family);
+    font-weight: normal;
+    font-size: 8px;
+    background-color: var(--mark-background-color);
+    padding: 1px;
+    border-radius: 2px;
+}
+sup.preview-mark > a:link,
+sup.restricted-mark > a:link {
+    font-weight: normal;
 }
 .deprecation-comment, .help-footnote, .preview-comment, .restricted-comment {
     font-style:italic;

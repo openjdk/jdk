@@ -68,6 +68,54 @@ public class NamedParameterSpec implements AlgorithmParameterSpec {
     public static final NamedParameterSpec ED448
         = new NamedParameterSpec("Ed448");
 
+    /**
+     * The ML-DSA-44 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_DSA_44
+        = new NamedParameterSpec("ML-DSA-44");
+
+    /**
+     * The ML-DSA-65 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_DSA_65
+        = new NamedParameterSpec("ML-DSA-65");
+
+    /**
+     * The ML-DSA-87 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_DSA_87
+        = new NamedParameterSpec("ML-DSA-87");
+
+    /**
+     * The ML-KEM-512 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_KEM_512
+            = new NamedParameterSpec("ML-KEM-512");
+
+    /**
+     * The ML-KEM-768 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_KEM_768
+            = new NamedParameterSpec("ML-KEM-768");
+
+    /**
+     * The ML-KEM-1024 parameters
+     *
+     * @since 24
+     */
+    public static final NamedParameterSpec ML_KEM_1024
+            = new NamedParameterSpec("ML-KEM-1024");
+
     private final String name;
 
     /**
