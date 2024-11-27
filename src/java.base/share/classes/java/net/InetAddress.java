@@ -60,7 +60,6 @@ import jdk.internal.misc.Blocker;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
 import sun.net.ResolverProviderConfiguration;
-import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;
 import sun.nio.cs.UTF_8;
@@ -362,11 +361,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      */
     static {
         PREFER_IPV4_STACK_VALUE =
-                GetPropertyAction.privilegedGetProperty("java.net.preferIPv4Stack");
+                System.getProperty("java.net.preferIPv4Stack");
         PREFER_IPV6_ADDRESSES_VALUE =
-                GetPropertyAction.privilegedGetProperty("java.net.preferIPv6Addresses");
+                System.getProperty("java.net.preferIPv6Addresses");
         HOSTS_FILE_NAME =
-                GetPropertyAction.privilegedGetProperty("jdk.net.hosts.file");
+                System.getProperty("jdk.net.hosts.file");
         jdk.internal.loader.BootLoader.loadLibrary("net");
         SharedSecrets.setJavaNetInetAddressAccess(
                 new JavaNetInetAddressAccess() {
