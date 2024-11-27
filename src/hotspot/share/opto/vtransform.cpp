@@ -343,7 +343,6 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
         const VPointer& p = vtn->vpointer(vloop_analyzer);
         if (p.is_valid()) {
           VTransformVectorNode* vector = vtn->isa_Vector();
-          uint vector_length = vector != nullptr ? vector->nodes().length() : 1;
           bool is_load = vtn->is_load_in_loop();
           const VPointer iv_offset_p(p.make_with_iv_offset(iv_offset));
           memory_regions.push(new VMemoryRegion(iv_offset_p, is_load, schedule_order++));
@@ -567,11 +566,9 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
+  const VPointer& load_p = vpointer(vloop_analyzer);
   while (mem->is_StoreVector()) {
-    // TODO refactor with VPointer for this vector load!
     VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop());
-    const VPointer& scalar_p = vpointer(vloop_analyzer);
-    const VPointer load_p(scalar_p.make_with_size(scalar_p.size() * vlen));
     if (store_p.never_overlaps_with(load_p)) {
       mem = mem->in(MemNode::Memory);
     } else {
