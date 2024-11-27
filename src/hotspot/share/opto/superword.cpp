@@ -172,16 +172,9 @@ void SuperWord::unrolling_analysis(const VLoop &vloop, int &local_loop_unroll_fa
 
       // save a queue of post process nodes
       if (n_ctrl != nullptr && lpt->is_member(phase->get_loop(n_ctrl))) {
-        // Process the memory expression
-        if (!adr->is_AddP()) {
-          NOT_PRODUCT( n->dump(); )
-          NOT_PRODUCT( adr->dump(); )
-          assert(false, "what is this?");
-          ignored_nodes.set_ignored(adr);
-        } else {
-          // Mark the internal nodes of the address expression in ignored_nodes.
-          VPointer xp(current, vloop, ignored_nodes);
-        }
+        // Parse the address expression with VPointer, and mark the internal
+        // nodes of the address expression in ignore_nodes.
+        VPointer p(current, vloop, ignored_nodes);
       }
     }
   }
