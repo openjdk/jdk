@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,14 @@ import java.awt.Font;
  */
 public abstract class LayoutManager {
 
-    void setCutEdges(boolean enable);
-
-    void doLayout(LayoutGraph graph);
-
-    public abstract void setCutEdges(boolean enable);
-
     public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
     public static final int SWEEP_ITERATIONS = 1;
     public static final int CROSSING_ITERATIONS = 1;
     public static final int NODE_OFFSET = 8;
     public static final int LAYER_OFFSET = 8;
     public static final double SCALE_LAYER_PADDING = 1.5;
+
+    public abstract void setCutEdges(boolean enable);
 
     public abstract void doLayout(LayoutGraph graph);
 }

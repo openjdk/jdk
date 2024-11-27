@@ -34,10 +34,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -178,5 +175,18 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     public abstract int getPosition();
 
     public abstract void setPosition(int position);
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Slot other)) return false;
+        return this.wantedIndex == other.wantedIndex &&
+                Objects.equals(this.figure, other.figure);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(figure, wantedIndex);
+    }
 }
 

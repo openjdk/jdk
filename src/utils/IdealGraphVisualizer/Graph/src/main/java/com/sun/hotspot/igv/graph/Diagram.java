@@ -133,6 +133,10 @@ public class Diagram {
         return blocks.get(b);
     }
 
+    public boolean hasFigure(InputNode n) {
+        return figures.containsKey(n);
+    }
+
     public Figure getFigure(InputNode n) {
         assert figures.containsKey(n);
         return figures.get(n);

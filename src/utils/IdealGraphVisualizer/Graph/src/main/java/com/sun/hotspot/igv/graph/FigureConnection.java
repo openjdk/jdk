@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.Point;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  *
@@ -161,15 +162,15 @@ public class FigureConnection implements Connection {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof FigureConnection)) {
-            return false;
-        }
-
-        return getInputSlot().getFigure().equals(((FigureConnection)o).getInputSlot().getFigure())
-                && getOutputSlot().getFigure().equals(((FigureConnection)o).getOutputSlot().getFigure())
-                && getInputSlot().getPosition() == ((FigureConnection)o).getInputSlot().getPosition()
-                && getOutputSlot().getPosition() == ((FigureConnection) o).getOutputSlot().getPosition();
+        if (this == o) return true;
+        if (!(o instanceof FigureConnection that)) return false;
+        return Objects.equals(this.outputSlot, that.outputSlot) &&
+                Objects.equals(this.inputSlot, that.inputSlot);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(outputSlot, inputSlot);
+    }
 }
 

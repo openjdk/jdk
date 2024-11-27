@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,9 @@ import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
-import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -60,8 +57,8 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private final OutputSlot outputSlot;
     private final DiagramScene scene;
     private final List<? extends Connection> connections;
-    private Point from;
-    private Point to;
+    private final Point from;
+    private final Point to;
     private Rectangle clientArea;
     private final LineWidget predecessor;
     private final List<LineWidget> successors;
@@ -69,12 +66,13 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private boolean popupVisible;
     private final boolean isBold;
     private final boolean isDashed;
+    private boolean needToInitToolTipText = true;
 
     public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
         this.scene = scene;
         this.outputSlot = s;
-        this.connections = connections;
+        this.connections = Collections.unmodifiableList(connections);
         this.from = from;
         this.to = to;
         this.predecessor = predecessor;
@@ -92,7 +90,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         if (!connections.isEmpty()) {
             color = connections.get(0).getColor();
         }
-        setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
 
         setCheckClipping(false);
 
@@ -100,36 +97,11 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         setBackground(color);
     }
 
-
-    public Point getClientAreaLocation() {
-        return clientArea.getLocation();
-    }
-
     private void computeClientArea() {
         int minX = from.x;
         int minY = from.y;
         int maxX = to.x;
         int maxY = to.y;
-
-        if (fromControlYOffset != 0 && toControlYOffset != 0) {
-            // Adjust the bounding box to accommodate control points for curves
-            if (from.y < to.y) { // non-reversed edges
-                minY = Math.min(minY, from.y + fromControlYOffset);
-                maxY = Math.max(maxY, to.y + toControlYOffset);
-            } else { // reversed edges
-                if (from.x - to.x > 0) {
-                    minX = Math.min(minX, from.x - 150);
-                    maxX = Math.max(maxX, to.x + 150);
-                    minY = Math.min(minY, from.y + fromControlYOffset);
-                    maxY = Math.max(maxY, to.y + toControlYOffset);
-                } else {
-                    minX = Math.min(minX, from.x + 150);
-                    maxX = Math.max(maxX, to.x - 150);
-                    minY = Math.min(minY, from.y + fromControlYOffset);
-                    maxY = Math.max(maxY, to.y + toControlYOffset);
-                }
-            }
-        }
 
         // Ensure min and max values are correct
         if (minX > maxX) {
@@ -156,30 +128,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             sb.append("<br>");
         }
         return sb.toString();
-    }
-
-
-    public void setFrom(Point from) {
-        this.from = from;
-        computeClientArea();
-    }
-
-    public void setTo(Point to) {
-        this.to= to;
-        computeClientArea();
-    }
-
-    private int fromControlYOffset;
-    private int toControlYOffset;
-
-    public void setFromControlYOffset(int fromControlYOffset) {
-        this.fromControlYOffset = fromControlYOffset;
-        computeClientArea();
-    }
-
-    public void setToControlYOffset(int toControlYOffset) {
-        this.toControlYOffset = toControlYOffset;
-        computeClientArea();
     }
 
     public Point getFrom() {
@@ -227,41 +175,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
         }
 
-        // Define S-shaped curve with control points
-        if (fromControlYOffset != 0 && toControlYOffset != 0) {
-            if (from.y < to.y) { // non-reversed edges
-                if (Math.abs(from.x - to.x) > 10) {
-                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
-                    sShape.setCurve(from.x, from.y,
-                            from.x, from.y + fromControlYOffset,
-                            to.x, to.y + toControlYOffset,
-                            to.x, to.y);
-                    g.draw(sShape);
-                } else {
-                    g.drawLine(from.x, from.y, to.x, to.y);
-                }
-            } else {  // reverse edges
-                if (from.x - to.x > 0) {
-                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
-                    sShape.setCurve(from.x, from.y,
-                            from.x - 150, from.y + fromControlYOffset,
-                            to.x + 150, to.y + toControlYOffset,
-                            to.x, to.y);
-                    g.draw(sShape);
-                } else {
-                    // add x offset
-                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
-                    sShape.setCurve(from.x, from.y,
-                            from.x + 150, from.y + fromControlYOffset,
-                            to.x - 150, to.y + toControlYOffset,
-                            to.x, to.y);
-                    g.draw(sShape);
-                }
-            }
-        } else {
-            // Fallback to straight line if control points are not set
-            g.drawLine(from.x, from.y, to.x, to.y);
-        }
+        g.drawLine(from.x, from.y, to.x, to.y);
 
         boolean sameFrom = false;
         boolean sameTo = successors.isEmpty();
@@ -318,15 +232,11 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             setHighlighted(enableHighlighting);
             recursiveHighlightSuccessors(enableHighlighting);
             highlightVertices(enableHighlighting);
+            if (enableHighlighting && needToInitToolTipText) {
+                setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
+                needToInitToolTipText = false; // Ensure it's only set once
+            }
         }
-    }
-
-    public LineWidget getPredecessor() {
-        return predecessor;
-    }
-
-    public List<LineWidget> getSuccessors() {
-        return successors;
     }
 
     private void highlightPredecessors(boolean enable) {
@@ -384,13 +294,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             s.setPopupVisible(b);
             s.popupVisibleSuccessors(b);
         }
-    }
-
-    public Figure getFromFigure() {
-        if (outputSlot != null) {
-            return outputSlot.getFigure();
-        }
-        return null;
     }
 
     @Override

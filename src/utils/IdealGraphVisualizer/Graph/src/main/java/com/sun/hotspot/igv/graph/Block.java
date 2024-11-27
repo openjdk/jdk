@@ -63,7 +63,9 @@ public class Block implements Cluster {
     public List<? extends Vertex> getVertices() {
         List<Vertex> vertices = new ArrayList<>();
         for (InputNode inputNode : inputBlock.getNodes()) {
-            vertices.add(diagram.getFigure(inputNode));
+            if (diagram.hasFigure(inputNode)) {
+                vertices.add(diagram.getFigure(inputNode));
+            }
         }
         return vertices;
     }
@@ -100,7 +102,8 @@ public class Block implements Cluster {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) return false;
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
         Block other = (Block) obj;
         return inputBlock.equals(other.inputBlock);
     }

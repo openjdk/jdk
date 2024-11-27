@@ -67,10 +67,10 @@ import org.openide.util.ImageUtilities;
 public class FigureWidget extends Widget implements Properties.Provider, PopupMenuProvider, DoubleClickHandler {
 
     private static final double LABEL_ZOOM_FACTOR = 0.3;
-    private Figure figure;
-    private Widget middleWidget;
-    private ArrayList<LabelWidget> labelWidgets;
-    private DiagramScene diagramScene;
+    private final Figure figure;
+    private final Widget middleWidget;
+    private final ArrayList<LabelWidget> labelWidgets;
+    private final DiagramScene diagramScene;
     private boolean boundary;
     private static final Image warningSign = ImageUtilities.loadImage("com/sun/hotspot/igv/view/images/warning.png");
 
@@ -129,7 +129,10 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         this.addChild(middleWidget);
 
         Widget textWidget = new Widget(scene);
-        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(SerialAlignment.CENTER, 0));
+        SerialAlignment textAlign = scene.getModel().getShowCFG() ?
+                LayoutFactory.SerialAlignment.LEFT_TOP :
+                LayoutFactory.SerialAlignment.CENTER;
+        textWidget.setLayout(LayoutFactory.createVerticalFlowLayout(textAlign, 0));
         middleWidget.addChild(textWidget);
 
         String[] strings = figure.getLines();
@@ -180,10 +183,6 @@ public class FigureWidget extends Widget implements Properties.Provider, PopupMe
         node.setDisplayName(getName());
 
         this.setToolTipText(PropertiesConverter.convertToHTML(f.getProperties()));
-    }
-
-    public void updatePosition() {
-        setPreferredLocation(figure.getPosition());
     }
 
     public int getFigureHeight() {

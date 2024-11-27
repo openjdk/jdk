@@ -71,8 +71,13 @@ public class Figure extends Properties.Entity implements Vertex {
 
     public int getSlotsHeight() {
         int slotHeight = 0;
-        if (hasNamedInputSlot() || hasNamedOutputSlot()) {
-            slotHeight += diagram.isCFG() ? 2 * Figure.SLOT_HEIGHT : Figure.SLOT_HEIGHT;
+        if (diagram.isCFG()) {
+            if (hasNamedInputSlot()) {
+                slotHeight += Figure.SLOT_HEIGHT;
+            }
+            if (hasNamedOutputSlot()) {
+                slotHeight += Figure.SLOT_HEIGHT;
+            }
         }
         return slotHeight;
     }
@@ -376,15 +381,16 @@ public class Figure extends Properties.Entity implements Vertex {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Figure)) {
+        if (this == o) return true;
+        if (!(o instanceof Figure other)) {
             return false;
         }
-        return getInputNode().equals(((Figure) o).getInputNode());
+        return Objects.equals(this.getInputNode(), other.getInputNode());
     }
 
     @Override
     public int hashCode() {
-        return getInputNode().hashCode();
+        return Objects.hash(getInputNode());
     }
 
     @Override
