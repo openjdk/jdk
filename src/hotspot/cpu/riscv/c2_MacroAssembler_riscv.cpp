@@ -2003,7 +2003,7 @@ void C2_MacroAssembler::enc_cmpEqNe_imm0_branch(int cmpFlag, Register op1, Label
 }
 
 void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Register dst, Register src) {
-  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask ? true : false;
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
   int op_select = cmpFlag & (~unsigned_branch_mask);
 
   switch (op_select) {
