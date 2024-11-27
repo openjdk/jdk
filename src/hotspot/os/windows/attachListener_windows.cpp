@@ -161,7 +161,7 @@ public:
 
 
 // Win32AttachOperationRequest is an element of AttachOperation request list.
-class Win32AttachOperationRequest {
+class Win32AttachOperationRequest: public CHeapObj<mtServiceability> {
 private:
   AttachAPIVersion _ver;
   char _name[AttachOperation::name_length_max + 1];

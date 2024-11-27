@@ -32,7 +32,6 @@
  * @summary Basic tests for Process and Environment Variable code
  * @modules java.base/java.lang:open
  *          java.base/java.io:open
- *          java.base/jdk.internal.misc
  * @requires !vm.musl
  * @requires vm.flagless
  * @library /test/lib
@@ -2676,17 +2675,6 @@ public class Basic {
                 else unexpected(t);}}
 
     static boolean isLocked(BufferedInputStream bis) throws Exception {
-        Field lockField = BufferedInputStream.class.getDeclaredField("lock");
-        lockField.setAccessible(true);
-        var lock = (jdk.internal.misc.InternalLock) lockField.get(bis);
-        if (lock != null) {
-            if (lock.tryLock()) {
-                lock.unlock();
-                return false;
-            } else {
-                return true;
-            }
-        }
         return new Thread() {
             volatile boolean unlocked;
 

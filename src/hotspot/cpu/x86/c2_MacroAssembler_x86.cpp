@@ -7073,13 +7073,3 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
     vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   }
 }
-
-#ifdef _LP64
-void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
-  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
-  // obj-start, so that we can load from the object's mark-word instead. Usually the address
-  // comes as obj-start in obj and klass_offset_in_bytes in disp.
-  movq(dst, src.plus_disp(-oopDesc::klass_offset_in_bytes()));
-  shrq(dst, markWord::klass_shift);
-}
-#endif

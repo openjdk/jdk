@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8342075
+ * @bug 8342075 8343855
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm  -Djdk.internal.httpclient.debug=true
@@ -40,7 +40,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -53,6 +52,7 @@ import java.util.function.Consumer;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpHeadOrGetHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.http2.BodyOutputStream;
 import jdk.httpclient.test.lib.http2.Http2Handler;
@@ -69,6 +69,7 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -90,6 +91,19 @@ public class StreamFlowControlTest {
                 { http2URI,  true },
                 { https2URI, true },
         };
+    }
+
+    static void sleep(long wait) throws InterruptedException {
+        if (wait <= 0) return;
+        long remaining = Utils.adjustTimeout(wait);
+        long start = System.nanoTime();
+        while (remaining > 0) {
+            Thread.sleep(remaining);
+            long end = System.nanoTime();
+            remaining = remaining - NANOSECONDS.toMillis(end - start);
+        }
+        System.out.printf("Waited %s ms%n",
+                NANOSECONDS.toMillis(System.nanoTime() - start));
     }
 
 
@@ -115,7 +129,7 @@ public class StreamFlowControlTest {
                 CompletableFuture<String> sent = new CompletableFuture<>();
                 responseSent.put(query, sent);
                 HttpRequest request = HttpRequest.newBuilder(uriWithQuery)
-                        .POST(BodyPublishers.ofString("Hello there!"))
+                        .GET()
                         .build();
                 System.out.println("\nSending request:" + uriWithQuery);
                 final HttpClient cc = client;
@@ -130,9 +144,9 @@ public class StreamFlowControlTest {
                     // we have to pull to get the exception, but slow enough
                     // so that DataFrames are buffered up to the point that
                     // the window is exceeded...
-                    int wait = uri.startsWith("https://") ? 500 : 350;
+                    long wait = uri.startsWith("https://") ? 800 : 350;
                     try (InputStream is = response.body()) {
-                        Thread.sleep(Utils.adjustTimeout(wait));
+                        sleep(wait);
                         is.readAllBytes();
                     }
                     // we could fail here if we haven't waited long enough
@@ -174,7 +188,7 @@ public class StreamFlowControlTest {
                 CompletableFuture<String> sent = new CompletableFuture<>();
                 responseSent.put(query, sent);
                 HttpRequest request = HttpRequest.newBuilder(uriWithQuery)
-                        .POST(BodyPublishers.ofString("Hello there!"))
+                        .GET()
                         .build();
                 System.out.println("\nSending request:" + uriWithQuery);
                 final HttpClient cc = client;
@@ -188,9 +202,9 @@ public class StreamFlowControlTest {
                         assertEquals(key, label, "Unexpected key for " + query);
                     }
                     sent.join();
-                    int wait = uri.startsWith("https://") ? 600 : 300;
+                    long wait = uri.startsWith("https://") ? 800 : 350;
                     try (InputStream is = response.body()) {
-                        Thread.sleep(Utils.adjustTimeout(wait));
+                        sleep(wait);
                         is.readAllBytes();
                     }
                     // we could fail here if we haven't waited long enough
@@ -252,7 +266,9 @@ public class StreamFlowControlTest {
         var https2TestServer = new Http2TestServer("localhost", true, sslContext);
         https2TestServer.addHandler(new Http2TestHandler(), "/https2/");
         this.https2TestServer = HttpTestServer.of(https2TestServer);
+        this.https2TestServer.addHandler(new HttpHeadOrGetHandler(), "/https2/head/");
         https2URI = "https://" + this.https2TestServer.serverAuthority() + "/https2/x";
+        String h2Head = "https://" + this.https2TestServer.serverAuthority() + "/https2/head/z";
 
         // Override the default exchange supplier with a custom one to enable
         // particular test scenarios
@@ -261,6 +277,13 @@ public class StreamFlowControlTest {
 
         this.http2TestServer.start();
         this.https2TestServer.start();
+
+        // warmup to eliminate delay due to SSL class loading and initialization.
+        try (var client = HttpClient.newBuilder().sslContext(sslContext).build()) {
+            var request = HttpRequest.newBuilder(URI.create(h2Head)).HEAD().build();
+            var resp = client.send(request, BodyHandlers.discarding());
+            assertEquals(resp.statusCode(), 200);
+        }
     }
 
     @AfterTest
@@ -279,11 +302,19 @@ public class StreamFlowControlTest {
                  OutputStream os = t.getResponseBody()) {
 
                 byte[] bytes = is.readAllBytes();
-                System.out.println("Server " + t.getLocalAddress() + " received:\n"
-                        + t.getRequestURI() + ": " + new String(bytes, StandardCharsets.UTF_8));
+                if (bytes.length != 0) {
+                    System.out.println("Server " + t.getLocalAddress() + " received:\n"
+                            + t.getRequestURI() + ": " + new String(bytes, StandardCharsets.UTF_8));
+                } else {
+                    System.out.println("No request body for " + t.getRequestMethod());
+                }
+
                 t.getResponseHeaders().setHeader("X-Connection-Key", t.getConnectionKey());
 
-                if (bytes.length == 0) bytes = "no request body!".getBytes(StandardCharsets.UTF_8);
+                if (bytes.length == 0) {
+                    bytes = "no request body!"
+                            .repeat(100).getBytes(StandardCharsets.UTF_8);
+                }
                 int window = Integer.getInteger("jdk.httpclient.windowsize", 2 * 16 * 1024);
                 final int maxChunkSize;
                 if (t instanceof FCHttp2TestExchange fct) {
@@ -307,13 +338,22 @@ public class StreamFlowControlTest {
                             // ignore and continue...
                         }
                     }
-                    ((BodyOutputStream) os).writeUncontrolled(resp, 0, resp.length);
+                    try {
+                        ((BodyOutputStream) os).writeUncontrolled(resp, 0, resp.length);
+                    } catch (IOException x) {
+                        if (t instanceof FCHttp2TestExchange fct) {
+                            fct.conn.updateConnectionWindow(resp.length);
+                        }
+                    }
+                }
+            } finally {
+                if (t instanceof FCHttp2TestExchange fct) {
+                    fct.responseSent(query);
+                } else {
+                    fail("Exchange is not %s but %s"
+                            .formatted(FCHttp2TestExchange.class.getName(), t.getClass().getName()));
                 }
             }
-            if (t instanceof FCHttp2TestExchange fct) {
-                fct.responseSent(query);
-            } else fail("Exchange is not %s but %s"
-                    .formatted(FCHttp2TestExchange.class.getName(), t.getClass().getName()));
         }
     }
 

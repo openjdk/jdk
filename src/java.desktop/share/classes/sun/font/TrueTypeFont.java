@@ -38,9 +38,6 @@ import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -246,13 +243,7 @@ public class TrueTypeFont extends FileFont {
                 FontUtilities.logInfo("open TTF: " + platName);
             }
             try {
-                @SuppressWarnings("removal")
-                RandomAccessFile raf = AccessController.doPrivileged(
-                    new PrivilegedExceptionAction<RandomAccessFile>() {
-                        public RandomAccessFile run() throws FileNotFoundException {
-                            return new RandomAccessFile(platName, "r");
-                    }
-                });
+                RandomAccessFile raf = new RandomAccessFile(platName, "r");
                 disposerRecord.channel = raf.getChannel();
                 fileSize = (int)disposerRecord.channel.size();
                 if (usePool) {
@@ -261,13 +252,6 @@ public class TrueTypeFont extends FileFont {
                         ((SunFontManager) fm).addToPool(this);
                     }
                 }
-            } catch (PrivilegedActionException e) {
-                close();
-                Throwable reason = e.getCause();
-                if (reason == null) {
-                    reason = e;
-                }
-                throw new FontFormatException(reason.toString());
             } catch (ClosedChannelException e) {
                 /* NIO I/O is interruptible, recurse to retry operation.
                  * The call to channel.size() above can throw this exception.
@@ -664,7 +648,6 @@ public class TrueTypeFont extends FileFont {
     };
 
     private static String defaultCodePage = null;
-    @SuppressWarnings("removal")
     static String getCodePage() {
 
         if (defaultCodePage != null) {
@@ -672,8 +655,7 @@ public class TrueTypeFont extends FileFont {
         }
 
         if (FontUtilities.isWindows) {
-            defaultCodePage =
-                AccessController.doPrivileged(new GetPropertyAction("file.encoding"));
+            defaultCodePage = System.getProperty("file.encoding");
         } else {
             if (languages.length != codePages.length) {
                 throw new InternalError("wrong code pages array length");
