@@ -75,7 +75,7 @@ void GrowableArrayNestingCheck::on_resource_area_alloc() const {
 }
 
 void GrowableArrayNestingCheck::on_arena_alloc(Arena* arena) const {
-  if ((arena->get_tag() == Arena::Tag::tag_ra) && _nesting != static_cast<ResourceArea*>(arena)->nesting()) {
+  if ((arena->get_tag() == Arena::Tag::tag_ra) && (_nesting != static_cast<ResourceArea*>(arena)->nesting())) {
     fatal("allocation bug: GrowableArray is growing within nested ResourceMark");
   }
 }
