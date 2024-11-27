@@ -791,19 +791,16 @@ public abstract class HtmlDocletWriter {
         }
         if (targetLink != null) {
             if (flags.contains(ElementFlag.PREVIEW)) {
-                return new ContentBuilder(
-                    links.createLink(targetLink, label),
-                    HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(packageElement).name()),
-                                                  contents.previewMark))
-                );
+                return new ContentBuilder(links.createLink(targetLink, label),
+                        HtmlTree.SUP(HtmlStyles.previewMark,
+                                links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(packageElement).name()),
+                                        contents.previewMark)));
             }
             return links.createLink(targetLink, label);
         } else {
             if (flags.contains(ElementFlag.PREVIEW)) {
-                return new ContentBuilder(
-                    label,
-                    HtmlTree.SUP(contents.previewMark)
-                );
+                return new ContentBuilder(label,
+                        HtmlTree.SUP(HtmlStyles.previewMark, contents.previewMark));
             }
             return label;
         }
@@ -835,19 +832,16 @@ public abstract class HtmlDocletWriter {
             targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
             Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
-                link = new ContentBuilder(
-                        link,
-                        HtmlTree.SUP(links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(mdle).name()),
-                                                      contents.previewMark))
-                );
+                link = new ContentBuilder(link,
+                        HtmlTree.SUP(HtmlStyles.previewMark,
+                                links.createLink(targetLink.withFragment(htmlIds.forPreviewSection(mdle).name()),
+                                                      contents.previewMark)));
             }
             return link;
         }
         if (flags.contains(ElementFlag.PREVIEW)) {
-            return new ContentBuilder(
-                label,
-                HtmlTree.SUP(contents.previewMark)
-            );
+            return new ContentBuilder(label,
+                    HtmlTree.SUP(HtmlStyles.previewMark, contents.previewMark));
         }
         return label;
     }

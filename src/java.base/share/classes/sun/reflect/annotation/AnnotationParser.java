@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,7 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Supplier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+
 import jdk.internal.reflect.ConstantPool;
 
 import sun.reflect.generics.parser.SignatureParser;
@@ -292,16 +291,12 @@ public class AnnotationParser {
      * Returns an annotation of the given type backed by the given
      * member {@literal ->} value map.
      */
-    @SuppressWarnings("removal")
     public static Annotation annotationForMap(final Class<? extends Annotation> type,
                                               final Map<String, Object> memberValues)
     {
-        return AccessController.doPrivileged(new PrivilegedAction<Annotation>() {
-            public Annotation run() {
-                return (Annotation) Proxy.newProxyInstance(
-                    type.getClassLoader(), new Class<?>[] { type },
-                    new AnnotationInvocationHandler(type, memberValues));
-            }});
+        return (Annotation) Proxy.newProxyInstance(
+                type.getClassLoader(), new Class<?>[] { type },
+                new AnnotationInvocationHandler(type, memberValues));
     }
 
     /**

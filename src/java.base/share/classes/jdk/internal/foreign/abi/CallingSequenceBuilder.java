@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *  or visit www.oracle.com if you need additional information or have any
  *  questions.
  */
+
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.Utils;
@@ -38,7 +39,6 @@ import jdk.internal.foreign.abi.Binding.ShiftLeft;
 import jdk.internal.foreign.abi.Binding.ShiftRight;
 import jdk.internal.foreign.abi.Binding.VMLoad;
 import jdk.internal.foreign.abi.Binding.VMStore;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
@@ -54,7 +54,7 @@ import static java.lang.invoke.MethodType.methodType;
 
 public class CallingSequenceBuilder {
     private static final boolean VERIFY_BINDINGS = Boolean.parseBoolean(
-            GetPropertyAction.privilegedGetProperty("java.lang.foreign.VERIFY_BINDINGS", "true"));
+            System.getProperty("java.lang.foreign.VERIFY_BINDINGS", "true"));
 
     private final ABIDescriptor abi;
     private final LinkerOptions linkerOptions;

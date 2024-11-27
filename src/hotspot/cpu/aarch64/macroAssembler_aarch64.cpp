@@ -39,6 +39,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -775,6 +776,10 @@ static void pass_arg3(MacroAssembler* masm, Register arg) {
   }
 }
 
+static bool is_preemptable(address entry_point) {
+  return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter);
+}
+
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register java_thread,
                                   Register last_java_sp,
@@ -810,7 +815,12 @@ void MacroAssembler::call_VM_base(Register oop_result,
   assert(last_java_sp != rfp, "can't use rfp");
 
   Label l;
-  set_last_Java_frame(last_java_sp, rfp, l, rscratch1);
+  if (is_preemptable(entry_point)) {
+    // skip setting last_pc since we already set it to desired value.
+    set_last_Java_frame(last_java_sp, rfp, noreg, rscratch1);
+  } else {
+    set_last_Java_frame(last_java_sp, rfp, l, rscratch1);
+  }
 
   // do the call, remove parameters
   MacroAssembler::call_VM_leaf_base(entry_point, number_of_arguments, &l);
@@ -1002,10 +1012,11 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
 }
 
 int MacroAssembler::ic_check_size() {
+  int extra_instructions = UseCompactObjectHeaders ? 1 : 0;
   if (target_needs_far_branch(CAST_FROM_FN_PTR(address, SharedRuntime::get_ic_miss_stub()))) {
-    return NativeInstruction::instruction_size * 7;
+    return NativeInstruction::instruction_size * (7 + extra_instructions);
   } else {
-    return NativeInstruction::instruction_size * 5;
+    return NativeInstruction::instruction_size * (5 + extra_instructions);
   }
 }
 
@@ -1023,7 +1034,11 @@ int MacroAssembler::ic_check(int end_alignment) {
 
   int uep_offset = offset();
 
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp1, receiver);
+    ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    cmpw(tmp1, tmp2);
+  } else if (UseCompressedClassPointers) {
     ldrw(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
     ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
     cmpw(tmp1, tmp2);
@@ -5009,8 +5024,22 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
+// Loads the obj's Klass* into dst.
+// Preserves all registers (incl src, rscratch1 and rscratch2).
+// Input:
+// src - the oop we want to load the klass from.
+// dst - output narrow klass.
+void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
+  assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
+  ldr(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  lsr(dst, dst, markWord::klass_shift);
+}
+
 void MacroAssembler::load_klass(Register dst, Register src) {
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+    decode_klass_not_null(dst);
+  } else if (UseCompressedClassPointers) {
     ldrw(dst, Address(src, oopDesc::klass_offset_in_bytes()));
     decode_klass_not_null(dst);
   } else {
@@ -5065,28 +5094,50 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   resolve_oop_handle(dst, tmp1, tmp2);
 }
 
-void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
+void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
+  assert_different_registers(obj, klass, tmp);
   if (UseCompressedClassPointers) {
-    ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    if (UseCompactObjectHeaders) {
+      load_narrow_klass_compact(tmp, obj);
+    } else {
+      ldrw(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
+    }
     if (CompressedKlassPointers::base() == nullptr) {
-      cmp(trial_klass, tmp, LSL, CompressedKlassPointers::shift());
+      cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
       return;
     } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
                && CompressedKlassPointers::shift() == 0) {
       // Only the bottom 32 bits matter
-      cmpw(trial_klass, tmp);
+      cmpw(klass, tmp);
       return;
     }
     decode_klass_not_null(tmp);
   } else {
-    ldr(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
-  cmp(trial_klass, tmp);
+  cmp(klass, tmp);
+}
+
+void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(tmp1, obj1);
+    load_narrow_klass_compact(tmp2,  obj2);
+    cmpw(tmp1, tmp2);
+  } else if (UseCompressedClassPointers) {
+    ldrw(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
+    cmpw(tmp1, tmp2);
+  } else {
+    ldr(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
+    cmp(tmp1, tmp2);
+  }
 }
 
 void MacroAssembler::store_klass(Register dst, Register src) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     encode_klass_not_null(src);
     strw(src, Address(dst, oopDesc::klass_offset_in_bytes()));
@@ -5096,6 +5147,7 @@ void MacroAssembler::store_klass(Register dst, Register src) {
 }
 
 void MacroAssembler::store_klass_gap(Register dst, Register src) {
+  assert(!UseCompactObjectHeaders, "not with compact headers");
   if (UseCompressedClassPointers) {
     // Store to klass gap in destination
     strw(src, Address(dst, oopDesc::klass_gap_offset_in_bytes()));
@@ -5246,9 +5298,6 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
     return _klass_decode_mode;
   }
 
-  assert(LogKlassAlignmentInBytes == CompressedKlassPointers::shift()
-         || 0 == CompressedKlassPointers::shift(), "decode alg wrong");
-
   if (CompressedKlassPointers::base() == nullptr) {
     return (_klass_decode_mode = KlassDecodeZero);
   }
@@ -5274,7 +5323,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   switch (klass_decode_mode()) {
   case KlassDecodeZero:
     if (CompressedKlassPointers::shift() != 0) {
-      lsr(dst, src, LogKlassAlignmentInBytes);
+      lsr(dst, src, CompressedKlassPointers::shift());
     } else {
       if (dst != src) mov(dst, src);
     }
@@ -5283,7 +5332,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   case KlassDecodeXor:
     if (CompressedKlassPointers::shift() != 0) {
       eor(dst, src, (uint64_t)CompressedKlassPointers::base());
-      lsr(dst, dst, LogKlassAlignmentInBytes);
+      lsr(dst, dst, CompressedKlassPointers::shift());
     } else {
       eor(dst, src, (uint64_t)CompressedKlassPointers::base());
     }
@@ -5291,7 +5340,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 
   case KlassDecodeMovk:
     if (CompressedKlassPointers::shift() != 0) {
-      ubfx(dst, src, LogKlassAlignmentInBytes, 32);
+      ubfx(dst, src, CompressedKlassPointers::shift(), 32);
     } else {
       movw(dst, src);
     }
@@ -5313,7 +5362,7 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
   switch (klass_decode_mode()) {
   case KlassDecodeZero:
     if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, LogKlassAlignmentInBytes);
+      lsl(dst, src, CompressedKlassPointers::shift());
     } else {
       if (dst != src) mov(dst, src);
     }
@@ -5321,7 +5370,7 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 
   case KlassDecodeXor:
     if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, src, LogKlassAlignmentInBytes);
+      lsl(dst, src, CompressedKlassPointers::shift());
       eor(dst, dst, (uint64_t)CompressedKlassPointers::base());
     } else {
       eor(dst, src, (uint64_t)CompressedKlassPointers::base());
@@ -5336,7 +5385,7 @@ void  MacroAssembler::decode_klass_not_null(Register dst, Register src) {
     movk(dst, shifted_base >> 32, 32);
 
     if (CompressedKlassPointers::shift() != 0) {
-      lsl(dst, dst, LogKlassAlignmentInBytes);
+      lsl(dst, dst, CompressedKlassPointers::shift());
     }
 
     break;
@@ -5495,6 +5544,38 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+}
+
+void MacroAssembler::inc_held_monitor_count(Register tmp) {
+  Address dst(rthread, JavaThread::held_monitor_count_offset());
+#ifdef ASSERT
+  ldr(tmp, dst);
+  increment(tmp);
+  str(tmp, dst);
+  Label ok;
+  tbz(tmp, 63, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#else
+  increment(dst);
+#endif
+}
+
+void MacroAssembler::dec_held_monitor_count(Register tmp) {
+  Address dst(rthread, JavaThread::held_monitor_count_offset());
+#ifdef ASSERT
+  ldr(tmp, dst);
+  decrement(tmp);
+  str(tmp, dst);
+  Label ok;
+  tbz(tmp, 63, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#else
+  decrement(dst);
+#endif
 }
 
 void MacroAssembler::verify_tlab() {

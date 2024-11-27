@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import sun.net.www.protocol.http.AuthCacheImpl;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.util.logging.PlatformLogger;
 import static sun.net.www.protocol.http.HttpURLConnection.TunnelState.*;
-import sun.security.action.GetPropertyAction;
 
 /**
  * @author Herb Jellinek
@@ -70,10 +69,10 @@ public class HttpClient extends NetworkClient {
 
     /** Response code for CONTINUE */
     private boolean ignoreContinue = true;
-    private static final int    HTTP_CONTINUE = 100;
+    private static final int HTTP_CONTINUE = 100;
 
     /** Default port number for http daemons. REMIND: make these private */
-    static final int    httpPortNumber = 80;
+    static final int httpPortNumber = 80;
 
     /** return default port number (subclasses may override) */
     protected int getDefaultPort () { return httpPortNumber; }
@@ -194,7 +193,7 @@ public class HttpClient extends NetworkClient {
     }
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         String keepAlive = props.getProperty("http.keepAlive");
         String retryPost = props.getProperty("sun.net.http.retryPost");
         String cacheNTLM = props.getProperty("jdk.ntlm.cache");
@@ -241,11 +240,6 @@ public class HttpClient extends NetworkClient {
     }
 
     protected HttpClient() {
-    }
-
-    private HttpClient(URL url)
-    throws IOException {
-        this(url, (String)null, -1, false);
     }
 
     protected HttpClient(URL url,
@@ -388,15 +382,6 @@ public class HttpClient extends NetworkClient {
                 ret.authcache = httpuc.getAuthCache();
             }
         } else {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                if (ret.proxy == Proxy.NO_PROXY || ret.proxy == null) {
-                    security.checkConnect(InetAddress.getByName(url.getHost()).getHostAddress(), url.getPort());
-                } else {
-                    security.checkConnect(url.getHost(), url.getPort());
-                }
-            }
             ret.url = url;
         }
         return ret;
@@ -571,29 +556,18 @@ public class HttpClient extends NetworkClient {
      * be done; for proxy tunneling, the socket needs to be converted
      * into an SSL socket before ssl handshake can take place.
      */
-    public void afterConnect() throws IOException, UnknownHostException {
+    public void afterConnect() throws IOException {
         // NO-OP. Needs to be overwritten by HttpsClient
     }
 
     /*
-     * call openServer in a privileged block
+     * call openServer
      */
-    @SuppressWarnings("removal")
-    private void privilegedOpenServer(final InetSocketAddress server)
+    private void openServer(final InetSocketAddress server)
          throws IOException
     {
         assert clientLock.isHeldByCurrentThread();
-        try {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<>() {
-                    public Void run() throws IOException {
-                    openServer(server.getHostString(), server.getPort());
-                    return null;
-                }
-            });
-        } catch (java.security.PrivilegedActionException pae) {
-            throw (IOException) pae.getException();
-        }
+        openServer(server.getHostString(), server.getPort());
     }
 
     /*
@@ -601,7 +575,7 @@ public class HttpClient extends NetworkClient {
      */
     private void superOpenServer(final String proxyHost,
                                  final int proxyPort)
-        throws IOException, UnknownHostException
+        throws IOException
     {
         super.openServer(proxyHost, proxyPort);
     }
@@ -610,14 +584,8 @@ public class HttpClient extends NetworkClient {
      */
     protected void openServer() throws IOException {
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-
         lock();
         try {
-            if (security != null) {
-                security.checkConnect(host, port);
-            }
 
             if (keepingAlive) { // already opened
                 return;
@@ -628,7 +596,7 @@ public class HttpClient extends NetworkClient {
 
                 if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
                     sun.net.www.URLConnection.setProxiedHost(host);
-                    privilegedOpenServer((InetSocketAddress) proxy.address());
+                    openServer((InetSocketAddress) proxy.address());
                     usingProxy = true;
                     return;
                 } else {
@@ -644,7 +612,7 @@ public class HttpClient extends NetworkClient {
                  */
                 if ((proxy != null) && (proxy.type() == Proxy.Type.HTTP)) {
                     sun.net.www.URLConnection.setProxiedHost(host);
-                    privilegedOpenServer((InetSocketAddress) proxy.address());
+                    openServer((InetSocketAddress) proxy.address());
                     usingProxy = true;
                     return;
                 } else {
@@ -663,7 +631,7 @@ public class HttpClient extends NetworkClient {
 
         String fileName;
 
-        /**
+        /*
          * proxyDisabled is set by subclass HttpsClient!
          */
         if (usingProxy && !proxyDisabled) {
@@ -817,7 +785,7 @@ public class HttpClient extends NetworkClient {
         keepAliveConnections = -1;
         keepAliveTimeout = 0;
 
-        boolean ret = false;
+        boolean ret;
         byte[] b = new byte[8];
 
         try {

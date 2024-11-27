@@ -336,6 +336,66 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
   restore_locals();
 }
 
+#ifdef _LP64
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                                                    address entry_point,
+                                                    Register arg_1) {
+  assert(arg_1 == c_rarg1, "");
+  Label resume_pc, not_preempted;
+
+#ifdef ASSERT
+  {
+    Label L;
+    cmpptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    jcc(Assembler::equal, L);
+    stop("Should not have alternate return address set");
+    bind(L);
+  }
+#endif /* ASSERT */
+
+  // Force freeze slow path.
+  push_cont_fastpath();
+
+  // Make VM call. In case of preemption set last_pc to the one we want to resume to.
+  // Note: call_VM_helper requires last_Java_pc for anchor to be at the top of the stack.
+  lea(rscratch1, resume_pc);
+  push(rscratch1);
+  MacroAssembler::call_VM_helper(oop_result, entry_point, 1, false /*check_exceptions*/);
+  pop(rscratch1);
+
+  pop_cont_fastpath();
+
+  // Check if preempted.
+  movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+  cmpptr(rscratch1, NULL_WORD);
+  jccb(Assembler::zero, not_preempted);
+  movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+  jmp(rscratch1);
+
+  // In case of preemption, this is where we will resume once we finally acquire the monitor.
+  bind(resume_pc);
+  restore_after_resume(false /* is_native */);
+
+  bind(not_preempted);
+}
+
+void InterpreterMacroAssembler::restore_after_resume(bool is_native) {
+  lea(rscratch1, ExternalAddress(Interpreter::cont_resume_interpreter_adapter()));
+  call(rscratch1);
+  if (is_native) {
+    // On resume we need to set up stack as expected.
+    push(dtos);
+    push(ltos);
+  }
+}
+#else
+void InterpreterMacroAssembler::call_VM_preemptable(Register oop_result,
+                         address entry_point,
+                         Register arg_1) {
+  MacroAssembler::call_VM(oop_result, entry_point, arg_1);
+}
+#endif  // _LP64
+
 void InterpreterMacroAssembler::check_and_handle_popframe(Register java_thread) {
   if (JvmtiExport::can_pop_frame()) {
     Label L;
@@ -1154,7 +1214,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
          "The argument is only for looks. It must be c_rarg1");
 
   if (LockingMode == LM_MONITOR) {
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
@@ -1241,14 +1301,14 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       jcc(Assembler::notZero, slow_case);
 
       bind(count_locking);
+      inc_held_monitor_count();
     }
-    inc_held_monitor_count();
     jmp(done);
 
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    call_VM(noreg,
+    call_VM_preemptable(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
     bind(done);
@@ -1321,8 +1381,8 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
       jcc(Assembler::notZero, slow_case);
 
       bind(count_locking);
+      dec_held_monitor_count();
     }
-    dec_held_monitor_count();
     jmp(done);
 
     bind(slow_case);

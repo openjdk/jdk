@@ -316,7 +316,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
                   relocInfo::static_call_type);
   address call = __ reloc_call(resolve);
   if (call == nullptr) {
-    ce->bailout("trampoline stub overflow");
+    ce->bailout("reloc call address stub overflow");
     return;
   }
   ce->add_call_info_here(info());

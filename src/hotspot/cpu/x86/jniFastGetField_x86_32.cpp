@@ -36,17 +36,6 @@
 
 #define BUFFER_SIZE 30
 
-#ifdef _WINDOWS
-GetBooleanField_t JNI_FastGetField::jni_fast_GetBooleanField_fp;
-GetByteField_t    JNI_FastGetField::jni_fast_GetByteField_fp;
-GetCharField_t    JNI_FastGetField::jni_fast_GetCharField_fp;
-GetShortField_t   JNI_FastGetField::jni_fast_GetShortField_fp;
-GetIntField_t     JNI_FastGetField::jni_fast_GetIntField_fp;
-GetLongField_t    JNI_FastGetField::jni_fast_GetLongField_fp;
-GetFloatField_t   JNI_FastGetField::jni_fast_GetFloatField_fp;
-GetDoubleField_t  JNI_FastGetField::jni_fast_GetDoubleField_fp;
-#endif
-
 // Instead of issuing lfence for LoadLoad barrier, we create data dependency
 // between loads, which is much more efficient than lfence.
 
@@ -119,12 +108,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   // ca1 is data dependent on rax,.
   __ jcc (Assembler::notEqual, slow);
 
-#ifndef _WINDOWS
   __ ret (0);
-#else
-  // __stdcall calling convention
-  __ ret (3*wordSize);
-#endif
 
   slowcase_entry_pclist[count++] = __ pc();
   __ bind (slow);
@@ -142,18 +126,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   __ flush ();
 
-#ifndef _WINDOWS
   return fast_entry;
-#else
-  switch (type) {
-  case T_BOOLEAN: jni_fast_GetBooleanField_fp = (GetBooleanField_t) fast_entry; break;
-  case T_BYTE:    jni_fast_GetByteField_fp    = (GetByteField_t)    fast_entry; break;
-  case T_CHAR:    jni_fast_GetCharField_fp    = (GetCharField_t)    fast_entry; break;
-  case T_SHORT:   jni_fast_GetShortField_fp   = (GetShortField_t)   fast_entry; break;
-  case T_INT:     jni_fast_GetIntField_fp     = (GetIntField_t)     fast_entry; break;
-  }
-  return os::win32::fast_jni_accessor_wrapper(type);
-#endif
 }
 
 address JNI_FastGetField::generate_fast_get_boolean_field() {
@@ -238,12 +211,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 
   __ pop (rsi);
 
-#ifndef _WINDOWS
   __ ret (0);
-#else
-  // __stdcall calling convention
-  __ ret (3*wordSize);
-#endif
 
   slowcase_entry_pclist[count-1] = __ pc();
   slowcase_entry_pclist[count++] = __ pc();
@@ -255,12 +223,7 @@ address JNI_FastGetField::generate_fast_get_long_field() {
 
   __ flush ();
 
-#ifndef _WINDOWS
   return fast_entry;
-#else
-  jni_fast_GetLongField_fp = (GetLongField_t) fast_entry;
-  return os::win32::fast_jni_accessor_wrapper(T_LONG);
-#endif
 }
 
 address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
@@ -330,12 +293,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
   // access.
   __ jcc (Assembler::notEqual, slow_with_pop);
 
-#ifndef _WINDOWS
   __ ret (0);
-#else
-  // __stdcall calling convention
-  __ ret (3*wordSize);
-#endif
 
   __ bind (slow_with_pop);
   // invalid load. pop FPU stack.
@@ -354,15 +312,7 @@ address JNI_FastGetField::generate_fast_get_float_field0(BasicType type) {
 
   __ flush ();
 
-#ifndef _WINDOWS
   return fast_entry;
-#else
-  switch (type) {
-  case T_FLOAT:  jni_fast_GetFloatField_fp  = (GetFloatField_t)  fast_entry; break;
-  case T_DOUBLE: jni_fast_GetDoubleField_fp = (GetDoubleField_t) fast_entry; break;
-  }
-  return os::win32::fast_jni_accessor_wrapper(type);
-#endif
 }
 
 address JNI_FastGetField::generate_fast_get_float_field() {

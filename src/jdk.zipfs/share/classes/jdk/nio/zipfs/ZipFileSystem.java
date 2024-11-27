@@ -44,10 +44,6 @@ import java.nio.channels.WritableByteChannel;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -82,10 +78,8 @@ import static jdk.nio.zipfs.ZipUtils.*;
  */
 class ZipFileSystem extends FileSystem {
     // statics
-    @SuppressWarnings("removal")
-    private static final boolean isWindows = AccessController.doPrivileged(
-        (PrivilegedAction<Boolean>)()->System.getProperty("os.name")
-                                             .startsWith("Windows"));
+    private static final boolean isWindows = System.getProperty("os.name")
+                                             .startsWith("Windows");
     private static final byte[] ROOTPATH = new byte[] { '/' };
     private static final String PROPERTY_POSIX = "enablePosixFileAttributes";
     private static final String PROPERTY_DEFAULT_OWNER = "defaultOwner";
@@ -168,9 +162,7 @@ class ZipFileSystem extends FileSystem {
         }
         // sm and existence check
         zfpath.getFileSystem().provider().checkAccess(zfpath, AccessMode.READ);
-        @SuppressWarnings("removal")
-        boolean writeable = AccessController.doPrivileged(
-            (PrivilegedAction<Boolean>)()->Files.isWritable(zfpath));
+        boolean writeable = Files.isWritable(zfpath);
         this.readOnly = !writeable;
         this.zc = ZipCoder.get(nameEncoding);
         this.rootdir = new ZipPath(this, new byte[]{'/'});
@@ -244,23 +236,14 @@ class ZipFileSystem extends FileSystem {
     // If not specified in env, it is the owner of the archive. If no owner can
     // be determined, we try to go with system property "user.name". If that's not
     // accessible, we return "<zipfs_default>".
-    @SuppressWarnings("removal")
     private UserPrincipal initOwner(Path zfpath, Map<String, ?> env) throws IOException {
         Object o = env.get(PROPERTY_DEFAULT_OWNER);
         if (o == null) {
             try {
-                PrivilegedExceptionAction<UserPrincipal> pa = ()->Files.getOwner(zfpath);
-                return AccessController.doPrivileged(pa);
-            } catch (UnsupportedOperationException | PrivilegedActionException e) {
-                if (e instanceof UnsupportedOperationException ||
-                    e.getCause() instanceof NoSuchFileException)
-                {
-                    PrivilegedAction<String> pa = ()->System.getProperty("user.name");
-                    String userName = AccessController.doPrivileged(pa);
-                    return ()->userName;
-                } else {
-                    throw new IOException(e);
-                }
+                return Files.getOwner(zfpath);
+            } catch (UnsupportedOperationException | NoSuchFileException e) {
+                String userName = System.getProperty("user.name");
+                return ()->userName;
             }
         }
         if (o instanceof String) {
@@ -282,7 +265,6 @@ class ZipFileSystem extends FileSystem {
     // If not specified in env, we try to determine the group of the zip archive itself.
     // If this is not possible/unsupported, we will return a group principal going by
     // the same name as the default owner.
-    @SuppressWarnings("removal")
     private GroupPrincipal initGroup(Path zfpath, Map<String, ?> env) throws IOException {
         Object o = env.get(PROPERTY_DEFAULT_GROUP);
         if (o == null) {
@@ -291,16 +273,9 @@ class ZipFileSystem extends FileSystem {
                 if (zfpv == null) {
                     return defaultOwner::getName;
                 }
-                PrivilegedExceptionAction<GroupPrincipal> pa = ()->zfpv.readAttributes().group();
-                return AccessController.doPrivileged(pa);
-            } catch (UnsupportedOperationException | PrivilegedActionException e) {
-                if (e instanceof UnsupportedOperationException ||
-                    e.getCause() instanceof NoSuchFileException)
-                {
-                    return defaultOwner::getName;
-                } else {
-                    throw new IOException(e);
-                }
+                return zfpv.readAttributes().group();
+            } catch (UnsupportedOperationException | NoSuchFileException e) {
+                return defaultOwner::getName;
             }
         }
         if (o instanceof String) {
@@ -462,7 +437,6 @@ class ZipFileSystem extends FileSystem {
         return (path)->pattern.matcher(path.toString()).matches();
     }
 
-    @SuppressWarnings("removal")
     @Override
     public void close() throws IOException {
         beginWrite();
@@ -480,13 +454,9 @@ class ZipFileSystem extends FileSystem {
         }
         beginWrite();                // lock and sync
         try {
-            AccessController.doPrivileged((PrivilegedExceptionAction<Void>)() -> {
-                sync(); return null;
-            });
+            sync();
             ch.close();              // close the ch just in case no update
                                      // and sync didn't close the ch
-        } catch (PrivilegedActionException e) {
-            throw (IOException)e.getException();
         } finally {
             endWrite();
         }
@@ -512,10 +482,8 @@ class ZipFileSystem extends FileSystem {
         synchronized (tmppaths) {
             for (Path p : tmppaths) {
                 try {
-                    AccessController.doPrivileged(
-                        (PrivilegedExceptionAction<Boolean>)() -> Files.deleteIfExists(p));
-                } catch (PrivilegedActionException e) {
-                    IOException x = (IOException)e.getException();
+                    Files.deleteIfExists(p);
+                } catch (IOException x) {
                     if (ioe == null)
                         ioe = x;
                     else

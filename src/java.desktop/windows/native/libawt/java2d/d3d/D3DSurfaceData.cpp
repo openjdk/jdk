@@ -62,7 +62,7 @@ void D3DSD_SetNativeDimensions(JNIEnv *env, D3DSDOps *d3dsdo) {
     }
 
     JNU_SetFieldByName(env, NULL, sdObject, "nativeWidth", "I", width);
-    if (!(env->ExceptionOccurred())) {
+    if (!(env->ExceptionCheck())) {
         JNU_SetFieldByName(env, NULL, sdObject, "nativeHeight", "I", height);
     }
 

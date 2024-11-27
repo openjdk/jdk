@@ -2160,7 +2160,16 @@ void MacroAssembler::call_VM_leaf_base(address entry_point) {
 }
 
 int MacroAssembler::ic_check_size() {
-  return 30 + (ImplicitNullChecks ? 0 : 6);
+  int ic_size = 24;
+  if (!ImplicitNullChecks) {
+    ic_size += 6;
+  }
+  if (UseCompactObjectHeaders) {
+    ic_size += 12;
+  } else {
+    ic_size += 6; // either z_llgf or z_lg
+  }
+  return ic_size;
 }
 
 int MacroAssembler::ic_check(int end_alignment) {
@@ -2181,7 +2190,9 @@ int MacroAssembler::ic_check(int end_alignment) {
     z_cgij(R2_receiver, 0, Assembler::bcondEqual, failure);
   }
 
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(R1_scratch, R2_receiver);
+  } else if (UseCompressedClassPointers) {
     z_llgf(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
   } else {
     z_lg(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
@@ -3492,7 +3503,7 @@ void MacroAssembler::increment_counter_eq(address counter_address, Register tmp1
 void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2) {
 
   assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_lock_lightweight");
-  assert_different_registers(oop, box, temp1, temp2);
+  assert_different_registers(oop, box, temp1, temp2, Z_R0_scratch);
 
   Register displacedHeader = temp1;
   Register currentHeader   = temp1;
@@ -3561,14 +3572,13 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   Register zero = temp;
   Register monitor_tagged = displacedHeader; // Tagged with markWord::monitor_value.
-  // The object's monitor m is unlocked iff m->owner is null,
-  // otherwise m->owner may contain a thread or a stack address.
 
-  // Try to CAS m->owner from null to current thread.
-  // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-  // Otherwise, register zero is filled with the current owner.
+  // Try to CAS owner (no owner => current thread's _lock_id).
+  // If csg succeeds then CR=EQ, otherwise, register zero is filled
+  // with the current owner.
   z_lghi(zero, 0);
-  z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_csg(zero, Z_R0_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
 
   // Store a non-null value into the box.
   z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
@@ -3577,7 +3587,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   BLOCK_COMMENT("fast_path_recursive_lock {");
   // Check if we are already the owner (recursive lock)
-  z_cgr(Z_thread, zero); // owner is stored in zero by "z_csg" above
+  z_cgr(Z_R0_scratch, zero); // owner is stored in zero by "z_csg" above
   z_brne(done); // not a recursive lock
 
   // Current thread already owns the lock. Just increment recursion count.
@@ -3595,7 +3605,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2) {
 
   assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
-  assert_different_registers(oop, box, temp1, temp2);
+  assert_different_registers(oop, box, temp1, temp2, Z_R0_scratch);
 
   Register displacedHeader = temp1;
   Register currentHeader   = temp2;
@@ -3642,7 +3652,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  z_cg(Z_thread, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_cg(Z_R0_scratch, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   z_brne(done);
 
   BLOCK_COMMENT("fast_path_recursive_unlock {");
@@ -3852,7 +3863,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
 
 #ifdef ASSERT
   Label ok;
-  z_tmll(current, KlassAlignmentInBytes-1); // Check alignment.
+  z_tmll(current, CompressedKlassPointers::klass_alignment_in_bytes() - 1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
   // a 32-bit value. Issuing two illtraps assures the disassembler finds
@@ -3866,7 +3877,6 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   // We then can be sure we calculate an offset that fits into 32 bit.
   // More generally speaking: all subsequent calculations are purely 32-bit.
   if (shift != 0) {
-    assert (LogKlassAlignmentInBytes == shift, "decode alg wrong");
     z_srlg(dst, current, shift);
     current = dst;
   }
@@ -3996,7 +4006,7 @@ void MacroAssembler::decode_klass_not_null(Register dst) {
 
 #ifdef ASSERT
   Label ok;
-  z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
+  z_tmll(dst, CompressedKlassPointers::klass_alignment_in_bytes() - 1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
   // a 32-bit value. Issuing two illtraps assures the disassembler finds
@@ -4043,7 +4053,7 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
 
 #ifdef ASSERT
   Label ok;
-  z_tmll(dst, KlassAlignmentInBytes-1); // Check alignment.
+  z_tmll(dst, CompressedKlassPointers::klass_alignment_in_bytes() - 1); // Check alignment.
   z_brc(Assembler::bcondAllZero, ok);
   // The plain disassembler does not recognize illtrap. It instead displays
   // a 32-bit value. Issuing two illtraps assures the disassembler finds
@@ -4065,10 +4075,58 @@ void MacroAssembler::load_klass(Register klass, Address mem) {
   }
 }
 
+// Loads the obj's Klass* into dst.
+// Input:
+// src - the oop we want to load the klass from.
+// dst - output nklass.
+void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
+  BLOCK_COMMENT("load_narrow_klass_compact {");
+  assert(UseCompactObjectHeaders, "expects UseCompactObjectHeaders");
+  z_lg(dst, Address(src, oopDesc::mark_offset_in_bytes()));
+  z_srlg(dst, dst, markWord::klass_shift);
+  BLOCK_COMMENT("} load_narrow_klass_compact");
+}
+
+void MacroAssembler::cmp_klass(Register klass, Register obj, Register tmp) {
+  BLOCK_COMMENT("cmp_klass {");
+  assert_different_registers(obj, klass, tmp);
+  if (UseCompactObjectHeaders) {
+    assert(tmp != noreg, "required");
+    assert_different_registers(klass, obj, tmp);
+    load_narrow_klass_compact(tmp, obj);
+    z_cr(klass, tmp);
+  } else if (UseCompressedClassPointers) {
+    z_c(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+  } else {
+    z_cg(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
+  }
+  BLOCK_COMMENT("} cmp_klass");
+}
+
+void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2) {
+  BLOCK_COMMENT("cmp_klasses_from_objects {");
+  if (UseCompactObjectHeaders) {
+    assert(tmp1 != noreg && tmp2 != noreg, "required");
+    assert_different_registers(obj1, obj2, tmp1, tmp2);
+    load_narrow_klass_compact(tmp1, obj1);
+    load_narrow_klass_compact(tmp2, obj2);
+    z_cr(tmp1, tmp2);
+  } else if (UseCompressedClassPointers) {
+    z_l(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    z_c(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
+  } else {
+    z_lg(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    z_cg(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
+  }
+  BLOCK_COMMENT("} cmp_klasses_from_objects");
+}
+
 void MacroAssembler::load_klass(Register klass, Register src_oop) {
-  if (UseCompressedClassPointers) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(klass, src_oop);
+    decode_klass_not_null(klass);
+  } else if (UseCompressedClassPointers) {
     z_llgf(klass, oopDesc::klass_offset_in_bytes(), src_oop);
-    // Attention: no null check here!
     decode_klass_not_null(klass);
   } else {
     z_lg(klass, oopDesc::klass_offset_in_bytes(), src_oop);
@@ -4076,6 +4134,7 @@ void MacroAssembler::load_klass(Register klass, Register src_oop) {
 }
 
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
+  assert(!UseCompactObjectHeaders, "Don't use with compact headers");
   if (UseCompressedClassPointers) {
     assert_different_registers(dst_oop, klass, Z_R0);
     if (ck == noreg) ck = klass;
@@ -4087,6 +4146,7 @@ void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) 
 }
 
 void MacroAssembler::store_klass_gap(Register s, Register d) {
+  assert(!UseCompactObjectHeaders, "Don't use with compact headers");
   if (UseCompressedClassPointers) {
     assert(s != d, "not enough registers");
     // Support s = noreg.
@@ -4112,7 +4172,11 @@ void MacroAssembler::compare_klass_ptr(Register Rop1, int64_t disp, Register Rba
     const int shift = CompressedKlassPointers::shift();
     address   base  = CompressedKlassPointers::base();
 
-    assert((shift == 0) || (shift == LogKlassAlignmentInBytes), "cKlass encoder detected bad shift");
+    if (UseCompactObjectHeaders) {
+      assert(shift >= 3, "cKlass encoder detected bad shift");
+    } else {
+      assert((shift == 0) || (shift == 3), "cKlass encoder detected bad shift");
+    }
     assert_different_registers(Rop1, Z_R0);
     assert_different_registers(Rop1, Rbase, Z_R1);
 
@@ -6164,7 +6228,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
 }
 
 void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
-  assert_different_registers(obj, box, tmp1, tmp2);
+  assert_different_registers(obj, box, tmp1, tmp2, Z_R0_scratch);
 
   // Handle inflated monitor.
   NearLabel inflated;
@@ -6292,15 +6356,16 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
 
 
-    // Try to CAS m->owner from null to current thread.
-    // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-    // Otherwise, register zero is filled with the current owner.
+    // Try to CAS owner (no owner => current thread's _lock_id).
+    // If csg succeeds then CR=EQ, otherwise, register zero is filled
+    // with the current owner.
     z_lghi(zero, 0);
-    z_csg(zero, Z_thread, owner_address);
+    z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+    z_csg(zero, Z_R0_scratch, owner_address);
     z_bre(monitor_locked);
 
     // Check if recursive.
-    z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
+    z_cgr(Z_R0_scratch, zero); // zero contains the owner from z_csg instruction
     z_brne(slow_path);
 
     // Recursive

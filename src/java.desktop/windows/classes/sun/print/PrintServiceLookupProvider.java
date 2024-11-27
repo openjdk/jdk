@@ -25,8 +25,6 @@
 
 package sun.print;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 
 import javax.print.DocFlavor;
@@ -54,15 +52,9 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         loadAWTLibrary();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void loadAWTLibrary() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("awt");
-                    return null;
-                }
-            });
+        System.loadLibrary("awt");
     }
 
     /* The singleton win32 print lookup service.
@@ -85,31 +77,26 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         return win32PrintLUS;
     }
 
-    @SuppressWarnings("removal")
     public PrintServiceLookupProvider() {
 
         if (win32PrintLUS == null) {
             win32PrintLUS = this;
 
             // start the local printer listener thread
-            AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
-                                        new PrinterChangeListener(),
-                                        "PrinterListener", 0, false);
-                thr.setContextClassLoader(null);
-                thr.setDaemon(true);
-                return thr;
-            }).start();
+            Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                    new PrinterChangeListener(),
+                                    "PrinterListener", 0, false);
+            thr.setContextClassLoader(null);
+            thr.setDaemon(true);
+            thr.start();
 
             // start the remote printer listener thread
-            AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread thr = new Thread(ThreadGroupUtils.getRootThreadGroup(),
-                                        new RemotePrinterChangeListener(),
-                                        "RemotePrinterListener", 0, false);
-                thr.setContextClassLoader(null);
-                thr.setDaemon(true);
-                return thr;
-            }).start();
+            Thread thr1 = new Thread(ThreadGroupUtils.getRootThreadGroup(),
+                                    new RemotePrinterChangeListener(),
+                                    "RemotePrinterListener", 0, false);
+            thr1.setContextClassLoader(null);
+            thr1.setDaemon(true);
+            thr1.start();
         } /* else condition ought to never happen! */
     }
 
