@@ -1067,7 +1067,6 @@ define SetupRunJtregTestBody
 	        }' \
 	        $$($1_RESULT_FILE) \
 	  )) \
-	  $$(if $$($1_SKIPPED), , $$(eval $1_SKIPPED := 0)) \
 	  $$(eval $1_ERROR := $$(shell $$(AWK) '{gsub(/[,;]/, ""); \
 	      for (i=1; i<=NF; i++) { if ($$$$i == "error:") \
 	      print $$$$(i+1) } }' $$($1_RESULT_FILE))) \
