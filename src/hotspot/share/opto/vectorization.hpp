@@ -729,11 +729,12 @@ private:
   const bool _is_valid;
 
   VPointer(const VLoop& vloop,
-           const MemPointer& mem_pointer) :
+           const MemPointer& mem_pointer,
+           const bool must_be_invalid = false) :
     _vloop(vloop),
     _mem_pointer(mem_pointer),
     _iv_scale(init_iv_scale()),
-    _is_valid(init_is_valid()) {}
+    _is_valid(!must_be_invalid && init_is_valid()) {}
 
 public:
   VPointer(const MemNode* mem,
@@ -769,8 +770,24 @@ public:
   // new_pointer = base + invar + iv_scale * (iv + iv_offset) + con
   //             = base + invar + iv_scale * iv               + (con + iv_scale * iv_offset)
   VPointer make_with_iv_offset(const jint iv_offset) const {
-    // TODO
-    return *this;
+    NoOverflowInt new_con = NoOverflowInt(con()) + NoOverflowInt(iv_scale()) * NoOverflowInt(iv_offset);
+    if (new_con.is_NaN()) {
+      assert("false", "TODO find a case"); // TODO
+      return make_invalid();
+    }
+    const VPointer p(_vloop, mem_pointer().make_with_con(new_con));
+#ifndef PRODUCT
+    if (_vloop.mptrace().is_trace_parsing()) {
+      tty->print_cr("VPointer::make_with_iv_offset:");
+      tty->print("  old: "); print_on(tty);
+      tty->print("  new: "); p.print_on(tty);
+    }
+#endif
+    return p;
+  }
+
+  VPointer make_invalid() const {
+    return VPointer(_vloop, mem_pointer(), true /* must be invalid*/);
   }
 
   // Accessors

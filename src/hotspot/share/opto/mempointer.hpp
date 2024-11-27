@@ -627,16 +627,17 @@ private:
   }
 
   // Mutated copy.
-  //   The new MemPointer is identical, except it has a different size.
+  //   The new MemPointer is identical, except it has a different size and con.
   MemPointer(const MemPointer& old,
+             const NoOverflowInt new_con,
              const jint new_size) :
     NOT_PRODUCT(_trace(old._trace) COMMA)
     _summands(old._summands),
-    _con(old.con()),
+    _con(new_con),
     _base(old.base()),
     _size(new_size)
   {
-    // TODO be careful with mutating con...NaN!
+    assert(!_con.is_NaN(), "non-NaN constant");
   }
 
 public:
@@ -659,7 +660,11 @@ public:
   }
 
   MemPointer make_with_size(const jint new_size) const {
-    return MemPointer(*this, new_size);
+    return MemPointer(*this, this->con(), new_size);
+  };
+
+  MemPointer make_with_con(const NoOverflowInt new_con) const {
+    return MemPointer(*this, new_con, this->size());
   };
 
 private:
