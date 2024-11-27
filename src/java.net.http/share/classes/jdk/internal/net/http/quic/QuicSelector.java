@@ -31,8 +31,6 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -183,7 +181,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
         public void shutdown() {
             markDone();
             try {
-                shutdown(virtualThreadService);
+                virtualThreadService.shutdown();
             } finally {
                 wakeup();
             }
@@ -247,27 +245,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
                 if (!done()) markDone();
                 timer().stop();
                 endpoints.removeIf(this::close);
-                close(virtualThreadService);
-            }
-        }
-
-        @SuppressWarnings({"deprecation", "removal"})
-        private void close(ExecutorService exec) {
-            var sm = System.getSecurityManager();
-            if (sm == null) exec.close();
-            else {
-                PrivilegedAction<Void> close = () -> { exec.close(); return null; };
-                AccessController.doPrivileged(close);
-            }
-        }
-
-        @SuppressWarnings({"deprecation", "removal"})
-        private void shutdown(ExecutorService exec) {
-            var sm = System.getSecurityManager();
-            if (sm == null) exec.shutdown();
-            else {
-                PrivilegedAction<Void> shutdown = () -> { exec.shutdown(); return null; };
-                AccessController.doPrivileged(shutdown);
+                virtualThreadService.close();
             }
         }
 
@@ -302,7 +280,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
     }
 
     /**
-     * A {@link QuicSelector} implementation based on non blocking
+     * A {@link QuicSelector} implementation based on non-blocking
      * {@linkplain DatagramChannel Datagram Channels} and using a
      * NIO {@link Selector}.
      * This implementation is tied to {@link QuicSelectableEndpoint} instances.
@@ -487,7 +465,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
     /**
      * Closes this {@code QuicSelector}.
      * This method calls {@link #shutdown()} and then {@linkplain
-     * #awaitTermination(long, TimeUnit)} waits for the selector thread
+     * #awaitTermination(long, TimeUnit) waits for the selector thread
      * to terminate}, up to two {@link #IDLE_PERIOD_MS}.
      */
     @Override
@@ -529,7 +507,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
      * @param name the selector name
      * @throws IOException if an IOException occurs when creating the underlying {@link Selector}
      */
-    public static QuicNioSelector createQuicNioSelector(QuicInstance quicInstance, String name)
+    public static QuicSelector<? extends QuicEndpoint> createQuicNioSelector(QuicInstance quicInstance, String name)
             throws IOException {
         Selector selector = Selector.open();
         return new QuicNioSelector(quicInstance, selector, name);
@@ -548,7 +526,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
      * @param quicInstance the quic instance
      * @param name the selector name
      */
-    public static QuicVirtualThreadPoller createQuicVirtualThreadPoller(QuicInstance quicInstance, String name) {
+    public static QuicSelector<? extends QuicEndpoint> createQuicVirtualThreadPoller(QuicInstance quicInstance, String name) {
         return new QuicVirtualThreadPoller(quicInstance, name);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@ import java.util.function.Function;
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
-
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import jdk.httpclient.test.lib.common.ServerNameMatcher;
 import jdk.internal.net.http.common.Log;
@@ -271,16 +268,8 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
         }
     }
 
-    @SuppressWarnings("removal")
     static QuicEndpointFactory newQuicEndpointFactory() {
-        if (System.getSecurityManager() != null) {
-            // do not require test code to posses permissions when creating
-            // the server QuicConnections
-            PrivilegedAction<QuicEndpointFactory> action = QuicEndpointFactory::new;
-            return AccessController.doPrivileged(action);
-        } else {
-            return new QuicEndpointFactory();
-        }
+        return new QuicEndpointFactory();
     }
 
     public void setConnectionAcceptor(final ConnectionAcceptor acceptor) {

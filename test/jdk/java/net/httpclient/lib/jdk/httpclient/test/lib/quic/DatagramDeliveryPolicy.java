@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@ package jdk.httpclient.test.lib.quic;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.ParseException;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -223,13 +221,7 @@ public interface DatagramDeliveryPolicy {
     }
 
     private static String privilegedGetProperty(String property, String defval) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null) return System.getProperty(property, defval);
-        PrivilegedAction<String> action = () -> System.getProperty(property, defval);
-        @SuppressWarnings("removal")
-        var value = AccessController.doPrivileged(action);
-        return value;
+        return System.getProperty(property, defval);
     }
 
     /**

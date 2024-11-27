@@ -35,14 +35,9 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
@@ -236,8 +231,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     private final String name;
     private final DatagramChannel channel;
     private final ByteBuffer receiveBuffer;
-    private final PrivilegedExceptionAction<SocketAddress> privilegedChannelReceive
-            = new PrivilegedReceive();
     final Executor executor;
     final ConcurrentLinkedQueue<Datagram> readQueue = new ConcurrentLinkedQueue<>();
     final ConcurrentLinkedQueue<QuicDatagram> writeQueue = new ConcurrentLinkedQueue<>();
@@ -340,8 +333,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     Executor writeLoopExecutor() { return executor; }
 
     public SocketAddress getLocalAddress() throws IOException {
-        // Revisit: consider whether this should be done in a doPrivileged, to
-        // get an accurate result in the presence of a security manager
         return channel.getLocalAddress();
     }
 
@@ -696,12 +687,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             return poller.readLoopExecutor();
         }
 
-        private boolean isDoPrivilegedNeeded() {
-            // This a hack to detect whether we run on the server side.
-            // In that case, because of JDK-8305530, a doPrivileged is needed
-            return super.quicInstance.getClass().getModule() != this.getClass().getModule();
-        }
-
         private final SequentialScheduler channelScheduler = SequentialScheduler.lockingScheduler(this::channelReadLoop0);
 
         @Override
@@ -709,22 +694,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             channelScheduler.runOrSchedule();
         }
 
-        @SuppressWarnings({"removal"})
         private void channelReadLoop0() {
-            var sm = System.getSecurityManager();
-            if (sm != null && isDoPrivilegedNeeded()) {
-                // needed to work around JDK-8305530
-                PrivilegedAction<?> channelReadLoop = () -> {
-                    channelReadLoop1();
-                    return null;
-                };
-                AccessController.doPrivileged(channelReadLoop);
-            } else {
-                channelReadLoop1();
-            }
-        }
-
-        private void channelReadLoop1() {
             super.channelReadLoop();
         }
 
@@ -774,8 +744,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         int readLoopStarted = initialStart;
         int totalpkt = 0;
         try {
-            @SuppressWarnings("removal")
-            final SecurityManager sm = System.getSecurityManager();
             int sincepkt = 0;
             while (!isClosed() && !stopReading()) {
                 var pos = buffer.position();
@@ -784,22 +752,14 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     debug.log("receiving with buffer(pos=%s, limit=%s)", pos, limit);
                 assert pos == 0;
                 assert limit > pos;
-                final SocketAddress source;
-                if (sm == null) {
-                    source = channel.receive(buffer);
-                } else {
-                    try {
-                        @SuppressWarnings("removal")
-                        var unused = source = AccessController.doPrivileged(this.privilegedChannelReceive);
-                    } catch (PrivilegedActionException pae) {
-                        throw pae.getCause();
-                    }
-                }
+
+                final SocketAddress source = channel.receive(buffer);
                 if (source == null) {
                     if (debug.on()) debug.log("nothing to read...");
                     if (nonBlocking) break;
                     assert channel.isBlocking();
                 }
+
                 totalpkt++;
                 sincepkt++;
                 buffer.flip();
@@ -947,25 +907,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     }
 
 
-    @SuppressWarnings("removal")
-    private int sendSM(ByteBuffer datagram, SocketAddress destination) throws IOException {
-        PrivilegedExceptionAction<Integer> send = () -> channel.send(datagram, destination);
-        try {
-            return AccessController.doPrivileged(send);
-        } catch (PrivilegedActionException pae) {
-            throw Utils.throwRuntimeOrIOException(pae);
-        }
-    }
-
     private int send(ByteBuffer datagram, SocketAddress destination) throws IOException {
-        @SuppressWarnings("removal")
-        var sm = System.getSecurityManager();
-        if (sm == null) {
-            return channel.send(datagram, destination);
-        } else {
-            // unlike with SocketChannel, sending requires a permission
-            return sendSM(datagram, destination);
-        }
+        return channel.send(datagram, destination);
     }
 
     void writeLoop() {
@@ -1945,38 +1888,29 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      *         {@link QuicSelectableEndpoint QuicSelectableEndpoint.class} or
      *         {@link QuicVirtualThreadedEndpoint QuicVirtualThreadedEndpoint.class}
      */
-    @SuppressWarnings({"unchecked", "removal"})
     private static <T extends QuicEndpoint> T create(Class<T> endpointType,
                                                      QuicInstance quicInstance,
                                                      String name,
                                                      SocketAddress bindAddress,
-                                                     QuicTimerQueue timerQueue,
-                                                     AccessControlContext acc) throws IOException {
-        PrivilegedExceptionAction<DatagramChannel> action = () -> {
-            DatagramChannel channel = DatagramChannel.open();
-            // avoid dependency on extnet
-            Optional<SocketOption<?>> df = channel.supportedOptions().stream().
-                    filter(o -> "IP_DONTFRAGMENT".equals(o.name())).findFirst();
-            if (df.isPresent()) {
-                // TODO on some platforms this doesn't work on dual stack sockets
-                // see Net#shouldSetBothIPv4AndIPv6Options
-                channel.setOption((SocketOption<Boolean>)df.get(), true);
-            }
-            if (QuicSelectableEndpoint.class.isAssignableFrom(endpointType)) {
-                channel.configureBlocking(false);
-            }
-            Consumer<String> logSink = Log.quic() ? Log::logQuic : null;
-            Utils.configureChannelBuffers(logSink, channel,
-                    quicInstance.getReceiveBufferSize(), quicInstance.getSendBufferSize());
-            return channel.bind(bindAddress); // could do that on attach instead?
-        };
-        DatagramChannel channel;
-        try {
-            @SuppressWarnings("removal")
-            var unused = channel = AccessController.doPrivileged(action, acc);
-        } catch (PrivilegedActionException e) {
-            throw Utils.throwRuntimeOrIOException(e);
+                                                     QuicTimerQueue timerQueue) throws IOException {
+        DatagramChannel channel = DatagramChannel.open();
+        // avoid dependency on extnet
+        Optional<SocketOption<?>> df = channel.supportedOptions().stream().
+                filter(o -> "IP_DONTFRAGMENT".equals(o.name())).findFirst();
+        if (df.isPresent()) {
+            // TODO on some platforms this doesn't work on dual stack sockets
+            // see Net#shouldSetBothIPv4AndIPv6Options
+            @SuppressWarnings("unchecked")
+            var option = (SocketOption<Boolean>) df.get();
+            channel.setOption(option, true);
         }
+        if (QuicSelectableEndpoint.class.isAssignableFrom(endpointType)) {
+            channel.configureBlocking(false);
+        }
+        Consumer<String> logSink = Log.quic() ? Log::logQuic : null;
+        Utils.configureChannelBuffers(logSink, channel,
+                quicInstance.getReceiveBufferSize(), quicInstance.getSendBufferSize());
+        channel.bind(bindAddress); // could do that on attach instead?
 
         if (endpointType.isAssignableFrom(QuicSelectableEndpoint.class)) {
             return endpointType.cast(new QuicSelectableEndpoint(quicInstance, channel, name, timerQueue));
@@ -1987,21 +1921,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
     }
 
-    private final class PrivilegedReceive implements PrivilegedExceptionAction<SocketAddress> {
-        @Override
-        public SocketAddress run() throws IOException {
-            return QuicEndpoint.this.channel.receive(QuicEndpoint.this.receiveBuffer);
-        }
-    }
-
     public static final class QuicEndpointFactory {
 
-        @SuppressWarnings("removal")
-        private final  AccessControlContext acc;
-
-        @SuppressWarnings("removal")
         public QuicEndpointFactory() {
-            this.acc = AccessController.getContext();
         }
 
         /**
@@ -2018,7 +1940,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                                                                       SocketAddress bindAddress,
                                                                       QuicTimerQueue timerQueue)
                 throws IOException {
-            return create(QuicSelectableEndpoint.class, quicInstance, name, bindAddress, timerQueue, acc);
+            return create(QuicSelectableEndpoint.class, quicInstance, name, bindAddress, timerQueue);
         }
 
         /**
@@ -2035,7 +1957,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                                                                                 SocketAddress bindAddress,
                                                                                 QuicTimerQueue timerQueue)
                 throws IOException {
-            return create(QuicVirtualThreadedEndpoint.class, quicInstance, name, bindAddress, timerQueue, acc);
+            return create(QuicVirtualThreadedEndpoint.class, quicInstance, name, bindAddress, timerQueue);
         }
     }
 

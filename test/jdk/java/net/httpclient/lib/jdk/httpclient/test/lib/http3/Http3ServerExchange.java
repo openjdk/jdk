@@ -687,7 +687,8 @@ public final class Http3ServerExchange implements Http2TestExchange {
                     }
                     writeEnabled.awaitUninterruptibly();
                     if (Log.requests()) {
-                        Log.logResponse(() -> logTag() + ": HTTP/3 Server unblocked");
+                        Log.logResponse(() -> logTag() + ": HTTP/3 Server unblocked - credits: "
+                                + osw.credit() + ", closed: " + closed);
                     }
                 }
                 if (closed) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
 package jdk.httpclient.test.lib.http3;
 
 import java.nio.ByteBuffer;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Optional;
 import java.util.Random;
 
@@ -82,18 +80,8 @@ final class UnknownOrReservedFrame extends AbstractHttp3Frame {
     }
 
     private static long getSeed() {
-        @SuppressWarnings("removal")
-        final Long seed = AccessController.doPrivileged(new PrivilegedAction<Long>() {
-            @Override
-            public Long run() {
-                try {
-                    return Long.valueOf(System.getProperty("seed"));
-                } catch (NumberFormatException e) {
-                }
-                return null;
-            }
-        });
-        return seed != null ? seed : new Random().nextLong();
+        Long seed = Long.getLong("seed");
+        return seed != null ? seed : System.nanoTime() ^ new Random().nextLong();
     }
 
     static Optional<UnknownOrReservedFrame> tryGenerateFrame() {

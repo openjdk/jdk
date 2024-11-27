@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 
 package jdk.internal.net.http;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.InetSocketAddress;
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLSession;
 
@@ -128,20 +127,10 @@ class Response {
         return sb.toString();
     }
 
-    @SuppressWarnings("removal")
     private static InetSocketAddress revealedLocalSocketAddress(HttpConnection connection) {
-        InetSocketAddress a;
-        var sm = System.getSecurityManager();
         try {
-            try {
-                return (InetSocketAddress) connection.channel().getLocalAddress();
-            } catch (SecurityException se) {
-                PrivilegedExceptionAction<InetSocketAddress> action =
-                        () -> (InetSocketAddress) connection.channel().getLocalAddress();
-                a = AccessController.doPrivileged(action);
-                return new InetSocketAddress(a.getPort());
-            }
-        } catch (Exception e) {
+            return (InetSocketAddress) connection.channel().getLocalAddress();
+        } catch (IOException io) {
             return null;
         }
     }

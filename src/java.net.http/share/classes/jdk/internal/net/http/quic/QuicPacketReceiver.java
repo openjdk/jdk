@@ -44,7 +44,7 @@ import java.util.Optional;
  * protocol (typically for retransmitting the CLOSE_CONNECTION frame
  * if needed).
  */
-interface QuicPacketReceiver {
+public interface QuicPacketReceiver {
 
     /**
      * A list of local connectionIds for this connection.
