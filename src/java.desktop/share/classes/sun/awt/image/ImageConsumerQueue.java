@@ -66,7 +66,7 @@ class ImageConsumerQueue {
     ImageConsumerQueue(InputStreamImageSource src, ImageConsumer ic) {
         consumer = ic;
         interested = true;
-        // ImageReps do their own security at access time.
+        // Leaving this code throwing SecurityException for compatibility
         if (ic instanceof ImageRepresentation) {
             ImageRepresentation ir = (ImageRepresentation) ic;
             if (ir.image.source != src) {
