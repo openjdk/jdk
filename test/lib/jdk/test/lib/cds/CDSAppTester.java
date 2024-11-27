@@ -28,6 +28,7 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.StringArrayUtils;
+import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
 /*
@@ -43,6 +44,7 @@ abstract public class CDSAppTester {
     private final String staticArchiveFileLog;
     private final String dynamicArchiveFile;
     private final String dynamicArchiveFileLog;
+    private final String tempBaseArchiveFile;
     private int numProductionRuns = 0;
 
     public CDSAppTester(String name) {
@@ -58,6 +60,7 @@ abstract public class CDSAppTester {
         staticArchiveFileLog = staticArchiveFile + ".log";
         dynamicArchiveFile = name() + ".dynamic.jsa";
         dynamicArchiveFileLog = dynamicArchiveFile + ".log";
+        tempBaseArchiveFile = name() + ".temp-base.jsa";
     }
 
     private String productionRunLog() {
@@ -189,9 +192,27 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
     }
 
+    private String getBaseArchiveForDynamicArchive() throws Exception {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        if (wb.isSharingEnabled()) {
+            return null;
+        } else {
+            File f = new File(tempBaseArchiveFile);
+            if (!f.exists()) {
+                CDSOptions opts = new CDSOptions();
+                opts.setArchiveName(tempBaseArchiveFile);
+                opts.addSuffix("-Djava.class.path=");
+                OutputAnalyzer out = CDSTestUtils.createArchive(opts);
+                CDSTestUtils.checkBaseDump(out);
+            }
+            return tempBaseArchiveFile;
+        }
+    }
+
     private OutputAnalyzer dumpDynamicArchive() throws Exception {
         RunMode runMode = RunMode.DUMP_DYNAMIC;
         String[] cmdLine = new String[0];
+        String baseArchive = getBaseArchiveForDynamicArchive();
         if (isDynamicWorkflow()) {
           // "classic" dynamic archive
           cmdLine = StringArrayUtils.concat(vmArgs(runMode),
@@ -203,6 +224,9 @@ abstract public class CDSAppTester {
                                                       "cds+class=debug",
                                                       "cds+resolve=debug",
                                                       "class+load=debug"));
+        }
+        if (baseArchive != null) {
+            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:SharedArchiveFile=" + baseArchive);
         }
         cmdLine = StringArrayUtils.concat(cmdLine, appCommandLine(runMode));
         return executeAndCheck(cmdLine, runMode, dynamicArchiveFile, dynamicArchiveFileLog);
@@ -227,9 +251,9 @@ abstract public class CDSAppTester {
                                                    logToFile(productionRunLog(), "cds"));
 
         if (isStaticWorkflow()) {
-            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:SharedArchiveFile=" + staticArchiveFile);
+            cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + staticArchiveFile);
         } else if (isDynamicWorkflow()) {
-            cmdLine = StringArrayUtils.concat(cmdLine, "-XX:SharedArchiveFile=" + dynamicArchiveFile);
+            cmdLine = StringArrayUtils.concat(cmdLine, "-Xshare:on", "-XX:SharedArchiveFile=" + dynamicArchiveFile);
         }
 
         if (extraVmArgs != null) {
