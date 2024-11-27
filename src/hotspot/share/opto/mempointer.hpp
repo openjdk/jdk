@@ -632,12 +632,14 @@ private:
              const NoOverflowInt new_con,
              const jint new_size) :
     NOT_PRODUCT(_trace(old._trace) COMMA)
-    _summands(old._summands),
     _con(new_con),
     _base(old.base()),
     _size(new_size)
   {
     assert(!_con.is_NaN(), "non-NaN constant");
+    for (int i = 0; i < SUMMANDS_SIZE; i++) {
+      _summands[i] = old.summands_at(i);
+    }
   }
 
 public:
