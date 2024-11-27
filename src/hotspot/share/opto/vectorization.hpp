@@ -722,14 +722,23 @@ private:
 
   const VLoop& _vloop;
   const MemPointer _mem_pointer;
-  const jint _size;
+  const jint _size; // TODO rm!
 
   // Derived, for quicker use.
   const jint  _iv_scale;
 
   const bool _is_valid;
 
+  VPointer(const VLoop& vloop,
+           const MemPointer& mem_pointer) :
+    _vloop(vloop),
+    _mem_pointer(mem_pointer),
+    _size(mem_pointer.size()),
+    _iv_scale(init_iv_scale()),
+    _is_valid(init_is_valid()) {}
+
 public:
+  // TODO refactor
   VPointer(const MemNode* mem,
            const VLoop& vloop,
            DecomposedNodeCallback& callback = DecomposedNodeCallback::empty()) :
@@ -748,6 +757,11 @@ public:
       print_on(tty);
     }
 #endif
+  }
+
+  VPointer make_with_size(const jint new_size) const {
+    // TODO trace
+    return VPointer(_vloop, mem_pointer().make_with_size(new_size));
   }
 
   // Accessors
@@ -812,17 +826,6 @@ public:
       return false;
     }
     return mem_pointer().never_overlaps_with(other.mem_pointer());
-  }
-
-  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
-    for (int i = 0; i < nodes.length(); i++) {
-      MemNode* mem = nodes.at(i)->as_Mem();
-      VPointer mem_p(mem->as_Mem(), _vloop);
-      if (!never_overlaps_with(mem_p)) {
-        return true; // possible overlap
-      }
-    }
-    return false;
   }
 
   NOT_PRODUCT( void print_on(outputStream* st) const; )

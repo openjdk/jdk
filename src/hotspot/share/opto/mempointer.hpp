@@ -626,6 +626,20 @@ private:
     assert(1 <= _size && _size <= 2048 && is_power_of_2(_size), "valid size");
   }
 
+  // Mutated copy.
+  //   The new MemPointer is identical, except it has a different size.
+  MemPointer(const MemPointer& old,
+             const jint new_size) :
+    NOT_PRODUCT(_trace(old._trace) COMMA)
+    _summands(old._summands),
+    _con(old.con()),
+    _base(old.base()),
+    _size(new_size)
+  {
+    // TODO trace
+    // TODO be careful with mutating con...NaN!
+  }
+
 public:
   static MemPointer make_trivial(Node* pointer,
                                  const jint size
@@ -644,6 +658,10 @@ public:
       return MemPointer::make_trivial(pointer, size NOT_PRODUCT(COMMA trace));
     }
   }
+
+  MemPointer make_with_size(const jint new_size) const {
+    return MemPointer(*this, new_size);
+  };
 
 private:
   MemPointerAliasing get_aliasing_with(const MemPointer& other

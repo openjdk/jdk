@@ -581,10 +581,12 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   while (mem->is_StoreVector()) {
     // TODO refactor with VPointer for this vector load!
     VPointer store_p(mem->as_Mem(), vloop_analyzer.vloop());
-    if (store_p.overlap_possible_with_any_in(nodes())) {
-      break;
-    } else {
+    const VPointer& scalar_p = vpointer(vloop_analyzer);
+    const VPointer load_p(scalar_p.make_with_size(scalar_p.size() * vlen));
+    if (store_p.never_overlaps_with(load_p)) {
       mem = mem->in(MemNode::Memory);
+    } else {
+      break;
     }
   }
 
