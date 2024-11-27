@@ -119,8 +119,10 @@ public final class CaptureStateUtil {
      *
      *}
      *
-     * @param target method handle that returns an {@code int} or a {@code long} and has
-     *              an errno MemorySegment as its first parameter
+     * @param target    method handle that returns an {@code int} or a {@code long} and has
+     *                  a capturing state MemorySegment as its first parameter
+     * @param stateName the name of the capturing state member layout
+     *                  (i.e. "errno","GetLastError", or "WSAGetLastError")
      * @throws IllegalArgumentException if the provided {@code target}'s return type is
      *                                  not {@code int} or {@code long}
      * @throws IllegalArgumentException if the provided {@code target}'s first parameter
@@ -138,13 +140,16 @@ public final class CaptureStateUtil {
             throw illegalArgNot(target, "have a MemorySegment as the first parameter");
         }
 
+        // (int | long)(int | long)
+        final MethodHandle returnFilter = RETURN_FILTERS
+                .get(returnType)
+                .get(stateName);
+        if (returnFilter == null) {
+            throw new IllegalArgumentException("Unknown state name: " + stateName);
+        }
+
         // (MemorySegment, C*)(int | long) -> (C*)(int | long)
         target = MethodHandles.collectArguments(target, 0, ACQUIRE_MH);
-
-        // (int | long)(int | long)
-        MethodHandle returnFilter = Objects.requireNonNull(RETURN_FILTERS
-                .get(returnType)
-                .get(stateName), "no such state name: " + stateName);
 
         // (C*)(int | long) -> (C*)(int | long)
         return MethodHandles.filterReturnValue(target, returnFilter);
