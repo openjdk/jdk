@@ -210,7 +210,7 @@ final class MethodHandleAccessorFactory {
     }
 
     private static MethodHandle getDirectMethod(Method method, boolean callerSensitive) throws IllegalAccessException {
-        var mtype = methodType(method.getReturnType(), method.getParameterTypes());
+        var mtype = methodType(method.getReturnType(), reflectionFactory.getExecutableSharedParameterTypes(method));
         var isStatic = Modifier.isStatic(method.getModifiers());
         var dmh = isStatic ? JLIA.findStatic(method.getDeclaringClass(), method.getName(), mtype)
                                         : JLIA.findVirtual(method.getDeclaringClass(), method.getName(), mtype);
@@ -232,7 +232,7 @@ final class MethodHandleAccessorFactory {
     private static MethodHandle findCallerSensitiveAdapter(Method method) throws IllegalAccessException {
         String name = method.getName();
         // append a Class parameter
-        MethodType mtype = methodType(method.getReturnType(), method.getParameterTypes())
+        MethodType mtype = methodType(method.getReturnType(), reflectionFactory.getExecutableSharedParameterTypes(method))
                                 .appendParameterTypes(Class.class);
         boolean isStatic = Modifier.isStatic(method.getModifiers());
 
@@ -370,11 +370,15 @@ final class MethodHandleAccessorFactory {
         if (member instanceof Method method && isSignaturePolymorphicMethod(method))
             return true;
 
-        // java.lang.invoke fails to create MH for bad ACC_VARARGS methods with no
-        // trailing array,  but core reflection ignores ACC_VARARGS flag like the JVM does.
-        // Fall back to use the native implementation instead.
-        if (isInvalidVarArgs(member))
+        // Lookup always calls MethodHandle::setVarargs on a member with ACC_VARARGS
+        // bit set, which verifies that the last parameter of the member must be
+        // an array type.  Such restriction does not exist in core reflection
+        // and the JVM.  Fall back to use the native implementation instead.
+        int paramCount = member.getParameterCount();
+        if (member.isVarArgs() &&
+                (paramCount == 0 || !(reflectionFactory.getExecutableSharedParameterTypes(member)[paramCount-1].isArray()))) {
             return true;
+        }
 
         // A method handle cannot be created if its type has an arity >= 255
         // as the method handle's invoke method consumes an extra argument
@@ -395,7 +399,7 @@ final class MethodHandleAccessorFactory {
      */
     private static int slotCount(Executable member) {
         int slots = 0;
-        Class<?>[] ptypes = member.getParameterTypes();
+        Class<?>[] ptypes = reflectionFactory.getExecutableSharedParameterTypes(member);
         for (Class<?> ptype : ptypes) {
             if (ptype == double.class || ptype == long.class) {
                 slots++;
@@ -428,24 +432,6 @@ final class MethodHandleAccessorFactory {
         // Single parameter of declared type Object[]
         Class<?>[] parameters = reflectionFactory.getExecutableSharedParameterTypes(method);
         return parameters.length == 1 && parameters[0] == Object[].class;
-    }
-
-    /**
-     * Lookup always calls MethodHandle::setVarargs on a member with varargs modifier
-     * bit set, which verifies that the last parameter of the member must be an array type.
-     * Thus, Lookup cannot create MethodHandle for such methods or constructors.
-     * The JVMS does not require that the last parameter descriptor of the method descriptor
-     * is an array type if the ACC_VARARGS flag is set in the access_flags item.
-     * Core reflection also has no variable arity support and ignores the ACC_VARARGS flag,
-     * treating them as regular arguments.
-     */
-    private static boolean isInvalidVarArgs(Executable member) {
-        if (!member.isVarArgs())
-            return false;
-
-        Class<?>[] parameters = reflectionFactory.getExecutableSharedParameterTypes(member);
-        var count = parameters.length;
-        return count == 0 || !parameters[count - 1].isArray();
     }
 
     /*

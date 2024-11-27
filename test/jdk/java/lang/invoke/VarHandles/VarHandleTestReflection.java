@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @bug 8335638 8343377
  * @run testng VarHandleTestReflection
  */
 
