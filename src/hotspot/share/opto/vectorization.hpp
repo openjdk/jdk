@@ -772,7 +772,13 @@ public:
   VPointer make_with_iv_offset(const jint iv_offset) const {
     NoOverflowInt new_con = NoOverflowInt(con()) + NoOverflowInt(iv_scale()) * NoOverflowInt(iv_offset);
     if (new_con.is_NaN()) {
-      assert("false", "TODO find a case"); // TODO
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_parsing()) {
+        tty->print_cr("VPointer::make_with_iv_offset:");
+        tty->print("  old: "); print_on(tty);
+        tty->print_cr("  new con overflow (iv_offset: %d) -> invalid VPointer.", iv_offset);
+      }
+#endif
       return make_invalid();
     }
     const VPointer p(_vloop, mem_pointer().make_with_con(new_con));

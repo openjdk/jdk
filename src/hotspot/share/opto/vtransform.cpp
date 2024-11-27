@@ -345,7 +345,11 @@ bool VTransformGraph::has_store_to_load_forwarding_failure(const VLoopAnalyzer& 
           VTransformVectorNode* vector = vtn->isa_Vector();
           bool is_load = vtn->is_load_in_loop();
           const VPointer iv_offset_p(p.make_with_iv_offset(iv_offset));
-          memory_regions.push(new VMemoryRegion(iv_offset_p, is_load, schedule_order++));
+          if (iv_offset_p.is_valid()) {
+            // The iv_offset may lead to overflows. This is a heuristic, so we do not
+            // care too much about those edge cases.
+            memory_regions.push(new VMemoryRegion(iv_offset_p, is_load, schedule_order++));
+          }
         }
       }
     }
