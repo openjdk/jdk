@@ -850,6 +850,14 @@ public:
   }
 
   bool is_adjacent_to_and_before(const VPointer& other) const {
+    if (!is_valid() || !other.is_valid()) {
+#ifndef PRODUCT
+      if (_vloop.mptrace().is_trace_overlap()) {
+        tty->print_cr("VPointer::is_adjacent_to_and_before: invalid VPointer, adjacency unknown.");
+      }
+#endif
+      return false;
+    }
     return mem_pointer().is_adjacent_to_and_before(other.mem_pointer());
   }
 
@@ -857,7 +865,7 @@ public:
     if (!is_valid() || !other.is_valid()) {
 #ifndef PRODUCT
       if (_vloop.mptrace().is_trace_overlap()) {
-        tty->print_cr("Never Overlap: false, because of invalid VPointer.");
+        tty->print_cr("VPointer::never_overlaps_with: invalid VPointer, overlap unknown.");
       }
 #endif
       return false;
