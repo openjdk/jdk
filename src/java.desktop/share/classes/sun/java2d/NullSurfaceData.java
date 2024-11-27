@@ -131,15 +131,6 @@ public class NullSurfaceData extends SurfaceData {
     }
 
     /**
-     * Performs Security Permissions checks to see if a Custom
-     * Composite object should be allowed access to the pixels
-     * of this surface.
-     */
-    protected void checkCustomComposite() {
-        return;
-    }
-
-    /**
      * Performs a copyarea within this surface.  Returns
      * false if there is no algorithm to perform the copyarea
      * given the current settings of the SunGraphics2D.

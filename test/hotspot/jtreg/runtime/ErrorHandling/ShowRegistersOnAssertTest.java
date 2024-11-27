@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
  * @summary Show Registers on assert/guarantee
  * @library /test/lib
  * @requires vm.flagless
- * @requires (vm.debug == true) & (os.family == "linux")
+ * @requires vm.debug == true & (os.family == "linux" | os.family == "windows")
  * @author Thomas Stuefe (SAP)
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -67,6 +67,20 @@ public class ShowRegistersOnAssertTest {
         // (which would be a sign that the assert poison page mechanism does not work).
         output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
         output_detail.shouldMatch("# +Internal Error.*");
+        if (show_registers_on_assert) {
+            // Extract the hs_err_pid file.
+            File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
+            Pattern[] pattern = new Pattern[] { Pattern.compile("Registers:"), null };
+            if (Platform.isX64()) {
+                pattern[1] = Pattern.compile("RAX=.*");
+            } else if (Platform.isX86()) {
+                pattern[1] = Pattern.compile("EAX=.*");
+            } else if (Platform.isAArch64()) {
+                pattern[1] = Pattern.compile("R0=.*");
+            }
+            // Pattern match the hs_err_pid file.
+            HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
+        }
     }
 
     public static void main(String[] args) throws Exception {

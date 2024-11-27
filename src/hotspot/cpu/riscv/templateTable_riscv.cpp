@@ -292,15 +292,10 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  if (AvoidUnalignedAccesses) {
-    __ load_signed_byte(x10, at_bcp(1));
-    __ load_unsigned_byte(t1, at_bcp(2));
-    __ slli(x10, x10, 8);
-    __ add(x10, x10, t1);
-  } else {
-    __ load_unsigned_short(x10, at_bcp(1));
-    __ revb_h_h(x10, x10); // reverse bytes in half-word and sign-extend
-  }
+  __ load_signed_byte(x10, at_bcp(1));
+  __ load_unsigned_byte(t1, at_bcp(2));
+  __ slli(x10, x10, 8);
+  __ add(x10, x10, t1);
 }
 
 void TemplateTable::ldc(LdcType type) {
@@ -1626,15 +1621,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    if (AvoidUnalignedAccesses) {
-      __ lb(x12, at_bcp(1));
-      __ lbu(t1, at_bcp(2));
-      __ slli(x12, x12, 8);
-      __ add(x12, x12, t1);
-    } else {
-      __ lhu(x12, at_bcp(1));
-      __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
-    }
+    __ lb(x12, at_bcp(1));
+    __ lbu(t1, at_bcp(2));
+    __ slli(x12, x12, 8);
+    __ add(x12, x12, t1);
   } else {
     __ lwu(x12, at_bcp(1));
     __ revb_w_w(x12, x12); // reverse bytes in word and sign-extend
