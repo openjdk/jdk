@@ -224,7 +224,6 @@ public class FtpURLConnection extends URLConnection {
             /**
              * Do we have to use a proxy?
              */
-            @SuppressWarnings("removal")
             ProxySelector sel = ProxySelector.getDefault();
             if (sel != null) {
                 URI uri = sun.net.www.ParseUtil.toURI(url);
