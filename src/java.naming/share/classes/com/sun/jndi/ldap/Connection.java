@@ -44,8 +44,6 @@ import javax.naming.ldap.Control;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -183,10 +181,8 @@ public final class Connection implements Runnable {
             = hostnameVerificationDisabledValue();
 
     private static boolean hostnameVerificationDisabledValue() {
-        PrivilegedAction<String> act = () -> System.getProperty(
+        String prop = System.getProperty(
                 "com.sun.jndi.ldap.object.disableEndpointIdentification");
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(act);
         if (prop == null) {
             return false;
         }
