@@ -33,7 +33,6 @@ import java.security.Security;
 import java.security.URIParameter;
 import java.text.MessageFormat;
 import java.util.*;
-import javax.security.auth.AuthPermission;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag;
 import javax.security.auth.login.Configuration;
@@ -178,8 +177,6 @@ public final class ConfigFile extends Configuration {
          * configured URL.
          *
          * @throws IOException if the Configuration can not be initialized
-         * @throws SecurityException if the caller does not have permission
-         *                           to initialize the Configuration
          */
         private void init() throws IOException {
 

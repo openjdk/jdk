@@ -356,7 +356,7 @@ public final class SunEntries {
         }
         egdSource = Security.getProperty(PROP_RNDSOURCE);
         if (egdSource == null) {
-             return "";
+            return "";
         }
         return egdSource;
     }

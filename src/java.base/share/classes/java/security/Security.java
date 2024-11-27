@@ -468,14 +468,13 @@ public final class Security {
      */
     public static synchronized int insertProviderAt(Provider provider,
             int position) {
-        String providerName = provider.getName();
         ProviderList list = Providers.getFullProviderList();
         ProviderList newList = ProviderList.insertAt(list, provider, position - 1);
         if (list == newList) {
             return -1;
         }
         Providers.setProviderList(newList);
-        return newList.getIndex(providerName) + 1;
+        return newList.getIndex(provider.getName()) + 1;
     }
 
     /**
