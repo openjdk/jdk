@@ -119,7 +119,7 @@ public final class ErrnoUtil {
         return segment;
     }
 
-    // Used reflectively via RETURN_FILTER_MH
+    // Used reflectively via INT_RETURN_FILTER_MH
     private static int returnFilter(int result) {
         return result >= 0 ? result : -errno();
     }
