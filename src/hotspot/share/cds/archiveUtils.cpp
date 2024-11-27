@@ -405,7 +405,6 @@ ArchiveWorkers::ArchiveWorkers() :
         _num_workers(max_workers()),
         _started_workers(0),
         _running_workers(0),
-        _finished_workers(0),
         _state(UNUSED),
         _task(nullptr) {}
 
@@ -467,7 +466,6 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
 
   // Set up the run and publish the task.
   Atomic::store(&_running_workers, _num_workers);
-  Atomic::store(&_finished_workers, 0);
   Atomic::release_store(&_task, task);
 
   // Kick off pool startup by starting a single worker, and proceed
@@ -486,14 +484,13 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   // on semaphore first, and then spin-wait for all workers to terminate.
   _end_semaphore.wait();
   SpinYield spin;
-  while (Atomic::load(&_finished_workers) != _num_workers) {
+  while (Atomic::load(&_running_workers) != 0) {
     spin.wait();
   }
 
   OrderAccess::fence();
 
   assert(Atomic::load(&_running_workers) == 0, "No workers are running");
-  assert(Atomic::load(&_finished_workers) == _num_workers, "All workers have finished");
 }
 
 void ArchiveWorkers::run_as_worker() {
@@ -507,10 +504,11 @@ void ArchiveWorkers::run_as_worker() {
 
   // Signal the pool the work is complete, and we are exiting.
   // Worker cannot do anything else with the pool after this.
-  if (Atomic::sub(&_running_workers, 1, memory_order_relaxed) == 0) {
+  if (Atomic::load(&_running_workers) == 1) {
+    // Last worker leaving. Notify the pool it can unblock to spin-wait.
     _end_semaphore.signal();
   }
-  Atomic::add(&_finished_workers, 1, memory_order_relaxed);
+  Atomic::sub(&_running_workers, 1, memory_order_relaxed);
 }
 
 void ArchiveWorkerTask::run() {
