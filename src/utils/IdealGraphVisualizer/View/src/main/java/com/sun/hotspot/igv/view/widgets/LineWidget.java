@@ -69,6 +69,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private boolean popupVisible;
     private final boolean isBold;
     private final boolean isDashed;
+    private boolean needToInitToolTipText = true;
 
     public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
@@ -92,7 +93,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         if (!connections.isEmpty()) {
             color = connections.get(0).getColor();
         }
-        setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
 
         setCheckClipping(false);
 
@@ -318,6 +318,10 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             setHighlighted(enableHighlighting);
             recursiveHighlightSuccessors(enableHighlighting);
             highlightVertices(enableHighlighting);
+            if (enableHighlighting && needToInitToolTipText) {
+                setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
+                needToInitToolTipText = false; // Ensure it's only set once
+            }
         }
     }
 
