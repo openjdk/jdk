@@ -224,7 +224,11 @@ static MethodMatcher::Mode check_mode(char name[], const char*& error_msg) {
       return MethodMatcher::Any;
     }
     match |= MethodMatcher::Suffix;
-    memmove(name, name + 1, strlen(name + 1) + 1);
+PRAGMA_DIAG_PUSH
+PRAGMA_STRINGOP_OVERREAD_IGNORED
+    // This code can incorrectly cause a "stringop-overread" warning with gcc
+     memmove(name, name + 1, strlen(name + 1) + 1);
+PRAGMA_DIAG_POP
   }
 
   size_t len = strlen(name);
