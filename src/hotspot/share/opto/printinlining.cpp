@@ -28,31 +28,26 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 
-InlinePrinter::InlinePrinter(Arena* arena, Compile* compile) : C(compile), _root(new(arena) IPInlineSite(nullptr, arena, 0)) {}
-
 bool InlinePrinter::is_enabled() const {
   return C->print_intrinsics() || C->print_inlining();
 }
-
-
-InlinePrinter::IPInlineAttempt::IPInlineAttempt(InliningResult result) : result(result) {}
 
 outputStream* InlinePrinter::record(ciMethod* callee, JVMState* state, InliningResult result, const char* msg) {
   if (!is_enabled()) {
     return &_nullStream;
   }
-  IPInlineAttempt* attempt = locate(state, callee)->add(result);
+  outputStream* stream = locate(state, callee)->add(result);
   if (msg != nullptr) {
-    attempt->msg.print("%s", msg);
+    stream->print("%s", msg);
   }
-  return &attempt->msg; // IPInlineAttempts are heap allocated so this address is safe
+  return stream; // Pointer stays valid, see IPInlineSite::add()
 }
 
-void InlinePrinter::print_on(outputStream* tty) {
+void InlinePrinter::print_on(outputStream* tty) const {
   if (!is_enabled()) {
     return;
   }
-  _root->dump(tty, -1);
+  _root.dump(tty, -1);
 }
 
 InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* callee) {
@@ -63,9 +58,9 @@ InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* ca
     state = state->caller();
   }
 
-  IPInlineSite* site = _root;
+  IPInlineSite* site = &_root;
   for (int i = growableArray->length() - 1; i >= 0; i--) {
-    site = site->at_bci(growableArray->at(i)->bci(), i == 0 ? callee : nullptr);
+    site = &site->at_bci(growableArray->at(i)->bci(), i == 0 ? callee : nullptr);
   }
 
   delete growableArray;
@@ -73,48 +68,43 @@ InlinePrinter::IPInlineSite* InlinePrinter::locate(JVMState* state, ciMethod* ca
   return site;
 }
 
-InlinePrinter::IPInlineSite* InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* callee) {
-  int index = (bci == -1) ? 0 : bci; // -1 is a special case for some intrinsics (e.g. java.lang.ref.reference.get)
-  assert(index >= 0, "index cannot be negative");
-  if (_children.length() <= index) {
+InlinePrinter::IPInlineSite& InlinePrinter::IPInlineSite::at_bci(int bci, ciMethod* callee) {
+  auto find_result = _children.find(bci);
+  IPInlineSite& child = find_result.node->val();
+
+  if (find_result.new_node) {
     assert(callee != nullptr, "an inline call is missing in the chain up to the root");
-    auto child = new (_arena) IPInlineSite(callee, _arena, bci);
-    _children.at_put_grow(index, child, nullptr);
-    return child;
-  }
-  if (IPInlineSite* child = _children.at(index)) {
-    if (callee != nullptr && callee != child->_method) {
-      IPInlineAttempt* attempt = child->add(InliningResult::SUCCESS);
-      attempt->msg.print("callee changed to ");
-      CompileTask::print_inline_inner_method_info(&attempt->msg, callee);
+    child.set_source(callee, bci);
+  } else { // We already saw a call at this site before
+    if (callee != nullptr && callee != child._method) {
+      outputStream* stream = child.add(InliningResult::SUCCESS);
+      stream->print("callee changed to ");
+      CompileTask::print_inline_inner_method_info(stream, callee);
     }
-    return child;
   }
-  auto child = new (_arena) IPInlineSite(callee, _arena, bci);
-  _children.at_put(index, child);
+
   return child;
 }
 
-InlinePrinter::IPInlineAttempt* InlinePrinter::IPInlineSite::add(InliningResult result) {
-  auto attempt = new (_arena) IPInlineAttempt(result);
-  _attempts.push(attempt);
-  return attempt;
+outputStream* InlinePrinter::IPInlineSite::add(InliningResult result) {
+  _attempts.push(IPInlineAttempt(result));
+  return _attempts.last().make_stream();
 }
 
-void InlinePrinter::IPInlineSite::dump(outputStream* tty, int level) {
+void InlinePrinter::IPInlineSite::dump(outputStream* tty, int level) const {
+  assert(_bci != -999, "trying to dump site without source");
+
   if (_attempts.is_nonempty()) {
     CompileTask::print_inlining_header(tty, _method, level, _bci);
   }
-  for (IPInlineAttempt* attempt : _attempts) {
-    CompileTask::print_inlining_inner_message(tty, attempt->result, attempt->msg.base());
+  for (int i = 0; i < _attempts.length(); i++) {
+    CompileTask::print_inlining_inner_message(tty, _attempts.at(i).result(), _attempts.at(i).stream()->base());
   }
   if (_attempts.is_nonempty()) {
     tty->cr();
   }
 
-  for (IPInlineSite* child : _children) {
-    if (child != nullptr) {
-      child->dump(tty, level + 1);
-    }
-  }
+  _children.visit_in_order([=](auto* node) {
+    node->val().dump(tty, level + 1);
+  });
 }
