@@ -124,7 +124,7 @@ public final class ErrnoUtil {
         return result >= 0 ? result : -errno();
     }
 
-    // Used reflectively via RETURN_FILTER_MH
+    // Used reflectively via LONG_RETURN_FILTER_MH
     private static long returnFilter(long result) {
         return result >= 0 ? result : -errno();
     }
