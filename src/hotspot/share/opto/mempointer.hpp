@@ -795,7 +795,7 @@ public:
       tty->print_cr("\nMemPointerParser::parse:");
       tty->print("  mem: "); mem->dump();
       parser.mem_pointer().print_on(tty);
-      mem->in(MemNode::Address)->dump_bfs(7, 0, "d");
+      mem->in(MemNode::Address)->dump_bfs(7, nullptr, "d");
     }
 #endif
 
