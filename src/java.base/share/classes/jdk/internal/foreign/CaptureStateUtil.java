@@ -34,8 +34,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
-public final class ErrnoUtil {
+public final class CaptureStateUtil {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
@@ -47,23 +51,45 @@ public final class ErrnoUtil {
         }
     };
 
-    private static final VarHandle ERRNO_HANDLE =
-            Linker.Option.captureStateLayout()
-                    .varHandle(MemoryLayout.PathElement.groupElement("errno"));
-
     private static final MethodHandle ACQUIRE_MH =
             MhUtil.findStatic(LOOKUP, "acquireCaptureStateSegment",
                     MethodType.methodType(MemorySegment.class));
 
     private static final MethodHandle INT_RETURN_FILTER_MH =
             MhUtil.findStatic(LOOKUP, "returnFilter",
-                    MethodType.methodType(int.class, int.class));
+                    MethodType.methodType(int.class, MethodHandle.class, int.class));
 
     private static final MethodHandle LONG_RETURN_FILTER_MH =
             MhUtil.findStatic(LOOKUP, "returnFilter",
-                    MethodType.methodType(long.class, long.class));
+                    MethodType.methodType(long.class, MethodHandle.class, long.class));
 
-    private ErrnoUtil() {
+    // (int.class | long.class) ->
+    //   ({"GetLastError" | "WSAGetLastError"} | "errno") ->
+    //     MethodHandle
+    private static final Map<Class<?>, Map<String, MethodHandle>> RETURN_FILTERS;
+
+    static {
+        Map<Class<?>, Map<String, MethodHandle>> classMap = new HashMap<>();
+        for (var clazz : new Class<?>[]{int.class, long.class}) {
+            Map<String, MethodHandle> handles = Linker.Option.captureStateLayout()
+                    .memberLayouts().stream()
+                    .collect(Collectors.toUnmodifiableMap(
+                            l -> l.name().orElseThrow(),
+                            l -> {
+                                MethodHandle mh = getAsIntHandle(l);
+                                MethodHandle returnFilter = clazz.equals(int.class)
+                                        ? INT_RETURN_FILTER_MH
+                                        : LONG_RETURN_FILTER_MH;
+                                // (int)int
+                                return returnFilter.bindTo(mh);
+                            }
+                    ));
+            classMap.put(clazz, handles);
+        }
+        RETURN_FILTERS = Map.copyOf(classMap);
+    }
+
+    private CaptureStateUtil() {
     }
 
     /**
@@ -75,7 +101,11 @@ public final class ErrnoUtil {
      * {@code open()}, {@code read()}, and {@code close()}). Clients can check the return
      * value as shown in this example:
      * {@snippet lang = java:
-     *      static final MethodHandle OPEN = ErrnoUtil.adaptSystemCall(CAPTURING_OPEN);
+     *       // (MemorySegment capture, MemorySegment pathname, int flags)int
+     *       static final MethodHandle CAPTURING_OPEN = ...
+     *
+     *      // (MemorySegment pathname, int flags)int
+     *      static final MethodHandle OPEN = CaptureStateUtil.adaptSystemCall(CAPTURING_OPEN);
      *
      *      try {
      *         int fh = (int)OPEN.invoke(pathName, flags);
@@ -83,6 +113,8 @@ public final class ErrnoUtil {
      *             throw new IOException("Error opening file: errno = " + (-fh));
      *         }
      *         processFile(fh);
+     *      } catch (Throwable t) {
+     *           throw new RuntimeException(t);
      *      }
      *
      *}
@@ -94,7 +126,8 @@ public final class ErrnoUtil {
      * @throws IllegalArgumentException if the provided {@code target}'s first parameter
      *                                  type is not {@linkplain MemorySegment}
      */
-    public static MethodHandle adaptSystemCall(MethodHandle target) {
+    public static MethodHandle adaptSystemCall(MethodHandle target, String stateName) {
+        Objects.requireNonNull(stateName);
         // Implicit null check
         final Class<?> returnType = target.type().returnType();
         if (!(returnType.equals(int.class) || returnType.equals(long.class))) {
@@ -103,11 +136,17 @@ public final class ErrnoUtil {
         if (target.type().parameterType(0) != MemorySegment.class) {
             throw illegalArgNot(target, "have a MemorySegment as the first parameter");
         }
+
         // (MemorySegment, C*)(int | long) -> (C*)(int | long)
         target = MethodHandles.collectArguments(target, 0, ACQUIRE_MH);
+
+        // (int | long)(int | long)
+        MethodHandle returnFilter = Objects.requireNonNull(RETURN_FILTERS
+                .get(returnType)
+                .get(stateName), "no such state name: " + stateName);
+
         // (C*)(int | long) -> (C*)(int | long)
-        return MethodHandles.filterReturnValue(target,
-                returnType.equals(int.class) ? INT_RETURN_FILTER_MH : LONG_RETURN_FILTER_MH);
+        return MethodHandles.filterReturnValue(target, returnFilter);
     }
 
     // Used reflectively via ACQUIRE_MH
@@ -120,17 +159,27 @@ public final class ErrnoUtil {
     }
 
     // Used reflectively via INT_RETURN_FILTER_MH
-    private static int returnFilter(int result) {
-        return result >= 0 ? result : -errno();
+    private static int returnFilter(MethodHandle errorHandle, int result) {
+        if (result >= 0) {
+            return result;
+        }
+        try {
+            return -(int) errorHandle.invoke();
+        } catch (Throwable t) {
+            throw new InternalError(t);
+        }
     }
 
     // Used reflectively via LONG_RETURN_FILTER_MH
-    private static long returnFilter(long result) {
-        return result >= 0 ? result : -errno();
-    }
-
-    private static int errno() {
-        return (int) ERRNO_HANDLE.get(acquireCaptureStateSegment(), 0L);
+    private static long returnFilter(MethodHandle errorHandle, long result) {
+        if (result >= 0) {
+            return result;
+        }
+        try {
+            return -(int) errorHandle.invoke();
+        } catch (Throwable t) {
+            throw new InternalError(t);
+        }
     }
 
     @SuppressWarnings("restricted")
@@ -147,6 +196,16 @@ public final class ErrnoUtil {
     private static IllegalArgumentException illegalArgNot(MethodHandle target, String info) {
         return new IllegalArgumentException("The provided target " + target
                 + " does not " + info);
+    }
+
+    private static MethodHandle getAsIntHandle(MemoryLayout layout) {
+        MethodHandle handle = MhUtil.findStatic(LOOKUP, "getStateAsInt", MethodType.methodType(int.class, VarHandle.class));
+        return handle.bindTo(layout.varHandle());
+    }
+
+    // Used reflectively by `getAsIntHandle(MemoryLayout layout)`
+    private static int getStateAsInt(VarHandle handle) {
+        return (int) handle.get(acquireCaptureStateSegment(), 0);
     }
 
 }

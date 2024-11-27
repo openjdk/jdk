@@ -28,7 +28,7 @@
  * @run junit TestErrnoUtil
  */
 
-import jdk.internal.foreign.ErrnoUtil;
+import jdk.internal.foreign.CaptureStateUtil;
 import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Linker;
@@ -43,8 +43,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class TestErrnoUtil {
 
+    private static final String ERRNO_NAME = "errno";
+
     private static final VarHandle ERRNO_HANDLE = Linker.Option.captureStateLayout()
-                    .varHandle(MemoryLayout.PathElement.groupElement("errno"));
+                    .varHandle(MemoryLayout.PathElement.groupElement(ERRNO_NAME));
 
     private static final MethodHandle INT_DUMMY_HANDLE;
     private static final MethodHandle LONG_DUMMY_HANDLE;
@@ -65,7 +67,7 @@ final class TestErrnoUtil {
 
     @Test
     void successfulInt() throws Throwable {
-        MethodHandle adapted = ErrnoUtil.adaptSystemCall(INT_DUMMY_HANDLE);
+        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(INT_DUMMY_HANDLE, ERRNO_NAME);
         int r = (int) adapted.invoke(1, 0);
         assertEquals(1, r);
     }
@@ -74,7 +76,7 @@ final class TestErrnoUtil {
 
     @Test
     void errorInt() throws Throwable {
-        MethodHandle adapted = ErrnoUtil.adaptSystemCall(INT_DUMMY_HANDLE);
+        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(INT_DUMMY_HANDLE, ERRNO_NAME);
 
         int r = (int) adapted.invoke(-1, EACCES);
         assertEquals(-EACCES, r);
@@ -82,14 +84,14 @@ final class TestErrnoUtil {
 
     @Test
     void successfulLong() throws Throwable {
-        MethodHandle adapted = ErrnoUtil.adaptSystemCall(LONG_DUMMY_HANDLE);
+        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, ERRNO_NAME);
         long r = (long) adapted.invoke(1, 0);
         assertEquals(1, r);
     }
 
     @Test
     void errorLong() throws Throwable {
-        MethodHandle adapted = ErrnoUtil.adaptSystemCall(LONG_DUMMY_HANDLE);
+        MethodHandle adapted = CaptureStateUtil.adaptSystemCall(LONG_DUMMY_HANDLE, ERRNO_NAME);
 
         long r = (long) adapted.invoke(-1, EACCES);
         assertEquals(-EACCES, r);
@@ -97,21 +99,22 @@ final class TestErrnoUtil {
 
     @Test
     void invariants() throws Throwable {
-        assertThrows(NullPointerException.class, () -> ErrnoUtil.adaptSystemCall(null));
-
         MethodHandle noSegment = MethodHandles.lookup()
                 .findStatic(TestErrnoUtil.class, "wrongType",
                         MethodType.methodType(long.class, long.class, int.class));
 
-        var noSegEx = assertThrows(IllegalArgumentException.class, () -> ErrnoUtil.adaptSystemCall(noSegment));
+        var noSegEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, ERRNO_NAME));
         assertTrue(noSegEx.getMessage().contains("does not have a MemorySegment as the first parameter"));
 
         MethodHandle wrongReturnType = MethodHandles.lookup()
                 .findStatic(TestErrnoUtil.class, "wrongType",
                         MethodType.methodType(short.class, MemorySegment.class, long.class, int.class));
 
-        var wrongRetEx = assertThrows(IllegalArgumentException.class, () -> ErrnoUtil.adaptSystemCall(wrongReturnType));
+        var wrongRetEx = assertThrows(IllegalArgumentException.class, () -> CaptureStateUtil.adaptSystemCall(wrongReturnType, ERRNO_NAME));
         assertTrue(wrongRetEx.getMessage().contains("does not return an int or a long"));
+
+        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(null, ERRNO_NAME));
+        assertThrows(NullPointerException.class, () -> CaptureStateUtil.adaptSystemCall(noSegment, null));
 
     }
 
