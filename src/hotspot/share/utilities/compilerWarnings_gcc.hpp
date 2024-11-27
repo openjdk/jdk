@@ -65,12 +65,6 @@
 #define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
 #endif
 
-// Disable -Wstringop-overread which is introduced in GCC 11.
-// https://gcc.gnu.org/gcc-11/changes.html
-#if !defined(__clang_major__) && (__GNUC__ >= 11)
-#define PRAGMA_STRINGOP_OVERREAD_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overread")
-#endif
-
 #define PRAGMA_NONNULL_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
 #define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED \
