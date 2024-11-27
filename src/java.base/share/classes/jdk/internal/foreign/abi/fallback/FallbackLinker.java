@@ -46,7 +46,6 @@ import java.lang.invoke.MethodHandles;
 import static java.lang.invoke.MethodHandles.foldArguments;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
