@@ -736,16 +736,13 @@ private:
     _is_valid(init_is_valid()) {}
 
 public:
-  // TODO refactor
   VPointer(const MemNode* mem,
            const VLoop& vloop,
            DecomposedNodeCallback& callback = DecomposedNodeCallback::empty()) :
-    _vloop(vloop),
-    _mem_pointer(MemPointerParser::parse(NOT_PRODUCT(vloop.mptrace() COMMA)
-                                         mem,
-                                         callback)),
-    _iv_scale(init_iv_scale()),
-    _is_valid(init_is_valid())
+    VPointer(vloop,
+             MemPointerParser::parse(NOT_PRODUCT(vloop.mptrace() COMMA)
+                                     mem,
+                                     callback))
   {
 #ifndef PRODUCT
     if (vloop.mptrace().is_trace_parsing()) {
