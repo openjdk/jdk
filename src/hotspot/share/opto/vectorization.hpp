@@ -754,8 +754,15 @@ public:
   }
 
   VPointer make_with_size(const jint new_size) const {
-    // TODO trace
-    return VPointer(_vloop, mem_pointer().make_with_size(new_size));
+    const VPointer p(_vloop, mem_pointer().make_with_size(new_size));
+#ifndef PRODUCT
+    if (_vloop.mptrace().is_trace_parsing()) {
+      tty->print_cr("VPointer::make_with_size:");
+      tty->print("  old: "); print_on(tty);
+      tty->print("  new: "); p.print_on(tty);
+    }
+#endif
+    return p;
   }
 
   // Accessors

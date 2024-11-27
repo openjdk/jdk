@@ -636,7 +636,6 @@ private:
     _base(old.base()),
     _size(new_size)
   {
-    // TODO trace
     // TODO be careful with mutating con...NaN!
   }
 
