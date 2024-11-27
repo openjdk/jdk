@@ -128,6 +128,8 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
@@ -1106,6 +1108,66 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "just checking");
 
   // copy the bytes to the output stream
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
+  output()->print_raw((const char*)addr, ba->length());
+}
+
+void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Symbol* sym = vmSymbols::jdk_internal_vm_JcmdVThreadCommands();
+  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
+
+  // invoke VThreadCommands.printScheduler
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  JavaCalls::call_static(&result,
+                         k,
+                         vmSymbols::printScheduler_name(),
+                         vmSymbols::void_byte_array_signature(),
+                         &args,
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // copy the bytes to the output stream
+  oop res = cast_to_oop(result.get_jobject());
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
+  output()->print_raw((const char*)addr, ba->length());
+}
+
+void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Symbol* sym = vmSymbols::jdk_internal_vm_JcmdVThreadCommands();
+  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
+
+  // invoke VThreadCommands.printPollers
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  JavaCalls::call_static(&result,
+                         k,
+                         vmSymbols::printPollers_name(),
+                         vmSymbols::void_byte_array_signature(),
+                         &args,
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output());
+    output()->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // copy the bytes to the output stream
+  oop res = cast_to_oop(result.get_jobject());
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());

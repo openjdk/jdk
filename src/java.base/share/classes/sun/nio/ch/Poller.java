@@ -442,4 +442,25 @@ public abstract class Poller {
             }
         }
     }
+
+    /**
+     * Return the master poller or null if there is no master poller.
+     */
+    public static Poller masterPoller() {
+        return POLLERS.masterPoller();
+    }
+
+    /**
+     * Return the list of read pollers.
+     */
+    public static List<Poller> readPollers() {
+        return POLLERS.readPollers();
+    }
+
+    /**
+     * Return the list of write pollers.
+     */
+    public static List<Poller> writePollers() {
+        return POLLERS.writePollers();
+    }
 }
