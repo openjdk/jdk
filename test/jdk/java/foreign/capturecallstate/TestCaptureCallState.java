@@ -92,9 +92,14 @@ public class TestCaptureCallState extends NativeTestHelper {
 
     @Test(dataProvider = "invalidCaptureSegmentCases")
     public void testInvalidCaptureSegment(MemorySegment captureSegment,
-                                          Class<?> expectedExceptionType, String expectedExceptionMessage) {
-        Linker.Option stl = Linker.Option.captureCallState("errno");
-        MethodHandle handle = downcallHandle("set_errno_V", FunctionDescriptor.ofVoid(C_INT), stl);
+                                          Class<?> expectedExceptionType, String expectedExceptionMessage,
+                                          Linker.Option[] extraOptions) {
+        List<Linker.Option> options = new ArrayList<>();
+        options.add(Linker.Option.captureCallState("errno"));
+        for (Linker.Option extra : extraOptions) {
+            options.add(extra);
+        }
+        MethodHandle handle = downcallHandle("set_errno_V", FunctionDescriptor.ofVoid(C_INT), options.toArray(Linker.Option[]::new));
 
         try {
             int testValue = 42;
@@ -159,10 +164,12 @@ public class TestCaptureCallState extends NativeTestHelper {
     @DataProvider
     public static Object[][] invalidCaptureSegmentCases() {
         return new Object[][]{
-            {Arena.ofAuto().allocate(1), IndexOutOfBoundsException.class, ".*Out of bound access on segment.*"},
-            {MemorySegment.NULL, IllegalArgumentException.class, ".*Capture segment is NULL.*"},
+            {Arena.ofAuto().allocate(1), IndexOutOfBoundsException.class, ".*Out of bound access on segment.*", new Linker.Option[0]},
+            {MemorySegment.NULL, IllegalArgumentException.class, ".*Capture segment is NULL.*", new Linker.Option[0]},
             {Arena.ofAuto().allocate(Linker.Option.captureStateLayout().byteSize() + 3).asSlice(3), // misaligned
-                    IllegalArgumentException.class, ".*Target offset incompatible with alignment constraints.*"},
+                    IllegalArgumentException.class, ".*Target offset incompatible with alignment constraints.*", new Linker.Option[0]},
+            {MemorySegment.ofArray(new byte[(int) Linker.Option.captureStateLayout().byteSize()]), // misaligned
+                    IllegalArgumentException.class, ".*Target offset incompatible with alignment constraints.*", new Linker.Option[0]},
         };
     }
 }
