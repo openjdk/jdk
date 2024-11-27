@@ -404,7 +404,7 @@ ArchiveWorkers::ArchiveWorkers() :
         _end_semaphore(0),
         _num_workers(max_workers()),
         _started_workers(0),
-        _running_workers(0),
+        _finish_tokens(0),
         _state(UNUSED),
         _task(nullptr) {}
 
@@ -464,8 +464,9 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   // Multiple threads can work with multiple chunks.
   task->configure_max_chunks(_num_workers * CHUNKS_PER_WORKER);
 
-  // Set up the run and publish the task.
-  Atomic::store(&_running_workers, _num_workers);
+  // Set up the run and publish the task. Issue one additional finish token
+  // to cover the semaphore shutdown path, see below.
+  Atomic::store(&_finish_tokens, _num_workers + 1);
   Atomic::release_store(&_task, task);
 
   // Kick off pool startup by starting a single worker, and proceed
@@ -484,13 +485,13 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   // on semaphore first, and then spin-wait for all workers to terminate.
   _end_semaphore.wait();
   SpinYield spin;
-  while (Atomic::load(&_running_workers) != 0) {
+  while (Atomic::load(&_finish_tokens) != 0) {
     spin.wait();
   }
 
   OrderAccess::fence();
 
-  assert(Atomic::load(&_running_workers) == 0, "No workers are running");
+  assert(Atomic::load(&_finish_tokens) == 0, "All tokens are consumed");
 }
 
 void ArchiveWorkers::run_as_worker() {
@@ -504,11 +505,13 @@ void ArchiveWorkers::run_as_worker() {
 
   // Signal the pool the work is complete, and we are exiting.
   // Worker cannot do anything else with the pool after this.
-  if (Atomic::load(&_running_workers) == 1) {
+  if (Atomic::sub(&_finish_tokens, 1, memory_order_relaxed) == 1) {
     // Last worker leaving. Notify the pool it can unblock to spin-wait.
+    // Then consume the last token and leave.
     _end_semaphore.signal();
+    int last = Atomic::sub(&_finish_tokens, 1, memory_order_relaxed);
+    assert(last == 0, "Should be");
   }
-  Atomic::sub(&_running_workers, 1, memory_order_relaxed);
 }
 
 void ArchiveWorkerTask::run() {
