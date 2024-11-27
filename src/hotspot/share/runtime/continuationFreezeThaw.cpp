@@ -257,13 +257,13 @@ public:
 
   static freeze_result freeze(JavaThread* thread, intptr_t* const sp) {
     freeze_result res = freeze_internal<SelfT, false>(thread, sp);
-    JFR_ONLY(assert((res == freeze_ok) || res == thread->last_freeze_fail_result(), "freeze failure not set"));
+    JFR_ONLY(assert((res == freeze_ok) || (res == thread->last_freeze_fail_result()), "freeze failure not set"));
     return res;
   }
 
   static freeze_result freeze_preempt(JavaThread* thread, intptr_t* const sp) {
     freeze_result res = freeze_internal<SelfT, true>(thread, sp);
-    JFR_ONLY(assert((res == freeze_ok) || res == thread->last_freeze_fail_result(), "freeze failure not set"));
+    JFR_ONLY(assert((res == freeze_ok) || (res == thread->last_freeze_fail_result()), "freeze failure not set"));
     return res;
   }
 
@@ -1669,21 +1669,21 @@ static inline freeze_result freeze_epilog(ContinuationWrapper& cont) {
   return freeze_ok;
 }
 
-static freeze_result freeze_epilog(JavaThread* thread, ContinuationWrapper& cont, freeze_result res) {
+static freeze_result freeze_epilog(JavaThread* current, ContinuationWrapper& cont, freeze_result res) {
   if (UNLIKELY(res != freeze_ok)) {
-    JFR_ONLY(thread->set_last_freeze_fail_result(res);)
+    JFR_ONLY(current->set_last_freeze_fail_result(res);)
     verify_continuation(cont.continuation());
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     return res;
   }
 
-  JVMTI_ONLY(jvmti_yield_cleanup(thread, cont)); // can safepoint
+  JVMTI_ONLY(jvmti_yield_cleanup(current, cont)); // can safepoint
   return freeze_epilog(cont);
 }
 
-static freeze_result preempt_epilog(JavaThread* thread, ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
+static freeze_result preempt_epilog(JavaThread* current, ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
   if (UNLIKELY(res != freeze_ok)) {
-    JFR_ONLY(thread->set_last_freeze_fail_result(res);)
+    JFR_ONLY(current->set_last_freeze_fail_result(res);)
     verify_continuation(cont.continuation());
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     return res;
