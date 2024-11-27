@@ -369,6 +369,7 @@ private:
   int _num_workers;
   int _started_workers;
   int _running_workers;
+  int _finished_workers;
 
   typedef enum { UNUSED, WORKING, SHUTDOWN } State;
   volatile State _state;

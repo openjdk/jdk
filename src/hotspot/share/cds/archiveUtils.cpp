@@ -45,6 +45,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/spinYield.hpp"
 
 CHeapBitMap* ArchivePtrMarker::_ptrmap = nullptr;
 CHeapBitMap* ArchivePtrMarker::_rw_ptrmap = nullptr;
@@ -404,6 +405,7 @@ ArchiveWorkers::ArchiveWorkers() :
         _num_workers(max_workers()),
         _started_workers(0),
         _running_workers(0),
+        _finished_workers(0),
         _state(UNUSED),
         _task(nullptr) {}
 
@@ -465,6 +467,7 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
 
   // Set up the run and publish the task.
   Atomic::store(&_running_workers, _num_workers);
+  Atomic::store(&_finished_workers, 0);
   Atomic::release_store(&_task, task);
 
   // Kick off pool startup by starting a single worker, and proceed
@@ -475,12 +478,22 @@ void ArchiveWorkers::run_task_multi(ArchiveWorkerTask* task) {
   // This allows us to hide parts of task handoff latency.
   task->run();
 
-  // Done executing task locally, wait for any remaining workers to complete,
-  // and then do the final housekeeping.
+  // Done executing task locally, wait for any remaining workers to complete.
+  // Once all workers report, we can proceed to termination. To do this safely,
+  // we need to make sure every worker has left. A spin-wait alone would suffice,
+  // but we do not want to burn cycles on it. A semaphore alone would not be safe,
+  // since workers can still be inside it as we proceed from wait here. So we block
+  // on semaphore first, and then spin-wait for all workers to terminate.
   _end_semaphore.wait();
+  SpinYield spin;
+  while (Atomic::load(&_finished_workers) != _num_workers) {
+    spin.wait();
+  }
+
   OrderAccess::fence();
 
   assert(Atomic::load(&_running_workers) == 0, "No workers are running");
+  assert(Atomic::load(&_finished_workers) == _num_workers, "All workers have finished");
 }
 
 void ArchiveWorkers::run_as_worker() {
@@ -492,10 +505,12 @@ void ArchiveWorkers::run_as_worker() {
   // All work done in threads should be visible to caller.
   OrderAccess::fence();
 
-  // Signal the pool the tasks are complete, if this was the last running worker.
+  // Signal the pool the work is complete, and we are exiting.
+  // Worker cannot do anything else with the pool after this.
   if (Atomic::sub(&_running_workers, 1, memory_order_relaxed) == 0) {
     _end_semaphore.signal();
   }
+  Atomic::add(&_finished_workers, 1, memory_order_relaxed);
 }
 
 void ArchiveWorkerTask::run() {
