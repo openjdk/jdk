@@ -831,7 +831,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                     }
                 }
 
-                connectionLayer.addChild(newPredecessor);
+                newWidgets.add(newPredecessor);
                 addObject(new ConnectionSet(connectionList), newPredecessor);
                 newPredecessor.getActions().addAction(hoverAction);
             }
@@ -1016,10 +1016,13 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         SelectionCoordinator.getInstance().getSelectedChangedEvent().addListener(selectedCoordinatorListener);
     }
 
+    private final ArrayList<LineWidget> newWidgets = new ArrayList<>();
+
     private void rebuildConnectionLayer() {
         outputSlotToLineWidget.clear();
         inputSlotToLineWidget.clear();
         connectionLayer.removeChildren();
+        newWidgets.clear();
         for (Figure figure : getModel().getDiagram().getFigures()) {
             for (OutputSlot outputSlot : figure.getOutputSlots()) {
                 List<FigureConnection> connectionList = new ArrayList<>(outputSlot.getConnections());
@@ -1034,6 +1037,9 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 }
             }
         }
+
+        connectionLayer.addChildren(newWidgets);
+        newWidgets.clear();
     }
 
     private Set<FigureWidget> getVisibleFigureWidgets() {
