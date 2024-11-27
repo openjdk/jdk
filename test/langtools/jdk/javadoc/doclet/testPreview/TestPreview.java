@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533
+ *           8331947 8281533 8318416
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -59,7 +59,10 @@ public class TestPreview extends JavadocTester {
         checkOutput("m/pkg/TestPreviewDeclarationUse.html", true,
                     "<code><a href=\"TestPreviewDeclaration.html\" title=\"interface in pkg\">TestPreviewDeclaration</a></code>");
         checkOutput("m/pkg/TestPreviewAPIUse.html", true,
-                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class=\"external-link\">Core</a><sup><a href=\"" + doc + "java.base/preview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\"external-link\">PREVIEW</a>");
+                "<a href=\"" + doc + "java.base/preview/Core.html\" title=\"class or interface in preview\" class="
+                        + "\"external-link\">Core</a><sup class=\"preview-mark\"><a href=\"" + doc + "java.base/pr"
+                        + "eview/Core.html#preview-preview.Core\" title=\"class or interface in preview\" class=\""
+                        + "external-link\">PREVIEW</a>");
         checkOutput("m/pkg/DocAnnotation.html", true,
                 "<span class=\"modifiers\">public @interface </span><span class=\"element-name type-name-label\">DocAnnotation</span>");
         checkOutput("m/pkg/DocAnnotationUse1.html", true,
@@ -106,7 +109,9 @@ public class TestPreview extends JavadocTester {
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Package</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-summary-item-name even-row-color package package-tab1"><a href="java.base/preview/package-summary.html">preview</a><sup><a href="java.base/preview/package-summary.html#preview-preview">PREVIEW</a></sup></div>
+                    <div class="col-summary-item-name even-row-color package package-tab1"><a href="java.base/prev\
+                    iew/package-summary.html">preview</a><sup class="preview-mark"><a href="java.base/preview/pack\
+                    age-summary.html#preview-preview">PREVIEW</a></sup></div>
                     <div class="col-second even-row-color package package-tab1">Test Feature</div>
                     <div class="col-last even-row-color package package-tab1">
                     <div class="block">Preview package.</div>
@@ -122,7 +127,9 @@ public class TestPreview extends JavadocTester {
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Record Class</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-summary-item-name even-row-color record-class record-class-tab1"><a href="java.base/preview/CoreRecord.html" title="class in preview">preview.CoreRecord</a><sup><a href="java.base/preview/CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup></div>
+                    <div class="col-summary-item-name even-row-color record-class record-class-tab1"><a href="java\
+                    .base/preview/CoreRecord.html" title="class in preview">preview.CoreRecord</a><sup class="prev\
+                    iew-mark"><a href="java.base/preview/CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup></div>
                     <div class="col-second even-row-color record-class record-class-tab1">Test Feature</div>
                     <div class="col-last even-row-color record-class record-class-tab1"></div>
                     </div>
@@ -137,7 +144,9 @@ public class TestPreview extends JavadocTester {
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
-                    <div class="col-summary-item-name even-row-color method method-tab1"><a href="java.base/preview/CoreRecordComponent.html#i()">preview.CoreRecordComponent.i()</a><sup><a href="java.base/preview/CoreRecordComponent.html#preview-i()">PREVIEW</a></sup></div>
+                    <div class="col-summary-item-name even-row-color method method-tab1"><a href="java.base/previe\
+                    w/CoreRecordComponent.html#i()">preview.CoreRecordComponent.i()</a><sup class="preview-mark"><\
+                    a href="java.base/preview/CoreRecordComponent.html#preview-i()">PREVIEW</a></sup></div>
                     <div class="col-second even-row-color method method-tab1">Test Feature</div>
                     <div class="col-last even-row-color method method-tab1">
                     <div class="block">Returns the value of the <code>i</code> record component.</div>
@@ -160,16 +169,16 @@ public class TestPreview extends JavadocTester {
                     </ol>""",
                 """
                     <div class="block">Preview feature. Links: <a href="CoreRecord.html" title="cla\
-                    ss in preview"><code>CoreRecord</code></a><sup><a href="CoreRecord.html#preview\
-                    -preview.CoreRecord">PREVIEW</a></sup>, <a href="CoreRecord.html" title="class \
-                    in preview"><code>core record</code></a><sup><a href="CoreRecord.html#preview-p\
-                    review.CoreRecord">PREVIEW</a></sup>,
+                    ss in preview"><code>CoreRecord</code></a><sup class="preview-mark"><a href="Co\
+                    reRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>, <a href="CoreRecor\
+                    d.html" title="class in preview"><code>core record</code></a><sup class="previe\
+                    w-mark"><a href="CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup>,
                      <a href="CoreRecord.html" title="class in preview">CoreRecord</a>, <a href="Co\
                     reRecord.html" title="class in preview">core record</a>.</div>""",
                 """
                     <li><a href="CoreRecord.html" title="class in preview"><code>CoreRecord</code><\
-                    /a><sup><a href="CoreRecord.html#preview-preview.CoreRecord">PREVIEW</a></sup><\
-                    /li>
+                    /a><sup class="preview-mark"><a href="CoreRecord.html#preview-preview.CoreRecor\
+                    d">PREVIEW</a></sup></li>
                     <li><a href="CoreRecord.html" title="class in preview">core record</a></li>""");
 
         // 8331947: Support preview features without JEP should not be included in Preview API page
@@ -188,13 +197,19 @@ public class TestPreview extends JavadocTester {
         checkOutput("api2/api/API.html", true,
                     "<p><a href=\"#test()\"><code>test()</code></a></p>",
                     "<p><a href=\"#testNoPreviewInSig()\"><code>testNoPreviewInSig()</code></a></p>",
-                    "title=\"class or interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.html\" title=\"class in api\">API</a><sup><a href=\"#preview-api.API\">PREVIEW</a></sup>&gt;");
+                    "title=\"class or interface in java.util\" class=\"external-link\">List</a>&lt;<a href=\"API.h"
+                            + "tml\" title=\"class in api\">API</a><sup class=\"preview-mark\"><a href=\"#preview-"
+                            + "api.API\">PREVIEW</a></sup>&gt;");
         checkOutput("api2/api/API2.html", true,
-                    "<a href=\"API.html#test()\"><code>API.test()</code></a><sup><a href=\"API.html#preview-api.API\">PREVIEW</a></sup>",
-                    "<a href=\"API.html#testNoPreviewInSig()\"><code>API.testNoPreviewInSig()</code></a><sup><a href=\"API.html#preview-api.API\">PREVIEW</a></sup>",
-                    "<a href=\"API3.html#test()\"><code>API3.test()</code></a><sup><a href=\"API3.html#preview-test()\">PREVIEW</a></sup>");
+                    "<a href=\"API.html#test()\"><code>API.test()</code></a><sup class=\"preview-mark\"><a href=\""
+                            + "API.html#preview-api.API\">PREVIEW</a></sup>",
+                    "<a href=\"API.html#testNoPreviewInSig()\"><code>API.testNoPreviewInSig()</code></a><sup class"
+                            + "=\"preview-mark\"><a href=\"API.html#preview-api.API\">PREVIEW</a></sup>",
+                    "<a href=\"API3.html#test()\"><code>API3.test()</code></a><sup class=\"preview-mark\"><a href="
+                            + "\"API3.html#preview-test()\">PREVIEW</a></sup>");
         checkOutput("api2/api/API3.html", true,
-                    "<div class=\"block\"><a href=\"#test()\"><code>test()</code></a><sup><a href=\"#preview-test()\">PREVIEW</a></sup></div>");
+                    "<div class=\"block\"><a href=\"#test()\"><code>test()</code></a><sup class=\"preview-mark\"><"
+                            + "a href=\"#preview-test()\">PREVIEW</a></sup></div>");
     }
 
     @Test
