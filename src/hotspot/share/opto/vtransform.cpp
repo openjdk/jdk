@@ -150,10 +150,10 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
   if (a > b) { return  1; }
 
 // Helper-class for VTransformGraph::has_store_to_load_forwarding_failure.
-// It represents a memory region:
-//   [adr, adr + memory_size)
-//   adr = base + invar + iv_scale * iv + con
-// TODO comment
+// It wraps a VPointer. The VPointer have an iv_offset applied, which
+// simulates a virtual unrolling. They represent the memory region:
+//   [adr, adr + size)
+//   adr = base + invar + iv_scale * (iv + iv_offset) + con
 class VMemoryRegion : public ResourceObj {
 private:
   // Note: VPointer has no default constructor, so we cannot use VMemoryRegion
