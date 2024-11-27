@@ -1344,9 +1344,13 @@ test-hotspot-jtreg-native: test-hotspot_native_sanity
 test-hotspot-gtest: exploded-test-gtest
 test-jdk-jtreg-native: test-jdk_native_sanity
 
+# Set dependencies for doc tests
+$(eval $(call AddTestDependency, docs_all, docs-jdk))
+test-docs: test-docs_all
+
 ALL_TARGETS += $(RUN_TEST_TARGETS) run-test exploded-run-test check \
     test-hotspot-jtreg test-hotspot-jtreg-native test-hotspot-gtest \
-    test-jdk-jtreg-native
+    test-jdk-jtreg-native test-docs
 
 ################################################################################
 ################################################################################
