@@ -34,7 +34,6 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 
 import static com.sun.beans.util.Cache.Kind.SOFT;
-import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /**
  * This utility class provides {@code static} methods
@@ -79,7 +78,7 @@ public final class MethodFinder extends AbstractFinder<Method> {
 
         try {
             Method method = CACHE.get(signature);
-            return (method == null) || isPackageAccessible(method.getDeclaringClass()) ? method : CACHE.create(signature);
+            return (method == null) ? method : CACHE.create(signature);
         }
         catch (SignatureException exception) {
             throw exception.toNoSuchMethodException("Method '" + name + "' is not found");
@@ -138,7 +137,7 @@ public final class MethodFinder extends AbstractFinder<Method> {
         if (!FinderUtils.isExported(type)) {
             throw new NoSuchMethodException("Method '" + method.getName() + "' is not accessible");
         }
-        if (Modifier.isPublic(type.getModifiers()) && isPackageAccessible(type)) {
+        if (Modifier.isPublic(type.getModifiers())) {
             return method;
         }
         if (Modifier.isStatic(method.getModifiers())) {

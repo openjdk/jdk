@@ -976,8 +976,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1001,8 +999,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support CellEditor listeners
@@ -1023,8 +1019,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1050,8 +1044,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support the getModel method
@@ -1078,10 +1070,7 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
-
                 break;
 
             case EventID.COLUMNMODEL:
@@ -1101,8 +1090,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1126,8 +1113,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support Document listeners
@@ -1148,8 +1133,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 //  Add the monitor as a PropertyChangeListener for document
                 //  change events from text components.
@@ -1174,8 +1157,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                         }
                     } catch (NoSuchMethodException e) {
                         // System.out.println("Exception: " + e.toString());
-                    } catch (SecurityException e) {
-                        System.out.println("Exception: " + e.toString());
                     }
                 }
                 break;
@@ -1210,8 +1191,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1234,8 +1213,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for selection models which support ListSelectionListeners
@@ -1257,8 +1234,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1278,8 +1253,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1302,8 +1275,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support getPopupMenu
@@ -1329,8 +1300,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1350,8 +1319,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1371,8 +1338,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1396,8 +1361,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support UndoableEdit listeners
@@ -1418,8 +1381,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1442,8 +1403,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1466,8 +1425,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support the getSelectionModel method
@@ -1489,8 +1446,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1622,8 +1577,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1646,8 +1599,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support CellEditor listeners
@@ -1665,8 +1616,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1689,8 +1638,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support the getModel method
@@ -1714,8 +1661,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1735,8 +1680,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1759,8 +1702,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support Document listeners
@@ -1778,8 +1719,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1810,8 +1749,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1831,8 +1768,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 // Look for selection models which support
@@ -1853,8 +1788,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1871,8 +1804,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1892,8 +1823,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support getPopupMenu
@@ -1916,8 +1845,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1934,8 +1861,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1952,8 +1877,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -1976,8 +1899,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 //  Look for components which support UndoableEdit listeners
@@ -1995,8 +1916,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -2013,8 +1932,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -2034,8 +1951,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
 
                 // Look for components which support the getSelectionModel
@@ -2056,8 +1971,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e) {
                     // System.out.println("Exception: " + e.toString());
-                } catch (SecurityException e) {
-                    System.out.println("Exception: " + e.toString());
                 }
                 break;
 
@@ -2512,8 +2425,6 @@ public class SwingEventMonitor extends AWTEventMonitor {
                     }
                 } catch (NoSuchMethodException e2) {
                     // System.out.println("Exception: " + e2.toString());
-                } catch (SecurityException e2) {
-                    System.out.println("Exception: " + e2.toString());
                 }
             }
 

@@ -49,11 +49,8 @@ import java.awt.Color;
 import java.awt.Insets;
 import java.awt.Dimension;
 import java.beans.PropertyChangeListener;
-import java.security.AccessController;
-import java.security.AccessControlContext;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
@@ -704,7 +701,6 @@ public class UIDefaults extends Hashtable<Object,Object>
         try {
             String className = (String)get(uiClassID);
             if (className != null) {
-                ReflectUtil.checkPackageAccess(className);
 
                 Class<?> cls = (Class)get(className);
                 if (cls == null) {
@@ -1062,8 +1058,6 @@ public class UIDefaults extends Hashtable<Object,Object>
      * @since 1.3
      */
     public static class ProxyLazyValue implements LazyValue {
-        @SuppressWarnings("removal")
-        private AccessControlContext acc;
         private String className;
         private String methodName;
         private Object[] args;
@@ -1117,9 +1111,7 @@ public class UIDefaults extends Hashtable<Object,Object>
          * @param o    an array of <code>Objects</code> to be passed as
          *              parameters to the static method in class c
          */
-        @SuppressWarnings("removal")
         public ProxyLazyValue(String c, String m, Object[] o) {
-            acc = AccessController.getContext();
             className = c;
             methodName = m;
             if (o != null) {
@@ -1148,7 +1140,6 @@ public class UIDefaults extends Hashtable<Object,Object>
                         cl = ClassLoader.getSystemClassLoader();
                     }
                 }
-                ReflectUtil.checkPackageAccess(className);
                 c = Class.forName(className, true, (ClassLoader)cl);
                 SwingUtilities2.checkAccess(c.getModifiers());
                 if (methodName != null) {

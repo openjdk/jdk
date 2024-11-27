@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -88,7 +88,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -265,14 +265,7 @@ public class TransformerFactoryImpl
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
      */
-    @SuppressWarnings("removal")
     public TransformerFactoryImpl() {
-
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            _isNotSecureProcessing = false;
-        }
-
         _xmlFeatures = new JdkXmlFeatures(!_isNotSecureProcessing);
         _overrideDefaultParser = _xmlFeatures.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
@@ -1392,7 +1385,7 @@ public class TransformerFactoryImpl
         // Find the parent directory of the translet.
         String transletParentDir = transletFile.getParent();
         if (transletParentDir == null)
-            transletParentDir = SecuritySupport.getSystemProperty("user.dir");
+            transletParentDir = System.getProperty("user.dir");
 
         File transletParentFile = new File(transletParentDir);
 

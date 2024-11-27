@@ -117,10 +117,7 @@
   product(bool, AOTClassLinking, false,                                     \
           "Load/link all archived classes for the boot/platform/app "       \
           "loaders before application main")                                \
-                                                                            \
-  product(bool, AOTCacheParallelRelocation, true, DIAGNOSTIC,               \
-          "Use parallel relocation code to speed up startup.")              \
-                                                                            \
+
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

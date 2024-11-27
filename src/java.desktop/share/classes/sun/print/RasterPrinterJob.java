@@ -25,8 +25,6 @@
 
 package sun.print;
 
-import java.io.FilePermission;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
@@ -255,11 +253,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
     protected boolean performingPrinting = false;
  // MacOSX - made protected so subclasses can reference it.
     protected boolean userCancelled = false;
-
-   /**
-    * Print to file permission variables.
-    */
-    private FilePermission printToFilePermission;
 
     /**
      * List of areas & the graphics state for redrawing
@@ -2499,37 +2492,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         g.setClip(clip);
         g.setPaint(Color.black);
-    }
-
-
-   /**
-    * User dialogs should disable "File" buttons if this returns false.
-    *
-    */
-    public boolean checkAllowedToPrintToFile() {
-        try {
-            throwPrintToFile();
-            return true;
-        } catch (SecurityException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Break this out as it may be useful when we allow API to
-     * specify printing to a file. In that case its probably right
-     * to throw a SecurityException if the permission is not granted
-     */
-    private void throwPrintToFile() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (printToFilePermission == null) {
-                printToFilePermission =
-                    new FilePermission("<<ALL FILES>>", "read,write");
-            }
-            security.checkPermission(printToFilePermission);
-        }
     }
 
     /* On-screen drawString renders most control chars as the missing glyph
