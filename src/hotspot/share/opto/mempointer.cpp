@@ -215,7 +215,6 @@ bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
   worklist.append(start);
   for (int i = 0; i < worklist.length(); i++) {
     Node* n = worklist.at(i);
-    n->dump();
     switch(n->Opcode()) {
       case Op_AddL:
         // Traverse to both inputs.

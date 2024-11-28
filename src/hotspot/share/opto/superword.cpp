@@ -2927,17 +2927,27 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
   // 1.3: base (unless base is guaranteed aw aligned)
   if (aw > ObjectAlignmentInBytes || is_base_native) {
-    // The base is only aligned with ObjectAlignmentInBytes with arrays.
-    // When the base() is top, we have no alignment guarantee at all.
-    // Hence, we must now take the base into account for the calculation.
-    Node* xbase = new CastP2XNode(nullptr, base);
-    phase()->register_new_node(xbase, pre_ctrl);
-    TRACE_ALIGN_VECTOR_NODE(xbase);
-#ifdef _LP64
-    xbase  = new ConvL2INode(xbase);
-    phase()->register_new_node(xbase, pre_ctrl);
-    TRACE_ALIGN_VECTOR_NODE(xbase);
-#endif
+    // For objects, the base is ObjectAlignmentInBytes aligned.
+    // For native memory, we have no such guarantee, and must
+    // always take the base into account for the calculation.
+    //
+    // Computations are done % (vector width/element size) so it's
+    // safe to simply convert invar to an int and loose the upper 32
+    // bit half. The base could be ptr, long or int. We cast all
+    // to int.
+    Node* xbase = base;
+    if (igvn().type(xbase)->isa_ptr()) {
+      // ptr -> int/long
+      xbase = new CastP2XNode(nullptr, xbase);
+      phase()->register_new_node(xbase, pre_ctrl);
+      TRACE_ALIGN_VECTOR_NODE(xbase);
+    }
+    if (igvn().type(xbase)->isa_long()) {
+      // long -> int
+      xbase  = new ConvL2INode(xbase);
+      phase()->register_new_node(xbase, pre_ctrl);
+      TRACE_ALIGN_VECTOR_NODE(xbase);
+    }
     if (is_sub) {
       xbic = new SubINode(xbic, xbase);
     } else {
