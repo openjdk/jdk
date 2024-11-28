@@ -202,7 +202,6 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc *_load_reference_barrier_tf;
   static const TypeFunc *_write_ref_field_pre_tf;
   static const TypeFunc *_clone_barrier_tf;
-  static const TypeFunc *_clone_type_barrier_set_c2_tf;
 
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
@@ -407,12 +406,6 @@ private:
   static void dtrace_object_alloc_Type_init();
   static void write_ref_field_pre_init();
   static void clone_barrier_init();
-  static void clone_type_barrier_set_c2_init();
-
-  static inline const TypeFunc *clone_type_barrier_set_c2_Type() {
-    assert(_clone_type_barrier_set_c2_tf != nullptr, "should be initialized");
-    return _clone_type_barrier_set_c2_tf;
-  }
 
   static inline const TypeFunc *clone_barrier_Type() {
     assert(_clone_barrier_tf != nullptr, "should be initialized");

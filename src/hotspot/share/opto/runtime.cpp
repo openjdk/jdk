@@ -260,7 +260,6 @@ const TypeFunc* OptoRuntime::_clone_type_tf = nullptr;
 const TypeFunc* OptoRuntime::_load_reference_barrier_tf = nullptr;
 const TypeFunc* OptoRuntime::_write_ref_field_pre_tf = nullptr;
 const TypeFunc* OptoRuntime::_clone_barrier_tf = nullptr;
-const TypeFunc* OptoRuntime::_clone_type_barrier_set_c2_tf = nullptr;
 
 
 // Helper method to do generation of RunTimeStub's
@@ -2025,23 +2024,6 @@ void OptoRuntime::clone_barrier_init() {
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
 
   _clone_barrier_tf = TypeFunc::make(domain, range);
-}
-
-void OptoRuntime::clone_type_barrier_set_c2_init() {
-  assert(_clone_type_barrier_set_c2_tf == nullptr, "should be");
-  // Create input type (domain)
-  const Type** domain_fields = TypeTuple::fields(4);
-  domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
-  domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
-  domain_fields[TypeFunc::Parms + 2] = TypeLong::LONG;        // size lower
-  domain_fields[TypeFunc::Parms + 3] = Type::HALF;            // size upper
-  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, domain_fields);
-
-  // Create result type (range)
-  const Type** range_fields = TypeTuple::fields(0);
-  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
-
-  _clone_type_barrier_set_c2_tf = TypeFunc::make(domain, range);
 }
 
 JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer_C(oopDesc* obj, JavaThread* current))
