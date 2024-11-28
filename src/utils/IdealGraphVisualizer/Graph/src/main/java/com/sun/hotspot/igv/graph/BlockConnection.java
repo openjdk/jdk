@@ -27,6 +27,7 @@ import com.sun.hotspot.igv.layout.Port;
 import java.awt.Color;
 import java.awt.Point;
 import java.util.List;
+import java.util.Objects;
 
 public class BlockConnection implements Connection {
 
@@ -98,5 +99,20 @@ public class BlockConnection implements Connection {
     @Override
     public boolean hasSlots() {
         return false;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof BlockConnection that)) return false;
+        return Objects.equals(this.sourceBlock, that.sourceBlock) &&
+                Objects.equals(this.destinationBlock, that.destinationBlock) &&
+                Objects.equals(this.label, that.label);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(sourceBlock, destinationBlock, label);
     }
 }
