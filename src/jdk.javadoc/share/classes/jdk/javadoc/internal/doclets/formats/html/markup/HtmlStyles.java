@@ -708,14 +708,6 @@ public enum HtmlStyles implements HtmlStyle {
      */
     typeParameters,
 
-    /**
-     * The class of a {@code span} containing type parameters in the signature of an element,
-     * used when the type parameters are too long to be displayed inline.
-     * @implNote
-     * The threshold for choosing between {@code typeParameters} and {@code typeParametersLong}
-     * is 50 characters.
-     */
-    typeParametersLong,
     //</editor-fold>
 
     //<editor-fold desc="search index and results">

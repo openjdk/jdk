@@ -777,12 +777,10 @@ class os: AllStatic {
   static void* get_default_process_handle();
 
   // Check for static linked agent library
-  static bool find_builtin_agent(JvmtiAgent *agent_lib, const char *syms[],
-                                 size_t syms_len);
+  static bool find_builtin_agent(JvmtiAgent* agent_lib, const char* sym);
 
   // Find agent entry point
-  static void *find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
-                                   const char *syms[], size_t syms_len);
+  static void* find_agent_function(JvmtiAgent* agent_lib, bool check_lib, const char* sym);
 
   // Provide wrapper versions of these functions to guarantee NUL-termination
   // in all cases.
@@ -859,8 +857,7 @@ class os: AllStatic {
   // We don't attempt to become a debugger, so we only follow frames if that
   // does not require a lookup in the unwind table, which is part of the binary
   // file but may be unsafe to read after a fatal error. So on x86, we can
-  // only walk stack if %ebp is used as frame pointer; on ia64, it's not
-  // possible to walk C stack without having the unwind table.
+  // only walk stack if %ebp is used as frame pointer.
   static bool is_first_C_frame(frame *fr);
   static frame get_sender_for_C_frame(frame *fr);
 

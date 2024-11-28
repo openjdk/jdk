@@ -24,20 +24,24 @@
 /*
  * @test
  * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874 8297879
- *           8331947 8281533 8318416
+ *           8331947 8281533 8343239 8318416
  * @summary  test generated docs for items declared using preview
- * @library  ../../lib
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:+open
- * @build    javadoc.tester.*
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestPreview
  */
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestPreview extends JavadocTester {
+    ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
         var tester = new TestPreview();
@@ -183,6 +187,60 @@ public class TestPreview extends JavadocTester {
 
         // 8331947: Support preview features without JEP should not be included in Preview API page
         checkOutput("preview-list.html", false, "supportMethod");
+    }
+
+    // 8343239 pre-existing permanent API that is later retrofitted
+    // to extend a @PreviewFeature interface should not be flagged as a preview feature
+    @Test
+    public void nonPreviewExtendsPreview(Path base) throws IOException {
+
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                import jdk.internal.javac.PreviewFeature;
+
+                /**
+                 * Preview feature
+                 */
+                @PreviewFeature(feature= PreviewFeature.Feature.TEST)
+                public interface CoreInterface {
+                }
+                """, """
+                package p;
+
+                 /**
+                  * Non preview feature
+                  */
+                 public interface NonPreviewExtendsPreview extends CoreInterface {
+                     default int getNumber() {
+                         return 0;
+                     }
+                 }
+                """);
+        javadoc("-d", "out-non-preview-extends-preview",
+                "--add-exports", "java.base/jdk.internal.javac=ALL-UNNAMED",
+                "--source-path",
+                src.toString(),
+                "p");
+        checkExit(Exit.OK);
+        checkOutput("p/NonPreviewExtendsPreview.html", false,
+                """
+                 <code>NonPreviewExtendsPreview</code> relies on preview features of the Java platform:
+                """,
+                """
+                <code>NonPreviewExtendsPreview</code> refers to one or more preview APIs:
+                """);
+        checkOutput("p/CoreInterface.html", true,
+                """
+                <div class="horizontal-scroll">
+                <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">CoreInterface</span></div>
+                <div class="preview-block" id="preview-p.CoreInterface"><span class="preview-label"><code>CoreInterface</code> is a preview API of the Java platform.</span>
+                <div class="preview-comment">Programs can only use <code>CoreInterface</code> when preview features are enabled.</div>
+                <div class="preview-comment">Preview features may be removed in a future release, or upgraded to permanent features of the Java platform.</div>
+                </div>
+                <div class="block">Preview feature</div>
+                </div>
+                """);
     }
 
     @Test
