@@ -3483,7 +3483,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return true;
 
         // Get an upper bound of precision() without using big powers of 10 (see bigDigitLength())
-        int digitLen = intVal == null ? precision() : (digitLengthLower(intVal) + 1);
+        int digitLen = intCompact != INFLATED ? precision() : (digitLengthLower(unscaledValue()) + 1);
         return digitLen > scale && stripZerosToMatchScale(intVal, intCompact, scale, 0L).scale == 0;
     }
 
