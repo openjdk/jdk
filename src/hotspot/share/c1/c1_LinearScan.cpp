@@ -1265,17 +1265,21 @@ void LinearScan::build_intervals() {
   // virtual fpu operands. Otherwise no allocation for fpu registers is
   // performed and so the temp ranges would be useless
   if (has_fpu_registers()) {
-#ifdef X86
-    if (UseSSE > 0) {
-      int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
-      for (i = 0; i < num_caller_save_xmm_regs; i ++) {
-        LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(i);
-        assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
-        assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
-        caller_save_registers[num_caller_save_registers++] = reg_num(opr);
-      }
+#ifndef X86
+    for (i = 0; i < FrameMap::nof_caller_save_fpu_regs; i++) {
+      LIR_Opr opr = FrameMap::caller_save_fpu_reg_at(i);
+      assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
+      assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
+      caller_save_registers[num_caller_save_registers++] = reg_num(opr);
     }
-#endif // X86
+#else
+    for (i = 0; i < FrameMap::get_num_caller_save_xmms(); i ++) {
+      LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(i);
+      assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
+      assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
+      caller_save_registers[num_caller_save_registers++] = reg_num(opr);
+    }
+#endif // !X86
   }
   assert(num_caller_save_registers <= LinearScan::nof_regs, "out of bounds");
 
