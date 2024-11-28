@@ -232,7 +232,7 @@ class Predicate : public StackObj {
 // Generic predicate visitor that does nothing. Subclass this visitor to add customized actions for each predicate.
 // The visit methods of this visitor are called from the predicate iterator classes which walk the predicate chain.
 // Use the UnifiedPredicateVisitor if the type of the predicate does not matter.
-class PredicateVisitor : public StackObj {
+class PredicateVisitor : StackObj {
  public:
   virtual void visit(const ParsePredicate& parse_predicate) {}
   virtual void visit(const RuntimePredicate& runtime_predicate) {}
@@ -297,8 +297,6 @@ class ParsePredicate : public Predicate {
   }
 
   static ParsePredicateNode* init_parse_predicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason);
-  NOT_PRODUCT(static void trace_cloned_parse_predicate(bool is_false_path_loop,
-                                                       const ParsePredicateSuccessProj* success_proj);)
 
  public:
   ParsePredicate(Node* parse_predicate_proj, Deoptimization::DeoptReason deopt_reason)
@@ -326,14 +324,6 @@ class ParsePredicate : public Predicate {
   ParsePredicateSuccessProj* tail() const override {
     assert(is_valid(), "must be valid");
     return _success_proj;
-  }
-
-  ParsePredicateNode* clone_to_unswitched_loop(Node* new_control, bool is_false_path_loop, PhaseIdealLoop* phase) const;
-
-  // Kills this Parse Predicate by marking it useless. Will be folded away in the next IGVN round.
-  void kill(PhaseIterGVN& igvn) const {
-    _parse_predicate_node->mark_useless();
-    igvn._worklist.push(_parse_predicate_node);
   }
 };
 
@@ -409,7 +399,6 @@ class TemplateAssertionPredicate : public Predicate {
   IfTrueNode* initialize(PhaseIdealLoop* phase, Node* new_control) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
-  void kill(PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
 
 #ifdef ASSERT
@@ -989,31 +978,6 @@ class NodeInClonedLoopBody : public NodeInLoopBody {
   }
 };
 
-// This class can be used to create predicates at a target loop where a new chain of predicates need to be established.
-class TargetLoopPredicateChain : public StackObj {
-  Node* const _loop_selector_proj;
-  const NodeInLoopBody& _node_in_loop_body;
-  PhaseIdealLoop* const _phase;
-
-  Node* predicate_chain_head() const {
-    return _loop_selector_proj->unique_ctrl_out();
-  }
-
-  void rewire_to_target_chain_head(IfNode* cloned_template_assertion_predicate, Node* current_predicate_chain_head) const;
-
- public:
-  TargetLoopPredicateChain(LoopNode* loop_head, const NodeInLoopBody& node_in_loop_body, PhaseIdealLoop* phase);
-  NONCOPYABLE(TargetLoopPredicateChain);
-
-  // Clones the provided Parse Predicate to the head of the current predicate chain at the target loop.
-  // This method is used for Loop Unswitching.
-  void clone_parse_predicate_to_chain(const ParsePredicate& parse_predicate, bool is_true_path_loop) {
-    parse_predicate.clone_to_unswitched_loop(_loop_selector_proj, !is_true_path_loop, _phase);
-  }
-
-  void clone_template_assertion_predicate_to_chain(const TemplateAssertionPredicate& template_assertion_predicate);
-};
-
 // Visitor to create Initialized Assertion Predicates at a target loop from Template Assertion Predicates from a source
 // loop. This visitor can be used in combination with a PredicateIterator.
 class CreateAssertionPredicatesVisitor : public PredicateVisitor {
@@ -1042,43 +1006,25 @@ class CreateAssertionPredicatesVisitor : public PredicateVisitor {
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
-// Visitor to clone Parse and Template Assertion Predicates from a loop to its unswitched true and false path loop.
-// The cloned predicates are not updated in any way. Thus, an Initialized Assertion Predicate is also not required to
-// be created. Note that the data dependencies from the Template Assertion Predicates are also updated to the newly
-// cloned Templates, depending on whether they belong to the true or false path loop.
-class CloneUnswitchedLoopPredicatesVisitor : public PredicateVisitor {
-  TargetLoopPredicateChain _true_path_loop_predicate_chain;
-  TargetLoopPredicateChain _false_path_loop_predicate_chain;
-
-  PhaseIdealLoop* const _phase;
-  bool _has_hoisted_check_parse_predicates;
-
- public:
-  CloneUnswitchedLoopPredicatesVisitor(LoopNode* true_path_loop_head,
-                                       LoopNode* false_path_loop_head,
-                                       const NodeInOriginalLoopBody& node_in_true_path_loop_body,
-                                       const NodeInClonedLoopBody& node_in_false_path_loop_body,
-                                       PhaseIdealLoop* phase);
-  NONCOPYABLE(CloneUnswitchedLoopPredicatesVisitor);
-
-  using PredicateVisitor::visit;
-
-  void visit(const ParsePredicate& parse_predicate) override;
-  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
-};
-
-// This visitor collects all OpaqueTemplateAssertionNodes of Template Assertion Predicates. This is used for cleaning
-// up unused Template Assertion Predicates.
-class OpaqueTemplateAssertionPredicateCollector : public PredicateVisitor {
+// This visitor collects all Template Assertion Predicates If nodes or the corresponding Opaque nodes, depending on the
+// provided 'get_opaque' flag, to the provided list.
+class TemplateAssertionPredicateCollector : public PredicateVisitor {
   Unique_Node_List& _list;
+  const bool _get_opaque;
 
  public:
-  explicit OpaqueTemplateAssertionPredicateCollector(Unique_Node_List& list) : _list(list) {}
+  TemplateAssertionPredicateCollector(Unique_Node_List& list, const bool get_opaque)
+      : _list(list),
+        _get_opaque(get_opaque) {}
 
   using PredicateVisitor::visit;
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override {
-    _list.push(template_assertion_predicate.opaque_node());
+    if (_get_opaque) {
+      _list.push(template_assertion_predicate.opaque_node());
+    } else {
+      _list.push(template_assertion_predicate.tail());
+    }
   }
 };
 
