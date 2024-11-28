@@ -239,14 +239,15 @@ bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
   return false;
 }
 
-// Find any special long node that we think is a better native-memory "base"
-// than a CastX2P.
-// TODO direct buffer?
+// Check if the node is a candidate to be a memory segment "base".
+// (1) CastX2P
+// (2) LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
+//     Holds the address() of a native memory segment.
 bool MemPointerParser::is_native_memory_base_candidate(Node* n) {
-  // TODO rename
+  // (1) CastX2P
   if (n->Opcode() == Op_CastX2P) { return true; }
-  // LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
-  // It is used to hold the address() of a native MemorySegment.
+
+  // (2) LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
   if (n->Opcode() != Op_LoadL) { return false; }
   LoadNode* load = n->as_Load();
 
