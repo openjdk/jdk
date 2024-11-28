@@ -63,9 +63,6 @@ public class InternalTypeUtilities {
      * @param referredLoader the referred class loader
      * @return true if it is safe to strongly reference the class from referred
      * in referred.
-     * @throws SecurityException if the caller does not have the
-     * {@code RuntimePermission("getClassLoader")} permission and the method
-     * needs to traverse the parent class loader chain.
      */
     public static boolean canReferenceDirectly(final ClassLoader referrerLoader, final ClassLoader referredLoader) {
         if(referredLoader == null) {

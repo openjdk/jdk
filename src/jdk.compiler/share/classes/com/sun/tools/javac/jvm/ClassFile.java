@@ -103,6 +103,7 @@ public class ClassFile {
     public static final int MAX_STACK = 0xffff;
 
     public static final int PREVIEW_MINOR_VERSION = 0xffff;
+    public static final int MAX_ANNOTATIONS = 0xffff;
 
     public enum Version {
         V45_3(45, 3), // base level for all attributes

@@ -79,7 +79,6 @@ public class Application {
     static Application sApplication = null;
 
     static {
-        checkSecurity();
         Toolkit.getDefaultToolkit(); // Start AppKit
         if (!Beans.isDesignTime()) {
             nativeInitializeApplicationDelegate();
@@ -88,20 +87,12 @@ public class Application {
         sApplication = new Application();
     }
 
-    private static void checkSecurity() {
-        @SuppressWarnings("removal")
-        final SecurityManager security = System.getSecurityManager();
-        if (security == null) return;
-        security.checkPermission(new RuntimePermission("canProcessApplicationEvents"));
-    }
-
     /**
      * @return the singleton representing this Mac OS X Application
      *
      * @since 1.4
      */
     public static Application getApplication() {
-        checkSecurity();
         return sApplication;
     }
 
@@ -118,7 +109,6 @@ public class Application {
      */
     @Deprecated
     public Application() {
-        checkSecurity();
     }
 
     /**

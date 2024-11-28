@@ -2112,7 +2112,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Remaining count is less than 8 bytes. Fill it by a single store.
     // Note that the total length is no less than 8 bytes.
-    if (t == T_BYTE || t == T_SHORT) {
+    if (!AvoidUnalignedAccesses && (t == T_BYTE || t == T_SHORT)) {
       __ beqz(count, L_exit1);
       __ shadd(to, count, to, tmp_reg, shift); // points to the end
       __ sd(value, Address(to, -8)); // overwrite some elements
@@ -2274,6 +2274,174 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
     StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
+  }
+
+  void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {
+    const int step = 16;
+    for (int i = 0; i < rounds; i++) {
+      __ vle32_v(working_vregs[i], key);
+      // The keys are stored in little-endian array, while we need
+      // to operate in big-endian.
+      // So performing an endian-swap here with vrev8.v instruction
+      __ vrev8_v(working_vregs[i], working_vregs[i]);
+      __ addi(key, key, step);
+    }
+  }
+
+  void generate_aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+    assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
+
+    __ vxor_vv(res, res, working_vregs[0]);
+    for (int i = 1; i < rounds - 1; i++) {
+      __ vaesem_vv(res, working_vregs[i]);
+    }
+    __ vaesef_vv(res, working_vregs[rounds - 1]);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //
+  address generate_aescrypt_encryptBlock() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
+
+    Label L_aes128, L_aes192;
+
+    const Register from        = c_rarg0;  // source array address
+    const Register to          = c_rarg1;  // destination array address
+    const Register key         = c_rarg2;  // key array address
+    const Register keylen      = c_rarg3;
+
+    VectorRegister working_vregs[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11,
+      v12, v13, v14, v15, v16, v17, v18
+    };
+    const VectorRegister res   = v19;
+
+    address start = __ pc();
+    __ enter();
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(res, from);
+
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs key += 15*16
+    generate_aes_loadkeys(key, working_vregs, 15);
+    generate_aes_encrypt(res, working_vregs, 15);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes192);
+    // Note: the following function performs key += 13*16
+    generate_aes_loadkeys(key, working_vregs, 13);
+    generate_aes_encrypt(res, working_vregs, 13);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes128);
+    // Note: the following function performs key += 11*16
+    generate_aes_loadkeys(key, working_vregs, 11);
+    generate_aes_encrypt(res, working_vregs, 11);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  void generate_aes_decrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+    assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
+
+    __ vxor_vv(res, res, working_vregs[rounds - 1]);
+    for (int i = rounds - 2; i > 0; i--) {
+      __ vaesdm_vv(res, working_vregs[i]);
+    }
+    __ vaesdf_vv(res, working_vregs[0]);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //
+  address generate_aescrypt_decryptBlock() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
+
+    Label L_aes128, L_aes192;
+
+    const Register from        = c_rarg0;  // source array address
+    const Register to          = c_rarg1;  // destination array address
+    const Register key         = c_rarg2;  // key array address
+    const Register keylen      = c_rarg3;
+
+    VectorRegister working_vregs[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11,
+      v12, v13, v14, v15, v16, v17, v18
+    };
+    const VectorRegister res   = v19;
+
+    address start = __ pc();
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(res, from);
+
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs key += 15*16
+    generate_aes_loadkeys(key, working_vregs, 15);
+    generate_aes_decrypt(res, working_vregs, 15);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes192);
+    // Note: the following function performs key += 13*16
+    generate_aes_loadkeys(key, working_vregs, 13);
+    generate_aes_decrypt(res, working_vregs, 13);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes128);
+    // Note: the following function performs key += 11*16
+    generate_aes_loadkeys(key, working_vregs, 11);
+    generate_aes_decrypt(res, working_vregs, 11);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    return start;
   }
 
   // code for comparing 16 bytes of strings with same encoding
@@ -3868,6 +4036,36 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
+  }
+
+  address generate_cont_preempt_stub() {
+    if (!Continuations::enabled()) return nullptr;
+    StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+    address start = __ pc();
+
+    __ reset_last_Java_frame(true);
+
+    // Set sp to enterSpecial frame, i.e. remove all frames copied into the heap.
+    __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
+
+    Label preemption_cancelled;
+    __ lbu(t0, Address(xthread, JavaThread::preemption_cancelled_offset()));
+    __ bnez(t0, preemption_cancelled);
+
+    // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+    SharedRuntime::continuation_enter_cleanup(_masm);
+    __ leave();
+    __ ret();
+
+    // We acquired the monitor after freezing the frames so call thaw to continue execution.
+    __ bind(preemption_cancelled);
+    __ sb(zr, Address(xthread, JavaThread::preemption_cancelled_offset()));
+    __ la(fp, Address(sp, checked_cast<int32_t>(ContinuationEntry::size() + 2 * wordSize)));
+    __ la(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
+    __ ld(t1, Address(t1));
+    __ jr(t1);
 
     return start;
   }
@@ -6234,6 +6432,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     StubRoutines::_cont_thaw             = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_preempt_stub     = generate_cont_preempt_stub();
   }
 
   void generate_final_stubs() {
@@ -6294,11 +6493,16 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_montgomerySquare = g.generate_square();
     }
 
+    if (UseAESIntrinsics) {
+      StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
+      StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+    }
+
     if (UsePoly1305Intrinsics) {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
 
-    if (UseRVVForBigIntegerShiftIntrinsics) {
+    if (UseRVV) {
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }

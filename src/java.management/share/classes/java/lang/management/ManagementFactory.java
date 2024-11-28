@@ -245,8 +245,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * @author  Mandy Chung
  * @since   1.5
  */
-@SuppressWarnings({"removal",
-                   "doclint:reference"}) // cross-module links
+@SuppressWarnings("doclint:reference") // cross-module links
 public class ManagementFactory {
     // A class with only static fields and methods.
     private ManagementFactory() {};
@@ -465,10 +464,6 @@ public class ManagementFactory {
      * @return the platform {@code MBeanServer}; the platform
      *         MXBeans are registered into the platform {@code MBeanServer}
      *         at the first time this method is called.
-     *
-     * @throws SecurityException if there is a security manager
-     * and the caller does not have the permission required by
-     * {@link javax.management.MBeanServerFactory#createMBeanServer}.
      *
      * @see javax.management.MBeanServerFactory
      * @see javax.management.MBeanServerFactory#createMBeanServer

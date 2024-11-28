@@ -31,6 +31,8 @@ import java.util.Set;
  */
 public interface LayoutManager {
 
+    void setCutEdges(boolean enable);
+
     void doLayout(LayoutGraph graph);
 
     void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks);

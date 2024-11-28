@@ -163,6 +163,23 @@ void InstanceStackChunkKlass::oop_oop_iterate_stack_slow(stackChunkOop chunk, Oo
   chunk->iterate_stack(&frame_closure);
 }
 
+template <typename OopT>
+void InstanceStackChunkKlass::oop_oop_iterate_lockstack(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr) {
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    return;
+  }
+
+  StackChunkOopIterateFilterClosure<OopIterateClosure> cl(closure, mr);
+  if (chunk->has_bitmap()) {
+    chunk->iterate_lockstack<OopT>(&cl);
+  } else {
+    chunk->iterate_lockstack<oop>(&cl);
+  }
+}
+
+template void InstanceStackChunkKlass::oop_oop_iterate_lockstack<oop>(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+template void InstanceStackChunkKlass::oop_oop_iterate_lockstack<narrowOop>(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+
 #ifdef ASSERT
 
 class DescribeStackChunkClosure {
@@ -224,7 +241,7 @@ public:
     frame f = fs.to_frame();
     _st->print_cr("-- frame sp: " PTR_FORMAT " interpreted: %d size: %d argsize: %d",
                   p2i(fs.sp()), fs.is_interpreted(), f.frame_size(),
-                  fs.is_interpreted() ? 0 : f.compiled_frame_stack_argsize());
+                  fs.is_interpreted() || fs.is_stub() ? 0 : f.compiled_frame_stack_argsize());
   #ifdef ASSERT
     f.print_value_on(_st);
   #else

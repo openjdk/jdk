@@ -26,6 +26,8 @@
  * @bug 4898428
  * @summary test that the new getInstance() implementation works correctly
  * @author Andreas Sterbenz
+ * @run main TestGetInstance des
+ * @run main TestGetInstance aes
  */
 
 import java.security.*;
@@ -47,12 +49,13 @@ public class TestGetInstance {
 
         KeyGenerator kg;
 
-        kg = KeyGenerator.getInstance("des");
+        String algo = args[0];
+        kg = KeyGenerator.getInstance(algo);
         System.out.println("Default: " + kg.getProvider().getName());
-        kg = KeyGenerator.getInstance("des",
+        kg = KeyGenerator.getInstance(algo,
                 System.getProperty("test.provider.name", "SunJCE"));
         same(p, kg.getProvider());
-        kg = KeyGenerator.getInstance("des", p);
+        kg = KeyGenerator.getInstance(algo, p);
         same(p, kg.getProvider());
 
         try {
