@@ -2174,6 +2174,8 @@ void OptoRuntime::initialize_types() {
   dtrace_method_entry_exit_Type_init();
   dtrace_object_alloc_Type_init();
   clone_type_init();
+  clone_barrier_init();
+  write_ref_field_pre_init();
   load_reference_barrier_init();
 }
 
