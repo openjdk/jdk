@@ -141,7 +141,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Signature of method with type parameters
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
-                    lass="type-parameters">&lt;T extends java.util.List,<wbr>
+                    lass="type-parameters">&lt;T extends java.util.List, \
                     V&gt;</span>
                     <span class="return-type">java.lang.String[]</span>&nbsp;<span class="element-name">meth\
                     odThatHasTypeParameters</span><wbr><span class="parameters">(T&nbsp;param1,
