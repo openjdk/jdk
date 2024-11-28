@@ -870,6 +870,7 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
   }
 }
 
+// Consider using cmov (Zicond)
 void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type,
                           LIR_Opr cmp_opr1, LIR_Opr cmp_opr2) {
   Label label;
