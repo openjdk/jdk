@@ -2928,8 +2928,10 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // 1.3: base (unless base is guaranteed aw aligned)
   if (aw > ObjectAlignmentInBytes || is_base_native) {
     // For objects, the base is ObjectAlignmentInBytes aligned.
-    // For native memory, we have no such guarantee, and must
-    // always take the base into account for the calculation.
+    // For native memory, we simply have a long that was cast to
+    // a pointer via CastX2P, or if we parsed through the CastX2P
+    // we only have a long. There is no alignment guarantee, and
+    // we must always take the base into account for the calculation.
     //
     // Computations are done % (vector width/element size) so it's
     // safe to simply convert invar to an int and loose the upper 32

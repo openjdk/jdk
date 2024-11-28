@@ -236,7 +236,6 @@ bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
     if (worklist.length() > 100) { return false; }
   }
   // Parsed over the whole expression, nothing found.
-  assert(false, "TODO rm");
   return false;
 }
 
