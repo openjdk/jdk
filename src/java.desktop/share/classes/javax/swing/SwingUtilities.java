@@ -1970,14 +1970,6 @@ public class SwingUtilities implements SwingConstants
         public void show() {
             // This frame can never be shown
         }
-        public void dispose() {
-            try {
-                getToolkit().getSystemEventQueue();
-                super.dispose();
-            } catch (Exception e) {
-                // untrusted code not allowed to dispose
-            }
-        }
     }
 
     /**

@@ -956,7 +956,6 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // Each entry is reg_pressure_per_value,number_of_regs
           //         RegL  RegI  RegFlags   RegF RegD    INTPRESSURE  FLOATPRESSURE
           // IA32     2     1     1          1    1          6           6
-          // IA64     1     1     1          1    1         50          41
           // SPARC    2     2     2          2    2         48 (24)     52 (26)
           // SPARCV9  2     2     2          2    2         48 (24)     52 (26)
           // AMD64    1     1     1          1    1         14          15

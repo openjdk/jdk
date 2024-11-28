@@ -39,9 +39,6 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE, Assembler::LMUL lmul);
 
-  void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
-  void expand_bits_v(Register dst, Register src, Register mask, bool is_long);
-
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box,
@@ -183,13 +180,6 @@
 
 
   // intrinsic methods implemented by rvv instructions
-
-  // compress bits, i.e. j.l.Integer/Long::compress.
-  void compress_bits_i_v(Register dst, Register src, Register mask);
-  void compress_bits_l_v(Register dst, Register src, Register mask);
-  // expand bits, i.e. j.l.Integer/Long::expand.
-  void expand_bits_i_v(Register dst, Register src, Register mask);
-  void expand_bits_l_v(Register dst, Register src, Register mask);
 
   void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
   void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);

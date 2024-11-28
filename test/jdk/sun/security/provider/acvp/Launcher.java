@@ -30,7 +30,7 @@ import java.security.Security;
 
 /*
  * @test
- * @bug 8342442
+ * @bug 8342442 8345057
  * @library /test/lib
  */
 

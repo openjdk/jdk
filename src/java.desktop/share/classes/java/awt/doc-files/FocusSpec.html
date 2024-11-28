@@ -986,8 +986,6 @@ A <code>PropertyChangeListener</code> installed on the current
 the <code>KeyboardFocusManager</code>'s context, even though the
 focus owner, focused Window, active Window, and current focus cycle
 root comprise the global focus state shared by all contexts.
-We believe this is less intrusive than requiring client code to pass
-a security check before installing a <code>PropertyChangeListener</code>.
 <p>
 Component supports the following focus-related properties:
 
@@ -1194,26 +1192,6 @@ Developers are encouraged to use KeyEventDispatchers,
 KeyEventPostProcessors, FocusTraversalPolicies,
 VetoableChangeListeners, and other concepts discussed in this document
 before resorting to a full replacement of the <code>KeyboardFocusManager</code>.
-<p>
-First note that, because unhindered access to Components in other
-contexts represents a security hole, the SecurityManager must grant a
-new permission, "replaceKeyboardFocusManager", before client code is
-permitted to replace the <code>KeyboardFocusManager</code> with an arbitrary
-subclass instance. Because of the security check, replacing the
-<code>KeyboardFocusManager</code> is not an option for applications that will be
-deployed in environments with a SecurityManager, such as applets in a
-browser.
-<p>
-Once installed, a <code>KeyboardFocusManager</code> instance has
-access to the global focus state via a set of protected functions.
-The <code>KeyboardFocusManager</code> can only call these functions
-if it is installed in the calling thread's context. This ensures
-that malicious code cannot circumvent the security check in
-<code>KeyboardFocusManager.setCurrentFocusManager</code>.
-A <code>KeyboardFocusManager</code> should always work with
-the global focus state instead of the context focus state.
-Failure to do this will lead to incorrect behavior of the
-<code>KeyboardFocusManager</code>.
 <p>
 The primary responsibility of a <code>KeyboardFocusManager</code>
 is the dispatch of the following events:

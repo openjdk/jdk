@@ -1849,7 +1849,7 @@ public final class Unsafe {
         DENY;
 
         private static MemoryAccessOption defaultValue() {
-            return ALLOW;
+            return WARN;
         }
 
         /**
