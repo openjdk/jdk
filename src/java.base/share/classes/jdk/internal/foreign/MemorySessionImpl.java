@@ -85,7 +85,7 @@ public abstract sealed class MemorySessionImpl
 
     int acquireCount;
 
-    public Arena asArena() {
+    public ArenaImpl asArena() {
         return new ArenaImpl(this);
     }
 

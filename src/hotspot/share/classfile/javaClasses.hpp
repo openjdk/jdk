@@ -32,11 +32,14 @@
 #include "runtime/handles.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/utf8.hpp"
 #include "utilities/vmEnums.hpp"
 
 class JvmtiThreadState;
 class RecordComponent;
 class SerializeClosure;
+class ObjectWaiter;
+class ObjectMonitor;
 
 #define CHECK_INIT(offset)  assert(offset != 0, "should be initialized"); return offset;
 
@@ -99,7 +102,7 @@ class java_lang_String : AllStatic {
   static oop    create_oop_from_unicode(const jchar* unicode, int len, TRAPS);
   static Handle create_from_str(const char* utf8_str, TRAPS);
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
-  static Handle create_from_symbol(Symbol* symbol, TRAPS);
+  static Handle create_from_symbol(const Symbol* symbol, TRAPS);
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
 
   static void set_compact_strings(bool value);
@@ -180,10 +183,24 @@ class java_lang_String : AllStatic {
     return h;
   }
 
+  static unsigned int hash_code(const char* utf8_str, size_t utf8_len) {
+    unsigned int h = 0;
+    int unicode_length = UTF8::unicode_length(utf8_str, utf8_len);
+
+    jchar c;
+    while (unicode_length-- > 0) {
+      utf8_str = UTF8::next(utf8_str, &c);
+      h = 31 * h + ((unsigned int)c);
+    }
+    return h;
+  }
+
   static unsigned int hash_code(oop java_string);
   static unsigned int hash_code_noupdate(oop java_string);
 
+  // Compare strings (of different types/encodings), length is the string (array) length
   static bool equals(oop java_string, const jchar* chars, int len);
+  static bool equals(oop java_string, const char* utf8_str, size_t utf8_len);
   static bool equals(oop str1, oop str2);
   static inline bool value_equals(typeArrayOop str_value1, typeArrayOop str_value2);
 
@@ -239,6 +256,7 @@ class java_lang_Class : AllStatic {
   static int _source_file_offset;
   static int _classData_offset;
   static int _classRedefinedCount_offset;
+  static int _reflectionData_offset;
 
   static bool _offsets_computed;
 
@@ -306,6 +324,7 @@ class java_lang_Class : AllStatic {
   static objArrayOop signers(oop java_class);
   static oop  class_data(oop java_class);
   static void set_class_data(oop java_class, oop classData);
+  static void set_reflection_data(oop java_class, oop reflection_data);
 
   static int component_mirror_offset() { return _component_mirror_offset; }
 
@@ -520,6 +539,8 @@ class java_lang_ThreadGroup : AllStatic {
 
 
 // Interface to java.lang.VirtualThread objects
+#define VTHREAD_INJECTED_FIELDS(macro)                                           \
+  macro(java_lang_VirtualThread,   objectWaiter,  intptr_signature,       false)
 
 class java_lang_VirtualThread : AllStatic {
  private:
@@ -532,6 +553,7 @@ class java_lang_VirtualThread : AllStatic {
   static int _notified_offset;
   static int _recheckInterval_offset;
   static int _timeout_offset;
+  static int _objectWaiter_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
  public:
   enum {
@@ -583,6 +605,11 @@ class java_lang_VirtualThread : AllStatic {
   static void set_notified(oop vthread, jboolean value);
   static bool is_preempted(oop vthread);
   static JavaThreadStatus map_state_to_thread_status(int state);
+
+  static inline ObjectWaiter* objectWaiter(oop vthread);
+  static inline void set_objectWaiter(oop vthread, ObjectWaiter* waiter);
+  static ObjectMonitor* current_pending_monitor(oop vthread);
+  static ObjectMonitor* current_waiting_monitor(oop vthread);
 };
 
 
@@ -1463,27 +1490,6 @@ public:
   static bool is_instance(oop obj);
 };
 
-// Interface to java.security.AccessControlContext objects
-
-class java_security_AccessControlContext: AllStatic {
- private:
-  // Note that for this class the layout changed between JDK1.2 and JDK1.3,
-  // so we compute the offsets at startup rather than hard-wiring them.
-  static int _context_offset;
-  static int _privilegedContext_offset;
-  static int _isPrivileged_offset;
-  static int _isAuthorized_offset;
-
-  static void compute_offsets();
- public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  static oop create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS);
-
-  // Debugging/initialization
-  friend class JavaClasses;
-};
-
-
 // Interface to java.lang.ClassLoader objects
 
 #define CLASSLOADER_INJECTED_FIELDS(macro)                            \
@@ -1540,16 +1546,11 @@ class java_lang_System : AllStatic {
   static int _static_in_offset;
   static int _static_out_offset;
   static int _static_err_offset;
-  static int _static_security_offset;
-  static int _static_allow_security_offset;
-  static int _static_never_offset;
 
  public:
   static int  in_offset() { CHECK_INIT(_static_in_offset); }
   static int out_offset() { CHECK_INIT(_static_out_offset); }
   static int err_offset() { CHECK_INIT(_static_err_offset); }
-  static bool allow_security_manager();
-  static bool has_security_manager();
 
   static void compute_offsets();
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;

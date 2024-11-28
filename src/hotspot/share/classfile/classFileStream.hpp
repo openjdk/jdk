@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class ClassFileStream: public ResourceObj {
   const u1* const _buffer_end;   // Buffer top (one past last element)
   mutable const u1* _current;    // Current buffer position
   const char* const _source;     // Source of stream (directory name, ZIP/JAR archive name)
-  bool _need_verify;             // True if verification is on for the class file
+  bool _need_verify;             // True if we need to verify and check truncation of stream bytes.
   bool _from_boot_loader_modules_image;  // True if this was created by ClassPathImageEntry.
   void truncated_file_error(TRAPS) const ;
 
@@ -52,12 +52,9 @@ class ClassFileStream: public ResourceObj {
   const char* clone_source() const;
 
  public:
-  static const bool verify;
-
   ClassFileStream(const u1* buffer,
                   int length,
                   const char* source,
-                  bool verify_stream = verify,  // to be verified by default
                   bool from_boot_loader_modules_image = false);
 
   virtual const ClassFileStream* clone() const;
@@ -77,7 +74,7 @@ class ClassFileStream: public ResourceObj {
   }
   const char* source() const { return _source; }
   bool need_verify() const { return _need_verify; }
-  void set_verify(bool flag) { _need_verify = flag; }
+  void set_need_verify(bool flag) { _need_verify = flag; }
   bool from_boot_loader_modules_image() const { return _from_boot_loader_modules_image; }
 
   void check_truncated_file(bool b, TRAPS) const {

@@ -27,7 +27,6 @@ package sun.print;
 
 import java.awt.color.ColorSpace;
 import java.awt.image.ColorConvertOp;
-import java.io.FilePermission;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -177,9 +176,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
          * use a particular pipeline. Either the raster
          * pipeline or the pdl pipeline can be forced.
          */
-        @SuppressWarnings("removal")
-        String forceStr = java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
+        String forceStr = System.getProperty(FORCE_PIPE_PROP);
 
         if (forceStr != null) {
             if (forceStr.equalsIgnoreCase(FORCE_PDL)) {
@@ -189,9 +186,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             }
         }
 
-        @SuppressWarnings("removal")
-        String shapeTextStr =java.security.AccessController.doPrivileged(
-                   new sun.security.action.GetPropertyAction(SHAPE_TEXT_PROP));
+        String shapeTextStr = System.getProperty(SHAPE_TEXT_PROP);
 
         if (shapeTextStr != null) {
             shapeTextProp = true;
@@ -262,11 +257,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
     protected boolean performingPrinting = false;
  // MacOSX - made protected so subclasses can reference it.
     protected boolean userCancelled = false;
-
-   /**
-    * Print to file permission variables.
-    */
-    private FilePermission printToFilePermission;
 
     /**
      * List of areas & the graphics state for redrawing
@@ -736,20 +726,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
           GraphicsEnvironment.getLocalGraphicsEnvironment().
           getDefaultScreenDevice().getDefaultConfiguration();
 
-        @SuppressWarnings("removal")
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return page;
         }
         updatePageAttributes(service, page);
@@ -817,20 +796,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
-        @SuppressWarnings("removal")
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return null;
         }
 
@@ -958,7 +926,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * returns true.
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
-    @SuppressWarnings("removal")
     public boolean printDialog(final PrintRequestAttributeSet attributes)
         throws HeadlessException {
         if (GraphicsEnvironment.isHeadless()) {
@@ -1013,19 +980,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         final GraphicsConfiguration gc = grCfg;
 
-        PrintService service = java.security.AccessController.doPrivileged(
-                               new java.security.PrivilegedAction<PrintService>() {
-                public PrintService run() {
-                    PrintService service = getPrintService();
-                    if (service == null) {
-                        ServiceDialog.showNoPrintService(gc);
-                        return null;
-                    }
-                    return service;
-                }
-            });
-
+        PrintService service = getPrintService();
         if (service == null) {
+            ServiceDialog.showNoPrintService(gc);
             return false;
         }
 
@@ -1038,13 +995,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                 services[i] = spsFactories[i].getPrintService(null);
             }
         } else {
-            services = java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction<PrintService[]>() {
-                public PrintService[] run() {
-                    PrintService[] services = PrinterJob.lookupPrintServices();
-                    return services;
-                }
-            });
+            services = PrinterJob.lookupPrintServices();
 
             if ((services == null) || (services.length == 0)) {
                 /*
@@ -2560,37 +2511,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
 
         g.setClip(clip);
         g.setPaint(Color.black);
-    }
-
-
-   /**
-    * User dialogs should disable "File" buttons if this returns false.
-    *
-    */
-    public boolean checkAllowedToPrintToFile() {
-        try {
-            throwPrintToFile();
-            return true;
-        } catch (SecurityException e) {
-            return false;
-        }
-    }
-
-    /**
-     * Break this out as it may be useful when we allow API to
-     * specify printing to a file. In that case its probably right
-     * to throw a SecurityException if the permission is not granted
-     */
-    private void throwPrintToFile() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (printToFilePermission == null) {
-                printToFilePermission =
-                    new FilePermission("<<ALL FILES>>", "read,write");
-            }
-            security.checkPermission(printToFilePermission);
-        }
     }
 
     /* On-screen drawString renders most control chars as the missing glyph

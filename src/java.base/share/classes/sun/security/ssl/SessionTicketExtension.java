@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import javax.net.ssl.SSLSessionContext;
 import static sun.security.ssl.SSLExtension.CH_SESSION_TICKET;
 import static sun.security.ssl.SSLExtension.SH_SESSION_TICKET;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
 import sun.security.ssl.SSLHandshake.HandshakeMessage;
@@ -78,8 +77,7 @@ final class SessionTicketExtension {
     private static final int KEYLEN = 256;
 
     static {
-        String s = GetPropertyAction.privilegedGetProperty(
-                "jdk.tls.server.statelessKeyTimeout");
+        String s = System.getProperty("jdk.tls.server.statelessKeyTimeout");
         if (s != null) {
             int kt;
             try {

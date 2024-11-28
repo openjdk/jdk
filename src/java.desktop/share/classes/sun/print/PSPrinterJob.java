@@ -338,18 +338,9 @@ public class PSPrinterJob extends RasterPrinterJob {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
     private static void initStatic() {
-       //enable privileges so initProps can access system properties,
-        // open the property file, etc.
-        java.security.AccessController.doPrivileged(
-                            new java.security.PrivilegedAction<Object>() {
-            public Object run() {
-                mFontProps = initProps();
-                isMac = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
-                return null;
-            }
-        });
+        mFontProps = initProps();
+        isMac = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
     }
 
     /*
@@ -512,7 +503,6 @@ public class PSPrinterJob extends RasterPrinterJob {
      * this method is called to mark the start of a
      * document.
      */
-    @SuppressWarnings("removal")
     protected void startDoc() throws PrinterException {
 
         // A security check has been performed in the
@@ -551,7 +541,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                     }
                 } else {
                     PrinterOpener po = new PrinterOpener();
-                    java.security.AccessController.doPrivileged(po);
+                    po.run();
                     if (po.pex != null) {
                         throw po.pex;
                     }
@@ -641,22 +631,16 @@ public class PSPrinterJob extends RasterPrinterJob {
                                            paperWidth + " "+ paperHeight+"]");
 
             final PrintService pservice = getPrintService();
-            Boolean isPS = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                       try {
-                           Class<?> psClass = Class.forName("sun.print.IPPPrintService");
-                           if (psClass.isInstance(pservice)) {
-                               Method isPSMethod = psClass.getMethod("isPostscript",
-                                                                     (Class[])null);
-                               return (Boolean)isPSMethod.invoke(pservice, (Object[])null);
-                           }
-                       } catch (Throwable t) {
-                       }
-                       return Boolean.TRUE;
-                    }
+            Boolean isPS = Boolean.TRUE;
+            try {
+                Class<?> psClass = Class.forName("sun.print.IPPPrintService");
+                if (psClass.isInstance(pservice)) {
+                    Method isPSMethod = psClass.getMethod("isPostscript",
+                                                          (Class[])null);
+                    isPS = (Boolean)isPSMethod.invoke(pservice, (Object[])null);
                 }
-            );
+            } catch (Throwable t) {
+            }
             if (isPS) {
                 mPSStream.print(" /DeferredMediaSelection true");
             }
@@ -677,9 +661,9 @@ public class PSPrinterJob extends RasterPrinterJob {
         mPSStream.println("%%EndSetup");
     }
 
-    // Inner class to run "privileged" to open the printer output stream.
+    // Inner class to open the printer output stream.
 
-    private class PrinterOpener implements java.security.PrivilegedAction<OutputStream> {
+    private class PrinterOpener {
         PrinterException pex;
         OutputStream result;
 
@@ -704,9 +688,9 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
     }
 
-    // Inner class to run "privileged" to invoke the system print command
+    // Inner class to invoke the system print command
 
-    private class PrinterSpooler implements java.security.PrivilegedAction<Object> {
+    private class PrinterSpooler {
         PrinterException pex;
 
         private void handleProcessFailure(final Process failedProcess,
@@ -767,21 +751,13 @@ public class PSPrinterJob extends RasterPrinterJob {
     /**
      * Invoked if the application cancelled the printjob.
      */
-    @SuppressWarnings("removal")
     protected void abortDoc() {
         if (mPSStream != null && mDestType != RasterPrinterJob.STREAM) {
             mPSStream.close();
         }
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
-
-            public Object run() {
-               if (spoolFile != null && spoolFile.exists()) {
-                   spoolFile.delete();
-               }
-               return null;
-            }
-        });
+        if (spoolFile != null && spoolFile.exists()) {
+            spoolFile.delete();
+        }
     }
 
     /**
@@ -789,7 +765,6 @@ public class PSPrinterJob extends RasterPrinterJob {
      * this method is called after that last page
      * has been imaged.
      */
-    @SuppressWarnings("removal")
     protected void endDoc() throws PrinterException {
         if (mPSStream != null) {
             mPSStream.println(EOF_COMMENT);
@@ -814,7 +789,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                 }
             }
             PrinterSpooler spooler = new PrinterSpooler();
-            java.security.AccessController.doPrivileged(spooler);
+            spooler.run();
             if (spooler.pex != null) {
                 throw spooler.pex;
             }
@@ -859,28 +834,18 @@ public class PSPrinterJob extends RasterPrinterJob {
                             paperWidth + " " + paperHeight + "]");
 
             final PrintService pservice = getPrintService();
-            @SuppressWarnings("removal")
-            Boolean isPS = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                        try {
-                            Class<?> psClass =
-                                Class.forName("sun.print.IPPPrintService");
-                            if (psClass.isInstance(pservice)) {
-                                Method isPSMethod =
-                                    psClass.getMethod("isPostscript",
-                                                      (Class[])null);
-                                return (Boolean)
-                                    isPSMethod.invoke(pservice,
+            Boolean isPS = Boolean.TRUE;
+            try {
+                Class<?> psClass = Class.forName("sun.print.IPPPrintService");
+                if (psClass.isInstance(pservice)) {
+                    Method isPSMethod =
+                                psClass.getMethod("isPostscript",
+                                                  (Class[])null);
+                    isPS = (Boolean) isPSMethod.invoke(pservice,
                                                       (Object[])null);
-                            }
-                        } catch (Throwable t) {
-                        }
-                        return Boolean.TRUE;
-                    }
-                    }
-                );
-
+                }
+            } catch (Throwable t) {
+            }
             if (isPS) {
                 mPSStream.print(" /DeferredMediaSelection true");
             }
