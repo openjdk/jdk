@@ -44,6 +44,8 @@ import jdk.internal.ffi.generated.socket.sockaddr;
 import jdk.internal.ffi.generated.socket.sockaddr_in;
 import jdk.internal.ffi.generated.socket.sockaddr_in6;
 import jdk.internal.ffi.generated.socket.socket_address_h;
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
@@ -149,11 +151,9 @@ class NativeSocketAddress {
 
     @Override
     public int hashCode() {
-        int h = 0;
-        for (long offset = 0; offset < memory.byteSize(); offset++) {
-            h = 31 * h + memory.get(JAVA_BYTE, offset);
-        }
-        return h;
+        return SegmentBulkOperations.contentHash(
+                (AbstractMemorySegmentImpl) memory,
+                0, memory.byteSize());
     }
 
     @Override
