@@ -2446,11 +2446,6 @@ public final class System {
                 return string.bytesCompatible(charset);
             }
 
-            @Override
-            public String conciseVersionString() {
-                return VersionProps.conciseVersionString();
-            }
-
         });
     }
 }

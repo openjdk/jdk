@@ -618,8 +618,4 @@ public interface JavaLangAccess {
      */
     boolean bytesCompatible(String string, Charset charset);
 
-    /**
-     * Return a short version string for this runtime.
-     */
-    String conciseVersionString();
 }
