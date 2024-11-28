@@ -645,13 +645,14 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+    //               IRNode.ADD_VB,        "= 0",
+    //               IRNode.STORE_VECTOR,  "= 0"},
+    //     applyIfPlatform = {"64-bit", "true"},
+    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
     // See: JDK-8330274
+    // Interestingly, it now passes for native, but not for objects.
     static Object[] testLongLoop_longIndex_intInvar_byte(MemorySegment a, int invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             long adr1 = (long)(i) + (long)(invar);
@@ -663,13 +664,14 @@ class TestMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
+    //               IRNode.ADD_VB,        "= 0",
+    //               IRNode.STORE_VECTOR,  "= 0"},
+    //     applyIfPlatform = {"64-bit", "true"},
+    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // FAILS: invariants are sorted differently, because of differently inserted Cast.
     // See: JDK-8330274
+    // Interestingly, it now passes for native, but not for objects.
     static Object[] testLongLoop_longIndex_longInvar_byte(MemorySegment a, long invar) {
         for (long i = 0; i < a.byteSize(); i++) {
             long adr1 = (long)(i) + (long)(invar);
