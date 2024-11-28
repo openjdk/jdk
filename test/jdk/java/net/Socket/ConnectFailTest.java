@@ -225,7 +225,8 @@ class ConnectFailTest {
         }
     }
 
-    private static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer) throws Throwable {
+    private static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer)
+            throws Throwable {
         try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
              ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
             // Accept connections in the background to avoid blocking the caller
