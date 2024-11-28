@@ -255,7 +255,7 @@ public final class Connection implements Runnable {
             throw ce;
         }
 
-        worker = Obj.helper.createThread(this);
+        worker = new Thread(this);
         worker.setDaemon(true);
         worker.start();
     }
@@ -309,7 +309,8 @@ public final class Connection implements Runnable {
             }
             @SuppressWarnings("unchecked")
             Class<? extends SocketFactory> socketFactoryClass =
-                    (Class<? extends SocketFactory>) Obj.helper.loadClass(socketFactoryName);
+                    (Class<? extends SocketFactory>) Class.forName(socketFactoryName,
+                            true, Thread.currentThread().getContextClassLoader());
             Method getDefault =
                     socketFactoryClass.getMethod("getDefault");
             SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
