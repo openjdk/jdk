@@ -62,7 +62,7 @@ public class ModINodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
-        Asserts.assertEQ(Math.abs(a) % 32, powerOf2(a));
+        Asserts.assertEQ(Math.max(0, a) % 32, powerOf2(a));
         Asserts.assertEQ(a % 127, powerOf2Minus1(a));
         Asserts.assertEQ(a % 1, constantAgain(a));
     }
@@ -87,7 +87,7 @@ public class ModINodeIdealizationTests {
     @IR(counts = {IRNode.AND_I, "1"})
     // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
     public int powerOf2(int x) {
-        return Math.abs(x) % 32;
+        return Math.max(0, x) % 32;
     }
 
     @Test

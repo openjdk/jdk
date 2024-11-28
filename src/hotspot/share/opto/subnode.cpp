@@ -1880,14 +1880,14 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
     if (ti->is_con()) {
       return TypeInt::make(uabs(ti->get_con()));
     }
-    return TypeInt::POS;
+    break;
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
     if (tl->is_con()) {
       return TypeLong::make(uabs(tl->get_con()));
     }
-    return TypeLong::POS;
+    break;
   }
   case Type::FloatCon:
     return TypeF::make(abs(t1->getf()));
