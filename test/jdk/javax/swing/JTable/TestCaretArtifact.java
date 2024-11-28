@@ -48,7 +48,7 @@ public class TestCaretArtifact {
         Do this few times.
         If artifact is seen, press Fail else press Pass.""";
 
-    public static void  main(String []args) throws Exception {
+    public static void  main(String[] args) throws Exception {
          PassFailJFrame.builder()
                 .title("Caret Artifact Instructions")
                 .instructions(INSTRUCTIONS)
@@ -65,7 +65,7 @@ public class TestCaretArtifact {
                 "inactive forever"}},
                 new Object[] {"1", "2"});
 
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("CaretArtifact");
         TableColumn column = table.getColumn("1");
         column.setCellEditor(editor);
         frame.getContentPane().add("Center", table);
