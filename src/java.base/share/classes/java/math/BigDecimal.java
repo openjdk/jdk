@@ -3479,8 +3479,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @return {@code true} if and only if {@code this == this.toBigInteger()}
      */
     boolean isInteger() {
-        return scale <= 0 || signum() == 0
-                || stripZerosToMatchScale(intVal, intCompact, scale, 0L).scale == 0;
+        if (scale <= 0 || signum() == 0)
+            return true;
+
+        // Get an upper bound of precision() without using big powers of 10 (see bigDigitLength())
+        int digitLen = intVal == null ? precision() : (digitLengthLower(intVal) + 1);
+        return digitLen > scale && stripZerosToMatchScale(intVal, intCompact, scale, 0L).scale == 0;
     }
 
     /**
@@ -4620,10 +4624,16 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          */
         if (b.signum == 0)
             return 1;
-        int r = (int)((((long)b.bitLength() + 1) * 646456993) >>> 31);
-        return b.compareMagnitude(bigTenToThe(r)) < 0? r : r+1;
+        int r = digitLengthLower(b);
+        return b.compareMagnitude(bigTenToThe(r)) < 0 ? r : r + 1;
     }
 
+    /**
+     * @return an integer {@code r} such that {@code 10^(r-1) <= b < 10^(r+1)}.
+     */
+    private int digitLengthLower(BigInteger b) {
+        return (int) (((b.bitLength() + 1L) * 646456993L) >>> 31);
+    }
     /**
      * Check a scale for Underflow or Overflow.  If this BigDecimal is
      * nonzero, throw an exception if the scale is outof range. If this
