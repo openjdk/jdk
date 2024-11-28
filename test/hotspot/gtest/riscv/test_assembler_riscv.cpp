@@ -110,7 +110,7 @@ template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 class CmpxchgTester {
  public:
   typedef TESTSIZE (*cmpxchg_func)(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result);
-  
+
   static TESTSIZE base_cmpxchg(int variant, intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result, bool boolean_result = false) {
     BufferBlob* bb = BufferBlob::create("riscvTest", 128);
     CodeBuffer code(bb);
@@ -175,7 +175,7 @@ void run_plain_cmpxchg_tests() {
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   0 /* variant */ , 1337 /* start value*/,
                                         1336 /* expected */,   42 /* new value */,
                                         1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
-  
+
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   0 /* variant */ , 1337 /* start value*/,
                                         1337 /* expected */,   42 /* new value */,
                                            1 /* return */    , 42 /* end value*/, true /* boolean ret*/);
@@ -183,7 +183,7 @@ void run_plain_cmpxchg_tests() {
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   0 /* variant */ , 1337 /* start value*/,
                                         1336 /* expected */,   42 /* new value */,
                                            0 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
-  
+
   // result == expected register
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
                                         1337 /* expected */,   42 /* new value */,
@@ -192,7 +192,7 @@ void run_plain_cmpxchg_tests() {
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
                                         1336 /* expected */,   42 /* new value */,
                                         1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
-  
+
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
                                         1337 /* expected */,   42 /* new value */,
                                            1 /* return */    , 42 /* end value*/, true /* boolean ret*/);
@@ -200,7 +200,7 @@ void run_plain_cmpxchg_tests() {
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
                                         1336 /* expected */,   42 /* new value */,
                                            0 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
-  
+
   // new_value == result register
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
                                         1337 /* expected */,   42 /* new value */,
@@ -209,7 +209,7 @@ void run_plain_cmpxchg_tests() {
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
                                         1336 /* expected */,   42 /* new value */,
                                         1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
-  
+
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
                                         1337 /* expected */,   42 /* new value */,
                                            1 /* return */    , 42 /* end value*/, true /* boolean ret*/);
@@ -217,7 +217,7 @@ void run_plain_cmpxchg_tests() {
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
                                         1336 /* expected */,   42 /* new value */,
                                            0 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
-  
+
   // expected == new_value register
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   3 /* variant */ , 1337 /* start value*/,
                                         1337 /* expected */,   42 /* new value */,
@@ -226,7 +226,7 @@ void run_plain_cmpxchg_tests() {
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   3 /* variant */ , 1337 /* start value*/,
                                         1336 /* expected */,   42 /* new value */,
                                         1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
-  
+
   plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   3 /* variant */ , 1337 /* start value*/,
                                         1337 /* expected */,   42 /* new value */,
                                            1 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
