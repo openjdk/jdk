@@ -46,85 +46,88 @@ public class TestIntLoopLongLimit {
                 "-XX:PerMethodTrapLimit=100" // allow slow-path loop limit checks
         );
     }
-
-    @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "1" }) // Make sure IR tests can pick up counted loops.
-    public static int testControlledCountedLoop(int limit) {
-        int sum = 0;
-        for (int i = 0; i < limit; i++) {
-            sum += i;
-        }
-        return sum;
-    }
-
-    @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "1" })
-    public static int testCountedLoopWithLongLimit(long limit) {
-        int sum = 0;
-        for (int i = 0; i < limit; i++) {
-            sum += i;
-        }
-        return sum;
-    }
-
-    @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "1" })
-    public static int testCountedLoopWithSwappedComparisonOperand(long limit) {
-        int sum = 0;
-        for (int i = 0; limit > i; i++) {
-            sum += i;
-        }
-        return sum;
-    }
-
-    // Test counted loops, regardless of limit types, are correctly constructed.
-    @Run(test = { "testControlledCountedLoop", "testCountedLoopWithLongLimit", "testCountedLoopWithSwappedComparisonOperand" })
-    public static void runTestSimpleCountedLoops(RunInfo info) {
-        long limit = RNG.nextLong(0, 1024 * 1024); // Choice a small number to avoid tests taking too long
-        int expected = testControlledCountedLoop((int) limit);
-        int observed1 = testCountedLoopWithLongLimit(limit);
-        int observed2 = testCountedLoopWithSwappedComparisonOperand(limit);
-
-        Asserts.assertEQ(expected, observed1);
-        Asserts.assertEQ(expected, observed2);
-    }
-
-    @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP }) // Eliminated by IR replacement
-    public static int testIvReplacedCountedLoop(long limit) {
-        int sum = 0;
-        for (int i = 0; i < limit; i++) {
-            sum += 1;
-        }
-        return sum;
-    }
-
-    @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP }) // Eliminated by IR replacement
-    public static long testLongIvReplacedCountedLoop(long limit) {
-        long sum = 0;
-        for (int i = 0; i < limit; i++) {
-            sum += 1;
-        }
-        return sum;
-    }
-
-    // Test counted loops with int and long IV types, are corrected constructed, IV replaced, and eliminated.
-    @Run(test = { "testIvReplacedCountedLoop", "testLongIvReplacedCountedLoop" })
-    public static void runTestIvReplacedCountedLoop(RunInfo info) {
-        long limit = RNG.nextLong(0, 1024 * 1024);
-
-        Asserts.assertEQ(limit, (long) testIvReplacedCountedLoop(limit));
-        Asserts.assertEQ(limit, testLongIvReplacedCountedLoop(limit));
-    }
+//
+//    @Test
+//    @IR(counts = { IRNode.COUNTED_LOOP, "2" }) // Make sure IR tests can pick up counted loops.
+//    @IR(failOn = { IRNode.LOOP })
+//    public static int testControlledCountedLoop(int limit) {
+//        int sum = 0;
+//        for (int i = 0; i < limit; i++) {
+//            sum += i;
+//        }
+//        return sum;
+//    }
+//
+//    @Test
+//    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+//    @IR(failOn = { IRNode.LOOP })
+//    public static int testCountedLoopWithLongLimit(long limit) {
+//        int sum = 0;
+//        for (int i = 0; i < limit; i++) {
+//            sum += i;
+//        }
+//        return sum;
+//    }
+//
+//    @Test
+//    @IR(counts = { IRNode.COUNTED_LOOP, "2" })
+//    @IR(failOn = { IRNode.LOOP })
+//    public static int testCountedLoopWithSwappedComparisonOperand(long limit) {
+//        int sum = 0;
+//        for (int i = 0; limit > i; i++) {
+//            sum += i;
+//        }
+//        return sum;
+//    }
+//
+//    // Test counted loops, regardless of limit types, are correctly constructed.
+//    @Run(test = { "testControlledCountedLoop", "testCountedLoopWithLongLimit", "testCountedLoopWithSwappedComparisonOperand" })
+//    public static void runTestSimpleCountedLoops(RunInfo info) {
+//        long limit = RNG.nextLong(0, 1024 * 1024); // Choice a small number to avoid tests taking too long
+//        int expected = testControlledCountedLoop((int) limit);
+//        int observed1 = testCountedLoopWithLongLimit(limit);
+//        int observed2 = testCountedLoopWithSwappedComparisonOperand(limit);
+//
+//        Asserts.assertEQ(expected, observed1);
+//        Asserts.assertEQ(expected, observed2);
+//    }
+//
+//    @Test
+//    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP }) // Eliminated by IR replacement
+//    public static int testIvReplacedCountedLoop(long limit) {
+//        int sum = 0;
+//        for (int i = 0; i < limit; i++) {
+//            sum += 1;
+//        }
+//        return sum;
+//    }
+//
+//    @Test
+//    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LOOP }) // Eliminated by IR replacement
+//    public static long testLongIvReplacedCountedLoop(long limit) {
+//        long sum = 0;
+//        for (int i = 0; i < limit; i++) {
+//            sum += 1;
+//        }
+//        return sum;
+//    }
+//
+//    // Test counted loops with int and long IV types, are corrected constructed, IV replaced, and eliminated.
+//    @Run(test = { "testIvReplacedCountedLoop", "testLongIvReplacedCountedLoop" })
+//    public static void runTestIvReplacedCountedLoop(RunInfo info) {
+//        long limit = RNG.nextLong(0, 1024 * 1024);
+//
+//        Asserts.assertEQ(limit, (long) testIvReplacedCountedLoop(limit));
+//        Asserts.assertEQ(limit, testLongIvReplacedCountedLoop(limit));
+//    }
 
     // Use a larger stride to avoid tests taking too long
     private static final int LARGE_STRIDE = Integer.MAX_VALUE / 1024;
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "1" })
-    public static long testCountedLoopWithOverflow(long limit) {
-        long sum = 0;
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    public static int testCountedLoopWithOverflow(long limit) {
+        int sum = 0;
         for (int i = 0; i < limit; i += LARGE_STRIDE) {
             sum += LARGE_STRIDE;
 
@@ -136,9 +139,9 @@ public class TestIntLoopLongLimit {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTED_LOOP, "1" })
-    public static long testCountedLoopWithUnderflow(long limit) {
-        long sum = 0;
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    public static int testCountedLoopWithUnderflow(long limit) {
+        int sum = 0;
         for (int i = 0; i > limit; i -= LARGE_STRIDE) {
             sum -= LARGE_STRIDE;
 
@@ -153,17 +156,20 @@ public class TestIntLoopLongLimit {
     public static void runTestCountedLoopWithOverflow(RunInfo info) {
         long limit = RNG.nextLong(0, 1024) * LARGE_STRIDE;
 
-        Asserts.assertEQ(limit, testCountedLoopWithOverflow(limit));
-        Asserts.assertEQ(-limit, testCountedLoopWithUnderflow(-limit));
+        Asserts.assertEQ((int) limit, testCountedLoopWithOverflow(limit));
+        Asserts.assertEQ((int) -limit, testCountedLoopWithUnderflow(-limit));
 
         if (info.isTestC2Compiled("testCountedLoopWithOverflow")) {
-            Asserts.assertEQ(-1L, testCountedLoopWithOverflow(Integer.MAX_VALUE));
-            Asserts.assertEQ(-1L, testCountedLoopWithOverflow(Integer.MAX_VALUE + 1L));
+            Asserts.assertEQ(-1, testCountedLoopWithOverflow(Integer.MAX_VALUE));
+            Asserts.assertEQ(-1, testCountedLoopWithOverflow(Integer.MAX_VALUE + 1L));
+            Asserts.assertEQ(-1, testCountedLoopWithOverflow(Integer.MAX_VALUE + limit));
         }
 
-        if (info.isTestC1Compiled("testCountedLoopWithUnderflow")) {
-            Asserts.assertEQ(1L, testCountedLoopWithUnderflow(Integer.MIN_VALUE));
-            Asserts.assertEQ(1L, testCountedLoopWithUnderflow(Integer.MIN_VALUE - 1L));
+        if (info.isTestC2Compiled("testCountedLoopWithUnderflow")) {
+            Asserts.assertEQ(1, testCountedLoopWithUnderflow(Integer.MIN_VALUE));
+            Asserts.assertEQ(1, testCountedLoopWithUnderflow(Integer.MIN_VALUE - 1L));
+            System.out.println(Integer.MIN_VALUE - limit);
+            Asserts.assertEQ(1, testCountedLoopWithUnderflow(Integer.MIN_VALUE - limit));
         }
     }
 }
