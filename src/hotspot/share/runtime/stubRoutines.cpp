@@ -194,7 +194,6 @@ address StubRoutines::_upcall_stub_load_target = nullptr;
 address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
 address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
 
-address StubRoutines::_Runtime1_is_instance_of = nullptr;
 
 // Initialization
 //

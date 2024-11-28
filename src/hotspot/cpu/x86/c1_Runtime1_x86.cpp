@@ -1318,6 +1318,50 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
       }
       break;
 
+    case C1StubId::is_instance_of_id:
+      {
+        // Mirror: c_rarg0
+        // Object: c_rarg1
+        // Temps: rdx, rcx, r8, r9
+        // Result: rax
+
+        // Get the Klass* into c_rarg0
+        Register klass = c_rarg0, obj = c_rarg1, result = rax;
+        __ movptr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
+
+        Label done, is_secondary;
+
+        __ xorq(result, result);
+        __ testq(klass, klass);
+        __ jcc(Assembler::equal, done); // Klass is null
+
+        __ testq(obj, obj);
+        __ jcc(Assembler::equal, done); // obj is null
+
+        __ movl(rdx, Address(klass, in_bytes(Klass::super_check_offset_offset())));
+        __ cmpl(rdx, in_bytes(Klass::secondary_super_cache_offset()));
+        __ jcc(Assembler::equal, is_secondary); // Klass is a secondary superclass
+
+        // Klass is a concrete class
+        __ load_klass(r8, obj, /*tmp*/r9);
+        __ cmpptr(klass, Address(r8, rdx));
+        __ setcc(Assembler::equal, result);
+        __ ret(0);
+
+        __ bind(is_secondary);
+
+        __ load_klass(obj, obj, /*tmp*/r9);
+        __ lookup_secondary_supers_table_var(obj, klass,
+                                             /*temps*/rdx, rcx, r8, r9,
+                                             result);
+        __ testq(result, result);
+        __ setcc(Assembler::equal, result);
+
+        __ bind(done);
+        __ ret(0);
+      }
+      break;
+
     case C1StubId::monitorenter_nofpu_id:
       save_fpu_registers = false;
       // fall through

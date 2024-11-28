@@ -304,8 +304,6 @@ class StubRoutines: AllStatic {
   static address _lookup_secondary_supers_table_stubs[];
   static address _lookup_secondary_supers_table_slow_path_stub;
 
-  static address _Runtime1_is_instance_of;
-
  public:
   // Initialization/Testing
   static void    initialize_initial_stubs();               // must happen before universe::genesis

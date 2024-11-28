@@ -252,6 +252,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, C1StubId id) {
   case C1StubId::fpu2long_stub_id:
   case C1StubId::unwind_exception_id:
   case C1StubId::counter_overflow_id:
+  case C1StubId::is_instance_of_id:
     expect_oop_map = false;
     break;
   default:
@@ -332,8 +333,6 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SharedRuntime::lrem);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_entry);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_exit);
-  FUNCTION_CASE(entry, is_instance_of);
-  FUNCTION_CASE(entry, StubRoutines::_Runtime1_is_instance_of);
   FUNCTION_CASE(entry, trace_block_entry);
 #ifdef JFR_HAVE_INTRINSICS
   FUNCTION_CASE(entry, JfrTime::time_function());
