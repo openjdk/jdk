@@ -44,6 +44,7 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
@@ -70,16 +71,35 @@ public class ShowRegistersOnAssertTest {
         if (show_registers_on_assert) {
             // Extract the hs_err_pid file.
             File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
-            Pattern[] pattern = new Pattern[] { Pattern.compile("Registers:"), null };
+
+            Pattern[] pattern = null;
+
             if (Platform.isX64()) {
-                pattern[1] = Pattern.compile("RAX=.*");
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("RAX=.*")};
             } else if (Platform.isX86()) {
-                pattern[1] = Pattern.compile("EAX=.*");
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("EAX=.*")};
             } else if (Platform.isAArch64()) {
-                pattern[1] = Pattern.compile("R0=.*");
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("R0=.*")};
+            } else if (Platform.isS390x()) {
+                pattern = new Pattern[] { Pattern.compile("General Purpose Registers:"),
+                                          Pattern.compile("^-{26}$"),
+                                          Pattern.compile("  r0  =.*")};
+            } else if (Platform.isPPC()) {
+                pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("pc =.*")};
             }
-            // Pattern match the hs_err_pid file.
-            HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
+
+            if (Platform.isS390x()) {
+              // On s390x, hs_err file is not complete.
+              try {
+                // Pattern match the hs_err_pid file.
+                HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
+              } catch (RuntimeException e) {
+                Asserts.assertEquals("hs-err file incomplete (missing END marker.)", e.getMessage());
+              }
+            } else {
+                // Pattern match the hs_err_pid file.
+                HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
+            }
         }
     }
 
