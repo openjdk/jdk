@@ -198,6 +198,11 @@ class OptoRuntime : public AllStatic {
 #endif // INCLUDE_JVMTI
   static const TypeFunc *_dtrace_method_entry_exit_tf;
   static const TypeFunc *_dtrace_object_alloc_tf;
+  static const TypeFunc *_clone_type_tf;
+  static const TypeFunc *_load_reference_barrier_tf;
+  static const TypeFunc *_write_ref_field_pre_tf;
+  static const TypeFunc *_clone_barrier_tf;
+  static const TypeFunc *_clone_type_barrier_set_c2_tf;
 
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
@@ -331,6 +336,8 @@ private:
   static void l2f_Type_init();
   static void void_long_Type_init();
   static void void_void_Type_init();
+  static void clone_type_init();
+  static void load_reference_barrier_init();
 
   static void jfr_write_checkpoint_Type_init();
 
@@ -398,6 +405,24 @@ private:
   // Dtrace support
   static void dtrace_method_entry_exit_Type_init();
   static void dtrace_object_alloc_Type_init();
+  static void write_ref_field_pre_init();
+  static void clone_barrier_init();
+  static void clone_type_barrier_set_c2_init();
+
+  static inline const TypeFunc *clone_type_barrier_set_c2_Type() {
+    assert(_clone_type_barrier_set_c2_tf != nullptr, "should be initialized");
+    return _clone_type_barrier_set_c2_tf;
+  }
+
+  static inline const TypeFunc *clone_barrier_Type() {
+    assert(_clone_barrier_tf != nullptr, "should be initialized");
+    return _clone_barrier_tf;
+  }
+
+  static inline const TypeFunc *write_ref_field_pre_Type() {
+    assert(_write_ref_field_pre_tf != nullptr, "should be initialized");
+    return _write_ref_field_pre_tf;
+  }
 
   static inline const TypeFunc *new_instance_Type() {
     assert(_new_instance_tf != nullptr, "should be initialized");
@@ -757,6 +782,16 @@ private:
   static inline const TypeFunc* dtrace_object_alloc_Type() {
     assert(_dtrace_object_alloc_tf != nullptr, "should be initialized");
     return _dtrace_object_alloc_tf;
+  }
+
+  static inline const TypeFunc* clone_type_Type() {
+    assert(_clone_type_tf != nullptr, "should be initialized");
+    return _clone_type_tf;
+  }
+
+  static inline const TypeFunc* load_reference_barrier_Type() {
+    assert(_load_reference_barrier_tf != nullptr, "should be initialized");
+    return _load_reference_barrier_tf;
   }
 
  private:

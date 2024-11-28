@@ -256,6 +256,12 @@ const TypeFunc* OptoRuntime::_notify_jvmti_vthread_tf = nullptr;
 #endif // INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_tf = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_object_alloc_tf = nullptr;
+const TypeFunc* OptoRuntime::_clone_type_tf = nullptr;
+const TypeFunc* OptoRuntime::_load_reference_barrier_tf = nullptr;
+const TypeFunc* OptoRuntime::_write_ref_field_pre_tf = nullptr;
+const TypeFunc* OptoRuntime::_clone_barrier_tf = nullptr;
+const TypeFunc* OptoRuntime::_clone_type_barrier_set_c2_tf = nullptr;
+
 
 // Helper method to do generation of RunTimeStub's
 address OptoRuntime::generate_stub(ciEnv* env,
@@ -1958,6 +1964,85 @@ void OptoRuntime::dtrace_object_alloc_Type_init() {
   _dtrace_object_alloc_tf = TypeFunc::make(domain,range);
 }
 
+void OptoRuntime::clone_type_init() {
+  assert(_clone_type_tf == nullptr, "should be");
+  // Create input type (domain)
+  int argcnt = NOT_LP64(3) LP64_ONLY(4);
+  const Type** const domain_fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  domain_fields[argp++] = TypeInstPtr::NOTNULL;  // src
+  domain_fields[argp++] = TypeInstPtr::NOTNULL;  // dst
+  domain_fields[argp++] = TypeX_X;               // size lower
+  LP64_ONLY(domain_fields[argp++] = Type::HALF); // size upper
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* const domain = TypeTuple::make(TypeFunc::Parms + argcnt, domain_fields);
+
+  // Create result type (range)
+  const Type** const range_fields = TypeTuple::fields(0);
+  const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
+
+  _clone_type_tf = TypeFunc::make(domain, range);
+}
+
+void OptoRuntime::load_reference_barrier_init() {
+  assert(_load_reference_barrier_tf == nullptr, "should be");
+  const Type **fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM; // original field value
+  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // original load address
+
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM;
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  _load_reference_barrier_tf = TypeFunc::make(domain, range);
+}
+
+void OptoRuntime::write_ref_field_pre_init() {
+  assert(_write_ref_field_pre_tf == nullptr, "should be");
+  const Type **fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
+  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL; // thread
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+
+  _write_ref_field_pre_tf = TypeFunc::make(domain, range);
+}
+
+void OptoRuntime::clone_barrier_init() {
+  assert(_clone_barrier_tf == nullptr, "should be");
+  const Type **fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeOopPtr::NOTNULL; // src oop
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+
+  _clone_barrier_tf = TypeFunc::make(domain, range);
+}
+
+void OptoRuntime::clone_type_barrier_set_c2_init() {
+  assert(_clone_type_barrier_set_c2_tf == nullptr, "should be");
+  // Create input type (domain)
+  const Type** domain_fields = TypeTuple::fields(4);
+  domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
+  domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
+  domain_fields[TypeFunc::Parms + 2] = TypeLong::LONG;        // size lower
+  domain_fields[TypeFunc::Parms + 3] = Type::HALF;            // size upper
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 4, domain_fields);
+
+  // Create result type (range)
+  const Type** range_fields = TypeTuple::fields(0);
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
+
+  _clone_type_barrier_set_c2_tf = TypeFunc::make(domain, range);
+}
 
 JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer_C(oopDesc* obj, JavaThread* current))
   assert(oopDesc::is_oop(obj), "must be a valid oop");
@@ -2106,6 +2191,8 @@ void OptoRuntime::initialize_types() {
 #endif // INCLUDE_JVMTI
   dtrace_method_entry_exit_Type_init();
   dtrace_object_alloc_Type_init();
+  clone_type_init();
+  load_reference_barrier_init();
 }
 
 int trace_exception_counter = 0;

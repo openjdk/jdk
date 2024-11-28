@@ -435,43 +435,15 @@ void ShenandoahBarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, N
 #undef __
 
 const TypeFunc* ShenandoahBarrierSetC2::write_ref_field_pre_Type() {
-  const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // original field value
-  fields[TypeFunc::Parms+1] = TypeRawPtr::NOTNULL; // thread
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-
-  return TypeFunc::make(domain, range);
+  return OptoRuntime::write_ref_field_pre_Type();
 }
 
 const TypeFunc* ShenandoahBarrierSetC2::clone_barrier_Type() {
-  const Type **fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeOopPtr::NOTNULL; // src oop
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-
-  return TypeFunc::make(domain, range);
+  return OptoRuntime::clone_barrier_Type();
 }
 
 const TypeFunc* ShenandoahBarrierSetC2::load_reference_barrier_Type() {
-  const Type **fields = TypeTuple::fields(2);
-  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM; // original field value
-  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM; // original load address
-
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+2, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms+0] = TypeOopPtr::BOTTOM;
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-  return TypeFunc::make(domain, range);
+  return OptoRuntime::load_reference_barrier_Type();
 }
 
 Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {

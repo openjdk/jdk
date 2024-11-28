@@ -36,6 +36,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "opto/callnode.hpp"
+#include "opto/arraycopynode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -713,6 +714,7 @@ void Type::Initialize_shared(Compile* current) {
   mreg2type[Op_VecZ] = TypeVect::VECTZ;
 
   LockNode::lock_type_init();
+  ArrayCopyNode::arraycopy_type_init();
   OptoRuntime::initialize_types();
 
   // Restore working type arena.
