@@ -193,12 +193,10 @@ int NativeMovRegMem::instruction_start() const {
   // See comment in Assembler::locate_operand() about VEX prefixes.
   if (instr_0 == instruction_VEX_prefix_2bytes) {
     assert((UseAVX > 0), "shouldn't have VEX prefix");
-    NOT_LP64(assert((0xC0 & ubyte_at(1)) == 0xC0, "shouldn't have LDS and LES instructions"));
     return 2;
   }
   if (instr_0 == instruction_VEX_prefix_3bytes) {
     assert((UseAVX > 0), "shouldn't have VEX prefix");
-    NOT_LP64(assert((0xC0 & ubyte_at(1)) == 0xC0, "shouldn't have LDS and LES instructions"));
     return 3;
   }
   if (instr_0 == instruction_EVEX_prefix_4bytes) {
@@ -314,8 +312,7 @@ void NativeMovRegMem::print() {
 void NativeLoadAddress::verify() {
   // make sure code pattern is actually a mov [reg+offset], reg instruction
   u_char test_byte = *(u_char*)instruction_address();
-  if ( ! ((test_byte == lea_instruction_code)
-          LP64_ONLY(|| (test_byte == mov64_instruction_code) ))) {
+  if ( ! ((test_byte == lea_instruction_code) || (test_byte == mov64_instruction_code) )) {
     fatal ("not a lea reg, [reg+offs] instruction");
   }
 }
@@ -387,7 +384,6 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 //
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   // complete jump instruction (to be inserted) is in code_buffer;
-#ifdef _LP64
   union {
     jlong cb_long;
     unsigned char code_buffer[8];
@@ -403,43 +399,6 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
 
   Atomic::store((jlong *) verified_entry, u.cb_long);
   ICache::invalidate_range(verified_entry, 8);
-
-#else
-  unsigned char code_buffer[5];
-  code_buffer[0] = instruction_code;
-  intptr_t disp = (intptr_t)dest - ((intptr_t)verified_entry + 1 + 4);
-  *(int32_t*)(code_buffer + 1) = (int32_t)disp;
-
-  check_verified_entry_alignment(entry, verified_entry);
-
-  // Can't call nativeJump_at() because it's asserts jump exists
-  NativeJump* n_jump = (NativeJump*) verified_entry;
-
-  //First patch dummy jmp in place
-
-  unsigned char patch[4];
-  assert(sizeof(patch)==sizeof(int32_t), "sanity check");
-  patch[0] = 0xEB;       // jmp rel8
-  patch[1] = 0xFE;       // jmp to self
-  patch[2] = 0xEB;
-  patch[3] = 0xFE;
-
-  // First patch dummy jmp in place
-  *(int32_t*)verified_entry = *(int32_t *)patch;
-
-  n_jump->wrote(0);
-
-  // Patch 5th byte (from jump instruction)
-  verified_entry[4] = code_buffer[4];
-
-  n_jump->wrote(4);
-
-  // Patch bytes 0-3 (from jump instruction)
-  *(int32_t*)verified_entry = *(int32_t *)code_buffer;
-  // Invalidate.  Opteron requires a flush after every write.
-  n_jump->wrote(0);
-#endif // _LP64
-
 }
 
 void NativeIllegalInstruction::insert(address code_pos) {

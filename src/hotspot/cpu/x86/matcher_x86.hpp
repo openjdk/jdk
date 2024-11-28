@@ -61,28 +61,14 @@
     //return value == (int) value;  // Cf. storeImmL and immL32.
 
     // Probably always true, even if a temp register is required.
-#ifdef _LP64
     return true;
-#else
-    return false;
-#endif
   }
 
-#ifdef _LP64
   // No additional cost for CMOVL.
   static constexpr int long_cmove_cost() { return 0; }
-#else
-  // Needs 2 CMOV's for longs.
-  static constexpr int long_cmove_cost() { return 1; }
-#endif
 
-#ifdef _LP64
   // No CMOVF/CMOVD with SSE2
   static int float_cmove_cost() { return ConditionalMoveLimit; }
-#else
-  // No CMOVF/CMOVD with SSE/SSE2
-  static int float_cmove_cost() { return (UseSSE>=1) ? ConditionalMoveLimit : 0; }
-#endif
 
   static bool narrow_oop_use_complex_address() {
     assert(UseCompressedOops, "only for compressed oops code");

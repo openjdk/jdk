@@ -25,8 +25,6 @@
 
 #include "precompiled.hpp"
 
-#ifdef _LP64
-
 #include "oops/compressedKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -45,5 +43,3 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
   // Nothing more to optimize for on x64. If base != 0, we will always emit the full 64-bit immediate.
   return result;
 }
-
-#endif // _LP64
