@@ -93,7 +93,7 @@ class VThreadCommandsTest {
         jcmd("Thread.vthread_pollers")
                 .shouldContain("Read I/O pollers:")
                 .shouldContain("Write I/O pollers:")
-                .shouldMatch("^\\[0\\] sun.nio.ch..+ \\[registered = [\\d]+, owner = .+\\]$");
+                .shouldMatch("^\\[0\\] sun\\.nio\\.ch\\..+ \\[registered = [\\d]+, owner = .+\\]$");
     }
 
     private OutputAnalyzer jcmd(String cmd) {
