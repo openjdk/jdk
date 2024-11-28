@@ -25,8 +25,6 @@
 
 package java.net;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Enumeration;
 import java.io.IOException;
 
@@ -105,9 +103,7 @@ class DefaultInterface {
                     continue;
 
                 boolean ip4 = false, ip6 = false, isNonLinkLocal = false;
-                PrivilegedAction<Enumeration<InetAddress>> pa = ni::getInetAddresses;
-                @SuppressWarnings("removal")
-                Enumeration<InetAddress> addrs = AccessController.doPrivileged(pa);
+                Enumeration<InetAddress> addrs = ni.getInetAddresses();
                 while (addrs.hasMoreElements()) {
                     InetAddress addr = addrs.nextElement();
                     if (!addr.isAnyLocalAddress()) {

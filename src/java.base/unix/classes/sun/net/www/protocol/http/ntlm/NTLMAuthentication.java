@@ -72,13 +72,14 @@ import sun.security.action.GetPropertyAction;
 public final class NTLMAuthentication extends AuthenticationInfo {
 
     private static final NTLMAuthenticationCallback NTLMAuthCallback =
-        NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
+            NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
 
     private String hostname;
     /* Domain to use if not specified by user */
     private static final String defaultDomain;
     /* Whether cache is enabled for NTLM */
     private static final boolean ntlmCache;
+
     static {
         Properties props = GetPropertyAction.privilegedGetProperties();
         defaultDomain = props.getProperty("http.auth.ntlm.domain", "");
@@ -86,7 +87,7 @@ public final class NTLMAuthentication extends AuthenticationInfo {
         ntlmCache = Boolean.parseBoolean(ntlmCacheProp);
     }
 
-    public static boolean supportsTransparentAuth () {
+    public static boolean supportsTransparentAuth() {
         return false;
     }
 
@@ -100,23 +101,6 @@ public final class NTLMAuthentication extends AuthenticationInfo {
             return NTLMAuthCallback.isTrustedSite(url);
         return false;
     }
-
-    @SuppressWarnings("removal")
-    private void init0() {
-
-        hostname = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<>() {
-            public String run() {
-                String localhost;
-                try {
-                    localhost = InetAddress.getLocalHost().getHostName();
-                } catch (UnknownHostException e) {
-                     localhost = "localhost";
-                }
-                return localhost;
-            }
-        });
-    };
 
     PasswordAuthentication pw;
 
@@ -150,7 +134,11 @@ public final class NTLMAuthentication extends AuthenticationInfo {
             username = s.substring (i+1);
         }
         password = pw.getPassword();
-        init0();
+        try {
+            hostname = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            hostname = "localhost";
+        }
         try {
             String version = GetPropertyAction.privilegedGetProperty("ntlm.version");
             client = new Client(version, hostname, username, ntdomain, password);
