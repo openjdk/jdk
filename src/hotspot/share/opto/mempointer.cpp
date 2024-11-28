@@ -26,6 +26,7 @@
 #include "opto/mempointer.hpp"
 #include "opto/addnode.hpp"
 #include "utilities/resourceHash.hpp"
+#include "classfile/vmSymbols.hpp"
 
 MemPointerParser::DecomposedNodeCallback MemPointerParser::DecomposedNodeCallback::_empty;
 
@@ -168,28 +169,34 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, De
         callback.callback(n);
         return;
       }
+      case Op_CastX2P:
+        // A CastX2P indicates that we are pointing to native memory, where some long is cast to
+        // a pointer. In general, we have no guarantees about this long, and just take it as a
+        // terminal summand. A CastX2P can also be a good candidate for a native-memory "base".
+        if (!sub_expression_has_native_base_candidate(n->in(1))) {
+          // General case: take CastX2P as a terminal summand, it is a candidate for the "base".
+          break;
+        }
+        // Fall-through: we can find a more precise native-memory "base". We further decompose
+        // the CastX2P to find this "base" and any other offsets from it.
       case Op_CastII:
       case Op_CastLL:
       case Op_ConvI2L:
-      // On 32bit systems we can also look through ConvL2I, since the final result will always
-      // be truncated back with ConvL2I. On 64bit systems we cannot decompose ConvL2I because
-      // such int values will eventually be expanded to long with a ConvI2L:
-      //
-      //   valL = max_jint + 1
-      //   ConvI2L(ConvL2I(valL)) = ConvI2L(min_jint) = min_jint != max_jint + 1 = valL
-      //
-      NOT_LP64( case Op_ConvL2I: )
-      {
-        // Decompose: look through.
-        Node* a = n->in(1);
-        _worklist.push(MemPointerSummand(a, scale));
-        callback.callback(n);
-        return;
-      }
-      case Op_CastX2P:
-      // In theory, we could parse through this, and further decompose. But this is also a good
-      // candidate for a native-memory "base".
-        break;
+        // On 32bit systems we can also look through ConvL2I, since the final result will always
+        // be truncated back with ConvL2I. On 64bit systems we cannot decompose ConvL2I because
+        // such int values will eventually be expanded to long with a ConvI2L:
+        //
+        //   valL = max_jint + 1
+        //   ConvI2L(ConvL2I(valL)) = ConvI2L(min_jint) = min_jint != max_jint + 1 = valL
+        //
+        NOT_LP64( case Op_ConvL2I: )
+        {
+          // Decompose: look through.
+          Node* a = n->in(1);
+          _worklist.push(MemPointerSummand(a, scale));
+          callback.callback(n);
+          return;
+        }
       default:
         // All other operations cannot be further decomposed. We just add them to the
         // terminal summands below.
@@ -199,6 +206,66 @@ void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, De
 
   // Default: we could not parse the "summand" further, i.e. it is terminal.
   _summands.push(summand);
+}
+
+bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
+  // BFS over the expression.
+  ResourceMark rm;
+  GrowableArray<Node*> worklist;
+  worklist.append(start);
+  for (int i = 0; i < worklist.length(); i++) {
+    Node* n = worklist.at(i);
+    n->dump();
+    switch(n->Opcode()) {
+      case Op_AddL:
+        // Traverse to both inputs.
+        worklist.append(n->in(1));
+        worklist.append(n->in(2));
+        break;
+      case Op_SubL:
+      case Op_CastLL:
+        // Traverse to the first input. The base cannot be on the rhs of a sub.
+        worklist.append(n->in(1));
+        break;
+      default:
+        if (is_native_memory_base_candidate(n)) { return true; }
+        break;
+    }
+    // This is a heuristic, so we are allowed to bail out early if the graph
+    // is too deep. The constant is chosen arbitrarily, not too large but big
+    // enough for all normal cases.
+    if (worklist.length() > 100) { return false; }
+  }
+  // Parsed over the whole expression, nothing found.
+  assert(false, "TODO rm");
+  return false;
+}
+
+// Find any special long node that we think is a better native-memory "base"
+// than a CastX2P.
+// TODO direct buffer?
+bool MemPointerParser::is_native_memory_base_candidate(Node* n) {
+  // TODO rename
+  if (n->Opcode() == Op_CastX2P) { return true; }
+  // LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
+  // It is used to hold the address() of a native MemorySegment.
+  if (n->Opcode() != Op_LoadL) { return false; }
+  LoadNode* load = n->as_Load();
+
+  const TypeInstPtr* inst_ptr = load->adr_type()->isa_instptr();
+  if (inst_ptr == nullptr) { return false; }
+
+  ciInstanceKlass* klass = inst_ptr->instance_klass();
+  int offset = inst_ptr->offset();
+  ciField* field = klass->get_field_by_offset(offset, false);
+
+  Symbol* field_symbol = field->name()->get_symbol();
+  Symbol* holder_symbol = field->holder()->name()->get_symbol();
+  if (holder_symbol != vmSymbols::jdk_internal_foreign_NativeMemorySegmentImpl() ||
+      field_symbol != vmSymbols::min_name()) {
+    return false;
+  }
+  return true;
 }
 
 // Check if the decomposition of operation opc is guaranteed to be safe.
@@ -344,7 +411,9 @@ Node* MemPointer::Base::find_base(Node* object_base, const GrowableArray<MemPoin
       return object_base;
     }
     // Native base.
-    if (object_base == nullptr && s.variable()->Opcode() == Op_CastX2P && s.scale().is_one()) {
+    if (object_base == nullptr &&
+	s.scale().is_one() &&
+        MemPointerParser::is_native_memory_base_candidate(s.variable())) {
       return s.variable();
     }
   }

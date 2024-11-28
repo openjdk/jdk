@@ -804,12 +804,15 @@ public:
     return parser.mem_pointer();
   }
 
+  static bool is_native_memory_base_candidate(Node* n);
+
 private:
   const MemPointer& mem_pointer() const { return _mem_pointer; }
 
   MemPointer parse(DecomposedNodeCallback& callback);
 
   void parse_sub_expression(const MemPointerSummand& summand, DecomposedNodeCallback& callback);
+  static bool sub_expression_has_native_base_candidate(Node* n);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;
 };
