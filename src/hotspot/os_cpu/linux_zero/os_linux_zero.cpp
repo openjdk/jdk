@@ -280,14 +280,6 @@ void os::Linux::init_thread_fpu_state(void) {
   // Nothing to do
 }
 
-int os::Linux::get_fpu_control_word() {
-  ShouldNotCallThis();
-  return -1; // silence compile warnings
-}
-
-void os::Linux::set_fpu_control_word(int fpu) {
-  ShouldNotCallThis();
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // thread stack

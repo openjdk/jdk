@@ -316,13 +316,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 void os::Linux::init_thread_fpu_state(void) {
 }
 
-int os::Linux::get_fpu_control_word(void) {
-  return 0;
-}
-
-void os::Linux::set_fpu_control_word(int fpu_control) {
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 

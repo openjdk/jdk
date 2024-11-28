@@ -1042,7 +1042,7 @@ void GraphBuilder::store_local(ValueStack* state, Value x, int index) {
     }
   }
 
-  state->store_local(index, round_fp(x));
+  state->store_local(index, x);
 }
 
 
@@ -1193,11 +1193,7 @@ void GraphBuilder::stack_op(Bytecodes::Code code) {
 void GraphBuilder::arithmetic_op(ValueType* type, Bytecodes::Code code, ValueStack* state_before) {
   Value y = pop(type);
   Value x = pop(type);
-  Value res = new ArithmeticOp(code, x, y, state_before);
-  // Note: currently single-precision floating-point rounding on Intel is handled at the LIRGenerator level
-  res = append(res);
-  res = round_fp(res);
-  push(type, res);
+  push(type, append(new ArithmeticOp(code, x, y, state_before)));
 }
 
 
@@ -2218,7 +2214,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   append_split(result);
 
   if (result_type != voidType) {
-    push(result_type, round_fp(result));
+    push(result_type, result);
   }
   if (profile_return() && result_type->is_object_kind()) {
     profile_return_type(result, target);
@@ -2344,13 +2340,6 @@ void GraphBuilder::throw_op(int bci) {
   state()->truncate_stack(0);
   append_with_bci(t, bci);
 }
-
-
-Value GraphBuilder::round_fp(Value fp_value) {
-  // TODO: Remove?
-  return fp_value;
-}
-
 
 Instruction* GraphBuilder::append_with_bci(Instruction* instr, int bci) {
   Canonicalizer canon(compilation(), instr, bci);

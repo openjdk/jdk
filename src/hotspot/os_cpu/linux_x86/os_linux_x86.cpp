@@ -311,15 +311,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 }
 
 void os::Linux::init_thread_fpu_state(void) {
-  // TODO: Cleanup?
-}
-
-int os::Linux::get_fpu_control_word(void) {
-  return 0;
-}
-
-void os::Linux::set_fpu_control_word(int fpu_control) {
-  // TODO: Cleanup?
+  // Nothing to do.
 }
 
 juint os::cpu_microcode_revision() {
@@ -464,7 +456,7 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 }
 
 void os::setup_fpu() {
-  // TODO: Cleanup?
+  // Nothing to do.
 }
 
 #ifndef PRODUCT

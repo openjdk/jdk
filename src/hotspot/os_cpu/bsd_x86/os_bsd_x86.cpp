@@ -464,7 +464,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 extern "C" void fixcw();
 
 void os::Bsd::init_thread_fpu_state(void) {
-  // TODO: Cleanup?
+  // Nothing to do.
 }
 
 juint os::cpu_microcode_revision() {
@@ -674,7 +674,7 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 }
 
 void os::setup_fpu() {
-  // TODO: Cleanup?
+  // Nothing to do.
 }
 
 #ifndef PRODUCT

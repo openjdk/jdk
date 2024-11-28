@@ -266,7 +266,6 @@ class GraphBuilder {
   void monitorexit(Value x, int bci);
   void new_multi_array(int dimensions);
   void throw_op(int bci);
-  Value round_fp(Value fp_value);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);
