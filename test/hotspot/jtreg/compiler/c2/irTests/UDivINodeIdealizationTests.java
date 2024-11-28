@@ -155,6 +155,6 @@ public class UDivINodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     public int divByPow2Big(int x) {
-        return Integer.divideUnsigned(x, -2147483648);  // -2147483648 = Integer.parseUnsignedInt("2147483648")
+        return Integer.divideUnsigned(x, Integer.MIN_VALUE);
     }
 }

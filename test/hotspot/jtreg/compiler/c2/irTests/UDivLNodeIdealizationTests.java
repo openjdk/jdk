@@ -155,6 +155,6 @@ public class UDivLNodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     public long divByPow2Big(long x) {
-        return Long.divideUnsigned(x, -9223372036854775808L);  // -9223372036837998592 = Long.parseUnsignedLong("9223372036854775808")
+        return Long.divideUnsigned(x, Long.MIN_VALUE);
     }
 }
