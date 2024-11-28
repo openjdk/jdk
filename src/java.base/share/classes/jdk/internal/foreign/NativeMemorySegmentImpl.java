@@ -36,7 +36,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * Implementation for native memory segments. A native memory segment is essentially a wrapper around
  * a native long address.
  */
-sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits MappedMemorySegmentImpl {
+public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits MappedMemorySegmentImpl {
 
     final long min;
 
