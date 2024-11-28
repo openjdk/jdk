@@ -51,6 +51,7 @@ oop BlockLocationPrinter<CollectedHeapT>::base_oop_or_null(void* addr) {
 
 template <typename CollectedHeapT>
 bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void* addr) {
+  ResourceMark rm;
   // Check if addr points into Java heap.
   bool in_heap = CollectedHeapT::heap()->is_in(addr);
   if (in_heap) {
