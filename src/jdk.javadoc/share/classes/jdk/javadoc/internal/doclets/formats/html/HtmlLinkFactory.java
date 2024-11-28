@@ -401,12 +401,15 @@ public class HtmlLinkFactory {
             }
             links.add("<");
             boolean many = false;
+            boolean longTypeParams = vars.stream()
+                    .map(t -> getLink(linkInfo.forType(t)))
+                    .anyMatch(t -> t.charCount() > ClassWriter.LONG_TYPE_PARAM);
             for (TypeMirror t : vars) {
                 if (many) {
-                    links.add(",");
-                    links.add(HtmlTree.WBR());
-                    if (linkInfo.addLineBreaksInTypeParameters()) {
-                        links.add(Text.NL);
+                    if (longTypeParams) {
+                        links.add(", ");
+                    } else {
+                        links.add(",").add(HtmlTree.WBR());
                     }
                 }
                 links.add(getLink(linkInfo.forType(t)));
