@@ -44,7 +44,6 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
@@ -71,9 +70,7 @@ public class ShowRegistersOnAssertTest {
         if (show_registers_on_assert) {
             // Extract the hs_err_pid file.
             File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
-
             Pattern[] pattern = null;
-
             if (Platform.isX64()) {
                 pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("RAX=.*")};
             } else if (Platform.isX86()) {
@@ -87,19 +84,8 @@ public class ShowRegistersOnAssertTest {
             } else if (Platform.isPPC()) {
                 pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("pc =.*")};
             }
-
-            if (Platform.isS390x()) {
-              // On s390x, hs_err file is not complete.
-              try {
-                // Pattern match the hs_err_pid file.
-                HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
-              } catch (RuntimeException e) {
-                Asserts.assertEquals("hs-err file incomplete (missing END marker.)", e.getMessage());
-              }
-            } else {
-                // Pattern match the hs_err_pid file.
-                HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
-            }
+            // Pattern match the hs_err_pid file.
+            HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
         }
     }
 
