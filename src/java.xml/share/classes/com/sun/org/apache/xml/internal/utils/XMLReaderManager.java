@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -37,7 +37,7 @@ import org.xml.sax.XMLReader;
  * Creates XMLReader objects and caches them for re-use.
  * This class follows the singleton pattern.
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 public class XMLReaderManager {
 
@@ -118,7 +118,7 @@ public class XMLReaderManager {
         ReaderWrapper rw = m_readers.get();
         boolean threadHasReader = (rw != null);
         reader = threadHasReader ? rw.reader : null;
-        String factory = SecuritySupport.getSystemProperty(property);
+        String factory = System.getProperty(property);
         if (threadHasReader && m_inUse.get(reader) != Boolean.TRUE &&
                 (rw.overrideDefaultParser == m_overrideDefaultParser) &&
                 ( factory == null || reader.getClass().getName().equals(factory))) {

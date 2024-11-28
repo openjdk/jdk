@@ -52,15 +52,15 @@ public:
   struct RTVerifierConstraint {
     u4 _name;
     u4 _from_name;
-    Symbol* name() { return ArchiveUtils::from_offset<Symbol*>(_name); }
-    Symbol* from_name() { return ArchiveUtils::from_offset<Symbol*>(_from_name); }
+    Symbol* name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_name); }
+    Symbol* from_name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_from_name); }
   };
 
   struct RTLoaderConstraint {
     u4   _name;
     char _loader_type1;
     char _loader_type2;
-    Symbol* constraint_name() { return ArchiveUtils::from_offset<Symbol*>(_name); }
+    Symbol* constraint_name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_name); }
   };
   struct RTEnumKlassStaticFields {
     int _num;
@@ -177,11 +177,7 @@ public:
 
   InstanceKlass* nest_host() {
     assert(!ArchiveBuilder::is_active(), "not called when dumping archive");
-    if (_nest_host_offset == 0) {
-      return nullptr;
-    } else {
-      return ArchiveUtils::from_offset<InstanceKlass*>(_nest_host_offset);
-    }
+    return ArchiveUtils::offset_to_archived_address_or_null<InstanceKlass*>(_nest_host_offset);
   }
 
   RTLoaderConstraint* loader_constraints() {
