@@ -942,7 +942,31 @@ IfTrueNode* CreateAssertionPredicatesVisitor::clone_template_and_replace_init_in
 
 // Rewire the newly created predicates to the old predicate chain head (i.e. '_current_predicate_chain_head') by
 // rewiring the current control input of '_current_predicate_chain_head' from '_old_target_loop_entry' to
-// 'initialized_assertion_predicate_success_proj'.
+// 'initialized_assertion_predicate_success_proj'. This is required because we walk the predicate chain from the loop
+// up and clone Template Assertion Predicates on the fly:
+//
+//          x
+//          |                                               old target
+//  Template Assertion                                      loop entry
+//     Predicate 1             old target        clone           |    \
+//          |                  loop entry        TAP 2           |     cloned Template Assertion
+//  Template Assertion             |            ======>          |            Predicate 2
+//     Predicate 2            target loop                        |
+//          |                                               target loop #_current_predicate_chain_head
+//     source loop
+//
+//
+//               old target                                                        old target
+//               loop entry                                                        loop entry
+//                    |    \                                 rewire                     |
+//                    |    cloned Template Assertion         to old         cloned Template Assertion #current_predicate
+//   initialize       |           Predicate 2               predicate              Predicate 2         _chain_head (new)
+//     TAP 2          |               |                     chain head                  |
+//    ======>         |      Initialized Assertion           ======>           Initialized Assertion
+//                    |          Predicate 2                                        Predicate 2
+//                    |                                                                 |
+//               target loop #_current_predicate_chain_head                        target loop
+//
 void CreateAssertionPredicatesVisitor::rewire_to_old_predicate_chain_head(
     Node* initialized_assertion_predicate_success_proj) const {
   if (_current_predicate_chain_head->is_Loop()) {
