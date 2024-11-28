@@ -73,7 +73,7 @@ static void *findJniFunction(JNIEnv *env, void *handle,
     sym = isLoad ? "JNI_OnLoad" : "JNI_OnUnload";
 
     // sym + '_' + cname + '\0'
-    if ((len = (cname != NULL ? (strlen(cname) + 1) : 0) + strlen(sym) + 1) >
+    if ((len = strlen(sym) + (cname != NULL ? (strlen(cname) + 1) : 0) + 1) >
         FILENAME_MAX) {
         goto done;
     }
