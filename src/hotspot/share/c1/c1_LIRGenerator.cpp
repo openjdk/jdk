@@ -881,17 +881,6 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
   *expected_typep = (ciArrayKlass*)expected_type;
 }
 
-
-LIR_Opr LIRGenerator::round_item(LIR_Opr opr) {
-  assert(opr->is_register(), "why spill if item is not register?");
-
-  if (strict_fp_requires_explicit_rounding) {
-    Unimplemented();
-  }
-  return opr;
-}
-
-
 LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
   assert(type2size[t] == type2size[value->type()],
          "size mismatch: t=%s, value->type()=%s", type2name(t), type2name(value->type()));
@@ -1916,20 +1905,6 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
   // is neither lir_cond_equal nor lir_cond_notEqual, see LIR_Assembler::comp_op.
   LIR_Opr zero_reg = new_register(type);
   __ move(zero, zero_reg);
-#if defined(X86) && !defined(_LP64)
-  // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
-  LIR_Opr index_copy = new_register(index.type());
-  // index >= 0
-  __ move(index.result(), index_copy);
-  __ cmp(lir_cond_less, index_copy, zero_reg);
-  __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
-                                                    Deoptimization::Action_make_not_entrant));
-  // index < length
-  __ move(index.result(), index_copy);
-  __ cmp(lir_cond_greaterEqual, index_copy, len);
-  __ branch(lir_cond_greaterEqual, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
-                                                            Deoptimization::Action_make_not_entrant));
-#else
   // index >= 0
   __ cmp(lir_cond_less, index.result(), zero_reg);
   __ branch(lir_cond_less, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
@@ -1938,7 +1913,6 @@ void LIRGenerator::do_PreconditionsCheckIndex(Intrinsic* x, BasicType type) {
   __ cmp(lir_cond_greaterEqual, index.result(), len);
   __ branch(lir_cond_greaterEqual, new DeoptimizeStub(info, Deoptimization::Reason_range_check,
                                                             Deoptimization::Action_make_not_entrant));
-#endif
   __ move(index.result(), result);
 }
 
@@ -2100,25 +2074,6 @@ void LIRGenerator::do_Throw(Throw* x) {
     __ unwind_exception(exceptionOopOpr());
   } else {
     __ throw_exception(exceptionPcOpr(), exceptionOopOpr(), info);
-  }
-}
-
-
-void LIRGenerator::do_RoundFP(RoundFP* x) {
-  assert(strict_fp_requires_explicit_rounding, "not required");
-
-  LIRItem input(x->input(), this);
-  input.load_item();
-  LIR_Opr input_opr = input.result();
-  assert(input_opr->is_register(), "why round if value is not in a register?");
-  assert(input_opr->is_single_fpu() || input_opr->is_double_fpu(), "input should be floating-point value");
-  if (input_opr->is_single_fpu()) {
-    set_result(x, round_item(input_opr)); // This code path not currently taken
-  } else {
-    LIR_Opr result = new_register(T_DOUBLE);
-    set_vreg_flag(result, must_start_in_memory);
-    __ roundfp(input_opr, LIR_OprFact::illegalOpr, result);
-    set_result(x, result);
   }
 }
 
@@ -3216,14 +3171,7 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
 
 void LIRGenerator::increment_backedge_counter_conditionally(LIR_Condition cond, LIR_Opr left, LIR_Opr right, CodeEmitInfo* info, int left_bci, int right_bci, int bci) {
   if (compilation()->is_profiling()) {
-#if defined(X86) && !defined(_LP64)
-    // BEWARE! On 32-bit x86 cmp clobbers its left argument so we need a temp copy.
-    LIR_Opr left_copy = new_register(left->type());
-    __ move(left, left_copy);
-    __ cmp(cond, left_copy, right);
-#else
     __ cmp(cond, left, right);
-#endif
     LIR_Opr step = new_register(T_INT);
     LIR_Opr plus_one = LIR_OprFact::intConst(InvocationCounter::count_increment);
     LIR_Opr zero = LIR_OprFact::intConst(0);

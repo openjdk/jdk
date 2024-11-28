@@ -674,10 +674,6 @@ class MemoryBuffer: public CompilationResourceObj {
       return load;
     }
 
-    if (strict_fp_requires_explicit_rounding && load->type()->is_float_kind()) {
-      Unimplemented();
-    }
-
     ciField* field = load->field();
     Value object   = load->obj();
     if (field->holder()->is_loaded() && !field->is_volatile()) {

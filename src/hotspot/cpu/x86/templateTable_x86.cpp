@@ -2611,9 +2611,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ cmpl(tos_state, ltos);
   __ jcc(Assembler::notEqual, notLong);
   // ltos
-    // Generate code as if volatile (x86_32).  There just aren't enough registers to
-    // save that information and this code is faster than the test.
-  __ access_load_at(T_LONG, IN_HEAP | MO_RELAXED, noreg /* ltos */, field, noreg, noreg);
+  __ access_load_at(T_LONG, IN_HEAP, noreg /* ltos */, field, noreg, noreg);
   __ push(ltos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -2874,8 +2872,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
   {
     __ pop(ltos);
     if (!is_static) pop_and_check_object(obj);
-    // MO_RELAXED: generate atomic store for the case of volatile field (important for x86_32)
-    __ access_store_at(T_LONG, IN_HEAP | MO_RELAXED, field, noreg /* ltos*/, noreg, noreg, noreg);
+    __ access_store_at(T_LONG, IN_HEAP, field, noreg /* ltos*/, noreg, noreg, noreg);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_lputfield, bc, rbx, true, byte_no);
     }

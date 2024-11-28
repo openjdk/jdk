@@ -328,7 +328,7 @@ void LIRGenerator::do_NegateOp(NegateOp* x) {
   }
   __ negate(value.result(), reg, tmp);
 
-  set_result(x, round_item(reg));
+  set_result(x, reg);
 }
 
 // for  _fadd, _fmul, _fsub, _fdiv, _frem
@@ -393,7 +393,7 @@ void LIRGenerator::do_ArithmeticOp_FPU(ArithmeticOp* x) {
     __ move(result_reg, result);
   } else {
     arithmetic_op_fpu(x->op(), reg, left.result(), right.result(), tmp);
-    set_result(x, round_item(reg));
+    set_result(x, reg);
   }
 }
 

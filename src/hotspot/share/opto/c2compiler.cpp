@@ -72,8 +72,6 @@ bool C2Compiler::init_c2_runtime() {
   }
 #endif
 
-  assert(!Matcher::strict_fp_requires_explicit_rounding, "No compiler support for rounding");
-
   // Check assumptions used while running ADLC
   Compile::adlc_verification();
   assert(REG_COUNT <= ConcreteRegisterImpl::number_of_registers, "incompatible register counts");

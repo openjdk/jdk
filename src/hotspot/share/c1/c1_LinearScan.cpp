@@ -1266,19 +1266,6 @@ void LinearScan::build_intervals() {
   // performed and so the temp ranges would be useless
   if (has_fpu_registers()) {
 #ifdef X86
-    if (UseSSE < 2) {
-#endif // X86
-      for (i = 0; i < FrameMap::nof_caller_save_fpu_regs; i++) {
-        LIR_Opr opr = FrameMap::caller_save_fpu_reg_at(i);
-        assert(opr->is_valid() && opr->is_register(), "FrameMap should not return invalid operands");
-        assert(reg_numHi(opr) == -1, "missing addition of range for hi-register");
-        caller_save_registers[num_caller_save_registers++] = reg_num(opr);
-      }
-#ifdef X86
-    }
-#endif // X86
-
-#ifdef X86
     if (UseSSE > 0) {
       int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
       for (i = 0; i < num_caller_save_xmm_regs; i ++) {
@@ -6732,7 +6719,6 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_push:
         case lir_pop:
         case lir_convert:
-        case lir_roundfp:
         case lir_cmove:           inc_counter(counter_misc_inst); break;
 
         default:                  inc_counter(counter_other_inst); break;

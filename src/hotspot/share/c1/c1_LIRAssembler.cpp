@@ -507,12 +507,6 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
       }
       break;
 
-    case lir_roundfp: {
-      LIR_OpRoundFP* round_op = op->as_OpRoundFP();
-      roundfp_op(round_op->in_opr(), round_op->tmp(), round_op->result_opr(), round_op->pop_fpu_stack());
-      break;
-    }
-
     case lir_return: {
       assert(op->as_OpReturn() != nullptr, "sanity");
       LIR_OpReturn *ret_op = (LIR_OpReturn*)op;
@@ -747,17 +741,6 @@ void LIR_Assembler::emit_op4(LIR_Op4* op) {
 void LIR_Assembler::build_frame() {
   _masm->build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 }
-
-
-void LIR_Assembler::roundfp_op(LIR_Opr src, LIR_Opr tmp, LIR_Opr dest, bool pop_fpu_stack) {
-  assert(strict_fp_requires_explicit_rounding, "not required");
-  assert((src->is_single_fpu() && dest->is_single_stack()) ||
-         (src->is_double_fpu() && dest->is_double_stack()),
-         "round_fp: rounds register -> stack location");
-
-  reg2stack (src, dest, src->type(), pop_fpu_stack);
-}
-
 
 void LIR_Assembler::move_op(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool pop_fpu_stack, bool wide) {
   if (src->is_register()) {
