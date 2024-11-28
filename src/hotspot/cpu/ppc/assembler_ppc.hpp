@@ -2492,8 +2492,8 @@ class Assembler : public AbstractAssembler {
   inline void lfsx(  FloatRegister d, Register b);
   inline void lfd(   FloatRegister d, int si16);
   inline void lfdx(  FloatRegister d, Register b);
-  inline void lfiwax(  FloatRegister d, Register b);
-  inline void lfiwzx(  FloatRegister d, Register b);
+  inline void lfiwax(FloatRegister d, Register b);
+  inline void lfiwzx(FloatRegister d, Register b);
   inline void stfs(  FloatRegister s, int si16);
   inline void stfsx( FloatRegister s, Register b);
   inline void stfd(  FloatRegister s, int si16);
