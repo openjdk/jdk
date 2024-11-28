@@ -466,18 +466,7 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
      * @param c a component
      * @return an instance of {@code BasicLabelUI}
      */
-    @SuppressWarnings("removal")
     public static ComponentUI createUI(JComponent c) {
-        if (System.getSecurityManager() != null) {
-            AppContext appContext = AppContext.getAppContext();
-            BasicLabelUI safeBasicLabelUI =
-                    (BasicLabelUI) appContext.get(BASIC_LABEL_UI_KEY);
-            if (safeBasicLabelUI == null) {
-                safeBasicLabelUI = new BasicLabelUI();
-                appContext.put(BASIC_LABEL_UI_KEY, safeBasicLabelUI);
-            }
-            return safeBasicLabelUI;
-        }
         return labelUI;
     }
 

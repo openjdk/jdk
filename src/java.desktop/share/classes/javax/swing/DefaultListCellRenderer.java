@@ -100,20 +100,14 @@ public class DefaultListCellRenderer extends JLabel
         setName("List.cellRenderer");
     }
 
-    @SuppressWarnings("removal")
     private Border getNoFocusBorder() {
         Border border = DefaultLookup.getBorder(this, ui, "List.cellNoFocusBorder");
-        if (System.getSecurityManager() != null) {
-            if (border != null) return border;
-            return SAFE_NO_FOCUS_BORDER;
-        } else {
-            if (border != null &&
-                    (noFocusBorder == null ||
-                    noFocusBorder == DEFAULT_NO_FOCUS_BORDER)) {
-                return border;
-            }
-            return noFocusBorder;
+        if (border != null &&
+                (noFocusBorder == null ||
+                noFocusBorder == DEFAULT_NO_FOCUS_BORDER)) {
+            return border;
         }
+        return noFocusBorder;
     }
 
     public Component getListCellRendererComponent(

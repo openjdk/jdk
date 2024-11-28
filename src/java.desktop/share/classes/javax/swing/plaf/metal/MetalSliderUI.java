@@ -130,22 +130,12 @@ public class MetalSliderUI extends BasicSliderUI {
         super( null );
     }
 
-    @SuppressWarnings("removal")
     private static Icon getHorizThumbIcon() {
-        if (System.getSecurityManager() != null) {
-            return SAFE_HORIZ_THUMB_ICON;
-        } else {
-            return horizThumbIcon;
-        }
+        return horizThumbIcon;
     }
 
-    @SuppressWarnings("removal")
     private static Icon getVertThumbIcon() {
-        if (System.getSecurityManager() != null) {
-            return SAFE_VERT_THUMB_ICON;
-        } else {
-            return vertThumbIcon;
-        }
+        return vertThumbIcon;
     }
 
     public void installUI( JComponent c ) {

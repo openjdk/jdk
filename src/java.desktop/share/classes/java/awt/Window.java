@@ -598,10 +598,7 @@ public class Window extends Container implements Accessible {
         if (owner != null) {
             owner.addOwnedWindow(weakThis);
             if (owner.isAlwaysOnTop()) {
-                try {
-                    setAlwaysOnTop(true);
-                } catch (SecurityException ignore) {
-                }
+                setAlwaysOnTop(true);
             }
         }
 
@@ -1305,10 +1302,7 @@ public class Window extends Container implements Accessible {
     // to insure that it cannot be overridden by client subclasses.
     final void toBack_NoClientCode() {
         if(isAlwaysOnTop()) {
-            try {
-                setAlwaysOnTop(false);
-            }catch(SecurityException e) {
-            }
+            setAlwaysOnTop(false);
         }
         if (visible) {
             WindowPeer peer = (WindowPeer)this.peer;
@@ -2191,10 +2185,7 @@ public class Window extends Container implements Accessible {
         for (WeakReference<Window> ref : ownedWindowArray) {
             Window window = ref.get();
             if (window != null) {
-                try {
-                    window.setAlwaysOnTop(alwaysOnTop);
-                } catch (SecurityException ignore) {
-                }
+                window.setAlwaysOnTop(alwaysOnTop);
             }
         }
     }

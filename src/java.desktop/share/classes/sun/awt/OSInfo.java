@@ -101,7 +101,7 @@ public class OSInfo {
         };
     }
 
-    public static WindowsVersion getWindowsVersion() throws SecurityException {
+    public static WindowsVersion getWindowsVersion() {
         String osVersion = System.getProperty(OS_VERSION);
 
         if (osVersion == null) {

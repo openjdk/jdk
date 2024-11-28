@@ -70,11 +70,7 @@ implements ListCellRenderer<Object>, Serializable {
 
     @SuppressWarnings("removal")
     private static Border getNoFocusBorder() {
-        if (System.getSecurityManager() != null) {
-            return SAFE_NO_FOCUS_BORDER;
-        } else {
-            return noFocusBorder;
-        }
+        return noFocusBorder;
     }
 
     public Dimension getPreferredSize() {

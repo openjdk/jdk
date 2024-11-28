@@ -5560,7 +5560,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                     return super.stopCellEditing();
                 }
 
-                SwingUtilities2.checkAccess(constructor.getModifiers());
                 value = constructor.newInstance(new Object[]{s});
             }
             catch (Exception e) {
@@ -5584,7 +5583,6 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 if (type == Object.class) {
                     type = String.class;
                 }
-                SwingUtilities2.checkAccess(type.getModifiers());
                 constructor = type.getConstructor(argTypes);
             }
             catch (Exception e) {
