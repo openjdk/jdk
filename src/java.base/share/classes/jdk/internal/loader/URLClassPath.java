@@ -75,7 +75,7 @@ public class URLClassPath {
     private static final String USER_AGENT_JAVA_VERSION = "UA-Java-Version";
     private static final String JAVA_VERSION;
     private static final boolean DEBUG;
-    private static final boolean DISABLE_JAR_CHECKING;
+    private static final boolean JAR_CHECKING_ENABLED;
     private static final boolean DISABLE_CP_URL_CHECK;
     private static final boolean DEBUG_CP_URL_CHECK;
 
@@ -83,8 +83,9 @@ public class URLClassPath {
         Properties props = System.getProperties();
         JAVA_VERSION = props.getProperty("java.version");
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
+        // do the jar check only if this system property is set to the value "false"
         String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
-        DISABLE_JAR_CHECKING = p != null ? p.equals("true") || p.isEmpty() : false;
+        JAR_CHECKING_ENABLED = p != null && p.equals("false");
 
         // This property will be removed in a later release
         p = props.getProperty("jdk.net.URLClassPath.disableClassPathURLCheck");
@@ -652,11 +653,12 @@ public class URLClassPath {
             }
         }
 
-        /* Throws if the given jar file is does not start with the correct LOC */
-        @SuppressWarnings("removal")
+        /* Throws if the given jar file does not start with the correct LOC */
         static JarFile checkJar(JarFile jar) throws IOException {
-            if (System.getSecurityManager() != null && !DISABLE_JAR_CHECKING
-                && !zipAccess.startsWithLocHeader(jar)) {
+            if (!JAR_CHECKING_ENABLED) {
+                return jar;
+            }
+            if (!zipAccess.startsWithLocHeader(jar)) {
                 IOException x = new IOException("Invalid Jar file");
                 try {
                     jar.close();
@@ -665,7 +667,6 @@ public class URLClassPath {
                 }
                 throw x;
             }
-
             return jar;
         }
 
