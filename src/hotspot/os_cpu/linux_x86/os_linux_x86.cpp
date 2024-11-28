@@ -248,7 +248,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub = VM_Version::cpuinfo_cont_addr();
     }
 
-#if !defined(PRODUCT) && defined(_LP64)
+#if !defined(PRODUCT)
     if ((sig == SIGSEGV) && VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
       // Verify that OS save/restore APX registers.
       stub = VM_Version::cpuinfo_cont_addr_apx();
@@ -491,11 +491,7 @@ juint os::cpu_microcode_revision() {
 // HotSpot guard pages is added later.
 size_t os::_compiler_thread_min_stack_allowed = 48 * K;
 size_t os::_java_thread_min_stack_allowed = 40 * K;
-#ifdef _LP64
 size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
-#else
-size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-#endif // _LP64
 
 // return default stack size for thr_type
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
