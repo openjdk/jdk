@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
@@ -75,6 +76,12 @@ public final class CgroupUtil {
         } catch (UncheckedIOException e) {
             throw e.getCause();
         }
+    }
+
+    @SuppressWarnings("removal")
+    public static boolean isDirectory(Path path) {
+        PrivilegedAction<Boolean> pa = () -> Files.isDirectory(path);
+        return AccessController.doPrivileged(pa);
     }
 
     @SuppressWarnings("removal")

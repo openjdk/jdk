@@ -36,7 +36,7 @@ import java.util.ArrayList;
  * @requires os.family == "linux"
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox CheckOperatingSystemMXBean
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main TestMemoryWithSubgroups
  */

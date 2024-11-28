@@ -315,10 +315,10 @@ char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_pa
   stringStream ss;
   ss.print_raw(mount_path);
   if (strcmp(cgroup_path, "/") != 0) {
-    ss.print_raw(cgroup_path);
-    if (strstr((char*)cgroup_path, "../") != nullptr) {
-      log_warning(os, container)("Cgroup cpu/memory controller path includes '../', detected limits won't be accurate",
-        mount_path, cgroup_path);
+    if (strstr(cgroup_path, "../") == nullptr) {
+      ss.print_raw(cgroup_path);
+    } else {
+      log_warning(os, container)("Cgroup cpu/memory controller path includes '../', detected limits won't be accurate");
     }
   }
   return os::strdup(ss.base());

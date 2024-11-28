@@ -62,12 +62,8 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   julong phys_mem = os::Linux::physical_memory();
   char* limit_cg_path = nullptr;
   jlong limit = mem->read_memory_limit_in_bytes(phys_mem);
-  jlong lowest_limit = phys_mem;
-  if (limit > 0 && limit < lowest_limit) {
-    lowest_limit = limit;
-    os::free(limit_cg_path); // handles nullptr
-    limit_cg_path = os::strdup(cg_path);
-  }
+  jlong lowest_limit = limit < 0 ? phys_mem : limit;
+  julong orig_limit = ((julong)lowest_limit) != phys_mem ? lowest_limit : phys_mem;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again
@@ -88,7 +84,7 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
     limit_cg_path = os::strdup("/");
   }
   assert(lowest_limit >= 0, "limit must be positive");
-  if ((julong)lowest_limit != phys_mem) {
+  if ((julong)lowest_limit != orig_limit) {
     // we've found a lower limit anywhere in the hierarchy,
     // set the path to the limit path
     assert(limit_cg_path != nullptr, "limit path must be set");
@@ -98,6 +94,7 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
                              mem->subsystem_path(),
                              lowest_limit);
   } else {
+    log_trace(os, container)("Lowest limit was: " JLONG_FORMAT, lowest_limit);
     log_trace(os, container)("No lower limit found for memory in hierarchy %s, "
                              "adjusting to original path %s",
                               mem->mount_point(), orig);
@@ -121,13 +118,9 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
   int host_cpus = os::Linux::active_processor_count();
   int cpus = CgroupUtil::processor_count(cpu, host_cpus);
-  int lowest_limit = host_cpus;
+  int lowest_limit = cpus < host_cpus ? cpus: host_cpus;
+  int orig_limit = lowest_limit != host_cpus ? lowest_limit : host_cpus;
   char* limit_cg_path = nullptr;
-  if (cpus != host_cpus && cpus < lowest_limit) {
-    lowest_limit = cpus;
-    os::free(limit_cg_path); // handles nullptr
-    limit_cg_path = os::strdup(cg_path);
-  }
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again
@@ -148,7 +141,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
     limit_cg_path = os::strdup(cg_path);
   }
   assert(lowest_limit >= 0, "limit must be positive");
-  if (lowest_limit != host_cpus) {
+  if (lowest_limit != orig_limit) {
     // we've found a lower limit anywhere in the hierarchy,
     // set the path to the limit path
     assert(limit_cg_path != nullptr, "limit path must be set");
@@ -158,6 +151,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
                              cpu->subsystem_path(),
                              lowest_limit);
   } else {
+    log_trace(os, container)("Lowest limit was: %d", lowest_limit);
     log_trace(os, container)("No lower limit found for cpu in hierarchy %s, "
                              "adjusting to original path %s",
                               cpu->mount_point(), orig);

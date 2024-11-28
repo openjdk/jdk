@@ -74,18 +74,7 @@ public class CgroupV1SubsystemControllerTest {
         CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         String cgroupPath = "/foo/bar/baz/some";
         ctrl.setPath(cgroupPath);
-        String expectedPath = mountPoint + cgroupPath;
-        assertEquals(expectedPath, ctrl.path());
-    }
-
-    @Test
-    public void testCgPathPrefixRoot() {
-        String root = "/a";
-        String mountPoint = "/sys/fs/cgroup/memory";
-        CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
-        String cgroupPath = "/a/b";
-        ctrl.setPath(cgroupPath);
-        String expectedPath = mountPoint + cgroupPath;
+        String expectedPath = mountPoint;
         assertEquals(expectedPath, ctrl.path());
     }
 
@@ -96,7 +85,7 @@ public class CgroupV1SubsystemControllerTest {
         CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);
         String cgroupPath = "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c";
         ctrl.setPath(cgroupPath);
-        String expectedPath = mountPoint + cgroupPath;
+        String expectedPath = mountPoint;
         assertEquals(expectedPath, ctrl.path());
     }
 }

@@ -440,17 +440,10 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
     "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c",  // cgroup_path
     "/sys/fs/cgroup/cpu,cpuacct"                                             // expected_path
   };
-  TestCase container_prefix = {
-    "/sys/fs/cgroup/memory",    // mount_path
-    "/a",                       // root_path
-    "/a/b",                     // cgroup_path
-    "/sys/fs/cgroup/memory"     // expected_path
-  };
-  int length = 4;
+  int length = 3;
   TestCase* testCases[] = { &host,
                             &container_engine,
-                            &container_moving_cgroup,
-                            &container_prefix };
+                            &container_moving_cgroup };
   for (int i = 0; i < length; i++) {
     CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
                                                        (char*)testCases[i]->mount_path,

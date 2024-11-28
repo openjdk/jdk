@@ -36,11 +36,12 @@ public class CgroupV2SubsystemController implements CgroupSubsystemController {
     private final String path;
 
     public CgroupV2SubsystemController(String mountPath, String cgroupPath) {
-        this.path = Paths.get(mountPath, cgroupPath).toString();
-        if (cgroupPath.indexOf("../") != -1) {
-            System.getLogger("jdk.internal.platform").log(Level.WARNING, String.format(
-                    "Cgroup v2 path at [%s] is [%s], cgroup limits can be wrong.",
-                    mountPath, cgroupPath));
+        if (cgroupPath.indexOf("../") == -1) {
+            this.path = Paths.get(mountPath, cgroupPath).toString();
+        } else {
+            this.path = mountPath;
+            System.getLogger("jdk.internal.platform").log(Level.WARNING,
+                    "Cgroup cpu/memory controller path includes '../', detected limits won't be accurate");
         }
     }
 
