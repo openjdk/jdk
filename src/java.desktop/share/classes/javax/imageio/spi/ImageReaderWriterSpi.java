@@ -26,8 +26,6 @@
 package javax.imageio.spi;
 
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataFormat;
 import javax.imageio.metadata.IIOMetadataFormatImpl;
@@ -584,10 +582,7 @@ public abstract class ImageReaderWriterSpi extends IIOServiceProvider {
         }
         try {
             // Try to load from the same location as the module of the SPI
-            final String className = formatClassName;
-            PrivilegedAction<Class<?>> pa = () -> { return getMetadataFormatClass(className); };
-            @SuppressWarnings("removal")
-            Class<?> cls = AccessController.doPrivileged(pa);
+            Class<?> cls = getMetadataFormatClass(formatClassName);
             Method meth = cls.getMethod("getInstance");
             return (IIOMetadataFormat) meth.invoke(null);
         } catch (Exception e) {

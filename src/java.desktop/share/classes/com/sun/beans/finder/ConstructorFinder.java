@@ -30,7 +30,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
 import static com.sun.beans.util.Cache.Kind.SOFT;
-import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /**
  * This utility class provides {@code static} methods
@@ -81,7 +80,7 @@ public final class ConstructorFinder extends AbstractFinder<Constructor<?>> {
             throw new NoSuchMethodException("Abstract class cannot be instantiated: "
                 + type.getName());
         }
-        if (!Modifier.isPublic(type.getModifiers()) || !isPackageAccessible(type)) {
+        if (!Modifier.isPublic(type.getModifiers())) {
             throw new NoSuchMethodException("Class is not accessible: " + type.getName());
         }
         PrimitiveWrapperMap.replacePrimitivesWithWrappers(args);

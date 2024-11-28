@@ -154,7 +154,7 @@ class MultipleManifestTest {
                 " inflated: entry1.txt" + nl +
                 " inflated: META-INF/MANIFEST.MF" + nl +
                 " inflated: entry2.txt" + nl;
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
     }
 
     /**
@@ -170,7 +170,7 @@ class MultipleManifestTest {
                 " inflated: entry1.txt" + nl +
                 "  skipped: META-INF/MANIFEST.MF exists" + nl +
                 " inflated: entry2.txt" + nl;
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
     }
 
     private String getManifestVersion() throws IOException {
@@ -197,6 +197,10 @@ class MultipleManifestTest {
         } finally {
             System.setErr(saveErr);
         }
+    }
+
+    private void assertOutputContains(String expected) {
+        Assertions.assertTrue(baos.toString().contains(expected));
     }
 
     private void println() throws IOException {

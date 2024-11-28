@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -85,4 +85,4 @@ $KT -delete -alias user
 
 EXTRAOPTS="--add-exports java.base/sun.security.validator=ALL-UNNAMED"
 $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . ${TESTSRC}${FS}CertReplace.java
-$JAVA ${TESTVMOPTS} ${EXTRAOPTS} CertReplace certreplace.jks certreplace.certs
+$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} ${EXTRAOPTS} CertReplace certreplace.jks certreplace.certs

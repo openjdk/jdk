@@ -282,40 +282,18 @@ login.configuration.provider=sun.security.provider.ConfigFile
 #
 #login.config.url.1=file:${user.home}/.java.login.config
 
-#
-# Class to instantiate as the system Policy. This is the name of the class
-# that will be used as the Policy object. The system class loader is used to
-# locate this class.
-#
-policy.provider=sun.security.provider.PolicyFile
-
-# The default is to have a single system-wide policy file,
-# and a policy file in the user's home directory.
-#
-policy.url.1=file:${java.home}/conf/security/java.policy
-policy.url.2=file:${user.home}/.java.policy
-
-# Controls whether or not properties are expanded in policy and login
-# configuration files. If set to false, properties (${...}) will not
-# be expanded in policy and login configuration files. If commented out or
-# set to an empty string, the default value is "false" for policy files and
-# "true" for login configuration files.
+# Controls whether or not properties are expanded in login configuration files.
+# If set to false, properties (${...}) will not be expanded in login
+# configuration files. If commented out or set to an empty string, the default
+# value is "true" for login configuration files.
 #
 policy.expandProperties=true
 
-# Controls whether or not an extra policy or login configuration file is
-# allowed to be passed on the command line with -Djava.security.policy=somefile
-# or -Djava.security.auth.login.config=somefile. If commented out or set to
-# an empty string, the default value is "false".
+# Controls whether or not an extra login configuration file is allowed to be
+# passed on the command line with -Djava.security.auth.login.config=somefile.
+# If commented out or set to an empty string, the default value is "false".
 #
 policy.allowSystemProperty=true
-
-# whether or not we look into the IdentityScope for trusted Identities
-# when encountering a 1.1 signed JAR file. If the identity is found
-# and is trusted, we grant it AllPermission. Note: the default policy
-# provider (sun.security.provider.PolicyFile) does not support this property.
-#
-policy.ignoreIdentityScope=false
 
 #
 # Default keystore type.
@@ -331,27 +309,6 @@ keystore.type=pkcs12
 # keystore type supports loading only PKCS12 keystore files.
 #
 keystore.type.compat=true
-
-#
-# List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when passed to the
-# SecurityManager::checkPackageAccess method unless the corresponding
-# RuntimePermission("accessClassInPackage."+package) has been granted.
-#
-package.access=sun.misc.,\
-               sun.reflect.,\
-
-#
-# List of comma-separated packages that start with or equal this string
-# will cause a security exception to be thrown when passed to the
-# SecurityManager::checkPackageDefinition method unless the corresponding
-# RuntimePermission("defineClassInPackage."+package) has been granted.
-#
-# By default, none of the class loaders supplied with the JDK call
-# checkPackageDefinition.
-#
-package.definition=sun.misc.,\
-                   sun.reflect.,\
 
 #
 # Determines whether this properties file can be appended to
@@ -373,10 +330,7 @@ ssl.TrustManagerFactory.algorithm=PKIX
 # any positive value: the number of seconds to cache an address for
 # zero: do not cache
 #
-# default value is forever (FOREVER). For security reasons, this
-# caching is made forever when a security manager is set. When a security
-# manager is not set, the default behavior in this implementation
-# is to cache for 30 seconds.
+# The default behavior in this implementation is to cache for 30 seconds.
 #
 # NOTE: setting this to anything other than the default value can have
 #       serious security implications. Do not set it unless
@@ -775,7 +729,11 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # This is in addition to the jdk.certpath.disabledAlgorithms property above.
 #
 # See the specification of "jdk.certpath.disabledAlgorithms" for the
-# syntax of the disabled algorithm string.
+# syntax of the disabled algorithm string. Additionally, TLS cipher suites
+# can be disabled with this property using one or more "*" wildcard characters.
+# For example, "TLS_RSA_*" disables all cipher suites that start with
+# "TLS_RSA_". Only cipher suites starting with "TLS_" are allowed to have
+# wildcard characters.
 #
 # Note: The algorithm restrictions do not apply to trust anchors or
 # self-signed certificates.
@@ -785,10 +743,10 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
-#       rsa_pkcs1_sha1, secp224r1
+#       rsa_pkcs1_sha1, secp224r1, TLS_RSA_*
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
-    ECDH
+    ECDH, TLS_RSA_*
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)

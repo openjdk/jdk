@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,8 +156,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
     }
 
     store = kit->store_to_memory(kit->control(), access.addr().node(), val.node(), bt,
-                                 access.addr().type(), mo, requires_atomic_access, unaligned,
-                                 mismatched, unsafe, access.barrier_data());
+                                 mo, requires_atomic_access, unaligned, mismatched,
+                                 unsafe, access.barrier_data());
   } else {
     assert(access.is_opt_access(), "either parse or opt access");
     C2OptAccess& opt_access = static_cast<C2OptAccess&>(access);
@@ -217,7 +217,7 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
                             unaligned, mismatched, unsafe, access.barrier_data());
       load = kit->gvn().transform(load);
     } else {
-      load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
+      load = kit->make_load(control, adr, val_type, access.type(), mo,
                             dep, requires_atomic_access, unaligned, mismatched, unsafe,
                             access.barrier_data());
     }
@@ -710,11 +710,12 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   int base_off = is_array ? arrayOopDesc::length_offset_in_bytes() :
                             instanceOopDesc::base_offset_in_bytes();
   // base_off:
-  // 8  - 32-bit VM
+  // 8  - 32-bit VM or 64-bit VM, compact headers
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
     assert(UseCompressedClassPointers, "");
+    assert(!UseCompactObjectHeaders, "");
     if (is_array) {
       // Exclude length to copy by 8 bytes words.
       base_off += sizeof(int);

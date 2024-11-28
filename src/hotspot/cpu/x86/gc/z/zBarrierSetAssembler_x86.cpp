@@ -363,8 +363,12 @@ static void emit_store_fast_path_check_c2(MacroAssembler* masm, Address ref_addr
 }
 
 static bool is_c2_compilation() {
+#ifdef COMPILER2
   CompileTask* task = ciEnv::current()->task();
   return task != nullptr && is_c2_compile(task->comp_level());
+#else
+  return false;
+#endif
 }
 
 void ZBarrierSetAssembler::store_barrier_fast(MacroAssembler* masm,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,14 +45,13 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import jdk.jpackage.internal.ApplicationLayout;
-import jdk.jpackage.test.Functional.ThrowingBiConsumer;
-import static jdk.jpackage.test.Functional.ThrowingBiConsumer.toBiConsumer;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
-import static jdk.jpackage.test.Functional.ThrowingSupplier.toSupplier;
-import static jdk.jpackage.test.Functional.rethrowUnchecked;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingBiConsumer.toBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.LINUX_DEB;
 import static jdk.jpackage.test.PackageType.LINUX_RPM;
@@ -124,6 +121,15 @@ public final class PackageTest extends RunnablePackageTest {
 
     public PackageTest setExpectedExitCode(int v) {
         expectedJPackageExitCode = v;
+        return this;
+    }
+
+    public PackageTest ignoreBundleOutputDir() {
+        return ignoreBundleOutputDir(true);
+    }
+
+    public PackageTest ignoreBundleOutputDir(boolean v) {
+        ignoreBundleOutputDir = v;
         return this;
     }
 
@@ -368,7 +374,7 @@ public final class PackageTest extends RunnablePackageTest {
         private final List<Consumer<Action>> handlers;
     }
 
-    final static class PackageHandlers {
+    static final class PackageHandlers {
         Consumer<JPackageCommand> installHandler;
         Consumer<JPackageCommand> uninstallHandler;
         BiFunction<JPackageCommand, Path, Path> unpackHandler;
@@ -528,7 +534,7 @@ public final class PackageTest extends RunnablePackageTest {
             private final JPackageCommand cmd = Functional.identity(() -> {
                 JPackageCommand result = new JPackageCommand();
                 result.setDefaultInputOutput().setDefaultAppName();
-                if (BUNDLE_OUTPUT_DIR != null) {
+                if (BUNDLE_OUTPUT_DIR != null && !ignoreBundleOutputDir) {
                     result.setArgumentValue("--dest", BUNDLE_OUTPUT_DIR.toString());
                 }
                 type.applyTo(result);
@@ -777,8 +783,9 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, Handler> handlers;
     private Set<String> namedInitializers;
     private Map<PackageType, PackageHandlers> packageHandlers;
+    private boolean ignoreBundleOutputDir;
 
-    private final static File BUNDLE_OUTPUT_DIR;
+    private static final Path BUNDLE_OUTPUT_DIR;
 
     static {
         final String propertyName = "output";
@@ -786,9 +793,9 @@ public final class PackageTest extends RunnablePackageTest {
         if (val == null) {
             BUNDLE_OUTPUT_DIR = null;
         } else {
-            BUNDLE_OUTPUT_DIR = new File(val).getAbsoluteFile();
+            BUNDLE_OUTPUT_DIR = Path.of(val).toAbsolutePath();
 
-            if (!BUNDLE_OUTPUT_DIR.isDirectory()) {
+            if (!Files.isDirectory(BUNDLE_OUTPUT_DIR)) {
                 throw new IllegalArgumentException(String.format("Invalid value of %s sytem property: [%s]. Should be existing directory",
                         TKit.getConfigPropertyName(propertyName),
                         BUNDLE_OUTPUT_DIR));

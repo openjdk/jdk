@@ -47,6 +47,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     private final AttributeMapper<T> mapper;
     final ClassReaderImpl classReader;
     final int payloadStart;
+    Utf8Entry name;
 
     BoundAttribute(ClassReader classReader, AttributeMapper<T> mapper, int payloadStart) {
         this.mapper = mapper;
@@ -59,8 +60,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     @Override
-    public String attributeName() {
-        return mapper.name();
+    public Utf8Entry attributeName() {
+        if (name == null) {
+            name = classReader.readEntry(payloadStart - 6, Utf8Entry.class);
+        }
+        return name;
     }
 
     @Override

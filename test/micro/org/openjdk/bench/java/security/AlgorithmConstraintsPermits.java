@@ -45,7 +45,7 @@ import static sun.security.util.DisabledAlgorithmConstraints.PROPERTY_TLS_DISABL
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
+@Fork(value = 3, jvmArgs = {"--add-exports", "java.base/sun.security.util=ALL-UNNAMED"})
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)

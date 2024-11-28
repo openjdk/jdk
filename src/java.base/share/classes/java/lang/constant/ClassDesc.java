@@ -120,7 +120,7 @@ public sealed interface ClassDesc
      * not in the correct format
      */
     static ClassDesc of(String packageName, String className) {
-        validateBinaryClassName(packageName);
+        validateBinaryPackageName(packageName);
         validateMemberName(className, false);
         if (packageName.isEmpty()) {
             return internalNameToDesc(className);

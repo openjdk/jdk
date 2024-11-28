@@ -36,7 +36,7 @@ import org.openjdk.jmh.annotations.Warmup;
 
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 3, jvmArgsAppend = {"-Xmx1g", "-Xms1g"})
+@Fork(value = 3, jvmArgs = {"-Xmx1g", "-Xms1g"})
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)

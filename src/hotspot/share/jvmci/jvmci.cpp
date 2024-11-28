@@ -54,26 +54,29 @@ volatile intx JVMCI::_first_error_tid = -1;
 volatile int JVMCI::_fatal_log_fd = -1;
 const char* JVMCI::_fatal_log_filename = nullptr;
 
-CompilerThreadCanCallJava::CompilerThreadCanCallJava(JavaThread* current, bool new_state) {
-  _current = nullptr;
+CompilerThread* CompilerThreadCanCallJava::update(JavaThread* current, bool new_state) {
   if (current->is_Compiler_thread()) {
     CompilerThread* ct = CompilerThread::cast(current);
     if (ct->_can_call_java != new_state &&
         ct->_compiler != nullptr &&
         ct->_compiler->is_jvmci())
     {
-      // Only enter a new context if the ability of the
+      // Only update the state if the ability of the
       // current thread to call Java actually changes
-      _reset_state = ct->_can_call_java;
       ct->_can_call_java = new_state;
-      _current = ct;
+      return ct;
     }
   }
+  return nullptr;
+}
+
+CompilerThreadCanCallJava::CompilerThreadCanCallJava(JavaThread* current, bool new_state) {
+  _current = CompilerThreadCanCallJava::update(current, new_state);
 }
 
 CompilerThreadCanCallJava::~CompilerThreadCanCallJava() {
   if (_current != nullptr) {
-    _current->_can_call_java = _reset_state;
+    _current->_can_call_java = !_current->_can_call_java;
   }
 }
 

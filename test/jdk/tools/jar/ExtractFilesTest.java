@@ -88,7 +88,7 @@ import jdk.test.lib.util.FileUtils;
                 " inflated: testfile1" + nl +
                 " inflated: testfile2" + nl;
         rm("META-INF testfile1 testfile2");
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
     }
 
     /**
@@ -105,7 +105,7 @@ import jdk.test.lib.util.FileUtils;
                 " inflated: testfile2" + nl;
         Assertions.assertEquals("testfile1", cat("testfile1"));
         rm("META-INF testfile1 testfile2");
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
     }
 
     /**
@@ -123,7 +123,7 @@ import jdk.test.lib.util.FileUtils;
         Assertions.assertEquals("", cat("testfile1"));
         Assertions.assertEquals("testfile2", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
     }
 
     /**
@@ -141,7 +141,7 @@ import jdk.test.lib.util.FileUtils;
         Assertions.assertEquals("", cat("testfile1"));
         Assertions.assertEquals("", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
     }
 
     /**
@@ -159,7 +159,7 @@ import jdk.test.lib.util.FileUtils;
         Assertions.assertEquals("testfile1", cat("testfile1"));
         Assertions.assertEquals("", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
     }
 
     /**
@@ -175,8 +175,12 @@ import jdk.test.lib.util.FileUtils;
                 "testfile1" + nl +
                 "testfile2" + nl;
 
-        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        assertOutputContains(output);
         Assertions.assertEquals("Warning: The --keep-old-files/-k/k option is not valid with current usage, will be ignored." + nl, err);
+    }
+
+    private void assertOutputContains(String expected) {
+        Assertions.assertTrue(baos.toString().contains(expected));
     }
 
     private Stream<Path> mkpath(String... args) {

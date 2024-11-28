@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -31,84 +30,6 @@ import java.util.function.Supplier;
 
 
 public class Functional {
-    @FunctionalInterface
-    public interface ThrowingConsumer<T> {
-        void accept(T t) throws Throwable;
-
-        public static <T> Consumer<T> toConsumer(ThrowingConsumer<T> v) {
-            return o -> {
-                try {
-                    v.accept(o);
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingBiConsumer<T, U> {
-        void accept(T t, U u) throws Throwable;
-
-        public static <T, U> BiConsumer<T, U> toBiConsumer(ThrowingBiConsumer<T, U> v) {
-            return (t, u) -> {
-                try {
-                    v.accept(t, u);
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingSupplier<T> {
-        T get() throws Throwable;
-
-        public static <T> Supplier<T> toSupplier(ThrowingSupplier<T> v) {
-            return () -> {
-                try {
-                    return v.get();
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-                // Unreachable
-                return null;
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingFunction<T, R> {
-        R apply(T t) throws Throwable;
-
-        public static <T, R> Function<T, R> toFunction(ThrowingFunction<T, R> v) {
-            return (t) -> {
-                try {
-                    return v.apply(t);
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-                // Unreachable
-                return null;
-            };
-        }
-    }
-
-    @FunctionalInterface
-    public interface ThrowingRunnable {
-        void run() throws Throwable;
-
-        public static Runnable toRunnable(ThrowingRunnable v) {
-            return () -> {
-                try {
-                    v.run();
-                } catch (Throwable ex) {
-                    rethrowUnchecked(ex);
-                }
-            };
-        }
-    }
 
     public static <T> Supplier<T> identity(Supplier<T> v) {
         return v;
@@ -140,25 +61,5 @@ public class Functional {
 
     public static <T> Predicate<T> identityPredicate(Predicate<T> v) {
         return v;
-    }
-
-    public static class ExceptionBox extends RuntimeException {
-        public ExceptionBox(Throwable throwable) {
-            super(throwable);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public static RuntimeException rethrowUnchecked(Throwable throwable) throws
-            ExceptionBox {
-        if (throwable instanceof RuntimeException) {
-            throw (RuntimeException)throwable;
-        }
-
-        if (throwable instanceof InvocationTargetException) {
-            throw new ExceptionBox(throwable.getCause());
-        }
-
-        throw new ExceptionBox(throwable);
     }
 }

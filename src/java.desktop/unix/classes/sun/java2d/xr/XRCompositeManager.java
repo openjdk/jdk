@@ -30,8 +30,6 @@ import java.awt.Composite;
 import java.awt.Paint;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import sun.awt.image.PixelConverter;
 import sun.font.XRTextRenderer;
@@ -93,13 +91,7 @@ public class XRCompositeManager {
     private XRCompositeManager(XRSurfaceData surface) {
         con = new XRBackendNative();
 
-        @SuppressWarnings("removal")
-        String gradProp =
-            AccessController.doPrivileged(new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty("sun.java2d.xrgradcache");
-                }
-            });
+        String gradProp = System.getProperty("sun.java2d.xrgradcache");
 
         enableGradCache = gradProp == null ||
                           !(gradProp.equalsIgnoreCase("false") ||

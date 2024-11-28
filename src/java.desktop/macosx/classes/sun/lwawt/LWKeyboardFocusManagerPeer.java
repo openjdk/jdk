@@ -57,13 +57,6 @@ public class LWKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
             focusedWindow = win;
         }
 
-        if (from != null) {
-            from.updateSecurityWarningVisibility();
-        }
-
-        if (to != null) {
-            to.updateSecurityWarningVisibility();
-        }
     }
 
     @Override
