@@ -33,9 +33,7 @@ void VMRegImpl::set_regName() {
   int i;
   for (i = 0; i < ConcreteRegisterImpl::max_gpr ; ) {
     regName[i++] = reg->name();
-#ifdef AMD64
     regName[i++] = reg->name();
-#endif // AMD64
     reg = reg->successor();
   }
 

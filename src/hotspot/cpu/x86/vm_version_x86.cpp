@@ -874,7 +874,6 @@ void VM_Version::get_processor_features() {
     UseSSE = 2;
   }
 
-#ifdef AMD64
   // flush_icache_stub have to be generated first.
   // That is why Icache line size is hard coded in ICache class,
   // see icache_x86.hpp. It is also the reason why we can't use
@@ -886,7 +885,6 @@ void VM_Version::get_processor_features() {
   guarantee(_cpuid_info.std_cpuid1_edx.bits.clflush != 0, "clflush is not supported");
   // clflush_size is size in quadwords (8 bytes).
   guarantee(_cpuid_info.std_cpuid1_ebx.bits.clflush_size == 8, "such clflush size is not supported");
-#endif
 
   // assigning this field effectively enables Unsafe.writebackMemory()
   // by initing UnsafeConstant.DATA_CACHE_LINE_FLUSH_SIZE to non-zero

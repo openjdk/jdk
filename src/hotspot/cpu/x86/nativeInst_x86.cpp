@@ -68,9 +68,7 @@ void NativeCall::print() {
 // Inserts a native call instruction at a given pc
 void NativeCall::insert(address code_pos, address entry) {
   intptr_t disp = (intptr_t)entry - ((intptr_t)code_pos + 1 + 4);
-#ifdef AMD64
   guarantee(disp == (intptr_t)(jint)disp, "must be 32-bit offset");
-#endif // AMD64
   *code_pos = instruction_code;
   *((int32_t *)(code_pos+1)) = (int32_t) disp;
   ICache::invalidate_range(code_pos, instruction_size);
@@ -158,7 +156,6 @@ void NativeCall::set_destination_mt_safe(address dest) {
 
 
 void NativeMovConstReg::verify() {
-#ifdef AMD64
   // make sure code pattern is actually a mov reg64, imm64 instruction
   bool valid_rex_prefix  = ubyte_at(0) == Assembler::REX_W || ubyte_at(0) == Assembler::REX_WB;
   bool valid_rex2_prefix = ubyte_at(0) == Assembler::REX2  &&
@@ -170,12 +167,6 @@ void NativeMovConstReg::verify() {
     print();
     fatal("not a REX.W[B] mov reg64, imm64");
   }
-#else
-  // make sure code pattern is actually a mov reg, imm32 instruction
-  u_char test_byte = *(u_char*)instruction_address();
-  u_char test_byte_2 = test_byte & ( 0xff ^ register_mask);
-  if (test_byte_2 != instruction_code) fatal("not a mov reg, imm32");
-#endif // AMD64
 }
 
 
@@ -338,9 +329,7 @@ void NativeJump::verify() {
 
 void NativeJump::insert(address code_pos, address entry) {
   intptr_t disp = (intptr_t)entry - ((intptr_t)code_pos + 1 + 4);
-#ifdef AMD64
   guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-#endif // AMD64
 
   *code_pos = instruction_code;
   *((int32_t*)(code_pos + 1)) = (int32_t)disp;
@@ -353,11 +342,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
   // in use. The patching in that instance must happen only when certain
   // alignment restrictions are true. These guarantees check those
   // conditions.
-#ifdef AMD64
   const int linesize = 64;
-#else
-  const int linesize = 32;
-#endif // AMD64
 
   // Must be wordSize aligned
   guarantee(((uintptr_t) verified_entry & (wordSize -1)) == 0,
@@ -415,9 +400,7 @@ void NativeGeneralJump::verify() {
 
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
   intptr_t disp = (intptr_t)entry - ((intptr_t)code_pos + 1 + 4);
-#ifdef AMD64
   guarantee(disp == (intptr_t)(int32_t)disp, "must be 32-bit offset");
-#endif // AMD64
 
   *code_pos = unconditional_long_jump;
   *((int32_t *)(code_pos+1)) = (int32_t) disp;
