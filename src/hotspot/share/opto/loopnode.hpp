@@ -1692,7 +1692,6 @@ private:
 
   IfTrueNode* clone_assertion_predicate_for_unswitched_loops(IfTrueNode* template_assertion_predicate_success_proj,
                                                              ParsePredicateNode* unswitched_loop_parse_predicate);
-
   static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
 
   bool _created_loop_node;

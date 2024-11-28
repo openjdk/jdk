@@ -33,7 +33,6 @@
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "castnode.hpp"
-
 #include "loopnode.hpp"
 #include "utilities/checkedCast.hpp"
 
@@ -334,6 +333,8 @@ bool CastLLNode::cmp_used_at_inner_loop_exit_test(Node* cmp) {
   return false;
 }
 
+// Find if this is a cast node added by PhaseIdealLoop::create_loop_nest() to narrow the number of iterations of the
+// inner loop
 bool CastLLNode::used_at_inner_loop_exit_test() {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node* convl2i = fast_out(i);
@@ -389,6 +390,8 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
+  // if it's a cast created by PhaseIdealLoop::create_loop_nest(), don't transform it until the counted loop is created
+  // in next loop opts pass
   if (!can_reshape || !used_at_inner_loop_exit_test()) {
     return optimize_integer_cast(phase, T_LONG);
   }
