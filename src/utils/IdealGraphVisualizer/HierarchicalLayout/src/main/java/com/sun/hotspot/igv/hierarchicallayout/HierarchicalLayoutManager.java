@@ -29,7 +29,7 @@ import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Point;
 import java.util.*;
 
-public class HierarchicalLayoutManager extends LayoutManager {
+public class HierarchicalLayoutManager extends LayoutManager implements LayoutMover {
 
     int maxLayerLength;
     private LayoutGraph graph;
@@ -63,6 +63,62 @@ public class HierarchicalLayoutManager extends LayoutManager {
         WriteResult.apply(layoutGraph);
 
         graph = layoutGraph;
+    }
+
+    @Override
+    public void moveLink(Point linkPos, int shiftX) {
+        int layerNr = graph.findLayer(linkPos.y);
+        for (LayoutNode node : graph.getLayer(layerNr)) {
+            if (node.isDummy() && linkPos.x == node.getX()) {
+                LayoutLayer layer = graph.getLayer(layerNr);
+                if (layer.contains(node)) {
+                    node.setX(linkPos.x + shiftX);
+                    layer.sortNodesByX();
+                    break;
+                }
+            }
+        }
+        writeBack();
+    }
+
+    @Override
+    public void moveVertices(Set<? extends Vertex> movedVertices) {
+        for (Vertex vertex : movedVertices) {
+            moveVertex(vertex);
+        }
+        writeBack();
+    }
+
+    private void writeBack() {
+        graph.optimizeBackEdgeCrossings();
+        graph.updateLayerMinXSpacing();
+        graph.straightenEdges();
+        WriteResult.apply(graph);
+    }
+
+    @Override
+    public void moveVertex(Vertex movedVertex) {
+        Point newLoc = movedVertex.getPosition();
+        LayoutNode movedNode = graph.getLayoutNode(movedVertex);
+        assert !movedNode.isDummy();
+
+        int layerNr = graph.findLayer(newLoc.y + movedNode.getOuterHeight() / 2);
+        if (movedNode.getLayer() == layerNr) { // we move the node in the same layer
+            LayoutLayer layer = graph.getLayer(layerNr);
+            if (layer.contains(movedNode)) {
+                movedNode.setX(newLoc.x);
+                layer.sortNodesByX();
+            }
+        } else { // only remove edges if we moved the node to a new layer
+            if (maxLayerLength > 0) return; // TODO: not implemented
+            graph.removeNodeAndEdges(movedNode);
+            layerNr = graph.insertNewLayerIfNeeded(movedNode, layerNr);
+            graph.addNodeToLayer(movedNode, layerNr);
+            movedNode.setX(newLoc.x);
+            graph.getLayer(layerNr).sortNodesByX();
+            graph.removeEmptyLayers();
+            graph.addEdges(movedNode, maxLayerLength);
+        }
     }
 
     public List<LayoutNode> getNodes() {

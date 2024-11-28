@@ -152,6 +152,10 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         y = top;
     }
 
+    public int getCenter() {
+        return y + height / 2;
+    }
+
     /**
      * Gets the bottom Y-coordinate of this layer.
      *
@@ -180,6 +184,53 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
     }
 
     /**
+     * Checks if this layer contains only dummy nodes.
+     *
+     * @return true if all nodes in the layer are dummy nodes; false otherwise.
+     */
+    public boolean containsOnlyDummyNodes() {
+        for (LayoutNode node : this) {
+            if (!node.isDummy()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Sorts the nodes in this layer by their X-coordinate in increasing order.
+     * Assigns position indices to nodes based on the sorted order.
+     * Adjusts the X-coordinates of nodes to ensure minimum spacing between them.
+     */
+    public void sortNodesByX() {
+        if (isEmpty()) return;
+
+        sort(NODE_X_COMPARATOR); // Sort nodes in the layer increasingly by x
+
+        updateNodeIndices();
+        updateMinXSpacing(false);
+    }
+
+    /**
+     * Ensures nodes have minimum horizontal spacing by adjusting their X positions.
+     *
+     * @param startFromZero if true, starts positioning from X = 0; otherwise, uses the first node's current X.
+     */
+    public void updateMinXSpacing(boolean startFromZero) {
+        if (isEmpty()) {
+            return; // No nodes to adjust.
+        }
+
+        int minX = startFromZero ? 0 : this.get(0).getX();
+
+        for (LayoutNode node : this) {
+            int x = Math.max(node.getX(), minX);
+            node.setX(x);
+            minX = x + node.getOuterWidth() + NODE_OFFSET;
+        }
+    }
+
+    /**
      * Initializes nodes' X positions with spacing.
      */
     public void initXPositions() {
@@ -199,6 +250,62 @@ public class LayoutLayer extends ArrayList<LayoutNode> {
         for (LayoutNode layoutNode : this) {
             layoutNode.setPos(pos);
             pos++;
+        }
+    }
+
+    /**
+     * Attempts to move the specified node to the right within the layer to the given X-coordinate.
+     * Ensures that the node does not overlap with its right neighbor by checking required spacing.
+     * If movement is possible without causing overlap, the node's X-coordinate is updated.
+     *
+     * @param layoutNode The node to move.
+     * @param newX       The desired new X-coordinate for the node.
+     */
+    public void tryShiftNodeRight(LayoutNode layoutNode, int newX) {
+        int currentX = layoutNode.getX();
+        int shiftAmount = newX - currentX;
+        int rightPos = layoutNode.getPos() + 1;
+
+        if (rightPos < size()) {
+            // There is a right neighbor
+            LayoutNode rightNeighbor = get(rightPos);
+            int proposedRightEdge = layoutNode.getRight() + shiftAmount;
+            int requiredLeftEdge = rightNeighbor.getOuterLeft() - NODE_OFFSET;
+
+            if (proposedRightEdge <= requiredLeftEdge) {
+                layoutNode.setX(newX);
+            }
+        } else {
+            // No right neighbor; safe to move freely to the right
+            layoutNode.setX(newX);
+        }
+    }
+
+    /**
+     * Attempts to move the specified node to the left within the layer to the given X-coordinate.
+     * Ensures that the node does not overlap with its left neighbor by checking required spacing.
+     * If movement is possible without causing overlap, the node's X-coordinate is updated.
+     *
+     * @param layoutNode The node to move.
+     * @param newX       The desired new X-coordinate for the node.
+     */
+    public void tryShiftNodeLeft(LayoutNode layoutNode, int newX) {
+        int currentX = layoutNode.getX();
+        int shiftAmount = currentX - newX;
+        int leftPos = layoutNode.getPos() - 1;
+
+        if (leftPos >= 0) {
+            // There is a left neighbor
+            LayoutNode leftNeighbor = get(leftPos);
+            int proposedLeftEdge = layoutNode.getLeft() - shiftAmount;
+            int requiredRightEdge = leftNeighbor.getOuterRight() + NODE_OFFSET;
+
+            if (requiredRightEdge <= proposedLeftEdge) {
+                layoutNode.setX(newX);
+            }
+        } else {
+            // No left neighbor; safe to move freely to the left
+            layoutNode.setX(newX);
         }
     }
 }

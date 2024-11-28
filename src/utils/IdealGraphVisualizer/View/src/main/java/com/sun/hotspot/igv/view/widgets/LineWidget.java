@@ -57,8 +57,8 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private final OutputSlot outputSlot;
     private final DiagramScene scene;
     private final List<? extends Connection> connections;
-    private final Point from;
-    private final Point to;
+    private Point from;
+    private Point to;
     private Rectangle clientArea;
     private final LineWidget predecessor;
     private final List<LineWidget> successors;
@@ -97,6 +97,10 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         setBackground(color);
     }
 
+    public Point getClientAreaLocation() {
+        return clientArea.getLocation();
+    }
+
     private void computeClientArea() {
         int minX = from.x;
         int minY = from.y;
@@ -130,12 +134,30 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         return sb.toString();
     }
 
+    public void setFrom(Point from) {
+        this.from = from;
+        computeClientArea();
+    }
+
+    public void setTo(Point to) {
+        this.to= to;
+        computeClientArea();
+    }
+
     public Point getFrom() {
         return from;
     }
 
     public Point getTo() {
         return to;
+    }
+
+    public LineWidget getPredecessor() {
+        return predecessor;
+    }
+
+    public List<LineWidget> getSuccessors() {
+        return Collections.unmodifiableList(successors);
     }
 
     private void addSuccessor(LineWidget widget) {
