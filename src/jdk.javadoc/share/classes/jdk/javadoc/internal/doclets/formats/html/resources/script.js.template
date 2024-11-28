@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
@@ -232,20 +232,6 @@ document.addEventListener("readystatechange", (e) => {
 });
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
-    // Reset animation for type parameter target highlight
-    document.querySelectorAll("a").forEach((link) => {
-        link.addEventListener("click", (e) => {
-            const href = e.currentTarget.getAttribute("href");
-            if (href && href.startsWith("#") && href.indexOf("type-param-") > -1) {
-                const target = document.getElementById(decodeURI(href.substring(1)));
-                if (target) {
-                    target.style.animation = "none";
-                    void target.offsetHeight;
-                    target.style.removeProperty("animation");
-                }
-            }
-        })
-    });
     // Make sure current element is visible in breadcrumb navigation on small displays
     const subnav = document.querySelector("ol.sub-nav-list");
     if (subnav && subnav.lastElementChild) {
