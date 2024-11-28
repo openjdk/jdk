@@ -23,11 +23,14 @@
 
 import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -41,6 +44,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -84,20 +88,20 @@ class ConnectFailTest {
     }
 
     @Test
-    void testConnectedSocket() throws Exception {
+    void testConnectedSocket() throws Throwable {
         testConnectedSocket(
                 ConnectFailTest::createConnectedSocket,
-                runnable -> {
-                    SocketException exception = assertThrows(SocketException.class, runnable::run);
+                executable -> {
+                    SocketException exception = assertThrows(SocketException.class, executable);
                     assertEquals("already connected", exception.getMessage());
                 });
     }
 
     @Test
-    void testConnectedNioSocket() throws Exception {
+    void testConnectedNioSocket() throws Throwable {
         testConnectedSocket(
                 ConnectFailTest::createConnectedNioSocket,
-                runnable -> assertThrows(AlreadyConnectedException.class, runnable::run));
+                executable -> assertThrows(AlreadyConnectedException.class, executable));
     }
 
     /**
@@ -106,9 +110,9 @@ class ConnectFailTest {
      * @param reconnectFailureVerifier a consumer verifying the thrown reconnect failure
      */
     private static void testConnectedSocket(
-            ThrowingFunction<SocketAddress, Socket> connectedSocketFactory,
-            Consumer<ThrowingRunnable> reconnectFailureVerifier)
-            throws Exception {
+            Function<SocketAddress, Socket> connectedSocketFactory,
+            Consumer<Executable> reconnectFailureVerifier)
+            throws Throwable {
         withEphemeralServerSocket(serverSocket -> {
             SocketAddress serverSocketAddress = serverSocket.getLocalSocketAddress();
             try (Socket socket = connectedSocketFactory.apply(serverSocketAddress)) {
@@ -184,8 +188,8 @@ class ConnectFailTest {
     @ParameterizedTest
     @MethodSource("connectedSocketFactories")
     void testConnectedSocketWithUnresolvedAddress(
-            ThrowingFunction<SocketAddress, Socket> connectedSocketFactory)
-            throws Exception {
+            Function<SocketAddress, Socket> connectedSocketFactory)
+            throws Throwable {
         withEphemeralServerSocket(serverSocket -> {
             SocketAddress serverSocketAddress = serverSocket.getLocalSocketAddress();
             try (Socket socket = connectedSocketFactory.apply(serverSocketAddress)) {
@@ -197,23 +201,31 @@ class ConnectFailTest {
         });
     }
 
-    static List<ThrowingFunction<SocketAddress, Socket>> connectedSocketFactories() {
+    static List<Function<SocketAddress, Socket>> connectedSocketFactories() {
         return List.of(
                 ConnectFailTest::createConnectedSocket,
                 ConnectFailTest::createConnectedNioSocket);
     }
 
-    private static Socket createConnectedSocket(SocketAddress address) throws IOException {
+    private static Socket createConnectedSocket(SocketAddress address) {
         InetSocketAddress inetAddress = (InetSocketAddress) address;
-        return new Socket(inetAddress.getAddress(), inetAddress.getPort());
+        try {
+            return new Socket(inetAddress.getAddress(), inetAddress.getPort());
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
     }
 
     @SuppressWarnings("resource")
-    private static Socket createConnectedNioSocket(SocketAddress address) throws IOException {
-        return SocketChannel.open(address).socket();
+    private static Socket createConnectedNioSocket(SocketAddress address) {
+        try {
+            return SocketChannel.open(address).socket();
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
     }
 
-    private static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer) throws Exception {
+    private static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer) throws Throwable {
         try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
              ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
             // Accept connections in the background to avoid blocking the caller
@@ -250,27 +262,6 @@ class ConnectFailTest {
 
         }
         System.err.println("[Test socket server] Stopping accepting connections");
-    }
-
-    @FunctionalInterface
-    private interface ThrowingConsumer<V> {
-
-        void accept(V value) throws Exception;
-
-    }
-
-    @FunctionalInterface
-    private interface ThrowingRunnable {
-
-        void run() throws Exception;
-
-    }
-
-    @FunctionalInterface
-    private interface ThrowingFunction<I, O> {
-
-        O apply(I input) throws Exception;
-
     }
 
 }
