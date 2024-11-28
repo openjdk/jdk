@@ -912,7 +912,6 @@ enum LIR_Code {
       , lir_nop
       , lir_std_entry
       , lir_osr_entry
-      , lir_fpop_raw
       , lir_breakpoint
       , lir_rtcall
       , lir_membar
@@ -926,8 +925,6 @@ enum LIR_Code {
       , lir_on_spin_wait
   , end_op0
   , begin_op1
-      , lir_fxch
-      , lir_fld
       , lir_push
       , lir_pop
       , lir_null_check

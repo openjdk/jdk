@@ -891,7 +891,6 @@ class LinearScanStatistic : public StackObj {
     counter_throw,
     counter_unwind,
     counter_typecheck,
-    counter_fpu_stack,
     counter_misc_inst,
     counter_other_inst,
     blank_line_2,

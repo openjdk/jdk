@@ -5957,19 +5957,6 @@ bool EdgeMoveOptimizer::operations_different(LIR_Op* op1, LIR_Op* op2) {
       return false;
     }
 
-  } else if (op1->code() == lir_fxch && op2->code() == lir_fxch) {
-    assert(op1->as_Op1() != nullptr, "fxch must be LIR_Op1");
-    assert(op2->as_Op1() != nullptr, "fxch must be LIR_Op1");
-    LIR_Op1* fxch1 = (LIR_Op1*)op1;
-    LIR_Op1* fxch2 = (LIR_Op1*)op2;
-    if (fxch1->in_opr()->as_jint() == fxch2->in_opr()->as_jint()) {
-      // equal FPU stack operations can be optimized
-      return false;
-    }
-
-  } else if (op1->code() == lir_fpop_raw && op2->code() == lir_fpop_raw) {
-    // equal FPU stack operations can be optimized
-    return false;
   }
 
   // no optimization possible
@@ -6489,7 +6476,6 @@ const char* LinearScanStatistic::counter_name(int counter_idx) {
     case counter_throw:           return "throw";
     case counter_unwind:          return "unwind";
     case counter_typecheck:       return "type+null-checks";
-    case counter_fpu_stack:       return "fpu-stack";
     case counter_misc_inst:       return "other instructions";
     case counter_other_inst:      return "misc. instructions";
 
@@ -6710,10 +6696,6 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_instanceof:
         case lir_checkcast:
         case lir_store_check:     inc_counter(counter_typecheck); break;
-
-        case lir_fpop_raw:
-        case lir_fxch:
-        case lir_fld:             inc_counter(counter_fpu_stack); break;
 
         case lir_nop:
         case lir_push:
