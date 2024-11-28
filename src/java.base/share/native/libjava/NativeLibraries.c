@@ -75,17 +75,17 @@ static void *findJniFunction(JNIEnv *env, void *handle,
     // sym + '_' + cname + '\0'
     if ((len = (cname != NULL ? (strlen(cname) + 1) : 0) + strlen(sym) + 1) >
         FILENAME_MAX) {
-      goto done;
+        goto done;
     }
     jniFunctionName = malloc(len);
     if (jniFunctionName == NULL) {
-      JNU_ThrowOutOfMemoryError(env, NULL);
-      goto done;
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        goto done;
     }
     strcpy(jniFunctionName, sym);
     if (cname != NULL) {
-      strcat(jniFunctionName, "_");
-      strcat(jniFunctionName, cname);
+        strcat(jniFunctionName, "_");
+        strcat(jniFunctionName, cname);
     }
     entryName = JVM_FindLibraryEntry(handle, jniFunctionName);
     free(jniFunctionName);
