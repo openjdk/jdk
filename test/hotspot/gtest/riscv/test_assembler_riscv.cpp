@@ -106,4 +106,78 @@ TEST_VM(RiscV, cmov) {
   }
 }
 
+template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
+class WeakNarrowCmpxchgTester {
+ public:
+  typedef TESTSIZE (*cmpxchg_func)(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result,
+                                   int64_t scratch0, int64_t scratch1, int64_t scratch2);
+
+  static TESTSIZE weak_narrow_cmpxchg(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result,
+                                      int64_t scratch0, int64_t scratch1, int64_t scratch2) {
+    BufferBlob* bb = BufferBlob::create("riscvTest", 128);
+    CodeBuffer code(bb);
+    MacroAssembler _masm(&code);
+    address entry = _masm.pc();
+    {
+       _masm.weak_cmpxchg_narrow_value(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
+                                      ASMSIZE, Assembler::relaxed, Assembler::relaxed,
+                                      /*result*/ c_rarg3, c_rarg4, c_rarg5, c_rarg6); /* Uses also t0-t1, caller saved */
+      _masm.mv(c_rarg0, c_rarg3);
+      _masm.ret();
+    }
+    _masm.flush(); // icache invalidate
+    TESTSIZE ret = ((cmpxchg_func)entry)(addr, expected, new_value, result, scratch0, scratch1, scratch2);
+    BufferBlob::free(bb);
+    return ret;
+  }
+};
+
+template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
+void run_narrow_cmpxchg_tests() {
+  // Assume natural aligned
+  TESTSIZE data[8];
+  TESTSIZE ret;
+  for (int i = 0; i < 7; i++) {
+    memset(data, -1, sizeof(data));
+
+    data[i] = 121;
+    ret = WeakNarrowCmpxchgTester<TESTSIZE, ASMSIZE>::weak_narrow_cmpxchg((intptr_t)&data[i], 121, 42, /* result */ 67,
+                                                                          -1, -1, -1);
+    ASSERT_EQ(ret, 1);
+    ASSERT_EQ(data[i], 42);
+
+    data[i] = 121;
+    ret = WeakNarrowCmpxchgTester<TESTSIZE, ASMSIZE>::weak_narrow_cmpxchg((intptr_t)&data[i], 120, 42, /* result */ 67,
+                                                                          -1, -1, -1);
+    ASSERT_EQ(ret, 0);
+    ASSERT_EQ(data[i], 121);
+  }
+}
+
+TEST_VM(RiscV, cmpxchg_weak_int16_lr_sc) {
+  bool zacas = UseZacas;
+  UseZacas = false;
+  run_narrow_cmpxchg_tests<int16_t, Assembler::int16>();
+  UseZacas = zacas;
+}
+
+TEST_VM(RiscV, cmpxchg_weak_int8_lr_sc) {
+  bool zacas = UseZacas;
+  UseZacas = false;
+  run_narrow_cmpxchg_tests<int8_t, Assembler::int8>();
+  UseZacas = zacas;
+}
+
+TEST_VM(RiscV, cmpxchg_weak_int16_maybe_zacas) {
+  if (UseZacas) {
+    run_narrow_cmpxchg_tests<int16_t, Assembler::int16>();
+  }
+}
+
+TEST_VM(RiscV, cmpxchg_weak_int8_maybe_zacas) {
+  if (UseZacas) {
+    run_narrow_cmpxchg_tests<int8_t, Assembler::int8>();
+  }
+}
+
 #endif  // RISCV
