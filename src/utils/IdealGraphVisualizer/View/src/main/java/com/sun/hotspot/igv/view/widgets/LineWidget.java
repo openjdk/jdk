@@ -30,6 +30,7 @@ import com.sun.hotspot.igv.graph.OutputSlot;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
 import java.awt.*;
+import java.awt.geom.CubicCurve2D;
 import java.awt.geom.Line2D;
 import java.util.*;
 import java.util.List;
@@ -67,6 +68,8 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private final boolean isBold;
     private final boolean isDashed;
     private boolean needToInitToolTipText = true;
+    private int fromControlYOffset;
+    private int toControlYOffset;
 
     public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
@@ -107,6 +110,26 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         int maxX = to.x;
         int maxY = to.y;
 
+        if (fromControlYOffset != 0 && toControlYOffset != 0) {
+            // Adjust the bounding box to accommodate control points for curves
+            if (from.y < to.y) { // non-reversed edges
+                minY = Math.min(minY, from.y + fromControlYOffset);
+                maxY = Math.max(maxY, to.y + toControlYOffset);
+            } else { // reversed edges
+                if (from.x - to.x > 0) {
+                    minX = Math.min(minX, from.x);
+                    maxX = Math.max(maxX, to.x);
+                    minY = Math.min(minY, from.y + fromControlYOffset);
+                    maxY = Math.max(maxY, to.y + toControlYOffset);
+                } else {
+                    minX = Math.min(minX, from.x);
+                    maxX = Math.max(maxX, to.x);
+                    minY = Math.min(minY, from.y + fromControlYOffset);
+                    maxY = Math.max(maxY, to.y + toControlYOffset);
+                }
+            }
+        }
+
         // Ensure min and max values are correct
         if (minX > maxX) {
             int tmp = minX;
@@ -141,6 +164,16 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
     public void setTo(Point to) {
         this.to= to;
+        computeClientArea();
+    }
+
+    public void setFromControlYOffset(int fromControlYOffset) {
+        this.fromControlYOffset = fromControlYOffset;
+        computeClientArea();
+    }
+
+    public void setToControlYOffset(int toControlYOffset) {
+        this.toControlYOffset = toControlYOffset;
         computeClientArea();
     }
 
@@ -197,7 +230,41 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
         }
 
-        g.drawLine(from.x, from.y, to.x, to.y);
+        // Define S-shaped curve with control points
+        if (fromControlYOffset != 0 && toControlYOffset != 0) {
+            if (from.y < to.y) { // non-reversed edges
+                if (Math.abs(from.x - to.x) > 10) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x, from.y + fromControlYOffset,
+                            to.x, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    g.drawLine(from.x, from.y, to.x, to.y);
+                }
+            } else {  // reverse edges
+                if (from.x - to.x > 0) {
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x - 150, from.y + fromControlYOffset,
+                            to.x + 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                } else {
+                    // add x offset
+                    CubicCurve2D.Float sShape = new CubicCurve2D.Float();
+                    sShape.setCurve(from.x, from.y,
+                            from.x + 150, from.y + fromControlYOffset,
+                            to.x - 150, to.y + toControlYOffset,
+                            to.x, to.y);
+                    g.draw(sShape);
+                }
+            }
+        } else {
+            // Fallback to straight line if control points are not set
+            g.drawLine(from.x, from.y, to.x, to.y);
+        }
 
         boolean sameFrom = false;
         boolean sameTo = successors.isEmpty();

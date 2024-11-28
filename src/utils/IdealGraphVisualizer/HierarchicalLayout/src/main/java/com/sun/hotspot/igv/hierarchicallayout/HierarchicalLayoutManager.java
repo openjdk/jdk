@@ -125,6 +125,11 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
         }
     }
 
+    @Override
+    public boolean isFreeForm() {
+        return false;
+    }
+
     public List<LayoutNode> getNodes() {
         return graph.getAllNodes();
     }

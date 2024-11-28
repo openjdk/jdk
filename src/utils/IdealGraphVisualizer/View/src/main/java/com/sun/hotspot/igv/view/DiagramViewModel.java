@@ -63,6 +63,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private final ChangedEvent<DiagramViewModel> selectedNodesChangedEvent = new ChangedEvent<>(this);
     private final ChangedEvent<DiagramViewModel> hiddenNodesChangedEvent = new ChangedEvent<>(this);
     private ChangedListener<InputGraph> titleChangedListener = g -> {};
+    private boolean showFreeInteractive;
     private boolean showStableSea;
     private boolean showSea;
     private boolean showBlocks;
@@ -100,6 +101,17 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     public void setGlobalSelection(boolean enable, boolean fire) {
         globalSelection = enable;
         if (fire && enable) {
+            diagramChangedEvent.fire();
+        }
+    }
+
+    public boolean getShowFreeInteractive() {
+        return showFreeInteractive;
+    }
+
+    public void setShowFreeInteractive(boolean enable) {
+        showFreeInteractive = enable;
+        if (enable) {
             diagramChangedEvent.fire();
         }
     }
@@ -224,6 +236,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
         globalSelection = GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected();
         cutEdges = CutEdgesAction.get(CutEdgesAction.class).isSelected();
+        showFreeInteractive = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.INTERACTIVE_FREE_NODES;
         showStableSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.STABLE_SEA_OF_NODES;
         showSea = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES;
         showBlocks = Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES;
@@ -266,7 +279,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         for (String ignored : getPositions()) {
             colors.add(Color.black);
         }
-        if (nodes.size() >= 1) {
+        if (!nodes.isEmpty()) {
             for (Integer id : nodes) {
                 if (id < 0) {
                     id = -id;
