@@ -59,7 +59,7 @@ class VThreadCommandsTest {
      */
     @Test
     void testVThreadScheduler() {
-        // ensure default scheduler are timeout schedulers are initialized
+        // ensure default scheduler and timeout schedulers are initialized
         Thread.startVirtualThread(() -> { });
 
         jcmd("Thread.vthread_scheduler")
@@ -93,7 +93,7 @@ class VThreadCommandsTest {
         jcmd("Thread.vthread_pollers")
                 .shouldContain("Read I/O pollers:")
                 .shouldContain("Write I/O pollers:")
-                .shouldContain("[0] sun.nio.ch");
+                .shouldMatch("^\\[0\\] sun.nio.ch..+ \\[registered = [\\d]+, owner = .+\\]$");
     }
 
     private OutputAnalyzer jcmd(String cmd) {

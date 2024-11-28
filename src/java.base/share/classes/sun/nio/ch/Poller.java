@@ -36,6 +36,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import jdk.internal.misc.InnocuousThread;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Polls file descriptors. Virtual threads invoke the poll method to park
@@ -52,6 +53,9 @@ public abstract class Poller {
             throw new ExceptionInInitializerError(ioe);
         }
     }
+
+    // the poller or sub-poller thread
+    private @Stable Thread owner;
 
     // maps file descriptors to parked Thread
     private final Map<Integer, Thread> map = new ConcurrentHashMap<>();
@@ -238,6 +242,7 @@ public abstract class Poller {
      * descriptor that is polled.
      */
     private void pollerLoop() {
+        owner = Thread.currentThread();
         try {
             for (;;) {
                 poll(-1);
@@ -258,6 +263,7 @@ public abstract class Poller {
      */
     private void subPollerLoop(Poller masterPoller) {
         assert Thread.currentThread().isVirtual();
+        owner = Thread.currentThread();
         try {
             int polled = 0;
             for (;;) {
@@ -282,7 +288,8 @@ public abstract class Poller {
 
     @Override
     public String toString() {
-        return Objects.toIdentityString(this) + " [registered = " + registered() + "]";
+        return String.format("%s [registered = %d, owner = %s]",
+                Objects.toIdentityString(this), registered(), owner);
     }
 
     /**
