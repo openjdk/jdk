@@ -2247,7 +2247,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         || mc.roundingMode == RoundingMode.HALF_EVEN && sqrt.testBit(0)
                         // Check if remainder is non-zero
                         || !workingInt.equals(workingSqrt.multiply(workingSqrt))
-                        || working.compareTo(new BigDecimal(workingInt)) != 0) {
+                        || !working.isInteger()) {
                     increment = true;
                 }
             }
@@ -2262,7 +2262,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
                 sqrt = sqrtRem[0];
                 // Check if remainder is non-zero
-                if (sqrtRem[1].signum != 0 || working.compareTo(new BigDecimal(workingInt)) != 0)
+                if (sqrtRem[1].signum != 0 || !working.isInteger())
                     sqrt = sqrt.add(1L);
             }
 
@@ -3473,6 +3473,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             buf.append(intString);
         }
         return buf.toString();
+    }
+
+    /**
+     * @return {@code true} if and only if {@code this == this.toBigInteger()}
+     */
+    boolean isInteger() {
+        return scale <= 0 || signum() == 0
+                || stripZerosToMatchScale(intVal, intCompact, scale, 0L).scale == 0;
     }
 
     /**
