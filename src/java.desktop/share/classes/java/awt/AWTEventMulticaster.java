@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,7 +625,6 @@ public class AWTEventMulticaster implements
      * @return the resulting listener
      * @since 1.4
      */
-    @SuppressWarnings("overloads")
     public static WindowStateListener add(WindowStateListener a,
                                           WindowStateListener b) {
         return (WindowStateListener)addInternal(a, b);
@@ -828,7 +827,6 @@ public class AWTEventMulticaster implements
      * @return the resulting listener
      * @since 1.4
      */
-    @SuppressWarnings("overloads")
     public static WindowStateListener remove(WindowStateListener l,
                                              WindowStateListener oldl) {
         return (WindowStateListener) removeInternal(l, oldl);

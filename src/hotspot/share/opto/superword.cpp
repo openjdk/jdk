@@ -1868,6 +1868,7 @@ bool SuperWord::schedule_and_apply() const {
   }
 
   if (!vtransform.schedule()) { return false; }
+  if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
   vtransform.apply();
   return true;
 }

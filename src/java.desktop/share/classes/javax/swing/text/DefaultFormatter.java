@@ -24,7 +24,6 @@
  */
 package javax.swing.text;
 
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 
 import java.io.Serializable;
@@ -248,7 +247,6 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
             Constructor<?> cons;
 
             try {
-                ReflectUtil.checkPackageAccess(vc);
                 SwingUtilities2.checkAccess(vc.getModifiers());
                 cons = vc.getConstructor(new Class<?>[]{String.class});
 

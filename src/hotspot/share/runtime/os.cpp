@@ -546,49 +546,35 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
-                              const char *syms[], size_t syms_len) {
+void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib, const char *sym) {
   assert(agent_lib != nullptr, "sanity check");
-  const char *lib_name;
   void *handle = agent_lib->os_lib();
   void *entryName = nullptr;
-  char *agent_function_name;
-  size_t i;
 
   // If checking then use the agent name otherwise test is_static_lib() to
   // see how to process this lookup
-  lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
-  for (i = 0; i < syms_len; i++) {
-    agent_function_name = build_agent_function_name(syms[i], lib_name, agent_lib->is_absolute_path());
-    if (agent_function_name == nullptr) {
-      break;
-    }
+  const char *lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
+
+  char* agent_function_name = build_agent_function_name(sym, lib_name, agent_lib->is_absolute_path());
+  if (agent_function_name != nullptr) {
     entryName = dll_lookup(handle, agent_function_name);
     FREE_C_HEAP_ARRAY(char, agent_function_name);
-    if (entryName != nullptr) {
-      break;
-    }
   }
   return entryName;
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
-                            size_t syms_len) {
-  void *ret;
-  void *proc_handle;
-  void *save_handle;
-
+bool os::find_builtin_agent(JvmtiAgent* agent, const char* sym) {
   assert(agent != nullptr, "sanity check");
   if (agent->name() == nullptr) {
     return false;
   }
-  proc_handle = get_default_process_handle();
+  void* proc_handle = get_default_process_handle();
   // Check for Agent_OnLoad/Attach_lib_name function
-  save_handle = agent->os_lib();
+  void* save_handle = agent->os_lib();
   // We want to look in this process' symbol table.
   agent->set_os_lib(proc_handle);
-  ret = find_agent_function(agent, true, syms, syms_len);
+  void* ret = find_agent_function(agent, true, sym);
   if (ret != nullptr) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
     agent->set_static_lib();
@@ -1081,6 +1067,26 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   long minutes = (sec/60) - (days * 1440) - (hours * 60);
   if (startStr == nullptr) startStr = "";
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
+}
+
+void os::print_tos_pc(outputStream* st, const void* context) {
+  if (context == nullptr) return;
+
+  // First of all, carefully determine sp without inspecting memory near pc.
+  // See comment below.
+  intptr_t* sp = nullptr;
+  fetch_frame_from_context(context, &sp, nullptr);
+  print_tos(st, (address)sp);
+  st->cr();
+
+  // Note: it may be unsafe to inspect memory near pc. For example, pc may
+  // point to garbage if entry point in an nmethod is corrupted. Leave
+  // this at the end, and hope for the best.
+  // This version of fetch_frame_from_context finds the caller pc if the actual
+  // one is bad.
+  address pc = fetch_frame_from_context(context).pc();
+  print_instructions(st, pc);
+  st->cr();
 }
 
 void os::print_tos(outputStream* st, address sp) {
@@ -2166,7 +2172,7 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
       MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
@@ -2188,7 +2194,7 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     res = pd_release_memory(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
@@ -2273,7 +2279,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);
@@ -2312,7 +2318,7 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    NmtVirtualMemoryLocker ml;
+    ThreadCritical tc;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);

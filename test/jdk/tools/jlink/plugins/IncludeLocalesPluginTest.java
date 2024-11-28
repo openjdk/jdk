@@ -22,25 +22,27 @@
  */
 
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import jdk.tools.jlink.plugin.PluginException;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
+import jdk.tools.jlink.plugin.PluginException;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
 
+
 /*
  * @test
  * @bug 8152143 8152704 8155649 8165804 8185841 8176841 8190918
  *      8179071 8202537 8221432 8222098 8251317 8258794 8265315
- *      8296248 8306116 8174269 8333582
+ *      8296248 8306116 8174269
  * @summary IncludeLocalesPlugin tests
  * @author Naoto Sato
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
@@ -59,14 +61,14 @@ import tests.Result;
  */
 public class IncludeLocalesPluginTest {
 
-    private final static String moduleName = "IncludeLocalesTest";
+    private static final String moduleName = "IncludeLocalesTest";
     private static Helper helper;
-    private final static int INCLUDE_LOCALES_OPTION = 0;
-    private final static int ADDMODS_OPTION         = 1;
-    private final static int EXPECTED_LOCATIONS     = 2;
-    private final static int UNEXPECTED_PATHS       = 3;
-    private final static int AVAILABLE_LOCALES      = 4;
-    private final static int ERROR_MESSAGE          = 5;
+    private static final int INCLUDE_LOCALES_OPTION = 0;
+    private static final int ADDMODS_OPTION         = 1;
+    private static final int EXPECTED_LOCATIONS     = 2;
+    private static final int UNEXPECTED_PATHS       = 3;
+    private static final int AVAILABLE_LOCALES      = 4;
+    private static final int ERROR_MESSAGE          = 5;
 
     private static int errors;
 
@@ -413,11 +415,18 @@ public class IncludeLocalesPluginTest {
     };
 
     public static void main(String[] args) throws Exception {
-        helper = Helper.newHelper();
+        boolean isLinkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
+        System.out.println("Running test on " +
+                           (isLinkableRuntime ? "enabled" : "disabled") +
+                           " capability of linking from the run-time image.");
+        System.out.println("Default module-path, 'jmods', " +
+                           (Helper.jdkHasPackagedModules() ? "" : "NOT ") +
+                           "present.");
+
+        helper = Helper.newHelper(isLinkableRuntime);
         if (helper == null) {
             throw new RuntimeException("Helper could not be initialized");
         }
-        helper.generateDefaultModules();
 
         for (Object[] data : testData) {
             // create image for each test data
@@ -425,14 +434,12 @@ public class IncludeLocalesPluginTest {
             if (data[INCLUDE_LOCALES_OPTION].toString().isEmpty()) {
                 System.out.println("Invoking jlink with no --include-locales option");
                 result = JImageGenerator.getJLinkTask()
-                    .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .call();
             } else {
                 System.out.println("Invoking jlink with \"" + data[INCLUDE_LOCALES_OPTION] + "\"");
                 result = JImageGenerator.getJLinkTask()
-                    .modulePath(helper.defaultModulePath())
                     .output(helper.createNewImageDir(moduleName))
                     .addMods((String) data[ADDMODS_OPTION])
                     .option((String) data[INCLUDE_LOCALES_OPTION])

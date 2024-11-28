@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #define SHARE_MEMORY_METASPACE_METASPACECONTEXT_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/metaspace/counters.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/debug.hpp"
 
@@ -61,6 +62,7 @@ class MetaspaceContext : public CHeapObj<mtMetaspace> {
   const char* const _name;
   VirtualSpaceList* const _vslist;
   ChunkManager* const _cm;
+  SizeAtomicCounter _used_words_counter;
 
   MetaspaceContext(const char* name, VirtualSpaceList* vslist, ChunkManager* cm) :
     _name(name),
@@ -78,8 +80,9 @@ public:
   // untouched, otherwise all memory is unmapped.
   ~MetaspaceContext();
 
-  VirtualSpaceList* vslist() { return _vslist; }
-  ChunkManager* cm() { return _cm; }
+  VirtualSpaceList* vslist()                    { return _vslist; }
+  ChunkManager* cm()                            { return _cm; }
+  SizeAtomicCounter* used_words_counter()       { return &_used_words_counter; }
 
   // Create a new, empty, expandable metaspace context.
   static MetaspaceContext* create_expandable_context(const char* name, CommitLimiter* commit_limiter);
@@ -103,6 +106,9 @@ public:
   // null otherwise.
   static MetaspaceContext* context_class()        { return _class_space_context; }
 
+  size_t used_words() const;
+  size_t committed_words() const;
+  size_t reserved_words() const;
 };
 
 } // end namespace

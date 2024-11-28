@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1202,7 +1202,7 @@ static ClassFileStream* schema_extend_event_klass_bytes(const InstanceKlass* ik,
       orig_stream->skip_u1_fast(attrib_len);
     }
   }
-  return new ClassFileStream(new_buffer, orig_stream_length, nullptr, ClassFileStream::verify);
+  return new ClassFileStream(new_buffer, orig_stream_length, nullptr);
 }
 
 // Attempt to locate an existing UTF8_INFO mapping the utf8_constant.
@@ -1510,7 +1510,7 @@ static ClassFileStream* schema_extend_event_subklass_bytes(const InstanceKlass* 
     size_of_new_bytes = size_of_instrumented_bytes;
     is_instrumented = true;
   }
-  return new ClassFileStream(new_bytes, size_of_new_bytes, nullptr, ClassFileStream::verify);
+  return new ClassFileStream(new_bytes, size_of_new_bytes, nullptr);
 }
 
 static bool _force_instrumentation = false;
@@ -1547,7 +1547,7 @@ static ClassFileStream* retransform_bytes(const Klass* existing_klass, const Cla
   assert(new_bytes != nullptr, "invariant");
   assert(size_of_new_bytes > 0, "invariant");
   is_instrumented = true;
-  return new ClassFileStream(new_bytes, size_of_new_bytes, nullptr, ClassFileStream::verify);
+  return new ClassFileStream(new_bytes, size_of_new_bytes, nullptr);
 }
 
 // On initial class load.

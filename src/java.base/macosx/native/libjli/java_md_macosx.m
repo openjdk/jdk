@@ -415,6 +415,8 @@ GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
 
+    JLI_TraceLauncher("Attempt to get JDK installation root from launcher executable path\n");
+
     if (GetApplicationHome(path, pathsize)) {
         /* Is the JDK co-located with the application? */
         if (JLI_IsStaticallyLinked()) {
@@ -428,18 +430,6 @@ GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative)
             if (access(libjava, F_OK) == 0) {
                 return JNI_TRUE;
             }
-        }
-        /* ensure storage for path + /jre + NULL */
-        if ((JLI_StrLen(path) + 4 + 1) > (size_t) pathsize) {
-            JLI_TraceLauncher("Insufficient space to store JRE path\n");
-            return JNI_FALSE;
-        }
-        /* Does the app ship a private JRE in <apphome>/jre directory? */
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/" JAVA_DLL, path);
-        if (access(libjava, F_OK) == 0) {
-            JLI_StrCat(path, "/jre");
-            JLI_TraceLauncher("JRE path is %s\n", path);
-            return JNI_TRUE;
         }
     }
 

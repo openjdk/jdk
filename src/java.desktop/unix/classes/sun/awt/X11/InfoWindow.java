@@ -47,8 +47,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.BreakIterator;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -227,16 +225,8 @@ public abstract class InfoWindow extends Window {
                             textLabel.setText(tooltipString);
                         }
 
-                        @SuppressWarnings("removal")
-                        Point pointer = AccessController.doPrivileged(
-                            new PrivilegedAction<Point>() {
-                                public Point run() {
-                                    if (!isPointerOverTrayIcon(liveArguments.getBounds())) {
-                                        return null;
-                                    }
-                                    return MouseInfo.getPointerInfo().getLocation();
-                                }
-                            });
+                        Point pointer = !isPointerOverTrayIcon(liveArguments.getBounds())
+                                        ? null : MouseInfo.getPointerInfo().getLocation();
                         if (pointer == null) {
                             return;
                         }

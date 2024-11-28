@@ -76,7 +76,6 @@ import sun.security.util.Debug;
  * @since 1.4
  */
 
-@SuppressWarnings("removal")
 final class JceSecurity {
 
     private static final Debug debug = Debug.getInstance("jca");
@@ -109,15 +108,7 @@ final class JceSecurity {
 
     static {
         try {
-            AccessController.doPrivileged(
-                new PrivilegedExceptionAction<> () {
-                    @Override
-                    public Void run() throws Exception {
-                        setupJurisdictionPolicies();
-                        return null;
-                    }
-                }
-            );
+            setupJurisdictionPolicies();
 
             isRestricted = defaultPolicy.implies(
                 CryptoAllPermission.INSTANCE) ? false : true;
@@ -285,20 +276,14 @@ final class JceSecurity {
         synchronized (codeBaseCacheRef) {
             URL url = codeBaseCacheRef.get(clazz);
             if (url == null) {
-                url = AccessController.doPrivileged(
-                    new PrivilegedAction<>() {
-                        @Override
-                        public URL run() {
-                            ProtectionDomain pd = clazz.getProtectionDomain();
-                            if (pd != null) {
-                                CodeSource cs = pd.getCodeSource();
-                                if (cs != null) {
-                                    return cs.getLocation();
-                                }
-                            }
-                            return NULL_URL;
-                        }
-                    });
+                url = NULL_URL;
+                ProtectionDomain pd = clazz.getProtectionDomain();
+                if (pd != null) {
+                    CodeSource cs = pd.getCodeSource();
+                    if (cs != null) {
+                        url = cs.getLocation();
+                    }
+                }
                 codeBaseCacheRef.put(clazz, url);
             }
             return (url == NULL_URL) ? null : url;
