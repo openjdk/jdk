@@ -3900,6 +3900,65 @@ address StubGenerator::generate_lookup_secondary_supers_table_slow_path_stub() {
   return start;
 }
 
+void poo() {
+}
+
+// JRT_LEAF(int, Runtime1::is_instance_of(oopDesc* mirror, oopDesc* obj))
+//   // had to return int instead of bool, otherwise there may be a mismatch
+address StubGenerator::generate_Runtime1_is_instance_of() {
+  StubCodeMark mark(this, "StubRoutines", "Runtime1_is_instance_of");
+
+  Label done, is_interface;
+
+  address start = __ pc();
+
+#ifdef ASSERT
+  __ enter();
+  __ call_VM_leaf_base(CAST_FROM_FN_PTR(address, &poo), 0);
+  __ leave();
+#endif
+
+  // Mirror: c_rarg0
+
+  // Temps: rdx, rcx, r8, r9
+
+  // Get the mirror into c_rarg0
+  __ movptr(c_rarg0, Address(c_rarg0, java_lang_Class::klass_offset()));
+
+  __ xorq(rax, rax);
+  __ testq(c_rarg0, c_rarg0);
+  __ jcc(Assembler::equal, done); // Mirror is null
+
+  __ testq(c_rarg1, c_rarg1);
+  __ jcc(Assembler::equal, done); // obj is null
+
+  __ movl(rdx, Address(c_rarg0, in_bytes(Klass::super_check_offset_offset())));
+  __ cmpl(rdx, in_bytes(Klass::secondary_super_cache_offset()));
+  __ jcc(Assembler::equal, is_interface); // Klass is an interface
+
+  // Klass is a concrete class
+  __ load_klass(r8, c_rarg1, /*tmp*/r9);
+  __ cmpptr(c_rarg0, Address(r8, rdx));
+  __ setcc(Assembler::equal, rax);
+  __ ret(0);
+
+  __ bind(is_interface);
+
+  __ load_klass(c_rarg1, c_rarg1, /*tmp*/r9);
+  __ lookup_secondary_supers_table_var(c_rarg1,
+                                       c_rarg0,
+                                       rdx, rcx, r8, r9,
+                                       rax);
+  __ testq(rax, rax);
+  __ setcc(Assembler::equal, rax);
+
+  __ bind(done);
+  __ ret(0);
+
+  return start;
+}
+
+
 void StubGenerator::create_control_words() {
   // Round to nearest, 64-bit mode, exceptions masked, flags specialized
   StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
@@ -4013,6 +4072,8 @@ void StubGenerator::generate_final_stubs() {
 
   StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
   StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
+
+  StubRoutines::_Runtime1_is_instance_of = StubGenerator::generate_Runtime1_is_instance_of();
 }
 
 void StubGenerator::generate_compiler_stubs() {

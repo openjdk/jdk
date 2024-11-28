@@ -333,6 +333,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_entry);
   FUNCTION_CASE(entry, SharedRuntime::dtrace_method_exit);
   FUNCTION_CASE(entry, is_instance_of);
+  FUNCTION_CASE(entry, StubRoutines::_Runtime1_is_instance_of);
   FUNCTION_CASE(entry, trace_block_entry);
 #ifdef JFR_HAVE_INTRINSICS
   FUNCTION_CASE(entry, JfrTime::time_function());

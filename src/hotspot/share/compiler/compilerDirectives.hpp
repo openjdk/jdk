@@ -62,7 +62,8 @@
   compilerdirectives_common_string_flags(cflags)
 
 #ifdef COMPILER1
-  #define compilerdirectives_c1_other_flags(cflags)
+  #define compilerdirectives_c1_other_flags(cflags) \
+    cflags(PrintIRWithLIR, bool, false, PrintIRWithLIR)
   #define compilerdirectives_c1_string_flags(cflags)
 #else
   #define compilerdirectives_c1_other_flags(cflags)

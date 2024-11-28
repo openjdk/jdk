@@ -634,6 +634,8 @@ class StubGenerator: public StubCodeGenerator {
   // Slow path implementation for UseSecondarySupersTable.
   address generate_lookup_secondary_supers_table_slow_path_stub();
 
+  address generate_Runtime1_is_instance_of();
+
   void create_control_words();
 
   // Initialization

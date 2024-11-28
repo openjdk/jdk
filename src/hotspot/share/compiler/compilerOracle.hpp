@@ -66,6 +66,7 @@ class methodHandle;
   option(PrintIntrinsics, "PrintIntrinsics", Bool) \
   option(PrintNMethods, "PrintNMethods", Bool)   \
   option(PrintOptoAssembly, "PrintOptoAssembly", Bool) \
+  option(PrintIRWithLIR, "PrintIRWithLIR", Bool) \
   option(PrintDebugInfo,    "PrintDebugInfo",    Bool) \
   option(PrintRelocations,  "PrintRelocations",  Bool) \
   option(PrintDependencies, "PrintDependencies", Bool) \
