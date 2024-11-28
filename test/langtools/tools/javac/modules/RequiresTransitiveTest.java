@@ -221,4 +221,39 @@ public class RequiresTransitiveTest extends ModuleTestBase {
 
         return src;
     }
+
+    @Test
+    public void testRepeatedModifiers(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1");
+        tb.writeJavaFiles(src_m1,
+                """
+                module m1 {
+                    requires static static java.sql;
+                    requires transitive transitive java.desktop;
+                }
+                """
+        );
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "--module-source-path", src.toString())
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        String[] expect = {
+                "module-info.java:2:21: compiler.err.repeated.modifier",
+                "module-info.java:3:25: compiler.err.repeated.modifier"
+        };
+
+        for (String e: expect) {
+            if (!log.contains(e))
+                throw new Exception("expected output not found: " + e);
+        }
+    }
 }

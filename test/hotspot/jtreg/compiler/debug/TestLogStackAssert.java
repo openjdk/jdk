@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,31 +21,19 @@
  * questions.
  */
 
-package sun.security.action;
+package compiler.debug;
 
-import java.io.*;
-
-import java.security.PrivilegedExceptionAction;
-
-/**
- * A convenience class for opening a FileInputStream as a privileged action.
- *
- * @author Andreas Sterbenz
+/*
+ * @test
+ * @bug 8344013
+ * @requires vm.debug == true & vm.compiler2.enabled
+ * @summary Verify the xmlStream log stack is not left in a bad state
+ * @run main/othervm -XX:+LogCompilation -XX:CompileCommand=log,*.* -XX:+CITimeVerbose -Xcomp compiler.debug.TestLogStackAssert
  */
-public class OpenFileInputStreamAction
-        implements PrivilegedExceptionAction<FileInputStream> {
+public class TestLogStackAssert {
 
-    private final File file;
-
-    public OpenFileInputStreamAction(File file) {
-        this.file = file;
+    public static void main(String[] args) throws Exception {
+        System.out.println("Test passed!");
     }
 
-    public OpenFileInputStreamAction(String filename) {
-        this.file = new File(filename);
-    }
-
-    public FileInputStream run() throws Exception {
-        return new FileInputStream(file);
-    }
 }

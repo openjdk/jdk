@@ -259,16 +259,33 @@ public:
   static bool has_aot_initialized_mirror(InstanceKlass* src_ik);
   template <typename T> static Array<T>* archive_array(GrowableArray<T>* tmp_array);
 
+  // The following functions translate between a u4 offset and an address in the
+  // the range of the mapped CDS archive (e.g., Metaspace::is_in_shared_metaspace()).
+  // Since the first 16 bytes in this range are dummy data (see ArchiveBuilder::reserve_buffer()),
+  // we know that offset 0 never represents a valid object. As a result, an offset of 0
+  // is used to encode a nullptr.
+  //
+  // Use the "archived_address_or_null" variants if a nullptr may be encoded.
+
   // offset must represent an object of type T in the mapped shared space. Return
   // a direct pointer to this object.
-  template <typename T> T static from_offset(u4 offset) {
+  template <typename T> T static offset_to_archived_address(u4 offset) {
+    assert(offset != 0, "sanity");
     T p = (T)(SharedBaseAddress + offset);
     assert(Metaspace::is_in_shared_metaspace(p), "must be");
     return p;
   }
 
+  template <typename T> T static offset_to_archived_address_or_null(u4 offset) {
+    if (offset == 0) {
+      return nullptr;
+    } else {
+      return offset_to_archived_address<T>(offset);
+    }
+  }
+
   // p must be an archived object. Get its offset from SharedBaseAddress
-  template <typename T> static u4 to_offset(T p) {
+  template <typename T> static u4 archived_address_to_offset(T p) {
     uintx pn = (uintx)p;
     uintx base = (uintx)SharedBaseAddress;
     assert(Metaspace::is_in_shared_metaspace(p), "must be");
@@ -276,6 +293,14 @@ public:
     uintx offset = pn - base;
     assert(offset <= MAX_SHARED_DELTA, "range check");
     return static_cast<u4>(offset);
+  }
+
+  template <typename T> static u4 archived_address_or_null_to_offset(T p) {
+    if (p == nullptr) {
+      return 0;
+    } else {
+      return archived_address_to_offset<T>(p);
+    }
   }
 };
 

@@ -2111,7 +2111,7 @@ void os::shutdown() {
 // easily trigger secondary faults in those threads. To reduce the likelihood
 // of that we use _exit rather than exit, so that no atexit hooks get run.
 // But note that os::shutdown() could also trigger secondary faults.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
     LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
@@ -2186,3 +2186,43 @@ char* os::pd_map_memory(int fd, const char* unused,
 bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
 }
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+static ucontext_t _saved_assert_context;
+static bool _has_saved_context = false;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+void os::save_assert_context(const void* ucVoid) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  memcpy(&_saved_assert_context, ucVoid, sizeof(ucontext_t));
+  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
+  //  after copying the context (see comment in sys/ucontext.h):
+#if defined(PPC64)
+  *((void**)&_saved_assert_context.uc_mcontext.regs) = &(_saved_assert_context.uc_mcontext.gp_regs);
+#elif defined(AMD64)
+  // In the copied version, fpregs should point to the copied contents.
+  // Sanity check: fpregs should point into the context.
+  if ((address)((const ucontext_t*)ucVoid)->uc_mcontext.fpregs > (address)ucVoid) {
+    size_t fpregs_offset = pointer_delta(((const ucontext_t*)ucVoid)->uc_mcontext.fpregs, ucVoid, 1);
+    if (fpregs_offset < sizeof(ucontext_t)) {
+      // Preserve the offset.
+      *((void**)&_saved_assert_context.uc_mcontext.fpregs) = (void*)((address)(void*)&_saved_assert_context + fpregs_offset);
+    }
+  }
+#endif
+  _has_saved_context = true;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(sigInfo != nullptr, "invariant");
+  *sigInfo = nullptr;
+  return _has_saved_context ? &_saved_assert_context : nullptr;
+#endif
+  *sigInfo = nullptr;
+  return nullptr;
+}
+
