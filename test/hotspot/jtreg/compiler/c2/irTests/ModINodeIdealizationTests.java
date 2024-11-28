@@ -23,6 +23,9 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+
+import java.util.Random;
+
 import compiler.lib.ir_framework.*;
 
 /*
@@ -33,11 +36,14 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.ModINodeIdealizationTests
  */
 public class ModINodeIdealizationTests {
+    public static final int RANDOM_POWER_OF_2 = 1 << (1 + new Random().nextInt(30));
+
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:CompileCommand=inline,*Math::max");
     }
 
-    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Minus1"})
+    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Random", "powerOf2Minus1", 
+                 "positivePowerOf2", "positivePowerOf2Random"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         a = (a == 0) ? 2 : a;
@@ -62,7 +68,10 @@ public class ModINodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
-        Asserts.assertEQ(Math.max(0, a) % 32, powerOf2(a));
+        Asserts.assertEQ(a % 32, powerOf2(a));
+        Asserts.assertEQ(a % RANDOM_POWER_OF_2, powerOf2Random(a));
+        Asserts.assertEQ(Math.max(0, a) % 32, positivePowerOf2(a));
+        Asserts.assertEQ(Math.max(0, a) % RANDOM_POWER_OF_2, positivePowerOf2Random(a));
         Asserts.assertEQ(a % 127, powerOf2Minus1(a));
         Asserts.assertEQ(a % 1, constantAgain(a));
     }
@@ -83,11 +92,31 @@ public class ModINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.MOD_I, IRNode.RSHIFT, IRNode.ADD})
+    @IR(failOn = {IRNode.MOD_I, IRNode.RSHIFT, IRNode.ADD, IRNode.SUB})
     @IR(counts = {IRNode.AND_I, "1"})
-    // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
-    public int powerOf2(int x) {
+    public int positivePowerOf2(int x) {
         return Math.max(0, x) % 32;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_I, IRNode.RSHIFT, IRNode.ADD, IRNode.SUB})
+    @IR(counts = {IRNode.AND_I, "1"})
+    public int positivePowerOf2Random(int x) {
+        return Math.max(0, x) % RANDOM_POWER_OF_2;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_I, IRNode.DIV})
+    @IR(counts = {IRNode.AND_I, "1"})
+    public int powerOf2(int x) {
+        return x % 32;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_I, IRNode.DIV})
+    @IR(counts = {IRNode.AND_I, "1"})
+    public int powerOf2Random(int x) {
+        return x % RANDOM_POWER_OF_2;
     }
 
     @Test

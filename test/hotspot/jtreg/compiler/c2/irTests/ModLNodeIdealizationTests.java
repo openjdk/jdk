@@ -23,6 +23,9 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+
+import java.util.Random;
+
 import compiler.lib.ir_framework.*;
 
 /*
@@ -33,11 +36,13 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.ModLNodeIdealizationTests
  */
 public class ModLNodeIdealizationTests {
+    public static final long RANDOM_POWER_OF_2 = 1L << (1 + new Random().nextInt(62));
+
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Minus1"})
+    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Random", "powerOf2Minus1"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         a = (a == 0) ? 2 : a;
@@ -62,7 +67,7 @@ public class ModLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
-        Asserts.assertEQ(Math.max(0, a) % 8589934592L, powerOf2(a));
+        Asserts.assertEQ(a % 8589934592L, powerOf2(a));
         Asserts.assertEQ(a % 8589934591L, powerOf2Minus1(a));
         Asserts.assertEQ(a % 1, constantAgain(a));
     }
@@ -83,11 +88,19 @@ public class ModLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.MOD_L, IRNode.RSHIFT, IRNode.ADD})
+    @IR(failOn = {IRNode.MOD_L, IRNode.DIV})
     @IR(counts = {IRNode.AND_L, "1"})
     // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
     public long powerOf2(long x) {
-        return Math.max(0, x) % 8589934592L;
+        return x % 8589934592L;
+    }
+
+    @Test
+    @IR(failOn = {IRNode.MOD_L, IRNode.DIV})
+    @IR(counts = {IRNode.AND_L, "1"})
+    // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
+    public long powerOf2Random(long x) {
+        return x % RANDOM_POWER_OF_2;
     }
 
     @Test

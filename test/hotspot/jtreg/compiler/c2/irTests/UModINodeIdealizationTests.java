@@ -23,6 +23,9 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+
+import java.util.Random;
+
 import compiler.lib.ir_framework.*;
 
 /*
@@ -33,11 +36,13 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.UModINodeIdealizationTests
  */
 public class UModINodeIdealizationTests {
+    public static final int RANDOM_POWER_OF_2 = 1 << (1 + new Random().nextInt(30));
+    
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Big", "reallyConstant"})
+    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Big", "powerOf2Random", "reallyConstant"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
         a = (a == 0) ? 2 : a;
@@ -95,6 +100,14 @@ public class UModINodeIdealizationTests {
     // Checks that for x % 2^k, 2^k-1 is used as a bit mask.
     public int powerOf2(int x) {
         return Integer.remainderUnsigned(x, 32);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UMOD_I, IRNode.MUL})
+    @IR(counts = {IRNode.AND, "1"})
+    // Checks that for x % 2^k, 2^k-1 is used as a bit mask.
+    public int powerOf2Random(int x) {
+        return Integer.remainderUnsigned(x, RANDOM_POWER_OF_2);
     }
 
     @Test

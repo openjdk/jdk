@@ -23,6 +23,9 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+
+import java.util.Random;
+
 import compiler.lib.ir_framework.*;
 
 /*
@@ -33,12 +36,14 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.UDivLNodeIdealizationTests
  */
 public class UDivLNodeIdealizationTests {
+    public static final long RANDOM_POWER_OF_2 = 1 << (1 + new Random().nextInt(62));
+
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     @Run(test = {"constant", "identity", "identityAgain", "identityAgainButBig", "identityThird",
-            "retainDenominator", "divByPow2", "divByPow2Big"})
+            "retainDenominator", "divByPow2", "divByPow2Big", "divByPow2Random"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         a = (a == 0) ? 1 : a;
@@ -137,6 +142,13 @@ public class UDivLNodeIdealizationTests {
     // Dividing an unsigned number by 8 is a trivial right shift by 3
     public long divByPow2(long x) {
         return Long.divideUnsigned(x, 8L);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.DIV})
+    @IR(counts = {IRNode.URSHIFT, "1"})
+    public long divByPow2Random(long x) {
+        return Long.divideUnsigned(x, RANDOM_POWER_OF_2);
     }
 
     @Test
