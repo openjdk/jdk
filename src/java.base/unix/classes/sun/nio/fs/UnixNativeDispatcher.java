@@ -392,6 +392,20 @@ class UnixNativeDispatcher {
         throws UnixException;
 
     /**
+     * utimensat(int fd, const char* path,
+     *           const struct timeval times[2], int flags)
+     */
+    static void utimensat(int fd, UnixPath path, long times0, long times1, int flags)
+        throws UnixException
+    {
+        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
+            utimensat0(fd, buffer.address(), times0, times1, flags);
+        }
+    }
+    private static native void utimensat0(int fd, long pathAddress, long times0, long times1, int flags)
+        throws UnixException;
+
+    /**
      * DIR *opendir(const char* dirname)
      */
     static long opendir(UnixPath path) throws UnixException {
@@ -557,7 +571,8 @@ class UnixNativeDispatcher {
     private static final int SUPPORTS_FUTIMES       = 1 << 2;
     private static final int SUPPORTS_FUTIMENS      = 1 << 3;
     private static final int SUPPORTS_LUTIMES       = 1 << 4;
-    private static final int SUPPORTS_XATTR         = 1 << 5;
+    private static final int SUPPORTS_UTIMENSAT     = 1 << 5;
+    private static final int SUPPORTS_XATTR         = 1 << 6;
     private static final int SUPPORTS_BIRTHTIME     = 1 << 16; // other features
     private static final int capabilities;
 
@@ -587,6 +602,13 @@ class UnixNativeDispatcher {
      */
     static boolean lutimesSupported() {
         return (capabilities & SUPPORTS_LUTIMES) != 0;
+    }
+
+    /**
+     * Supports utimensat
+     */
+    static boolean utimensatSupported() {
+        return (capabilities & SUPPORTS_UTIMENSAT) != 0;
     }
 
     /**

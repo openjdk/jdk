@@ -102,7 +102,9 @@ requires.properties= \
     systemd.support \
     release.implementor \
     jdk.containerized \
-    jdk.foreign.linker
+    jdk.foreign.linker \
+    jlink.runtime.linkable \
+    jlink.packagedModules
 
 # Minimum jtreg version
 requiredVersion=7.4+1

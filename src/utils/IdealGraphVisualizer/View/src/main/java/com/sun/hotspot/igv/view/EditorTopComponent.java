@@ -99,6 +99,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         };
 
         Action[] actionsWithSelection = new Action[]{
+                ColorAction.get(ColorAction.class),
                 ExtractAction.get(ExtractAction.class),
                 HideAction.get(HideAction.class),
                 null,
@@ -347,6 +348,10 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
     public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
         scene.addSelectedNodes(nodes, showIfHidden);
+    }
+
+    public void colorSelectedFigures(Color color) {
+        scene.colorSelectedFigures(color);
     }
 
     public void centerSelectedNodes() {

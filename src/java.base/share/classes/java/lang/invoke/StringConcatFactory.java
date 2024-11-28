@@ -1134,7 +1134,7 @@ public final class StringConcatFactory {
         };
 
         static final ReferencedKeyMap<MethodType, SoftReference<MethodHandlePair>> CACHE =
-                ReferencedKeyMap.create(true, true,
+                ReferencedKeyMap.create(true,
                         new Supplier<>() {
                             @Override
                             public Map<ReferenceKey<MethodType>, SoftReference<MethodHandlePair>> get() {

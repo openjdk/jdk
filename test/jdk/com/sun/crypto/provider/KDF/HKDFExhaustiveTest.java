@@ -69,6 +69,8 @@ public class HKDFExhaustiveTest {
   private static final int LARGE_LENGTH = 1000;
   private static final int NEGATIVE_LENGTH = -1;
 
+  static class TestKDFParams implements KDFParameters {}
+
   private static final KdfVerifier<String, String, AlgorithmParameterSpec> KdfGetInstanceVerifier =
       (a, p, s) -> {
 
@@ -304,6 +306,12 @@ public class HKDFExhaustiveTest {
     Utils.runAndCheckException(
         () -> KDF.getInstance(KDF_ALGORITHMS[0], null, INVALID_STRING),
         NoSuchProviderException.class);
+    Utils.runAndCheckException(
+        () -> KDF.getInstance(KDF_ALGORITHMS[0], new TestKDFParams(), SUNJCE),
+        InvalidAlgorithmParameterException.class);
+    Utils.runAndCheckException(
+        () -> KDF.getInstance(KDF_ALGORITHMS[0], new TestKDFParams(), SUNJCE_PROVIDER),
+        InvalidAlgorithmParameterException.class);
 
     // getInstance(String algorithm, KDFParameters kdfParameters, Provider provider)
     Utils.runAndCheckException(

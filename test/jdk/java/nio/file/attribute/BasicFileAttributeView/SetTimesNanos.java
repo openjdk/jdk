@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  */
 
 /* @test
- * @bug 8181493 8231174
+ * @bug 8181493 8231174 8343417
  * @summary Verify that nanosecond precision is maintained for file timestamps
  * @requires (os.family == "linux") | (os.family == "mac") | (os.family == "windows")
+ * @library ../.. /test/lib
+ * @build jdk.test.lib.Platform
  * @modules java.base/sun.nio.fs:+open
+ * @run main SetTimesNanos
  */
 
 import java.io.IOException;
@@ -36,15 +39,19 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
+import static java.nio.file.LinkOption.*;
+import static java.util.concurrent.TimeUnit.*;
+
+import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 
 public class SetTimesNanos {
-    private static final boolean IS_WINDOWS =
-        System.getProperty("os.name").startsWith("Windows");
 
     public static void main(String[] args) throws Exception {
-        if (!IS_WINDOWS) {
+        if (!Platform.isWindows()) {
             // Check whether futimens() system call is supported
             Class unixNativeDispatcherClass =
                 Class.forName("sun.nio.fs.UnixNativeDispatcher");
@@ -52,8 +59,7 @@ public class SetTimesNanos {
                 unixNativeDispatcherClass.getDeclaredMethod("futimensSupported");
             futimensSupported.setAccessible(true);
             if (!(boolean)futimensSupported.invoke(null)) {
-                System.err.println("futimens() not supported; skipping test");
-                return;
+                throw new SkippedException("futimens() not supported");
             }
         }
 
@@ -63,30 +69,34 @@ public class SetTimesNanos {
         System.out.format("FileStore: \"%s\" on %s (%s)%n",
             dir, store.name(), store.type());
 
-        Set<String> testedTypes = IS_WINDOWS ?
+        Set<String> testedTypes = Platform.isWindows() ?
             Set.of("NTFS") : Set.of("apfs", "ext4", "xfs", "zfs");
         if (!testedTypes.contains(store.type())) {
-            System.err.format("%s not in %s; skipping test", store.type(), testedTypes);
-            return;
+            throw new SkippedException(store.type() + " not in " + testedTypes);
         }
 
         testNanos(dir);
 
         Path file = Files.createFile(dir.resolve("test.dat"));
         testNanos(file);
+
+        if (Platform.isLinux()) {
+            testNanosLink(false);
+            testNanosLink(true);
+        }
     }
 
     private static void testNanos(Path path) throws IOException {
         // Set modification and access times
         // Time stamp = "2017-01-01 01:01:01.123456789";
         long timeNanos = 1_483_261_261L*1_000_000_000L + 123_456_789L;
-        FileTime pathTime = FileTime.from(timeNanos, TimeUnit.NANOSECONDS);
+        FileTime pathTime = FileTime.from(timeNanos, NANOSECONDS);
         BasicFileAttributeView view =
             Files.getFileAttributeView(path, BasicFileAttributeView.class);
         view.setTimes(pathTime, pathTime, null);
 
         // Windows file time resolution is 100ns so truncate
-        if (IS_WINDOWS) {
+        if (Platform.isWindows()) {
             timeNanos = 100L*(timeNanos/100L);
         }
 
@@ -99,12 +109,50 @@ public class SetTimesNanos {
         FileTime[] times = new FileTime[] {attrs.lastModifiedTime(),
             attrs.lastAccessTime()};
         for (int i = 0; i < timeNames.length; i++) {
-            long nanos = times[i].to(TimeUnit.NANOSECONDS);
+            long nanos = times[i].to(NANOSECONDS);
             if (nanos != timeNanos) {
                 throw new RuntimeException("Expected " + timeNames[i] +
                     " timestamp to be '" + timeNanos + "', but was '" +
                     nanos + "'");
             }
+        }
+    }
+
+    private static void testNanosLink(boolean absolute) throws IOException {
+        System.out.println("absolute: " + absolute);
+
+        var target = Path.of("target");
+        var symlink = Path.of("symlink");
+        if (absolute)
+            symlink = symlink.toAbsolutePath();
+
+        try {
+            Files.createFile(target);
+            Files.createSymbolicLink(symlink, target);
+
+            var newTime = FileTime.from(1730417633157646106L, NANOSECONDS);
+            System.out.println("newTime: " + newTime.to(NANOSECONDS));
+
+            for (Path p : List.of(target, symlink)) {
+                System.out.println("p: " + p);
+
+                var view = Files.getFileAttributeView(p,
+                    BasicFileAttributeView.class, NOFOLLOW_LINKS);
+                view.setTimes(newTime, newTime, null);
+                var attrs = view.readAttributes();
+
+                if (!attrs.lastAccessTime().equals(newTime))
+                    throw new RuntimeException("Last access time "
+                                               + attrs.lastAccessTime()
+                                               + " != " + newTime);
+                if (!attrs.lastAccessTime().equals(newTime))
+                    throw new RuntimeException("Last modified time "
+                                               + attrs.lastModifiedTime()
+                                               + " != " + newTime);
+            }
+        } finally {
+            Files.deleteIfExists(target);
+            Files.deleteIfExists(symlink);
         }
     }
 }

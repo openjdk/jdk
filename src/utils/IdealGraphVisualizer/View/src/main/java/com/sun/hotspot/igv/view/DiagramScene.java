@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,17 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
     };
+
+    public void colorSelectedFigures(Color color) {
+        for (Figure figure : model.getSelectedFigures()) {
+            figure.setColor(color);
+            FigureWidget figureWidget = getWidget(figure);
+            if (figureWidget != null) {
+                figureWidget.refreshColor();
+            }
+        }
+        validateAll();
+    }
 
     private Point getScrollPosition() {
         return scrollPane.getViewport().getViewPosition();

@@ -560,11 +560,6 @@ void CompilerConfig::ergo_initialize() {
 
   if (has_c1()) {
     if (!is_compilation_mode_selected()) {
-#if defined(_WINDOWS) && !defined(_LP64)
-      if (FLAG_IS_DEFAULT(NeverActAsServerClassMachine)) {
-        FLAG_SET_ERGO(NeverActAsServerClassMachine, true);
-      }
-#endif
       if (NeverActAsServerClassMachine) {
         set_client_emulation_mode_flags();
       }
@@ -628,4 +623,3 @@ void CompilerConfig::ergo_initialize() {
   }
 #endif // COMPILER2
 }
-

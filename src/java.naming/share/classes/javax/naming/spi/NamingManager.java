@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,22 +89,15 @@ public class NamingManager {
      * setObjectFactoryBuilder() overrides this default policy by installing
      * an ObjectFactoryBuilder. Subsequent object factories will
      * be loaded and created using the installed builder.
-     *<p>
-     * The builder can only be installed if the executing thread is allowed
-     * (by the security manager's checkSetFactory() method) to do so.
-     * Once installed, the builder cannot be replaced.
      *
      * @param builder The factory builder to install. If null, no builder
      *                  is installed.
-     * @throws SecurityException builder cannot be installed
-     *         for security reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a factory has already been installed.
      * @see #getObjectInstance
      * @see ObjectFactory
      * @see ObjectFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
     public static void setObjectFactoryBuilder(
             ObjectFactoryBuilder builder) throws NamingException {
@@ -561,19 +554,12 @@ public class NamingManager {
     /**
      * Sets the InitialContextFactory builder to be builder.
      *
-     *<p>
-     * The builder can only be installed if the executing thread is allowed by
-     * the security manager to do so. Once installed, the builder cannot
-     * be replaced.
      * @param builder The initial context factory builder to install. If null,
      *                no builder is set.
-     * @throws SecurityException builder cannot be installed for security
-     *         reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a builder was previous installed.
      * @see #hasInitialContextFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
     public static synchronized void setInitialContextFactoryBuilder(
         InitialContextFactoryBuilder builder)

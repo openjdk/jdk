@@ -259,7 +259,7 @@ public final class MacHelper {
     }
 
     static void verifyBundleStructure(JPackageCommand cmd) {
-        Path bundleRoot;
+        final Path bundleRoot;
         if (cmd.isImagePackageType()) {
             bundleRoot = cmd.outputBundle();
         } else {
@@ -268,8 +268,26 @@ public final class MacHelper {
         }
 
         TKit.assertDirectoryContent(bundleRoot).match(Path.of("Contents"));
-        TKit.assertDirectoryContent(bundleRoot.resolve("Contents")).match(
-                cmd.isRuntime() ? RUNTIME_BUNDLE_CONTENTS : APP_BUNDLE_CONTENTS);
+
+        final var contentsDir = bundleRoot.resolve("Contents");
+        final var expectedContentsItems = cmd.isRuntime() ? RUNTIME_BUNDLE_CONTENTS : APP_BUNDLE_CONTENTS;
+
+        var contentsVerifier = TKit.assertDirectoryContent(contentsDir);
+        if (!cmd.hasArgument("--app-content")) {
+            contentsVerifier.match(expectedContentsItems);
+        } else {
+            // Additional content added to the bundle.
+            // Verify there is no period (.) char in the names of additional directories if any.
+            contentsVerifier.contains(expectedContentsItems);
+            contentsVerifier = contentsVerifier.removeAll(expectedContentsItems);
+            contentsVerifier.match(contentsVerifier.items().stream().filter(path -> {
+                if (Files.isDirectory(contentsDir.resolve(path))) {
+                    return !path.getFileName().toString().contains(".");
+                } else {
+                    return true;
+                }
+            }).collect(toSet()));
+        }
     }
 
     static String getBundleName(JPackageCommand cmd) {

@@ -1,4 +1,0 @@
-grant {
-    // permission statement is missing trailing semi-colon
-    permission "java.util.PropertyPermission" "java.home", "read"
-};

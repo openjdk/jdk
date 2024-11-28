@@ -22,9 +22,7 @@
  */
 package jdk.jpackage.test;
 
-import java.awt.Desktop;
 import java.awt.GraphicsEnvironment;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -788,7 +786,7 @@ public final class PackageTest extends RunnablePackageTest {
     private Map<PackageType, PackageHandlers> packageHandlers;
     private boolean ignoreBundleOutputDir;
 
-    private static final File BUNDLE_OUTPUT_DIR;
+    private static final Path BUNDLE_OUTPUT_DIR;
 
     static {
         final String propertyName = "output";
@@ -796,9 +794,9 @@ public final class PackageTest extends RunnablePackageTest {
         if (val == null) {
             BUNDLE_OUTPUT_DIR = null;
         } else {
-            BUNDLE_OUTPUT_DIR = new File(val).getAbsoluteFile();
+            BUNDLE_OUTPUT_DIR = Path.of(val).toAbsolutePath();
 
-            if (!BUNDLE_OUTPUT_DIR.isDirectory()) {
+            if (!Files.isDirectory(BUNDLE_OUTPUT_DIR)) {
                 throw new IllegalArgumentException(String.format("Invalid value of %s sytem property: [%s]. Should be existing directory",
                         TKit.getConfigPropertyName(propertyName),
                         BUNDLE_OUTPUT_DIR));

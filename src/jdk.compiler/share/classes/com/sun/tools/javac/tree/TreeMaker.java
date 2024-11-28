@@ -1138,26 +1138,17 @@ public class TreeMaker implements JCTree.Factory {
             sym.owner.kind == MTH || sym.owner.kind == VAR) {
             return true;
         } else if (sym.kind == TYP && toplevel != null) {
-            Iterator<Symbol> it = toplevel.namedImportScope.getSymbolsByName(sym.name).iterator();
-            if (it.hasNext()) {
-                Symbol s = it.next();
-                return
-                  s == sym &&
-                  !it.hasNext();
-            }
-            it = toplevel.packge.members().getSymbolsByName(sym.name).iterator();
-            if (it.hasNext()) {
-                Symbol s = it.next();
-                return
-                  s == sym &&
-                  !it.hasNext();
-            }
-            it = toplevel.starImportScope.getSymbolsByName(sym.name).iterator();
-            if (it.hasNext()) {
-                Symbol s = it.next();
-                return
-                  s == sym &&
-                  !it.hasNext();
+            for (Scope scope : new Scope[] {toplevel.namedImportScope,
+                                            toplevel.packge.members(),
+                                            toplevel.starImportScope,
+                                            toplevel.moduleImportScope}) {
+                Iterator<Symbol> it = scope.getSymbolsByName(sym.name).iterator();
+                if (it.hasNext()) {
+                    Symbol s = it.next();
+                    return
+                      s == sym &&
+                      !it.hasNext();
+                }
             }
         }
         return sym.kind == TYP && sym.isImplicit();

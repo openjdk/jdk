@@ -2149,23 +2149,32 @@ public class Resolve {
         return null;
     };
 
-    private final RecoveryLoadClass starImportScopeRecovery = (env, name) -> {
-        Scope importScope = env.toplevel.starImportScope;
-        Symbol existing = importScope.findFirst(Convert.shortName(name),
-                                                sym -> sym.kind == TYP && sym.flatName() == name);
+    private final RecoveryLoadClass starImportScopeRecovery =
+            onDemandImportScopeRecovery(false);
 
-        if (existing != null) {
-            try {
-                existing = finder.loadClass(existing.packge().modle, name);
+    private final RecoveryLoadClass moduleImportScopeRecovery =
+            onDemandImportScopeRecovery(true);
 
-                return new InvisibleSymbolError(env, true, existing);
-            } catch (CompletionFailure cf) {
-                //ignore
+    private RecoveryLoadClass onDemandImportScopeRecovery(boolean moduleImportScope) {
+        return (env, name) -> {
+            Scope importScope = moduleImportScope ? env.toplevel.moduleImportScope
+                                                  : env.toplevel.starImportScope;
+            Symbol existing = importScope.findFirst(Convert.shortName(name),
+                                                    sym -> sym.kind == TYP && sym.flatName() == name);
+
+            if (existing != null) {
+                try {
+                    existing = finder.loadClass(existing.packge().modle, name);
+
+                    return new InvisibleSymbolError(env, true, existing);
+                } catch (CompletionFailure cf) {
+                    //ignore
+                }
             }
-        }
 
-        return null;
-    };
+            return null;
+        };
+    }
 
     Symbol lookupPackage(Env<AttrContext> env, Name name) {
         PackageSymbol pack = syms.lookupPackage(env.toplevel.modle, name);
@@ -2432,6 +2441,11 @@ public class Resolve {
 
             sym = findGlobalType(env, env.toplevel.starImportScope, name, starImportScopeRecovery);
             if (sym.exists()) return sym;
+            else bestSoFar = bestOf(bestSoFar, sym);
+
+            sym = findGlobalType(env, env.toplevel.moduleImportScope, name, moduleImportScopeRecovery);
+            if (sym.exists()) return sym;
+
             else bestSoFar = bestOf(bestSoFar, sym);
         }
 

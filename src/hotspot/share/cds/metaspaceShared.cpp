@@ -87,6 +87,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -359,8 +360,43 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
   }
 }
 
-// Read/write a data stream for restoring/preserving metadata pointers and
-// miscellaneous data from/to the shared archive file.
+// About "serialize" --
+//
+// This is (probably a badly named) way to read/write a data stream of pointers and
+// miscellaneous data from/to the shared archive file. The usual code looks like this:
+//
+//     // These two global C++ variables are initialized during dump time.
+//     static int _archived_int;
+//     static MetaspaceObj* archived_ptr;
+//
+//     void MyClass::serialize(SerializeClosure* soc) {
+//         soc->do_int(&_archived_int);
+//         soc->do_int(&_archived_ptr);
+//     }
+//
+//     At dumptime, these two variables are stored into the CDS archive.
+//     At runtime, these two variables are loaded from the CDS archive.
+//     In addition, the pointer is relocated as necessary.
+//
+// Some of the xxx::serialize() functions may have side effects and assume that
+// the archive is already mapped. For example, SymbolTable::serialize_shared_table_header()
+// unconditionally makes the set of archived symbols available. Therefore, we put most
+// of these xxx::serialize() functions inside MetaspaceShared::serialize(), which
+// is called AFTER we made the decision to map the archive.
+//
+// However, some of the "serialized" data are used to decide whether an archive should
+// be mapped or not (e.g., for checking if the -Djdk.module.main property is compatible
+// with the archive). The xxx::serialize() functions for these data must be put inside
+// MetaspaceShared::early_serialize(). Such functions must not produce side effects that
+// assume we will always decides to map the archive.
+
+void MetaspaceShared::early_serialize(SerializeClosure* soc) {
+  int tag = 0;
+  soc->do_tag(--tag);
+  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
+  CDS_JAVA_HEAP_ONLY(Modules::serialize_addmods_names(soc);)
+  soc->do_tag(666);
+}
 
 void MetaspaceShared::serialize(SerializeClosure* soc) {
   int tag = 0;
@@ -402,8 +438,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   SystemDictionaryShared::serialize_vm_classes(soc);
   soc->do_tag(--tag);
 
-  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
-  CDS_JAVA_HEAP_ONLY(Modules::serialize_addmods_names(soc);)
   CDS_JAVA_HEAP_ONLY(ClassLoaderDataShared::serialize(soc);)
 
   LambdaFormInvokers::serialize(soc);
@@ -455,6 +489,7 @@ private:
     log_info(cds)("Dumping symbol table ...");
     SymbolTable::write_to_archive(symbols);
   }
+  char* dump_early_read_only_tables();
   char* dump_read_only_tables();
 
 public:
@@ -494,6 +529,21 @@ public:
   }
 };
 
+char* VM_PopulateDumpSharedSpace::dump_early_read_only_tables() {
+  ArchiveBuilder::OtherROAllocMark mark;
+
+  // Write module name into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
+  // Write module names from --add-modules into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_addmods_names();)
+
+  DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
+  char* start = ro_region->top();
+  WriteClosure wc(ro_region);
+  MetaspaceShared::early_serialize(&wc);
+  return start;
+}
+
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
@@ -501,10 +551,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
-  // Write module name into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
-  // Write module names from --add-modules into archive
-  CDS_JAVA_HEAP_ONLY(Modules::dump_addmods_names();)
+
   // Write the other data to the output array.
   DumpRegion* ro_region = ArchiveBuilder::current()->ro_region();
   char* start = ro_region->top();
@@ -543,6 +590,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   log_info(cds)("Make classes shareable");
   _builder.make_klasses_shareable();
 
+  char* early_serialized_data = dump_early_read_only_tables();
   char* serialized_data = dump_read_only_tables();
 
   SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
@@ -556,6 +604,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   assert(static_archive != nullptr, "SharedArchiveFile not set?");
   _map_info = new FileMapInfo(static_archive, true);
   _map_info->populate_header(MetaspaceShared::core_region_alignment());
+  _map_info->set_early_serialized_data(early_serialized_data);
   _map_info->set_serialized_data(serialized_data);
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
 }
@@ -1199,19 +1248,25 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
           assert(ccs_end > cds_base, "Sanity check");
-#if INCLUDE_CDS_JAVA_HEAP
-          // We archived objects with pre-computed narrow Klass id. Set up encoding such that these Ids stay valid.
-          address precomputed_narrow_klass_base = cds_base;
-          const int precomputed_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
-          CompressedKlassPointers::initialize_for_given_encoding(
-            cds_base, ccs_end - cds_base, // Klass range
-            precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveHeapWriter
+          if (INCLUDE_CDS_JAVA_HEAP || UseCompactObjectHeaders) {
+            // The CDS archive may contain narrow Klass IDs that were precomputed at archive generation time:
+            // - every archived java object header (only if INCLUDE_CDS_JAVA_HEAP)
+            // - every archived Klass' prototype   (only if +UseCompactObjectHeaders)
+            //
+            // In order for those IDs to still be valid, we need to dictate base and shift: base should be the
+            // mapping start, shift the shift used at archive generation time.
+            address precomputed_narrow_klass_base = cds_base;
+            const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+            CompressedKlassPointers::initialize_for_given_encoding(
+              cds_base, ccs_end - cds_base, // Klass range
+              precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveBuilder
             );
-#else
-          CompressedKlassPointers::initialize (
-            cds_base, ccs_end - cds_base // Klass range
-            );
-#endif // INCLUDE_CDS_JAVA_HEAP
+          } else {
+            // Let JVM freely chose encoding base and shift
+            CompressedKlassPointers::initialize (
+              cds_base, ccs_end - cds_base // Klass range
+              );
+          }
           // map_or_load_heap_region() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_or_load_heap_region();
@@ -1266,7 +1321,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 //
 // If UseCompressedClassPointers=1, the range encompassing both spaces will be
 //  suitable to en/decode narrow Klass pointers: the base will be valid for
-//  encoding, the range [Base, End) not surpass KlassEncodingMetaspaceMax.
+//  encoding, the range [Base, End) and not surpass the max. range for that encoding.
 //
 // Return:
 //
@@ -1387,7 +1442,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
-      // encoding base since the archived heap objects contain nKlass IDs pre-calculated toward the start
+      // encoding base since the archived heap objects contain narrow Klass IDs pre-calculated toward the start
       // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
       // try allocating in low-address regions.
       total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);
@@ -1473,6 +1528,14 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
+  if (mapinfo->is_static()) {
+    // Currently, only static archive uses early serialized data.
+    char* buffer = mapinfo->early_serialized_data();
+    intptr_t* array = (intptr_t*)buffer;
+    ReadClosure rc(&array, (intptr_t)mapped_base_address);
+    early_serialize(&rc);
+  }
+
   mapinfo->set_is_mapped(true);
   return MAP_ARCHIVE_SUCCESS;
 }
@@ -1509,7 +1572,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   // shared string/symbol tables.
   char* buffer = static_mapinfo->serialized_data();
   intptr_t* array = (intptr_t*)buffer;
-  ReadClosure rc(&array);
+  ReadClosure rc(&array, (intptr_t)SharedBaseAddress);
   serialize(&rc);
 
   // Finish up archived heap initialization. These must be
@@ -1526,7 +1589,7 @@ void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
-    ReadClosure rc(&buffer);
+    ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
     ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
     DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();

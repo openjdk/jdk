@@ -111,6 +111,7 @@ public:
   static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
 
+  static void early_serialize(SerializeClosure* sc) NOT_CDS_RETURN;
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
   // JVM/TI RedefineClasses() support:
