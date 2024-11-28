@@ -23,6 +23,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -36,14 +37,14 @@ final class ServerSocketTestUtil {
 
     static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer) throws Exception {
         try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
-             ServerSocket serverSocket = new ServerSocket(0)) {
+             ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
             // Accept connections in the background to avoid blocking the caller
             executorService.submit(() -> acceptConnections(serverSocket));
             serverSocketConsumer.accept(serverSocket);
         }
     }
 
-    @SuppressWarnings({"ResultOfMethodCallIgnored"})
+    @SuppressWarnings("ResultOfMethodCallIgnored")
     private static void acceptConnections(ServerSocket serverSocket) {
         System.err.println("[Test socket server] Starting accepting connections");
         while (true) {
