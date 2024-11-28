@@ -181,12 +181,7 @@ const Type* ConvD2INode::Value(PhaseGVN* phase) const {
 }
 
 //------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
 Node *ConvD2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundDouble) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
   return nullptr;
 }
 
@@ -217,12 +212,7 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
 Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundDouble) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
   return nullptr;
 }
 
@@ -269,12 +259,7 @@ Node* ConvF2INode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
 Node *ConvF2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundFloat) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
   return nullptr;
 }
 
@@ -298,12 +283,7 @@ Node* ConvF2LNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------Ideal------------------------------------------
-// If converting to an int type, skip any rounding nodes
 Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (in(1)->Opcode() == Op_RoundFloat) {
-    set_req(1, in(1)->in(1));
-    return this;
-  }
   return nullptr;
 }
 
@@ -831,52 +811,6 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // It causes problems (sizes of Load and Store nodes do not match)
   // in objects initialization code and Escape Analysis.
   return nullptr;
-}
-
-
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// Remove redundant roundings
-Node* RoundFloatNode::Identity(PhaseGVN* phase) {
-  assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
-  // Do not round constants
-  if (phase->type(in(1))->base() == Type::FloatCon)  return in(1);
-  int op = in(1)->Opcode();
-  // Redundant rounding
-  if( op == Op_RoundFloat ) return in(1);
-  // Already rounded
-  if( op == Op_Parm ) return in(1);
-  if( op == Op_LoadF ) return in(1);
-  return this;
-}
-
-//------------------------------Value------------------------------------------
-const Type* RoundFloatNode::Value(PhaseGVN* phase) const {
-  return phase->type( in(1) );
-}
-
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// Remove redundant roundings.  Incoming arguments are already rounded.
-Node* RoundDoubleNode::Identity(PhaseGVN* phase) {
-  assert(Matcher::strict_fp_requires_explicit_rounding, "should only generate for Intel");
-  // Do not round constants
-  if (phase->type(in(1))->base() == Type::DoubleCon)  return in(1);
-  int op = in(1)->Opcode();
-  // Redundant rounding
-  if( op == Op_RoundDouble ) return in(1);
-  // Already rounded
-  if( op == Op_Parm ) return in(1);
-  if( op == Op_LoadD ) return in(1);
-  if( op == Op_ConvF2D ) return in(1);
-  if( op == Op_ConvI2D ) return in(1);
-  return this;
-}
-
-//------------------------------Value------------------------------------------
-const Type* RoundDoubleNode::Value(PhaseGVN* phase) const {
-  return phase->type( in(1) );
 }
 
 //=============================================================================

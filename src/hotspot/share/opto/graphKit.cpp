@@ -2365,40 +2365,6 @@ void GraphKit::record_profiled_return_for_speculation() {
   }
 }
 
-void GraphKit::round_double_arguments(ciMethod* dest_method) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    // (Note:  TypeFunc::make has a cache that makes this fast.)
-    const TypeFunc* tf    = TypeFunc::make(dest_method);
-    int             nargs = tf->domain()->cnt() - TypeFunc::Parms;
-    for (int j = 0; j < nargs; j++) {
-      const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
-      if (targ->basic_type() == T_DOUBLE) {
-        // If any parameters are doubles, they must be rounded before
-        // the call, dprecision_rounding does gvn.transform
-        Node *arg = argument(j);
-        arg = dprecision_rounding(arg);
-        set_argument(j, arg);
-      }
-    }
-  }
-}
-
-// rounding for strict float precision conformance
-Node* GraphKit::precision_rounding(Node* n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    Unimplemented();
-  }
-  return n;
-}
-
-// rounding for strict double precision conformance
-Node* GraphKit::dprecision_rounding(Node *n) {
-  if (Matcher::strict_fp_requires_explicit_rounding) {
-    Unimplemented();
-  }
-  return n;
-}
-
 //=============================================================================
 // Generate a fast path/slow path idiom.  Graph looks like:
 // [foo] indicates that 'foo' is a parameter

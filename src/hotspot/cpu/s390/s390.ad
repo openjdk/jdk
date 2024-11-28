@@ -5317,23 +5317,6 @@ instruct membar_storestore() %{
 
 
 //----------Register Move Instructions-----------------------------------------
-instruct roundDouble_nop(regD dst) %{
-  match(Set dst (RoundDouble dst));
-  ins_cost(0);
-  // TODO: s390 port size(FIXED_SIZE);
-  // z/Architecture results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode();
-  ins_pipe(pipe_class_dummy);
-%}
-
-instruct roundFloat_nop(regF dst) %{
-  match(Set dst (RoundFloat dst));
-  ins_cost(0);
-  // TODO: s390 port size(FIXED_SIZE);
-  // z/Architecture results are already "rounded" (i.e., normal-format IEEE).
-  ins_encode();
-  ins_pipe(pipe_class_dummy);
-%}
 
 // Cast Long to Pointer for unsafe natives.
 instruct castX2P(iRegP dst, iRegL src) %{
