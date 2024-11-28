@@ -35,8 +35,8 @@
 #define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type) \
 
 #define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
-  LP64_ONLY(declare_constant(frame::arg_reg_save_area_bytes))       \
-  declare_constant(frame::interpreter_frame_sender_sp_offset)       \
+  declare_constant(frame::arg_reg_save_area_bytes)             \
+  declare_constant(frame::interpreter_frame_sender_sp_offset)  \
   declare_constant(frame::interpreter_frame_last_sp_offset)
 
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
