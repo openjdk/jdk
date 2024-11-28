@@ -1473,11 +1473,11 @@ public:
   public:
 
   void ldr_constant(Register dest, const Address &const_addr) {
-    if (NearCpool) {
+    if (CodeCache::contains(const_addr.target())) {
       ldr(dest, const_addr);
     } else {
       uint64_t offset;
-      adrp(dest, InternalAddress(const_addr.target()), offset);
+      adrp(dest, const_addr, offset);
       ldr(dest, Address(dest, offset));
     }
   }
