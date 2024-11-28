@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private ClassLoader processorClassLoader;
     private ServiceLoader<Processor> serviceLoader;
-    private SecurityException processorLoaderException;
 
     private final JavaFileManager fileManager;
 
@@ -268,28 +267,24 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private void initProcessorLoader() {
-        try {
-            if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
-                try {
-                    serviceLoader = fileManager.getServiceLoader(ANNOTATION_PROCESSOR_MODULE_PATH, Processor.class);
-                } catch (IOException e) {
-                    throw new Abort(e);
-                }
-            } else {
-                // If processorpath is not explicitly set, use the classpath.
-                processorClassLoader = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
-                    ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
-                    : fileManager.getClassLoader(CLASS_PATH);
-
-                if (options.isSet("accessInternalAPI"))
-                    ModuleHelper.addExports(getClass().getModule(), processorClassLoader.getUnnamedModule());
-
-                if (processorClassLoader != null && processorClassLoader instanceof Closeable closeable) {
-                    compiler.closeables = compiler.closeables.prepend(closeable);
-                }
+        if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
+            try {
+                serviceLoader = fileManager.getServiceLoader(ANNOTATION_PROCESSOR_MODULE_PATH, Processor.class);
+            } catch (IOException e) {
+                throw new Abort(e);
             }
-        } catch (SecurityException e) {
-            processorLoaderException = e;
+        } else {
+            // If processorpath is not explicitly set, use the classpath.
+            processorClassLoader = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
+                ? fileManager.getClassLoader(ANNOTATION_PROCESSOR_PATH)
+                : fileManager.getClassLoader(CLASS_PATH);
+
+            if (options.isSet("accessInternalAPI"))
+                ModuleHelper.addExports(getClass().getModule(), processorClassLoader.getUnnamedModule());
+
+            if (processorClassLoader != null && processorClassLoader instanceof Closeable closeable) {
+                compiler.closeables = compiler.closeables.prepend(closeable);
+            }
         }
     }
 
@@ -305,35 +300,24 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         } else if (processors != null) {
             processorIterator = processors.iterator();
         } else {
-            if (processorLoaderException == null) {
-                /*
-                 * If the "-processor" option is used, search the appropriate
-                 * path for the named class.  Otherwise, use a service
-                 * provider mechanism to create the processor iterator.
-                 *
-                 * Note: if an explicit processor path is not set,
-                 * only the class path and _not_ the module path are
-                 * searched for processors.
-                 */
-                String processorNames = options.get(Option.PROCESSOR);
-                if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
-                    processorIterator = (processorNames == null) ?
-                            new ServiceIterator(serviceLoader, log) :
-                            new NameServiceIterator(serviceLoader, log, processorNames);
-                } else if (processorNames != null) {
-                    processorIterator = new NameProcessIterator(processorNames, processorClassLoader, log);
-                } else {
-                    processorIterator = new ServiceIterator(processorClassLoader, log);
-                }
+            /*
+             * If the "-processor" option is used, search the appropriate
+             * path for the named class.  Otherwise, use a service
+             * provider mechanism to create the processor iterator.
+             *
+             * Note: if an explicit processor path is not set,
+             * only the class path and _not_ the module path are
+             * searched for processors.
+             */
+            String processorNames = options.get(Option.PROCESSOR);
+            if (fileManager.hasLocation(ANNOTATION_PROCESSOR_MODULE_PATH)) {
+                processorIterator = (processorNames == null) ?
+                        new ServiceIterator(serviceLoader, log) :
+                        new NameServiceIterator(serviceLoader, log, processorNames);
+            } else if (processorNames != null) {
+                processorIterator = new NameProcessIterator(processorNames, processorClassLoader, log);
             } else {
-                /*
-                 * A security exception will occur if we can't create a classloader.
-                 * Ignore the exception if, with hindsight, we didn't need it anyway
-                 * (i.e. no processor was specified either explicitly, or implicitly,
-                 * in service configuration file.) Otherwise, we cannot continue.
-                 */
-                processorIterator = handleServiceLoaderUnavailability("proc.cant.create.loader",
-                        processorLoaderException);
+                processorIterator = new ServiceIterator(processorClassLoader, log);
             }
         }
         PlatformDescription platformProvider = context.get(PlatformDescription.class);
@@ -367,9 +351,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * Returns an empty processor iterator if no processors are on the
      * relevant path, otherwise if processors are present, logs an
      * error.  Called when a service loader is unavailable for some
-     * reason, either because a service loader class cannot be found
-     * or because a security policy prevents class loaders from being
-     * created.
+     * reason, for example, because a service loader class cannot be found.
      *
      * @param key The resource key to use to log an error message
      * @param e   If non-null, pass this exception to Abort
@@ -391,7 +373,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     /**
-     * Handle a security exception thrown during initializing the
+     * Handle a exception thrown during initializing the
      * Processor iterator.
      */
     private void handleException(String key, Exception e) {
