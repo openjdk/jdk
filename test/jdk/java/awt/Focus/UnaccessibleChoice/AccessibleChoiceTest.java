@@ -23,6 +23,7 @@
 
 import java.awt.Button;
 import java.awt.Choice;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GraphicsConfiguration;
@@ -35,7 +36,6 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -50,44 +50,47 @@ import javax.imageio.ImageIO;
 
 public class AccessibleChoiceTest {
     //Declare things used in the test, like buttons and labels here
-    Frame frame = new Frame("Accessible Choice Test Frame");
-    Choice choice = new Choice();
-    Button def = new Button("default owner");
-    CountDownLatch go = new CountDownLatch(1);
+    static Frame frame = new Frame("Accessible Choice Test Frame");
+    static Choice choice = new Choice();
+    static Button button = new Button("default owner");
+    static CountDownLatch go = new CountDownLatch(1);
+    static volatile Point loc;
 
     public static void main(final String[] args) throws Exception {
-        AccessibleChoiceTest app = new AccessibleChoiceTest();
-        app.test();
-    }
-
-    private void test() throws IOException {
         try {
-            init();
-            start();
+            System.out.println("ONE");
+            createAndShowUI();
+            System.out.println("TWO");
+            test();
+            System.out.println("THREE");
         } finally {
             if (frame != null) {
+                System.out.println("FOUR");
                 frame.dispose();
             }
         }
     }
 
-    public void init() {
-        frame.setLayout(new FlowLayout());
-        frame.add(def);
-        def.addFocusListener(new FocusAdapter() {
+    public static void createAndShowUI() throws Exception {
+        EventQueue.invokeAndWait(() -> {
+            System.out.println("FIVE");
+            frame.setLayout(new FlowLayout());
+            frame.add(button);
+            button.addFocusListener(new FocusAdapter() {
                 public void focusGained(FocusEvent e) {
                     go.countDown();
                 }
             });
-        choice.add("One");
-        choice.add("Two");
-        frame.add(choice);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
+            choice.add("One");
+            choice.add("Two");
+            frame.add(choice);
+            frame.pack();
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
     }
 
-    public void start() throws IOException {
+    public static void test() throws Exception {
         Robot robot;
         try {
             robot = new Robot();
@@ -98,11 +101,19 @@ public class AccessibleChoiceTest {
         robot.delay(1000);
         robot.setAutoWaitForIdle(true);
 
+        System.out.println("SIX");
+
         // Focus default button and wait till it gets focus
-        Point loc = def.getLocationOnScreen();
-        robot.mouseMove(loc.x + 5, loc.y + 5);
+        EventQueue.invokeAndWait(() -> {
+            loc = button.getLocationOnScreen();
+        });
+        robot.mouseMove(loc.x + button.getWidth() / 2, loc.y
+                + button.getHeight() / 2);
+        robot.delay(500);
+        System.out.println("SEVEN");
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        System.out.println("EIGHT");
 
         try {
             go.await(1, TimeUnit.SECONDS);
@@ -110,7 +121,7 @@ public class AccessibleChoiceTest {
             throw new RuntimeException("Interrupted !!!");
         }
 
-        if (!def.isFocusOwner()) {
+        if (!button.isFocusOwner()) {
             throw new RuntimeException("Button doesn't have focus");
         }
 
@@ -126,15 +137,14 @@ public class AccessibleChoiceTest {
             throw new RuntimeException("Choice doesn't have focus");
         }
 
-        // Press Down key to select next item in the choice(Motif 2.1)
+        // Press Down key to select next item in the choice
         // If bug exists we won't be able to do so
         robot.keyPress(KeyEvent.VK_DOWN);
         robot.keyRelease(KeyEvent.VK_DOWN);
 
-        robot.delay(500);
-
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("mac")) {
+            robot.delay(500);
             robot.keyPress(KeyEvent.VK_DOWN);
             robot.keyRelease(KeyEvent.VK_DOWN);
             robot.delay(500);
