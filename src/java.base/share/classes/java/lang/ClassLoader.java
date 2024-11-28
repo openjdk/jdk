@@ -301,7 +301,7 @@ public abstract class ClassLoader {
 
     // The classes loaded by this class loader. The only purpose of this table
     // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private @Stable ArrayList<Class<?>> classes = new ArrayList<>();
+    private final ArrayList<Class<?>> classes = new ArrayList<>();
 
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
@@ -2585,7 +2585,8 @@ public abstract class ClassLoader {
         }
         packages = new ConcurrentHashMap<>();
         package2certs = new ConcurrentHashMap<>();
-        classes = new ArrayList<>();
+	classes.clear();
+        classes.trimToSize();
         classLoaderValueMap = null;
     }
 }
