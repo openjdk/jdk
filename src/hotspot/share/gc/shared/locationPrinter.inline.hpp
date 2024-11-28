@@ -27,6 +27,7 @@
 
 #include "gc/shared/locationPrinter.hpp"
 
+#include "memory/resourceArea.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 
