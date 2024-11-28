@@ -1156,7 +1156,8 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 }
 
 address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
-  assert(VM_Version::supports_float16(), "this intrinsic is not supported");
+  if (!VM_Version::supports_float16()) return nullptr;
+
   address entry = __ pc();
 
   __ lfs(F1, Interpreter::stackElementSize, R15_esp);
@@ -1172,7 +1173,8 @@ address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
 }
 
 address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
-  assert(VM_Version::supports_float16(), "this intrinsic is not supported");
+  if (!VM_Version::supports_float16()) return nullptr;
+
   address entry = __ pc();
 
   // Note: Could also use:
