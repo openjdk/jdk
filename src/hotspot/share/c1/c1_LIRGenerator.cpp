@@ -886,18 +886,7 @@ LIR_Opr LIRGenerator::round_item(LIR_Opr opr) {
   assert(opr->is_register(), "why spill if item is not register?");
 
   if (strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 1 && opr->is_single_fpu()) {
-      LIR_Opr result = new_register(T_FLOAT);
-      set_vreg_flag(result, must_start_in_memory);
-      assert(opr->is_register(), "only a register can be spilled");
-      assert(opr->value_type()->is_float(), "rounding only for floats available");
-      __ roundfp(opr, LIR_OprFact::illegalOpr, result);
-      return result;
-    }
-#else
     Unimplemented();
-#endif // IA32
   }
   return opr;
 }

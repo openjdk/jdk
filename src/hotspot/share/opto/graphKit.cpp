@@ -2386,13 +2386,7 @@ void GraphKit::round_double_arguments(ciMethod* dest_method) {
 // rounding for strict float precision conformance
 Node* GraphKit::precision_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE == 0) {
-      return _gvn.transform(new RoundFloatNode(nullptr, n));
-    }
-#else
     Unimplemented();
-#endif // IA32
   }
   return n;
 }
@@ -2400,13 +2394,7 @@ Node* GraphKit::precision_rounding(Node* n) {
 // rounding for strict double precision conformance
 Node* GraphKit::dprecision_rounding(Node *n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    if (UseSSE < 2) {
-      return _gvn.transform(new RoundDoubleNode(nullptr, n));
-    }
-#else
     Unimplemented();
-#endif // IA32
   }
   return n;
 }

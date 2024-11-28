@@ -675,14 +675,7 @@ class MemoryBuffer: public CompilationResourceObj {
     }
 
     if (strict_fp_requires_explicit_rounding && load->type()->is_float_kind()) {
-#ifdef IA32
-      if (UseSSE < 2) {
-        // can't skip load since value might get rounded as a side effect
-        return load;
-      }
-#else
       Unimplemented();
-#endif // IA32
     }
 
     ciField* field = load->field();
@@ -2358,24 +2351,7 @@ void GraphBuilder::throw_op(int bci) {
 
 
 Value GraphBuilder::round_fp(Value fp_value) {
-  if (strict_fp_requires_explicit_rounding) {
-#ifdef IA32
-    // no rounding needed if SSE2 is used
-    if (UseSSE < 2) {
-      // Must currently insert rounding node for doubleword values that
-      // are results of expressions (i.e., not loads from memory or
-      // constants)
-      if (fp_value->type()->tag() == doubleTag &&
-          fp_value->as_Constant() == nullptr &&
-          fp_value->as_Local() == nullptr &&       // method parameters need no rounding
-          fp_value->as_RoundFP() == nullptr) {
-        return append(new RoundFP(fp_value));
-      }
-    }
-#else
-    Unimplemented();
-#endif // IA32
-  }
+  // TODO: Remove?
   return fp_value;
 }
 
