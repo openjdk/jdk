@@ -23,6 +23,7 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 import java.util.Random;
 
@@ -36,7 +37,7 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.ModLNodeIdealizationTests
  */
 public class ModLNodeIdealizationTests {
-    public static final long RANDOM_POWER_OF_2 = 1L << (1 + new Random().nextInt(62));
+    public static final long RANDOM_POWER_OF_2 = 1L << (1 + Utils.getRandomInstance().nextInt(62));
 
     public static void main(String[] args) {
         TestFramework.run();

@@ -23,6 +23,7 @@
 package compiler.c2.irTests;
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 import java.util.Random;
 
@@ -36,7 +37,7 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.ModINodeIdealizationTests
  */
 public class ModINodeIdealizationTests {
-    public static final int RANDOM_POWER_OF_2 = 1 << (1 + new Random().nextInt(30));
+    public static final int RANDOM_POWER_OF_2 = 1 << (1 + Utils.getRandomInstance().nextInt(30));
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:CompileCommand=inline,*Math::max");
