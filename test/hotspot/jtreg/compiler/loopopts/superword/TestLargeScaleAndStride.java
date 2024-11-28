@@ -43,7 +43,7 @@
  * @bug 8328938
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:SuperWordStoreToLoadForwardingFailureDetection=4096 compiler.loopopts.superword.TestLargeScaleAndStride
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:SuperWordStoreToLoadForwardingFailureDetection=4096 compiler.loopopts.superword.TestLargeScaleAndStride
  */
 
 package compiler.loopopts.superword;
