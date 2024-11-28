@@ -4631,9 +4631,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * @return an integer {@code r} such that {@code 10^(r-1) <= b < 10^(r+1)}.
      */
-    private int digitLengthLower(BigInteger b) {
+    private static int digitLengthLower(BigInteger b) {
         return (int) (((b.bitLength() + 1L) * 646456993L) >>> 31);
     }
+
     /**
      * Check a scale for Underflow or Overflow.  If this BigDecimal is
      * nonzero, throw an exception if the scale is outof range. If this
