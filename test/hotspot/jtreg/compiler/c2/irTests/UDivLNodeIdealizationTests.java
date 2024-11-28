@@ -90,7 +90,7 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / x => 1
     public long constant(long x) {
@@ -98,28 +98,28 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     // Checks x / 1 => x
     public long identity(long x) {
         return Long.divideUnsigned(x, 1L);
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     // Checks x / (c / c) => x
     public long identityAgain(long x) {
         return Long.divideUnsigned(x, Long.divideUnsigned(13L, 13L));
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     // Checks x / (c / c) => x
     public long identityAgainButBig(long x) {
         return Long.divideUnsigned(x, Long.divideUnsigned(-9214294468834361176L, -9214294468834361176L));  // Long.parseUnsignedLong("9232449604875190440") = -9214294468834361176L
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / (y / y) => x
     public long identityThird(long x, long y) {
@@ -137,7 +137,7 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     // Dividing an unsigned number by 8 is a trivial right shift by 3
     public long divByPow2(long x) {
@@ -145,14 +145,14 @@ public class UDivLNodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     public long divByPow2Random(long x) {
         return Long.divideUnsigned(x, RANDOM_POWER_OF_2);
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     public long divByPow2Big(long x) {
         return Long.divideUnsigned(x, -9223372036854775808L);  // -9223372036837998592 = Long.parseUnsignedLong("9223372036854775808")

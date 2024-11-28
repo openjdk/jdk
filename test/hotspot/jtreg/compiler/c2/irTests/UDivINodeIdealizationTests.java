@@ -90,7 +90,7 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / x => 1
     public int constant(int x) {
@@ -98,28 +98,28 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     // Checks x / 1 => x
     public int identity(int x) {
         return Integer.divideUnsigned(x, 1);
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     // Checks x / (c / c) => x
     public int identityAgain(int x) {
         return Integer.divideUnsigned(x, Integer.divideUnsigned(13, 13));
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     // Checks x / (c / c) => x
     public int identityAgainButBig(int x) {
         return Integer.divideUnsigned(x, Integer.divideUnsigned(-2129457054, -2129457054));  // Integer.parseUnsignedInt("2165510242") = -2129457054
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.DIV_BY_ZERO_TRAP, "1"})
     // Checks x / (y / y) => x
     public int identityThird(int x, int y) {
@@ -137,7 +137,7 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     // Dividing an unsigned number by 8 is a trivial right shift by 3
     public int divByPow2(int x) {
@@ -145,14 +145,14 @@ public class UDivINodeIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     public int divByPow2Random(int x) {
         return Integer.divideUnsigned(x, RANDOM_POWER_OF_2);
     }
 
     @Test
-    @IR(failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.UDIV})
     @IR(counts = {IRNode.URSHIFT, "1"})
     public int divByPow2Big(int x) {
         return Integer.divideUnsigned(x, -2147483648);  // -2147483648 = Integer.parseUnsignedInt("2147483648")
