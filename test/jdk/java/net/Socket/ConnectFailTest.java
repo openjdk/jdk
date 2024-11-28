@@ -23,14 +23,23 @@
 
 import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -55,51 +64,18 @@ class ConnectFailTest {
             InetSocketAddress.createUnresolved("no.such.host", DEAD_SERVER_PORT);
 
     @Test
-    void verifyUnresolvedAddress() {
+    void testUnresolvedAddress() {
         assertTrue(UNRESOLVED_ADDRESS.isUnresolved());
     }
 
-    // Socket should be closed when `unboundSocket.connect()` fails ////////////////////////////////////////////////////
-
-    @Test
-    void unboundSocketShouldBeClosedWhenConnectFails() throws Exception {
-        unboundSocketShouldBeClosedWhenConnectFails(ConnectFailTest::createUnboundSocket);
-    }
-
-    @Test
-    void unboundNioSocketShouldBeClosedWhenConnectFails() throws Exception {
-        unboundSocketShouldBeClosedWhenConnectFails(ConnectFailTest::createUnboundNioSocket);
-    }
-
-    private static void unboundSocketShouldBeClosedWhenConnectFails(
-            ThrowingSupplier<Socket> unboundSocketFactory)
-            throws Exception {
-        try (Socket socket = unboundSocketFactory.get()) {
-            assertFalse(socket.isBound());
-            assertFalse(socket.isConnected());
-            assertThrows(IOException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
-            assertTrue(socket.isClosed());
-        }
-    }
-
-    // Socket should be closed when `boundSocket.connect()` fails //////////////////////////////////////////////////////
-
-    @Test
-    void boundSocketShouldBeClosedWhenConnectFails() throws Exception {
-        boundSocketShouldBeClosedWhenConnectFails(
-                ConnectFailTest::createBoundSocket);
-    }
-
-    @Test
-    void boundNioSocketShouldBeClosedWhenConnectFails() throws Exception {
-        boundSocketShouldBeClosedWhenConnectFails(
-                ConnectFailTest::createBoundNioSocket);
-    }
-
-    private static void boundSocketShouldBeClosedWhenConnectFails(
-            ThrowingSupplier<Socket> boundSocketFactory)
-            throws Exception {
-        try (Socket socket = boundSocketFactory.get()) {
+    /**
+     * Verifies socket is closed when {@code unboundSocket.connect()} fails.
+     * @param socket an unbound socket
+     */
+    @ParameterizedTest
+    @MethodSource("boundSockets")
+    void testBoundSocket(Socket socket) throws IOException {
+        try (socket) {
             assertTrue(socket.isBound());
             assertFalse(socket.isConnected());
             assertThrows(IOException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
@@ -107,11 +83,9 @@ class ConnectFailTest {
         }
     }
 
-    // Socket should *NOT* be closed when `connectedSocket.connect()` fails ////////////////////////////////////////////
-
     @Test
-    void connectedSocketShouldNotBeClosedWhenConnectFails() throws Exception {
-        connectedSocketShouldNotBeClosedWhenConnectFails(
+    void testConnectedSocket() throws Exception {
+        testConnectedSocket(
                 ConnectFailTest::createConnectedSocket,
                 runnable -> {
                     SocketException exception = assertThrows(SocketException.class, runnable::run);
@@ -120,17 +94,22 @@ class ConnectFailTest {
     }
 
     @Test
-    void connectedNioSocketShouldNotBeClosedWhenConnectFails() throws Exception {
-        connectedSocketShouldNotBeClosedWhenConnectFails(
+    void testConnectedNioSocket() throws Exception {
+        testConnectedSocket(
                 ConnectFailTest::createConnectedNioSocket,
                 runnable -> assertThrows(AlreadyConnectedException.class, runnable::run));
     }
 
-    private static void connectedSocketShouldNotBeClosedWhenConnectFails(
+    /**
+     * Verifies socket is not closed when {@code `connectedSocket.connect()`} fails.
+     * @param connectedSocketFactory a connected socket factory
+     * @param reconnectFailureVerifier a consumer verifying the thrown reconnect failure
+     */
+    private static void testConnectedSocket(
             ThrowingFunction<SocketAddress, Socket> connectedSocketFactory,
             Consumer<ThrowingRunnable> reconnectFailureVerifier)
             throws Exception {
-        ServerSocketTestUtil.withEphemeralServerSocket(serverSocket -> {
+        withEphemeralServerSocket(serverSocket -> {
             SocketAddress serverSocketAddress = serverSocket.getLocalSocketAddress();
             try (Socket socket = connectedSocketFactory.apply(serverSocketAddress)) {
                 assertTrue(socket.isBound());
@@ -143,33 +122,14 @@ class ConnectFailTest {
         });
     }
 
-    // Socket should be closed when `unboundSocket.connect(unresolvedAddress)` fails ///////////////////////////////////
-
-    @Test
-    void unboundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails() throws Exception {
-        unboundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails(
-                ConnectFailTest::createUnboundSocket);
-    }
-
-    private static Socket createUnboundSocket() {
-        return new Socket();
-    }
-
-    @Test
-    void unboundNioSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails() throws Exception {
-        unboundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails(
-                ConnectFailTest::createUnboundNioSocket);
-    }
-
-    @SuppressWarnings("resource")
-    private static Socket createUnboundNioSocket() throws IOException {
-        return SocketChannel.open().socket();
-    }
-
-    private static void unboundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails(
-            ThrowingSupplier<Socket> unboundSocketFactory)
-            throws Exception {
-        try (Socket socket = unboundSocketFactory.get()) {
+    /**
+     * Verifies socket is closed when {@code unboundSocket.connect(unresolvedAddress)} fails.
+     * @param socket an unbound socket
+     */
+    @ParameterizedTest
+    @MethodSource("unboundSockets")
+    void testUnboundSocketWithUnresolvedAddress(Socket socket) throws IOException {
+        try (socket) {
             assertFalse(socket.isBound());
             assertFalse(socket.isConnected());
             assertThrows(IOException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
@@ -177,37 +137,21 @@ class ConnectFailTest {
         }
     }
 
-    // Socket should be closed when `boundSocket.connect(unresolvedAddress)` fails /////////////////////////////////////
-
-    @Test
-    void boundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails() throws Exception {
-        boundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails(
-                ConnectFailTest::createBoundSocket);
-    }
-
-    private static Socket createBoundSocket() throws IOException {
-        Socket socket = new Socket();
-        socket.bind(new InetSocketAddress(0));
-        return socket;
-    }
-
-    @Test
-    void boundNioSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails() throws Exception {
-        boundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails(
-                ConnectFailTest::createBoundNioSocket);
-    }
-
     @SuppressWarnings("resource")
-    private static Socket createBoundNioSocket() throws IOException {
-        SocketChannel channel = SocketChannel.open();
-        channel.bind(new InetSocketAddress(0));
-        return channel.socket();
+    static List<Socket> unboundSockets() throws IOException {
+        return List.of(
+                new Socket(),
+                SocketChannel.open().socket());
     }
 
-    private static void boundSocketShouldBeClosedWhenConnectWithUnresolvedAddressFails(
-            ThrowingSupplier<Socket> boundSocketFactory)
-            throws Exception {
-        try (Socket socket = boundSocketFactory.get()) {
+    /**
+     * Verifies socket is closed when {@code boundSocket.connect(unresolvedAddress)} fails.
+     * @param socket a bound socket
+     */
+    @ParameterizedTest
+    @MethodSource("boundSockets")
+    void testBoundSocketWithUnresolvedAddress(Socket socket) throws IOException {
+        try (socket) {
             assertTrue(socket.isBound());
             assertFalse(socket.isConnected());
             assertThrows(IOException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
@@ -215,34 +159,34 @@ class ConnectFailTest {
         }
     }
 
-    // Socket should *NOT* be closed when `connectedSocket.connect(unresolvedAddress)` fails ///////////////////////////
-
-    @Test
-    void connectedSocketShouldNotBeClosedWhenConnectWithUnresolvedAddressFails() throws Exception {
-        connectedSocketShouldNotBeClosedWhenConnectWithUnresolvedAddressFails(
-                ConnectFailTest::createConnectedSocket);
-    }
-
-    private static Socket createConnectedSocket(SocketAddress address) throws IOException {
-        InetSocketAddress inetAddress = (InetSocketAddress) address;
-        return new Socket(inetAddress.getAddress(), inetAddress.getPort());
-    }
-
-    @Test
-    void connectedNioSocketShouldNotBeClosedWhenConnectWithUnresolvedAddressFails() throws Exception {
-        connectedSocketShouldNotBeClosedWhenConnectWithUnresolvedAddressFails(
-                ConnectFailTest::createConnectedNioSocket);
-    }
-
     @SuppressWarnings("resource")
-    private static Socket createConnectedNioSocket(SocketAddress address) throws IOException {
-        return SocketChannel.open(address).socket();
+    static List<Socket> boundSockets() throws IOException {
+        List<Socket> sockets = new ArrayList<>();
+        // Socket
+        {
+            Socket socket = new Socket();
+            socket.bind(new InetSocketAddress(0));
+            sockets.add(socket);
+        }
+        // NIO Socket
+        {
+            SocketChannel channel = SocketChannel.open();
+            channel.bind(new InetSocketAddress(0));
+            sockets.add(channel.socket());
+        }
+        return sockets;
     }
 
-    private static void connectedSocketShouldNotBeClosedWhenConnectWithUnresolvedAddressFails(
+    /**
+     * Verifies socket is not closed when {@code connectedSocket.connect(unresolvedAddress)} fails.
+     * @param connectedSocketFactory a connected socket factory
+     */
+    @ParameterizedTest
+    @MethodSource("connectedSocketFactories")
+    void testConnectedSocketWithUnresolvedAddress(
             ThrowingFunction<SocketAddress, Socket> connectedSocketFactory)
             throws Exception {
-        ServerSocketTestUtil.withEphemeralServerSocket(serverSocket -> {
+        withEphemeralServerSocket(serverSocket -> {
             SocketAddress serverSocketAddress = serverSocket.getLocalSocketAddress();
             try (Socket socket = connectedSocketFactory.apply(serverSocketAddress)) {
                 assertTrue(socket.isBound());
@@ -253,17 +197,72 @@ class ConnectFailTest {
         });
     }
 
-    @FunctionalInterface
-    private interface ThrowingRunnable {
+    static List<ThrowingFunction<SocketAddress, Socket>> connectedSocketFactories() {
+        return List.of(
+                ConnectFailTest::createConnectedSocket,
+                ConnectFailTest::createConnectedNioSocket);
+    }
 
-        void run() throws Exception;
+    private static Socket createConnectedSocket(SocketAddress address) throws IOException {
+        InetSocketAddress inetAddress = (InetSocketAddress) address;
+        return new Socket(inetAddress.getAddress(), inetAddress.getPort());
+    }
+
+    @SuppressWarnings("resource")
+    private static Socket createConnectedNioSocket(SocketAddress address) throws IOException {
+        return SocketChannel.open(address).socket();
+    }
+
+    private static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer) throws Exception {
+        try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+             ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
+            // Accept connections in the background to avoid blocking the caller
+            executorService.submit(() -> acceptConnections(serverSocket));
+            serverSocketConsumer.accept(serverSocket);
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    private static void acceptConnections(ServerSocket serverSocket) {
+        System.err.println("[Test socket server] Starting accepting connections");
+        while (true) {
+            try {
+
+                // Accept the connection
+                Socket clientSocket = serverSocket.accept();
+                System.err.format(
+                        "[Test socket server] Accepted port %d to port %d%n",
+                        ((InetSocketAddress) clientSocket.getRemoteSocketAddress()).getPort(),
+                        clientSocket.getLocalPort());
+
+                // Instead of directly closing the socket, we try to read some to block. Directly closing
+                // the socket will invalidate the client socket tests checking the established connection
+                // status.
+                try (clientSocket; InputStream inputStream = clientSocket.getInputStream()) {
+                    inputStream.read();
+                } catch (IOException _) {
+                    // Do nothing
+                }
+
+            } catch (IOException _) {
+                break;
+            }
+
+        }
+        System.err.println("[Test socket server] Stopping accepting connections");
+    }
+
+    @FunctionalInterface
+    private interface ThrowingConsumer<V> {
+
+        void accept(V value) throws Exception;
 
     }
 
     @FunctionalInterface
-    private interface ThrowingSupplier<V> {
+    private interface ThrowingRunnable {
 
-        V get() throws Exception;
+        void run() throws Exception;
 
     }
 
