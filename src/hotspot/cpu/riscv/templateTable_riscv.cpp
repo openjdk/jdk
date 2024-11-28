@@ -1621,7 +1621,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    // sign extend the 16 bit value in x12
+    // Convert the 16-bit value into native byte-ordering and sign-extend
     __ lb(x12, at_bcp(1));
     __ lbu(t1, at_bcp(2));
     __ slli(x12, x12, 8);
@@ -1933,6 +1933,9 @@ void TemplateTable::fast_linearswitch() {
   __ andi(x9, x9, -BytesPerInt);
   // set counter
   __ lwu(x11, Address(x9, BytesPerInt));
+  // Convert the 32-bit npairs (number of pairs) into native byte-ordering
+  // We can use sign-extension here because npairs must be greater than or
+  // equal to 0 per JVM spec on 'lookupswitch' bytecode.
   __ revb_w(x11, x11);
   __ j(loop_entry);
   // table search
@@ -2006,7 +2009,9 @@ void TemplateTable::fast_binaryswitch() {
   __ mv(i, zr);                            // i = 0
   __ lwu(j, Address(array, -BytesPerInt)); // j = length(array)
 
-  // Convert j into native byteordering
+  // Convert the 32-bit npairs (number of pairs) into native byte-ordering
+  // We can use sign-extension here because npairs must be greater than or
+  // equal to 0 per JVM spec on 'lookupswitch' bytecode.
   __ revb_w(j, j);
 
   // And start
