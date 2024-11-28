@@ -92,9 +92,6 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _has_call(0)
  , _interval_in_loop(0)  // initialized later with correct length
  , _scope_value_cache(0) // initialized later with correct length
-#ifdef IA32
- , _fpu_stack_allocator(nullptr)
-#endif
 {
   assert(this->ir() != nullptr,          "check if valid");
   assert(this->compilation() != nullptr, "check if valid");
@@ -1091,43 +1088,23 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   // this operand is allowed to be on the stack in some cases
   BasicType opr_type = opr->type_register();
   if (opr_type == T_FLOAT || opr_type == T_DOUBLE) {
-    if (IA32_ONLY( (UseSSE == 1 && opr_type == T_FLOAT) || UseSSE >= 2 ) NOT_IA32( true )) {
-      // SSE float instruction (T_DOUBLE only supported with SSE2)
-      switch (op->code()) {
-        case lir_cmp:
-        case lir_add:
-        case lir_sub:
-        case lir_mul:
-        case lir_div:
-        {
-          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
-          LIR_Op2* op2 = (LIR_Op2*)op;
-          if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
-            assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
-            return shouldHaveRegister;
-          }
+    // SSE float instruction (T_DOUBLE only supported with SSE2)
+    switch (op->code()) {
+      case lir_cmp:
+      case lir_add:
+      case lir_sub:
+      case lir_mul:
+      case lir_div:
+      {
+        assert(op->as_Op2() != nullptr, "must be LIR_Op2");
+        LIR_Op2* op2 = (LIR_Op2*)op;
+        if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
+          assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
+          return shouldHaveRegister;
         }
-        default:
-          break;
       }
-    } else {
-      // FPU stack float instruction
-      switch (op->code()) {
-        case lir_add:
-        case lir_sub:
-        case lir_mul:
-        case lir_div:
-        {
-          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
-          LIR_Op2* op2 = (LIR_Op2*)op;
-          if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
-            assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
-            return shouldHaveRegister;
-          }
-        }
-        default:
-          break;
-      }
+      default:
+        break;
     }
     // We want to sometimes use logical operations on pointers, in particular in GC barriers.
     // Since 64bit logical operations do not current support operands on stack, we have to make sure
@@ -2666,14 +2643,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #endif
 
   } else if (opr->is_single_fpu()) {
-#ifdef IA32
-    // the exact location of fpu stack values is only known
-    // during fpu stack allocation, so the stack allocator object
-    // must be present
-    assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-    assert(_fpu_stack_allocator != nullptr, "must be present");
-    opr = _fpu_stack_allocator->to_fpu_stack(opr);
-#elif defined(AMD64)
+#if defined(AMD64)
     assert(false, "FPU not used on x86-64");
 #endif
 
@@ -2779,16 +2749,6 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       // name for the other half.  *first and *second must represent the
       // least and most significant words, respectively.
 
-#ifdef IA32
-      // the exact location of fpu stack values is only known
-      // during fpu stack allocation, so the stack allocator object
-      // must be present
-      assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-      assert(_fpu_stack_allocator != nullptr, "must be present");
-      opr = _fpu_stack_allocator->to_fpu_stack(opr);
-
-      assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrLo is used)");
-#endif
 #ifdef AMD64
       assert(false, "FPU not used on x86-64");
 #endif

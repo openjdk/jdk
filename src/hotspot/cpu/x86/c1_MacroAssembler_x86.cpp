@@ -336,8 +336,6 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
     fat_nop();
   }
   if (breakAtEntry) int3();
-  // build frame
-  IA32_ONLY( verify_FPU(0, "method_entry"); )
 }
 
 void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {

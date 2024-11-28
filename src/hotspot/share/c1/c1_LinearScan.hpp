@@ -35,7 +35,6 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-class FpuStackAllocator;
 class IRScopeDebugInfo;
 class Interval;
 class IntervalWalker;
@@ -107,7 +106,6 @@ class LinearScan : public CompilationResourceObj {
   friend class Interval;
   friend class IntervalWalker;
   friend class LinearScanWalker;
-  friend class FpuStackAllocator;
   friend class MoveResolver;
   friend class LinearScanStatistic;
   friend class LinearScanTimers;
@@ -177,14 +175,7 @@ class LinearScan : public CompilationResourceObj {
   int           num_loops() const                { return ir()->num_loops(); }
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }
 
-  // handling of fpu stack allocation (platform dependent, needed for debug information generation)
-#ifdef IA32
-  FpuStackAllocator* _fpu_stack_allocator;
-  bool use_fpu_stack_allocation() const          { return UseSSE < 2 && has_fpu_registers(); }
-#else
   bool use_fpu_stack_allocation() const          { return false; }
-#endif
-
 
   // access to interval list
   int           interval_count() const           { return _intervals.length(); }
