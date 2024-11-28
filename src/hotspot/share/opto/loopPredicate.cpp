@@ -302,7 +302,7 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
 void PhaseIdealLoop::clone_assertion_predicates(IdealLoopTree* loop,
                                                 const Unique_Node_List &list,
                                                 ParsePredicateNode* true_path_loop_parse_predicate) {
-  
+
   for (int i = list.size() - 1; i >= 0; i--) {
     IfTrueNode* template_assertion_predicate_success_proj = list.at(i)->as_IfTrue();
     assert(template_assertion_predicate_success_proj->in(0)->is_If(), "must be If node");
