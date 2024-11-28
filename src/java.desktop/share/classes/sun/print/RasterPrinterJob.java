@@ -816,10 +816,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                                            DocFlavor.SERVICE_FORMATTED.PAGEABLE,
                                            attributes, w);
         if (setOnTop) {
-            try {
-                pageDialog.setAlwaysOnTop(true);
-            } catch (SecurityException e) {
-            }
+            pageDialog.setAlwaysOnTop(true);
         }
 
         Rectangle dlgBounds = pageDialog.getBounds();
@@ -1311,11 +1308,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             (!fidelity && userName != null)) {
             userNameAttr = userName.getValue();
         } else {
-            try {
-                userNameAttr = getUserName();
-            } catch (SecurityException e) {
-                userNameAttr = "";
-            }
+            userNameAttr = getUserName();
         }
 
         /* OpenBook is used internally only when app uses Printable.
@@ -1654,11 +1647,6 @@ public abstract class RasterPrinterJob extends PrinterJob {
         } catch (IOException ioe) {
             throw new PrinterException("Cannot write to file:"+
                                        dest);
-        } catch (SecurityException se) {
-            //There is already file read/write access so at this point
-            // only delete access is denied.  Just ignore it because in
-            // most cases the file created in createNewFile gets overwritten
-            // anyway.
         }
 
         File pFile = f.getParentFile();
@@ -1831,11 +1819,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if  (userNameAttr != null) {
             return userNameAttr;
         } else {
-            try {
-                return  getUserName();
-            } catch (SecurityException e) {
-                return "";
-            }
+            return getUserName();
         }
     }
 
