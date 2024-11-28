@@ -485,10 +485,6 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   }
 
   const Type* t = phase->type(div->in(2));
-  if (t == TypeClass::ONE) { // Identity?
-    return nullptr;          // Skip it
-  }
-
   const TypeClass* tl = t->cast<TypeClass>();
   if (!tl) {
     return nullptr;
@@ -506,7 +502,7 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   }
   Unsigned l = static_cast<Unsigned>(tl->get_con()); // Get divisor
 
-  if (l == 0) {
+  if (l == 0 || l == 1) {
     return nullptr; // Dividing by zero constant does not idealize
   }
 
@@ -1180,9 +1176,6 @@ static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   }
   Unsigned con = static_cast<Unsigned>(ti->get_con());
 
-  if (con == 1) {
-    return ConNode::make(TypeClass::ZERO);
-  }
   if (con == 0) {
     return nullptr;
   }
@@ -1221,8 +1214,12 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return bot;
   }
 
-  const TypeClass* i1 = t1->cast<TypeClass>();
   const TypeClass* i2 = t2->cast<TypeClass>();
+  if (i2->is_con() && i2->get_con() == 1) {
+    return TypeClass::ZERO;
+  }
+
+  const TypeClass* i1 = t1->cast<TypeClass>();
   if (i1->is_con() && i2->is_con()) {
     Unsigned au = static_cast<Unsigned>(i1->get_con());
     Unsigned bu = static_cast<Unsigned>(i2->get_con());
