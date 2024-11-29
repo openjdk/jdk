@@ -71,6 +71,8 @@ public class UModLNodeIdealizationTests {
         Asserts.assertEQ(Long.remainderUnsigned(a, 1), constantAgain(a));
         Asserts.assertEQ(Long.remainderUnsigned(a, 8589934592L), powerOf2(a));
         Asserts.assertEQ(Long.remainderUnsigned(Long.parseUnsignedLong("9223372036854775808"), 302032), reallyConstant());
+        Asserts.assertEQ(Long.remainderUnsigned(a, Long.MIN_VALUE), powerOf2Big(a));
+        Asserts.assertEQ(Long.remainderUnsigned(a, RANDOM_POWER_OF_2), powerOf2Random(a));
     }
 
     @Test
@@ -116,6 +118,6 @@ public class UModLNodeIdealizationTests {
     @IR(counts = {IRNode.AND, "1"})
     // Checks that for x % 2^k, 2^k-1 is used as a bit mask.
     public long powerOf2Big(long x) {
-        return Long.remainderUnsigned(x, -9223372036854775808L); // -9223372036854775808 =  Long.parseUnsignedLong("9223372036854775808")
+        return Long.remainderUnsigned(x, Long.MIN_VALUE);
     }
 }

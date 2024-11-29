@@ -86,7 +86,8 @@ public class UDivLNodeIdealizationTests {
         Asserts.assertEQ(Long.divideUnsigned(a, 1), identity(a));
         Asserts.assertEQ(Long.divideUnsigned(a, Long.divideUnsigned(13, 13)), identityAgain(a));
         Asserts.assertEQ(Long.divideUnsigned(a, 8), divByPow2(a));
-        Asserts.assertEQ(Long.divideUnsigned(a, -9223372036854775808L), divByPow2Big(a));
+        Asserts.assertEQ(Long.divideUnsigned(a, Long.MIN_VALUE), divByPow2Big(a));
+        Asserts.assertEQ(Long.divideUnsigned(a, RANDOM_POWER_OF_2), divByPow2Random(a));
         Asserts.assertEQ(Long.divideUnsigned(a, Long.divideUnsigned(-9214294468834361176L, -9214294468834361176L)), identityAgainButBig(a));
     }
 
@@ -132,7 +133,6 @@ public class UDivLNodeIdealizationTests {
             IRNode.UDIV_L, "1",
             IRNode.DIV_BY_ZERO_TRAP, "1"
     })
-    // Hotspot should keep the division because it may cause a division by zero trap
     public long retainDenominator(long x, long y) {
         return Long.divideUnsigned((x * y), y);
     }

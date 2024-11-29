@@ -70,7 +70,9 @@ public class UModINodeIdealizationTests {
 
         Asserts.assertEQ(Integer.remainderUnsigned(a, 1), constantAgain(a));
         Asserts.assertEQ(Integer.remainderUnsigned(a, 32), powerOf2(a));
-        Asserts.assertEQ(Integer.remainderUnsigned(Integer.parseUnsignedInt("2147483648"), 302032), reallyConstant());
+        Asserts.assertEQ(Integer.remainderUnsigned(a, Integer.MIN_VALUE), powerOf2Big(a));
+        Asserts.assertEQ(Integer.remainderUnsigned(a, RANDOM_POWER_OF_2), powerOf2Random(a));
+        Asserts.assertEQ(Integer.remainderUnsigned(Integer.MIN_VALUE, 302032), reallyConstant());
     }
 
     @Test
@@ -92,7 +94,7 @@ public class UModINodeIdealizationTests {
     @IR(failOn = {IRNode.UMOD_I, IRNode.MUL})
     // Checks that modulo with two constants is calculated at compile time
     public int reallyConstant() {
-        return Integer.remainderUnsigned(-2147483648, 302032); // -2147483648 = Integer.parseUnsignedInt("2147483648")
+        return Integer.remainderUnsigned(Integer.MIN_VALUE, 302032); // -2147483648 = Integer.parseUnsignedInt("2147483648")
     }
 
     @Test
@@ -116,6 +118,6 @@ public class UModINodeIdealizationTests {
     @IR(counts = {IRNode.AND, "1"})
     // Checks that for x % 2^k, 2^k-1 is used as a bit mask.
     public int powerOf2Big(int x) {
-        return Integer.remainderUnsigned(x, -2147483648); // -2147483648 = Integer.parseUnsignedInt("2147483648")
+        return Integer.remainderUnsigned(x, Integer.MIN_VALUE);
     }
 }

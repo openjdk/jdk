@@ -43,7 +43,7 @@ public class ModINodeIdealizationTests {
         TestFramework.runWithFlags("-XX:CompileCommand=inline,*Math::max");
     }
 
-    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Random", "powerOf2Minus1", 
+    @Run(test = {"constant", "constantAgain", "powerOf2", "powerOf2Random", "powerOf2Minus1",
                  "positivePowerOf2", "positivePowerOf2Random"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
