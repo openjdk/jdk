@@ -721,7 +721,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         if (inputSlotToLineWidget.containsKey(inputSlot)) {
                             for (LineWidget lw : inputSlotToLineWidget.get(inputSlot)) {
                                 assert lw != null;
-                                Point toPt = lw.getTo();
                                 Point fromPt = lw.getFrom();
                                 Point toPt = lw.getTo();
                                 if (toPt == null || fromPt == null) {
@@ -747,7 +746,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                 assert lw != null;
                                 Point fromPt = lw.getFrom();
                                 Point toPt = lw.getTo();
-                                    lw.setFrom(new Point(xFrom, yFrom));
                                 if (toPt == null || fromPt == null) {
                                     continue;
                                 }
