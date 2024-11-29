@@ -50,7 +50,6 @@ public class FileURLConnection extends URLConnection {
     InputStream is;
 
     File file;
-    String filename;
     boolean isDirectory = false;
     boolean exists = false;
     List<String> files;
@@ -72,15 +71,14 @@ public class FileURLConnection extends URLConnection {
     public void connect() throws IOException {
         if (!connected) {
             try {
-                filename = file.toString();
                 isDirectory = file.isDirectory();
                 if (isDirectory) {
                     String[] fileList = file.list();
                     if (fileList == null)
-                        throw new FileNotFoundException(filename + " exists, but is not accessible");
+                        throw new FileNotFoundException(file.getPath() + " exists, but is not accessible");
                     files = Arrays.<String>asList(fileList);
                 } else {
-                    is = new BufferedInputStream(new FileInputStream(filename));
+                    is = new BufferedInputStream(new FileInputStream(file.getPath()));
                 }
             } catch (IOException e) {
                 throw e;
@@ -109,7 +107,7 @@ public class FileURLConnection extends URLConnection {
 
             if (!isDirectory) {
                 FileNameMap map = java.net.URLConnection.getFileNameMap();
-                contentType = map.getContentTypeFor(filename);
+                contentType = map.getContentTypeFor(file.getPath());
                 if (contentType != null) {
                     properties.add(CONTENT_TYPE, contentType);
                 }
@@ -191,7 +189,7 @@ public class FileURLConnection extends URLConnection {
                 StringBuilder sb = new StringBuilder();
 
                 if (files == null) {
-                    throw new FileNotFoundException(filename);
+                    throw new FileNotFoundException(file.getPath());
                 }
 
                 files.sort(Collator.getInstance());
@@ -204,7 +202,7 @@ public class FileURLConnection extends URLConnection {
                 // Put it into a (default) locale-specific byte-stream.
                 is = new ByteArrayInputStream(sb.toString().getBytes());
             } else {
-                throw new FileNotFoundException(filename);
+                throw new FileNotFoundException(file.getPath());
             }
         }
         return is;
