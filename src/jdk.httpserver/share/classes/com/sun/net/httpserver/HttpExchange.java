@@ -233,9 +233,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract String getProtocol();
 
     /**
-     * {@return the attribute's value from this exchange's
-     * {@linkplain HttpContext#getAttributes() context attributes}, or {@code null} if either
-     * the attribute isn't set or the attribute value is {@code null}}
+     * Returns the attribute's value from this exchange's
+     * {@linkplain HttpContext#getAttributes() context attributes}.
      *
      * @apiNote {@link Filter} modules may store arbitrary objects as attributes through
      * {@code HttpExchange} instances as an out-of-band communication mechanism. Other filters
@@ -245,6 +244,8 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      * available.
      *
      * @param name the name of the attribute to retrieve
+     * @return the attribute's value or {@code null} if either the attribute isn't set
+     *         or the attribute value is {@code null}
      * @throws NullPointerException if name is {@code null}
      */
     public abstract Object getAttribute(String name);
