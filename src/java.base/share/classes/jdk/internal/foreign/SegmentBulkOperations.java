@@ -33,8 +33,6 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.MemorySegment;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
-
 /**
  * This class contains optimized bulk operation methods that operate on one or several
  * memory segments.
