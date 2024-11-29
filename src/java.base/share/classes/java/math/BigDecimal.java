@@ -4629,7 +4629,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * @return an integer {@code r} such that {@code 10^(r-1) <= b < 10^(r+1)}.
+     * @return an integer {@code r} such that {@code 10^(r-1) <= abs(b) < 10^(r+1)}.
      */
     private static int digitLengthLower(BigInteger b) {
         return (int) (((b.abs().bitLength() + 1L) * 646456993L) >>> 31);
