@@ -340,9 +340,9 @@ public:
   if (st->fill_to(n) == 0) {  \
     st->print(" ");           \
   }
-    st->print(PTR_FORMAT "-" PTR_FORMAT, (size_t)mapping_info._address, (size_t)(mapping_info._address + mapping_info._size));
+    st->print("%#014.12llx-%#014.11llx", (uint64_t)(mapping_info._address), (uint64_t)(mapping_info._address + mapping_info._size));
     INDENT_BY(38);
-    st->print("%12zu", mapping_info._size);
+    st->print("%12ld", mapping_info._size);
     INDENT_BY(51);
     st->print("%s", mapping_info._protect_buffer.base());
     INDENT_BY(56);
@@ -379,6 +379,16 @@ public:
     //*/
     st->cr();
 
+  /*
+   * regarding the 'cursor':
+   * The dll_list is sorted by ascending start address,
+   * and the macOS region_info is also returned in ascending start address.
+   * When printing out a region_info, we skip ahead in the dll_list until we find
+   * dlls within the region, and print them out.  
+   * Then we leave the cursor pointing to the first dll above the current region.
+   * We do not print out any dll info for regions with an associated file_name,
+   * as that would be redundant.
+   */
     if (mapping_info._file_name.count() == 0) {
       for (; dll_list.cursor_current() != nullptr; dll_list.cursor_next()) {
         DllEntry* e = dll_list.cursor_current();
@@ -389,7 +399,7 @@ public:
           break;
         }
         INDENT_BY(5);
-        st->print(PTR_FORMAT, (size_t)(e->_address));
+        st->print("%#014.12llx", (uint64_t)(e->_address));
         INDENT_BY(73);
         st->print_cr("%s", e->_dll_name);
       }
