@@ -257,6 +257,7 @@ bool MemPointerParser::is_native_memory_base_candidate(Node* n) {
   ciInstanceKlass* klass = inst_ptr->instance_klass();
   int offset = inst_ptr->offset();
   ciField* field = klass->get_field_by_offset(offset, false);
+  if (field == nullptr) { return false; }
 
   Symbol* field_symbol = field->name()->get_symbol();
   Symbol* holder_symbol = field->holder()->name()->get_symbol();
