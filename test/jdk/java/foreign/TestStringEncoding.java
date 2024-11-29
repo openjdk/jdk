@@ -274,7 +274,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_BYTE, len, (byte) 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = SegmentBulkOperations.strlenByte((AbstractMemorySegmentImpl) segment, j, segment.byteSize());
+                        int actual = StringSupport.strlenByte((AbstractMemorySegmentImpl) segment, j, segment.byteSize());
                         assertEquals(actual, len - j);
                     }
                 }
@@ -298,7 +298,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_SHORT, len, (short) 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = SegmentBulkOperations.strlenShort((AbstractMemorySegmentImpl) segment, j * Short.BYTES, segment.byteSize());
+                        int actual = StringSupport.strlenShort((AbstractMemorySegmentImpl) segment, j * Short.BYTES, segment.byteSize());
                         assertEquals(actual, (len - j) * Short.BYTES);
                     }
                 }
@@ -322,7 +322,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_INT, len, 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = SegmentBulkOperations.strlenInt((AbstractMemorySegmentImpl) segment, j * Integer.BYTES, segment.byteSize());
+                        int actual = StringSupport.strlenInt((AbstractMemorySegmentImpl) segment, j * Integer.BYTES, segment.byteSize());
                         assertEquals(actual, (len - j) * Integer.BYTES);
                     }
                 }

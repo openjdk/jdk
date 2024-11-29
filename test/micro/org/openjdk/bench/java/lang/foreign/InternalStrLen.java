@@ -24,6 +24,7 @@ package org.openjdk.bench.java.lang.foreign;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.SegmentBulkOperations;
+import jdk.internal.foreign.StringSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -107,22 +108,22 @@ public class InternalStrLen {
 
     @Benchmark
     public int chunkedSingle() {
-        return SegmentBulkOperations.strlenByte(singleByteSegment, 0, singleByteSegment.byteSize());
+        return StringSupport.strlenByte(singleByteSegment, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedSingleMisaligned() {
-        return SegmentBulkOperations.strlenByte(singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
+        return StringSupport.strlenByte(singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedDouble() {
-        return SegmentBulkOperations.strlenShort(doubleByteSegment, 0, doubleByteSegment.byteSize());
+        return StringSupport.strlenShort(doubleByteSegment, 0, doubleByteSegment.byteSize());
     }
 
     @Benchmark
     public int changedElementQuad() {
-        return SegmentBulkOperations.strlenInt(quadByteSegment, 0, quadByteSegment.byteSize());
+        return StringSupport.strlenInt(quadByteSegment, 0, quadByteSegment.byteSize());
     }
 
     // These are the legacy methods
