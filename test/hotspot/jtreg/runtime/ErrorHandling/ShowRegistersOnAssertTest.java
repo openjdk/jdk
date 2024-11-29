@@ -84,7 +84,7 @@ public class ShowRegistersOnAssertTest {
             } else if (Platform.isPPC()) {
                 pattern = new Pattern[] { Pattern.compile("Registers:"), Pattern.compile("pc =.*")};
             } else {
-                pattern = new Pattern[] { Pattern.compile("Registers:"), null };
+                pattern = new Pattern[] { Pattern.compile("Registers:") };
             }
             // Pattern match the hs_err_pid file.
             HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
