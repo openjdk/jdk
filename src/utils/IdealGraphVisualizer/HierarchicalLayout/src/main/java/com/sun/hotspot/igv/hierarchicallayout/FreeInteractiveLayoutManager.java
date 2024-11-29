@@ -135,8 +135,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
     }
 
     public void positionNewLayoutNodes(List<LayoutNode> newLayoutNodes) {
-        Random random = new Random();
-
         // First pass: Initial positioning based on unassigned neighbors
         newLayoutNodes.sort(LeastUnassignedNeighborsComparator);
 
@@ -195,13 +193,26 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         }
     }
 
+    /**
+     * Applies a force-based adjustment to the position of a given layout node
+     * based on repulsive forces from all other nodes and attractive forces from its assigned neighbors.
+     * <p>
+     * This method simulates a physical system where nodes repel each other to maintain spacing
+     * and are pulled towards their neighbors to maintain connectivity. The forces are calculated
+     * using Coulomb's law for repulsion and Hooke's law for attraction. The system iterates for
+     * a fixed number of iterations to stabilize the position of the node.
+     *
+     * @param node               The node whose position is being adjusted.
+     * @param assignedNeighbors  A list of neighboring nodes that attract this node.
+     * @param allNodes           A collection of all nodes in the layout, used for repulsive forces.
+     */
     private void applyForceBasedAdjustment(LayoutNode node, List<LayoutNode> assignedNeighbors, Collection<LayoutNode> allNodes) {
         // Constants for force-based adjustment
-        final int ITERATIONS = 50;
-        final double REPULSION_CONSTANT = 1000;
-        final double SPRING_CONSTANT = 0.2;
-        final double DAMPING = 0.8;
-        final double IDEAL_LENGTH = 100;
+        final int ITERATIONS = 50; // Number of simulation iterations.
+        final double REPULSION_CONSTANT = 1000; // Magnitude of repulsive forces.
+        final double SPRING_CONSTANT = 0.2; // Strength of attractive forces to neighbors.
+        final double DAMPING = 0.8; // Damping factor to reduce displacement and ensure convergence.
+        final double IDEAL_LENGTH = 100; // Ideal distance between a node and its neighbors.
 
         double posX = node.getX();
         double posY = node.getY();
@@ -217,8 +228,16 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
                 double deltaX = posX - otherNode.getX();
                 double deltaY = posY - otherNode.getY();
-                double distanceSquared = deltaX * deltaX + deltaY * deltaY + 0.01; // Prevent division by zero
+                double distanceSquared = deltaX * deltaX + deltaY * deltaY;
                 double distance = Math.sqrt(distanceSquared);
+
+                // If distance is zero, add small random noise to deltaX and deltaY
+                if (distance == 0) {
+                    deltaX = random.nextDouble() * 0.1 - 0.05; // Random value between -0.05 and 0.05
+                    deltaY = random.nextDouble() * 0.1 - 0.05;
+                    distanceSquared = deltaX * deltaX + deltaY * deltaY;
+                    distance = Math.sqrt(distanceSquared);
+                }
 
                 // Repulsive force (Coulomb's law)
                 double repulsiveForce = REPULSION_CONSTANT / distanceSquared;
@@ -230,7 +249,14 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
             for (LayoutNode neighbor : assignedNeighbors) {
                 double deltaX = neighbor.getX() - posX;
                 double deltaY = neighbor.getY() - posY;
-                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY + 0.01); // Prevent division by zero
+                double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+                // If distance is zero, add small random noise to deltaX and deltaY
+                if (distance == 0) {
+                    deltaX = random.nextDouble() * 0.1 - 0.05; // Random value between -0.05 and 0.05
+                    deltaY = random.nextDouble() * 0.1 - 0.05;
+                    distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                }
 
                 // Attractive force (Hooke's law)
                 double displacement = distance - IDEAL_LENGTH;
@@ -253,7 +279,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         node.setY((int) posY);
     }
 
-
     // Utility method: position around a given node
     private void setPositionAroundSingleNode(LayoutNode node, LayoutNode neighbor, int displacement) {
         boolean neighborIsPredecessor = prevGraph.isPredecessorVertex(node.getVertex(), neighbor.getVertex());
@@ -266,7 +291,6 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
             shiftY = -displacement;
         }
         assert shiftY != 0;
-
 
         int randomY = neighbor.getY() + random.nextInt(MAX_OFFSET_AROUND_NEIGHBOR + 1) + shiftY;
         int randomX = neighbor.getX() + random.nextInt(MAX_OFFSET_AROUND_NEIGHBOR + 1);
