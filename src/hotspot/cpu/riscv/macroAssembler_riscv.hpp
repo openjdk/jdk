@@ -913,13 +913,9 @@ public:
   void orn(Register Rd, Register Rs1, Register Rs2);
 
   // revb
-  void revb_h_h(Register Rd, Register Rs, Register tmp = t0);                           // reverse bytes in halfword in lower 16 bits, sign-extend
-  void revb_w_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);      // reverse bytes in lower word, sign-extend
   void revb_h_h_u(Register Rd, Register Rs, Register tmp = t0);                         // reverse bytes in halfword in lower 16 bits, zero-extend
   void revb_h_w_u(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);    // reverse bytes in halfwords in lower 32 bits, zero-extend
-  void revb_h_helper(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in upper 16 bits (48:63) and move to lower
-  void revb_h(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in each halfword
-  void revb_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in each word
+  void revb_w(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in lower word, sign-extend
   void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
 
   void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
