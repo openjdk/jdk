@@ -661,7 +661,7 @@ public class Socket implements java.io.Closeable {
             throw new IllegalArgumentException("Unsupported address type");
 
         if (epoint.isUnresolved()) {
-            var uhe = new UnknownHostException(epoint.getHostName() + " is unresolved");
+            var uhe = new UnknownHostException(epoint.getHostName());
             closeSuppressingExceptions(uhe);
             throw uhe;
         }
