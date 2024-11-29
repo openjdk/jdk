@@ -21,14 +21,14 @@
  * questions.
  */
 
-// key: compiler.warn.serial.method.not.private
-// key: compiler.warn.serial.method.static
-// key: compiler.warn.serial.method.unexpected.return.type
-// key: compiler.warn.serial.concrete.instance.method
-// key: compiler.warn.serial.method.one.arg
-// key: compiler.warn.serial.method.parameter.type
-// key: compiler.warn.serial.method.no.args
-// key: compiler.warn.serial.method.unexpected.exception
+// key: compiler.warn.lint.serial.method.not.private
+// key: compiler.warn.lint.serial.method.static
+// key: compiler.warn.lint.serial.method.unexpected.return.type
+// key: compiler.warn.lint.serial.concrete.instance.method
+// key: compiler.warn.lint.serial.method.one.arg
+// key: compiler.warn.lint.serial.method.parameter.type
+// key: compiler.warn.lint.serial.method.no.args
+// key: compiler.warn.lint.serial.method.unexpected.exception
 
 // options: -Xlint:serial
 

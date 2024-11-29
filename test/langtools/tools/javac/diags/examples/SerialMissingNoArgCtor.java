@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.warn.serializable.missing.access.no.arg.ctor
+// key: compiler.warn.lint.serializable.missing.access.no.arg.ctor
 // key: compiler.warn.non.serializable.instance.field
 // key: compiler.warn.non.serializable.instance.field.array
 

@@ -359,7 +359,7 @@ public class Lint
             map.put(option, this);
         }
 
-        static LintCategory get(String option) {
+        public static LintCategory get(String option) {
             return map.get(option);
         }
 
