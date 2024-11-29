@@ -47,8 +47,7 @@ class CmovTester {
       _masm.mv(c_rarg0, c_rarg2);
       _masm.ret();
     }
-    _masm.flush();
-    OrderAccess::cross_modify_fence();
+    _masm.flush(); // icache invalidate
     int64_t ret = ((zicond_func)entry)(a0, a1, a2, a3);
     ASSERT_EQ(ret, result);
     BufferBlob::free(bb);
@@ -149,8 +148,7 @@ class CmpxchgTester {
       }
       _masm.ret();
     }
-    _masm.flush();
-    OrderAccess::cross_modify_fence();
+    _masm.flush(); // icache invalidate
     TESTSIZE ret = ((cmpxchg_func)entry)(addr, expected, new_value, result);
     BufferBlob::free(bb);
     return ret;
