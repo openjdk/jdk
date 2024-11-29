@@ -28,10 +28,16 @@ package com.sun.tools.javac.code;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 /**
@@ -61,13 +67,13 @@ public class Lint {
      *
      * <p>
      * The returned instance will be different from this instance if and only if
-     * {@link LintSuppression#suppressionsFrom} returns a non-empty set.
+     * {@link #suppressionsFrom} returns a non-empty set.
      *
      * @param sym symbol
      * @return lint instance with new warning suppressions applied, or this instance if none
      */
     public Lint augment(Symbol sym) {
-        EnumSet<LintCategory> suppressions = lintSuppression.suppressionsFrom(sym);
+        EnumSet<LintCategory> suppressions = suppressionsFrom(sym);
         if (!suppressions.isEmpty()) {
             Lint lint = new Lint(this);
             lint.values.removeAll(suppressions);
@@ -88,8 +94,11 @@ public class Lint {
         return l;
     }
 
-    // Used to calculate suppressions from annotations
-    private final LintSuppression lintSuppression;
+    private final Context context;
+
+    // These are initialized lazily to avoid dependency loops
+    private Symtab syms;
+    private Names names;
 
     // Invariant: it's never the case that a category is in both "values" and "suppressedValues"
     private final EnumSet<LintCategory> values;
@@ -141,13 +150,14 @@ public class Lint {
 
         suppressedValues = LintCategory.newEmptySet();
 
+        this.context = context;
         context.put(lintKey, this);
-
-        lintSuppression = LintSuppression.instance(context);
     }
 
     protected Lint(Lint other) {
-        this.lintSuppression = other.lintSuppression;
+        this.context = other.context;
+        this.syms = other.syms;
+        this.names = other.names;
         this.values = other.values.clone();
         this.suppressedValues = other.suppressedValues.clone();
     }
@@ -386,5 +396,58 @@ public class Lint {
      */
     public boolean isSuppressed(LintCategory lc) {
         return suppressedValues.contains(lc);
+    }
+
+    /**
+     * Obtain the set of lint warning categories suppressed at the given symbol's declaration.
+     *
+     * <p>
+     * This set can be non-empty only if the symbol is annotated with either
+     * @SuppressWarnings or @Deprecated.
+     *
+     * @param symbol symbol corresponding to a possibly-annotated declaration
+     * @return new warning suppressions applied to sym
+     */
+    public EnumSet<LintCategory> suppressionsFrom(Symbol symbol) {
+        EnumSet<LintCategory> suppressions = suppressionsFrom(symbol.getDeclarationAttributes().stream());
+        if (symbol.isDeprecated() && symbol.isDeprecatableViaAnnotation())
+            suppressions.add(LintCategory.DEPRECATION);
+        return suppressions;
+    }
+
+    /**
+     * Retrieve the lint categories suppressed by the given @SuppressWarnings annotation.
+     *
+     * @param annotation @SuppressWarnings annotation, or null
+     * @return set of lint categories, possibly empty but never null
+     */
+    private EnumSet<LintCategory> suppressionsFrom(JCAnnotation annotation) {
+        initializeIfNeeded();
+        if (annotation == null)
+            return LintCategory.newEmptySet();
+        Assert.check(annotation.attribute.type.tsym == syms.suppressWarningsType.tsym);
+        return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
+    }
+
+    // Find the @SuppressWarnings annotation in the attribute stream and extract the suppressions
+    private EnumSet<LintCategory> suppressionsFrom(Stream<Attribute.Compound> attributes) {
+        initializeIfNeeded();
+        return attributes
+          .filter(attribute -> attribute.type.tsym == syms.suppressWarningsType.tsym)
+          .map(attribute -> attribute.member(names.value))
+          .flatMap(attribute -> Stream.of(((Attribute.Array)attribute).values))
+          .map(Attribute.Constant.class::cast)
+          .map(elem -> elem.value)
+          .map(String.class::cast)
+          .map(LintCategory::get)
+          .filter(Objects::nonNull)
+          .collect(Collectors.toCollection(LintCategory::newEmptySet));
+    }
+
+    private void initializeIfNeeded() {
+        if (syms == null) {
+            syms = Symtab.instance(context);
+            names = Names.instance(context);
+        }
     }
 }
