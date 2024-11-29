@@ -173,7 +173,7 @@ class PartialArrayStateManager : public CHeapObj<mtGC> {
   Arena* _arenas;
 
   // Limit on the number of allocators this manager supports.
-  uint _num_allocators;
+  uint _max_allocators;
 
   // CounterValues is an integral type large enough to encode a pair of
   // allocator counters as a single unit for atomic manipulation.
@@ -212,7 +212,7 @@ class PartialArrayStateManager : public CHeapObj<mtGC> {
   void release_allocator() NOT_DEBUG_RETURN;
 
 public:
-  explicit PartialArrayStateManager(uint num_allocators);
+  explicit PartialArrayStateManager(uint max_allocators);
 
   // Release the memory that has been requested by allocators associated with
   // this manager.

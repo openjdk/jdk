@@ -113,12 +113,12 @@ union PartialArrayStateManager::CounterState {
     : _cd({constructed, destructed}) {}
 };
 
-PartialArrayStateManager::PartialArrayStateManager(uint num_allocators)
-  : _arenas(NEW_C_HEAP_ARRAY(Arena, num_allocators, mtGC)),
-    _num_allocators(num_allocators),
+PartialArrayStateManager::PartialArrayStateManager(uint max_allocators)
+  : _arenas(NEW_C_HEAP_ARRAY(Arena, max_allocators, mtGC)),
+    _max_allocators(max_allocators),
     _counters(CounterState(0, 0)._values)
 {
-  assert(num_allocators <= std::numeric_limits<Counter>::max(), "must be");
+  assert(max_allocators <= std::numeric_limits<Counter>::max(), "must be");
 }
 
 PartialArrayStateManager::~PartialArrayStateManager() {
@@ -139,7 +139,7 @@ PartialArrayStateManager::increment_counters(Counter constructed,
 Arena* PartialArrayStateManager::register_allocator() {
   CounterState state = increment_counters(1, 0);
   assert(state._cd._destructed == 0, "not in allocating phase");
-  assert(state._cd._constructed  < _num_allocators,
+  assert(state._cd._constructed  < _max_allocators,
          "exceeded configured maximum number of allocators");
   return ::new (&_arenas[state._cd._constructed]) Arena(mtGC);
 }
