@@ -85,17 +85,4 @@ public class InputSlot extends Slot {
     public String toString() {
         return "InputSlot[figure=" + this.getFigure().toString() + ", position=" + getPosition() + "]";
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof InputSlot that)) return false;
-        if (!super.equals(o)) return false;
-        return this.originalIndex == that.originalIndex;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), originalIndex);
-    }
 }
