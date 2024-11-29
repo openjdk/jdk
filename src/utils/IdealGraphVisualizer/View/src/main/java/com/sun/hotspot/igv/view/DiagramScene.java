@@ -94,7 +94,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private HierarchicalLayoutManager seaLayoutManager;
     private LayoutMover layoutMover;
 
-
     /**
      * The alpha level of partially visible figures.
      */
