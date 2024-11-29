@@ -46,15 +46,15 @@ public class FileURLConnection extends URLConnection {
     private static final String TEXT_PLAIN = "text/plain";
     private static final String LAST_MODIFIED = "last-modified";
 
-    final File file;
-    InputStream is;
-    List<String> directoryListing;
+    private final File file;
+    private InputStream is;
+    private List<String> directoryListing;
 
-    boolean isDirectory = false;
-    boolean exists = false;
+    private boolean isDirectory = false;
+    private boolean exists = false;
 
-    long length = -1;
-    long lastModified = 0;
+    private long length = -1;
+    private long lastModified = 0;
 
     protected FileURLConnection(URL u, File file) {
         super(u);
