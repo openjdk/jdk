@@ -90,7 +90,7 @@ public class CgroupV1SubsystemControllerTest {
     }
 
     @Test
-    public void testCgPathFallbackToMountPoint() {
+    public void testCgPathToMovedPath() {
         String root = "/system.slice/garden.service/garden/good/2f57368b-0eda-4e52-64d8-af5c";
         String mountPoint = "/sys/fs/cgroup/cpu,cpuacct";
         CgroupV1SubsystemController ctrl = new CgroupV1SubsystemController(root, mountPoint);

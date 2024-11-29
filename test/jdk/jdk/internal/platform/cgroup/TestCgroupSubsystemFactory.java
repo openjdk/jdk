@@ -476,7 +476,7 @@ public class TestCgroupSubsystemFactory {
         CgroupV1SubsystemController cgroupv1MemoryController = new CgroupV1SubsystemController(cpuInfo.getMountRoot(), cpuInfo.getMountPoint());
         cgroupv1MemoryController.setPath(cpuInfo.getCgroupPath());
         String actualPath = cgroupv1MemoryController.path();
-        assertNotNull("Controller path should not have been null", actualPath);
+        assertNotNull(actualPath);
         String expectedPath = expectedMountPoint + cpuInfo.getCgroupPath();
         assertEquals("Should be equal to the mount point path", expectedPath, actualPath);
     }

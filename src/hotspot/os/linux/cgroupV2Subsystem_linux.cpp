@@ -317,7 +317,7 @@ char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_pa
   if (strcmp(cgroup_path, "/") != 0) {
     ss.print_raw(cgroup_path);
     if (strstr((char*)cgroup_path, "../") != nullptr) {
-      log_warning(os, container)("Cgroup v2 path at [%s] is [%s], cgroup limits can be wrong.",
+      log_warning(os, container)("Cgroup cpu/memory controller path includes '../', detected limits won't be accurate",
         mount_path, cgroup_path);
     }
   }
