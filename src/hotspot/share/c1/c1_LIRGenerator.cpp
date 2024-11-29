@@ -1253,6 +1253,9 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
   }
 
   address instanceof_fn = Runtime1::entry_for(C1StubId::is_instance_of_id);
+  if (getenv("APH_FOO_BAZ")) {
+    instanceof_fn = nullptr;
+  }
   if (instanceof_fn == nullptr) {
     instanceof_fn = CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
   }

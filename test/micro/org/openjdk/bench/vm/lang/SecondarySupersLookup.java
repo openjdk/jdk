@@ -23,7 +23,6 @@
 package org.openjdk.bench.vm.lang;
 
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 
@@ -33,7 +32,7 @@ import java.util.Random;
 @State(Scope.Thread)
 @Warmup(iterations = 1, time = 1)
 @Measurement(iterations = 3, time = 1)
-@Fork(value = 5, jvmArgsAppend = "-XX:CompileCommand=dontinline,org.openjdk.bench.vm.lang.SecondarySupersLookup::test,true")
+@Fork(value = 5)
 public class SecondarySupersLookup {
     interface J  {}
     interface I01 {}
@@ -146,11 +145,8 @@ public class SecondarySupersLookup {
         throw new InternalError("" + i);
     }
 
-    Blackhole bh;
-
     @Setup
-    public void warmup(Blackhole blackhole) {
-        bh = blackhole;
+    public void warmup() {
         for (int i = 0; i < 20_000; i++) {
             Class<?> s = getSuper(i);
             test(obj01, s, s.isInstance(obj01));
@@ -165,12 +161,11 @@ public class SecondarySupersLookup {
         }
     }
 
-    private void test(Object obj, Class<?> cls, boolean expected) {
+    private static void test(Object obj, Class<?> cls, boolean expected) {
         if (cls.isInstance(obj) != expected) {
             throw new InternalError(obj.getClass() + " " + cls + " " + expected);
         }
     }
-
     @Benchmark
     public void testPositive01() {
         test(obj01, I01.class, true);
