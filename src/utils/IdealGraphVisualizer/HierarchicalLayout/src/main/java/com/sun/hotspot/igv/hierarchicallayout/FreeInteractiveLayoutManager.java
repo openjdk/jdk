@@ -125,6 +125,7 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         // Write back vertices
         for (Vertex vertex : prevGraph.getVertices()) {
             LayoutNode layoutNode = layoutNodes.get(vertex);
+            layoutNode.setVertex(vertex);
             vertex.setPosition(new Point(layoutNode.getLeft(), layoutNode.getTop()));
         }
 
@@ -327,7 +328,11 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         if (link.getFrom().getVertex() == link.getTo().getVertex()) return;
 
         LayoutNode from = layoutNodes.get(link.getFrom().getVertex());
+        from.setVertex(link.getFrom().getVertex());
+        from.updateSize();
         LayoutNode to = layoutNodes.get(link.getTo().getVertex());
+        to.setVertex(link.getTo().getVertex());
+        to.updateSize();
         int relativeFromX = link.getFrom().getRelativePosition().x;
         int relativeToX = link.getTo().getRelativePosition().x;
 
