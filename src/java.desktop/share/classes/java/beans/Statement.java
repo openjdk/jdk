@@ -35,8 +35,6 @@ import com.sun.beans.finder.ConstructorFinder;
 import com.sun.beans.finder.MethodFinder;
 import sun.reflect.misc.MethodUtil;
 
-import static sun.reflect.misc.ReflectUtil.checkPackageAccess;
-
 /**
  * A {@code Statement} object represents a primitive statement
  * in which a single method is applied to a target and
@@ -189,13 +187,8 @@ public class Statement {
                 // Class.forName(String className) won't load classes outside
                 // of core from a class inside core. Special
                 // case this method.
-                // checkPackageAccess(name) will be called by ClassFinder
                 return ClassFinder.resolveClass(name, this.loader);
             }
-            // The 3 args Class.forName(String className, boolean, classloader)
-            // requires getClassLoader permission, but we will be stricter and
-            // will require access to the package as well.
-            checkPackageAccess(name);
         }
         Class<?>[] argClasses = new Class<?>[arguments.length];
         for(int i = 0; i < arguments.length; i++) {

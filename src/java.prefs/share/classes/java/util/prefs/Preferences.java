@@ -30,19 +30,9 @@ import jdk.internal.util.OperatingSystem;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
-
-// These imports needed only as a workaround for a JavaDoc bug
-import java.lang.RuntimePermission;
-import java.lang.Integer;
-import java.lang.Long;
-import java.lang.Float;
-import java.lang.Double;
 
 /**
  * A node in a hierarchical collection of preference data.  This class
@@ -227,19 +217,10 @@ public abstract class Preferences {
 
     private static final PreferencesFactory factory = factory();
 
-    @SuppressWarnings("removal")
     private static PreferencesFactory factory() {
         // 1. Try user-specified system property
-        String factoryName = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty(
-                        "java.util.prefs.PreferencesFactory");}});
+        String factoryName = System.getProperty("java.util.prefs.PreferencesFactory");
         if (factoryName != null) {
-            // FIXME: This code should be run in a doPrivileged and
-            // not use the context classloader, to avoid being
-            // dependent on the invoking thread.
-            // Checking AllPermission also seems wrong.
             try {
                 @SuppressWarnings("deprecation")
                 Object result =Class.forName(factoryName, false,
@@ -250,10 +231,6 @@ public abstract class Preferences {
                 try {
                     // workaround for javaws, plugin,
                     // load factory class using non-system classloader
-                    SecurityManager sm = System.getSecurityManager();
-                    if (sm != null) {
-                        sm.checkPermission(new java.security.AllPermission());
-                    }
                     @SuppressWarnings("deprecation")
                     Object result = Class.forName(factoryName, false,
                                                   Thread.currentThread()
@@ -267,14 +244,6 @@ public abstract class Preferences {
                 }
             }
         }
-
-        return AccessController.doPrivileged(
-            new PrivilegedAction<PreferencesFactory>() {
-                public PreferencesFactory run() {
-                    return factory1();}});
-    }
-
-    private static PreferencesFactory factory1() {
         // 2. Try service provider interface
         Iterator<PreferencesFactory> itr = ServiceLoader
             .load(PreferencesFactory.class, ClassLoader.getSystemClassLoader())
@@ -428,23 +397,11 @@ public abstract class Preferences {
     }
 
     /**
-     * This permission object represents the permission required to get
-     * access to the user or system root (which in turn allows for all
-     * other operations).
-     */
-    private static Permission prefsPerm = new RuntimePermission("preferences");
-
-    /**
      * Returns the root preference node for the calling user.
      *
      * @return the root preference node for the calling user.
      */
     public static Preferences userRoot() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkPermission(prefsPerm);
-
         return factory.userRoot();
     }
 
@@ -454,11 +411,6 @@ public abstract class Preferences {
      * @return the root preference node for the system.
      */
     public static Preferences systemRoot() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null)
-            security.checkPermission(prefsPerm);
-
         return factory.systemRoot();
     }
 

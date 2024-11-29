@@ -4215,6 +4215,9 @@ public class JavacParser implements Parser {
                                 }
                                 isTransitive = true;
                                 break;
+                            } else if (token.name() == names.transitive && isTransitive) {
+                                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.RepeatedModifier);
+                                break;
                             } else {
                                 break loop;
                             }
