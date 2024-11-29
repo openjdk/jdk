@@ -69,19 +69,17 @@ public class FileURLConnection extends URLConnection {
      */
     public void connect() throws IOException {
         if (!connected) {
-            try {
-                isDirectory = file.isDirectory();
-                if (isDirectory) {
-                    String[] fileList = file.list();
-                    if (fileList == null)
-                        throw new FileNotFoundException(file.getPath() + " exists, but is not accessible");
-                    directoryListing = Arrays.<String>asList(fileList);
-                } else {
-                    is = new BufferedInputStream(new FileInputStream(file.getPath()));
-                }
-            } catch (IOException e) {
-                throw e;
+
+            isDirectory = file.isDirectory();
+            if (isDirectory) {
+                String[] fileList = file.list();
+                if (fileList == null)
+                    throw new FileNotFoundException(file.getPath() + " exists, but is not accessible");
+                directoryListing = Arrays.<String>asList(fileList);
+            } else {
+                is = new BufferedInputStream(new FileInputStream(file.getPath()));
             }
+
             connected = true;
         }
     }
