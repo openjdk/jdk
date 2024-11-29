@@ -67,7 +67,7 @@ public class JcmdVThreadCommands {
     }
 
     /**
-     * Print information on threads registered for I/O to a byte[].
+     * Invoked by the VM to print the I/O pollers to a byte[].
      */
     private static byte[] printPollers() {
         StringBuilder sb = new StringBuilder();

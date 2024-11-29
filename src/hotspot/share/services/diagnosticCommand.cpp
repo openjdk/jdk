@@ -1076,13 +1076,6 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
 
   Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
   Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
 
   // invoke the ThreadDump method to dump to file
   JavaValue result(T_OBJECT);
@@ -1113,25 +1106,26 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   output()->print_raw((const char*)addr, ba->length());
 }
 
-void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
+// Calls a static no-arg method on jdk.internal.vm.JcmdVThreadCommands that returns a byte[] with
+// the output. If the method completes successfully then the bytes are copied to the output stream.
+// If the method fails then the exception is printed to the output stream.
+static void execute_vthread_command(Symbol* method_name, outputStream* output, TRAPS) {
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
-  Symbol* sym = vmSymbols::jdk_internal_vm_JcmdVThreadCommands();
-  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_JcmdVThreadCommands(), true, CHECK);
 
-  // invoke VThreadCommands.printScheduler
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
   JavaCalls::call_static(&result,
                          k,
-                         vmSymbols::printScheduler_name(),
+                         method_name,
                          vmSymbols::void_byte_array_signature(),
                          &args,
                          THREAD);
   if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
+    java_lang_Throwable::print(PENDING_EXCEPTION, output);
+    output->cr();
     CLEAR_PENDING_EXCEPTION;
     return;
   }
@@ -1140,37 +1134,15 @@ void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
   oop res = cast_to_oop(result.get_jobject());
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
-  output()->print_raw((const char*)addr, ba->length());
+  output->print_raw((const char*)addr, ba->length());
+}
+
+void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
+  execute_vthread_command(vmSymbols::printScheduler_name(), output(), CHECK);
 }
 
 void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
-  ResourceMark rm(THREAD);
-  HandleMark hm(THREAD);
-
-  Symbol* sym = vmSymbols::jdk_internal_vm_JcmdVThreadCommands();
-  Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
-
-  // invoke VThreadCommands.printPollers
-  JavaValue result(T_OBJECT);
-  JavaCallArguments args;
-  JavaCalls::call_static(&result,
-                         k,
-                         vmSymbols::printPollers_name(),
-                         vmSymbols::void_byte_array_signature(),
-                         &args,
-                         THREAD);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
-
-  // copy the bytes to the output stream
-  oop res = cast_to_oop(result.get_jobject());
-  typeArrayOop ba = typeArrayOop(res);
-  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
-  output()->print_raw((const char*)addr, ba->length());
+  execute_vthread_command(vmSymbols::printPollers_name(), output(), CHECK);
 }
 
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :
