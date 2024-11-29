@@ -372,7 +372,7 @@ Java_sun_java2d_windows_GDIWindowSurfaceData_initOps(JNIEnv *env, jobject wsd,
     wsdo->invalid = JNI_FALSE;
     wsdo->lockType = WIN32SD_LOCK_UNLOCKED;
     wsdo->peer = env->NewWeakGlobalRef(peer);
-    if (env->ExceptionOccurred()) {
+    if (env->ExceptionCheck()) {
         return;
     }
     wsdo->depth = depth;

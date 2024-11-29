@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         topPanel.add(lookInLabel, BorderLayout.BEFORE_LINE_BEGINS);
 
         // CurrentDir ComboBox
-        @SuppressWarnings("serial") // anonymous class
         JComboBox<Object> tmp1 = new JComboBox<Object>() {
             public Dimension getPreferredSize() {
                 Dimension d = super.getPreferredSize();
@@ -381,7 +380,6 @@ public class MetalFileChooserUI extends BasicFileChooserUI {
         populateFileNameLabel();
         fileNamePanel.add(fileNameLabel);
 
-        @SuppressWarnings("serial") // anonymous class
         JTextField tmp2 = new JTextField(35) {
             public Dimension getMaximumSize() {
                 return new Dimension(Short.MAX_VALUE, super.getPreferredSize().height);
