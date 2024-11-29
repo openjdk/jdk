@@ -165,11 +165,11 @@ class ConnectFailTest {
         }
     }
 
-    @SuppressWarnings("resource")
     static List<Socket> sockets() throws Exception {
-        return List.of(
-                new Socket(),
-                SocketChannel.open().socket());
+        Socket socket = new Socket();
+        @SuppressWarnings("resource")
+        Socket channelSocket = SocketChannel.open().socket();
+        return List.of(socket, channelSocket);
     }
 
     private static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer)
