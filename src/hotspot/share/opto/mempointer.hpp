@@ -208,6 +208,37 @@
 //   then we can easily compute the distance between the pointers (distance = con2 - con1),
 //   and determine if they are adjacent.
 //
+// MemPointer::Base
+//   The MemPointer is decomposed like this:
+//     pointer = SUM(summands) + con
+//
+//   This is sufficient for simple adjacency checks and we do not need to know if the pointer references
+//   native (off-heap) or object (heap) memory. However, in some cases it is necessary or useful to know
+//   the object base, or the native pointer's base.
+//
+//   - Object (heap) base (MemPointer::base().is_object()):
+//     Is the base of the Java object, which resides on the Java heap.
+//     Guarantees:
+//       - Always has an alignment of ObjectAlignmentInBytes.
+//       - A MemPointer with a given object base always must point into the memory of that object. Thus,
+//         if we have two pointers with two different bases at runtime, we know the two pointers do not
+//         alias.
+//
+//   - Native (off-heap) base (MemPointer::base().is_native()):
+//     It is a pointer into off-heap memory. We do not know if it points at the beginning or into the
+//     middle of some off-heap allocated memory. We have no guarantees about the alignment either. All
+//     we require, is that it is a summand with a scale = 1, and that it is accepted as a
+//     MemPointer::is_native_memory_base_candidate. It can thus be one of these:
+//     TODO continue talking about alignment use case -> why want a good base that is probably aligned,
+//     and it must be same for different MemPointer if possible -> challenging
+//      (1) CastX2P
+//          This is simply some arbitrary long cast to a pointer. It may be computed as an addition of
+//          multiple long and even int values. In some cases this means that we could have further
+//          decomposed the CastX2P further, but at that point it is even harder to tell what should be
+//          a good candidate for a native memory base. TODO
+//      (2) LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
+//          This is especially interesting because it holds the address() of a native MemorySegment.
+//
 // -----------------------------------------------------------------------------------------
 //
 //   We have to be careful on 64-bit systems with ConvI2L: decomposing its input is not
@@ -675,7 +706,7 @@ private:
 
   bool has_same_summands_as(const MemPointer& other, uint start) const;
   bool has_same_summands_as(const MemPointer& other) const { return has_same_summands_as(other, 0); }
-  bool has_different_base_but_otherwise_same_summands_as(const MemPointer& other) const;
+  bool has_different_object_base_but_otherwise_same_summands_as(const MemPointer& other) const;
 
 public:
   bool has_same_non_base_summands_as(const MemPointer& other) const {

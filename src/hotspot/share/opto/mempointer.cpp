@@ -240,7 +240,7 @@ bool MemPointerParser::sub_expression_has_native_base_candidate(Node* start) {
 }
 
 // Check if the node is a candidate to be a memory segment "base".
-// (1) CastX2P
+// (1) CastX2P: some arbitrary long that is cast to a pointer.
 // (2) LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
 //     Holds the address() of a native memory segment.
 bool MemPointerParser::is_native_memory_base_candidate(Node* n) {
@@ -412,7 +412,7 @@ Node* MemPointer::Base::find_base(Node* object_base, const GrowableArray<MemPoin
     }
     // Native base.
     if (object_base == nullptr &&
-	s.scale().is_one() &&
+        s.scale().is_one() &&
         MemPointerParser::is_native_memory_base_candidate(s.variable())) {
       return s.variable();
     }
@@ -440,7 +440,7 @@ MemPointerAliasing MemPointer::get_aliasing_with(const MemPointer& other
 
   // "MemPointer Lemma" condition (S2): check if all summands are the same:
   bool has_same_base = false;
-  if (has_different_base_but_otherwise_same_summands_as(other)) {
+  if (has_different_object_base_but_otherwise_same_summands_as(other)) {
     // At runtime, the two object bases can be:
     //   (1) different: we have no aliasing, pointers point to different memory objects.
     //   (2) the same:  implies that all summands are the same, (S2) holds.
@@ -511,7 +511,7 @@ bool MemPointer::has_same_summands_as(const MemPointer& other, uint start) const
   return true;
 }
 
-bool MemPointer::has_different_base_but_otherwise_same_summands_as(const MemPointer& other) const {
+bool MemPointer::has_different_object_base_but_otherwise_same_summands_as(const MemPointer& other) const {
   if (!base().is_object() ||
       !other.base().is_object() ||
       base().object() == other.base().object()) {
