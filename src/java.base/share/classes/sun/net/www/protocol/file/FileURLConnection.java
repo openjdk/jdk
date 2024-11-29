@@ -75,7 +75,7 @@ public class FileURLConnection extends URLConnection {
                 String[] fileList = file.list();
                 if (fileList == null)
                     throw new FileNotFoundException(file.getPath() + " exists, but is not accessible");
-                directoryListing = Arrays.<String>asList(fileList);
+                directoryListing = Arrays.asList(fileList);
             } else {
                 is = new BufferedInputStream(new FileInputStream(file.getPath()));
             }
