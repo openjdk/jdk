@@ -52,7 +52,7 @@ public class FileURLConnection extends URLConnection {
     final File file;
     boolean isDirectory = false;
     boolean exists = false;
-    List<String> files;
+    List<String> directoryListing;
 
     long length = -1;
     long lastModified = 0;
@@ -76,7 +76,7 @@ public class FileURLConnection extends URLConnection {
                     String[] fileList = file.list();
                     if (fileList == null)
                         throw new FileNotFoundException(file.getPath() + " exists, but is not accessible");
-                    files = Arrays.<String>asList(fileList);
+                    directoryListing = Arrays.<String>asList(fileList);
                 } else {
                     is = new BufferedInputStream(new FileInputStream(file.getPath()));
                 }
@@ -188,14 +188,14 @@ public class FileURLConnection extends URLConnection {
 
                 StringBuilder sb = new StringBuilder();
 
-                if (files == null) {
+                if (directoryListing == null) {
                     throw new FileNotFoundException(file.getPath());
                 }
 
-                files.sort(Collator.getInstance());
+                directoryListing.sort(Collator.getInstance());
 
-                for (int i = 0 ; i < files.size() ; i++) {
-                    String fileName = files.get(i);
+                for (int i = 0; i < directoryListing.size() ; i++) {
+                    String fileName = directoryListing.get(i);
                     sb.append(fileName);
                     sb.append("\n");
                 }
