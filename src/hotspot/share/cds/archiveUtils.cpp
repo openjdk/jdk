@@ -535,8 +535,12 @@ void ArchiveWorkerTask::configure_max_chunks(int max_chunks) {
 
 ArchiveWorkerThread::ArchiveWorkerThread(ArchiveWorkers* pool) : NamedThread(), _pool(pool) {
   set_name("ArchiveWorkerThread");
-  os::create_thread(this, os::os_thread);
-  os::start_thread(this);
+  if (os::create_thread(this, os::os_thread)) {
+    os::start_thread(this);
+  } else {
+    vm_exit_during_initialization("Unable to create archive worker",
+                                  os::native_thread_creation_failed_msg());
+  }
 }
 
 void ArchiveWorkerThread::run() {
@@ -549,4 +553,9 @@ void ArchiveWorkerThread::run() {
 
   // Work.
   _pool->run_as_worker();
+}
+
+void ArchiveWorkerThread::post_run() {
+  this->NamedThread::post_run();
+  delete this;
 }

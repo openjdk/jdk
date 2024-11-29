@@ -40,7 +40,7 @@ public:
   int max() { return Atomic::load(&_max); }
 };
 
-// Test a repeated cycle of pool start works.
+// Test a repeated cycle of workers init/shutdown without task works.
 TEST_VM(ArchiveWorkersTest, continuous_restart) {
   for (int c = 0; c < 1000; c++) {
     ArchiveWorkers workers;

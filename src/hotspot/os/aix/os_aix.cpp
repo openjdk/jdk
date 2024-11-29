@@ -858,7 +858,8 @@ void os::free_thread(OSThread* osthread) {
 
   // We are told to free resources of the argument thread,
   // but we can only really operate on the current thread.
-  assert(Thread::current()->osthread() == osthread,
+  // FIXME: See NonJavaThread::post_run that clears Thread::current before we reach here!
+  assert(Thread::current_or_null() == nullptr || Thread::current()->osthread() == osthread,
          "os::free_thread but not current thread");
 
   // Restore caller's signal mask

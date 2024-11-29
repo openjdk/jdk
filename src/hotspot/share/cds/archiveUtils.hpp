@@ -347,6 +347,8 @@ class ArchiveWorkerThread : public NamedThread {
 private:
   ArchiveWorkers* const _pool;
 
+  void post_run() override;
+
 public:
   ArchiveWorkerThread(ArchiveWorkers* pool);
   const char* type_name() const override { return "Archive Worker Thread"; }
