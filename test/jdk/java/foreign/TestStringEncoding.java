@@ -35,10 +35,13 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Random;
 import java.util.function.UnaryOperator;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
 import jdk.internal.foreign.StringSupport;
 import org.testng.annotations.*;
 
@@ -86,7 +89,6 @@ public class TestStringEncoding {
             }
         }
     }
-
 
     @Test(dataProvider = "strings")
     public void testStringsHeap(String testString) {
@@ -198,8 +200,21 @@ public class TestStringEncoding {
                 try (arena) {
                     MemorySegment inSegment = arena.allocateFrom(testString, charset);
                     for (int i = 0; i < 3; i++) {
+                        String expected = testString.substring(i);
+
                         String actual = inSegment.getString(i, charset);
-                        assertEquals(actual, testString.substring(i));
+                        if (!actual.equals(expected)) {
+                            System.out.println("i = " + i + " failed");
+                            System.out.println("testString = " + testString);
+                            System.out.println("actual = '" + actual + "'");
+                            //System.out.println("actual = " + HF.formatHex(actual.getBytes(StandardCharsets.UTF_8)));
+                            System.out.println("substr = '" + testString.substring(1) + "'");
+                            //System.out.println("substr = " + HF.formatHex(expected.getBytes(StandardCharsets.UTF_8)));
+                            System.out.flush();
+                        } else {
+                            System.out.println("i = " + i + " ok");
+                        }
+                        assertEquals(actual, expected);
                     }
                 }
             }
@@ -271,7 +286,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_BYTE, len, (byte) 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = StringSupport.chunkedStrlenByte(segment, j);
+                        int actual = SegmentBulkOperations.strlenByte((AbstractMemorySegmentImpl) segment, j, segment.byteSize());
                         assertEquals(actual, len - j);
                     }
                 }
@@ -295,7 +310,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_SHORT, len, (short) 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = StringSupport.chunkedStrlenShort(segment, j * Short.BYTES);
+                        int actual = SegmentBulkOperations.strlenShort((AbstractMemorySegmentImpl) segment, j * Short.BYTES, segment.byteSize());
                         assertEquals(actual, (len - j) * Short.BYTES);
                     }
                 }
@@ -319,7 +334,7 @@ public class TestStringEncoding {
                     }
                     segment.setAtIndex(JAVA_INT, len, 0);
                     for (int j = 0; j < len; j++) {
-                        int actual = StringSupport.strlenInt(segment, j * Integer.BYTES);
+                        int actual = SegmentBulkOperations.strlenInt((AbstractMemorySegmentImpl) segment, j * Integer.BYTES, segment.byteSize());
                         assertEquals(actual, (len - j) * Integer.BYTES);
                     }
                 }

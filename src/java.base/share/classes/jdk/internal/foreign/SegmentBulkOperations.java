@@ -28,11 +28,12 @@ package jdk.internal.foreign;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.foreign.MemorySegment;
+
+import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
 
 /**
  * This class contains optimized bulk operation methods that operate on one or several
@@ -50,6 +51,7 @@ public final class SegmentBulkOperations {
     private SegmentBulkOperations() {}
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
+    private static final long LONG_MASK = ~7L; // The last three bits are zero
 
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
@@ -75,21 +77,21 @@ public final class SegmentBulkOperations {
             int offset = 0;
             // 0...0X...X000
             final int limit = (int) (dst.length & (NATIVE_THRESHOLD_FILL - 8));
-            for (; offset < limit; offset += 8) {
+            for (; offset < limit; offset += Long.BYTES) {
                 SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, longValue, !Architecture.isLittleEndian());
             }
             int remaining = (int) dst.length - limit;
             // 0...0X00
-            if (remaining >= 4) {
+            if (remaining >= Integer.BYTES) {
                 SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (int) longValue, !Architecture.isLittleEndian());
-                offset += 4;
-                remaining -= 4;
+                offset += Integer.BYTES;
+                remaining -= Integer.BYTES;
             }
             // 0...00X0
-            if (remaining >= 2) {
+            if (remaining >= Short.BYTES) {
                 SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (short) longValue, !Architecture.isLittleEndian());
-                offset += 2;
-                remaining -= 2;
+                offset += Short.BYTES;
+                remaining -= Short.BYTES;
             }
             // 0...000X
             if (remaining == 1) {
@@ -123,26 +125,26 @@ public final class SegmentBulkOperations {
             // is an overlap, we could tolerate one particular direction of overlap (but not the other).
 
             // 0...0X...X000
-            final int limit = (int) (size & (NATIVE_THRESHOLD_COPY - 8));
+            final int limit = (int) (size & (NATIVE_THRESHOLD_COPY - Long.BYTES));
             int offset = 0;
-            for (; offset < limit; offset += 8) {
+            for (; offset < limit; offset += Long.BYTES) {
                 final long v = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset, !Architecture.isLittleEndian());
                 SCOPED_MEMORY_ACCESS.putLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v, !Architecture.isLittleEndian());
             }
             int remaining = (int) size - offset;
             // 0...0X00
-            if (remaining >= 4) {
+            if (remaining >= Integer.BYTES) {
                 final int v = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(),src.unsafeGetOffset() + srcOffset + offset, !Architecture.isLittleEndian());
                 SCOPED_MEMORY_ACCESS.putIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v, !Architecture.isLittleEndian());
-                offset += 4;
-                remaining -= 4;
+                offset += Integer.BYTES;
+                remaining -= Integer.BYTES;
             }
             // 0...00X0
-            if (remaining >= 2) {
+            if (remaining >= Short.BYTES) {
                 final short v = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset, !Architecture.isLittleEndian());
                 SCOPED_MEMORY_ACCESS.putShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v, !Architecture.isLittleEndian());
-                offset += 2;
-                remaining -=2;
+                offset += Short.BYTES;
+                remaining -= Short.BYTES;
             }
             // 0...000X
             if (remaining == 1) {
@@ -202,9 +204,9 @@ public final class SegmentBulkOperations {
             return 1;
         }
         int result = 1;
-        final long longBytes = length & ((1L << 62) - 8);
+        final long longBytes = length & LONG_MASK;
         final long limit = fromOffset + longBytes;
-        for (; fromOffset < limit; fromOffset += 8) {
+        for (; fromOffset < limit; fromOffset += Long.BYTES) {
             long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
             result = result * POWERS_OF_31[7]
                     + ((byte) (val >>> 56)) * POWERS_OF_31[6]
@@ -218,24 +220,24 @@ public final class SegmentBulkOperations {
         }
         int remaining = (int) (length - longBytes);
         // 0...0X00
-        if (remaining >= 4) {
+        if (remaining >= Integer.BYTES) {
             int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
             result = result * POWERS_OF_31[3]
                     + ((byte) (val >>> 24)) * POWERS_OF_31[2]
                     + ((byte) (val >>> 16)) * POWERS_OF_31[1]
                     + ((byte) (val >>> 8)) * POWERS_OF_31[0]
                     + ((byte) val);
-            fromOffset += 4;
-            remaining -= 4;
+            fromOffset += Integer.BYTES;
+            remaining -= Integer.BYTES;
         }
         // 0...00X0
-        if (remaining >= 2) {
+        if (remaining >= Short.BYTES) {
             short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
             result = result * POWERS_OF_31[1]
                     + ((byte) (val >>> 8)) * POWERS_OF_31[0]
                     + ((byte) val);
-            fromOffset += 2;
-            remaining -= 2;
+            fromOffset += Short.BYTES;
+            remaining -= Short.BYTES;
         }
         // 0...000X
         if (remaining == 1) {
@@ -288,7 +290,7 @@ public final class SegmentBulkOperations {
                                  long start, int length, boolean srcAndDstBytesDiffer) {
         int offset = 0;
         final int limit = length & (NATIVE_THRESHOLD_MISMATCH - 8);
-        for (; offset < limit; offset += 8) {
+        for (; offset < limit; offset += Long.BYTES) {
             final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
@@ -298,24 +300,24 @@ public final class SegmentBulkOperations {
         int remaining = length - offset;
 
         // 0...0X00
-        if (remaining >= 4) {
+        if (remaining >= Integer.BYTES) {
             final int s = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final int d = SCOPED_MEMORY_ACCESS.getIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
-            offset += 4;
-            remaining -= 4;
+            offset += Integer.BYTES;
+            remaining -= Integer.BYTES;
         }
         // 0...00X0
-        if (remaining >= 2) {
+        if (remaining >= Short.BYTES) {
             final short s = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
             final short d = SCOPED_MEMORY_ACCESS.getShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
-            offset += 2;
-            remaining -= 2;
+            offset += Short.BYTES;
+            remaining -= Short.BYTES;
         }
         // 0...000X
         if (remaining == 1) {
@@ -376,6 +378,164 @@ public final class SegmentBulkOperations {
             remaining -= i;
         }
         return ~remaining;
+    }
+
+    //private static final HexFormat HF = HexFormat.ofDelimiter(" ");
+
+    /**
+     * {@return the shortest distance beginning at the provided {@code fromOffset}
+     *          to the encountering of a zero byte in the provided {@code segment}
+     *          checking bytes before the {@code toOffset}}
+     * <p>
+     * The method is using a heuristic method to determine if a long word contains a
+     * zero byte. The method might have false positives but never false negatives.
+     * <p>
+     * This method is inspired by the `glibc/string/strlen.c` implementation
+     *
+     * @param segment    to examine
+     * @param fromOffset from where examination shall begin (inclusive)
+     * @param toOffset   to where examination shall end (exclusive)
+     * @throws IllegalArgumentException if the examined region contains no zero bytes
+     *                                  within a length that can be accepted by a String
+     */
+    @ForceInline
+    public static int strlenByte(final AbstractMemorySegmentImpl segment,
+                                 final long fromOffset,
+                                 final long toOffset) {
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        if (length == 0) {
+            // The state has to be checked explicitly for zero-length segments
+            segment.scope.checkValidState();
+            throw stringTooLarge(segment, fromOffset, toOffset);
+        }
+        final long longBytes = length & LONG_MASK;
+        final long longLimit = fromOffset + longBytes;
+        long offset = fromOffset;
+        for (; offset < longLimit; offset += Long.BYTES) {
+            long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
+            if (mightContainZeroByte(val)) {
+                for (int j = 0; j < Long.BYTES; j++) {
+                    if (SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j) == 0) {
+                        return requireWithinArraySize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                    }
+                }
+            }
+        }
+        // Handle the tail
+        for (; offset < toOffset; offset++) {
+            byte val = SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset);
+            if (val == 0) {
+                return requireWithinArraySize(offset - fromOffset, segment, fromOffset, toOffset);
+            }
+        }
+        throw nullNotFound(segment, fromOffset, toOffset);
+    }
+
+    @ForceInline
+    public static int strlenShort(final AbstractMemorySegmentImpl segment,
+                                  final long fromOffset,
+                                  final long toOffset) {
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        if (length == 0) {
+            segment.scope.checkValidState();
+            throw stringTooLarge(segment, fromOffset, toOffset);
+        }
+        final long longBytes = length & LONG_MASK;
+        final long longLimit = fromOffset + longBytes;
+        long offset = fromOffset;
+        for (; offset < longLimit; offset += Long.BYTES) {
+            long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
+            if (mightContainZeroShort(val)) {
+                for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
+                    //System.out.println("j = " + j + " : " + HF.toHexDigits(SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j)));
+                    if (SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
+                        return requireWithinArraySize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                    }
+                }
+            }
+        }
+        // Handle the tail
+        // Prevent over scanning as we step by 2
+        final long endScan = toOffset & ~1; // The last bit is zero
+        for (; offset < endScan; offset += Short.BYTES) {
+            short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
+            //System.out.println("byte offset = " + offset + " : " + HF.toHexDigits(val));
+            if (val == 0) {
+                return requireWithinArraySize(offset - fromOffset, segment, fromOffset, toOffset);
+            }
+        }
+        throw nullNotFound(segment, fromOffset, toOffset);
+    }
+
+    // The gain of using `long` wide operations for `int` is lower than for the two other `byte` and `short` variants
+    // so, there is only a simpler method for `int`s
+    @ForceInline
+    public static int strlenInt(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
+        long length = Math.min(toOffset - fromOffset, ArraysSupport.SOFT_MAX_ARRAY_LENGTH) & ~3;
+        for (int offset = 0; offset < length; offset += Integer.BYTES) {
+            // We are guaranteed to be aligned here so, we can use unaligned access.
+            int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
+            if (val == 0) {
+                return offset;
+            }
+        }
+        throw nullNotFound(segment, fromOffset, toOffset);
+    }
+
+    /*
+    Bits 63 and N * 8 (N = 1..7) of this number are zero.  Call these bits
+    the "holes".  Note that there is a hole just to the left of
+    each byte, with an extra at the end:
+
+    bits:  01111110 11111110 11111110 11111110 11111110 11111110 11111110 11111111
+    bytes: AAAAAAAA BBBBBBBB CCCCCCCC DDDDDDDD EEEEEEEE FFFFFFFF GGGGGGGG HHHHHHHH
+
+    The 1-bits make sure that carries propagate to the next 0-bit.
+    The 0-bits provide holes for carries to fall into.
+    */
+    private static final long HIMAGIC_FOR_BYTES = 0x8080_8080_8080_8080L;
+    private static final long LOMAGIC_FOR_BYTES = 0x0101_0101_0101_0101L;
+
+    private static boolean mightContainZeroByte(long l) {
+        return ((l - LOMAGIC_FOR_BYTES) & (~l) & HIMAGIC_FOR_BYTES) != 0;
+    }
+
+    private static final long HIMAGIC_FOR_SHORTS = 0x8000_8000_8000_8000L;
+    private static final long LOMAGIC_FOR_SHORTS = 0x0001_0001_0001_0001L;
+
+    static boolean mightContainZeroShort(long l) {
+        return ((l - LOMAGIC_FOR_SHORTS) & (~l) & HIMAGIC_FOR_SHORTS) != 0;
+    }
+
+
+    private static int requireWithinArraySize(long size,
+                                              AbstractMemorySegmentImpl segment,
+                                              long fromOffset,
+                                              long toOffset) {
+        if (size > ArraysSupport.SOFT_MAX_ARRAY_LENGTH) {
+            throw stringTooLarge(segment, fromOffset, toOffset);
+        }
+        return (int) size;
+    }
+
+    private static IllegalArgumentException stringTooLarge(AbstractMemorySegmentImpl segment,
+                                                           long fromOffset,
+                                                           long toOffset) {
+        return new IllegalArgumentException("String too large: " + exceptionInfo(segment, fromOffset, toOffset));
+    }
+
+    private static IndexOutOfBoundsException nullNotFound(AbstractMemorySegmentImpl segment,
+                                                          long fromOffset,
+                                                          long toOffset) {
+        return new IndexOutOfBoundsException("No null terminator found: " + exceptionInfo(segment, fromOffset, toOffset));
+    }
+
+    private static String exceptionInfo(AbstractMemorySegmentImpl segment,
+                                        long fromOffset,
+                                        long toOffset) {
+        return segment + " using region [" + fromOffset + ", " + toOffset + ")";
     }
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";

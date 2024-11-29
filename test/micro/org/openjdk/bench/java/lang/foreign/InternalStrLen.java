@@ -22,6 +22,8 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -50,13 +52,14 @@ import static jdk.internal.foreign.StringSupport.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED", "--enable-native-access=ALL-UNNAMED", "--enable-preview"})
+@Fork(value = 3, jvmArgs = {"--add-exports=java.base/jdk.internal.foreign=ALL-UNNAMED",
+                            "--enable-native-access=ALL-UNNAMED"})
 public class InternalStrLen {
 
-    private MemorySegment singleByteSegment;
-    private MemorySegment singleByteSegmentMisaligned;
-    private MemorySegment doubleByteSegment;
-    private MemorySegment quadByteSegment;
+    private AbstractMemorySegmentImpl singleByteSegment;
+    private AbstractMemorySegmentImpl singleByteSegmentMisaligned;
+    private AbstractMemorySegmentImpl doubleByteSegment;
+    private AbstractMemorySegmentImpl quadByteSegment;
 
     @Param({"1", "4", "16", "251", "1024"})
     int size;
@@ -64,10 +67,9 @@ public class InternalStrLen {
     @Setup
     public void setup() {
         var arena = Arena.ofAuto();
-        singleByteSegment = arena.allocate((size + 1L) * Byte.BYTES);
-        singleByteSegmentMisaligned = arena.allocate((size + 1L) * Byte.BYTES);
-        doubleByteSegment = arena.allocate((size + 1L) * Short.BYTES);
-        quadByteSegment = arena.allocate((size + 1L) * Integer.BYTES);
+        singleByteSegment = (AbstractMemorySegmentImpl) arena.allocate((size + 1L) * Byte.BYTES);
+        doubleByteSegment = (AbstractMemorySegmentImpl) arena.allocate((size + 1L) * Short.BYTES);
+        quadByteSegment = (AbstractMemorySegmentImpl) arena.allocate((size + 1L) * Integer.BYTES);
         Stream.of(singleByteSegment, doubleByteSegment, quadByteSegment)
                 .forEach(s -> IntStream.range(0, (int) s.byteSize() - 1)
                         .forEach(i -> s.set(
@@ -78,7 +80,7 @@ public class InternalStrLen {
         singleByteSegment.set(ValueLayout.JAVA_BYTE, singleByteSegment.byteSize() - Byte.BYTES, (byte) 0);
         doubleByteSegment.set(ValueLayout.JAVA_SHORT, doubleByteSegment.byteSize() - Short.BYTES, (short) 0);
         quadByteSegment.set(ValueLayout.JAVA_INT, quadByteSegment.byteSize() - Integer.BYTES, 0);
-        singleByteSegmentMisaligned = arena.allocate(singleByteSegment.byteSize() + 1).
+        singleByteSegmentMisaligned = (AbstractMemorySegmentImpl) arena.allocate(singleByteSegment.byteSize() + 1).
                 asSlice(1);
         MemorySegment.copy(singleByteSegment, 0, singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
     }
@@ -105,17 +107,17 @@ public class InternalStrLen {
 
     @Benchmark
     public int chunkedSingle() {
-        return chunkedStrlenByte(singleByteSegment, 0);
+        return SegmentBulkOperations.strlenByte(singleByteSegment, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedSingleMisaligned() {
-        return chunkedStrlenByte(singleByteSegmentMisaligned, 0);
+        return SegmentBulkOperations.strlenByte(singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedDouble() {
-        return chunkedStrlenShort(doubleByteSegment, 0);
+        return SegmentBulkOperations.strlenShort(doubleByteSegment, 0, doubleByteSegment.byteSize());
     }
 
     @Benchmark
