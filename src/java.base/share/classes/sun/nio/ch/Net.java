@@ -40,6 +40,7 @@ import java.net.StandardProtocolFamily;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NotYetBoundException;
 import java.nio.channels.NotYetConnectedException;
@@ -166,6 +167,8 @@ public class Net {
             nx = newSocketException("Socket is not connected");
         else if (x instanceof AlreadyBoundException)
             nx = newSocketException("Already bound");
+        else if (x instanceof AlreadyConnectedException)
+            nx = newSocketException("already connected");
         else if (x instanceof NotYetBoundException)
             nx = newSocketException("Socket is not bound yet");
         else if (x instanceof UnsupportedAddressTypeException)
