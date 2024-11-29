@@ -52,7 +52,7 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
     public void setCutEdges(boolean enable) {
         maxLayerLength = enable ? 10 : -1;
     }
-  
+
    @Override
     public boolean isFreeForm() {
         return false;
