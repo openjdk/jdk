@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,45 +23,22 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import java.awt.Font;
+
 /**
  *
  * @author Thomas Wuerthinger
  */
-public class Timing {
+public abstract class LayoutManager {
 
-    private long lastValue;
-    private long sum;
-    private final String name;
+    public static final Font TITLE_FONT = new Font("Arial", Font.BOLD, 14);
+    public static final int SWEEP_ITERATIONS = 1;
+    public static final int CROSSING_ITERATIONS = 1;
+    public static final int NODE_OFFSET = 8;
+    public static final int LAYER_OFFSET = 8;
+    public static final double SCALE_LAYER_PADDING = 1.5;
 
-    public Timing(String name) {
-        this.name = name;
-    }
+    public abstract void setCutEdges(boolean enable);
 
-    @Override
-    public String toString() {
-        long val = sum;
-        if (lastValue != 0) {
-            // Timer running
-            long newValue = System.nanoTime();
-            val += (newValue - lastValue);
-        }
-        return "Timing for " + name + " is: " + val / 1000000 + " ms";
-    }
-
-    public void print() {
-        System.out.println();
-    }
-
-    public void start() {
-        lastValue = System.nanoTime();
-    }
-
-    public void stop() {
-        if (lastValue == 0) {
-            throw new IllegalStateException("You must call start before stop");
-        }
-        long newValue = System.nanoTime();
-        sum += newValue - lastValue;
-        lastValue = 0;
-    }
+    public abstract void doLayout(LayoutGraph graph);
 }
