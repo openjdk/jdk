@@ -913,8 +913,8 @@ public:
   void orn(Register Rd, Register Rs1, Register Rs2);
 
   // reverse bytes
-  void revbw(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);         // reverse bytes in lower word, sign-extend
-  void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
+  void revbw(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2= t1);  // reverse bytes in lower word, sign-extend
+  void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);  // reverse bytes in doubleword
 
   void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
   void rolw_imm(Register dst, Register src, uint32_t, Register tmp = t0);
