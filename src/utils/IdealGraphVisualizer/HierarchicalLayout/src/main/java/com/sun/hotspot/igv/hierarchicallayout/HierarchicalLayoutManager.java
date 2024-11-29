@@ -37,7 +37,6 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
 
     int maxLayerLength;
     private LayoutGraph graph;
-
     private boolean layoutSelfEdges = false;
 
     public HierarchicalLayoutManager() {
