@@ -132,7 +132,7 @@ public class HierarchicalLayoutManager extends LayoutManager implements LayoutMo
             graph.addEdges(movedNode, maxLayerLength);
         }
     }
-  
+
     /**
      * Removes self-edges from nodes in the graph. If self-edges are to be included in the layout
      * (`layoutSelfEdges` is true), it stores them in the node for later processing and marks the graph
