@@ -224,10 +224,6 @@ void GraphKit::gen_stub(address C_function,
   store_to_memory(control(), adr_sp, null(), T_ADDRESS, MemNode::unordered);
   // Clear last_Java_pc
   store_to_memory(control(), adr_last_Java_pc, null(), T_ADDRESS, MemNode::unordered);
-#if (defined(IA64) && !defined(AIX))
-  Node* adr_last_Java_fp = basic_plus_adr(top(), thread, in_bytes(JavaThread::last_Java_fp_offset()));
-  store_to_memory(control(), adr_last_Java_fp, null(), T_ADDRESS, MemNode::unordered);
-#endif
 
   // For is-fancy-jump, the C-return value is also the branch target
   Node* target = map()->in(TypeFunc::Parms);

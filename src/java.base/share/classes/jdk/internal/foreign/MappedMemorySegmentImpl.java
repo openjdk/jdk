@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import jdk.internal.misc.ScopedMemoryAccess;
  * memory mapped segment, such as the file descriptor associated with the mapping. This information is crucial
  * in order to correctly reconstruct a byte buffer object from the segment (see {@link #makeByteBuffer()}).
  */
-final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
+public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     private final UnmapperProxy unmapper;
 

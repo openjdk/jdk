@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,11 +163,6 @@ class WindowsPath implements Path {
 
     // use this message when throwing exceptions
     String getPathForExceptionMessage() {
-        return path;
-    }
-
-    // use this path for permission checks
-    String getPathForPermissionCheck() {
         return path;
     }
 
@@ -890,30 +885,6 @@ class WindowsPath implements Path {
         }
     }
 
-    void checkRead() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkRead(getPathForPermissionCheck());
-        }
-    }
-
-    void checkWrite() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkWrite(getPathForPermissionCheck());
-        }
-    }
-
-    void checkDelete() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkDelete(getPathForPermissionCheck());
-        }
-    }
-
     @Override
     public URI toUri() {
         return WindowsUriSupport.toUri(this);
@@ -924,13 +895,6 @@ class WindowsPath implements Path {
         if (isAbsolute())
             return this;
 
-        // permission check as per spec
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess("user.dir");
-        }
-
         try {
             return createFromNormalizedPath(getFileSystem(), getAbsolutePath());
         } catch (WindowsException x) {
@@ -940,7 +904,6 @@ class WindowsPath implements Path {
 
     @Override
     public WindowsPath toRealPath(LinkOption... options) throws IOException {
-        checkRead();
         String rp = WindowsLinkSupport.getRealPath(this, Util.followLinks(options));
         return createFromNormalizedPath(getFileSystem(), rp);
     }
@@ -955,31 +918,6 @@ class WindowsPath implements Path {
             throw new NullPointerException();
         if (!(watcher instanceof WindowsWatchService))
             throw new ProviderMismatchException();
-
-        // When a security manager is set then we need to make a defensive
-        // copy of the modifiers and check for the Windows specific FILE_TREE
-        // modifier. When the modifier is present then check that permission
-        // has been granted recursively.
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            boolean watchSubtree = false;
-            final int ml = modifiers.length;
-            if (ml > 0) {
-                modifiers = Arrays.copyOf(modifiers, ml);
-                int i=0;
-                while (i < ml) {
-                    if (ExtendedOptions.FILE_TREE.matches(modifiers[i++])) {
-                        watchSubtree = true;
-                        break;
-                    }
-                }
-            }
-            String s = getPathForPermissionCheck();
-            sm.checkRead(s);
-            if (watchSubtree)
-                sm.checkRead(s + "\\-");
-        }
 
         return ((WindowsWatchService)watcher).register(this, events, modifiers);
     }
