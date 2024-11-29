@@ -23,7 +23,6 @@
 package org.openjdk.bench.java.lang.foreign;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.SegmentBulkOperations;
 import jdk.internal.foreign.StringSupport;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -46,7 +45,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.lang.foreign.ValueLayout.*;
-import static jdk.internal.foreign.StringSupport.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)

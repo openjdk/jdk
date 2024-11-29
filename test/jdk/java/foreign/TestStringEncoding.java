@@ -35,13 +35,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Random;
 import java.util.function.UnaryOperator;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.SegmentBulkOperations;
 import jdk.internal.foreign.StringSupport;
 import org.testng.annotations.*;
 
