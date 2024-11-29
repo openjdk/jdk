@@ -324,30 +324,34 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
         node.setY((int) barycenterY + displacementY);
     }
 
+    /**
+     * Sets control points for a given link based on its start and end layout nodes.
+     * <p>
+     * Calculates the start and end points, applies offsets for curvature, and updates
+     * the link's control points.
+     *
+     * @param link The link to process.
+     */
     private void setLinkControlPoints(Link link) {
-        if (link.getFrom().getVertex() == link.getTo().getVertex()) return;
+        if (link.getFrom().getVertex() == link.getTo().getVertex()) return; // Skip self-links
 
         LayoutNode from = layoutNodes.get(link.getFrom().getVertex());
         from.setVertex(link.getFrom().getVertex());
         from.updateSize();
+
         LayoutNode to = layoutNodes.get(link.getTo().getVertex());
         to.setVertex(link.getTo().getVertex());
         to.updateSize();
-        int relativeFromX = link.getFrom().getRelativePosition().x;
-        int relativeToX = link.getTo().getRelativePosition().x;
 
-        int startX = from.getLeft() + relativeFromX;
-        int startY = from.getBottom();
-        int endX = to.getLeft() + relativeToX;
-        int endY = to.getTop();
+        Point startPoint = new Point(from.getLeft() + link.getFrom().getRelativePosition().x, from.getBottom());
+        Point endPoint = new Point(to.getLeft() + link.getTo().getRelativePosition().x, to.getTop());
 
-        Point startPoint = new Point(startX, startY);
-        Point endPoint = new Point(endX, endY);
-        List<Point> line = new ArrayList<>();
-        line.add(startPoint);
-        line.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
-        line.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
-        line.add(endPoint);
-        link.setControlPoints(line);
+        List<Point> controlPoints = new ArrayList<>();
+        controlPoints.add(startPoint);
+        controlPoints.add(new Point(startPoint.x, startPoint.y + LINE_OFFSET));
+        controlPoints.add(new Point(endPoint.x, endPoint.y - LINE_OFFSET));
+        controlPoints.add(endPoint);
+
+        link.setControlPoints(controlPoints);
     }
 }
