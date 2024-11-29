@@ -37,7 +37,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
 
     int maxLayerLength;
     private LayoutGraph graph;
-
     private boolean layoutSelfEdges = false;
 
     public HierarchicalLayoutManager() {
@@ -283,6 +282,7 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 workingList = newWorkingList;
                 layer++;
             }
+
             int layerCount = layer - 1;
             for (LayoutNode n : graph.getLayoutNodes()) {
                 n.setLayer((layerCount - 1 - n.getLayer()));

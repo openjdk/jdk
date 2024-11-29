@@ -175,6 +175,5 @@ public abstract class Slot implements Port, Source.Provider, Properties.Provider
     public abstract int getPosition();
 
     public abstract void setPosition(int position);
-
 }
 

@@ -124,7 +124,6 @@ public class LayoutNode {
         bottomMargin = 0;
         leftMargin = 0;
         rightMargin = 0;
-
         if (hasSelfEdge()) {
             topMargin += REVERSE_EDGE_OFFSET;
             bottomMargin += REVERSE_EDGE_OFFSET;
