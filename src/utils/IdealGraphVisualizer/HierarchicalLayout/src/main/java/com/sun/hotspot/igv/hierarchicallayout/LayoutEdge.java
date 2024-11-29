@@ -170,6 +170,24 @@ public class LayoutEdge {
     }
 
     /**
+     * Gets the absolute x-coordinate of the source node's connection point for this edge.
+     *
+     * @return The x-coordinate of the source node's connection point.
+     */
+    public int getFromX() {
+        return from.getX() + getRelativeFromX();
+    }
+
+    /**
+     * Gets the absolute x-coordinate of the target node's connection point for this edge.
+     *
+     * @return The x-coordinate of the target node's connection point.
+     */
+    public int getToX() {
+        return to.getX() + getRelativeToX();
+    }
+
+    /**
      * Gets the relative horizontal position from the source node's left boundary to the edge's starting point.
      *
      * @return The relative x-coordinate from the source node.

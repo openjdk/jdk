@@ -69,6 +69,7 @@ public class LayoutNode {
     private int rightMargin;
     private int leftMargin;
     private int pos = -1; // Position within its layer
+    private boolean reverseLeft = false;
     private int crossingNumber = 0;
 
     public boolean hasSelfEdge() {
@@ -251,6 +252,15 @@ public class LayoutNode {
     }
 
     /**
+     * Gets the outer left boundary (including left margin) of the node.
+     *
+     * @return The x-coordinate of the outer left boundary.
+     */
+    public int getOuterLeft() {
+        return x;
+    }
+
+    /**
      * Gets the total width of the node, including left and right margins.
      *
      * @return The total outer width.
@@ -270,6 +280,15 @@ public class LayoutNode {
 
     public int getHeight() {
         return height;
+    }
+
+    /**
+     * Gets the right boundary (excluding right margin) of the node.
+     *
+     * @return The x-coordinate of the right boundary.
+     */
+    public int getRight() {
+        return x + leftMargin + width;
     }
 
     /**
@@ -436,6 +455,50 @@ public class LayoutNode {
         this.pos = pos;
     }
 
+    /**
+     * Groups the successor edges by their relative x-coordinate from the current node.
+     *
+     * @return A map of relative x-coordinate to list of successor edges.
+     */
+    public Map<Integer, List<LayoutEdge>> groupSuccessorsByX() {
+        Map<Integer, List<LayoutEdge>> result = new HashMap<>();
+        for (LayoutEdge succEdge : succs) {
+            result.computeIfAbsent(succEdge.getRelativeFromX(), k -> new ArrayList<>()).add(succEdge);
+        }
+        return result;
+    }
+
+    private int getBackedgeCrossingScore() {
+        int score = 0;
+        for (LayoutEdge predEdge : preds) {
+            if (predEdge.isReversed()) {
+                List<Point> points = reversedLinkEndPoints.get(predEdge.getLink());
+                if (points != null) {
+                    int x0 = points.get(points.size() - 1).x;
+                    int xn = points.get(0).x;
+                    int startPoint = predEdge.getStartX();
+                    int endPoint = predEdge.getEndX();
+                    int win = (x0 < xn) ? (startPoint - endPoint) : (endPoint - startPoint);
+                    score += win;
+                }
+            }
+        }
+        for (LayoutEdge succEdge : succs) {
+            if (succEdge.isReversed()) {
+                List<Point> points = reversedLinkStartPoints.get(succEdge.getLink());
+                if (points != null) {
+                    int x0 = points.get(points.size() - 1).x;
+                    int xn = points.get(0).x;
+                    int startPoint = succEdge.getStartX();
+                    int endPoint = succEdge.getEndX();
+                    int win = (x0 > xn) ? (startPoint - endPoint) : (endPoint - startPoint);
+                    score += win;
+                }
+            }
+        }
+        return score;
+    }
+
     private boolean computeReversedStartPoints(boolean left) {
         TreeMap<Integer, ArrayList<LayoutEdge>> sortedDownMap = left ? new TreeMap<>() : new TreeMap<>(Collections.reverseOrder());
         for (LayoutEdge succEdge : succs) {
@@ -518,12 +581,28 @@ public class LayoutNode {
     }
 
     public void computeReversedLinkPoints(boolean reverseLeft) {
+        this.reverseLeft = reverseLeft;
+
         initSize();
         reversedLinkStartPoints.clear();
         reversedLinkEndPoints.clear();
 
         boolean hasReversedDown = computeReversedStartPoints(reverseLeft);
-        computeReversedEndPoints(hasReversedDown != reverseLeft);
+        boolean hasReversedUP = computeReversedEndPoints(hasReversedDown != reverseLeft);
+    }
+
+    public boolean isReverseRight() {
+        return !reverseLeft;
+    }
+
+    public void optimizeBackEdgeCrossing() {
+        if (reversedLinkStartPoints.isEmpty() && reversedLinkEndPoints.isEmpty()) return;
+        int orig_score = getBackedgeCrossingScore();
+        computeReversedLinkPoints(isReverseRight());
+        int reverse_score = getBackedgeCrossingScore();
+        if (orig_score > reverse_score) {
+            computeReversedLinkPoints(isReverseRight());
+        }
     }
 
     public ArrayList<Point> getSelfEdgePoints() {
