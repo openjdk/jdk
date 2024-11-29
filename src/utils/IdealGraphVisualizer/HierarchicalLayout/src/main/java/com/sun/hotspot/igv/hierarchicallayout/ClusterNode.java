@@ -226,4 +226,16 @@ public class ClusterNode implements Vertex {
     public Set<? extends Vertex> getSubNodes() {
         return subNodes;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof ClusterNode other)) return false;
+        return Objects.equals(this.name, other.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
+    }
 }

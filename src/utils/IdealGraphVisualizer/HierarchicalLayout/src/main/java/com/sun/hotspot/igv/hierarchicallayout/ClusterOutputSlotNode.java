@@ -28,6 +28,7 @@ import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.util.Objects;
 
 /**
  *
@@ -59,6 +60,7 @@ public class ClusterOutputSlotNode implements Vertex {
     public ClusterOutputSlotNode(ClusterNode n, String id) {
         this.blockNode = n;
         this.id = id;
+        this.position = new Point(0, 0);
 
         n.addSubNode(this);
 
@@ -136,4 +138,15 @@ public class ClusterOutputSlotNode implements Vertex {
         return toString().compareTo(o.toString());
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof ClusterOutputSlotNode other)) return false;
+        return Objects.equals(this.id, other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
