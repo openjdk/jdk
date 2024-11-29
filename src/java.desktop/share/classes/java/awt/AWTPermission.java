@@ -37,6 +37,7 @@ import java.security.BasicPermission;
  * @apiNote
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
+ * Consequently this class is deprecated for removal in a future release.
  *
  * @see java.security.BasicPermission
  * @see java.security.Permission
@@ -46,7 +47,9 @@ import java.security.BasicPermission;
  *
  * @author Marianne Mueller
  * @author Roland Schemers
+ * @deprecated There is no replacement for this class.
  */
+@Deprecated(since="24", forRemoval=true)
 public final class AWTPermission extends BasicPermission {
 
     /**
