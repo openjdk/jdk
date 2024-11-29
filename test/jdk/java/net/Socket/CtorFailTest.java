@@ -23,7 +23,6 @@
 
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
@@ -47,8 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /*
  * @test
  * @summary verifies that the socket is closed on constructor failures
- * @library /test/lib
- * @run junit/othervm --add-opens java.base/java.net=ALL-UNNAMED CtorFailTest
+ * @modules java.base/java.net:+open
+ * @run junit CtorFailTest
  */
 class CtorFailTest {
 
@@ -78,12 +77,9 @@ class CtorFailTest {
     }
 
     @ParameterizedTest
-    @MethodSource("testCases")
+    @MethodSource("socketImpls")
     @SuppressWarnings("resource")
-    void test(Exception bindException, Exception connectException) throws Throwable {
-
-        // Create a socket using the mock `SocketImpl` configured to fail
-        MockSocketImpl socketImpl = new MockSocketImpl(bindException, connectException);
+    void test(MockSocketImpl socketImpl) throws Throwable {
         withSocketImplFactory(() -> socketImpl, () -> {
 
             // Trigger the failure
@@ -96,21 +92,24 @@ class CtorFailTest {
             });
 
             // Run verifications
-            Exception expectedException = bindException != null ? bindException : connectException;
+            Exception expectedException = socketImpl.bindException != null
+                    ? socketImpl.bindException
+                    : socketImpl.connectException;
             assertSame(expectedException, caughtException);
             assertEquals(1, socketImpl.closeInvocationCounter.get());
 
         });
-
     }
 
-    static List<Arguments> testCases() {
+    static List<MockSocketImpl> socketImpls() {
         String exceptionMessage = "intentional test failure";
+        IOException checkedException = new IOException(exceptionMessage);
+        IllegalArgumentException uncheckedException = new IllegalArgumentException(exceptionMessage);
         return List.of(
-                Arguments.of(new IOException(exceptionMessage), null),
-                Arguments.of(null, new IOException(exceptionMessage)),
-                Arguments.of(new IllegalArgumentException(exceptionMessage), null),
-                Arguments.of(null, new IllegalArgumentException(exceptionMessage)));
+                new MockSocketImpl(checkedException, null),
+                new MockSocketImpl(null, checkedException),
+                new MockSocketImpl(uncheckedException, null),
+                new MockSocketImpl(null, uncheckedException));
     }
 
     private static final class MockSocketImpl extends SocketImpl {
