@@ -106,7 +106,7 @@ class ConnectFailTest {
                 SocketException exception = assertThrows(
                         SocketException.class,
                         () -> socket.connect(REFUSING_SOCKET_ADDRESS));
-                assertEquals("already connected", exception.getMessage());
+                assertEquals("Already connected", exception.getMessage());
                 assertFalse(socket.isClosed());
             }
         }

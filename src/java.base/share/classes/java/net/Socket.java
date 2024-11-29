@@ -655,7 +655,7 @@ public class Socket implements java.io.Closeable {
         if (isClosed(s))
             throw new SocketException("Socket is closed");
         if (isConnected(s))
-            throw new SocketException("already connected");
+            throw new SocketException("Already connected");
 
         if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");

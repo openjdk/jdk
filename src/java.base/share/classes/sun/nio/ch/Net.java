@@ -168,7 +168,7 @@ public class Net {
         else if (x instanceof AlreadyBoundException)
             nx = newSocketException("Already bound");
         else if (x instanceof AlreadyConnectedException)
-            nx = newSocketException("already connected");
+            nx = newSocketException("Already connected");
         else if (x instanceof NotYetBoundException)
             nx = newSocketException("Socket is not bound yet");
         else if (x instanceof UnsupportedAddressTypeException)
