@@ -422,7 +422,6 @@ public class Figure extends Properties.Entity implements Vertex {
         return toString().compareTo(f.toString());
     }
 
-
     public void setCustomColor(Color color) {
         // Apply custom color not just to this input node but to all
         // corresponding input nodes in the group.

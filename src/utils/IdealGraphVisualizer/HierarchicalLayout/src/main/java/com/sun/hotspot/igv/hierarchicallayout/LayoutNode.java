@@ -324,17 +324,6 @@ public class LayoutNode {
         } else {
             return "dummy";
         }
-
-        return !sortedUpMap.isEmpty();
-    }
-
-    public void computeReversedLinkPoints(boolean reverseLeft) {
-        initSize();
-        reversedLinkStartPoints.clear();
-        reversedLinkEndPoints.clear();
-
-        boolean hasReversedDown = computeReversedStartPoints(reverseLeft);
-        computeReversedEndPoints(hasReversedDown != reverseLeft);
     }
 
     public int getX() {
