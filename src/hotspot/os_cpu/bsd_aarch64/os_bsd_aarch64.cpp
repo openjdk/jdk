@@ -501,8 +501,7 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 }
 
 extern "C" {
-  // wait function, should not be inlined; and causes trouble with linktime optimization
-  // NOINLINE
+  // needs local assembler label '1:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
@@ -525,12 +524,12 @@ extern "C" {
                                       // to entry for case SpinWait::NOP
         "  add  %[d], %[d], %[o]  \n"
         "  br   %[d]              \n"
-        "  b    1f  \n" // case SpinWait::NONE  (-1)
+        "  b    1f                \n" // case SpinWait::NONE  (-1)
         "  nop                    \n" // padding
         "  nop                    \n" // case SpinWait::NOP   ( 0)
-        "  b    1f  \n"
+        "  b    1f                \n"
         "  isb                    \n" // case SpinWait::ISB   ( 1)
-        "  b    1f  \n"
+        "  b    1f                \n"
         "  yield                  \n" // case SpinWait::YIELD ( 2)
         "1:        \n"
         : [d]"=&r"(br_dst)
