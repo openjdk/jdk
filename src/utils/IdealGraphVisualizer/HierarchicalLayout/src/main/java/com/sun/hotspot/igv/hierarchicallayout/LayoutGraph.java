@@ -51,6 +51,7 @@ public class LayoutGraph {
     private final LinkedHashMap<Vertex, LayoutNode> layoutNodes;
     private final List<LayoutNode> dummyNodes;
     private final List<LayoutLayer> layers;
+    private boolean showSelfEdges = false;
 
     /**
      * Constructs a new LayoutGraph using the provided collection of links and additional vertices.
@@ -94,6 +95,14 @@ public class LayoutGraph {
         layoutNodes.clear();
         dummyNodes.clear();
         layers.clear();
+    }
+
+    public boolean showSelfEdges() {
+        return showSelfEdges;
+    }
+
+    public void setShowSelfEdges(boolean showSelfEdges) {
+        this.showSelfEdges = showSelfEdges;
     }
 
     /**
