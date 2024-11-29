@@ -27,8 +27,10 @@ import com.sun.hotspot.igv.graph.Block;
 import com.sun.hotspot.igv.graph.Connection;
 import com.sun.hotspot.igv.graph.Figure;
 import com.sun.hotspot.igv.graph.OutputSlot;
+import com.sun.hotspot.igv.layout.Vertex;
 import com.sun.hotspot.igv.util.StringUtils;
 import com.sun.hotspot.igv.view.DiagramScene;
+import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 import java.awt.*;
 import java.awt.geom.Line2D;
 import java.util.*;
@@ -38,6 +40,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import org.netbeans.api.visual.action.ActionFactory;
 import org.netbeans.api.visual.action.PopupMenuProvider;
+import org.netbeans.api.visual.action.SelectProvider;
 import org.netbeans.api.visual.model.ObjectState;
 import org.netbeans.api.visual.widget.Widget;
 
