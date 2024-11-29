@@ -1533,7 +1533,13 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       jint c = right->as_constant_ptr()->as_jint();
       switch (code) {
         case lir_add: __ z_agfi(lreg, c);  break;
-        case lir_sub: __ z_agfi(lreg, -c); break; // note: -min_jint == min_jint
+        case lir_sub:
+                      if (Immediate::is_simm16(c)) {
+                        __ z_ahi(lreg, -c); // note: -min_jint == min_jint
+                      } else {
+                        __ z_slfi(lreg, c);
+                      }
+                      break;
         case lir_mul: __ z_msfi(lreg, c);  break;
         default: ShouldNotReachHere();
       }
