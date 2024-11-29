@@ -723,10 +723,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                 assert lw != null;
                                 Point toPt = lw.getTo();
                                 Point fromPt = lw.getFrom();
-                                if (!layoutMover.isFreeForm() && toPt != null && fromPt != null) {
-                                    int xTo = toPt.x + shiftX;
-                                    int yTo = toPt.y + shiftY;
-                                    lw.setTo(new Point(xTo, yTo));
+                                Point toPt = lw.getTo();
+                                if (toPt == null || fromPt == null) {
+                                    continue;
+                                }
+                                int xTo = toPt.x + shiftX;
+                                int yTo = toPt.y + shiftY;
+                                lw.setTo(new Point(xTo, yTo));
+                                if (!layoutMover.isFreeForm()) {
                                     lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
                                     LineWidget pred = lw.getPredecessor();
                                     pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
@@ -743,10 +747,14 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                                 assert lw != null;
                                 Point fromPt = lw.getFrom();
                                 Point toPt = lw.getTo();
-                                if (!layoutMover.isFreeForm() && toPt != null && fromPt != null) {
-                                    int xFrom = fromPt.x + shiftX;
-                                    int yFrom = fromPt.y + shiftY;
                                     lw.setFrom(new Point(xFrom, yFrom));
+                                if (toPt == null || fromPt == null) {
+                                    continue;
+                                }
+                                int xFrom = fromPt.x + shiftX;
+                                int yFrom = fromPt.y + shiftY;
+                                lw.setFrom(new Point(xFrom, yFrom));
+                                if (!layoutMover.isFreeForm()) {
                                     lw.setTo(new Point(toPt.x + shiftX, toPt.y));
                                     for (LineWidget succ : lw.getSuccessors()) {
                                         succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
