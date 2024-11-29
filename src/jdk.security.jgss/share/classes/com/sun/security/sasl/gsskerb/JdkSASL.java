@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package com.sun.security.sasl.gsskerb;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Provider;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidParameterException;
@@ -74,19 +72,13 @@ public final class JdkSASL extends Provider {
         }
     }
 
-    @SuppressWarnings("removal")
     public JdkSASL() {
         super("JdkSASL", PROVIDER_VER, info);
 
         final Provider p = this;
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                putService(new ProviderService(p, "SaslClientFactory",
-                           "GSSAPI", "com.sun.security.sasl.gsskerb.FactoryImpl"));
-                putService(new ProviderService(p, "SaslServerFactory",
-                           "GSSAPI", "com.sun.security.sasl.gsskerb.FactoryImpl"));
-                return null;
-            }
-        });
+        putService(new ProviderService(p, "SaslClientFactory",
+                   "GSSAPI", "com.sun.security.sasl.gsskerb.FactoryImpl"));
+        putService(new ProviderService(p, "SaslServerFactory",
+                   "GSSAPI", "com.sun.security.sasl.gsskerb.FactoryImpl"));
     }
 }

@@ -4912,6 +4912,10 @@ void MacroAssembler::population_count(Register dst, Register src,
     }
     bind(done);
   }
+#ifdef ASSERT
+  mov64(scratch1, 0xCafeBabeDeadBeef);
+  movq(scratch2, scratch1);
+#endif
 }
 
 // Ensure that the inline code and the stub are using the same registers.
@@ -5113,6 +5117,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   const Register r_array_base = *available_regs++;
 
   // Get the first array index that can contain super_klass into r_array_index.
+  // Note: Clobbers r_array_base and slot.
   population_count(r_array_index, r_array_index, /*temp2*/r_array_base, /*temp3*/slot);
 
   // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
@@ -5130,7 +5135,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   jccb(Assembler::equal, L_success);
 
   // Restore slot to its true value
-  xorl(slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1)); // slot ^ 63 === 63 - slot (mod 64)
+  movb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
 
   // Linear probe. Rotate the bitmap so that the next bit to test is
   // in Bit 1.

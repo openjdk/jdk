@@ -105,11 +105,13 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
 // Methods in Verifier
 
+// This method determines whether we run the verifier and class file format checking code.
 bool Verifier::should_verify_for(oop class_loader) {
   return class_loader == nullptr ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
+// This method determines whether we allow package access in access checks in reflection.
 bool Verifier::relax_access_for(oop loader) {
   bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
   bool need_verify =
@@ -118,6 +120,21 @@ bool Verifier::relax_access_for(oop loader) {
     // verifyRemote
     (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
   return !need_verify;
+}
+
+// Callers will pass should_verify_class as true, depending on the results of should_verify_for() above,
+// or pass true for redefinition of any class.
+static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
+  Symbol* name = klass->name();
+
+  return (should_verify_class &&
+    // Can not verify the bytecodes for shared classes because they have
+    // already been rewritten to contain constant pool cache indices,
+    // which the verifier can't understand.
+    // Shared classes shouldn't have stackmaps either.
+    // However, bytecodes for shared old classes can be verified because
+    // they have not been rewritten.
+    !(klass->is_shared() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
@@ -271,27 +288,6 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     assert(exception_message != nullptr, "");
     THROW_MSG_(exception_name, exception_message, false);
   }
-}
-
-bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
-  Symbol* name = klass->name();
-
-  return (should_verify_class &&
-    // return if the class is a bootstrapping class
-    // or defineClass specified not to verify by default (flags override passed arg)
-    // We need to skip the following four for bootstraping
-    name != vmSymbols::java_lang_Object() &&
-    name != vmSymbols::java_lang_Class() &&
-    name != vmSymbols::java_lang_String() &&
-    name != vmSymbols::java_lang_Throwable() &&
-
-    // Can not verify the bytecodes for shared classes because they have
-    // already been rewritten to contain constant pool cache indices,
-    // which the verifier can't understand.
-    // Shared classes shouldn't have stackmaps either.
-    // However, bytecodes for shared old classes can be verified because
-    // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()));
 }
 
 Symbol* Verifier::inference_verify(

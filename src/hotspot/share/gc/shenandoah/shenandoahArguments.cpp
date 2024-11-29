@@ -186,6 +186,8 @@ void ShenandoahArguments::initialize() {
   if (FLAG_IS_DEFAULT(TLABAllocationWeight)) {
     FLAG_SET_DEFAULT(TLABAllocationWeight, 90);
   }
+
+  FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
 size_t ShenandoahArguments::conservative_max_heap_alignment() {
@@ -209,11 +211,6 @@ void ShenandoahArguments::initialize_alignments() {
   }
   SpaceAlignment = align;
   HeapAlignment = align;
-}
-
-void ShenandoahArguments::initialize_heap_flags_and_sizes() {
-  GCArguments::initialize_heap_flags_and_sizes();
-  FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
 CollectedHeap* ShenandoahArguments::create_heap() {
