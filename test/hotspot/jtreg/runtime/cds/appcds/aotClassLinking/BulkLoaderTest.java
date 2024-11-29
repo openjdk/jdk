@@ -41,9 +41,10 @@
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build InitiatingLoaderTester
- * @build BulkLoaderTest
+ * @build jdk.test.whitebox.WhiteBox BulkLoaderTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
- * @run driver BulkLoaderTest DYNAMIC
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. BulkLoaderTest DYNAMIC
  */
 
 import java.io.File;
@@ -80,7 +81,6 @@ public class BulkLoaderTest {
         // Run without archived FMG -- fail to load
         {
             String extraVmArgs[] = {
-                "-Xshare:on",
                 "-Xlog:cds",
                 "-Djdk.module.showModuleResolution=true"
             };

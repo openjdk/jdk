@@ -31,7 +31,6 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
-import java.awt.KeyboardFocusManager;
 import java.awt.LayoutManager;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -123,8 +122,6 @@ public class BasicScrollBarUI
     protected ArrowButtonListener buttonListener;
     /** Model listener */
     protected ModelListener modelListener;
-    /** KeyboardFocusListener */
-    protected KeyboardFocusListener keyboardFocusListener;
 
     /** Thumb rectangle */
     protected Rectangle thumbRect;
@@ -359,15 +356,12 @@ public class BasicScrollBarUI
         buttonListener = createArrowButtonListener();
         modelListener = createModelListener();
         propertyChangeListener = createPropertyChangeListener();
-        keyboardFocusListener = createKeyboardFocusListener();
 
         scrollbar.addMouseListener(trackListener);
         scrollbar.addMouseMotionListener(trackListener);
         scrollbar.getModel().addChangeListener(modelListener);
         scrollbar.addPropertyChangeListener(propertyChangeListener);
         scrollbar.addFocusListener(getHandler());
-        KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                .addPropertyChangeListener(keyboardFocusListener);
 
         if (incrButton != null) {
             incrButton.addMouseListener(buttonListener);
@@ -449,8 +443,6 @@ public class BasicScrollBarUI
             incrButton.removeMouseListener(buttonListener);
         }
 
-        KeyboardFocusManager.getCurrentKeyboardFocusManager()
-                .removePropertyChangeListener(keyboardFocusListener);
         scrollbar.getModel().removeChangeListener(modelListener);
         scrollbar.removeMouseListener(trackListener);
         scrollbar.removeMouseMotionListener(trackListener);
@@ -515,14 +507,6 @@ public class BasicScrollBarUI
      */
     protected PropertyChangeListener createPropertyChangeListener() {
         return getHandler();
-    }
-
-    /**
-     * Creates a keyboard focus listener.
-     * @return a keyboard focus listener
-     */
-    protected KeyboardFocusListener createKeyboardFocusListener() {
-        return new KeyboardFocusListener();
     }
 
     private void updateThumbState(int x, int y) {
@@ -1216,35 +1200,6 @@ public class BasicScrollBarUI
      */
     public boolean getSupportsAbsolutePositioning() {
         return supportsAbsolutePositioning;
-    }
-
-    /**
-     * A listener to listen for keyboard focus changes.
-     */
-    protected class KeyboardFocusListener implements PropertyChangeListener {
-        /**
-         * Constructs a {@code KeyboardFocusListener}.
-         */
-        protected KeyboardFocusListener() {}
-
-        @Override
-        public void propertyChange(PropertyChangeEvent e) {
-            String propertyName = e.getPropertyName();
-
-            if ("focusOwner" == propertyName) {
-                // Stop scrolling if no longer focus owner
-                if (e.getNewValue() == null && scrollTimer.isRunning()) {
-                    scrollTimer.stop();
-                    buttonListener.handledEvent = false;
-                    scrollbar.setValueIsAdjusting(false);
-                    if (incrButton.getModel().isPressed()) {
-                        incrButton.getModel().setPressed(false);
-                    } else if (decrButton.getModel().isPressed()) {
-                        decrButton.getModel().setPressed(false);
-                    }
-                }
-            }
-        }
     }
 
     /**

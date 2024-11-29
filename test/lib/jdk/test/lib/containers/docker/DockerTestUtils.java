@@ -289,7 +289,7 @@ public class DockerTestUtils {
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
         System.out.println("[STDERR]\n" + output.getStderr());
         System.out.println("[STDOUT]\n" + stdoutLimited);
-        if (stdout != stdoutLimited) {
+        if (!stdout.equals(stdoutLimited)) {
             System.out.printf("Child process STDOUT is limited to %d lines\n",
                               max);
         }

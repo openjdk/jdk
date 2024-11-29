@@ -626,6 +626,17 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_leu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ge(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_geu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_lt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gt(Register cmp1, Register cmp2, Register dst, Register src);
+  void cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src);
+
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -1146,10 +1157,9 @@ public:
                     enum operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
-  void cmpxchg_narrow_value_helper(Register addr, Register expected,
-                                   Register new_val,
+  void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    enum operand_size size,
-                                   Register tmp1, Register tmp2, Register tmp3);
+                                   Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             enum operand_size size,
