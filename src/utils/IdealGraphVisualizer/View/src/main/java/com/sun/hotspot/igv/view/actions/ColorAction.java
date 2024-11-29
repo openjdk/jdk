@@ -128,10 +128,11 @@ public final class ColorAction extends ModelAwareAction {
 
         // Add "No Color" button
         JButton noColorButton = new JButton("No Color");
-        noColorButton.setOpaque(false);
-        noColorButton.setContentAreaFilled(false);
+        noColorButton.setOpaque(true);
+        noColorButton.setContentAreaFilled(true);
         noColorButton.setBorderPainted(true);
-        noColorButton.setPreferredSize(new Dimension(60, 16));
+        noColorButton.setPreferredSize(new Dimension(90, 24));
+        noColorButton.setFocusPainted(false);
         noColorButton.addActionListener(e -> {
             selectedColorLabel.setBackground(NO_COLOR);
             selectedColorLabel.setOpaque(false);
