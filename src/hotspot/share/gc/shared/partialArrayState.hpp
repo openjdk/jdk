@@ -159,7 +159,7 @@ public:
 //
 // - releasing: When an allocator is destroyed the manager transitions to this
 // phase.  It remains in this phase until all extent allocators associated with
-// this manager have been destroyed.  During this phase, new allocators man not
+// this manager have been destroyed.  During this phase, new allocators may not
 // be created, nor may extent allocators request memory from this manager.
 //
 // Once all the associated allocators have been destroyed the releasing phase
