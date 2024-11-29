@@ -49,7 +49,7 @@ public class FileURLConnection extends URLConnection {
     String contentType;
     InputStream is;
 
-    File file;
+    final File file;
     boolean isDirectory = false;
     boolean exists = false;
     List<String> files;
