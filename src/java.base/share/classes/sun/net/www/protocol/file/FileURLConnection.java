@@ -179,16 +179,14 @@ public class FileURLConnection extends URLConnection {
         if (is == null) {
             if (isDirectory) {
 
-                StringBuilder sb = new StringBuilder();
-
                 if (directoryListing == null) {
                     throw new FileNotFoundException(file.getPath());
                 }
 
                 directoryListing.sort(Collator.getInstance());
 
-                for (int i = 0; i < directoryListing.size() ; i++) {
-                    String fileName = directoryListing.get(i);
+                StringBuilder sb = new StringBuilder();
+                for (String fileName : directoryListing) {
                     sb.append(fileName);
                     sb.append("\n");
                 }
