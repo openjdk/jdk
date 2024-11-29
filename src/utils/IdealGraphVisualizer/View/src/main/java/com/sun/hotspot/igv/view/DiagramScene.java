@@ -830,7 +830,10 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateVisibleFigureWidgets();
         updateNodeHull();
         updateVisibleBlockWidgets();
+        validateAll();
 
+        Set<Figure> visibleFigures = getVisibleFigures();
+        Set<Connection> visibleConnections = getVisibleConnections();
         if (getModel().getShowStableSea()) {
             doStableSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowSea()) {
@@ -840,7 +843,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         } else if (getModel().getShowCFG()) {
             doCFGLayout(visibleFigures, visibleConnections);
         }
-      
+        rebuildConnectionLayer();
+
+        updateFigureWidgetLocations(oldVisibleFigureWidgets);
+        updateBlockWidgetBounds(oldVisibleBlockWidgets);
+        validateAll();
         setFigureSelection(model.getSelectedFigures());
         centerSelectedFigures();
         rebuilding = false;
