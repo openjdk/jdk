@@ -64,7 +64,7 @@ class ConnectFailTest {
     }
 
     /**
-     * Verifies socket is closed when {@code unboundSocket.connect()} fails.
+     * Verifies that an unbound socket is closed when {@code connect()} fails.
      */
     @ParameterizedTest
     @MethodSource("sockets")
@@ -78,7 +78,7 @@ class ConnectFailTest {
     }
 
     /**
-     * Verifies socket is closed when {@code boundSocket.connect()} fails.
+     * Verifies that a bound socket is closed when {@code connect()} fails.
      */
     @ParameterizedTest
     @MethodSource("sockets")
@@ -93,7 +93,7 @@ class ConnectFailTest {
     }
 
     /**
-     * Verifies socket is not closed when {@code `connectedSocket.connect()`} fails.
+     * Verifies that a connected socket is not closed when {@code connect()} fails.
      */
     @ParameterizedTest
     @MethodSource("sockets")
@@ -113,7 +113,7 @@ class ConnectFailTest {
     }
 
     /**
-     * Verifies socket is closed when {@code unboundSocket.connect(unresolvedAddress)} fails.
+     * Verifies that an unbound socket is closed when {@code connect()} is invoked using an unresolved address.
      */
     @ParameterizedTest
     @MethodSource("sockets")
@@ -127,7 +127,7 @@ class ConnectFailTest {
     }
 
     /**
-     * Verifies socket is closed when {@code boundSocket.connect(unresolvedAddress)} fails.
+     * Verifies that a bound socket is closed when {@code connect()} is invoked using an unresolved address.
      */
     @ParameterizedTest
     @MethodSource("sockets")
@@ -142,7 +142,7 @@ class ConnectFailTest {
     }
 
     /**
-     * Verifies socket is not closed when {@code connectedSocket.connect(unresolvedAddress)} fails.
+     * Verifies that a connected socket is not closed when {@code connect()} is invoked using an unresolved address.
      */
     @ParameterizedTest
     @MethodSource("sockets")
