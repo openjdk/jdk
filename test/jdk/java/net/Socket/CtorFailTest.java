@@ -36,7 +36,9 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketImpl;
 import java.net.SocketImplFactory;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -149,6 +151,19 @@ class CtorFailTest {
                             "unknown exception type: " + exception.getClass().getCanonicalName());
                 }
             }
+        }
+
+        @Override
+        public String toString() {
+            Map<String, Object> valueByKey = new LinkedHashMap<>();
+            if (bindException != null) {
+                valueByKey.put("bindException", bindException.getClass().getSimpleName());
+            }
+            if (connectException != null) {
+                valueByKey.put("connectException", connectException.getClass().getSimpleName());
+            }
+            valueByKey.put("closeInvocationCounter", closeInvocationCounter.get());
+            return MockSocketImpl.class.getSimpleName() + valueByKey;
         }
 
         // Rest of the `SocketImpl` methods should not be used, hence overriding them to throw `UOE`
