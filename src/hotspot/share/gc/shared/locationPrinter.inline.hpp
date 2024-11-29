@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ bool BlockLocationPrinter<CollectedHeapT>::print_location(outputStream* st, void
   // Check if addr points into Java heap.
   bool in_heap = CollectedHeapT::heap()->is_in(addr);
   if (in_heap) {
-    // base_oop_or_null() might be unimplemented and return NULL for some GCs/generations
+    // base_oop_or_null() might be unimplemented and return null for some GCs/generations
     oop o = base_oop_or_null(addr);
     if (o != nullptr) {
       if ((void*)o == addr) {

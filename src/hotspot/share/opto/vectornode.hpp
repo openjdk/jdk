@@ -441,8 +441,12 @@ class MulVINode : public VectorNode {
 // Vector multiply long
 class MulVLNode : public VectorNode {
 public:
-  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+    init_class_id(Class_MulVL);
+  }
   virtual int Opcode() const;
+  bool has_int_inputs() const;
+  bool has_uint_inputs() const;
 };
 
 //------------------------------MulVFNode--------------------------------------

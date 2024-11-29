@@ -170,9 +170,7 @@ void AOTConstantPoolResolver::dumptime_resolve_constants(InstanceKlass* ik, TRAP
 Klass* AOTConstantPoolResolver::find_loaded_class(Thread* current, oop class_loader, Symbol* name) {
   HandleMark hm(current);
   Handle h_loader(current, class_loader);
-  Klass* k = SystemDictionary::find_instance_or_array_klass(current, name,
-                                                            h_loader,
-                                                            Handle());
+  Klass* k = SystemDictionary::find_instance_or_array_klass(current, name, h_loader);
   if (k != nullptr) {
     return k;
   }

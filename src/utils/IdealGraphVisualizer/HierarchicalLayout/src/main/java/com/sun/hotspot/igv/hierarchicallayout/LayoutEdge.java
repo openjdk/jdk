@@ -27,9 +27,12 @@ package com.sun.hotspot.igv.hierarchicallayout;
 import com.sun.hotspot.igv.layout.Link;
 
 /**
- * Represents an edge in the layout graph between two nodes (LayoutNode).
- * Contains information about the source and target nodes, relative positions,
- * and whether the edge has been reversed (used for back edges in hierarchical layouts).
+ * The LayoutEdge class represents a connection between two nodes (LayoutNode) in a hierarchical graph layout.
+ * It stores information about the starting node (from), the ending node (to), and the positions where
+ * the edge connects to these nodes. It also keeps track of whether the edge has been reversed,
+ * which is useful for handling edges that go against the main flow in hierarchical layouts (like loops or back edges).
+ * This class ensures that edges are drawn correctly between nodes,
+ * helping to create clear and understandable visualizations of the graph.
  */
 public class LayoutEdge {
 

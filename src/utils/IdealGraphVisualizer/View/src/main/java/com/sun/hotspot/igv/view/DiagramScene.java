@@ -93,7 +93,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private HierarchicalLayoutManager seaLayoutManager;
     private LayoutMover layoutMover;
 
-
     /**
      * The alpha level of partially visible figures.
      */
@@ -831,10 +830,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         updateVisibleFigureWidgets();
         updateNodeHull();
         updateVisibleBlockWidgets();
-        validateAll();
 
-        Set<Figure> visibleFigures = getVisibleFigures();
-        Set<Connection> visibleConnections = getVisibleConnections();
         if (getModel().getShowStableSea()) {
             doStableSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowSea()) {
@@ -844,11 +840,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         } else if (getModel().getShowCFG()) {
             doCFGLayout(visibleFigures, visibleConnections);
         }
-        rebuildConnectionLayer();
-
-        updateFigureWidgetLocations(oldVisibleFigureWidgets);
-        updateBlockWidgetBounds(oldVisibleBlockWidgets);
-        validateAll();
+      
         setFigureSelection(model.getSelectedFigures());
         centerSelectedFigures();
         rebuilding = false;
@@ -949,7 +941,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
-
 
     private MoveProvider getFigureConnectionMoveProvider() {
         return new MoveProvider() {

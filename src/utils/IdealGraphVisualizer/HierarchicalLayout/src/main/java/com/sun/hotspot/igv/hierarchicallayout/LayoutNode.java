@@ -31,9 +31,13 @@ import java.awt.Point;
 import java.util.*;
 
 /**
- * Represents a node in a hierarchical graph layout.
- * A LayoutNode can be either an actual vertex from the graph or a dummy node inserted during the layout process.
- * It stores layout-related properties such as position, size, margins, and connections to predecessor and successor nodes.
+ * The LayoutNode class represents a node in a hierarchical graph layout.
+ * It can be either an actual node from the original graph or a temporary "dummy" node added during the layout process
+ * to handle complex edge connections.
+ * This class stores important layout information like the node's position (x and y coordinates),
+ * size (width and height), layer level, and connections to other nodes through incoming and outgoing edges.
+ * It provides methods to calculate optimal positions, manage margins, and handle reversed edges,
+ * all aimed at arranging the nodes neatly in layers to create a clear and visually organized graph display.
  */
 public class LayoutNode {
 
@@ -285,6 +289,55 @@ public class LayoutNode {
      */
     public int getRight() {
         return x + leftMargin + width;
+    }
+
+    /**
+     * Gets the outer right boundary (including right margin) of the node.
+     *
+     * @return The x-coordinate of the outer right boundary.
+     */
+    public int getOuterRight() {
+        return x + leftMargin + width + rightMargin;
+    }
+
+    /**
+     * Calculates the total degree of the node (sum of in-degree and out-degree).
+     *
+     * @return The total degree of the node.
+     */
+    public int getDegree() {
+        return preds.size() + succs.size();
+    }
+
+    /**
+     * Gets the left boundary (excluding left margin) of the node.
+     *
+     * @return The x-coordinate of the left boundary.
+     */
+    public int getLeft() {
+        return x + leftMargin;
+    }
+
+    /**
+     * Gets the total width of the node, including left and right margins.
+     *
+     * @return The total outer width.
+     */
+    public int getOuterWidth() {
+        return leftMargin + width + rightMargin;
+    }
+
+    /**
+     * Gets the total height of the node, including top and bottom margins.
+     *
+     * @return The total outer height.
+     */
+    public int getOuterHeight() {
+        return topMargin + height + bottomMargin;
+    }
+
+    public int getHeight() {
+        return height;
     }
 
     /**
@@ -578,7 +631,8 @@ public class LayoutNode {
 
     public void computeReversedLinkPoints(boolean reverseLeft) {
         this.reverseLeft = reverseLeft;
-        initSize();
+
+      initSize();
         reversedLinkStartPoints.clear();
         reversedLinkEndPoints.clear();
 
@@ -598,6 +652,7 @@ public class LayoutNode {
         if (orig_score > reverse_score) {
             computeReversedLinkPoints(isReverseRight());
         }
+        computeReversedEndPoints(hasReversedDown != reverseLeft);
     }
 
     public ArrayList<Point> getSelfEdgePoints() {

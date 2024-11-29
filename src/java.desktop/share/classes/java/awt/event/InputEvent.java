@@ -33,7 +33,6 @@ import java.io.Serial;
 import java.util.Arrays;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -313,6 +312,7 @@ public abstract sealed class InputEvent extends ComponentEvent
     /*
      * A flag that indicates that this instance can be used to access
      * the system clipboard.
+     * This should be false in a headless environment, true in a headful one.
      */
     private transient boolean canAccessSystemClipboard;
 
@@ -385,26 +385,7 @@ public abstract sealed class InputEvent extends ComponentEvent
     }
 
     private boolean canAccessSystemClipboard() {
-        boolean b = false;
-
-        if (!GraphicsEnvironment.isHeadless()) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-                    b = true;
-                } catch (SecurityException se) {
-                    if (logger.isLoggable(PlatformLogger.Level.FINE)) {
-                        logger.fine("InputEvent.canAccessSystemClipboard() got SecurityException ", se);
-                    }
-                }
-            } else {
-                b = true;
-            }
-        }
-
-        return b;
+        return !GraphicsEnvironment.isHeadless();
     }
 
     /**
