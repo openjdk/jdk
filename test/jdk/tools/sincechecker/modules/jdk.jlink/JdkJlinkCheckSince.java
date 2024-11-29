@@ -27,3 +27,4 @@
  * @summary Test for `@since` in jdk.jlink module
  * @library /test/lib /test/jdk/tools/sincechecker
  * @run main SinceChecker jdk.jlink
+ */
