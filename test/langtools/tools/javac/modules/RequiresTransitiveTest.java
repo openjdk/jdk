@@ -343,7 +343,7 @@ public class RequiresTransitiveTest extends ModuleTestBase {
                 .sourcepath(src)
                 .files(findJavaFiles(src))
                 .outdir(classes)
-                .run()
+                .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
