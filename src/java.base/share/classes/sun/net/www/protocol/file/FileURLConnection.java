@@ -46,7 +46,6 @@ public class FileURLConnection extends URLConnection {
     private static final String TEXT_PLAIN = "text/plain";
     private static final String LAST_MODIFIED = "last-modified";
 
-    String contentType;
     InputStream is;
 
     final File file;
@@ -107,7 +106,7 @@ public class FileURLConnection extends URLConnection {
 
             if (!isDirectory) {
                 FileNameMap map = java.net.URLConnection.getFileNameMap();
-                contentType = map.getContentTypeFor(file.getPath());
+                String contentType = map.getContentTypeFor(file.getPath());
                 if (contentType != null) {
                     properties.add(CONTENT_TYPE, contentType);
                 }
