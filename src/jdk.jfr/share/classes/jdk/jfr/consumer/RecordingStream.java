@@ -455,6 +455,9 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         directoryStream.awaitTermination();
     }
 
+    /**
+     * @since 16
+     */
     @Override
     public void onMetadata(Consumer<MetadataEvent> action) {
         directoryStream.onMetadata(action);
