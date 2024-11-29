@@ -96,10 +96,6 @@ public final class SecurityConstants {
     public static final RuntimePermission GET_PD_PERMISSION =
         new RuntimePermission("getProtectionDomain");
 
-    // java.lang.Class, java.lang.ClassLoader, java.lang.Thread
-    public static final RuntimePermission GET_CLASSLOADER_PERMISSION =
-        new RuntimePermission("getClassLoader");
-
     // java.lang.Thread
     public static final RuntimePermission GET_STACK_TRACE_PERMISSION =
        new RuntimePermission("getStackTrace");

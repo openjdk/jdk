@@ -212,9 +212,9 @@ public class TestInterface extends JavadocTester {
                 ator.OfInt</a>&lt;<a href="Spliterator.OfInt.html#type-param-Integer" title="type parameter in Spli\
                 terator.OfInt">Integer</a>&gt;, <a href="Spliterator.OfPrimitive.html" title="in\
                 terface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.OfPrimitive\
-                .html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><a href="Spl\
+                .html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>, <a href="Spl\
                 iterator.OfPrimitive.html#type-param-T_CONS" title="type parameter in Spliterator.OfPrimitive">T_C\
-                ONS</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Spl\
+                ONS</a>, <a href="Spliterator.OfPrimitive.html#type-param-T_SPLITR" title="type parameter in Spl\
                 iterator.OfPrimitive">T_SPLITR</a> extends <a href="Spliterator.OfPrimitive.html\
                 " title="interface in pkg2">Spliterator.OfPrimitive</a>&lt;<a href="Spliterator.\
                 OfPrimitive.html#type-param-T" title="type parameter in Spliterator.OfPrimitive">T</a>,<wbr><\
@@ -243,8 +243,8 @@ public class TestInterface extends JavadocTester {
                 <div class="col-second even-row-color"><code><a href="Spliterator.OfPrimitive.ht\
                 ml" class="type-name-link" title="interface in pkg2">Spliterator.OfPrimitive</a>\
                 &lt;<a href="Spliterator.OfPrimitive.html#type-param-T" title="type parameter in Spliterator.\
-                OfPrimitive">T</a>,<wbr><a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title="type param\
-                eter in Spliterator.OfPrimitive">T_CONS</a>,<wbr><a href="Spliterator.OfPrimitiv\
+                OfPrimitive">T</a>, <a href="Spliterator.OfPrimitive.html#type-param-T_CONS" title="type param\
+                eter in Spliterator.OfPrimitive">T_CONS</a>, <a href="Spliterator.OfPrimitiv\
                 e.html#type-param-T_SPLITR" title="type parameter in Spliterator.OfPrimitive">T_SPLITR</a> extends <\
                 a href="Spliterator.OfPrimitive.html" title="interface in pkg2">Spliterator.OfPr\
                 imitive</a>&lt;<a href="Spliterator.OfPrimitive.html#type-param-T" title="type parameter in S\
