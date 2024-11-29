@@ -174,14 +174,10 @@ public class FileURLConnection extends URLConnection {
     public synchronized InputStream getInputStream()
         throws IOException {
 
-        int iconHeight;
-        int iconWidth;
-
         connect();
 
         if (is == null) {
             if (isDirectory) {
-                FileNameMap map = java.net.URLConnection.getFileNameMap();
 
                 StringBuilder sb = new StringBuilder();
 
