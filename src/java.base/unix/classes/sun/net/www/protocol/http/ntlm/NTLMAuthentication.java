@@ -41,7 +41,6 @@ import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
 import sun.net.www.protocol.http.AuthScheme;
 import sun.net.www.protocol.http.HttpURLConnection;
-import sun.security.action.GetPropertyAction;
 
 /**
  * NTLMAuthentication:
@@ -81,9 +80,8 @@ public final class NTLMAuthentication extends AuthenticationInfo {
     private static final boolean ntlmCache;
 
     static {
-        Properties props = GetPropertyAction.privilegedGetProperties();
-        defaultDomain = props.getProperty("http.auth.ntlm.domain", "");
-        String ntlmCacheProp = props.getProperty("jdk.ntlm.cache", "true");
+        defaultDomain = System.getProperty("http.auth.ntlm.domain", "");
+        String ntlmCacheProp = System.getProperty("jdk.ntlm.cache", "true");
         ntlmCache = Boolean.parseBoolean(ntlmCacheProp);
     }
 
@@ -140,7 +138,7 @@ public final class NTLMAuthentication extends AuthenticationInfo {
             hostname = "localhost";
         }
         try {
-            String version = GetPropertyAction.privilegedGetProperty("ntlm.version");
+            String version = System.getProperty("ntlm.version");
             client = new Client(version, hostname, username, ntdomain, password);
         } catch (NTLMException ne) {
             try {
