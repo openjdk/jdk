@@ -171,6 +171,7 @@ public final class ParseUtil {
      * Returns a new String constructed from the specified String by replacing
      * the URL escape sequences and UTF8 encoding with the characters they
      * represent.
+     * @throws IllegalArgumentException if {@code s} could not be decoded
      */
     public static String decode(String s) {
         int n = s.length();

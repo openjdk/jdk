@@ -32,6 +32,12 @@ import java.util.stream.Collectors;
 
 
 /**
+ * The LayoutGraph class is responsible for organizing and arranging a graph's nodes and edges for visual display.
+ * It takes a collection of nodes (Vertex) and connections between them (Link) and structures them into layers,
+ * creating a hierarchical layout. The class handles complexities like edges that span multiple layers
+ * by inserting temporary "dummy" nodes to maintain a clear hierarchy.
+ * This organization helps ensure that when the graph is displayed, it is easy to understand and visually coherent,
+ * making the relationships between nodes clear and straightforward.
  *
  * @author Thomas Wuerthinger
  */
@@ -54,6 +60,7 @@ public class LayoutGraph {
     private final LinkedHashMap<Vertex, LayoutNode> layoutNodes;
     private final List<LayoutNode> dummyNodes;
     private final List<LayoutLayer> layers;
+    private boolean showSelfEdges = false;
 
     /**
      * Constructs a new LayoutGraph using the provided collection of links and additional vertices.
@@ -97,6 +104,14 @@ public class LayoutGraph {
         layoutNodes.clear();
         dummyNodes.clear();
         layers.clear();
+    }
+
+    public boolean showSelfEdges() {
+        return showSelfEdges;
+    }
+
+    public void setShowSelfEdges(boolean showSelfEdges) {
+        this.showSelfEdges = showSelfEdges;
     }
 
     /**

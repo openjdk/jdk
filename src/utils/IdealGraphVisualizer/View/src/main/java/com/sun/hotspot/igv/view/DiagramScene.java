@@ -232,7 +232,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
 
     public void colorSelectedFigures(Color color) {
         for (Figure figure : model.getSelectedFigures()) {
-            figure.setColor(color);
+            figure.setCustomColor(color);
             FigureWidget figureWidget = getWidget(figure);
             if (figureWidget != null) {
                 figureWidget.refreshColor();
@@ -647,6 +647,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                 startLayerY = widget.getLocation().y;
                 hasMoved = false; // Reset the movement flag
                 if (layoutMover.isFreeForm()) return;
+
                 Set<Figure> selectedFigures = model.getSelectedFigures();
                 if (selectedFigures.size() == 1) {
                     Figure selectedFigure = selectedFigures.iterator().next();
@@ -722,11 +723,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                             for (LineWidget lw : inputSlotToLineWidget.get(inputSlot)) {
                                 assert lw != null;
                                 Point toPt = lw.getTo();
-                                int xTo = toPt.x + shiftX;
-                                int yTo = toPt.y + shiftY;
-                                lw.setTo(new Point(xTo, yTo));
-                                if (!layoutMover.isFreeForm()) {
-                                    Point fromPt = lw.getFrom();
+                                Point fromPt = lw.getFrom();
+                                if (!layoutMover.isFreeForm() && toPt != null && fromPt != null) {
+                                    int xTo = toPt.x + shiftX;
+                                    int yTo = toPt.y + shiftY;
+                                    lw.setTo(new Point(xTo, yTo));
                                     lw.setFrom(new Point(fromPt.x + shiftX, fromPt.y));
                                     LineWidget pred = lw.getPredecessor();
                                     pred.setTo(new Point(pred.getTo().x + shiftX, pred.getTo().y));
@@ -742,11 +743,11 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                             for (LineWidget lw : outputSlotToLineWidget.get(outputSlot)) {
                                 assert lw != null;
                                 Point fromPt = lw.getFrom();
-                                int xFrom = fromPt.x + shiftX;
-                                int yFrom = fromPt.y + shiftY;
-                                lw.setFrom(new Point(xFrom, yFrom));
-                                if (!layoutMover.isFreeForm()) {
-                                    Point toPt = lw.getTo();
+                                Point toPt = lw.getTo();
+                                if (!layoutMover.isFreeForm() && toPt != null && fromPt != null) {
+                                    int xFrom = fromPt.x + shiftX;
+                                    int yFrom = fromPt.y + shiftY;
+                                    lw.setFrom(new Point(xFrom, yFrom));
                                     lw.setTo(new Point(toPt.x + shiftX, toPt.y));
                                     for (LineWidget succ : lw.getSuccessors()) {
                                         succ.setFrom(new Point(succ.getFrom().x + shiftX, succ.getFrom().y));
@@ -846,8 +847,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         Set<Connection> visibleConnections = getVisibleConnections();
         if (getModel().getShowFreeInteractive()) {
             doFreeInteractiveLayout(visibleFigures, visibleConnections);
-        }
-        else if (getModel().getShowStableSea()) {
+        } else if (getModel().getShowStableSea()) {
             doStableSeaLayout(visibleFigures, visibleConnections);
         } else if (getModel().getShowSea()) {
             doSeaLayout(visibleFigures, visibleConnections);
@@ -967,7 +967,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     }
 
     private final Point specialNullPoint = new Point(Integer.MAX_VALUE, Integer.MAX_VALUE);
-
 
     private MoveProvider getFigureConnectionMoveProvider() {
         return new MoveProvider() {
@@ -1173,7 +1172,6 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
     }
-
 
     private void processBlockConnection(BlockConnection blockConnection) {
         boolean isDashed = blockConnection.getStyle() == Connection.ConnectionStyle.DASHED;

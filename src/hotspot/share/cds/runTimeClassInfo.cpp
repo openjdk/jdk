@@ -79,7 +79,7 @@ InstanceKlass* RunTimeClassInfo::klass() const {
   if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space((address)this)) {
     return ArchiveBuilder::current()->offset_to_buffered<InstanceKlass*>(_klass_offset);
   } else {
-    return ArchiveUtils::from_offset<InstanceKlass*>(_klass_offset);
+    return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
   }
 }
 

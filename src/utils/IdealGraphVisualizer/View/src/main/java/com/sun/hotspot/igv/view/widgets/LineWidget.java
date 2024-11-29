@@ -98,6 +98,31 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
         getActions().addAction(ActionFactory.createPopupMenuAction(this));
         setBackground(color);
+
+        getActions().addAction(new CustomSelectAction(new SelectProvider() {
+
+            @Override
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
+                Set<Vertex> vertexSet = new HashSet<>();
+                for (Connection connection : connections) {
+                    if (connection.hasSlots()) {
+                        vertexSet.add(connection.getTo().getVertex());
+                        vertexSet.add(connection.getFrom().getVertex());
+                    }
+                }
+                scene.userSelectionSuggested(vertexSet, invertSelection);
+            }
+        }));
     }
 
     public Point getClientAreaLocation() {
@@ -109,26 +134,6 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         int minY = from.y;
         int maxX = to.x;
         int maxY = to.y;
-
-        if (fromControlYOffset != 0 && toControlYOffset != 0) {
-            // Adjust the bounding box to accommodate control points for curves
-            if (from.y < to.y) { // non-reversed edges
-                minY = Math.min(minY, from.y + fromControlYOffset);
-                maxY = Math.max(maxY, to.y + toControlYOffset);
-            } else { // reversed edges
-                if (from.x - to.x > 0) {
-                    minX = Math.min(minX, from.x);
-                    maxX = Math.max(maxX, to.x);
-                    minY = Math.min(minY, from.y + fromControlYOffset);
-                    maxY = Math.max(maxY, to.y + toControlYOffset);
-                } else {
-                    minX = Math.min(minX, from.x);
-                    maxX = Math.max(maxX, to.x);
-                    minY = Math.min(minY, from.y + fromControlYOffset);
-                    maxY = Math.max(maxY, to.y + toControlYOffset);
-                }
-            }
-        }
 
         // Ensure min and max values are correct
         if (minX > maxX) {

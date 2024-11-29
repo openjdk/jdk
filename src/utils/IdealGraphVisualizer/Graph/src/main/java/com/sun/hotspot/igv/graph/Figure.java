@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.graph;
 
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.layout.Cluster;
@@ -153,7 +154,12 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public Color getColor() {
-        return color;
+        Color customColor = inputNode.getCustomColor();
+        if (customColor != null) {
+            return customColor;
+        } else {
+            return color;
+        }
     }
 
     public void setWarning(String warning) {
@@ -414,5 +420,17 @@ public class Figure extends Properties.Entity implements Vertex {
     @Override
     public int compareTo(Vertex f) {
         return toString().compareTo(f.toString());
+    }
+
+    public void setCustomColor(Color color) {
+        // Apply custom color not just to this input node but to all
+        // corresponding input nodes in the group.
+        InputGraph graph = diagram.getInputGraph();
+        for (InputGraph g : graph.getGroup().getGraphs()) {
+            InputNode n = g.getNode(inputNode.getId());
+            if (n != null) {
+                n.setCustomColor(color);
+            }
+        }
     }
 }

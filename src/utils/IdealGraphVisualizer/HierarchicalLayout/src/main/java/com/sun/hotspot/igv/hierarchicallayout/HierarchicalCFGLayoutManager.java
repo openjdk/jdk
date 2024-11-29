@@ -46,6 +46,7 @@ public class HierarchicalCFGLayoutManager extends LayoutManager {
         Font font = new Font("Arial", Font.BOLD, 14);
         fontMetrics = canvas.getFontMetrics(font);
         manager = new HierarchicalLayoutManager();
+        manager.setLayoutSelfEdges(true);
     }
 
     @Override

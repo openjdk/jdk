@@ -25,8 +25,6 @@
 
 package sun.java2d.marlin;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -357,11 +355,8 @@ public final class RendererStats implements MarlinConst {
         private final ConcurrentLinkedQueue<RendererStats> allStats
             = new ConcurrentLinkedQueue<>();
 
-        @SuppressWarnings("removal")
         private RendererStatsHolder() {
-            AccessController.doPrivileged(
-                (PrivilegedAction<Void>) () -> {
-                    final Thread hook = new Thread(
+            final Thread hook = new Thread(
                         MarlinUtils.getRootThreadGroup(),
                         new Runnable() {
                             @Override
@@ -371,21 +366,18 @@ public final class RendererStats implements MarlinConst {
                         },
                         "MarlinStatsHook"
                     );
-                    hook.setContextClassLoader(null);
-                    Runtime.getRuntime().addShutdownHook(hook);
+            hook.setContextClassLoader(null);
+            Runtime.getRuntime().addShutdownHook(hook);
 
-                    if (USE_DUMP_THREAD) {
-                        final Timer statTimer = new Timer("RendererStats");
-                        statTimer.scheduleAtFixedRate(new TimerTask() {
-                            @Override
-                            public void run() {
-                                dump();
-                            }
-                        }, DUMP_INTERVAL, DUMP_INTERVAL);
+            if (USE_DUMP_THREAD) {
+                final Timer statTimer = new Timer("RendererStats");
+                statTimer.scheduleAtFixedRate(new TimerTask() {
+                    @Override
+                    public void run() {
+                        dump();
                     }
-                    return null;
-                }
-            );
+                }, DUMP_INTERVAL, DUMP_INTERVAL);
+            }
         }
 
         void add(final Object parent, final RendererStats stats) {
