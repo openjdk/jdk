@@ -2496,7 +2496,6 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   size_t underscore_len = 0; // optional underscore if lib_name is set
   const char *start;
 
-
   if (lib_name != nullptr) {
     if (is_absolute_path) {
       // Need to strip path, prefix and suffix
