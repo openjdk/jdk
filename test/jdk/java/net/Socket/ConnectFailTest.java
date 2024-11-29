@@ -23,23 +23,18 @@
 
 import jdk.test.lib.Utils;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.ThrowingConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -103,10 +98,9 @@ class ConnectFailTest {
     @ParameterizedTest
     @MethodSource("sockets")
     void testConnectedSocket(Socket socket) throws Throwable {
-        try (socket) {
-            withEphemeralServerSocket(serverSocket -> {
-                SocketAddress serverSocketAddress = serverSocket.getLocalSocketAddress();
-                socket.connect(serverSocketAddress);
+        try (socket; ServerSocket serverSocket = createEphemeralServerSocket()) {
+            socket.connect(serverSocket.getLocalSocketAddress());
+            try (Socket _ = serverSocket.accept()) {
                 assertTrue(socket.isBound());
                 assertTrue(socket.isConnected());
                 SocketException exception = assertThrows(
@@ -114,7 +108,7 @@ class ConnectFailTest {
                         () -> socket.connect(REFUSING_SOCKET_ADDRESS));
                 assertEquals("already connected", exception.getMessage());
                 assertFalse(socket.isClosed());
-            });
+            }
         }
     }
 
@@ -153,15 +147,14 @@ class ConnectFailTest {
     @ParameterizedTest
     @MethodSource("sockets")
     void testConnectedSocketWithUnresolvedAddress(Socket socket) throws Throwable {
-        try (socket) {
-            withEphemeralServerSocket(serverSocket -> {
-                SocketAddress serverSocketAddress = serverSocket.getLocalSocketAddress();
-                socket.connect(serverSocketAddress);
+        try (socket; ServerSocket serverSocket = createEphemeralServerSocket()) {
+            socket.connect(serverSocket.getLocalSocketAddress());
+            try (Socket _ = serverSocket.accept()) {
                 assertTrue(socket.isBound());
                 assertTrue(socket.isConnected());
                 assertThrows(IOException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
                 assertFalse(socket.isClosed());
-            });
+            }
         }
     }
 
@@ -172,47 +165,8 @@ class ConnectFailTest {
         return List.of(socket, channelSocket);
     }
 
-    private static void withEphemeralServerSocket(ThrowingConsumer<ServerSocket> serverSocketConsumer)
-            throws Throwable {
-        @SuppressWarnings("resource")   // We'll use `shutdownNow()`
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
-        try (ServerSocket serverSocket = new ServerSocket(0, 0, InetAddress.getLoopbackAddress())) {
-            // Accept connections in the background to avoid blocking the caller
-            executorService.submit(() -> continuouslyAcceptConnections(serverSocket));
-            serverSocketConsumer.accept(serverSocket);
-        } finally {
-            executorService.shutdownNow();
-        }
-    }
-
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    private static void continuouslyAcceptConnections(ServerSocket serverSocket) {
-        System.err.println("[Test socket server] Starting accepting connections");
-        while (true) {
-            try {
-
-                // Accept the connection
-                Socket clientSocket = serverSocket.accept();
-                System.err.format(
-                        "[Test socket server] Accepted port %d to port %d%n",
-                        ((InetSocketAddress) clientSocket.getRemoteSocketAddress()).getPort(),
-                        clientSocket.getLocalPort());
-
-                // Instead of directly closing the socket, we try to read some to block. Directly closing
-                // the socket will invalidate the client socket tests checking the established connection
-                // status.
-                try (clientSocket; InputStream inputStream = clientSocket.getInputStream()) {
-                    inputStream.read();
-                } catch (IOException _) {
-                    // Do nothing
-                }
-
-            } catch (IOException _) {
-                break;
-            }
-
-        }
-        System.err.println("[Test socket server] Stopping accepting connections");
+    private static ServerSocket createEphemeralServerSocket() throws IOException {
+        return new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
     }
 
 }
