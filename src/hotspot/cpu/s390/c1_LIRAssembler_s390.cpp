@@ -1532,12 +1532,18 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       // cpu register - constant
       jint c = right->as_constant_ptr()->as_jint();
       switch (code) {
-        case lir_add: __ z_agfi(lreg, c);  break;
-        case lir_sub:
+        case lir_add:
                       if (Immediate::is_simm16(c)) {
-                        __ z_ahi(lreg, -c); // note: -min_jint == min_jint
+                        __ z_ahi(lreg, c);
                       } else {
-                        __ z_slfi(lreg, c);
+                        __ z_afi(lreg, c);
+                      }
+                      break;
+        case lir_sub:
+                      if (c != min_jint) {
+                        __ z_afi(lreg, -c);
+                      } else {
+                        __ z_afi(lreg, c); // note: -min_jint == min_jint
                       }
                       break;
         case lir_mul: __ z_msfi(lreg, c);  break;
