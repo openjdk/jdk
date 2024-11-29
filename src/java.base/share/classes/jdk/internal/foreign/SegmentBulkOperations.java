@@ -449,7 +449,6 @@ public final class SegmentBulkOperations {
             long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
             if (mightContainZeroShort(val)) {
                 for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
-                    //System.out.println("j = " + j + " : " + HF.toHexDigits(SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j)));
                     if (SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
                         return requireWithinArraySize(offset + j - fromOffset, segment, fromOffset, toOffset);
                     }
@@ -461,7 +460,6 @@ public final class SegmentBulkOperations {
         final long endScan = toOffset & ~1; // The last bit is zero
         for (; offset < endScan; offset += Short.BYTES) {
             short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
-            //System.out.println("byte offset = " + offset + " : " + HF.toHexDigits(val));
             if (val == 0) {
                 return requireWithinArraySize(offset - fromOffset, segment, fromOffset, toOffset);
             }
@@ -469,8 +467,44 @@ public final class SegmentBulkOperations {
         throw nullNotFound(segment, fromOffset, toOffset);
     }
 
-    // The gain of using `long` wide operations for `int` is lower than for the two other `byte` and `short` variants
-    // so, there is only a simpler method for `int`s
+    @ForceInline
+    public static int strlenInt(final AbstractMemorySegmentImpl segment,
+                                final long fromOffset,
+                                final long toOffset) {
+        final long length = toOffset - fromOffset;
+        segment.checkBounds(fromOffset, length);
+        if (length == 0) {
+            segment.scope.checkValidState();
+            throw stringTooLarge(segment, fromOffset, toOffset);
+        }
+        final long longBytes = length & LONG_MASK;
+        final long longLimit = fromOffset + longBytes;
+        long offset = fromOffset;
+        for (; offset < longLimit; offset += Long.BYTES) {
+            long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
+            if (mightContainZeroShort(val)) {
+                for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
+                    if (SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
+                        return requireWithinArraySize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                    }
+                }
+            }
+        }
+        // Handle the tail
+        // Prevent over scanning as we step by 4
+        final long endScan = toOffset & ~3; // The last two bit are zero
+        for (; offset < endScan; offset += Integer.BYTES) {
+            int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
+            if (val == 0) {
+                return requireWithinArraySize(offset - fromOffset, segment, fromOffset, toOffset);
+            }
+        }
+        throw nullNotFound(segment, fromOffset, toOffset);
+    }
+
+
+/*    // The gain of using `long` wide operations for `int` is lower than for the two other
+    // `byte` and `short` variants so, there is only a simpler method for `int`s
     @ForceInline
     public static int strlenInt(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
         long length = Math.min(toOffset - fromOffset, ArraysSupport.SOFT_MAX_ARRAY_LENGTH) & ~3;
@@ -482,7 +516,7 @@ public final class SegmentBulkOperations {
             }
         }
         throw nullNotFound(segment, fromOffset, toOffset);
-    }
+    }*/
 
     /*
     Bits 63 and N * 8 (N = 1..7) of this number are zero.  Call these bits

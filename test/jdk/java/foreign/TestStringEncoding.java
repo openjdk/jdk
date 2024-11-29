@@ -201,19 +201,7 @@ public class TestStringEncoding {
                     MemorySegment inSegment = arena.allocateFrom(testString, charset);
                     for (int i = 0; i < 3; i++) {
                         String expected = testString.substring(i);
-
                         String actual = inSegment.getString(i, charset);
-                        if (!actual.equals(expected)) {
-                            System.out.println("i = " + i + " failed");
-                            System.out.println("testString = " + testString);
-                            System.out.println("actual = '" + actual + "'");
-                            //System.out.println("actual = " + HF.formatHex(actual.getBytes(StandardCharsets.UTF_8)));
-                            System.out.println("substr = '" + testString.substring(1) + "'");
-                            //System.out.println("substr = " + HF.formatHex(expected.getBytes(StandardCharsets.UTF_8)));
-                            System.out.flush();
-                        } else {
-                            System.out.println("i = " + i + " ok");
-                        }
                         assertEquals(actual, expected);
                     }
                 }
