@@ -485,10 +485,10 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   }
 
   const Type* t = phase->type(div->in(2));
-  const TypeClass* tl = t->cast<TypeClass>();
-  if (!tl) {
+  if (t == Type::TOP) {
     return nullptr;
   }
+  const TypeClass* tl = t->cast<TypeClass>();
 
   // Check for useless control input
   // Check for excluding div-zero case
