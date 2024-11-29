@@ -37,7 +37,7 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.UModLNodeIdealizationTests
  */
 public class UModLNodeIdealizationTests {
-    public static final long RANDOM_POWER_OF_2 = 1 << (1 + Utils.getRandomInstance().nextInt(62));
+    public static final long RANDOM_POWER_OF_2 = 1L << (1 + Utils.getRandomInstance().nextInt(62));
 
     public static void main(String[] args) {
         TestFramework.run();
