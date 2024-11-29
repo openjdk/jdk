@@ -575,15 +575,8 @@ public class ClassWriter extends BasicWriter {
         if (options.showAllAttrs) {
             attrWriter.write(m.attributes());
         } else if (code != null) {
-            if (options.showDisassembled) {
+            if (options.showDisassembled || options.showLineAndLocalVariableTables) {
                 codeWriter.writeMinimal(code);
-            }
-
-            if (options.showLineAndLocalVariableTables) {
-                code.findAttribute(Attributes.lineNumberTable())
-                        .ifPresent(a -> attrWriter.write(a, code));
-                code.findAttribute(Attributes.localVariableTable())
-                        .ifPresent(a -> attrWriter.write(a, code));
             }
         }
 

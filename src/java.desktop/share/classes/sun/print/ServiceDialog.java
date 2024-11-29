@@ -46,7 +46,6 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.print.PrinterJob;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -680,14 +679,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
         implements ActionListener, ItemListener, PopupMenuListener
     {
         private final String strTitle = getMsg("border.printservice");
-        private FilePermission printToFilePermission;
         private JButton btnProperties;
         private JCheckBox cbPrintToFile;
         private JComboBox<String> cbName;
         private JLabel lblType, lblStatus, lblInfo;
         private ServiceUIFactory uiFactory;
         private boolean changedService = false;
-        private boolean filePermission;
 
         public PrintServicePanel() {
             super();
@@ -744,8 +741,6 @@ public class ServiceDialog extends JDialog implements ActionListener {
             c.gridwidth = GridBagConstraints.REMAINDER;
             cbPrintToFile = createCheckBox("checkbox.printtofile", this);
             addToGB(cbPrintToFile, this, gridbag, c);
-
-            filePermission = allowedToPrintToFile();
         }
 
         public boolean isPrintToFileSelected() {
@@ -873,37 +868,13 @@ public class ServiceDialog extends JDialog implements ActionListener {
          * We disable the "Print To File" checkbox if this returns false
          */
         private boolean allowedToPrintToFile() {
-            try {
-                throwPrintToFile();
-                return true;
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
-
-        /**
-         * Break this out as it may be useful when we allow API to
-         * specify printing to a file. In that case its probably right
-         * to throw a SecurityException if the permission is not granted.
-         */
-        private void throwPrintToFile() {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                if (printToFilePermission == null) {
-                    printToFilePermission =
-                        new FilePermission("<<ALL FILES>>", "read,write");
-                }
-                security.checkPermission(printToFilePermission);
-            }
+            return true;
         }
 
         public void updateInfo() {
             Class<Destination> dstCategory = Destination.class;
             boolean dstSupported = false;
             boolean dstSelected = false;
-            boolean dstAllowed = filePermission ?
-                allowedToPrintToFile() : false;
 
             // setup Destination (print-to-file) widgets
             Destination dst = (Destination)asCurrent.get(dstCategory);
@@ -923,9 +894,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     dstSupported = true;
                 }
             }
-            cbPrintToFile.setEnabled(dstSupported && dstAllowed);
-            cbPrintToFile.setSelected(dstSelected && dstAllowed
-                                      && dstSupported);
+            cbPrintToFile.setEnabled(dstSupported);
+            cbPrintToFile.setSelected(dstSelected && dstSupported);
 
             // setup PrintService information widgets
             Attribute type = psCurrent.getAttribute(PrinterMakeAndModel.class);
