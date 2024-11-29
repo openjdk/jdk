@@ -47,9 +47,11 @@ public class LayoutNode {
     // Default dimensions for dummy nodes
     public static final int DUMMY_HEIGHT = 1;
     public static final int DUMMY_WIDTH = 1;
+    public static final int REVERSE_EDGE_OFFSET = NODE_OFFSET + LayoutNode.DUMMY_WIDTH;
     private Vertex vertex; // Associated graph vertex; null for dummy nodes
     private final List<LayoutEdge> preds = new ArrayList<>(); // Incoming edges
     private final List<LayoutEdge> succs = new ArrayList<>(); // Outgoing edges
+    private LayoutEdge selfEdge = null;
     private final HashMap<Link, List<Point>> reversedLinkStartPoints = new HashMap<>(); // Start points of reversed edges
     private final HashMap<Link, List<Point>> reversedLinkEndPoints = new HashMap<>();   // End points of reversed edges
     // Layout properties
@@ -66,6 +68,22 @@ public class LayoutNode {
     private boolean reverseLeft = false;
     private int crossingNumber = 0;
 
+    public boolean hasSelfEdge() {
+        return selfEdge != null;
+    }
+
+    public void setSelfEdge(LayoutEdge selfEdge) {
+        this.selfEdge = selfEdge;
+        if (selfEdge != null) {
+            topMargin += REVERSE_EDGE_OFFSET;
+            bottomMargin += REVERSE_EDGE_OFFSET;
+            rightMargin += REVERSE_EDGE_OFFSET;
+        }
+    }
+
+    public LayoutEdge getSelfEdge() {
+        return selfEdge;
+    }
 
     /**
      * Constructs a LayoutNode associated with the given Vertex.
@@ -103,6 +121,11 @@ public class LayoutNode {
         bottomMargin = 0;
         leftMargin = 0;
         rightMargin = 0;
+        if (hasSelfEdge()) {
+            topMargin += REVERSE_EDGE_OFFSET;
+            bottomMargin += REVERSE_EDGE_OFFSET;
+            rightMargin += REVERSE_EDGE_OFFSET;
+        }
     }
 
     public int getCrossingNumber() {
@@ -482,7 +505,7 @@ public class LayoutNode {
             }
         }
 
-        int offset = NODE_OFFSET + LayoutNode.DUMMY_WIDTH;
+        int offset = REVERSE_EDGE_OFFSET;
         int offsetX = left ? -offset : offset;
         int currentX = left ? 0 : width;
         int startY = 0;
@@ -522,7 +545,7 @@ public class LayoutNode {
             }
         }
 
-        int offset = NODE_OFFSET + LayoutNode.DUMMY_WIDTH;
+        int offset = REVERSE_EDGE_OFFSET;
         int offsetX = left ? -offset : offset;
         int currentX = left ? 0 : getWidth();
         int startY = height;
@@ -575,5 +598,17 @@ public class LayoutNode {
         if (orig_score > reverse_score) {
             computeReversedLinkPoints(isReverseRight());
         }
+    }
+
+    public ArrayList<Point> getSelfEdgePoints() {
+        ArrayList<Point> points = new ArrayList<>();
+
+        Link selfEdgeLink = getSelfEdge().getLink();
+
+        points.add(new Point(selfEdgeLink.getFrom().getRelativePosition().x,  selfEdgeLink.getFrom().getRelativePosition().y-REVERSE_EDGE_OFFSET));
+        points.add(new Point(width + REVERSE_EDGE_OFFSET,  selfEdgeLink.getFrom().getRelativePosition().y-REVERSE_EDGE_OFFSET));
+        points.add(new Point(width + REVERSE_EDGE_OFFSET, height + REVERSE_EDGE_OFFSET));
+        points.add(new Point(selfEdgeLink.getTo().getRelativePosition().x,  height + REVERSE_EDGE_OFFSET));
+        return points;
     }
 }
