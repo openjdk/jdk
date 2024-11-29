@@ -95,6 +95,31 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
         getActions().addAction(ActionFactory.createPopupMenuAction(this));
         setBackground(color);
+
+        getActions().addAction(new CustomSelectAction(new SelectProvider() {
+
+            @Override
+            public boolean isAimingAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public boolean isSelectionAllowed(Widget widget, Point localLocation, boolean invertSelection) {
+                return true;
+            }
+
+            @Override
+            public void select(Widget widget, Point localLocation, boolean invertSelection) {
+                Set<Vertex> vertexSet = new HashSet<>();
+                for (Connection connection : connections) {
+                    if (connection.hasSlots()) {
+                        vertexSet.add(connection.getTo().getVertex());
+                        vertexSet.add(connection.getFrom().getVertex());
+                    }
+                }
+                scene.userSelectionSuggested(vertexSet, invertSelection);
+            }
+        }));
     }
 
     private void computeClientArea() {

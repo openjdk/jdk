@@ -29,10 +29,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * Represents a layer in a hierarchical graph layout.
- * Each LayoutLayer contains a collection of LayoutNodes positioned at the same vertical level.
- * Provides methods to manage the nodes within the layer, including positioning, sorting,
- * and adjusting the layout to minimize overlaps and improve visual clarity.
+ * The LayoutLayer class represents a single horizontal layer in a hierarchical graph layout.
+ * It holds a list of nodes (LayoutNode) that are all on the same vertical level.
+ * This class provides simple methods to manage these nodes: you can add nodes to the layer,
+ * calculate the maximum height needed to fit all nodes, center the nodes vertically within the layer, and set
+ * their horizontal positions with proper spacing. In essence, LayoutLayer helps organize nodes neatly in a graph,
+ * making it easier to display the graph clearly and understand the relationships between nodes.
  */
 public class LayoutLayer extends ArrayList<LayoutNode> {
 

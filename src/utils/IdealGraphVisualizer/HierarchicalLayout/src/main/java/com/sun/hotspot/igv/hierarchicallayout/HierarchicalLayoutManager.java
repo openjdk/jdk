@@ -38,8 +38,15 @@ public class HierarchicalLayoutManager extends LayoutManager {
     int maxLayerLength;
     private LayoutGraph graph;
 
+    private boolean layoutSelfEdges = false;
+
     public HierarchicalLayoutManager() {
         setCutEdges(false);
+        setLayoutSelfEdges(false);
+    }
+
+    public void setLayoutSelfEdges(boolean layoutSelfEdges) {
+        this.layoutSelfEdges = layoutSelfEdges;
     }
 
     @Override
@@ -51,7 +58,9 @@ public class HierarchicalLayoutManager extends LayoutManager {
     public void doLayout(LayoutGraph layoutGraph) {
         layoutGraph.initializeLayout();
 
-        // STEP 1: Remove self edges and reverse edges
+        removeSelfEdges(layoutGraph);
+
+        // STEP 1: Reverse edges
         ReverseEdges.apply(layoutGraph);
 
         // STEP 2: Assign layers and create dummy nodes
@@ -69,6 +78,38 @@ public class HierarchicalLayoutManager extends LayoutManager {
         graph = layoutGraph;
     }
 
+    /**
+     * Removes self-edges from nodes in the graph. If self-edges are to be included in the layout
+     * (`layoutSelfEdges` is true), it stores them in the node for later processing and marks the graph
+     * to display self-edges
+     */
+    private void removeSelfEdges(LayoutGraph graph) {
+        for (LayoutNode node : graph.getLayoutNodes()) {
+            // Collect self-edges first to avoid concurrent modification
+            List<LayoutEdge> selfEdges = new ArrayList<>();
+            for (LayoutEdge edge : node.getSuccessors()) {
+                if (edge.getTo() == node) {
+                    selfEdges.add(edge);
+                }
+            }
+
+            // Remove each self-edge
+            for (LayoutEdge edge : selfEdges) {
+                node.removeSuccessor(edge);
+                node.removePredecessor(edge);
+            }
+            if (layoutSelfEdges) {
+                for (LayoutEdge selfEdge : selfEdges) {
+                    node.setSelfEdge(selfEdge);
+                }
+                graph.setShowSelfEdges(true);
+            }
+        }
+        if (layoutSelfEdges) {
+            graph.setShowSelfEdges(true);
+        }
+    }
+
     public List<LayoutNode> getNodes() {
         return graph.getAllNodes();
     }
@@ -76,30 +117,11 @@ public class HierarchicalLayoutManager extends LayoutManager {
     public static class ReverseEdges {
 
         static public void apply(LayoutGraph graph) {
-            removeSelfEdges(graph);
             reverseRootInputs(graph);
             depthFirstSearch(graph);
 
             for (LayoutNode node : graph.getLayoutNodes()) {
                 node.computeReversedLinkPoints(false);
-            }
-        }
-
-        private static void removeSelfEdges(LayoutGraph graph) {
-            for (LayoutNode node : graph.getLayoutNodes()) {
-                // Collect self-edges first to avoid concurrent modification
-                List<LayoutEdge> selfEdges = new ArrayList<>();
-                for (LayoutEdge edge : node.getSuccessors()) {
-                    if (edge.getTo() == node) {
-                        selfEdges.add(edge);
-                    }
-                }
-
-                // Remove each self-edge
-                for (LayoutEdge edge : selfEdges) {
-                    node.removeSuccessor(edge);
-                    node.removePredecessor(edge);
-                }
             }
         }
 
@@ -261,7 +283,6 @@ public class HierarchicalLayoutManager extends LayoutManager {
                 workingList = newWorkingList;
                 layer++;
             }
-
             int layerCount = layer - 1;
             for (LayoutNode n : graph.getLayoutNodes()) {
                 n.setLayer((layerCount - 1 - n.getLayer()));
@@ -674,6 +695,19 @@ public class HierarchicalLayoutManager extends LayoutManager {
                         }
                     }
                     linkPositions.put(succEdge.getLink(), linkPoints);
+                }
+            }
+
+            if (graph.showSelfEdges()) {
+                for (LayoutNode layoutNode : graph.getLayoutNodes()) {
+                    if (layoutNode.hasSelfEdge()) {
+                        LayoutEdge selfEdge = layoutNode.getSelfEdge();
+                        ArrayList<Point> points = layoutNode.getSelfEdgePoints();
+                        for (Point point : points) {
+                            point.setLocation(point.getX() + layoutNode.getLeft(), point.getY() + layoutNode.getTop());
+                        }
+                        linkPositions.put(selfEdge.getLink(), points);
+                    }
                 }
             }
 
