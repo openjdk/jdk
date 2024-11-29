@@ -46,12 +46,12 @@ public class FileURLConnection extends URLConnection {
     private static final String TEXT_PLAIN = "text/plain";
     private static final String LAST_MODIFIED = "last-modified";
 
-    InputStream is;
-
     final File file;
+    InputStream is;
+    List<String> directoryListing;
+
     boolean isDirectory = false;
     boolean exists = false;
-    List<String> directoryListing;
 
     long length = -1;
     long lastModified = 0;
