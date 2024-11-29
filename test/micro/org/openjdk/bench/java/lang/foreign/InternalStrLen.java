@@ -122,7 +122,7 @@ public class InternalStrLen {
 
     @Benchmark
     public int changedElementQuad() {
-        return strlenInt(quadByteSegment, 0);
+        return SegmentBulkOperations.strlenInt(quadByteSegment, 0, quadByteSegment.byteSize());
     }
 
     // These are the legacy methods
