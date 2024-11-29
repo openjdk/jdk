@@ -63,7 +63,7 @@ public class ShowRegistersOnAssertTest {
 
         OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
 
-        // we should have crashed with an internal error. We should definitly NOT have crashed with a segfault
+        // we should have crashed with an internal error. We should definitely NOT have crashed with a segfault
         // (which would be a sign that the assert poison page mechanism does not work).
         output_detail.shouldMatch("# A fatal error has been detected by the Java Runtime Environment:.*");
         output_detail.shouldMatch("# +Internal Error.*");
