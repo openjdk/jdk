@@ -532,7 +532,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
          * Static factory method; build a custom diagnostic key using given kind, prefix, code and args.
          */
         public static DiagnosticInfo of(DiagnosticType type, String prefix, String code, Object... args) {
-            return of(type, prefix, code, args);
+            return of(type, null, prefix, code, args);
         }
 
         public static DiagnosticInfo of(DiagnosticType type, LintCategory lc, String prefix, String code, Object... args) {
@@ -540,9 +540,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                 case ERROR:
                     return new Error(prefix, code, args);
                 case WARNING:
-                    return lc == null ?
-                            new Warning(prefix, code, args) :
-                            new LintWarning(prefix, lc, code, args);
+                    return new Warning(lc, prefix, code, args);
                 case NOTE:
                     return new Note(prefix, code, args);
                 case FRAGMENT:
@@ -585,8 +583,18 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Class representing warning diagnostic keys.
      */
     public static sealed class Warning extends DiagnosticInfo {
+        final LintCategory category;
+
         public Warning(String prefix, String key, Object... args) {
             super(DiagnosticType.WARNING, prefix, key, args);
+            category = key.contains(".lint.") ?
+                    LintCategory.get(key.split("\\.")[2]) :
+                    null;
+        }
+
+        public Warning(LintCategory category, String prefix, String key, Object... args) {
+            super(DiagnosticType.WARNING, prefix, key, args);
+            this.category = category;
         }
     }
 

@@ -239,7 +239,13 @@ public class ClassGenerator {
                 .collect(Collectors.joining("\n *"));
         String[] keyParts = key.split("\\.");
         FactoryKind k = FactoryKind.parseFrom(keyParts[1]);
-        String factoryName = factoryName(key);
+        String factoryName;
+        if (keyParts[2].equals("lint")) {
+            // skip lint warning category
+            factoryName = factoryName(key.replace(".lint." + keyParts[3], ""));
+        } else {
+            factoryName = factoryName(key);
+        }
         if (msgInfo.getTypes().isEmpty()) {
             //generate field
             String factoryField = StubKind.FACTORY_FIELD.format(k.keyClazz, factoryName,
