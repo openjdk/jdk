@@ -36,6 +36,7 @@ public class Diagram {
 
     private final Map<InputNode, Figure> figures;
     private final Map<InputBlock, Block> blocks;
+    private final InputGraph inputGraph;
     private final String nodeText;
     private final String shortNodeText;
     private final String tinyNodeText;
@@ -66,6 +67,7 @@ public class Diagram {
         this.figures = new LinkedHashMap<>();
         this.blocks = new LinkedHashMap<>(8);
         this.blockConnections = new HashSet<>();
+        this.inputGraph = graph;
         this.cfg = false;
         int curId = 0;
 
@@ -126,6 +128,10 @@ public class Diagram {
             Block s = getBlock(e.getTo());
             blockConnections.add(new BlockConnection(p, s, e.getLabel()));
         }
+    }
+
+    public InputGraph getInputGraph() {
+        return inputGraph;
     }
 
     public Block getBlock(InputBlock b) {

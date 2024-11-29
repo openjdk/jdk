@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.graph;
 
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.layout.Cluster;
@@ -423,6 +424,14 @@ public class Figure extends Properties.Entity implements Vertex {
 
 
     public void setCustomColor(Color color) {
-        inputNode.setCustomColor(color);
+        // Apply custom color not just to this input node but to all
+        // corresponding input nodes in the group.
+        InputGraph graph = diagram.getInputGraph();
+        for (InputGraph g : graph.getGroup().getGraphs()) {
+            InputNode n = g.getNode(inputNode.getId());
+            if (n != null) {
+                n.setCustomColor(color);
+            }
+        }
     }
 }
