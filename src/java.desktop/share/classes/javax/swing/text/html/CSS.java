@@ -132,9 +132,9 @@ import javax.swing.text.View;
  * CSS 4 are supported.</b>
  *
  * @spec https://www.w3.org/TR/REC-CSS1 Cascading Style Sheets, level 1
- * @spec https://www.w3.org/TR/css-color-4/#named-colors
- * @spec https://www.w3.org/TR/css-color-4/#hex-notation
- * @spec https://www.w3.org/TR/css-color-4/#rgb-functions
+ * @spec https://www.w3.org/TR/css-color-4/#rgb-functions The RGB functions
+ * @spec https://www.w3.org/TR/css-color-4/#hex-notation The RGB Hexadecimal Notations
+ * @spec https://www.w3.org/TR/css-color-4/#named-colors Named Colors
  * @author  Timothy Prinzing
  * @author  Scott Violet
  * @see StyleSheet
