@@ -448,7 +448,10 @@
  * XML Schema Part 2: Datatypes Second Edition
  * </th>
  * <td style="text-align:center">
- * XMLSchema.dtd XMLSchema.xsd datatypes.dtd datatypes.xsd
+ * XMLSchema.dtd<br>
+ * datatypes.dtd<br>
+ * XMLSchema.xsd<br>
+ * datatypes.xsd
  * </td>
  * </tr>
  * <tr>
@@ -456,7 +459,9 @@
  * XHTML&trade; 1.0 The Extensible HyperText Markup Language
  * </th>
  * <td style="text-align:center">
- * xhtml1-frameset.dtd xhtml1-strict.dtd xhtml1-transitional.dtd
+ * xhtml1-frameset.dtd<br>
+ * xhtml1-strict.dtd<br>
+ * xhtml1-transitional.dtd
  * </td>
  * </tr>
  * <tr>
@@ -464,7 +469,9 @@
  * XHTML&trade; 1.0 in XML Schema
  * </th>
  * <td style="text-align:center">
- * xhtml1-frameset.xsd xhtml1-strict.xsd xhtml1-transitional.xsd
+ * xhtml1-frameset.xsd<br>
+ * xhtml1-strict.xsd<br>
+ * xhtml1-transitional.xsd
  * </td>
  * </tr>
  * <tr>
@@ -480,8 +487,7 @@
  * XHTML 1.1 XML Schema Definition
  * </th>
  * <td style="text-align:center">
- * xhtml-attribs-1.xsd xhtml-copyright-1.xsd xhtml-datatypes-1.xsd xhtml-framework-1.xsd<br>
- * xhtml11-model-1.xsd xhtml11-modules-1.xsd xhtml11.xsd
+ * xhtml11.xsd
  * </td>
  * </tr>
  * <tr>
