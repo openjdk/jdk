@@ -417,11 +417,91 @@
  * </ul>
  *
  * <h2 id="JDKCATALOG">JDK built-in Catalog</h2>
- * The JDK has a built-in catalog that hosts the following DTDs defined by the Java Platform:
- * <ul>
- * <li>DTD for {@link java.util.prefs.Preferences java.util.prefs.Preferences}, preferences.dtd</li>
- * <li>DTD for {@link java.util.Properties java.util.Properties}, properties.dtd</li>
- * </ul>
+ * The JDK has a built-in catalog that hosts DTDs and XSDs list in the following table.
+ * <table class="plain" id="JDKCatalog">
+ * <caption>DTDs and XSDs in JDK built-in Catalog</caption>
+ * <thead>
+ * <tr>
+ * <th scope="col">Source</th>
+ * <th scope="col">Files</th>
+ * </tr>
+ * </thead>
+ *
+ * <tbody>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="util_preferences">
+ * {@link java.util.prefs.Preferences java.util.prefs.Preferences}</th>
+ * <td style="text-align:center">
+ * preferences.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="util_properties">
+ * {@link java.util.Properties java.util.Properties}</th>
+ * <td style="text-align:center">
+ * properties.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XMLSchema">
+ * XML Schema Part 1: Structures Second Edition<br>
+ * XML Schema Part 2: Datatypes Second Edition
+ * </th>
+ * <td style="text-align:center">
+ * XMLSchema.dtd XMLSchema.xsd datatypes.dtd datatypes.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML10">
+ * XHTML&trade; 1.0 The Extensible HyperText Markup Language
+ * </th>
+ * <td style="text-align:center">
+ * xhtml1-frameset.dtd xhtml1-strict.dtd xhtml1-transitional.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML10Schema">
+ * XHTML&trade; 1.0 in XML Schema
+ * </th>
+ * <td style="text-align:center">
+ * xhtml1-frameset.xsd xhtml1-strict.xsd xhtml1-transitional.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML11">
+ * XHTML&trade; 1.1 - Module-based XHTML - Second Edition
+ * </th>
+ * <td style="text-align:center">
+ * xhtml11.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XHTML11Schema">
+ * XHTML 1.1 XML Schema Definition
+ * </th>
+ * <td style="text-align:center">
+ * xhtml-attribs-1.xsd xhtml-copyright-1.xsd xhtml-datatypes-1.xsd xhtml-framework-1.xsd<br>
+ * xhtml11-model-1.xsd xhtml11-modules-1.xsd xhtml11.xsd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="XMLSPEC">
+ * XML DTD for W3C specifications
+ * </th>
+ * <td style="text-align:center">
+ * xmlspec.dtd
+ * </td>
+ * </tr>
+ * <tr>
+ * <th scope="row" style="font-weight:normal" id="Namespace">
+ * The "xml:" Namespace
+ * </th>
+ * <td style="text-align:center">
+ * xml.xsd
+ * </td>
+ * </tr>
+ * </tbody>
+ * </table>
  * <p>
  * The catalog is loaded once when the first JAXP processor factory is created.
  *
