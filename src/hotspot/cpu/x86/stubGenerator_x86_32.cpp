@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1131,8 +1131,8 @@ class StubGenerator: public StubCodeGenerator {
     bs->arraycopy_prologue(_masm, decorators, t, from, to, count);
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       __ subptr(to, from); // to --> to_from
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1321,8 +1321,8 @@ class StubGenerator: public StubCodeGenerator {
 
     {
       bool add_entry = (t != T_OBJECT && (!aligned || t == T_INT));
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       // copy from high to low
       __ cmpl(count, 2<<shift); // Short arrays (< 8 bytes) copy by element
       __ jcc(Assembler::below, L_copy_4_bytes); // use unsigned cmp
@@ -1450,8 +1450,8 @@ class StubGenerator: public StubCodeGenerator {
     BLOCK_COMMENT("Entry:");
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
       __ subptr(to, from); // to --> to_from
       if (UseXMMForArrayCopy) {
         xmm_copy_forward(from, to_from, count);
@@ -1505,8 +1505,8 @@ class StubGenerator: public StubCodeGenerator {
     __ jump_cc(Assembler::aboveEqual, nooverlap);
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, true, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, true, true);
 
       __ jmpb(L_copy_8_bytes);
 
@@ -3843,120 +3843,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
- public:
-  // Information about frame layout at time of blocking runtime call.
-  // Note that we only have to preserve callee-saved registers since
-  // the compilers are responsible for supplying a continuation point
-  // if they expect all registers to be preserved.
-  enum layout {
-    thread_off,    // last_java_sp
-    arg1_off,
-    arg2_off,
-    rbp_off,       // callee saved register
-    ret_pc,
-    framesize
-  };
-
  private:
-
-#undef  __
-#define __ masm->
-
-  //------------------------------------------------------------------------------------------------------------------------
-  // Continuation point for throwing of implicit exceptions that are not handled in
-  // the current activation. Fabricates an exception oop and initiates normal
-  // exception dispatching in this frame.
-  //
-  // Previously the compiler (c2) allowed for callee save registers on Java calls.
-  // This is no longer true after adapter frames were removed but could possibly
-  // be brought back in the future if the interpreter code was reworked and it
-  // was deemed worthwhile. The comment below was left to describe what must
-  // happen here if callee saves were resurrected. As it stands now this stub
-  // could actually be a vanilla BufferBlob and have now oopMap at all.
-  // Since it doesn't make much difference we've chosen to leave it the
-  // way it was in the callee save days and keep the comment.
-
-  // If we need to preserve callee-saved values we need a callee-saved oop map and
-  // therefore have to make these stubs into RuntimeStubs rather than BufferBlobs.
-  // If the compiler needs all registers to be preserved between the fault
-  // point and the exception handler then it must assume responsibility for that in
-  // AbstractCompiler::continuation_for_implicit_null_exception or
-  // continuation_for_implicit_division_by_zero_exception. All other implicit
-  // exceptions (e.g., NullPointerException or AbstractMethodError on entry) are
-  // either at call sites or otherwise assume that stack unwinding will be initiated,
-  // so caller saved registers were assumed volatile in the compiler.
-  address generate_throw_exception(const char* name, address runtime_entry,
-                                   Register arg1 = noreg, Register arg2 = noreg) {
-
-    int insts_size = 256;
-    int locs_size  = 32;
-
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps  = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-
-    address start = __ pc();
-
-    // This is an inlined and slightly modified version of call_VM
-    // which has the ability to fetch the return PC out of
-    // thread-local storage and also sets up last_Java_sp slightly
-    // differently than the real call_VM
-    Register java_thread = rbx;
-    __ get_thread(java_thread);
-
-    __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // pc and rbp, already pushed
-    __ subptr(rsp, (framesize-2) * wordSize); // prolog
-
-    // Frame is now completed as far as size and linkage.
-
-    int frame_complete = __ pc() - start;
-
-    // push java thread (becomes first argument of C function)
-    __ movptr(Address(rsp, thread_off * wordSize), java_thread);
-    if (arg1 != noreg) {
-      __ movptr(Address(rsp, arg1_off * wordSize), arg1);
-    }
-    if (arg2 != noreg) {
-      assert(arg1 != noreg, "missing reg arg");
-      __ movptr(Address(rsp, arg2_off * wordSize), arg2);
-    }
-
-    // Set up last_Java_sp and last_Java_fp
-    __ set_last_Java_frame(java_thread, rsp, rbp, nullptr, noreg);
-
-    // Call runtime
-    BLOCK_COMMENT("call runtime_entry");
-    __ call(RuntimeAddress(runtime_entry));
-    // Generate oop map
-    OopMap* map =  new OopMap(framesize, 0);
-    oop_maps->add_gc_map(__ pc() - start, map);
-
-    // restore the thread (cannot use the pushed argument since arguments
-    // may be overwritten by C code generated by an optimizing compiler);
-    // however can use the register value directly if it is callee saved.
-    __ get_thread(java_thread);
-
-    __ reset_last_Java_frame(java_thread, true);
-
-    __ leave(); // required for proper stackwalking of RuntimeStub frame
-
-    // check for pending exceptions
-#ifdef ASSERT
-    Label L;
-    __ cmpptr(Address(java_thread, Thread::pending_exception_offset()), NULL_WORD);
-    __ jcc(Assembler::notEqual, L);
-    __ should_not_reach_here();
-    __ bind(L);
-#endif /* ASSERT */
-    __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
-
-    RuntimeStub* stub = RuntimeStub::new_runtime_stub(name, &code, frame_complete, framesize, oop_maps, false);
-    return stub->entry_point();
-  }
-
 
   void create_control_words() {
     // Round to nearest, 53-bit mode, exceptions masked
@@ -3965,8 +3852,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_fpu_cntrl_wrd_trunc = 0x0D7F;
     // Round to nearest, 24-bit mode, exceptions masked
     StubRoutines::x86::_fpu_cntrl_wrd_24    = 0x007F;
-    // Round to nearest, 64-bit mode, exceptions masked
-    StubRoutines::x86::_mxcsr_std           = 0x1F80;
+    // Round to nearest, 64-bit mode, exceptions masked, flags specialized
+    StubRoutines::x86::_mxcsr_std           = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
     // Note: the following two constants are 80-bit values
     //       layout is critical for correct loading by FPU.
     // Bias for strict fp multiply/divide
@@ -3997,109 +3884,6 @@ class StubGenerator: public StubCodeGenerator {
     return nullptr;
   }
 
-#if INCLUDE_JFR
-
-  static void jfr_prologue(address the_pc, MacroAssembler* masm) {
-    Register java_thread = rdi;
-    __ get_thread(java_thread);
-    __ set_last_Java_frame(java_thread, rsp, rbp, the_pc, noreg);
-    __ movptr(Address(rsp, 0), java_thread);
-  }
-
-  // The handle is dereferenced through a load barrier.
-  static void jfr_epilogue(MacroAssembler* masm) {
-    Register java_thread = rdi;
-    __ get_thread(java_thread);
-    __ reset_last_Java_frame(java_thread, true);
-  }
-
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  static RuntimeStub* generate_jfr_write_checkpoint() {
-    enum layout {
-      FPUState_off         = 0,
-      rbp_off              = FPUStateSizeInWords,
-      rdi_off,
-      rsi_off,
-      rcx_off,
-      rbx_off,
-      saved_argument_off,
-      saved_argument_off2, // 2nd half of double
-      framesize
-    };
-
-    int insts_size = 1024;
-    int locs_size = 64;
-    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-    __ enter();
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-    jfr_prologue(the_pc, _masm);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    jfr_epilogue(_masm);
-    __ resolve_global_jobject(rax, rdi, rdx);
-    __ leave();
-    __ ret(0);
-
-    OopMap* map = new OopMap(framesize, 1); // rbp
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub;
-  }
-
-  // For c2: call to return a leased buffer.
-  static RuntimeStub* generate_jfr_return_lease() {
-    enum layout {
-      FPUState_off = 0,
-      rbp_off = FPUStateSizeInWords,
-      rdi_off,
-      rsi_off,
-      rcx_off,
-      rbx_off,
-      saved_argument_off,
-      saved_argument_off2, // 2nd half of double
-      framesize
-    };
-
-    int insts_size = 1024;
-    int locs_size = 64;
-    CodeBuffer code("jfr_return_lease", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-    __ enter();
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-    jfr_prologue(the_pc, _masm);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
-    jfr_epilogue(_masm);
-    __ leave();
-    __ ret(0);
-
-    OopMap* map = new OopMap(framesize, 1); // rbp
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub;
-  }
-
-#endif // INCLUDE_JFR
-
   //---------------------------------------------------------------------------
   // Initialization
 
@@ -4121,20 +3905,14 @@ class StubGenerator: public StubCodeGenerator {
     create_control_words();
 
     // Initialize table for copy memory (arraycopy) check.
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(16);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::x86::_verify_mxcsr_entry         = generate_verify_mxcsr();
     StubRoutines::x86::_verify_fpu_cntrl_wrd_entry = generate_verify_fpu_cntrl_wrd();
     StubRoutines::x86::_d2i_wrapper                = generate_d2i_wrapper(T_INT,  CAST_FROM_FN_PTR(address, SharedRuntime::d2i));
     StubRoutines::x86::_d2l_wrapper                = generate_d2i_wrapper(T_LONG, CAST_FROM_FN_PTR(address, SharedRuntime::d2l));
-
-    // Build this early so it's available for the interpreter
-    StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",
-                                                                                      CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
-    StubRoutines::_throw_delayed_StackOverflowError_entry  = generate_throw_exception("delayed StackOverflowError throw_exception",
-                                                                                      CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError));
 
     if (UseCRC32Intrinsics) {
       // set table address before stub generation which use it
@@ -4188,27 +3966,10 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-    JFR_ONLY(generate_jfr_stubs();)
   }
-
-#if INCLUDE_JFR
-  void generate_jfr_stubs() {
-    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-  }
-#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
-
-    // These entry points require SharedInfo::stack0 to be set up in non-core builds
-    // and need to be relocatable, so they each fabricate a RuntimeStub internally.
-    StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
-    StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
-    StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
 
     // support for verify_oop (must happen after universe_init)
     StubRoutines::_verify_oop_subroutine_entry     = generate_verify_oop();
@@ -4218,7 +3979,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
   }
 

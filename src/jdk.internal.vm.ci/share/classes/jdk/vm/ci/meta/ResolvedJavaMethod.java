@@ -464,6 +464,16 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     }
 
     /**
+     * Returns true if this method has a
+     * {@code jdk.internal.misc.ScopedMemoryAccess.Scoped} annotation.
+     *
+     * @return true if Scoped annotation present, false otherwise.
+     */
+    default boolean isScoped() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
      * Gets a speculation log that can be used when compiling this method to make new speculations
      * and query previously failed speculations. The implementation may return a new
      * {@link SpeculationLog} object each time this method is called so its the caller's

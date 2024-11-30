@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package sun.security.ssl;
 
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -38,8 +36,6 @@ import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
-import sun.security.action.GetIntegerAction;
-import sun.security.action.GetPropertyAction;
 import sun.security.ssl.SSLExtension.ClientExtensions;
 import sun.security.ssl.SSLExtension.ServerExtensions;
 
@@ -78,9 +74,7 @@ final class SSLConfiguration implements Cloneable {
     BiFunction<SSLSocket, List<String>, String> socketAPSelector;
     BiFunction<SSLEngine, List<String>, String> engineAPSelector;
 
-    @SuppressWarnings("removal")
-    HashMap<HandshakeCompletedListener, AccessControlContext>
-                                handshakeListeners;
+    HashSet<HandshakeCompletedListener> handshakeListeners;
 
     boolean                     noSniExtension;
     boolean                     noSniMatcher;
@@ -105,7 +99,7 @@ final class SSLConfiguration implements Cloneable {
             "jdk.tls.acknowledgeCloseNotify", false);
 
     // Set the max size limit for Handshake Message to 2^15
-    static final int maxHandshakeMessageSize = GetIntegerAction.privilegedGetProperty(
+    static final int maxHandshakeMessageSize = Integer.getInteger(
             "jdk.tls.maxHandshakeMessageSize", 32768);
 
     // Limit the certificate chain length accepted from clients
@@ -120,6 +114,11 @@ final class SSLConfiguration implements Cloneable {
 
     static final boolean enableDtlsResumeCookie = Utilities.getBooleanProperty(
             "jdk.tls.enableDtlsResumeCookie", true);
+
+    // Number of NewSessionTickets that will be sent by the server.
+    static final int serverNewSessionTicketCount;
+    // Default for NewSessionTickets
+    static final int SERVER_NST_DEFAULT = 1;
 
     // Is the extended_master_secret extension supported?
     static {
@@ -138,30 +137,28 @@ final class SSLConfiguration implements Cloneable {
     static {
         boolean globalPropSet = false;
 
-        // jdk.tls.maxCertificateChainLength property has no default
-        Integer maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
+        /*
+         * jdk.tls.maxCertificateChainLength system property works for both
+         * server and client modes.
+         */
+        Integer maxCertificateChainLength = Integer.getInteger(
                 "jdk.tls.maxCertificateChainLength");
         if (maxCertificateChainLength != null && maxCertificateChainLength >= 0) {
             globalPropSet = true;
         }
 
         /*
-         * If either jdk.tls.server.maxInboundCertificateChainLength or
-         * jdk.tls.client.maxInboundCertificateChainLength is set, it will
-         * override jdk.tls.maxCertificateChainLength, regardless of whether
-         * jdk.tls.maxCertificateChainLength is set or not.
-         * If neither jdk.tls.server.maxInboundCertificateChainLength nor
-         * jdk.tls.client.maxInboundCertificateChainLength is set, the behavior
-         * depends on the setting of jdk.tls.maxCertificateChainLength. If
-         * jdk.tls.maxCertificateChainLength is set, it falls back to that
-         * value; otherwise, it defaults to 8 for
-         * jdk.tls.server.maxInboundCertificateChainLength
-         * and 10 for jdk.tls.client.maxInboundCertificateChainLength.
-         * Users can independently set either
-         * jdk.tls.server.maxInboundCertificateChainLength or
-         * jdk.tls.client.maxInboundCertificateChainLength.
+         * jdk.tls.server.maxInboundCertificateChainLength system property
+         * works in server mode.
+         * maxInboundClientCertChainLen is the maximum length of a client
+         * certificate chain accepted by a server. It is determined as follows:
+         *  - If the jdk.tls.server.maxInboundCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise, if the jdk.tls.maxCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise it is set to a default value of 8.
          */
-        Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
+        Integer inboundClientLen = Integer.getInteger(
                 "jdk.tls.server.maxInboundCertificateChainLength");
 
         // Default for jdk.tls.server.maxInboundCertificateChainLength is 8
@@ -172,8 +169,19 @@ final class SSLConfiguration implements Cloneable {
             maxInboundClientCertChainLen = inboundClientLen;
         }
 
-        Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
-                "jdk.tls.client.maxInboundCertificateChainLength");
+        /*
+         * jdk.tls.client.maxInboundCertificateChainLength system property
+         * works in client mode.
+         * maxInboundServerCertChainLen is the maximum length of a server
+         * certificate chain accepted by a client. It is determined as follows:
+         *  - If the jdk.tls.client.maxInboundCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise, if the jdk.tls.maxCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise it is set to a default value of 10.
+         */
+        Integer inboundServerLen = Integer.getInteger(
+            "jdk.tls.client.maxInboundCertificateChainLength");
 
         // Default for jdk.tls.client.maxInboundCertificateChainLength is 10
         if (inboundServerLen == null || inboundServerLen < 0) {
@@ -181,6 +189,33 @@ final class SSLConfiguration implements Cloneable {
                     maxCertificateChainLength : 10;
         } else {
             maxInboundServerCertChainLen = inboundServerLen;
+        }
+
+        /*
+         * jdk.tls.server.newSessionTicketCount system property
+         * Sets the number of NewSessionTickets sent to a TLS 1.3 resumption
+         * client.  The value must be between 0 and 10.  Default is defined by
+         * SERVER_NST_DEFAULT.
+         */
+        Integer nstServerCount = Integer.getInteger(
+            "jdk.tls.server.newSessionTicketCount");
+        if (nstServerCount == null || nstServerCount < 0 ||
+            nstServerCount > 10) {
+            serverNewSessionTicketCount = SERVER_NST_DEFAULT;
+            if (nstServerCount != null && SSLLogger.isOn &&
+                SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine(
+                    "jdk.tls.server.newSessionTicketCount defaults to " +
+                        SERVER_NST_DEFAULT + " as the property was not " +
+                        "between 0 and 10");
+            }
+        } else {
+            serverNewSessionTicketCount = nstServerCount;
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine(
+                    "jdk.tls.server.newSessionTicketCount set to " +
+                        serverNewSessionTicketCount);
+            }
         }
     }
 
@@ -343,15 +378,14 @@ final class SSLConfiguration implements Cloneable {
     }
 
     // SSLSocket only
-    @SuppressWarnings("removal")
     void addHandshakeCompletedListener(
             HandshakeCompletedListener listener) {
 
         if (handshakeListeners == null) {
-            handshakeListeners = new HashMap<>(4);
+            handshakeListeners = new HashSet<>(4);
         }
 
-        handshakeListeners.put(listener, AccessController.getContext());
+        handshakeListeners.add(listener);
     }
 
     // SSLSocket only
@@ -362,7 +396,7 @@ final class SSLConfiguration implements Cloneable {
             throw new IllegalArgumentException("no listeners");
         }
 
-        if (handshakeListeners.remove(listener) == null) {
+        if (!handshakeListeners.remove(listener)) {
             throw new IllegalArgumentException("listener not registered");
         }
 
@@ -491,14 +525,14 @@ final class SSLConfiguration implements Cloneable {
     }
 
     @Override
-    @SuppressWarnings({"removal","unchecked", "CloneDeclaresCloneNotSupported"})
+    @SuppressWarnings({"unchecked", "CloneDeclaresCloneNotSupported"})
     public Object clone() {
         // Note that only references to the configurations are copied.
         try {
             SSLConfiguration config = (SSLConfiguration)super.clone();
             if (handshakeListeners != null) {
                 config.handshakeListeners =
-                    (HashMap<HandshakeCompletedListener, AccessControlContext>)
+                    (HashSet<HandshakeCompletedListener>)
                             handshakeListeners.clone();
             }
 
@@ -532,7 +566,7 @@ final class SSLConfiguration implements Cloneable {
      * system property.
      */
     private static String[] getCustomizedSignatureScheme(String propertyName) {
-        String property = GetPropertyAction.privilegedGetProperty(propertyName);
+        String property = System.getProperty(propertyName);
         if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +

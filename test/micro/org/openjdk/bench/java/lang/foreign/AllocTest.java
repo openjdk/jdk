@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class AllocTest extends CLayouts {
 
     Arena arena = Arena.ofConfined();
@@ -65,33 +65,30 @@ public class AllocTest extends CLayouts {
 
     @Benchmark
     public MemorySegment alloc_confined() {
-        Arena arena = Arena.ofConfined();
-        MemorySegment segment = arena.allocate(size);
-        arena.close();
-        return segment;
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocate(size);
+        }
     }
 
     @Benchmark
     public long alloc_calloc_arena() {
-        CallocArena arena = new CallocArena();
-        MemorySegment segment = arena.allocate(size);
-        arena.close();
-        return segment.address();
+        try (CallocArena arena = new CallocArena()) {
+            return arena.allocate(size).address();
+        }
     }
 
     @Benchmark
     public long alloc_unsafe_arena() {
-        UnsafeArena arena = new UnsafeArena();
-        MemorySegment segment = arena.allocate(size);
-        arena.close();
-        return segment.address();
+        try (UnsafeArena arena = new UnsafeArena()) {
+            return arena.allocate(size).address();
+        }
     }
 
     public static class CallocArena implements Arena {
 
         static final MethodHandle CALLOC = Linker.nativeLinker()
                 .downcallHandle(
-                        Linker.nativeLinker().defaultLookup().find("calloc").get(),
+                        Linker.nativeLinker().defaultLookup().findOrThrow("calloc"),
                         FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
 
         static MemorySegment calloc(long size) {

@@ -190,7 +190,7 @@ class CompletenessAnalyzer {
         EOF(TokenKind.EOF, 0),  //
         ERROR(TokenKind.ERROR, XERRO),  //
         IDENTIFIER(TokenKind.IDENTIFIER, XEXPR1|XDECL1|XTERM),  //
-        UNDERSCORE(TokenKind.UNDERSCORE, XDECL1),  //  _
+        UNDERSCORE(TokenKind.UNDERSCORE, XDECL1|XEXPR),  //  _
         CLASS(TokenKind.CLASS, XEXPR|XDECL1|XBRACESNEEDED),  //  class decl (MAPPED: DOTCLASS)
         MONKEYS_AT(TokenKind.MONKEYS_AT, XEXPR|XDECL1),  //  @
         IMPORT(TokenKind.IMPORT, XDECL1|XSTART),  //  import -- consider declaration
@@ -209,14 +209,14 @@ class CompletenessAnalyzer {
         THROWS(TokenKind.THROWS, XDECL|XBRACESNEEDED),  //  throws
 
         // Primarive type names
-        BOOLEAN(TokenKind.BOOLEAN, XEXPR1|XDECL1),  //  boolean
-        BYTE(TokenKind.BYTE, XEXPR1|XDECL1),  //  byte
-        CHAR(TokenKind.CHAR, XEXPR1|XDECL1),  //  char
-        DOUBLE(TokenKind.DOUBLE, XEXPR1|XDECL1),  //  double
-        FLOAT(TokenKind.FLOAT, XEXPR1|XDECL1),  //  float
-        INT(TokenKind.INT, XEXPR1|XDECL1),  //  int
-        LONG(TokenKind.LONG, XEXPR1|XDECL1),  //  long
-        SHORT(TokenKind.SHORT, XEXPR1|XDECL1),  //  short
+        BOOLEAN(TokenKind.BOOLEAN, XEXPR1|XDECL1|XTERM),  //  boolean
+        BYTE(TokenKind.BYTE, XEXPR1|XDECL1|XTERM),  //  byte
+        CHAR(TokenKind.CHAR, XEXPR1|XDECL1|XTERM),  //  char
+        DOUBLE(TokenKind.DOUBLE, XEXPR1|XDECL1|XTERM),  //  double
+        FLOAT(TokenKind.FLOAT, XEXPR1|XDECL1|XTERM),  //  float
+        INT(TokenKind.INT, XEXPR1|XDECL1|XTERM),  //  int
+        LONG(TokenKind.LONG, XEXPR1|XDECL1|XTERM),  //  long
+        SHORT(TokenKind.SHORT, XEXPR1|XDECL1|XTERM),  //  short
         VOID(TokenKind.VOID, XEXPR1|XDECL1),  //  void
 
         // Modifiers keywords
@@ -306,7 +306,7 @@ class CompletenessAnalyzer {
         AMPAMP(TokenKind.AMPAMP, XEXPR, true),  //  &&
         BARBAR(TokenKind.BARBAR, XEXPR, true),  //  ||
         PLUS(TokenKind.PLUS, XEXPR1, true),  //  +
-        SUB(TokenKind.SUB, XEXPR1, true),  //  -
+        SUB(TokenKind.SUB, XEXPR1 | XDECL, true),  //  -
         SLASH(TokenKind.SLASH, XEXPR, true),  //  /
         BAR(TokenKind.BAR, XEXPR, true),  //  |
         CARET(TokenKind.CARET, XEXPR, true),  //  ^
@@ -805,8 +805,24 @@ class CompletenessAnalyzer {
         }
 
         public Completeness parseExpression() {
-            while (token.kind.isExpression())
+            while (token.kind.isExpression()) {
+                CT prevToken = in.prevCT;
                 nextToken();
+                // primitive types can only appear in the end of an `instanceof` expression
+                switch (token.kind) {
+                    case EOF:
+                        switch (in.prevCT.kind) {
+                            case BYTE, SHORT, CHAR, INT, LONG, FLOAT, DOUBLE, BOOLEAN:
+                                switch (prevToken.kind) {
+                                    case INSTANCEOF:
+                                        return Completeness.COMPLETE;
+                                    default:
+                                        return Completeness.DEFINITELY_INCOMPLETE;
+                                }
+                        }
+                }
+            }
+
             return Completeness.COMPLETE;
         }
 

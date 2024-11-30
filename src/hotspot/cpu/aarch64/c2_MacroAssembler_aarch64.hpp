@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,19 @@
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
  public:
+  // jdk.internal.util.ArraysSupport.vectorizedHashCode
+  address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
+                          FloatRegister vdata1, FloatRegister vdata2, FloatRegister vdata3,
+                          FloatRegister vmul0, FloatRegister vmul1, FloatRegister vmul2,
+                          FloatRegister vmul3, FloatRegister vpow, FloatRegister vpowm,
+                          BasicType eltype);
+
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  // See full description in macroAssembler_aarch64.cpp.
   void fast_lock(Register object, Register box, Register tmp, Register tmp2, Register tmp3);
   void fast_unlock(Register object, Register box, Register tmp, Register tmp2);
+  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
+  void fast_lock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
+  void fast_unlock_lightweight(Register object, Register box, Register t1, Register t2, Register t3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -94,13 +103,13 @@
 
   // Vector cast
   void neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
-                          FloatRegister src, BasicType src_bt);
+                          FloatRegister src, BasicType src_bt, bool is_unsigned = false);
 
   void neon_vector_narrow(FloatRegister dst, BasicType dst_bt,
                           FloatRegister src, BasicType src_bt, unsigned src_vlen_in_bytes);
 
   void sve_vector_extend(FloatRegister dst, SIMD_RegVariant dst_size,
-                         FloatRegister src, SIMD_RegVariant src_size);
+                         FloatRegister src, SIMD_RegVariant src_size, bool is_unsigned = false);
 
   void sve_vector_narrow(FloatRegister dst, SIMD_RegVariant dst_size,
                          FloatRegister src, SIMD_RegVariant src_size, FloatRegister tmp);

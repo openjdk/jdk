@@ -165,4 +165,3 @@ public class CheckAnnotationAdapter extends AnnotationVisitor {
         }
     }
 }
-

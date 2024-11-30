@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8162817 8168921
+ * @bug 8162817 8168921 8322218
  * @summary Test of toString on normal annotations
  */
 
@@ -192,8 +192,8 @@ public class AnnotationToStringTest {
         public short[]     f4;
 
         @ExpectedString(
-       "@CharArray({'a', 'b', 'c', '\\''})")
-        @CharArray({'a', 'b', 'c', '\''})
+       "@CharArray({'a', 'b', 'c', '\\'', '\"'})")
+        @CharArray({'a', 'b', 'c', '\'', '"'})
         public char[]      f5;
 
         @ExpectedString(
@@ -209,8 +209,8 @@ public class AnnotationToStringTest {
         public long[]      f7;
 
         @ExpectedString(
-       "@StringArray({\"A\", \"B\", \"C\", \"\\\"Quote\\\"\"})")
-        @StringArray({"A", "B", "C", "\"Quote\""})
+       "@StringArray({\"A\", \"B\", \"C\", \"\\\"Quote\\\"\", \"'\", \"\\\"\"})")
+        @StringArray({"A", "B", "C", "\"Quote\"", "'", "\""})
         public String[]    f8;
 
         @ExpectedString(

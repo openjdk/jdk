@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,11 @@ public class HeapSummaryEventAllGcs {
         GCHelper.callSystemGc(5, true);
         recording.stop();
 
-        if (!checkCollectors(recording, expectedYoungCollector, expectedOldCollector)) {
+        List<RecordedEvent> allEvents = Events.fromRecording(recording);
+        if (!checkCollectors(allEvents, expectedYoungCollector, expectedOldCollector)) {
             return;
         }
-        List<RecordedEvent> events = GCHelper.removeFirstAndLastGC(Events.fromRecording(recording));
+        List<RecordedEvent> events = GCHelper.removeFirstAndLastGC(allEvents);
         for (RecordedEvent event : events) {
             System.out.println("Event:" + event);
         }
@@ -190,8 +191,8 @@ public class HeapSummaryEventAllGcs {
         Asserts.assertEquals(size, end - start, "Size mismatch");
     }
 
-    private static boolean checkCollectors(Recording recording, String expectedYoung, String expectedOld) throws Exception {
-        for (RecordedEvent event : Events.fromRecording(recording)) {
+    private static boolean checkCollectors(List<RecordedEvent> events, String expectedYoung, String expectedOld) throws Exception {
+        for (RecordedEvent event : events) {
             if (Events.isEventType(event, EventNames.GCConfiguration)) {
                 final String young = Events.assertField(event, "youngCollector").notEmpty().getValue();
                 final String old = Events.assertField(event, "oldCollector").notEmpty().getValue();

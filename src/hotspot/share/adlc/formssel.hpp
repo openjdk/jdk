@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,7 +257,7 @@ public:
   void                set_cisc_reg_mask_name(const char *rm_name) { _cisc_reg_mask_name = rm_name; }
   // Output cisc-method prototypes and method bodies
   void                declare_cisc_version(ArchDesc &AD, FILE *fp_cpp);
-  bool                define_cisc_version (ArchDesc &AD, FILE *fp_cpp);
+  void                define_cisc_version(ArchDesc& AD, FILE* fp_cpp);
 
   bool                check_branch_variant(ArchDesc &AD, InstructForm *short_branch);
 
@@ -273,7 +273,7 @@ public:
   bool                has_short_branch_form() { return _short_branch_form != nullptr; }
   // Output short branch prototypes and method bodies
   void                declare_short_branch_methods(FILE *fp_cpp);
-  bool                define_short_branch_methods(ArchDesc &AD, FILE *fp_cpp);
+  void                define_short_branch_methods(ArchDesc& AD, FILE* fp_cpp);
 
   uint                alignment() { return _alignment; }
   void                set_alignment(uint val) { _alignment = val; }
@@ -310,6 +310,7 @@ public:
 
   virtual void dump();             // Debug printer
   virtual void output(FILE *fp);   // Write to output files
+  virtual void forms_do(FormClosure *f);
 };
 
 //------------------------------EncodeForm-------------------------------------
@@ -333,6 +334,7 @@ public:
 
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write info to output files
+  virtual void forms_do(FormClosure *f);
 };
 
 //------------------------------EncClass---------------------------------------
@@ -377,6 +379,7 @@ public:
   bool verify();
   void dump();
   void output(FILE *fp);
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------MachNode---------------------------------------
@@ -468,6 +471,7 @@ public:
 
   void dump();
   void output(FILE *fp);
+  virtual void forms_do(FormClosure *f);
 };
 
 //------------------------------Effect-----------------------------------------
@@ -515,6 +519,7 @@ public:
 
   void dump();                    // Debug printer
   void output(FILE *fp);          // Write info to output files
+  virtual void forms_do(FormClosure *f);
 };
 
 //---------------------------------Flag----------------------------------------
@@ -554,6 +559,7 @@ public:
   ~RewriteRule();                  // Destructor
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 
@@ -584,6 +590,7 @@ public:
   virtual bool ideal_only() const;
   virtual void dump();             // Debug printer
   virtual void output(FILE *fp);   // Write to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------OperandForm------------------------------------
@@ -711,6 +718,7 @@ public:
 
   virtual void dump();             // Debug printer
   virtual void output(FILE *fp);   // Write to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------Constraint-------------------------------------
@@ -729,6 +737,7 @@ public:
 
   void dump();                     // Debug printer
   void output(FILE *fp);           // Write info to output files
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------Predicate--------------------------------------
@@ -1014,6 +1023,7 @@ public:
 
   void dump();
   void output(FILE *fp);
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------MatchRule--------------------------------------
@@ -1075,6 +1085,7 @@ public:
   void dump();
   void output_short(FILE *fp);
   void output(FILE *fp);
+  virtual void forms_do(FormClosure* f);
 };
 
 //------------------------------Attribute--------------------------------------

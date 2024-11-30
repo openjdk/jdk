@@ -92,7 +92,7 @@ class TestEagerReclaimHumongousRegionsWithRefsReclaimRegionFast {
 public class TestEagerReclaimHumongousRegionsWithRefs {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-XX:+UseG1GC",
             "-Xms128M",
             "-Xmx128M",
@@ -101,8 +101,6 @@ public class TestEagerReclaimHumongousRegionsWithRefs {
             TestEagerReclaimHumongousRegionsWithRefsReclaimRegionFast.class.getName());
 
         Pattern p = Pattern.compile("Full GC");
-
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         int found = 0;
         Matcher m = p.matcher(output.getStdout());

@@ -25,6 +25,7 @@
  * @bug 8317678
  * @modules java.base/java.util.zip:open
  * @summary Fix up hashCode() for ZipFile.Source.Key
+ * @library /test/lib
  * @run junit/othervm ZipSourceCache
  */
 
@@ -34,6 +35,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.zip.*;
+import jdk.test.lib.util.FileUtils;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,7 +64,7 @@ public class ZipSourceCache {
 
     @AfterAll
     public static void cleanup() throws IOException {
-        Files.deleteIfExists(Path.of(ZIPFILE_NAME));
+        FileUtils.deleteFileIfExistsWithRetry(Path.of(ZIPFILE_NAME));
     }
 
     /*

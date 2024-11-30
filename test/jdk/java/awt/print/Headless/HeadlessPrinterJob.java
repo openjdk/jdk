@@ -31,6 +31,7 @@ import java.awt.print.*;
 
 /*
  * @test
+ * @key printer
  * @summary Check that PrinterJob constructor and methods do not throw unexpected
  *          exceptions in headless mode
  * @run main/othervm -Djava.awt.headless=true HeadlessPrinterJob

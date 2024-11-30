@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -64,10 +65,12 @@ void G1RedirtyCardsLocalQueueSet::enqueue(void* value) {
   }
 }
 
-void G1RedirtyCardsLocalQueueSet::flush() {
+BufferNodeList G1RedirtyCardsLocalQueueSet::flush() {
   flush_queue(_queue);
+  BufferNodeList cur_buffers = _buffers;
   _shared_qset->add_bufferlist(_buffers);
   _buffers = BufferNodeList();
+  return cur_buffers;
 }
 
 // G1RedirtyCardsLocalQueueSet::Queue

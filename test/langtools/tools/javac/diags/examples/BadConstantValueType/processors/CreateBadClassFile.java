@@ -33,8 +33,8 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 import java.lang.reflect.AccessFlag;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.ConstantValueAttribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.ConstantValueAttribute;
 
 /* Create an invalid classfile with a static final field of type object with
  * ConstantValue of type String.
@@ -43,7 +43,7 @@ import jdk.internal.classfile.attribute.ConstantValueAttribute;
 public class CreateBadClassFile extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         if (++round == 1) {
-            byte[] bytes = Classfile.of().build(ClassDesc.of("Test"), cb -> {
+            byte[] bytes = ClassFile.of().build(ClassDesc.of("Test"), cb -> {
                 cb.withSuperclass(ConstantDescs.CD_Object);
                 cb.withVersion(51, 0);
                 cb.withFlags(AccessFlag.ABSTRACT ,

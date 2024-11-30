@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
  /*
  * @test
- * @bug 8196399 8202537
+ * @bug 8196399 8202537 8174269
  * @summary  test Formatter if any ArithmeticException is thrown while
  * formatting a number in the locale which does not use any
  * grouping, but specifies a grouping separator.
  * @library provider
  * @build provider/module-info provider/test.NumberFormatProviderImpl
- * @run main/othervm -Djava.locale.providers=SPI,COMPAT NoGroupingUsed
+ * @run main/othervm -Djava.locale.providers=SPI,CLDR NoGroupingUsed
  */
 
 import java.util.Formatter;

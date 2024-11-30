@@ -1,5 +1,6 @@
 /*
  * Copyright 2016 Google, Inc.  All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +26,8 @@
  * @test
  * @bug 8171132
  * @summary Improve class reading of invalid or out-of-range ConstantValue attributes
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.jvm
@@ -40,7 +37,7 @@
  * @run main BadConstantValue
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.code.Symtab;
@@ -185,11 +182,11 @@ public class BadConstantValue {
      * B's type and A's ConstantValue attribute.
      */
     private static void swapConstantValues(File file) throws Exception {
-        ClassModel cf = Classfile.of().parse(file.toPath());
+        ClassModel cf = ClassFile.of().parse(file.toPath());
         FieldModel a = cf.fields().getFirst();
         FieldModel b = cf.fields().get(1);
-        byte[] Bytes = Classfile.of().transform(cf, ClassTransform
-                .dropping(ce -> ce instanceof ClassfileVersion || ce instanceof FieldModel)
+        byte[] Bytes = ClassFile.of().transformClass(cf, ClassTransform
+                .dropping(ce -> ce instanceof ClassFileVersion || ce instanceof FieldModel)
                 .andThen(ClassTransform.endHandler(classBuilder -> classBuilder
                         .withField(b.fieldName(), b.fieldType(), fieldBuilder -> {
                             fieldBuilder.withFlags(b.flags().flagsMask());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,20 @@
 
 /*
  * @test
- * @summary Testing Classfile builder blocks.
+ * @summary Testing ClassFile builder blocks.
  * @run junit BuilderTryCatchTest
  */
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ExceptionCatch;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +45,6 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.AccessFlag;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -66,13 +67,13 @@ class BuilderTryCatchTest {
             catchBuilder.catching(CD_IOOBE, tb -> {
                 tb.pop();
 
-                tb.constantInstruction(Opcode.LDC, "IndexOutOfBoundsException");
-                tb.returnInstruction(TypeKind.ReferenceType);
+                tb.ldc("IndexOutOfBoundsException");
+                tb.areturn();
             }).catchingAll(tb -> {
                 tb.pop();
 
-                tb.constantInstruction(Opcode.LDC, "any");
-                tb.returnInstruction(TypeKind.ReferenceType);
+                tb.ldc("any");
+                tb.areturn();
             });
         });
 
@@ -91,12 +92,12 @@ class BuilderTryCatchTest {
             catchBuilder.catching(CD_IOOBE, tb -> {
                 tb.pop();
 
-                tb.constantInstruction(Opcode.LDC, "IndexOutOfBoundsException");
+                tb.ldc("IndexOutOfBoundsException");
                 tb.astore(1);
             }).catchingAll(tb -> {
                 tb.pop();
 
-                tb.constantInstruction(Opcode.LDC, "any");
+                tb.ldc("any");
                 tb.astore(1);
             });
         });
@@ -132,8 +133,8 @@ class BuilderTryCatchTest {
             catchBuilder.catching(CD_IOOBE, tb -> {
                 tb.pop();
 
-                tb.constantInstruction(Opcode.LDC, "IndexOutOfBoundsException");
-                tb.returnInstruction(TypeKind.ReferenceType);
+                tb.ldc("IndexOutOfBoundsException");
+                tb.areturn();
             });
         });
 
@@ -153,8 +154,8 @@ class BuilderTryCatchTest {
             catchBuilder.catchingAll(tb -> {
                 tb.pop();
 
-                tb.constantInstruction(Opcode.LDC, "any");
-                tb.returnInstruction(TypeKind.ReferenceType);
+                tb.ldc("any");
+                tb.areturn();
             });
         });
 
@@ -171,7 +172,7 @@ class BuilderTryCatchTest {
     void testTryEmptyCatch() {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {});
 
-        boolean anyGotos = Classfile.of().parse(bytes).methods().stream()
+        boolean anyGotos = ClassFile.of().parse(bytes).methods().stream()
                 .flatMap(mm -> mm.code().stream())
                 .flatMap(CompoundElement::elementStream)
                 .anyMatch(codeElement ->
@@ -182,12 +183,12 @@ class BuilderTryCatchTest {
 
     @Test
     void testEmptyTry() {
-        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
+                    ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
-                            int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
-                            xb.constantInstruction("S");
+                            int stringSlot = xb.allocateLocal(TypeKind.REFERENCE);
+                            xb.loadConstant("S");
                             xb.astore(stringSlot);
 
                             assertThrows(IllegalArgumentException.class, () -> {
@@ -198,14 +199,14 @@ class BuilderTryCatchTest {
                                     catchBuilder.catchingAll(tb -> {
                                         tb.pop();
 
-                                        tb.constantInstruction(Opcode.LDC, "any");
-                                        tb.returnInstruction(TypeKind.ReferenceType);
+                                        tb.ldc("any");
+                                        tb.areturn();
                                     });
                                 });
                             });
 
                             xb.aload(stringSlot);
-                            xb.returnInstruction(TypeKind.ReferenceType);
+                            xb.areturn();
                         });
                     });
         });
@@ -213,19 +214,19 @@ class BuilderTryCatchTest {
 
     @Test
     void testLocalAllocation() throws Throwable {
-        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
+                    ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
-                            int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
-                            xb.constantInstruction("S");
+                            int stringSlot = xb.allocateLocal(TypeKind.REFERENCE);
+                            xb.loadConstant("S");
                             xb.astore(stringSlot);
 
                             xb.trying(tb -> {
-                                int intSlot = tb.allocateLocal(TypeKind.IntType);
+                                int intSlot = tb.allocateLocal(TypeKind.INT);
 
                                 tb.aload(0);
-                                tb.constantInstruction(0);
+                                tb.loadConstant(0);
                                 // IndexOutOfBoundsException
                                 tb.aaload();
                                 // NullPointerException
@@ -239,8 +240,8 @@ class BuilderTryCatchTest {
                                 catchBuilder.catching(CD_IOOBE, tb -> {
                                     tb.pop();
 
-                                    int doubleSlot = tb.allocateLocal(TypeKind.DoubleType);
-                                    tb.constantInstruction(Math.PI);
+                                    int doubleSlot = tb.allocateLocal(TypeKind.DOUBLE);
+                                    tb.loadConstant(Math.PI);
                                     tb.dstore(doubleSlot);
 
                                     tb.dload(doubleSlot);
@@ -249,8 +250,8 @@ class BuilderTryCatchTest {
                                 }).catchingAll(tb -> {
                                     tb.pop();
 
-                                    int refSlot = tb.allocateLocal(TypeKind.ReferenceType);
-                                    tb.constantInstruction("REF");
+                                    int refSlot = tb.allocateLocal(TypeKind.REFERENCE);
+                                    tb.loadConstant("REF");
                                     tb.astore(refSlot);
 
                                     tb.aload(refSlot);
@@ -260,7 +261,7 @@ class BuilderTryCatchTest {
                             });
 
                             xb.aload(stringSlot);
-                            xb.returnInstruction(TypeKind.ReferenceType);
+                            xb.areturn();
                         });
                     });
         });
@@ -276,17 +277,17 @@ class BuilderTryCatchTest {
     }
 
     static byte[] generateTryCatchMethod(Consumer<CodeBuilder.CatchBuilder> c) {
-        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
+                    ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
-                            int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
-                            xb.constantInstruction("S");
+                            int stringSlot = xb.allocateLocal(TypeKind.REFERENCE);
+                            xb.loadConstant("S");
                             xb.astore(stringSlot);
 
                             xb.trying(tb -> {
                                 tb.aload(0);
-                                tb.constantInstruction(0);
+                                tb.loadConstant(0);
                                 // IndexOutOfBoundsException
                                 tb.aaload();
                                 // NullPointerException
@@ -295,7 +296,7 @@ class BuilderTryCatchTest {
                             }, c);
 
                             xb.aload(stringSlot);
-                            xb.returnInstruction(TypeKind.ReferenceType);
+                            xb.areturn();
                         });
                     });
         });

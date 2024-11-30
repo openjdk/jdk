@@ -28,14 +28,14 @@
 #include "globals_vectorApiSupport_linux.S.inc"
 #ifdef __VECTOR_API_MATH_INTRINSICS_LINUX
 # -- Machine type EM64t
-	.text
+        .text
 ..TXTST0:
 .L_2__routine_start___jsvml_log1pf4_ha_e9_0:
 # -- Begin  __jsvml_log1pf4_ha_e9
-	.text
+        .text
 # mark_begin;
-       .align    16,0x90
-	.globl __jsvml_log1pf4_ha_e9
+        .align    16,0x90
+        .globl __jsvml_log1pf4_ha_e9
 # --- __jsvml_log1pf4_ha_e9(__m128)
 __jsvml_log1pf4_ha_e9:
 # parameter 1: %xmm0
@@ -45,15 +45,15 @@ __jsvml_log1pf4_ha_e9:
         .byte     15                                            #439.540
         .byte     30                                            #439.540
         .byte     250                                           #439.540
-	.cfi_startproc
+        .cfi_startproc
 ..___tag_value___jsvml_log1pf4_ha_e9.1:
 ..L2:
                                                           #325.1
         pushq     %rbp                                          #325.1
-	.cfi_def_cfa_offset 16
+        .cfi_def_cfa_offset 16
         movq      %rsp, %rbp                                    #325.1
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
         andq      $-64, %rsp                                    #325.1
         subq      $192, %rsp                                    #325.1
         movaps    %xmm0, %xmm8                                  #325.1
@@ -148,11 +148,11 @@ __jsvml_log1pf4_ha_e9:
                                 # Execution count [1.00e+00]
         movq      %rbp, %rsp                                    #442.12
         popq      %rbp                                          #442.12
-	.cfi_def_cfa 7, 8
-	.cfi_restore 6
+        .cfi_def_cfa 7, 8
+        .cfi_restore 6
         ret                                                     #442.12
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
                                 # LOE
 ..B1.3:                         # Preds ..B1.1
                                 # Execution count [5.00e-02]: Infreq
@@ -163,10 +163,10 @@ __jsvml_log1pf4_ha_e9:
                                 # Execution count [2.25e-03]: Infreq
         xorl      %edx, %edx                                    #439.448
         movq      %r12, 8(%rsp)                                 #439.448[spill]
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
         movl      %edx, %r12d                                   #439.448
         movq      %r13, (%rsp)                                  #439.448[spill]
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
         movl      %eax, %r13d                                   #439.448
                                 # LOE rbx r12 r14 r15 r13d
 ..B1.7:                         # Preds ..B1.8 ..B1.6
@@ -183,13 +183,13 @@ __jsvml_log1pf4_ha_e9:
 ..B1.9:                         # Preds ..B1.8
                                 # Execution count [2.25e-03]: Infreq
         movq      8(%rsp), %r12                                 #[spill]
-	.cfi_restore 12
+        .cfi_restore 12
         movq      (%rsp), %r13                                  #[spill]
-	.cfi_restore 13
+        .cfi_restore 13
         movups    128(%rsp), %xmm0                              #439.667
         jmp       ..B1.2        # Prob 100%                     #439.667
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
                                 # LOE rbx r12 r13 r14 r15 xmm0
 ..B1.10:                        # Preds ..B1.7
                                 # Execution count [6.25e-04]: Infreq
@@ -202,20 +202,20 @@ __jsvml_log1pf4_ha_e9:
         jmp       ..B1.8        # Prob 100%                     #439.540
         .align    16,0x90
                                 # LOE rbx r14 r15 r12d r13d
-	.cfi_endproc
+        .cfi_endproc
 # mark_end;
-	.type	__jsvml_log1pf4_ha_e9,@function
-	.size	__jsvml_log1pf4_ha_e9,.-__jsvml_log1pf4_ha_e9
+        .type   __jsvml_log1pf4_ha_e9,@function
+        .size   __jsvml_log1pf4_ha_e9,.-__jsvml_log1pf4_ha_e9
 ..LN__jsvml_log1pf4_ha_e9.0:
-	.data
+        .data
 # -- End  __jsvml_log1pf4_ha_e9
-	.text
+        .text
 .L_2__routine_start___jsvml_log1pf8_ha_l9_1:
 # -- Begin  __jsvml_log1pf8_ha_l9
-	.text
+        .text
 # mark_begin;
-       .align    16,0x90
-	.globl __jsvml_log1pf8_ha_l9
+        .align    16,0x90
+        .globl __jsvml_log1pf8_ha_l9
 # --- __jsvml_log1pf8_ha_l9(__m256)
 __jsvml_log1pf8_ha_l9:
 # parameter 1: %ymm0
@@ -225,15 +225,15 @@ __jsvml_log1pf8_ha_l9:
         .byte     15                                            #561.546
         .byte     30                                            #561.546
         .byte     250                                           #561.546
-	.cfi_startproc
+        .cfi_startproc
 ..___tag_value___jsvml_log1pf8_ha_l9.22:
 ..L23:
                                                          #447.1
         pushq     %rbp                                          #447.1
-	.cfi_def_cfa_offset 16
+        .cfi_def_cfa_offset 16
         movq      %rsp, %rbp                                    #447.1
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
         andq      $-64, %rsp                                    #447.1
         subq      $192, %rsp                                    #447.1
         lea       -137216+__jsvml_slog1p_ha_data_internal(%rip), %rax #542.64
@@ -323,11 +323,11 @@ __jsvml_log1pf8_ha_l9:
                                 # Execution count [1.00e+00]
         movq      %rbp, %rsp                                    #564.12
         popq      %rbp                                          #564.12
-	.cfi_def_cfa 7, 8
-	.cfi_restore 6
+        .cfi_def_cfa 7, 8
+        .cfi_restore 6
         ret                                                     #564.12
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
                                 # LOE
 ..B2.3:                         # Preds ..B2.1
                                 # Execution count [5.00e-02]: Infreq
@@ -343,10 +343,10 @@ __jsvml_log1pf8_ha_l9:
                                 # Execution count [2.25e-03]: Infreq
         vzeroupper                                              #
         movq      %r12, 8(%rsp)                                 #[spill]
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
         movl      %eax, %r12d                                   #
         movq      %r13, (%rsp)                                  #[spill]
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
         movl      %edx, %r13d                                   #
                                 # LOE rbx r12 r14 r15 r13d
 ..B2.7:                         # Preds ..B2.8 ..B2.13
@@ -363,13 +363,13 @@ __jsvml_log1pf8_ha_l9:
 ..B2.9:                         # Preds ..B2.8
                                 # Execution count [2.25e-03]: Infreq
         movq      8(%rsp), %r12                                 #[spill]
-	.cfi_restore 12
+        .cfi_restore 12
         movq      (%rsp), %r13                                  #[spill]
-	.cfi_restore 13
+        .cfi_restore 13
         vmovups   128(%rsp), %ymm0                              #561.676
         jmp       ..B2.2        # Prob 100%                     #561.676
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
                                 # LOE rbx r12 r13 r14 r15 ymm0
 ..B2.10:                        # Preds ..B2.7
                                 # Execution count [6.25e-04]: Infreq
@@ -382,20 +382,20 @@ __jsvml_log1pf8_ha_l9:
         jmp       ..B2.8        # Prob 100%                     #561.546
         .align    16,0x90
                                 # LOE rbx r14 r15 r12d r13d
-	.cfi_endproc
+        .cfi_endproc
 # mark_end;
-	.type	__jsvml_log1pf8_ha_l9,@function
-	.size	__jsvml_log1pf8_ha_l9,.-__jsvml_log1pf8_ha_l9
+        .type   __jsvml_log1pf8_ha_l9,@function
+        .size   __jsvml_log1pf8_ha_l9,.-__jsvml_log1pf8_ha_l9
 ..LN__jsvml_log1pf8_ha_l9.1:
-	.data
+        .data
 # -- End  __jsvml_log1pf8_ha_l9
-	.text
+        .text
 .L_2__routine_start___jsvml_log1pf4_ha_l9_2:
 # -- Begin  __jsvml_log1pf4_ha_l9
-	.text
+        .text
 # mark_begin;
-       .align    16,0x90
-	.globl __jsvml_log1pf4_ha_l9
+        .align    16,0x90
+        .globl __jsvml_log1pf4_ha_l9
 # --- __jsvml_log1pf4_ha_l9(__m128)
 __jsvml_log1pf4_ha_l9:
 # parameter 1: %xmm0
@@ -405,15 +405,15 @@ __jsvml_log1pf4_ha_l9:
         .byte     15                                            #683.540
         .byte     30                                            #683.540
         .byte     250                                           #683.540
-	.cfi_startproc
+        .cfi_startproc
 ..___tag_value___jsvml_log1pf4_ha_l9.43:
 ..L44:
                                                          #569.1
         pushq     %rbp                                          #569.1
-	.cfi_def_cfa_offset 16
+        .cfi_def_cfa_offset 16
         movq      %rsp, %rbp                                    #569.1
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
         andq      $-64, %rsp                                    #569.1
         subq      $192, %rsp                                    #569.1
         vmovaps   %xmm0, %xmm8                                  #569.1
@@ -486,11 +486,11 @@ __jsvml_log1pf4_ha_l9:
                                 # Execution count [1.00e+00]
         movq      %rbp, %rsp                                    #686.12
         popq      %rbp                                          #686.12
-	.cfi_def_cfa 7, 8
-	.cfi_restore 6
+        .cfi_def_cfa 7, 8
+        .cfi_restore 6
         ret                                                     #686.12
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
                                 # LOE
 ..B3.3:                         # Preds ..B3.1
                                 # Execution count [5.00e-02]: Infreq
@@ -502,10 +502,10 @@ __jsvml_log1pf4_ha_l9:
                                 # Execution count [2.25e-03]: Infreq
         xorl      %edx, %edx                                    #683.448
         movq      %r12, 8(%rsp)                                 #683.448[spill]
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
         movl      %edx, %r12d                                   #683.448
         movq      %r13, (%rsp)                                  #683.448[spill]
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
         movl      %eax, %r13d                                   #683.448
                                 # LOE rbx r12 r14 r15 r13d
 ..B3.7:                         # Preds ..B3.8 ..B3.6
@@ -522,13 +522,13 @@ __jsvml_log1pf4_ha_l9:
 ..B3.9:                         # Preds ..B3.8
                                 # Execution count [2.25e-03]: Infreq
         movq      8(%rsp), %r12                                 #[spill]
-	.cfi_restore 12
+        .cfi_restore 12
         movq      (%rsp), %r13                                  #[spill]
-	.cfi_restore 13
+        .cfi_restore 13
         movups    128(%rsp), %xmm0                              #683.667
         jmp       ..B3.2        # Prob 100%                     #683.667
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
                                 # LOE rbx r12 r13 r14 r15 xmm0
 ..B3.10:                        # Preds ..B3.7
                                 # Execution count [6.25e-04]: Infreq
@@ -541,20 +541,20 @@ __jsvml_log1pf4_ha_l9:
         jmp       ..B3.8        # Prob 100%                     #683.540
         .align    16,0x90
                                 # LOE rbx r14 r15 r12d r13d
-	.cfi_endproc
+        .cfi_endproc
 # mark_end;
-	.type	__jsvml_log1pf4_ha_l9,@function
-	.size	__jsvml_log1pf4_ha_l9,.-__jsvml_log1pf4_ha_l9
+        .type   __jsvml_log1pf4_ha_l9,@function
+        .size   __jsvml_log1pf4_ha_l9,.-__jsvml_log1pf4_ha_l9
 ..LN__jsvml_log1pf4_ha_l9.2:
-	.data
+        .data
 # -- End  __jsvml_log1pf4_ha_l9
-	.text
+        .text
 .L_2__routine_start___jsvml_log1pf4_ha_ex_3:
 # -- Begin  __jsvml_log1pf4_ha_ex
-	.text
+        .text
 # mark_begin;
-       .align    16,0x90
-	.globl __jsvml_log1pf4_ha_ex
+        .align    16,0x90
+        .globl __jsvml_log1pf4_ha_ex
 # --- __jsvml_log1pf4_ha_ex(__m128)
 __jsvml_log1pf4_ha_ex:
 # parameter 1: %xmm0
@@ -564,15 +564,15 @@ __jsvml_log1pf4_ha_ex:
         .byte     15                                            #805.540
         .byte     30                                            #805.540
         .byte     250                                           #805.540
-	.cfi_startproc
+        .cfi_startproc
 ..___tag_value___jsvml_log1pf4_ha_ex.64:
 ..L65:
                                                          #691.1
         pushq     %rbp                                          #691.1
-	.cfi_def_cfa_offset 16
+        .cfi_def_cfa_offset 16
         movq      %rsp, %rbp                                    #691.1
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
         andq      $-64, %rsp                                    #691.1
         subq      $192, %rsp                                    #691.1
         movaps    %xmm0, %xmm8                                  #691.1
@@ -672,11 +672,11 @@ __jsvml_log1pf4_ha_ex:
                                 # Execution count [1.00e+00]
         movq      %rbp, %rsp                                    #808.12
         popq      %rbp                                          #808.12
-	.cfi_def_cfa 7, 8
-	.cfi_restore 6
+        .cfi_def_cfa 7, 8
+        .cfi_restore 6
         ret                                                     #808.12
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
                                 # LOE
 ..B4.3:                         # Preds ..B4.1
                                 # Execution count [5.00e-02]: Infreq
@@ -687,10 +687,10 @@ __jsvml_log1pf4_ha_ex:
                                 # Execution count [2.25e-03]: Infreq
         xorl      %edx, %edx                                    #805.448
         movq      %r12, 8(%rsp)                                 #805.448[spill]
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
         movl      %edx, %r12d                                   #805.448
         movq      %r13, (%rsp)                                  #805.448[spill]
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
         movl      %eax, %r13d                                   #805.448
                                 # LOE rbx r12 r14 r15 r13d
 ..B4.7:                         # Preds ..B4.8 ..B4.6
@@ -707,13 +707,13 @@ __jsvml_log1pf4_ha_ex:
 ..B4.9:                         # Preds ..B4.8
                                 # Execution count [2.25e-03]: Infreq
         movq      8(%rsp), %r12                                 #[spill]
-	.cfi_restore 12
+        .cfi_restore 12
         movq      (%rsp), %r13                                  #[spill]
-	.cfi_restore 13
+        .cfi_restore 13
         movups    128(%rsp), %xmm0                              #805.667
         jmp       ..B4.2        # Prob 100%                     #805.667
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
                                 # LOE rbx r12 r13 r14 r15 xmm0
 ..B4.10:                        # Preds ..B4.7
                                 # Execution count [6.25e-04]: Infreq
@@ -726,20 +726,20 @@ __jsvml_log1pf4_ha_ex:
         jmp       ..B4.8        # Prob 100%                     #805.540
         .align    16,0x90
                                 # LOE rbx r14 r15 r12d r13d
-	.cfi_endproc
+        .cfi_endproc
 # mark_end;
-	.type	__jsvml_log1pf4_ha_ex,@function
-	.size	__jsvml_log1pf4_ha_ex,.-__jsvml_log1pf4_ha_ex
+        .type   __jsvml_log1pf4_ha_ex,@function
+        .size   __jsvml_log1pf4_ha_ex,.-__jsvml_log1pf4_ha_ex
 ..LN__jsvml_log1pf4_ha_ex.3:
-	.data
+        .data
 # -- End  __jsvml_log1pf4_ha_ex
-	.text
+        .text
 .L_2__routine_start___jsvml_log1pf16_ha_z0_4:
 # -- Begin  __jsvml_log1pf16_ha_z0
-	.text
+        .text
 # mark_begin;
-       .align    16,0x90
-	.globl __jsvml_log1pf16_ha_z0
+        .align    16,0x90
+        .globl __jsvml_log1pf16_ha_z0
 # --- __jsvml_log1pf16_ha_z0(__m512)
 __jsvml_log1pf16_ha_z0:
 # parameter 1: %zmm0
@@ -749,15 +749,15 @@ __jsvml_log1pf16_ha_z0:
         .byte     15                                            #902.760
         .byte     30                                            #902.760
         .byte     250                                           #902.760
-	.cfi_startproc
+        .cfi_startproc
 ..___tag_value___jsvml_log1pf16_ha_z0.85:
 ..L86:
                                                          #813.1
         pushq     %rbp                                          #813.1
-	.cfi_def_cfa_offset 16
+        .cfi_def_cfa_offset 16
         movq      %rsp, %rbp                                    #813.1
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
         andq      $-64, %rsp                                    #813.1
         subq      $192, %rsp                                    #813.1
         vmovups   256+__jsvml_slog1p_ha_data_internal_avx512(%rip), %zmm4 #853.54
@@ -815,11 +815,11 @@ __jsvml_log1pf16_ha_z0:
                                 # Execution count [1.00e+00]
         movq      %rbp, %rsp                                    #905.12
         popq      %rbp                                          #905.12
-	.cfi_def_cfa 7, 8
-	.cfi_restore 6
+        .cfi_def_cfa 7, 8
+        .cfi_restore 6
         ret                                                     #905.12
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
                                 # LOE
 ..B5.3:                         # Preds ..B5.1
                                 # Execution count [5.00e-02]: Infreq
@@ -871,16 +871,16 @@ __jsvml_log1pf16_ha_z0:
                                 # Execution count [2.25e-03]: Infreq
         vzeroupper                                              #
         movq      %r12, 16(%rsp)                                #[spill]
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x50, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x50, 0xff, 0xff, 0xff, 0x22
         movl      %eax, %r12d                                   #
         movq      %r13, 8(%rsp)                                 #[spill]
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
         movl      %edx, %r13d                                   #
         movq      %r14, (%rsp)                                  #[spill]
-	.cfi_escape 0x10, 0x0e, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0e, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
         movl      %esi, %r14d                                   #
         movq      %rbx, 24(%rsp)                                #[spill]
-	.cfi_escape 0x10, 0x03, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x58, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x03, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x58, 0xff, 0xff, 0xff, 0x22
         movl      %ecx, %ebx                                    #
                                 # LOE rbx r15 r12d r13d r14d
 ..B5.12:                        # Preds ..B5.13 ..B5.18
@@ -897,21 +897,21 @@ __jsvml_log1pf16_ha_z0:
 ..B5.14:                        # Preds ..B5.13
                                 # Execution count [2.25e-03]: Infreq
         movq      (%rsp), %r14                                  #[spill]
-	.cfi_restore 14
+        .cfi_restore 14
         movl      %r12d, %eax                                   #
         movq      16(%rsp), %r12                                #[spill]
-	.cfi_restore 12
+        .cfi_restore 12
         movl      %r13d, %edx                                   #
         movq      8(%rsp), %r13                                 #[spill]
-	.cfi_restore 13
+        .cfi_restore 13
         movq      24(%rsp), %rbx                                #[spill]
-	.cfi_restore 3
+        .cfi_restore 3
         vmovups   128(%rsp), %zmm0                              #902.888
         jmp       ..B5.7        # Prob 100%                     #902.888
-	.cfi_escape 0x10, 0x03, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x58, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x50, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0e, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x03, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x58, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x50, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0e, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
                                 # LOE rbx r12 r13 r14 r15 eax edx zmm0
 ..B5.15:                        # Preds ..B5.12
                                 # Execution count [6.25e-04]: Infreq
@@ -924,20 +924,20 @@ __jsvml_log1pf16_ha_z0:
         jmp       ..B5.13       # Prob 100%                     #902.760
         .align    16,0x90
                                 # LOE r15 ebx r12d r13d r14d
-	.cfi_endproc
+        .cfi_endproc
 # mark_end;
-	.type	__jsvml_log1pf16_ha_z0,@function
-	.size	__jsvml_log1pf16_ha_z0,.-__jsvml_log1pf16_ha_z0
+        .type   __jsvml_log1pf16_ha_z0,@function
+        .size   __jsvml_log1pf16_ha_z0,.-__jsvml_log1pf16_ha_z0
 ..LN__jsvml_log1pf16_ha_z0.4:
-	.data
+        .data
 # -- End  __jsvml_log1pf16_ha_z0
-	.text
+        .text
 .L_2__routine_start___jsvml_log1pf8_ha_e9_5:
 # -- Begin  __jsvml_log1pf8_ha_e9
-	.text
+        .text
 # mark_begin;
-       .align    16,0x90
-	.globl __jsvml_log1pf8_ha_e9
+        .align    16,0x90
+        .globl __jsvml_log1pf8_ha_e9
 # --- __jsvml_log1pf8_ha_e9(__m256)
 __jsvml_log1pf8_ha_e9:
 # parameter 1: %ymm0
@@ -947,15 +947,15 @@ __jsvml_log1pf8_ha_e9:
         .byte     15                                            #1348.546
         .byte     30                                            #1348.546
         .byte     250                                           #1348.546
-	.cfi_startproc
+        .cfi_startproc
 ..___tag_value___jsvml_log1pf8_ha_e9.116:
 ..L117:
                                                         #1234.1
         pushq     %rbp                                          #1234.1
-	.cfi_def_cfa_offset 16
+        .cfi_def_cfa_offset 16
         movq      %rsp, %rbp                                    #1234.1
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
         andq      $-64, %rsp                                    #1234.1
         subq      $192, %rsp                                    #1234.1
         lea       -137216+__jsvml_slog1p_ha_data_internal(%rip), %rax #1329.42
@@ -1061,11 +1061,11 @@ __jsvml_log1pf8_ha_e9:
         vmovaps   %ymm1, %ymm0                                  #1351.12
         movq      %rbp, %rsp                                    #1351.12
         popq      %rbp                                          #1351.12
-	.cfi_def_cfa 7, 8
-	.cfi_restore 6
+        .cfi_def_cfa 7, 8
+        .cfi_restore 6
         ret                                                     #1351.12
-	.cfi_def_cfa 6, 16
-	.cfi_offset 6, -16
+        .cfi_def_cfa 6, 16
+        .cfi_offset 6, -16
                                 # LOE
 ..B6.3:                         # Preds ..B6.1
                                 # Execution count [5.00e-02]: Infreq
@@ -1082,10 +1082,10 @@ __jsvml_log1pf8_ha_e9:
                                 # Execution count [2.25e-03]: Infreq
         vzeroupper                                              #
         movq      %r12, 8(%rsp)                                 #[spill]
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
         movl      %eax, %r12d                                   #
         movq      %r13, (%rsp)                                  #[spill]
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
         movl      %edx, %r13d                                   #
                                 # LOE rbx r12 r14 r15 r13d
 ..B6.7:                         # Preds ..B6.8 ..B6.13
@@ -1102,13 +1102,13 @@ __jsvml_log1pf8_ha_e9:
 ..B6.9:                         # Preds ..B6.8
                                 # Execution count [2.25e-03]: Infreq
         movq      8(%rsp), %r12                                 #[spill]
-	.cfi_restore 12
+        .cfi_restore 12
         movq      (%rsp), %r13                                  #[spill]
-	.cfi_restore 13
+        .cfi_restore 13
         vmovups   128(%rsp), %ymm1                              #1348.676
         jmp       ..B6.2        # Prob 100%                     #1348.676
-	.cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
-	.cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0c, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x48, 0xff, 0xff, 0xff, 0x22
+        .cfi_escape 0x10, 0x0d, 0x0e, 0x38, 0x1c, 0x0d, 0xc0, 0xff, 0xff, 0xff, 0x1a, 0x0d, 0x40, 0xff, 0xff, 0xff, 0x22
                                 # LOE rbx r12 r13 r14 r15 ymm1
 ..B6.10:                        # Preds ..B6.7
                                 # Execution count [6.25e-04]: Infreq
@@ -1121,21 +1121,21 @@ __jsvml_log1pf8_ha_e9:
         jmp       ..B6.8        # Prob 100%                     #1348.546
         .align    16,0x90
                                 # LOE rbx r14 r15 r12d r13d
-	.cfi_endproc
+        .cfi_endproc
 # mark_end;
-	.type	__jsvml_log1pf8_ha_e9,@function
-	.size	__jsvml_log1pf8_ha_e9,.-__jsvml_log1pf8_ha_e9
+        .type   __jsvml_log1pf8_ha_e9,@function
+        .size   __jsvml_log1pf8_ha_e9,.-__jsvml_log1pf8_ha_e9
 ..LN__jsvml_log1pf8_ha_e9.5:
-	.data
+        .data
 # -- End  __jsvml_log1pf8_ha_e9
-	.text
+        .text
 .L_2__routine_start___jsvml_slog1p_ha_cout_rare_internal_6:
 # -- Begin  __jsvml_slog1p_ha_cout_rare_internal
-	.text
+        .text
 # mark_begin;
-       .align    16,0x90
-	.hidden __jsvml_slog1p_ha_cout_rare_internal
-	.globl __jsvml_slog1p_ha_cout_rare_internal
+        .align    16,0x90
+        .hidden __jsvml_slog1p_ha_cout_rare_internal
+        .globl __jsvml_slog1p_ha_cout_rare_internal
 # --- __jsvml_slog1p_ha_cout_rare_internal(const float *, float *)
 __jsvml_slog1p_ha_cout_rare_internal:
 # parameter 1: %rdi
@@ -1146,7 +1146,7 @@ __jsvml_slog1p_ha_cout_rare_internal:
         .byte     15                                            #1221.13
         .byte     30                                            #1221.13
         .byte     250                                           #1221.13
-	.cfi_startproc
+        .cfi_startproc
 ..___tag_value___jsvml_slog1p_ha_cout_rare_internal.137:
 ..L138:
                                                         #1121.1
@@ -1373,1508 +1373,1508 @@ __jsvml_slog1p_ha_cout_rare_internal:
         ret                                                     #1221.13
         .align    16,0x90
                                 # LOE rbx rbp r12 r13 r14 r15 eax
-	.cfi_endproc
+        .cfi_endproc
 # mark_end;
-	.type	__jsvml_slog1p_ha_cout_rare_internal,@function
-	.size	__jsvml_slog1p_ha_cout_rare_internal,.-__jsvml_slog1p_ha_cout_rare_internal
+        .type   __jsvml_slog1p_ha_cout_rare_internal,@function
+        .size   __jsvml_slog1p_ha_cout_rare_internal,.-__jsvml_slog1p_ha_cout_rare_internal
 ..LN__jsvml_slog1p_ha_cout_rare_internal.6:
-	.data
+        .data
 # -- End  __jsvml_slog1p_ha_cout_rare_internal
-	.section .rodata, "a"
-	.align 64
-	.align 64
-	.hidden __jsvml_slog1p_ha_data_internal_avx512
-	.globl __jsvml_slog1p_ha_data_internal_avx512
+        .section .rodata, "a"
+        .align 64
+        .align 64
+        .hidden __jsvml_slog1p_ha_data_internal_avx512
+        .globl __jsvml_slog1p_ha_data_internal_avx512
 __jsvml_slog1p_ha_data_internal_avx512:
-	.long	1060205056
-	.long	1059688960
-	.long	1059187712
-	.long	1058701824
-	.long	1058229248
-	.long	1057769472
-	.long	1057321984
-	.long	1056807936
-	.long	1055958016
-	.long	1055129600
-	.long	1054320640
-	.long	1053531136
-	.long	1052760064
-	.long	1052006400
-	.long	1051268096
-	.long	1050547200
-	.long	1049840640
-	.long	1049148416
-	.long	1048365056
-	.long	1047035904
-	.long	1045733376
-	.long	1044455424
-	.long	1043200000
-	.long	1041969152
-	.long	1040760832
-	.long	1038958592
-	.long	1036623872
-	.long	1034330112
-	.long	1032073216
-	.long	1027907584
-	.long	1023541248
-	.long	1015087104
-	.long	901758606
-	.long	3071200204
-	.long	931108809
-	.long	3074069268
-	.long	3077535321
-	.long	3071146094
-	.long	3063010043
-	.long	3072147991
-	.long	908173938
-	.long	3049723733
-	.long	925190435
-	.long	923601997
-	.long	3048768765
-	.long	3076457870
-	.long	926424291
-	.long	3073778483
-	.long	3069146713
-	.long	912794238
-	.long	912483742
-	.long	920635797
-	.long	3054902185
-	.long	3069864633
-	.long	922801832
-	.long	3033791132
-	.long	3076717488
-	.long	3076037756
-	.long	3072434855
-	.long	3077481184
-	.long	3066991812
-	.long	917116064
-	.long	925811956
-	.long	900509991
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	2147483648
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3212836864
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	3196061712
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	1051373854
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.type	__jsvml_slog1p_ha_data_internal_avx512,@object
-	.size	__jsvml_slog1p_ha_data_internal_avx512,768
-	.align 64
-	.hidden __jsvml_slog1p_ha_data_internal
-	.globl __jsvml_slog1p_ha_data_internal
+        .long   1060205056
+        .long   1059688960
+        .long   1059187712
+        .long   1058701824
+        .long   1058229248
+        .long   1057769472
+        .long   1057321984
+        .long   1056807936
+        .long   1055958016
+        .long   1055129600
+        .long   1054320640
+        .long   1053531136
+        .long   1052760064
+        .long   1052006400
+        .long   1051268096
+        .long   1050547200
+        .long   1049840640
+        .long   1049148416
+        .long   1048365056
+        .long   1047035904
+        .long   1045733376
+        .long   1044455424
+        .long   1043200000
+        .long   1041969152
+        .long   1040760832
+        .long   1038958592
+        .long   1036623872
+        .long   1034330112
+        .long   1032073216
+        .long   1027907584
+        .long   1023541248
+        .long   1015087104
+        .long   901758606
+        .long   3071200204
+        .long   931108809
+        .long   3074069268
+        .long   3077535321
+        .long   3071146094
+        .long   3063010043
+        .long   3072147991
+        .long   908173938
+        .long   3049723733
+        .long   925190435
+        .long   923601997
+        .long   3048768765
+        .long   3076457870
+        .long   926424291
+        .long   3073778483
+        .long   3069146713
+        .long   912794238
+        .long   912483742
+        .long   920635797
+        .long   3054902185
+        .long   3069864633
+        .long   922801832
+        .long   3033791132
+        .long   3076717488
+        .long   3076037756
+        .long   3072434855
+        .long   3077481184
+        .long   3066991812
+        .long   917116064
+        .long   925811956
+        .long   900509991
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   2147483648
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3212836864
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   3196061712
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   1051373854
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .type   __jsvml_slog1p_ha_data_internal_avx512,@object
+        .size   __jsvml_slog1p_ha_data_internal_avx512,768
+        .align 64
+        .hidden __jsvml_slog1p_ha_data_internal
+        .globl __jsvml_slog1p_ha_data_internal
 __jsvml_slog1p_ha_data_internal:
-	.long	3266227256
-	.long	3107766024
-	.long	3266228276
-	.long	3107776882
-	.long	3266229284
-	.long	3109949545
-	.long	3266230292
-	.long	3108055846
-	.long	3266231292
-	.long	3106351937
-	.long	3266232276
-	.long	3109092567
-	.long	3266233260
-	.long	3107948216
-	.long	3266234236
-	.long	3107170960
-	.long	3266235204
-	.long	3106817287
-	.long	3266236164
-	.long	3106942449
-	.long	3266237116
-	.long	3107600489
-	.long	3266238060
-	.long	3108844279
-	.long	3266239004
-	.long	3106531253
-	.long	3266239932
-	.long	3109100650
-	.long	3266240860
-	.long	3108213420
-	.long	3266241780
-	.long	3108112381
-	.long	3266242692
-	.long	3108845034
-	.long	3266243604
-	.long	3106263589
-	.long	3266244500
-	.long	3108802209
-	.long	3266245396
-	.long	3108116909
-	.long	3266246284
-	.long	3108445707
-	.long	3266247164
-	.long	3109831435
-	.long	3266248044
-	.long	3108121760
-	.long	3266248916
-	.long	3107552123
-	.long	3266249780
-	.long	3108162844
-	.long	3266250644
-	.long	3105799146
-	.long	3266251492
-	.long	3108888393
-	.long	3266252340
-	.long	3109079979
-	.long	3266253188
-	.long	3106411173
-	.long	3266254020
-	.long	3109307139
-	.long	3266254852
-	.long	3109415127
-	.long	3266255684
-	.long	3106770317
-	.long	3266256500
-	.long	3109795834
-	.long	3266257324
-	.long	3105942641
-	.long	3266258132
-	.long	3107826892
-	.long	3266258940
-	.long	3107092610
-	.long	3266259740
-	.long	3107966131
-	.long	3266260540
-	.long	3106284596
-	.long	3266261332
-	.long	3106273188
-	.long	3266262116
-	.long	3107962226
-	.long	3266262900
-	.long	3107187186
-	.long	3266263676
-	.long	3108171617
-	.long	3266264452
-	.long	3106749947
-	.long	3266265220
-	.long	3107144703
-	.long	3266265980
-	.long	3109383615
-	.long	3266266740
-	.long	3109299629
-	.long	3266267500
-	.long	3106919521
-	.long	3266268252
-	.long	3106463913
-	.long	3266268996
-	.long	3107958670
-	.long	3266269740
-	.long	3107234917
-	.long	3266270476
-	.long	3108511954
-	.long	3266271212
-	.long	3107620056
-	.long	3266271940
-	.long	3108777693
-	.long	3266272668
-	.long	3107814325
-	.long	3266273388
-	.long	3108947630
-	.long	3266274108
-	.long	3108006290
-	.long	3266274820
-	.long	3109207222
-	.long	3266275532
-	.long	3108378366
-	.long	3266276236
-	.long	3109735912
-	.long	3266276940
-	.long	3109107087
-	.long	3266277644
-	.long	3106513079
-	.long	3266278340
-	.long	3106169044
-	.long	3266279028
-	.long	3108095503
-	.long	3266279716
-	.long	3108118349
-	.long	3266280404
-	.long	3106257463
-	.long	3266281084
-	.long	3106726720
-	.long	3266281756
-	.long	3109545389
-	.long	3266282436
-	.long	3106343833
-	.long	3266283100
-	.long	3109723642
-	.long	3266283772
-	.long	3107120300
-	.long	3266284436
-	.long	3106940529
-	.long	3266285092
-	.long	3109202170
-	.long	3266285748
-	.long	3109728494
-	.long	3266286404
-	.long	3108536808
-	.long	3266287052
-	.long	3109838471
-	.long	3266287700
-	.long	3109455977
-	.long	3266288348
-	.long	3107405879
-	.long	3266288988
-	.long	3107898790
-	.long	3266289628
-	.long	3106756477
-	.long	3266290260
-	.long	3108189081
-	.long	3266290892
-	.long	3108017907
-	.long	3266291524
-	.long	3106258339
-	.long	3266292148
-	.long	3107119845
-	.long	3266292772
-	.long	3106423069
-	.long	3266293388
-	.long	3108377050
-	.long	3266294004
-	.long	3108802011
-	.long	3266294620
-	.long	3107712277
-	.long	3266295228
-	.long	3109316274
-	.long	3266295836
-	.long	3109433625
-	.long	3266296444
-	.long	3108078064
-	.long	3266297044
-	.long	3109457438
-	.long	3266297644
-	.long	3109390801
-	.long	3266298244
-	.long	3107891329
-	.long	3266298836
-	.long	3109166323
-	.long	3266299428
-	.long	3109034299
-	.long	3266300020
-	.long	3107507904
-	.long	3266300604
-	.long	3108793919
-	.long	3266301188
-	.long	3108710352
-	.long	3266301772
-	.long	3107269350
-	.long	3266302348
-	.long	3108677203
-	.long	3266302924
-	.long	3108751436
-	.long	3266303500
-	.long	3107503720
-	.long	3266304068
-	.long	3109139881
-	.long	3266304636
-	.long	3109476985
-	.long	3266305204
-	.long	3108526254
-	.long	3266305772
-	.long	3106298768
-	.long	3266306332
-	.long	3106999765
-	.long	3266306892
-	.long	3106445739
-	.long	3266307444
-	.long	3108841650
-	.long	3266308004
-	.long	3105809415
-	.long	3266308548
-	.long	3109942336
-	.long	3266309100
-	.long	3108667760
-	.long	3266309652
-	.long	3106190122
-	.long	3266310196
-	.long	3106713732
-	.long	3266310740
-	.long	3106054165
-	.long	3266311276
-	.long	3108415484
-	.long	3266311812
-	.long	3109613023
-	.long	3266312348
-	.long	3109656301
-	.long	3266312884
-	.long	3108554723
-	.long	3266313420
-	.long	3106317576
-	.long	3266313948
-	.long	3107148341
-	.long	3266314476
-	.long	3106861780
-	.long	3266314996
-	.long	3109661153
-	.long	3266315524
-	.long	3107166702
-	.long	3266316044
-	.long	3107775778
-	.long	3266316564
-	.long	3107302717
-	.long	3266317076
-	.long	3109950361
-	.long	3266317596
-	.long	3107338539
-	.long	3266318108
-	.long	3107864196
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	2147483647
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	964689920
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2139095040
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	2063597568
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	1051372345
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	3204448310
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	998244352
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	3212836863
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	2055208960
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	4294967040
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	901758464
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	3204448256
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	1051372203
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	3196059527
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	1045220287
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	3190475908
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	1041398342
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	3187262718
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	1037844266
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	3187902610
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	1039525906
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	16777216
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	25165824
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	1059760811
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	8388607
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	1060205056
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	901758606
-	.long	2139095040
-	.long	4286578688
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.long	1065353216
-	.long	3212836864
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.long	0
-	.long	2147483648
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.byte	0
-	.type	__jsvml_slog1p_ha_data_internal,@object
-	.size	__jsvml_slog1p_ha_data_internal,3264
-	.align 32
+        .long   3266227256
+        .long   3107766024
+        .long   3266228276
+        .long   3107776882
+        .long   3266229284
+        .long   3109949545
+        .long   3266230292
+        .long   3108055846
+        .long   3266231292
+        .long   3106351937
+        .long   3266232276
+        .long   3109092567
+        .long   3266233260
+        .long   3107948216
+        .long   3266234236
+        .long   3107170960
+        .long   3266235204
+        .long   3106817287
+        .long   3266236164
+        .long   3106942449
+        .long   3266237116
+        .long   3107600489
+        .long   3266238060
+        .long   3108844279
+        .long   3266239004
+        .long   3106531253
+        .long   3266239932
+        .long   3109100650
+        .long   3266240860
+        .long   3108213420
+        .long   3266241780
+        .long   3108112381
+        .long   3266242692
+        .long   3108845034
+        .long   3266243604
+        .long   3106263589
+        .long   3266244500
+        .long   3108802209
+        .long   3266245396
+        .long   3108116909
+        .long   3266246284
+        .long   3108445707
+        .long   3266247164
+        .long   3109831435
+        .long   3266248044
+        .long   3108121760
+        .long   3266248916
+        .long   3107552123
+        .long   3266249780
+        .long   3108162844
+        .long   3266250644
+        .long   3105799146
+        .long   3266251492
+        .long   3108888393
+        .long   3266252340
+        .long   3109079979
+        .long   3266253188
+        .long   3106411173
+        .long   3266254020
+        .long   3109307139
+        .long   3266254852
+        .long   3109415127
+        .long   3266255684
+        .long   3106770317
+        .long   3266256500
+        .long   3109795834
+        .long   3266257324
+        .long   3105942641
+        .long   3266258132
+        .long   3107826892
+        .long   3266258940
+        .long   3107092610
+        .long   3266259740
+        .long   3107966131
+        .long   3266260540
+        .long   3106284596
+        .long   3266261332
+        .long   3106273188
+        .long   3266262116
+        .long   3107962226
+        .long   3266262900
+        .long   3107187186
+        .long   3266263676
+        .long   3108171617
+        .long   3266264452
+        .long   3106749947
+        .long   3266265220
+        .long   3107144703
+        .long   3266265980
+        .long   3109383615
+        .long   3266266740
+        .long   3109299629
+        .long   3266267500
+        .long   3106919521
+        .long   3266268252
+        .long   3106463913
+        .long   3266268996
+        .long   3107958670
+        .long   3266269740
+        .long   3107234917
+        .long   3266270476
+        .long   3108511954
+        .long   3266271212
+        .long   3107620056
+        .long   3266271940
+        .long   3108777693
+        .long   3266272668
+        .long   3107814325
+        .long   3266273388
+        .long   3108947630
+        .long   3266274108
+        .long   3108006290
+        .long   3266274820
+        .long   3109207222
+        .long   3266275532
+        .long   3108378366
+        .long   3266276236
+        .long   3109735912
+        .long   3266276940
+        .long   3109107087
+        .long   3266277644
+        .long   3106513079
+        .long   3266278340
+        .long   3106169044
+        .long   3266279028
+        .long   3108095503
+        .long   3266279716
+        .long   3108118349
+        .long   3266280404
+        .long   3106257463
+        .long   3266281084
+        .long   3106726720
+        .long   3266281756
+        .long   3109545389
+        .long   3266282436
+        .long   3106343833
+        .long   3266283100
+        .long   3109723642
+        .long   3266283772
+        .long   3107120300
+        .long   3266284436
+        .long   3106940529
+        .long   3266285092
+        .long   3109202170
+        .long   3266285748
+        .long   3109728494
+        .long   3266286404
+        .long   3108536808
+        .long   3266287052
+        .long   3109838471
+        .long   3266287700
+        .long   3109455977
+        .long   3266288348
+        .long   3107405879
+        .long   3266288988
+        .long   3107898790
+        .long   3266289628
+        .long   3106756477
+        .long   3266290260
+        .long   3108189081
+        .long   3266290892
+        .long   3108017907
+        .long   3266291524
+        .long   3106258339
+        .long   3266292148
+        .long   3107119845
+        .long   3266292772
+        .long   3106423069
+        .long   3266293388
+        .long   3108377050
+        .long   3266294004
+        .long   3108802011
+        .long   3266294620
+        .long   3107712277
+        .long   3266295228
+        .long   3109316274
+        .long   3266295836
+        .long   3109433625
+        .long   3266296444
+        .long   3108078064
+        .long   3266297044
+        .long   3109457438
+        .long   3266297644
+        .long   3109390801
+        .long   3266298244
+        .long   3107891329
+        .long   3266298836
+        .long   3109166323
+        .long   3266299428
+        .long   3109034299
+        .long   3266300020
+        .long   3107507904
+        .long   3266300604
+        .long   3108793919
+        .long   3266301188
+        .long   3108710352
+        .long   3266301772
+        .long   3107269350
+        .long   3266302348
+        .long   3108677203
+        .long   3266302924
+        .long   3108751436
+        .long   3266303500
+        .long   3107503720
+        .long   3266304068
+        .long   3109139881
+        .long   3266304636
+        .long   3109476985
+        .long   3266305204
+        .long   3108526254
+        .long   3266305772
+        .long   3106298768
+        .long   3266306332
+        .long   3106999765
+        .long   3266306892
+        .long   3106445739
+        .long   3266307444
+        .long   3108841650
+        .long   3266308004
+        .long   3105809415
+        .long   3266308548
+        .long   3109942336
+        .long   3266309100
+        .long   3108667760
+        .long   3266309652
+        .long   3106190122
+        .long   3266310196
+        .long   3106713732
+        .long   3266310740
+        .long   3106054165
+        .long   3266311276
+        .long   3108415484
+        .long   3266311812
+        .long   3109613023
+        .long   3266312348
+        .long   3109656301
+        .long   3266312884
+        .long   3108554723
+        .long   3266313420
+        .long   3106317576
+        .long   3266313948
+        .long   3107148341
+        .long   3266314476
+        .long   3106861780
+        .long   3266314996
+        .long   3109661153
+        .long   3266315524
+        .long   3107166702
+        .long   3266316044
+        .long   3107775778
+        .long   3266316564
+        .long   3107302717
+        .long   3266317076
+        .long   3109950361
+        .long   3266317596
+        .long   3107338539
+        .long   3266318108
+        .long   3107864196
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   2147483647
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   964689920
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2139095040
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   2063597568
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   1051372345
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   3204448310
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   998244352
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   3212836863
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   2055208960
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   4294967040
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   901758464
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   1065353216
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   3204448256
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   1051372203
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   3196059527
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   1045220287
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   3190475908
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   1041398342
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   3187262718
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   1037844266
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   3187902610
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   1039525906
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   16777216
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   25165824
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   1059760811
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   8388607
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   1060205056
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   901758606
+        .long   2139095040
+        .long   4286578688
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .long   1065353216
+        .long   3212836864
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .long   0
+        .long   2147483648
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .byte   0
+        .type   __jsvml_slog1p_ha_data_internal,@object
+        .size   __jsvml_slog1p_ha_data_internal,3264
+        .align 32
 _vmldLnHATab:
-	.long	1065353216
-	.long	0
-	.long	0
-	.long	1065091072
-	.long	1015087104
-	.long	900509991
-	.long	1064828928
-	.long	1023541248
-	.long	925811956
-	.long	1064566784
-	.long	1027915776
-	.long	3084221144
-	.long	1064304640
-	.long	1032073216
-	.long	3066991812
-	.long	1064173568
-	.long	1033195520
-	.long	882149603
-	.long	1063911424
-	.long	1035468800
-	.long	928189163
-	.long	1063649280
-	.long	1037783040
-	.long	927501741
-	.long	1063518208
-	.long	1038958592
-	.long	3076037756
-	.long	1063256064
-	.long	1040759808
-	.long	904405630
-	.long	1063124992
-	.long	1041361920
-	.long	3052231524
-	.long	1062862848
-	.long	1042581504
-	.long	922094799
-	.long	1062731776
-	.long	1043201024
-	.long	3070120623
-	.long	1062469632
-	.long	1044455424
-	.long	3069864633
-	.long	1062338560
-	.long	1045091328
-	.long	3063188516
-	.long	1062207488
-	.long	1045733376
-	.long	3054902185
-	.long	1061945344
-	.long	1047035904
-	.long	920635797
-	.long	1061814272
-	.long	1047697408
-	.long	904920689
-	.long	1061683200
-	.long	1048365056
-	.long	912483742
-	.long	1061552128
-	.long	1048807936
-	.long	3052664405
-	.long	1061421056
-	.long	1049148416
-	.long	912794238
-	.long	1061158912
-	.long	1049840384
-	.long	889474359
-	.long	1061027840
-	.long	1050191872
-	.long	3059868362
-	.long	1060896768
-	.long	1050546944
-	.long	3059256525
-	.long	1060765696
-	.long	1050905600
-	.long	912008988
-	.long	1060634624
-	.long	1051268352
-	.long	912290698
-	.long	1060503552
-	.long	1051635200
-	.long	3037211048
-	.long	1060372480
-	.long	1052005888
-	.long	906226119
-	.long	1060241408
-	.long	1052380928
-	.long	3052480305
-	.long	1060110336
-	.long	1052760064
-	.long	3048768765
-	.long	1059979264
-	.long	1053143552
-	.long	3049975450
-	.long	1059848192
-	.long	1053531392
-	.long	894485718
-	.long	1059717120
-	.long	1053923840
-	.long	897598623
-	.long	1059586048
-	.long	1054320896
-	.long	907355277
-	.long	1059586048
-	.long	1054320896
-	.long	907355277
-	.long	1059454976
-	.long	1054722816
-	.long	881705073
-	.long	1059323904
-	.long	1055129600
-	.long	3049723733
-	.long	1059192832
-	.long	1055541248
-	.long	890353599
-	.long	1059061760
-	.long	1055958016
-	.long	908173938
-	.long	1059061760
-	.long	1055958016
-	.long	908173938
-	.long	1058930688
-	.long	1056380160
-	.long	883644938
-	.long	1058799616
-	.long	1056807680
-	.long	3052015799
-	.long	1058668544
-	.long	1057102592
-	.long	884897284
-	.long	1058668544
-	.long	1057102592
-	.long	884897284
-	.long	1058537472
-	.long	1057321920
-	.long	3037632470
-	.long	1058406400
-	.long	1057544128
-	.long	865017195
-	.long	1058275328
-	.long	1057769344
-	.long	3042936546
-	.long	1058275328
-	.long	1057769344
-	.long	3042936546
-	.long	1058144256
-	.long	1057997568
-	.long	903344518
-	.long	1058013184
-	.long	1058228992
-	.long	897862967
-	.long	1058013184
-	.long	1058228992
-	.long	897862967
-	.long	1057882112
-	.long	1058463680
-	.long	3047822280
-	.long	1057882112
-	.long	1058463680
-	.long	3047822280
-	.long	1057751040
-	.long	1058701632
-	.long	883793293
-	.long	1057619968
-	.long	1058943040
-	.long	851667963
-	.long	1057619968
-	.long	1058943040
-	.long	851667963
-	.long	1057488896
-	.long	1059187968
-	.long	3000004036
-	.long	1057488896
-	.long	1059187968
-	.long	3000004036
-	.long	1057357824
-	.long	1059436544
-	.long	3047430717
-	.long	1057357824
-	.long	1059436544
-	.long	3047430717
-	.long	1057226752
-	.long	1059688832
-	.long	3043802308
-	.long	1057226752
-	.long	1059688832
-	.long	3043802308
-	.long	1057095680
-	.long	1059944960
-	.long	876113044
-	.long	1057095680
-	.long	1059944960
-	.long	876113044
-	.long	1056964608
-	.long	1060205056
-	.long	901758606
-	.long	1060205056
-	.long	901758606
-	.long	1207959616
-	.long	1174405120
-	.long	1008730112
-	.long	1400897536
-	.long	0
-	.long	1065353216
-	.long	3204448256
-	.long	1051372203
-	.long	3196059648
-	.long	1045220557
-	.long	3190467243
-	.long	1041387009
-	.long	3187672480
-	.type	_vmldLnHATab,@object
-	.size	_vmldLnHATab,840
-	.space 8, 0x00 	# pad
-	.align 16
+        .long   1065353216
+        .long   0
+        .long   0
+        .long   1065091072
+        .long   1015087104
+        .long   900509991
+        .long   1064828928
+        .long   1023541248
+        .long   925811956
+        .long   1064566784
+        .long   1027915776
+        .long   3084221144
+        .long   1064304640
+        .long   1032073216
+        .long   3066991812
+        .long   1064173568
+        .long   1033195520
+        .long   882149603
+        .long   1063911424
+        .long   1035468800
+        .long   928189163
+        .long   1063649280
+        .long   1037783040
+        .long   927501741
+        .long   1063518208
+        .long   1038958592
+        .long   3076037756
+        .long   1063256064
+        .long   1040759808
+        .long   904405630
+        .long   1063124992
+        .long   1041361920
+        .long   3052231524
+        .long   1062862848
+        .long   1042581504
+        .long   922094799
+        .long   1062731776
+        .long   1043201024
+        .long   3070120623
+        .long   1062469632
+        .long   1044455424
+        .long   3069864633
+        .long   1062338560
+        .long   1045091328
+        .long   3063188516
+        .long   1062207488
+        .long   1045733376
+        .long   3054902185
+        .long   1061945344
+        .long   1047035904
+        .long   920635797
+        .long   1061814272
+        .long   1047697408
+        .long   904920689
+        .long   1061683200
+        .long   1048365056
+        .long   912483742
+        .long   1061552128
+        .long   1048807936
+        .long   3052664405
+        .long   1061421056
+        .long   1049148416
+        .long   912794238
+        .long   1061158912
+        .long   1049840384
+        .long   889474359
+        .long   1061027840
+        .long   1050191872
+        .long   3059868362
+        .long   1060896768
+        .long   1050546944
+        .long   3059256525
+        .long   1060765696
+        .long   1050905600
+        .long   912008988
+        .long   1060634624
+        .long   1051268352
+        .long   912290698
+        .long   1060503552
+        .long   1051635200
+        .long   3037211048
+        .long   1060372480
+        .long   1052005888
+        .long   906226119
+        .long   1060241408
+        .long   1052380928
+        .long   3052480305
+        .long   1060110336
+        .long   1052760064
+        .long   3048768765
+        .long   1059979264
+        .long   1053143552
+        .long   3049975450
+        .long   1059848192
+        .long   1053531392
+        .long   894485718
+        .long   1059717120
+        .long   1053923840
+        .long   897598623
+        .long   1059586048
+        .long   1054320896
+        .long   907355277
+        .long   1059586048
+        .long   1054320896
+        .long   907355277
+        .long   1059454976
+        .long   1054722816
+        .long   881705073
+        .long   1059323904
+        .long   1055129600
+        .long   3049723733
+        .long   1059192832
+        .long   1055541248
+        .long   890353599
+        .long   1059061760
+        .long   1055958016
+        .long   908173938
+        .long   1059061760
+        .long   1055958016
+        .long   908173938
+        .long   1058930688
+        .long   1056380160
+        .long   883644938
+        .long   1058799616
+        .long   1056807680
+        .long   3052015799
+        .long   1058668544
+        .long   1057102592
+        .long   884897284
+        .long   1058668544
+        .long   1057102592
+        .long   884897284
+        .long   1058537472
+        .long   1057321920
+        .long   3037632470
+        .long   1058406400
+        .long   1057544128
+        .long   865017195
+        .long   1058275328
+        .long   1057769344
+        .long   3042936546
+        .long   1058275328
+        .long   1057769344
+        .long   3042936546
+        .long   1058144256
+        .long   1057997568
+        .long   903344518
+        .long   1058013184
+        .long   1058228992
+        .long   897862967
+        .long   1058013184
+        .long   1058228992
+        .long   897862967
+        .long   1057882112
+        .long   1058463680
+        .long   3047822280
+        .long   1057882112
+        .long   1058463680
+        .long   3047822280
+        .long   1057751040
+        .long   1058701632
+        .long   883793293
+        .long   1057619968
+        .long   1058943040
+        .long   851667963
+        .long   1057619968
+        .long   1058943040
+        .long   851667963
+        .long   1057488896
+        .long   1059187968
+        .long   3000004036
+        .long   1057488896
+        .long   1059187968
+        .long   3000004036
+        .long   1057357824
+        .long   1059436544
+        .long   3047430717
+        .long   1057357824
+        .long   1059436544
+        .long   3047430717
+        .long   1057226752
+        .long   1059688832
+        .long   3043802308
+        .long   1057226752
+        .long   1059688832
+        .long   3043802308
+        .long   1057095680
+        .long   1059944960
+        .long   876113044
+        .long   1057095680
+        .long   1059944960
+        .long   876113044
+        .long   1056964608
+        .long   1060205056
+        .long   901758606
+        .long   1060205056
+        .long   901758606
+        .long   1207959616
+        .long   1174405120
+        .long   1008730112
+        .long   1400897536
+        .long   0
+        .long   1065353216
+        .long   3204448256
+        .long   1051372203
+        .long   3196059648
+        .long   1045220557
+        .long   3190467243
+        .long   1041387009
+        .long   3187672480
+        .type   _vmldLnHATab,@object
+        .size   _vmldLnHATab,840
+        .space 8, 0x00  # pad
+        .align 16
 .L_2il0floatpacket.23:
-	.long	0x4b400000,0x4b400000,0x4b400000,0x4b400000
-	.type	.L_2il0floatpacket.23,@object
-	.size	.L_2il0floatpacket.23,16
-	.align 4
+        .long   0x4b400000,0x4b400000,0x4b400000,0x4b400000
+        .type   .L_2il0floatpacket.23,@object
+        .size   .L_2il0floatpacket.23,16
+        .align 4
 .L_2il0floatpacket.92:
-	.long	0x53800000
-	.type	.L_2il0floatpacket.92,@object
-	.size	.L_2il0floatpacket.92,4
-	.align 4
+        .long   0x53800000
+        .type   .L_2il0floatpacket.92,@object
+        .size   .L_2il0floatpacket.92,4
+        .align 4
 .L_2il0floatpacket.93:
-	.long	0x3c200000
-	.type	.L_2il0floatpacket.93,@object
-	.size	.L_2il0floatpacket.93,4
-	.align 4
+        .long   0x3c200000
+        .type   .L_2il0floatpacket.93,@object
+        .size   .L_2il0floatpacket.93,4
+        .align 4
 .L_2il0floatpacket.94:
-	.long	0xbf000000
-	.type	.L_2il0floatpacket.94,@object
-	.size	.L_2il0floatpacket.94,4
-	.align 4
+        .long   0xbf000000
+        .type   .L_2il0floatpacket.94,@object
+        .size   .L_2il0floatpacket.94,4
+        .align 4
 .L_2il0floatpacket.95:
-	.long	0x3eaaaaab
-	.type	.L_2il0floatpacket.95,@object
-	.size	.L_2il0floatpacket.95,4
-	.align 4
+        .long   0x3eaaaaab
+        .type   .L_2il0floatpacket.95,@object
+        .size   .L_2il0floatpacket.95,4
+        .align 4
 .L_2il0floatpacket.96:
-	.long	0xbe800000
-	.type	.L_2il0floatpacket.96,@object
-	.size	.L_2il0floatpacket.96,4
-	.align 4
+        .long   0xbe800000
+        .type   .L_2il0floatpacket.96,@object
+        .size   .L_2il0floatpacket.96,4
+        .align 4
 .L_2il0floatpacket.97:
-	.long	0x3e4ccccd
-	.type	.L_2il0floatpacket.97,@object
-	.size	.L_2il0floatpacket.97,4
-	.align 4
+        .long   0x3e4ccccd
+        .type   .L_2il0floatpacket.97,@object
+        .size   .L_2il0floatpacket.97,4
+        .align 4
 .L_2il0floatpacket.98:
-	.long	0xbe2aaaab
-	.type	.L_2il0floatpacket.98,@object
-	.size	.L_2il0floatpacket.98,4
-	.align 4
+        .long   0xbe2aaaab
+        .type   .L_2il0floatpacket.98,@object
+        .size   .L_2il0floatpacket.98,4
+        .align 4
 .L_2il0floatpacket.99:
-	.long	0x3e124e01
-	.type	.L_2il0floatpacket.99,@object
-	.size	.L_2il0floatpacket.99,4
-	.align 4
+        .long   0x3e124e01
+        .type   .L_2il0floatpacket.99,@object
+        .size   .L_2il0floatpacket.99,4
+        .align 4
 .L_2il0floatpacket.100:
-	.long	0xbe0005a0
-	.type	.L_2il0floatpacket.100,@object
-	.size	.L_2il0floatpacket.100,4
-	.align 4
+        .long   0xbe0005a0
+        .type   .L_2il0floatpacket.100,@object
+        .size   .L_2il0floatpacket.100,4
+        .align 4
 .L_2il0floatpacket.101:
-	.long	0xbf800000
-	.type	.L_2il0floatpacket.101,@object
-	.size	.L_2il0floatpacket.101,4
-	.align 4
+        .long   0xbf800000
+        .type   .L_2il0floatpacket.101,@object
+        .size   .L_2il0floatpacket.101,4
+        .align 4
 .L_2il0floatpacket.102:
-	.long	0x3f317218
-	.type	.L_2il0floatpacket.102,@object
-	.size	.L_2il0floatpacket.102,4
-	.align 4
+        .long   0x3f317218
+        .type   .L_2il0floatpacket.102,@object
+        .size   .L_2il0floatpacket.102,4
+        .align 4
 .L_2il0floatpacket.103:
-	.long	0x3f317200
-	.type	.L_2il0floatpacket.103,@object
-	.size	.L_2il0floatpacket.103,4
-	.align 4
+        .long   0x3f317200
+        .type   .L_2il0floatpacket.103,@object
+        .size   .L_2il0floatpacket.103,4
+        .align 4
 .L_2il0floatpacket.104:
-	.long	0x35bfbe8e
-	.type	.L_2il0floatpacket.104,@object
-	.size	.L_2il0floatpacket.104,4
-	.align 4
+        .long   0x35bfbe8e
+        .type   .L_2il0floatpacket.104,@object
+        .size   .L_2il0floatpacket.104,4
+        .align 4
 .L_2il0floatpacket.105:
-	.long	0x48000040
-	.type	.L_2il0floatpacket.105,@object
-	.size	.L_2il0floatpacket.105,4
-	.align 4
+        .long   0x48000040
+        .type   .L_2il0floatpacket.105,@object
+        .size   .L_2il0floatpacket.105,4
+        .align 4
 .L_2il0floatpacket.106:
-	.long	0x46000000
-	.type	.L_2il0floatpacket.106,@object
-	.size	.L_2il0floatpacket.106,4
-	.align 4
+        .long   0x46000000
+        .type   .L_2il0floatpacket.106,@object
+        .size   .L_2il0floatpacket.106,4
+        .align 4
 .L_2il0floatpacket.107:
-	.long	0x3f800000
-	.type	.L_2il0floatpacket.107,@object
-	.size	.L_2il0floatpacket.107,4
-	.data
-	.section .note.GNU-stack, ""
+        .long   0x3f800000
+        .type   .L_2il0floatpacket.107,@object
+        .size   .L_2il0floatpacket.107,4
+        .data
+        .section .note.GNU-stack, ""
 // -- Begin DWARF2 SEGMENT .eh_frame
-	.section .eh_frame,"a",@progbits
+        .section .eh_frame,"a",@progbits
 .eh_frame_seg:
-	.align 1
+        .align 1
 #endif
 # End

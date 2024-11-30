@@ -31,7 +31,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class PackageFile {
+final class PackageFile {
 
     /**
      * Returns path to package file.
@@ -62,5 +62,5 @@ public final class PackageFile {
 
     private final String packageName;
 
-    private final static String FILENAME = ".package";
+    private static final String FILENAME = ".package";
 }

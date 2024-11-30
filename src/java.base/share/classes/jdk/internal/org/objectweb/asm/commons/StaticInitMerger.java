@@ -154,4 +154,3 @@ public class StaticInitMerger extends ClassVisitor {
         super.visitEnd();
     }
 }
-

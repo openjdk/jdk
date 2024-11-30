@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @summary Testing Classfile complex basic blocks affecting SM generator.
+ * @summary Testing ClassFile complex basic blocks affecting SM generator.
  * @run junit BasicBlockTest
  */
 import java.io.InputStream;
 import java.io.IOException;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.junit.jupiter.api.Test;
 
 class BasicBlockTest {
@@ -55,9 +55,9 @@ class BasicBlockTest {
     @Test
     void testPatternsCausingBasicBlockTroubles() throws IOException {
         try (InputStream in = BasicBlockTest.class.getResourceAsStream("BasicBlockTest.class")) {
-            var cc = Classfile.of();
+            var cc = ClassFile.of();
             var classModel = cc.parse(in.readAllBytes());
-            cc.build(classModel.thisClass().asSymbol(), cb -> classModel.forEachElement(cb));
+            cc.build(classModel.thisClass().asSymbol(), classModel::forEach);
         }
     }
 }

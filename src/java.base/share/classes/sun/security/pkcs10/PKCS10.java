@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.security.pkcs10;
 
 import java.io.PrintStream;
@@ -174,7 +173,7 @@ public class PKCS10 {
                 throw new SignatureException("Invalid PKCS #10 signature");
             }
         } catch (InvalidKeyException e) {
-            throw new SignatureException("Invalid key");
+            throw new SignatureException("Invalid key", e);
         } catch (InvalidAlgorithmParameterException e) {
             throw new SignatureException("Invalid signature parameters", e);
         } catch (ProviderException e) {
@@ -307,9 +306,12 @@ public class PKCS10 {
 
 
         byte[] CRLF = new byte[] {'\r', '\n'};
-        out.println("-----BEGIN NEW CERTIFICATE REQUEST-----");
-        out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(encoded));
-        out.println("-----END NEW CERTIFICATE REQUEST-----");
+        out.print("-----BEGIN NEW CERTIFICATE REQUEST-----");
+        out.print("\r\n");
+        out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(encoded));
+        out.print("\r\n");
+        out.print("-----END NEW CERTIFICATE REQUEST-----");
+        out.print("\r\n");
     }
 
     /**

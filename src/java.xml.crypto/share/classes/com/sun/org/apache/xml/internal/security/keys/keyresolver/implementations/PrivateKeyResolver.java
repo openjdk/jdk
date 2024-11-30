@@ -32,7 +32,9 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Enumeration;
+
 import javax.crypto.SecretKey;
+
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.content.X509Data;
 import com.sun.org.apache.xml.internal.security.keys.content.x509.XMLX509Certificate;

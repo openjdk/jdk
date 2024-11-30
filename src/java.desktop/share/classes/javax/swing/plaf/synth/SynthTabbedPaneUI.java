@@ -636,6 +636,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
                 }
             }
         }
+
         tabContext.getPainter().paintTabbedPaneTabBackground(tabContext, g,
                 x, y, width, height, tabIndex, placement);
         tabContext.getPainter().paintTabbedPaneTabBorder(tabContext, g,
@@ -655,8 +656,6 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
             paintIcon(g, tabPlacement, tabIndex, icon, iconRect, isSelected);
             paintText(ss, g, tabPlacement, font, metrics,
                     tabIndex, clippedTitle, textRect, isSelected);
-
-
         }
     }
 

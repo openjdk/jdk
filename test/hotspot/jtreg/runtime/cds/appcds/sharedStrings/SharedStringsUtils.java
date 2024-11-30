@@ -96,7 +96,7 @@ public class SharedStringsUtils {
 
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
         String[] args =
-            TestCommon.concat(extraOptions, "-XX:+UseCompressedOops", "-XX:+UseG1GC",
+            TestCommon.concat(extraOptions, "-XX:+UseCompressedOops",
             "-XX:SharedArchiveConfigFile=" +
             TestCommon.getSourceFile(sharedDataFile));
         args = TestCommon.concat(childVMOptionsPrefix, args);
@@ -124,7 +124,7 @@ public class SharedStringsUtils {
 
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
         String[] args = TestCommon.concat(extraOptions,
-            "-cp", appJar, "-XX:+UseCompressedOops", "-XX:+UseG1GC", className);
+            "-cp", appJar, "-XX:+UseCompressedOops", className);
         args = TestCommon.concat(childVMOptionsPrefix, args);
 
         OutputAnalyzer output = TestCommon.execAuto(args);
@@ -143,7 +143,7 @@ public class SharedStringsUtils {
 
         String appJar = TestCommon.getTestJar(TEST_JAR_NAME_FULL);
         String[] args = TestCommon.concat(extraOptions,
-            "-XX:+UseCompressedOops", "-XX:+UseG1GC", className);
+            "-XX:+UseCompressedOops", className);
         args = TestCommon.concat(childVMOptionsPrefix, args);
 
         OutputAnalyzer output = TestCommon.exec(appJar, args);

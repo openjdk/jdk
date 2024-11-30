@@ -23,6 +23,8 @@
 # questions.
 #
 
+include CopyFiles.gmk
+
 $(eval $(call IncludeCustomExtension, hotspot/gensrc/GensrcJvmti.gmk))
 
 ################################################################################

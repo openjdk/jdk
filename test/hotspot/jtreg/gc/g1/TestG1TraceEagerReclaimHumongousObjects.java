@@ -41,16 +41,14 @@ import java.util.LinkedList;
 
 public class TestG1TraceEagerReclaimHumongousObjects {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                         "-Xms128M",
-                                                                         "-Xmx128M",
-                                                                         "-Xmn16M",
-                                                                         "-XX:G1HeapRegionSize=1M",
-                                                                         "-Xlog:gc+phases=trace,gc+humongous=trace",
-                                                                         "-XX:+UnlockExperimentalVMOptions",
-                                                                         GCWithHumongousObjectTest.class.getName());
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                "-Xms128M",
+                                                                "-Xmx128M",
+                                                                "-Xmn16M",
+                                                                "-XX:G1HeapRegionSize=1M",
+                                                                "-Xlog:gc+phases=trace,gc+humongous=trace",
+                                                                "-XX:+UnlockExperimentalVMOptions",
+                                                                GCWithHumongousObjectTest.class.getName());
 
     System.out.println(output.getStdout());
     // As G1ReclaimDeadHumongousObjectsAtYoungGC is set(default), below logs should be displayed.

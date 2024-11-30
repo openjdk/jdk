@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.layout.Port;
 import com.sun.hotspot.igv.layout.Vertex;
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.util.*;
 
 /**
@@ -37,6 +38,7 @@ import java.util.*;
  */
 public class ClusterNode implements Vertex {
 
+    public static final int PADDING = 8;
     private Cluster cluster;
     private Port inputSlot;
     private final Set<Vertex> subNodes;
@@ -45,21 +47,15 @@ public class ClusterNode implements Vertex {
     private final Set<Link> subEdges;
     private boolean root;
     private final String name;
-    private final int border;
-    private final Dimension nodeOffset;
     private final int headerVerticalSpace;
     private final Dimension emptySize;
 
-    public ClusterNode(Cluster cluster, String name, int border,
-                       Dimension nodeOffset, int headerVerticalSpace,
-                       Dimension emptySize) {
+    public ClusterNode(Cluster cluster, String name, int headerVerticalSpace, Dimension emptySize) {
         this.subNodes = new HashSet<>();
         this.subEdges = new HashSet<>();
         this.cluster = cluster;
         this.position = new Point(0, 0);
         this.name = name;
-        this.border = border;
-        this.nodeOffset = nodeOffset;
         this.headerVerticalSpace = headerVerticalSpace;
         this.emptySize = emptySize;
         if (emptySize.width > 0 || emptySize.height > 0) {
@@ -67,8 +63,8 @@ public class ClusterNode implements Vertex {
         }
     }
 
-    public ClusterNode(Cluster cluster, String name) {
-        this(cluster, name, 20, new Dimension(0, 0), 0, new Dimension(0, 0));
+    public void updateClusterBounds() {
+        cluster.setBounds(new Rectangle(position, size));
     }
 
     public String getName() {
@@ -145,22 +141,22 @@ public class ClusterNode implements Vertex {
 
         // Normalize coordinates
         for (Vertex n : subNodes) {
-            n.setPosition(new Point(n.getPosition().x - minX + nodeOffset.width,
-                                    n.getPosition().y - minY + nodeOffset.height + headerVerticalSpace));
+            n.setPosition(new Point(n.getPosition().x - minX,
+                                    n.getPosition().y - minY + headerVerticalSpace));
         }
 
         for (Link l : subEdges) {
             List<Point> points = new ArrayList<>(l.getControlPoints());
             for (Point p : points) {
                 p.x -= minX;
-                p.y -= minY;
+                p.y = p.y - minY + headerVerticalSpace;
             }
             l.setControlPoints(points);
 
         }
 
-        size.width += 2 * border;
-        size.height += 2 * border;
+        size.width += 2 * PADDING;
+        size.height += 2 * PADDING;
     }
 
     public Port getInputSlot() {
@@ -181,7 +177,7 @@ public class ClusterNode implements Vertex {
         this.position = pos;
         for (Vertex n : subNodes) {
             Point cur = new Point(n.getPosition());
-            cur.translate(pos.x + border, pos.y + border);
+            cur.translate(pos.x + PADDING, pos.y + PADDING);
             n.setPosition(cur);
         }
 
@@ -191,7 +187,7 @@ public class ClusterNode implements Vertex {
             for (Point p : arr) {
                 if (p != null) {
                     Point p2 = new Point(p);
-                    p2.translate(pos.x + border, pos.y + border);
+                    p2.translate(pos.x + PADDING, pos.y + PADDING);
                     newArr.add(p2);
                 } else {
                     newArr.add(null);
@@ -218,10 +214,6 @@ public class ClusterNode implements Vertex {
         return root;
     }
 
-    public int getBorder() {
-        return border;
-    }
-
     public int compareTo(Vertex o) {
         return toString().compareTo(o.toString());
     }
@@ -233,5 +225,17 @@ public class ClusterNode implements Vertex {
 
     public Set<? extends Vertex> getSubNodes() {
         return subNodes;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof ClusterNode other)) return false;
+        return Objects.equals(this.name, other.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }

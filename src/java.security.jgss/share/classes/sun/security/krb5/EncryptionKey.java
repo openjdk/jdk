@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 package sun.security.krb5;
 
+import sun.security.jgss.krb5.Krb5Util;
 import sun.security.util.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
@@ -41,6 +42,8 @@ import sun.security.krb5.internal.ktab.KeyTab;
 import sun.security.krb5.internal.ccache.CCacheOutputStream;
 import javax.crypto.spec.DESKeySpec;
 import javax.crypto.spec.DESedeKeySpec;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 /**
  * This class encapsulates the concept of an EncryptionKey. An encryption
@@ -73,8 +76,6 @@ public class EncryptionKey
     private int keyType;
     private byte[] keyValue;
     private Integer kvno; // not part of ASN1 encoding;
-
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     public synchronized int getEType() {
         return keyType;
@@ -186,8 +187,8 @@ public class EncryptionKey
                         stringToKey(password, salt, null, etypes[i]),
                         etypes[i], null);
             } else {
-                if (DEBUG) {
-                    System.out.println("Encryption Type " +
+                if (DEBUG != null) {
+                    DEBUG.println("Encryption Type " +
                         EType.toString(etypes[i]) +
                         " is not supported/enabled");
                 }
@@ -498,12 +499,7 @@ public class EncryptionKey
 
     public String toString() {
         return "EncryptionKey: keyType=" + keyType
-                + " kvno=" + kvno
-                + " keyValue (hex dump)="
-                + (keyValue == null || keyValue.length == 0 ?
-                " Empty Key" : '\n'
-                + Krb5.hexDumper.encodeBuffer(keyValue)
-                + '\n');
+                + ", kvno=" + kvno + ", " + Krb5Util.keyInfo(keyValue);
     }
 
     /**

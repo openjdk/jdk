@@ -109,4 +109,3 @@ public class IntInsnNode extends AbstractInsnNode {
         return new IntInsnNode(opcode, operand).cloneAnnotations(this);
     }
 }
-

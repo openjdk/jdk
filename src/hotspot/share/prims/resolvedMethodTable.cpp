@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ static const size_t GROW_HINT = 32;
 
 static const size_t ResolvedMethodTableSizeLog = 10;
 
-unsigned int method_hash(const Method* method) {
+static unsigned int method_hash(const Method* method) {
   unsigned int hash = method->method_holder()->class_loader_data()->identity_hash();
   hash = (hash * 31) ^ method->klass_name()->identity_hash();
   hash = (hash * 31) ^ method->name()->identity_hash();

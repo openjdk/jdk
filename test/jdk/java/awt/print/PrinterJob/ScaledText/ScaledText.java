@@ -25,7 +25,7 @@
   @test
   @bug 4291373
   @summary  Printing of scaled text is wrong / disappearing
-  @author prr: area=PrinterJob
+  @key printer
   @run main/manual ScaledText
 */
 import java.awt.*;

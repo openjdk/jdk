@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ enum JVMFlagsEnum : int {
             DEFINE_FLAG_MEMBER_ENUM,
             DEFINE_FLAG_MEMBER_ENUM,
             DEFINE_FLAG_MEMBER_ENUM,
-            DEFINE_FLAG_MEMBER_ENUM,
             IGNORE_RANGE,
             IGNORE_CONSTRAINT)
   NUM_JVMFlagsEnum
@@ -64,12 +63,10 @@ ALL_FLAGS(IGNORE_FLAG,               // develop     : declared as const
           IGNORE_FLAG,               // develop-pd  : declared as const
           DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
-          IGNORE_FLAG,               // not-product : is not declared
           IGNORE_RANGE,
           IGNORE_CONSTRAINT)
 #else
 ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
-          DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,
           DEFINE_FLAG_MEMBER_SETTER,

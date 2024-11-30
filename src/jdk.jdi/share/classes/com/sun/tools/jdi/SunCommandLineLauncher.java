@@ -47,7 +47,7 @@ public class SunCommandLineLauncher extends AbstractLauncher {
     private static final String ARG_QUOTE = "quote";
     private static final String ARG_VM_EXEC = "vmexec";
 
-    static private final String ARG_VM_INCLUDE_VTHREADS = "includevirtualthreads";
+    private static final String ARG_VM_INCLUDE_VTHREADS = "includevirtualthreads";
 
     TransportService transportService;
     Transport transport;

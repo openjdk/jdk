@@ -24,8 +24,8 @@
 
 package sun.jvm.hotspot.interpreter;
 
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.oops.ConstantPoolCache;
+import sun.jvm.hotspot.oops.Method;
 
 // any bytecode with constant pool index
 
@@ -37,12 +37,7 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
   // the constant pool index for this bytecode
   public int index() {
     if (code() == Bytecodes._invokedynamic) {
-      int index = getIndexU4();
-      if (ConstantPool.isInvokedynamicIndex(index)) {
-        return ConstantPool.decodeInvokedynamicIndex(index);
-      } else {
-        return index;
-      }
+      return getIndexU4();
     } else {
       return getIndexU2(code(), false);
     }
@@ -56,8 +51,10 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
         return cpCacheIndex;
      } else if (code() == Bytecodes._invokedynamic) {
         return cpCache.getIndyEntryAt(cpCacheIndex).getConstantPoolIndex();
+     } else if (Bytecodes.isFieldCode(code())) {
+        return cpCache.getFieldEntryAt(cpCacheIndex).getConstantPoolIndex();
      } else {
-        return cpCache.getEntryAt((int) (0xFFFF & cpCacheIndex)).getConstantPoolIndex();
+        return cpCache.getMethodEntryAt(cpCacheIndex).getConstantPoolIndex();
      }
   }
 }

@@ -25,19 +25,15 @@
  * @test
  * @bug 7005371
  * @summary  Multicatch: assertion error while generating LocalVariableTypeTable attribute
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -g SubTest.java
  * @run main T7005371
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
 
 import java.io.*;
 
@@ -63,7 +59,7 @@ public class T7005371 {
     void verifyLocalVariableTypeTableAttr(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassModel cf = Classfile.of().parse(f.toPath());
+            ClassModel cf = ClassFile.of().parse(f.toPath());
             MethodModel testMethod = null;
             for (MethodModel m : cf.methods()) {
                 if (m.methodName().equalsString(TEST_METHOD_NAME)) {
@@ -74,11 +70,11 @@ public class T7005371 {
             if (testMethod == null) {
                 throw new Error("Missing method: " + TEST_METHOD_NAME);
             }
-            CodeAttribute code = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute code = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (code == null) {
                 throw new Error("Missing Code attribute for method: " + TEST_METHOD_NAME);
             }
-            LocalVariableTypeTableAttribute lvt_table = code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).orElse(null);
+            LocalVariableTypeTableAttribute lvt_table = code.findAttribute(Attributes.localVariableTypeTable()).orElse(null);
             if (lvt_table == null) {
                 throw new Error("Missing LocalVariableTypeTable attribute for method: " + TEST_METHOD_NAME);
             }

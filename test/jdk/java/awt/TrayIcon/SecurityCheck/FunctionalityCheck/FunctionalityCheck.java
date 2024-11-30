@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,12 @@ import java.awt.image.BufferedImage;
  * @test
  * @key headful
  * @summary Check for MouseEvents with all mouse buttons
- * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
  * @library /lib/client ../../
  * @build java.desktop/java.awt.Helper
  * @build ExtendedRobot SystemTrayIconHelper
- * @run main/othervm/policy=tray.policy -Djava.security.manager FunctionalityCheck
+ * @run main FunctionalityCheck
  */
 
 public class FunctionalityCheck {
@@ -58,9 +57,9 @@ public class FunctionalityCheck {
     static boolean isOel7orLater;
 
     static final int[] buttonTypes = {
-        InputEvent.BUTTON1_MASK,
-        InputEvent.BUTTON2_MASK,
-        InputEvent.BUTTON3_MASK
+        InputEvent.BUTTON1_DOWN_MASK,
+        InputEvent.BUTTON2_DOWN_MASK,
+        InputEvent.BUTTON3_DOWN_MASK
     };
 
     static final String[] buttonNames = {

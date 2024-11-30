@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import javax.tools.JavaFileObject;
 import java.io.IOException;
@@ -67,12 +67,12 @@ public abstract class RuntimeParameterAnnotationsTestBase extends AnnotationsTes
                 classFile,
                 testMethod,
                 method,
-                Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS);
+                Attributes.runtimeInvisibleParameterAnnotations());
         List<Map<String, Annotation>> actualVisible = collectAnnotations(
                 classFile,
                 testMethod,
                 method,
-                Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS);
+                Attributes.runtimeVisibleParameterAnnotations());
 
         List<TestCase.TestParameterInfo> parameters = testMethod.parameters;
         for (int i = 0; i < parameters.size(); ++i) {

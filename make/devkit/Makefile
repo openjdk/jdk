@@ -81,7 +81,7 @@ $(info target_platforms $(target_platforms))
 
 all compile : $(platforms)
 
-ifeq (,$(SKIP_ME))
+ifeq ($(SKIP_ME), )
   $(foreach p,$(filter-out $(me),$(platforms)),$(eval $(p) : $$(me)))
 endif
 

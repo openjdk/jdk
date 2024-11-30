@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 8141243
+ * @bug 8141243 8174269
  * @summary Make sure that SimpleDateFormat parses "UTC" as the UTC time zone.
  * @run main Bug8141243
- * @run main/othervm -Djava.locale.providers=COMPAT Bug8141243
  */
 
 import java.text.DateFormat;

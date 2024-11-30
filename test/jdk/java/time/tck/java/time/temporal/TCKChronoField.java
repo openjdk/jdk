@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,7 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -262,5 +263,15 @@ public class TCKChronoField {
         for (ChronoField field : ChronoField.values()) {
             assertEquals(ChronoField.valueOf(field.name()), field);
         }
+    }
+
+    // verify the minimum and maximum values of ChronoField.INSTANT_SECONDS
+    // matches the minimum and maximum supported epoch second by Instant.
+    @Test
+    public void testMinMaxInstantSeconds() {
+        assertEquals(ChronoField.INSTANT_SECONDS.range().getMinimum(),
+                Instant.MIN.getLong(ChronoField.INSTANT_SECONDS));
+        assertEquals(ChronoField.INSTANT_SECONDS.range().getMaximum(),
+                Instant.MAX.getLong(ChronoField.INSTANT_SECONDS));
     }
 }

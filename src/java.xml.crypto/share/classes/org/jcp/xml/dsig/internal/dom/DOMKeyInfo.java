@@ -141,14 +141,17 @@ public final class DOMKeyInfo extends DOMStructure implements KeyInfo {
         keyInfoTypes = Collections.unmodifiableList(content);
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public List<XMLStructure> getContent() {
         return keyInfoTypes;
     }
 
+    @Override
     public void marshal(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException
     {

@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "jlong.h"
+
 JNIEXPORT jlong JNICALL Java_org_openjdk_bench_java_lang_foreign_ToCStringTest_writeString(JNIEnv *const env, const jclass cls, const jstring text) {
     const char *str = (*env)->GetStringUTFChars(env, text, NULL);
     jlong addr = ptr_to_jlong(str);

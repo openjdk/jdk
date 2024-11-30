@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@
  *        GetContentType GetContentTypeTest
  * @run main/othervm GetContentTypeTest
  * @summary Test JarURLConnection.getContentType would
- *          would return default "content/unknown"
+ *          return default "content/unknown"
  */
 
-import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
@@ -49,9 +49,9 @@ public class GetContentTypeTest {
         Path resJar = Paths.get(System.getProperty("test.src"),
                 "resource.jar");
         Path classes = Paths.get(System.getProperty("test.classes"));
-        ProcessTools.executeCommand(
-                JDKToolFinder.getTestJDKTool("java"),
-                "-cp", resJar + File.pathSeparator + classes, "GetContentType")
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-cp", resJar + File.pathSeparator + classes, "GetContentType");
+        new OutputAnalyzer(pb.start())
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .shouldHaveExitValue(0);

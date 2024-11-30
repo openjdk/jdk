@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,8 +180,6 @@ typedef enum _cairo_status {
 } cairo_status_t;
 
 /* We define all structure pointers to be void* */
-typedef void GdkPixbuf;
-typedef void GMainContext;
 typedef void GVfs;
 
 typedef void GdkColormap;
@@ -394,6 +392,9 @@ static void         (*fp_g_object_set)(gpointer object,
                                        ...);
 
 static gboolean (*fp_g_main_context_iteration)(GMainContext *context, gboolean may_block);
+static GMainContext *(*fp_g_main_context_default)();
+static gboolean (*fp_g_main_context_is_owner)(GMainContext* context);
+
 static gboolean (*fp_g_str_has_prefix)(const gchar *str, const gchar *prefix);
 static gchar** (*fp_g_strsplit)(const gchar *string, const gchar *delimiter,
            gint max_tokens);

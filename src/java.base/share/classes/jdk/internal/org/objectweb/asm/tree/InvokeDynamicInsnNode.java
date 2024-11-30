@@ -98,12 +98,12 @@ public class InvokeDynamicInsnNode extends AbstractInsnNode {
             final String name,
             final String descriptor,
             final Handle bootstrapMethodHandle,
-            final Object... bootstrapMethodArguments) { // NOPMD(ArrayIsStoredDirectly): public field.
+            final Object... bootstrapMethodArguments) {
         super(Opcodes.INVOKEDYNAMIC);
         this.name = name;
         this.desc = descriptor;
         this.bsm = bootstrapMethodHandle;
-        this.bsmArgs = bootstrapMethodArguments;
+        this.bsmArgs = bootstrapMethodArguments; // NOPMD(ArrayIsStoredDirectly): public field.
     }
 
     @Override
@@ -122,4 +122,3 @@ public class InvokeDynamicInsnNode extends AbstractInsnNode {
         return new InvokeDynamicInsnNode(name, desc, bsm, bsmArgs).cloneAnnotations(this);
     }
 }
-

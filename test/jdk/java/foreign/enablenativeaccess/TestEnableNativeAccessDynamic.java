@@ -56,7 +56,7 @@ public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
 
     @DataProvider(name = "failureCases")
     public Object[][] failureCases() {
-        String errMsg = "Illegal native access from: module panama_module";
+        String errMsg = "Illegal native access from module panama_module";
         return new Object[][] {
                 { "panama_enable_native_access_fail", PANAMA_MAIN, failWithError(errMsg) },
                 { "panama_enable_native_access_fail_reflection", PANAMA_REFLECTION, failWithError(errMsg) },
@@ -73,6 +73,7 @@ public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
             Result expectedResult, boolean panamaModuleInBootLayer) throws Exception
     {
         List<String> list = new ArrayList<>();
+        list.add("--illegal-native-access=deny");
         if (panamaModuleInBootLayer) {
             list.addAll(List.of("-p", MODULE_PATH));
             list.add("--add-modules=panama_module");

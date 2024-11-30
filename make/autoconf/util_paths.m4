@@ -23,7 +23,7 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 # Appends a string to a path variable, only adding the : when needed.
 AC_DEFUN([UTIL_APPEND_TO_PATH],
 [
@@ -36,7 +36,7 @@ AC_DEFUN([UTIL_APPEND_TO_PATH],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Prepends a string to a path variable, only adding the : when needed.
 AC_DEFUN([UTIL_PREPEND_TO_PATH],
 [
@@ -49,7 +49,7 @@ AC_DEFUN([UTIL_PREPEND_TO_PATH],
   fi
 ])
 
-###############################################################################
+################################################################################
 # This will make sure the given variable points to a full and proper
 # path. This means:
 # 1) There will be no spaces in the path. On unix platforms,
@@ -118,7 +118,7 @@ AC_DEFUN([UTIL_FIXUP_PATH],
   fi
 ])
 
-##############################################################################
+################################################################################
 # Fixup path to be a Windows full long path
 # Note: Only supported with cygwin/msys2 (cygpath tool)
 AC_DEFUN([UTIL_FIXUP_WIN_LONG_PATH],
@@ -136,7 +136,7 @@ AC_DEFUN([UTIL_FIXUP_WIN_LONG_PATH],
 ])
 
 
-###############################################################################
+################################################################################
 # Check if the given file is a unix-style or windows-style executable, that is,
 # if it expects paths in unix-style or windows-style.
 # Returns "windows" or "unix" in $RESULT.
@@ -170,7 +170,7 @@ AC_DEFUN([UTIL_CHECK_WINENV_EXEC_TYPE],
   fi
 ])
 
-###############################################################################
+################################################################################
 # This will make sure the given variable points to a executable
 # with a full and proper path. This means:
 # 1) There will be no spaces in the path. On unix platforms,
@@ -289,7 +289,7 @@ AC_DEFUN([UTIL_FIXUP_EXECUTABLE],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Setup a tool for the given variable. If correctly specified by the user,
 # use that value, otherwise search for the tool using the supplied code snippet.
 # $1: variable to set
@@ -369,7 +369,7 @@ AC_DEFUN([UTIL_SETUP_TOOL],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Locate a tool using proper methods.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
@@ -436,7 +436,7 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Call UTIL_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool. This will look
 # first for cross-compilation tools.
 # $1: variable to set
@@ -452,7 +452,7 @@ AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Test that variable $1 denoting a program is not empty. If empty, exit with an error.
 # $1: variable to check
 AC_DEFUN([UTIL_CHECK_NONEMPTY],
@@ -462,7 +462,7 @@ AC_DEFUN([UTIL_CHECK_NONEMPTY],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Like UTIL_LOOKUP_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
@@ -473,7 +473,7 @@ AC_DEFUN([UTIL_REQUIRE_PROGS],
   UTIL_CHECK_NONEMPTY($1)
 ])
 
-###############################################################################
+################################################################################
 # Like UTIL_LOOKUP_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
@@ -485,7 +485,7 @@ AC_DEFUN([UTIL_REQUIRE_TOOLCHAIN_PROGS],
 ])
 
 
-###############################################################################
+################################################################################
 # Like UTIL_SETUP_TOOL but fails if no tool was found.
 # $1: variable to set
 # $2: autoconf macro to call to look for the special tool
@@ -497,7 +497,7 @@ AC_DEFUN([UTIL_REQUIRE_SPECIAL],
   # unix tools. No further processing needed.
 ])
 
-###############################################################################
+################################################################################
 # Add FIXPATH prefix to variable. Normally this is done by UTIL_LOOKUP_PROGS
 # or UTIL_FIXUP_EXECUTABLE, but in some circumstances this has to be done
 # explicitly, such as when the command in question does not exist yet.
@@ -510,7 +510,7 @@ AC_DEFUN([UTIL_ADD_FIXPATH],
   fi
 ])
 
-###############################################################################
+################################################################################
 AC_DEFUN([UTIL_REMOVE_SYMBOLIC_LINKS],
 [
   if test "x$OPENJDK_BUILD_OS" != xwindows; then

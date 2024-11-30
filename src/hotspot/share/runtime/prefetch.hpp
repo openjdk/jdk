@@ -35,12 +35,6 @@
 
 class Prefetch : AllStatic {
  public:
-  enum style {
-    do_none,  // Do no prefetching
-    do_read,  // Do read prefetching
-    do_write  // Do write prefetching
-  };
-
   // Prefetch anticipating read; must not fault, semantically a no-op
   static void read(const void* loc, intx interval);
 

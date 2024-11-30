@@ -29,6 +29,7 @@
  * @requires vm.compiler2.enabled
  * @requires os.arch == "x86_64" | os.arch == "amd64"
  * @requires os.family == "linux" | os.family == "windows"
+ * @requires vm.flagless
  * @library /test/lib
  * @run main LoadJsvmlTest
  */

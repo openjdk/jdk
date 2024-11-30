@@ -17,15 +17,6 @@ import common.util.TestBase;
  * The DTD property controls how DTDs are processed.
  */
 public class DTDTestBase extends TestBase {
-    static final String SRC_DIR;
-    static {
-        String srcDir = System.getProperty("test.src", ".");
-        if (IS_WINDOWS) {
-            srcDir = srcDir.replace('\\', '/');
-        }
-        SRC_DIR = srcDir;
-        TEST_SOURCE_DIR = srcDir + "/../xmlfiles/";
-    }
 
     public void testDOM(String filename, Properties fsp, PropertyState state,
         Properties config, Properties[] sysProp, Properties[] apiProp,

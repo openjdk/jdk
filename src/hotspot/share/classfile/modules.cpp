@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -71,7 +73,9 @@ static char* get_module_name(oop module, int& len, TRAPS) {
   if (name_oop == nullptr) {
     THROW_MSG_NULL(vmSymbols::java_lang_NullPointerException(), "Null module name");
   }
-  char* module_name = java_lang_String::as_utf8_string(name_oop, len);
+  size_t utf8_len;
+  char* module_name = java_lang_String::as_utf8_string(name_oop, utf8_len);
+  len = checked_cast<int>(utf8_len); // module names are < 64K
   if (!verify_module_name(module_name, len)) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                    err_msg("Invalid module name: %s", module_name));
@@ -83,9 +87,9 @@ static Symbol* as_symbol(jstring str_object) {
   if (str_object == nullptr) {
     return nullptr;
   }
-  int len;
+  size_t len;
   char* str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(str_object), len);
-  return SymbolTable::new_symbol(str, len);
+  return SymbolTable::new_symbol(str, checked_cast<int>(len));
 }
 
 ModuleEntryTable* Modules::get_module_entry_table(Handle h_loader) {
@@ -141,8 +145,10 @@ bool Modules::is_package_defined(Symbol* package, Handle h_loader) {
 // Will use the provided buffer if it's sufficiently large, otherwise allocates
 // a resource array
 // The length of the resulting string will be assigned to utf8_len
-static const char* as_internal_package(oop package_string, char* buf, int buflen, int& utf8_len) {
-  char* package_name = java_lang_String::as_utf8_string_full(package_string, buf, buflen, utf8_len);
+static const char* as_internal_package(oop package_string, char* buf, size_t buflen, int& utf8_len) {
+  size_t full_utf8_len;
+  char* package_name = java_lang_String::as_utf8_string_full(package_string, buf, buflen, full_utf8_len);
+  utf8_len = checked_cast<int>(full_utf8_len); // package names are < 64K
 
   // Turn all '/'s into '.'s
   for (int index = 0; index < utf8_len; index++) {
@@ -258,7 +264,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
 }
 
 // Caller needs ResourceMark.
-void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
+static void throw_dup_pkg_exception(const char* module_name, PackageEntry* package, TRAPS) {
   const char* package_name = package->name()->as_C_string();
   if (package->module()->is_named()) {
     THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
@@ -304,11 +310,6 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   oop loader = java_lang_Module::loader(module());
-  // Make sure loader is not the jdk.internal.reflect.DelegatingClassLoader.
-  if (loader != java_lang_ClassLoader::non_reflection_class_loader(loader)) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Class loader is an invalid delegating class loader");
-  }
   Handle h_loader = Handle(THREAD, loader);
   // define_module can be called during start-up, before the class loader's ClassLoaderData
   // has been created.  SystemDictionary::register_loader ensures creation, if needed.
@@ -485,8 +486,7 @@ static bool _seen_system_unnamed_module = false;
 //
 // Returns true iff the oop has an archived ModuleEntry.
 bool Modules::check_archived_module_oop(oop orig_module_obj) {
-  assert(DumpSharedSpaces, "must be");
-  assert(MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_dumping_full_module_graph(), "must be");
   assert(java_lang_Module::is_instance(orig_module_obj), "must be");
 
   ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
@@ -560,9 +560,8 @@ void Modules::verify_archived_modules() {
   ModuleEntry::verify_archived_module_entries();
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
 char* Modules::_archived_main_module_name = nullptr;
-#endif
+char* Modules::_archived_addmods_names = nullptr;
 
 void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
@@ -596,15 +595,115 @@ void Modules::serialize(SerializeClosure* soc) {
 
     if (disable) {
       log_info(cds)("Disabling optimized module handling");
-      MetaspaceShared::disable_optimized_module_handling();
+      CDSConfig::stop_using_optimized_module_handling();
     }
-    log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+
+    // Don't hold onto the pointer, in case we might decide to unmap the archive.
+    _archived_main_module_name = nullptr;
   }
 }
 
+void Modules::dump_addmods_names() {
+  unsigned int count = Arguments::addmods_count();
+  const char* addmods_names = get_addmods_names_as_sorted_string();
+  if (addmods_names != nullptr) {
+    _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
+  }
+  ArchivePtrMarker::mark_pointer(&_archived_addmods_names);
+}
+
+void Modules::serialize_addmods_names(SerializeClosure* soc) {
+  soc->do_ptr(&_archived_addmods_names);
+  if (soc->reading()) {
+    bool disable = false;
+    if (_archived_addmods_names[0] != '\0') {
+      if (Arguments::addmods_count() == 0) {
+        log_info(cds)("--add-modules module name(s) found in archive but not specified during runtime: %s",
+            _archived_addmods_names);
+        disable = true;
+      } else {
+        const char* addmods_names = get_addmods_names_as_sorted_string();
+        if (strcmp((const char*)_archived_addmods_names, addmods_names) != 0) {
+          log_info(cds)("Mismatched --add-modules module name(s).");
+          log_info(cds)("  dump time: %s runtime: %s", _archived_addmods_names, addmods_names);
+          disable = true;
+        }
+      }
+    } else {
+      if (Arguments::addmods_count() > 0) {
+        log_info(cds)("--add-modules module name(s) specified during runtime but not found in archive: %s",
+                      get_addmods_names_as_sorted_string());
+        disable = true;
+      }
+    }
+    if (disable) {
+      log_info(cds)("Disabling optimized module handling");
+      CDSConfig::stop_using_optimized_module_handling();
+    }
+    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+
+    // Don't hold onto the pointer, in case we might decide to unmap the archive.
+    _archived_addmods_names = nullptr;
+  }
+}
+
+const char* Modules::get_addmods_names_as_sorted_string() {
+  ResourceMark rm;
+  const int max_digits = 3;
+  const int extra_symbols_count = 2; // includes '.', '\0'
+  size_t prop_len = strlen("jdk.module.addmods") + max_digits + extra_symbols_count;
+  char* prop_name = resource_allocate_bytes(prop_len);
+  GrowableArray<const char*> list;
+  for (unsigned int i = 0; i < Arguments::addmods_count(); i++) {
+    jio_snprintf(prop_name, prop_len, "jdk.module.addmods.%d", i);
+    const char* prop_value = Arguments::get_property(prop_name);
+    char* p = resource_allocate_bytes(strlen(prop_value) + 1);
+    strcpy(p, prop_value);
+    while (*p == ',') p++; // skip leading commas
+    while (*p) {
+      char* next = strchr(p, ',');
+      if (next == nullptr) {
+        // no more commas, p is the last element
+        list.append(p);
+        break;
+      } else {
+        *next = 0;
+        list.append(p);
+        p = next + 1;
+      }
+    }
+  }
+
+  // Example:
+  // --add-modules=java.compiler --add-modules=java.base,java.base,,
+  //
+  // list[0] = "java.compiler"
+  // list[1] = "java.base"
+  // list[2] = "java.base"
+  // list[3] = ""
+  // list[4] = ""
+  list.sort(ClassLoaderExt::compare_module_names);
+
+  const char* prefix = "";
+  stringStream st;
+  const char* last_string = ""; // This also filters out all empty strings
+  for (int i = 0; i < list.length(); i++) {
+    const char* m = list.at(i);
+    if (strcmp(m, last_string) != 0) { // filter out duplicates
+      st.print("%s%s", prefix, m);
+      last_string = m;
+      prefix = "\n";
+    }
+  }
+
+  return (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
+}
+
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
-  assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
 
   // We don't want the classes used by the archived full module graph to be redefined by JVMTI.
   // Luckily, such classes are loaded in the JVMTI "early" phase, and CDS is disabled if a JVMTI
@@ -640,7 +739,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
 }
 
 void Modules::check_cds_restrictions(TRAPS) {
-  if (DumpSharedSpaces && Universe::is_module_initialized() && MetaspaceShared::use_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph() && Universe::is_module_initialized()) {
     THROW_MSG(vmSymbols::java_lang_UnsupportedOperationException(),
               "During -Xshare:dump, module system cannot be modified after it's initialized");
   }

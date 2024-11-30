@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,9 +70,9 @@ import java.util.Objects;
  * <p> When only one part is given, the value is stored directly in
  * the network address without any byte rearrangement.
  *
- * <p> These forms support parts specified in decimal format only.
- * For example, the following forms are supported by methods capable
- * of parsing textual representations of IPv4 addresses:
+ * <p> For example, the following (decimal) forms are supported by the methods
+ * {@link Inet4Address#ofLiteral(String)} and {@link InetAddress#getByName(String)}
+ * which are capable of parsing textual representations of IPv4 addresses:
  * {@snippet :
  *  // Dotted-decimal 'd.d.d.d' form with four part address literal
  *  InetAddress.getByName("007.008.009.010"); // ==> /7.8.9.10
@@ -93,8 +93,16 @@ import java.util.Objects;
  *  Inet4Address.ofLiteral("02130706689"); // ==> /127.0.1.1
  * }
  *
+ * <p> The above forms adhere to "strict" decimal-only syntax.
+ * Additionally, the {@link Inet4Address#ofPosixLiteral(String)}
+ * method implements a POSIX {@code inet_addr} compatible "loose"
+ * parsing algorithm, allowing octal and hexadecimal address segments.
+ * Please refer to <a href="https://www.ietf.org/rfc/rfc6943.html#section-3.1.1">
+ * <i>RFC&nbsp;6943: Issues in Identifier Comparison for Security
+ * Purposes</i></a>. Aside from {@code Inet4Address.ofPosixLiteral(String)}, all methods only
+ * support strict decimal parsing.
  * <p> For methods that return a textual representation as output
- * value, the first form, i.e. a dotted-quad string, is used.
+ * value, the first form, i.e. a dotted-quad string in strict decimal notation, is used.
  *
  * <h3> The Scope of a Multicast Address </h3>
  *
@@ -112,6 +120,8 @@ import java.util.Objects;
  *      RFC 2365: Administratively Scoped IP Multicast
  * @spec https://www.rfc-editor.org/info/rfc790
  *      RFC 790: Assigned numbers
+ * @spec https://www.rfc-editor.org/rfc/rfc6943.html#section-3.1.1
+ *      RFC 6943: Issues in Identifier Comparison for Security Purposes
  * @since 1.4
  */
 
@@ -173,10 +183,77 @@ class Inet4Address extends InetAddress {
      * @throws IllegalArgumentException if the {@code ipv4AddressLiteral} cannot be
      *         parsed as an IPv4 address literal.
      * @throws NullPointerException if the {@code ipv4AddressLiteral} is {@code null}.
+     * @since 22
      */
     public static Inet4Address ofLiteral(String ipv4AddressLiteral) {
         Objects.requireNonNull(ipv4AddressLiteral);
         return parseAddressString(ipv4AddressLiteral, true);
+    }
+
+    /**
+     * Creates an {@code Inet4Address} based on the provided {@linkplain
+     * Inet4Address##format-posix textual representation of an IPv4 address in
+     * POSIX {@code inet_addr} compatible form}.
+     * <p> <a id="format-posix"></a> The method {@code ofPosixLiteral}
+     * implements <a href="https://pubs.opengroup.org/onlinepubs/9699919799/functions/inet_addr.html">
+     * POSIX {@code inet_addr}</a> compatible parsing algorithm, allowing
+     * octal and hexadecimal address segments. {@code "0"} is the prefix
+     * for octal numbers, {@code "0x"} and {@code "0X"} are the prefixes
+     * for hexadecimal numbers. Non-zero address segments that start from
+     * non-zero digits are parsed as decimal numbers. The following
+     * (non-decimal) forms are supported by this method:
+     * {@snippet :
+     *  // Dotted-quad 'x.x.x.x' form with four part address literal
+     *  Inet4Address.ofPosixLiteral("0177.0.0.1"); // ==> /127.0.0.1
+     *  Inet4Address.ofPosixLiteral("0x7F.0.0.1"); // ==> /127.0.0.1
+     *
+     *  // Dotted-triple 'x.x.x' form with three part address literal,
+     *  // the last part is placed in the rightmost two bytes
+     *  // of the constructed address
+     *  Inet4Address.ofPosixLiteral("0177.0.0402"); // ==> /127.0.1.2
+     *  Inet4Address.ofPosixLiteral("0x7F.0.0x102"); // ==> /127.0.1.2
+     *
+     *  // Dotted-double 'x.x' form with two part address literal,
+     *  // the last part is placed in the rightmost three bytes
+     *  // of the constructed address
+     *  Inet4Address.ofPosixLiteral("0177.0201003"); // ==> /127.1.2.3
+     *  Inet4Address.ofPosixLiteral("0x7F.0x10203"); // ==> /127.1.2.3
+     *  Inet4Address.ofPosixLiteral("127.66051"); // ==> /127.1.2.3
+     *
+     *  // Dotless 'x' form with one value that is stored directly in
+     *  // the constructed address bytes without any rearrangement
+     *  Inet4Address.ofPosixLiteral("0100401404"); // ==> /1.2.3.4
+     *  Inet4Address.ofPosixLiteral("0x1020304"); // ==> /1.2.3.4
+     *  Inet4Address.ofPosixLiteral("16909060"); // ==> /1.2.3.4
+     * }
+     * <p> If the provided IPv4 address literal cannot represent a
+     * valid IPv4 address in {@linkplain Inet4Address##format-posix
+     * POSIX form} an {@code IllegalArgumentException} is thrown.
+     * <p> This method doesn't block, i.e. no hostname lookup is performed.
+     *
+     * @apiNote
+     * This method produces different results compared to {@linkplain Inet4Address#ofLiteral}
+     * when {@code posixIPAddressLiteral} parameter contains address segments with
+     * leading zeroes. An address segment with a leading zero is always parsed as an octal
+     * number by this method, therefore {@code 0255} (octal) will be parsed as
+     * {@code 173} (decimal). On the other hand, {@link Inet4Address#ofLiteral
+     * Inet4Address.ofLiteral} ignores leading zeros, parses all numbers as decimal and produces
+     * {@code 255}. Where this method would parse {@code 0256.0256.0256.0256} (octal) and
+     * produce {@code 174.174.174.174} (decimal) in four dotted quad notation,
+     * {@link Inet4Address#ofLiteral Inet4Address.ofLiteral} will throw
+     * {@code IllegalArgumentException}.
+     *
+     * @param posixIPAddressLiteral a textual representation of an IPv4 address.
+     * @return an {@link Inet4Address} object with no hostname set, and constructed
+     *         from the provided IPv4 address literal.
+     * @throws IllegalArgumentException if the {@code posixIPAddressLiteral} cannot be
+     *         parsed as an IPv4 address literal.
+     * @throws NullPointerException if the {@code posixIPAddressLiteral} is {@code null}.
+     * @since 23
+     */
+    public static Inet4Address ofPosixLiteral(String posixIPAddressLiteral) {
+        Objects.requireNonNull(posixIPAddressLiteral);
+        return parseAddressStringPosix(posixIPAddressLiteral);
     }
 
     /**
@@ -209,6 +286,45 @@ class Inet4Address extends InetAddress {
             return null;
         }
         return new Inet4Address(null, addrBytes);
+    }
+
+    /**
+     * Parses the given string as an IPv4 address literal in
+     * {@linkplain Inet4Address##format-posix POSIX form.}
+     *
+     * <p> If the given {@code addressLiteral} string cannot be parsed as an IPv4 address literal
+     * in POSIX form and {@code throwIAE} is {@code false}, {@code null} is returned.
+     * If the given {@code addressLiteral} string cannot be parsed as an IPv4 address literal
+     * and {@code throwIAE} is {@code true}, an {@code IllegalArgumentException}
+     * is thrown.
+     *
+     * @apiNote
+     * This method produces different results compared to {@linkplain Inet4Address#parseAddressString}
+     * when {@code addressLiteral} parameter contains address segments with leading
+     * zeroes. An address segment with a leading zero is always parsed as an octal
+     * number by this method, therefore {@code 0255} (octal) will be parsed as
+     * {@code 173} (decimal). On the other hand, {@link Inet4Address#parseAddressString}
+     * ignores leading zeros, parses all numbers as decimal and produces {@code 255}.
+     * Where this method would parse {@code 0256.0256.0256.0256} (octal) and produce
+     * {@code 174.174.174.174} (decimal) in four dotted quad notation, {@linkplain
+     * Inet4Address#parseAddressString} will either throw {@code IllegalArgumentException}
+     * or return {@code null}, depending on the value of {@code throwIAE}.
+     *
+     * @param addressLiteral IPv4 address literal to parse
+     * @param throwIAE whether to throw {@code IllegalArgumentException} if the
+     *                 given {@code addressLiteral} string cannot be parsed as
+     *                 an IPv4 address literal.
+     * @return {@code Inet4Address} object constructed from the address literal;
+     *         or {@code null} if the literal cannot be parsed as an IPv4 address
+     * @throws IllegalArgumentException if the given {@code addressLiteral} string
+     * cannot be parsed as an IPv4 address literal and {@code throwIAE} is {@code true}.
+     */
+    private static Inet4Address parseAddressStringPosix(String addressLiteral) {
+        byte [] parsedBytes = IPAddressUtil.parseBsdLiteralV4(addressLiteral);
+        if (parsedBytes == null) {
+            throw IPAddressUtil.invalidIpAddressLiteral(addressLiteral);
+        }
+        return new Inet4Address(null, parsedBytes);
     }
 
     /**

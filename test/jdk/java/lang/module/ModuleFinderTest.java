@@ -23,10 +23,8 @@
 
 /**
  * @test
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.module
+ * @enablePreview
+ * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build ModuleFinderTest jdk.test.lib.util.ModuleInfoWriter
  * @run testng ModuleFinderTest

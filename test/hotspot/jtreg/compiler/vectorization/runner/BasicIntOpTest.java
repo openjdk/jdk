@@ -198,7 +198,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.LSHIFT_VI, ">0"})
     public int[] vectorShiftLeft() {
         int[] res = new int[SIZE];
@@ -209,7 +209,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.RSHIFT_VI, ">0"})
     public int[] vectorSignedShiftRight() {
         int[] res = new int[SIZE];
@@ -220,7 +220,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         counts = {IRNode.URSHIFT_VI, ">0"})
     public int[] vectorUnsignedShiftRight() {
         int[] res = new int[SIZE];

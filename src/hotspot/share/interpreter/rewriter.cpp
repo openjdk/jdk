@@ -35,6 +35,7 @@
 #include "oops/generateOopMap.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -58,7 +59,9 @@ void Rewriter::compute_index_maps() {
         break;
       case JVM_CONSTANT_InterfaceMethodref: // fall through
       case JVM_CONSTANT_Methodref         :
-        add_cp_cache_entry(i);
+        _cp_map.at_put(i, _method_entry_index);
+        _method_entry_index++;
+        _initialized_method_entries.push(ResolvedMethodEntry((u2)i));
         break;
       case JVM_CONSTANT_Dynamic:
         assert(_pool->has_dynamic_constant(), "constant pool's _has_dynamic_constant flag not set");
@@ -81,8 +84,8 @@ void Rewriter::compute_index_maps() {
   // Record limits of resolved reference map for constant pool cache indices
   record_map_limits();
 
-  guarantee((int) _cp_cache_map.length() - 1 <= (int) ((u2)-1),
-            "all cp cache indexes fit in a u2");
+  guarantee(_initialized_field_entries.length() - 1 <= (int)((u2)-1), "All resolved field indices fit in a u2");
+  guarantee(_initialized_method_entries.length() - 1 <= (int)((u2)-1), "All resolved method indices fit in a u2");
 
   if (saw_mh_symbol) {
     _method_handle_invokers.at_grow(length, 0);
@@ -104,9 +107,12 @@ void Rewriter::restore_bytecodes(Thread* thread) {
 // Creates a constant pool cache given a CPC map
 void Rewriter::make_constant_pool_cache(TRAPS) {
   ClassLoaderData* loader_data = _pool->pool_holder()->class_loader_data();
+  assert(_field_entry_index == _initialized_field_entries.length(), "Field entry size mismatch");
+  assert(_method_entry_index == _initialized_method_entries.length(), "Method entry size mismatch");
   ConstantPoolCache* cache =
-      ConstantPoolCache::allocate(loader_data, _cp_cache_map,
-                                  _invokedynamic_references_map, _initialized_indy_entries, _initialized_field_entries, CHECK);
+      ConstantPoolCache::allocate(loader_data, _invokedynamic_references_map,
+                                  _initialized_indy_entries, _initialized_field_entries, _initialized_method_entries,
+                                  CHECK);
 
   // initialize object cache in constant pool
   _pool->set_cache(cache);
@@ -120,12 +126,10 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
 #if INCLUDE_CDS
   if (!HAS_PENDING_EXCEPTION && CDSConfig::is_dumping_archive()) {
     if (_pool->pool_holder()->is_shared()) {
-      assert(DynamicDumpSharedSpaces, "must be");
+      assert(CDSConfig::is_dumping_dynamic_archive(), "must be");
       // We are linking a shared class from the base archive. This
       // class won't be written into the dynamic archive, so there's no
       // need to save its CpCaches.
-    } else {
-      cache->save_for_archive(THREAD);
     }
   }
 #endif
@@ -194,21 +198,22 @@ void Rewriter::rewrite_field_reference(address bcp, int offset, bool reverse) {
   }
 }
 
-// Rewrite a classfile-order CP index into a native-order CPC index.
-void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
+void Rewriter::rewrite_method_reference(address bcp, int offset, bool reverse) {
   address p = bcp + offset;
   if (!reverse) {
     int  cp_index    = Bytes::get_Java_u2(p);
-    int  cache_index = cp_entry_to_cp_cache(cp_index);
-    Bytes::put_native_u2(p, (u2)cache_index);
-    if (!_method_handle_invokers.is_empty())
-      maybe_rewrite_invokehandle(p - 1, cp_index, cache_index, reverse);
+    int  method_entry_index = _cp_map.at(cp_index);
+    Bytes::put_native_u2(p, (u2)method_entry_index);
+    if (!_method_handle_invokers.is_empty()) {
+      maybe_rewrite_invokehandle(p - 1, cp_index, method_entry_index, reverse);
+    }
   } else {
-    int cache_index = Bytes::get_native_u2(p);
-    int pool_index = cp_cache_entry_pool_index(cache_index);
+    int method_entry_index = Bytes::get_native_u2(p);
+    int pool_index = _initialized_method_entries.at(method_entry_index).constant_pool_index();
     Bytes::put_Java_u2(p, (u2)pool_index);
-    if (!_method_handle_invokers.is_empty())
-      maybe_rewrite_invokehandle(p - 1, pool_index, cache_index, reverse);
+    if (!_method_handle_invokers.is_empty()) {
+      maybe_rewrite_invokehandle(p - 1, pool_index, method_entry_index, reverse);
+    }
   }
 }
 
@@ -221,27 +226,27 @@ void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
     if (_pool->tag_at(cp_index).is_interface_method()) {
-      int cache_index = add_invokespecial_cp_cache_entry(cp_index);
-      if (cache_index != (int)(jushort) cache_index) {
+      _initialized_method_entries.push(ResolvedMethodEntry((u2)cp_index));
+      Bytes::put_native_u2(p, (u2)_method_entry_index);
+      _method_entry_index++;
+      if (_method_entry_index != (int)(u2)_method_entry_index) {
         *invokespecial_error = true;
       }
-      Bytes::put_native_u2(p, (u2)cache_index);
     } else {
-      rewrite_member_reference(bcp, offset, reverse);
+      rewrite_method_reference(bcp, offset, reverse);
     }
   } else {
-    rewrite_member_reference(bcp, offset, reverse);
+    rewrite_method_reference(bcp, offset, reverse);
   }
 }
-
 
 // Adjust the invocation bytecode for a signature-polymorphic method (MethodHandle.invoke, etc.)
 void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse) {
   if (!reverse) {
     if ((*opc) == (u1)Bytecodes::_invokevirtual ||
         // allow invokespecial as an alias, although it would be very odd:
-        (*opc) == (u1)Bytecodes::_invokespecial) {
-      assert(_pool->tag_at(cp_index).is_method(), "wrong index");
+        ((*opc) == (u1)Bytecodes::_invokespecial)) {
+          assert(_pool->tag_at(cp_index).is_method(), "wrong index");
       // Determine whether this is a signature-polymorphic method.
       if (cp_index >= _method_handle_invokers.length())  return;
       int status = _method_handle_invokers.at(cp_index);
@@ -251,13 +256,15 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
                                                          _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
                                                                 _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
-          add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+          _initialized_method_entries.at(cache_index).set_resolved_references_index((u2)resolved_index);
           status = +1;
         } else {
           status = -1;
@@ -298,15 +305,14 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
+    Bytes::put_native_u4(p, (u2)_invokedynamic_index);
     _invokedynamic_index++;
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
     _initialized_indy_entries.push(ResolvedIndyEntry((u2)resolved_index, (u2)cp_index));
   } else {
     // Should do nothing since we are not patching this bytecode
-    int cache_index = ConstantPool::decode_invokedynamic_index(
-                        Bytes::get_native_u4(p));
+    int cache_index = Bytes::get_native_u4(p);
     int cp_index = _initialized_indy_entries.at(cache_index).constant_pool_index();
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
@@ -471,7 +477,7 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
       case Bytecodes::_invokestatic   :
       case Bytecodes::_invokeinterface:
       case Bytecodes::_invokehandle   : // if reverse=true
-        rewrite_member_reference(bcp, prefix_length+1, reverse);
+        rewrite_method_reference(bcp, prefix_length+1, reverse);
         break;
       case Bytecodes::_invokedynamic:
         rewrite_invokedynamic(bcp, prefix_length+1, reverse);
@@ -524,7 +530,7 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
   // determine index maps for Method* rewriting
   compute_index_maps();
 
-  if (RegisterFinalizersAtInit && _klass->name() == vmSymbols::java_lang_Object()) {
+  if (_klass->name() == vmSymbols::java_lang_Object()) {
     bool did_rewrite = false;
     int i = _methods->length();
     while (i-- > 0) {
@@ -577,13 +583,13 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _pool(cpool),
     _methods(methods),
     _cp_map(cpool->length()),
-    _cp_cache_map(cpool->length() / 2),
     _reference_map(cpool->length()),
     _resolved_references_map(cpool->length() / 2),
     _invokedynamic_references_map(cpool->length() / 2),
     _method_handle_invokers(cpool->length()),
     _invokedynamic_index(0),
-    _field_entry_index(0)
+    _field_entry_index(0),
+    _method_entry_index(0)
 {
 
   // Rewrite bytecodes - exception here exits.

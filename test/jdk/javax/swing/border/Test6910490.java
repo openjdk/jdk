@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
 import javax.swing.Icon;
-import javax.swing.JApplet;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.border.MatteBorder;
@@ -37,22 +37,40 @@ import javax.swing.border.MatteBorder;
  * @test
  * @bug 6910490
  * @summary Tests a matte border around a component inside a scroll pane.
- * @author Sergey Malenkov
- * @run applet/manual=yesno Test6910490.html
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual Test6910490
  */
 
-public class Test6910490 extends JApplet implements Icon {
+public class Test6910490 implements Icon {
+    public static void main(String[] args) throws Exception {
+        String testInstructions = """
+                If the border is painted over scroll bars then test fails.
+                Otherwise test passes.""";
+        Test6910490 obj = new Test6910490();
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(testInstructions)
+                .rows(3)
+                .columns(35)
+                .testUI(obj.initializeTest())
+                .build()
+                .awaitAndCheck();
+    }
 
-    @Override
-    public void init() {
+    public JFrame initializeTest() {
         Insets insets = new Insets(10, 10, 10, 10);
-        Dimension size = new Dimension(getWidth() / 2, getHeight());
+        JFrame frame = new JFrame("Matte Border Test");
+        frame.setSize(600, 300);
+        Dimension size = new Dimension(frame.getWidth() / 2, frame.getHeight());
         JSplitPane pane = new JSplitPane(
                 JSplitPane.HORIZONTAL_SPLIT,
                 create("Color", size, new MatteBorder(insets, RED)),
                 create("Icon", size, new MatteBorder(insets, this)));
+
         pane.setDividerLocation(size.width - pane.getDividerSize() / 2);
-        add(pane);
+        frame.add(pane);
+        return frame;
     }
 
     private JScrollPane create(String name, Dimension size, MatteBorder border) {

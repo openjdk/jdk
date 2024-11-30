@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8165947 8170579
+ * @key printer
  * @summary  Verifies System default banner page option is honoured by jdk
  * @requires os.family == "linux"
  * @run main/manual TestCheckSystemDefaultBannerOption

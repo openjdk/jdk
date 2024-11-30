@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,39 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
 // compiled code and the run-time system. Platform-specific entry
-// points are defined in the platform-specific inner class.
+// points are defined in the platform-specific inner class. Most
+// routines have a single (main) entry point. However, a few routines
+// do provide alternative entry points.
+//
+// Stub routines whose entries are advertised via class StubRoutines
+// are generated in batches at well-defined stages during JVM init:
+// initial stubs, continuation stubs, compiler stubs, final stubs.
+// Each batch is embedded in a single, associated blob (an instance of
+// BufferBlob) i.e. the blob to entry relationship is 1-m.
+//
+// Note that this constrasts with the much smaller number of stub
+// routines generated via classes SharedRuntime, c1_Runtime1 and
+// OptoRuntime. The latter routines are also generated at well-defined
+// points during JVM init. However, each stub routine has its own
+// unique blob (various subclasses of RuntimeBlob) i.e. the blob to
+// entry relationship is 1-1. The difference arises because
+// SharedRuntime routines may need to be relocatable or advertise
+// properties such as a frame size via their blob.
+//
+// Staging of stub routine generation is needed in order to manage
+// init dependencies between 1) stubs and other stubs or 2) stubs and
+// other runtime components. For example, some exception throw stubs
+// need to be generated before compiler stubs (such as the
+// deoptimization stub) so that the latter can invoke the thrwo rotine
+// in bail-out code. Likewise, stubs that access objects (such as the
+// object array copy stub) need to be created after initialization of
+// some GC constants and generation of the GC barrier stubs they might
+// need to invoke.
 //
 // Class scheme:
 //
@@ -48,8 +76,7 @@
 //           |                                  |
 //           |                                  |
 //    stubRoutines.cpp                   stubRoutines_<arch>.cpp
-//    stubRoutines_<os_family>.cpp       stubGenerator_<arch>.cpp
-//    stubRoutines_<os_arch>.cpp
+//                                       stubGenerator_<arch>.cpp
 //
 // Note 1: The important thing is a clean decoupling between stub
 //         entry points (interfacing to the whole vm; i.e., 1-to-n
@@ -74,18 +101,20 @@
 // 3. add a public accessor function to the instance variable
 // 4. implement the corresponding generator function in the platform-dependent
 //    stubGenerator_<arch>.cpp file and call the function in generate_all() of that file
+// 5. ensure the entry is generated in the right blob to satisfy initialization
+//    dependencies between it and other stubs or runtime components.
 
-class UnsafeCopyMemory : public CHeapObj<mtCode> {
+class UnsafeMemoryAccess : public CHeapObj<mtCode> {
  private:
   address _start_pc;
   address _end_pc;
   address _error_exit_pc;
  public:
   static address           _common_exit_stub_pc;
-  static UnsafeCopyMemory* _table;
+  static UnsafeMemoryAccess* _table;
   static int               _table_length;
   static int               _table_max_length;
-  UnsafeCopyMemory() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
+  UnsafeMemoryAccess() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
   void    set_start_pc(address pc)      { _start_pc = pc; }
   void    set_end_pc(address pc)        { _end_pc = pc; }
   void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
@@ -96,9 +125,9 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static void    set_common_exit_stub_pc(address pc) { _common_exit_stub_pc = pc; }
   static address common_exit_stub_pc()               { return _common_exit_stub_pc; }
 
-  static UnsafeCopyMemory* add_to_table(address start_pc, address end_pc, address error_exit_pc) {
-    guarantee(_table_length < _table_max_length, "Incorrect UnsafeCopyMemory::_table_max_length");
-    UnsafeCopyMemory* entry = &_table[_table_length];
+  static UnsafeMemoryAccess* add_to_table(address start_pc, address end_pc, address error_exit_pc) {
+    guarantee(_table_length < _table_max_length, "Incorrect UnsafeMemoryAccess::_table_max_length");
+    UnsafeMemoryAccess* entry = &_table[_table_length];
     entry->set_start_pc(start_pc);
     entry->set_end_pc(end_pc);
     entry->set_error_exit_pc(error_exit_pc);
@@ -112,13 +141,13 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static void    create_table(int max_size);
 };
 
-class UnsafeCopyMemoryMark : public StackObj {
+class UnsafeMemoryAccessMark : public StackObj {
  private:
-  UnsafeCopyMemory*  _ucm_entry;
+  UnsafeMemoryAccess*  _ucm_entry;
   StubCodeGenerator* _cgen;
  public:
-  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
-  ~UnsafeCopyMemoryMark();
+  UnsafeMemoryAccessMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
+  ~UnsafeMemoryAccessMark();
 };
 
 class StubRoutines: AllStatic {
@@ -136,11 +165,6 @@ class StubRoutines: AllStatic {
   static address _call_stub_entry;
   static address _forward_exception_entry;
   static address _catch_exception_entry;
-  static address _throw_AbstractMethodError_entry;
-  static address _throw_IncompatibleClassChangeError_entry;
-  static address _throw_NullPointerException_at_call_entry;
-  static address _throw_StackOverflowError_entry;
-  static address _throw_delayed_StackOverflowError_entry;
 
   static address _atomic_xchg_entry;
   static address _atomic_cmpxchg_entry;
@@ -192,6 +216,8 @@ class StubRoutines: AllStatic {
   static address _unsafe_arraycopy;
   static address _generic_arraycopy;
 
+  static address _unsafe_setmemory;
+
   static address _jbyte_fill;
   static address _jshort_fill;
   static address _jint_fill;
@@ -212,6 +238,8 @@ class StubRoutines: AllStatic {
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
   static address _poly1305_processBlocks;
+  static address _intpoly_montgomeryMult_P256;
+  static address _intpoly_assign;
 
   static address _md5_implCompress;
   static address _md5_implCompressMB;
@@ -226,6 +254,8 @@ class StubRoutines: AllStatic {
 
   static address _updateBytesCRC32;
   static address _crc_table_adr;
+
+  static address _string_indexof_array[4];
 
   static address _crc32c_table_addr;
   static address _updateBytesCRC32C;
@@ -251,25 +281,28 @@ class StubRoutines: AllStatic {
   static address _dlibm_reduce_pi04l;
   static address _dlibm_tan_cot_huge;
   static address _dtan;
+  static address _dtanh;
   static address _fmod;
 
   static address _f2hf;
   static address _hf2f;
 
+  static address _method_entry_barrier;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
-
-  JFR_ONLY(static RuntimeStub* _jfr_write_checkpoint_stub;)
-  JFR_ONLY(static address _jfr_write_checkpoint;)
-  JFR_ONLY(static RuntimeStub* _jfr_return_lease_stub;)
-  JFR_ONLY(static address _jfr_return_lease;)
+  static address _cont_preempt_stub;
 
   // Vector Math Routines
-  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
-  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
+  static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
+  static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH];
 
   static address _upcall_stub_exception_handler;
+  static address _upcall_stub_load_target;
+
+  static address _lookup_secondary_supers_table_stubs[];
+  static address _lookup_secondary_supers_table_slow_path_stub;
 
  public:
   // Initialization/Testing
@@ -317,12 +350,6 @@ class StubRoutines: AllStatic {
 
   // Exceptions
   static address forward_exception_entry()                 { return _forward_exception_entry; }
-  // Implicit exceptions
-  static address throw_AbstractMethodError_entry()         { return _throw_AbstractMethodError_entry; }
-  static address throw_IncompatibleClassChangeError_entry(){ return _throw_IncompatibleClassChangeError_entry; }
-  static address throw_NullPointerException_at_call_entry(){ return _throw_NullPointerException_at_call_entry; }
-  static address throw_StackOverflowError_entry()          { return _throw_StackOverflowError_entry; }
-  static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
@@ -378,6 +405,11 @@ class StubRoutines: AllStatic {
   typedef void (*UnsafeArrayCopyStub)(const void* src, void* dst, size_t count);
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
 
+  static address unsafe_setmemory()     { return _unsafe_setmemory; }
+
+  typedef void (*UnsafeSetMemoryStub)(void* dst, size_t count, char byte);
+  static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
+
   static address generic_arraycopy()   { return _generic_arraycopy; }
   static address select_arraysort_function() { return _array_sort; }
   static address select_array_partition_function() { return _array_partition; }
@@ -396,6 +428,8 @@ class StubRoutines: AllStatic {
   static address electronicCodeBook_encryptAESCrypt()   { return _electronicCodeBook_encryptAESCrypt; }
   static address electronicCodeBook_decryptAESCrypt()   { return _electronicCodeBook_decryptAESCrypt; }
   static address poly1305_processBlocks()               { return _poly1305_processBlocks; }
+  static address intpoly_montgomeryMult_P256()          { return _intpoly_montgomeryMult_P256; }
+  static address intpoly_assign()        { return _intpoly_assign; }
   static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
   static address ghash_processBlocks()   { return _ghash_processBlocks; }
   static address chacha20Block()         { return _chacha20Block; }
@@ -441,6 +475,7 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+  static address dtanh()               { return _dtanh; }
 
   // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
   // methods which perform the same operations as the intrinsic version.
@@ -451,25 +486,43 @@ class StubRoutines: AllStatic {
 
   static jshort f2hf(jfloat x) {
     assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jshort (*f2hf_stub_t)(jfloat x);
     return ((f2hf_stub_t)_f2hf)(x);
   }
   static jfloat hf2f(jshort x) {
     assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
   }
 
+  static address method_entry_barrier() { return _method_entry_barrier; }
+
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
   static address cont_returnBarrierExc(){return _cont_returnBarrierExc; }
-
-  JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
-  JFR_ONLY(static address jfr_return_lease() { return _jfr_return_lease; })
+  static address cont_preempt_stub()   { return _cont_preempt_stub; }
 
   static address upcall_stub_exception_handler() {
     assert(_upcall_stub_exception_handler != nullptr, "not implemented");
     return _upcall_stub_exception_handler;
+  }
+
+  static address upcall_stub_load_target() {
+    assert(_upcall_stub_load_target != nullptr, "not implemented");
+    return _upcall_stub_load_target;
+  }
+
+  static address lookup_secondary_supers_table_stub(u1 slot) {
+    assert(slot < Klass::SECONDARY_SUPERS_TABLE_SIZE, "out of bounds");
+    assert(_lookup_secondary_supers_table_stubs[slot] != nullptr, "not implemented");
+    return _lookup_secondary_supers_table_stubs[slot];
+  }
+
+  static address lookup_secondary_supers_table_slow_path_stub() {
+    assert(_lookup_secondary_supers_table_slow_path_stub != nullptr, "not implemented");
+    return _lookup_secondary_supers_table_slow_path_stub;
   }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);

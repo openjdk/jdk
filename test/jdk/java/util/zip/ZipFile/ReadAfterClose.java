@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,30 +22,107 @@
  */
 
 /* @test
-   @bug 4528128 6846616
-   @summary Test if reading InputStream of a closed ZipFile crashes VM
-   @author kladko
-   */
+   @bug 8340684
+   @summary Verify unspecified, but long-standing behavior when reading
+   from an input stream obtained using ZipFile::getInputStream after
+   the ZipFile has been closed.
+   @run junit ReadAfterClose
+ */
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.zip.*;
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.stream.Stream;
+import java.util.zip.CRC32;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ReadAfterClose {
-    public static void main(String[] argv) throws Exception {
+
+    // ZIP file used in this test
+    private Path zip = Path.of("read-after-close.zip");
+
+    /**
+     * Create a sample ZIP file for use by this test
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @BeforeEach
+    public void setUp() throws IOException {
+        byte[] content = "hello".repeat(1000).getBytes(StandardCharsets.UTF_8);
+        try (OutputStream out = Files.newOutputStream(zip);
+             ZipOutputStream zo = new ZipOutputStream(out)) {
+            {
+                zo.putNextEntry(new ZipEntry("deflated.txt"));
+                zo.write(content);
+            }
+            {
+                ZipEntry entry = new ZipEntry("stored.txt");
+                entry.setMethod(ZipEntry.STORED);
+                CRC32 crc = new CRC32();
+                crc.update(content);
+                entry.setCrc(crc.getValue());
+                entry.setSize(content.length);
+                zo.putNextEntry(entry);
+                zo.write(content);
+            }
+        }
+    }
+
+    /**
+     * Delete the ZIP file produced by this test
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @AfterEach
+    public void cleanup() throws IOException {
+        Files.deleteIfExists(zip);
+    }
+
+    /**
+     * Produce arguments with a variation of stored / deflated entries,
+     * and read behavior before closing the ZipFile.
+     * @return
+     */
+    public static Stream<Arguments> arguments() {
+        return Stream.of(
+                Arguments.of("stored.txt",   true),
+                Arguments.of("stored.txt",   false),
+                Arguments.of("deflated.txt", true),
+                Arguments.of("deflated.txt", false)
+        );
+    }
+    /**
+     * Attempting to read from an InputStream obtained by ZipFile.getInputStream
+     * after the backing ZipFile is closed should throw IOException
+     *
+     * @throws IOException if an unexpected IOException occurs
+     */
+    @ParameterizedTest
+    @MethodSource("arguments")
+    public void readAfterClose(String entryName, boolean readFirst) throws IOException {
+        // Retain a reference to an input stream backed by a closed ZipFile
         InputStream in;
-        try (ZipFile zf = new ZipFile(
-                 new File(System.getProperty("test.src","."),"crash.jar"))) {
-            ZipEntry zent = zf.getEntry("Test.java");
-            in = zf.getInputStream(zent);
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+            in = zf.getInputStream(new ZipEntry(entryName));
+            // Optionally consume a single byte from the stream before closing
+            if (readFirst) {
+                in.read();
+            }
         }
-        // ensure zf is closed at this point
-        try {
+
+        assertThrows(IOException.class, () -> {
             in.read();
-        } catch (IOException e) {
-            return;
-        }
-        throw new Exception("Test failed.");
+        });
     }
 }

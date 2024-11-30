@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ TEST_VM(ThreadsTest, fast_jni_in_vm) {
   // DirectByteBuffer is an easy way to trigger GetIntField,
   // see JDK-8262896
   jlong capacity = 0x10000;
-  jobject buffer = env->NewDirectByteBuffer(NULL, (jlong)capacity);
-  ASSERT_NE((void*)NULL, buffer);
+  jobject buffer = env->NewDirectByteBuffer(nullptr, (jlong)capacity);
+  ASSERT_NE((void*)nullptr, buffer);
   ASSERT_EQ(capacity, env->GetDirectBufferCapacity(buffer));
 }

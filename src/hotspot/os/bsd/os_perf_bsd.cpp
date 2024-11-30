@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
   #include <net/if.h>
   #include <net/if_dl.h>
   #include <net/route.h>
+  #include <sys/times.h>
 #endif
 
 static const double NANOS_PER_SEC = 1000000000.0;
@@ -47,10 +48,10 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
    friend class CPUPerformanceInterface;
  private:
 #ifdef __APPLE__
-  uint64_t _total_cpu_nanos;
+  uint64_t _jvm_real;
   uint64_t _total_csr_nanos;
-  uint64_t _jvm_user_nanos;
-  uint64_t _jvm_system_nanos;
+  uint64_t _jvm_user;
+  uint64_t _jvm_system;
   long _jvm_context_switches;
   long _used_ticks;
   long _total_ticks;
@@ -86,11 +87,11 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
 
 CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
 #ifdef __APPLE__
-  _total_cpu_nanos= 0;
+  _jvm_real = 0;
   _total_csr_nanos= 0;
   _jvm_context_switches = 0;
-  _jvm_user_nanos = 0;
-  _jvm_system_nanos = 0;
+  _jvm_user = 0;
+  _jvm_system = 0;
   _used_ticks = 0;
   _total_ticks = 0;
   _active_processor_count = 0;
@@ -152,42 +153,35 @@ int CPUPerformanceInterface::CPUPerformance::cpu_load_total_process(double* cpu_
 int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserLoad, double* pjvmKernelLoad, double* psystemTotalLoad) {
 #ifdef __APPLE__
   int result = cpu_load_total_process(psystemTotalLoad);
-  mach_port_t task = mach_task_self();
-  mach_msg_type_number_t task_info_count = TASK_INFO_MAX;
-  task_info_data_t task_info_data;
-  kern_return_t kr = task_info(task, TASK_ABSOLUTETIME_INFO, (task_info_t)task_info_data, &task_info_count);
-  if (kr != KERN_SUCCESS) {
+
+  struct tms buf;
+  clock_t jvm_real = times(&buf);
+  if (jvm_real == (clock_t) (-1)) {
     return OS_ERR;
   }
-  task_absolutetime_info_t absolutetime_info = (task_absolutetime_info_t)task_info_data;
 
   int active_processor_count = os::active_processor_count();
-  uint64_t jvm_user_nanos = absolutetime_info->total_user;
-  uint64_t jvm_system_nanos = absolutetime_info->total_system;
+  uint64_t jvm_user = buf.tms_utime;
+  uint64_t jvm_system = buf.tms_stime;
 
-  uint64_t total_cpu_nanos;
-  if(!now_in_nanos(&total_cpu_nanos)) {
-    return OS_ERR;
-  }
-
-  if (_total_cpu_nanos == 0 || active_processor_count != _active_processor_count) {
-    // First call or change in active processor count
+  if (active_processor_count != _active_processor_count) {
+    // Change in active processor count
     result = OS_ERR;
   } else {
-    uint64_t delta_nanos = active_processor_count * (total_cpu_nanos - _total_cpu_nanos);
-    if (delta_nanos == 0) {
+    uint64_t delta = active_processor_count * (jvm_real - _jvm_real);
+    if (delta == 0) {
       // Avoid division by zero
       return OS_ERR;
     }
 
-    *pjvmUserLoad = normalize((double)(jvm_user_nanos - _jvm_user_nanos)/delta_nanos);
-    *pjvmKernelLoad = normalize((double)(jvm_system_nanos - _jvm_system_nanos)/delta_nanos);
+    *pjvmUserLoad = normalize((double)(jvm_user - _jvm_user) / delta);
+    *pjvmKernelLoad = normalize((double)(jvm_system - _jvm_system) / delta);
   }
 
   _active_processor_count = active_processor_count;
-  _total_cpu_nanos = total_cpu_nanos;
-  _jvm_user_nanos = jvm_user_nanos;
-  _jvm_system_nanos = jvm_system_nanos;
+  _jvm_real = jvm_real;
+  _jvm_user = jvm_user;
+  _jvm_system = jvm_system;
 
   return result;
 #else

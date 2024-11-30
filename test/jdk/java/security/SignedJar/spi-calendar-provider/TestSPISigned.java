@@ -100,7 +100,7 @@ public class TestSPISigned {
             testRun.add(classPath);
             testRun.add(TestSPISigned.class.getSimpleName());
             testRun.add("run-test");
-            OutputAnalyzer out = ProcessTools.executeTestJvm(testRun);
+            OutputAnalyzer out = ProcessTools.executeTestJava(testRun);
             out.shouldHaveExitValue(0);
             out.shouldContain("DEBUG: Getting xx language");
         }

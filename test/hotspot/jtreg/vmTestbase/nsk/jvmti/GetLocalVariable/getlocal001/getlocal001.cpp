@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -146,7 +146,7 @@ void check2(jvmtiEnv *jvmti_env, jthread thr, jint depth,
 void check3(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr, jint depth,
         jvmtiLocalVariableEntry *table, jint count, jmethodID mid) {
     jvmtiError err;
-    jobject ob1 = NULL, ob2 = NULL;
+    jobject ob1 = nullptr, ob2 = nullptr;
     jclass cls;
     jfieldID fid;
     jint fldVal = 0;
@@ -171,7 +171,7 @@ void check3(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr, jint depth,
                 continue;
             }
             fid = env->GetFieldID(cls, "fld", "I");
-            if (fid == NULL) {
+            if (fid == nullptr) {
                 printf("Cannot find ID for \"fld\" field of meth03\n");
                 env->ExceptionClear();
                 result = STATUS_FAILED;
@@ -284,7 +284,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID mid,
         jboolean was_poped_by_exception, jvalue return_value) {
     jvmtiError err;
-    jvmtiLocalVariableEntry *table = NULL;
+    jvmtiLocalVariableEntry *table = nullptr;
     jint entryCount = 0;
     int i;
 
@@ -307,7 +307,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
                 printf(">>> exit: meth02\n");
             }
             check2(jvmti_env, thr, 0, table, entryCount);
-            mid2 = NULL;
+            mid2 = nullptr;
         } else if (mid == mid3) {
             if (printdump == JNI_TRUE) {
                 printf(">>> exit: meth03\n");
@@ -320,7 +320,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
             check4(jvmti_env, thr, 0, table, entryCount);
         }
     }
-    if (table != NULL) {
+    if (table != nullptr) {
         for (i = 0; i < entryCount; i++) {
             jvmti_env->Deallocate((unsigned char*)table[i].name);
             jvmti_env->Deallocate((unsigned char*)table[i].signature);
@@ -332,7 +332,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method, jlocation location) {
     jvmtiError err;
-    jvmtiLocalVariableEntry *table = NULL;
+    jvmtiLocalVariableEntry *table = nullptr;
     jint entryCount = 0;
     jmethodID mid;
     jlocation loc;
@@ -376,7 +376,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf("ERROR: didn't know where we got called from");
         result = STATUS_FAILED;
     }
-    if (table != NULL) {
+    if (table != nullptr) {
         for (i = 0; i < entryCount; i++) {
             jvmti_env->Deallocate((unsigned char*)table[i].name);
             jvmti_env->Deallocate((unsigned char*)table[i].signature);
@@ -400,12 +400,12 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -474,7 +474,7 @@ Java_nsk_jvmti_GetLocalVariable_getlocal001_getMeth(JNIEnv *env, jclass cls,
         result = STATUS_FAILED;
         return;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable METHOD_EXIT event: %s (%d)\n",
                TranslateError(err), err);
@@ -487,7 +487,7 @@ Java_nsk_jvmti_GetLocalVariable_getlocal001_getMeth(JNIEnv *env, jclass cls,
         return;
     }
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

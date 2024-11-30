@@ -25,6 +25,7 @@
  * @test
  * @bug 8073480
  * @summary explicit range checks should be recognized by C2
+ * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc:+open
  * @build jdk.test.whitebox.WhiteBox

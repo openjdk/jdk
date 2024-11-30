@@ -31,19 +31,19 @@
 
 inline ZPhysicalMemorySegment::ZPhysicalMemorySegment()
   : _start(zoffset(UINTPTR_MAX)),
-    _end(zoffset(UINTPTR_MAX)),
+    _end(zoffset_end(UINTPTR_MAX)),
     _committed(false) {}
 
 inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(zoffset start, size_t size, bool committed)
   : _start(start),
-    _end(start + size),
+    _end(to_zoffset_end(start, size)),
     _committed(committed) {}
 
 inline zoffset ZPhysicalMemorySegment::start() const {
   return _start;
 }
 
-inline zoffset ZPhysicalMemorySegment::end() const {
+inline zoffset_end ZPhysicalMemorySegment::end() const {
   return _end;
 }
 

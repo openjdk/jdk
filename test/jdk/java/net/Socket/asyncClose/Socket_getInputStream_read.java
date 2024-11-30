@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class Socket_getInputStream_read extends AsyncCloseTest implements Runnab
             }
             latch.countDown();
             int n = in.read();
-            failed("Socket.getInputStream().read() returned unexpectedly!!");
+            failed("Socket.getInputStream().read() returned unexpectedly, n=" + n);
         } catch (SocketException se) {
             if (latch.getCount() != 1) {
                 closed();
@@ -77,20 +77,22 @@ public class Socket_getInputStream_read extends AsyncCloseTest implements Runnab
     public AsyncCloseTest go() {
         try {
             InetAddress lh = InetAddress.getLocalHost();
-            ServerSocket ss = new ServerSocket(0, 0, lh);
-            s.connect( new InetSocketAddress(lh, ss.getLocalPort()) );
-            Socket s2 = ss.accept();
-            Thread thr = new Thread(this);
-            thr.start();
-            latch.await();
-            Thread.sleep(5000); //sleep, so Socket.getInputStream().read() can block
-            s.close();
-            thr.join();
+            try (ServerSocket ss = new ServerSocket(0, 0, lh)) {
+                s.connect(new InetSocketAddress(lh, ss.getLocalPort()));
+                try (Socket s2 = ss.accept()) {
+                    Thread thr = new Thread(this);
+                    thr.start();
+                    latch.await();
+                    Thread.sleep(5000); //sleep, so Socket.getInputStream().read() can block
+                    s.close();
+                    thr.join();
+                }
 
-            if (isClosed()) {
-                return passed();
-            } else {
-                return failed("Socket.getInputStream().read() wasn't preempted");
+                if (isClosed()) {
+                    return passed();
+                } else {
+                    return failed("Socket.getInputStream().read() wasn't preempted");
+                }
             }
         } catch (Exception x) {
             failed(x.getMessage());

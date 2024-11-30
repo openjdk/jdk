@@ -57,6 +57,7 @@ public class HelperNodeList implements NodeList {
      * @param index
      * @return node with index i
      */
+    @Override
     public Node item(int index) {
         return nodes.get(index);
     }
@@ -66,6 +67,7 @@ public class HelperNodeList implements NodeList {
      *
      *  @return length of the list
      */
+    @Override
     public int getLength() {
         return nodes.size();
     }

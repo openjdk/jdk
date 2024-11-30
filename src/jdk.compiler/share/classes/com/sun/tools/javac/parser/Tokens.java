@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,12 +274,14 @@ public class Tokens {
     public interface Comment {
 
         enum CommentStyle {
-            LINE,       // Starting with //
-            BLOCK,      // starting with /*
-            JAVADOC,    // starting with /**
+            LINE,            // starting with //   -- also known in JLS as "end-of-line comment"
+            BLOCK,           // starting with /*   -- also known in JLS as "traditional comment"
+            JAVADOC_LINE,    // starting with ///
+            JAVADOC_BLOCK    // starting with /**
         }
 
         String getText();
+        JCDiagnostic.DiagnosticPosition getPos();
         int getSourcePos(int index);
         CommentStyle getStyle();
         boolean isDeprecated();
@@ -359,7 +361,7 @@ public class Tokens {
          * the last one is returned
          */
         public Comment docComment() {
-            List<Comment> comments = getComments(Comment.CommentStyle.JAVADOC);
+            List<Comment> comments = getDocComments();
             return comments.isEmpty() ?
                     null :
                     comments.head;
@@ -370,7 +372,7 @@ public class Tokens {
          * javadoc comment attached to this token contains the '@deprecated' string
          */
         public boolean deprecatedFlag() {
-            for (Comment c : getComments(Comment.CommentStyle.JAVADOC)) {
+            for (Comment c : getDocComments()) {
                 if (c.isDeprecated()) {
                     return true;
                 }
@@ -378,14 +380,15 @@ public class Tokens {
             return false;
         }
 
-        private List<Comment> getComments(Comment.CommentStyle style) {
+        private List<Comment> getDocComments() {
             if (comments == null) {
                 return List.nil();
             } else {
                 ListBuffer<Comment> buf = new ListBuffer<>();
                 for (Comment c : comments) {
-                    if (c.getStyle() == style) {
-                        buf.add(c);
+                    Comment.CommentStyle style = c.getStyle();
+                    switch (style) {
+                        case JAVADOC_BLOCK, JAVADOC_LINE -> buf.add(c);
                     }
                 }
                 return buf.toList();

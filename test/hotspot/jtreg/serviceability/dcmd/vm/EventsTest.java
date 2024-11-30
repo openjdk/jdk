@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 import org.testng.annotations.Test;
+import org.testng.Assert;
 
 /*
  * @test
@@ -37,6 +38,9 @@ import org.testng.annotations.Test;
  * @run testng  EventsTest
  */
 public class EventsTest {
+
+    // MAX should be less than number of actually recorded events
+    private static int MAX = 9;
 
     static String buildHeaderPattern(String logname) {
         return "^" + logname + ".*\\(\\d+ events\\):";
@@ -64,9 +68,27 @@ public class EventsTest {
         output.stdoutShouldNotMatch(buildHeaderPattern("Classes unloaded"));
     }
 
+    public void run_max(CommandExecutor executor) {
+        OutputAnalyzer output = executor.execute("VM.events max=" + MAX);
+        long lines = output.asLines().stream().filter(x -> x.contains("Loading class")).count();
+        Assert.assertTrue(lines == MAX, "There are should be " + MAX + " lines");
+    }
+
+    public void run_max_selected(CommandExecutor executor) {
+        OutputAnalyzer output = executor.execute("VM.events log=load max=" + MAX);
+        output.stdoutShouldMatch(buildHeaderPattern("Classes loaded"));
+        long lines = output.asLines().stream().filter(x -> x.contains("Loading class")).count();
+        Assert.assertTrue(lines == MAX, "There are should be " + MAX + " lines");
+        output.stdoutShouldNotMatch(buildHeaderPattern("Events"));
+        output.stdoutShouldNotMatch(buildHeaderPattern("Compilation"));
+    }
+
+
     @Test
     public void jmx() {
         run_all(new JMXExecutor());
         run_selected(new JMXExecutor());
+        run_max(new JMXExecutor());
+        run_max_selected(new JMXExecutor());
     }
 }

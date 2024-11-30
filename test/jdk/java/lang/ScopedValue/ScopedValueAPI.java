@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @run junit ScopedValueAPI
  */
 
+import java.lang.ScopedValue.CallableOp;
 import java.util.NoSuchElementException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -48,86 +48,58 @@ class ScopedValueAPI {
     }
 
     /**
-     * Test that the run method is invoked.
+     * Test that where invokes the Runnable's run method.
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testRun(ThreadFactory factory) throws Exception {
+    void testRunWhere(ThreadFactory factory) throws Exception {
         test(factory, () -> {
             class Box { static boolean executed; }
             ScopedValue<String> name = ScopedValue.newInstance();
-            ScopedValue.runWhere(name, "duke", () -> { Box.executed = true; });
+            ScopedValue.where(name, "duke").run(() -> { Box.executed = true; });
             assertTrue(Box.executed);
         });
     }
 
     /**
-     * Test the run method throwing an exception.
+     * Test where when the run method throws an exception.
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testRunThrows(ThreadFactory factory) throws Exception {
+    void testRunWhereThrows(ThreadFactory factory) throws Exception {
         test(factory, () -> {
             class FooException extends RuntimeException {  }
             ScopedValue<String> name = ScopedValue.newInstance();
             Runnable op = () -> { throw new FooException(); };
-            assertThrows(FooException.class, () -> ScopedValue.runWhere(name, "duke", op));
+            assertThrows(FooException.class, () -> ScopedValue.where(name, "duke").run(op));
             assertFalse(name.isBound());
         });
     }
 
     /**
-     * Test that the call method is invoked.
+     * Test that callWhere invokes the CallableOp's call method.
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testCall(ThreadFactory factory) throws Exception {
+    void testCallWhere(ThreadFactory factory) throws Exception {
         test(factory, () -> {
             ScopedValue<String> name = ScopedValue.newInstance();
-            String result = ScopedValue.callWhere(name, "duke", name::get);
+            String result = ScopedValue.where(name, "duke").call(name::get);
             assertEquals("duke", result);
         });
     }
 
     /**
-     * Test that the get method is invoked.
+     * Test callWhere when the call method throws an exception.
      */
     @ParameterizedTest
     @MethodSource("factories")
-    void testGetWhere(ThreadFactory factory) throws Exception {
-        test(factory, () -> {
-            ScopedValue<String> name = ScopedValue.newInstance();
-            String result = ScopedValue.getWhere(name, "duke", (Supplier<String>)(name::get));
-            assertEquals("duke", result);
-        });
-    }
-
-    /**
-     * Test the call method throwing an exception.
-     */
-    @ParameterizedTest
-    @MethodSource("factories")
-    void testCallThrows(ThreadFactory factory) throws Exception {
+    void testCallWhereThrows(ThreadFactory factory) throws Exception {
         test(factory, () -> {
             class FooException extends RuntimeException {  }
             ScopedValue<String> name = ScopedValue.newInstance();
-            Callable<Void> op = () -> { throw new FooException(); };
-            assertThrows(FooException.class, () -> ScopedValue.callWhere(name, "duke", op));
-            assertFalse(name.isBound());
-        });
-    }
-
-    /**
-     * Test the get(Supplier) method throwing an exception.
-     */
-    @ParameterizedTest
-    @MethodSource("factories")
-    void testGetThrows(ThreadFactory factory) throws Exception {
-        test(factory, () -> {
-            class FooException extends RuntimeException {  }
-            ScopedValue<String> name = ScopedValue.newInstance();
-            Supplier<Void> op = () -> { throw new FooException(); };
-            assertThrows(FooException.class, () -> ScopedValue.getWhere(name, "duke", op));
+            CallableOp<Void, RuntimeException> op = () -> { throw new FooException(); };
+            assertThrows(FooException.class, () -> ScopedValue.where(name, "duke").call(op));
             assertFalse(name.isBound());
         });
     }
@@ -144,8 +116,8 @@ class ScopedValueAPI {
             assertThrows(NoSuchElementException.class, name1::get);
             assertThrows(NoSuchElementException.class, name2::get);
 
-            // run
-            ScopedValue.runWhere(name1, "duke", () -> {
+            // where
+            ScopedValue.where(name1, "duke").run(() -> {
                 assertEquals("duke", name1.get());
                 assertThrows(NoSuchElementException.class, name2::get);
 
@@ -153,17 +125,8 @@ class ScopedValueAPI {
             assertThrows(NoSuchElementException.class, name1::get);
             assertThrows(NoSuchElementException.class, name2::get);
 
-            // call
-            ScopedValue.callWhere(name1, "duke", () -> {
-                assertEquals("duke", name1.get());
-                assertThrows(NoSuchElementException.class, name2::get);
-                return null;
-            });
-            assertThrows(NoSuchElementException.class, name1::get);
-            assertThrows(NoSuchElementException.class, name2::get);
-
-            // get
-            ScopedValue.getWhere(name1, "duke", () -> {
+            // callWhere
+            ScopedValue.where(name1, "duke").call(() -> {
                 assertEquals("duke", name1.get());
                 assertThrows(NoSuchElementException.class, name2::get);
                 return null;
@@ -185,25 +148,16 @@ class ScopedValueAPI {
             assertFalse(name1.isBound());
             assertFalse(name2.isBound());
 
-            // run
-            ScopedValue.runWhere(name1, "duke", () -> {
+            // where
+            ScopedValue.where(name1, "duke").run(() -> {
                 assertTrue(name1.isBound());
                 assertFalse(name2.isBound());
             });
             assertFalse(name1.isBound());
             assertFalse(name2.isBound());
 
-            // call
-            ScopedValue.callWhere(name1, "duke", () -> {
-                assertTrue(name1.isBound());
-                assertFalse(name2.isBound());
-                return null;
-            });
-            assertFalse(name1.isBound());
-            assertFalse(name2.isBound());
-
-            // call
-            ScopedValue.callWhere(name1, "duke", () -> {
+            // callWhere
+            ScopedValue.where(name1, "duke").call(() -> {
                 assertTrue(name1.isBound());
                 assertFalse(name2.isBound());
                 return null;
@@ -224,14 +178,14 @@ class ScopedValueAPI {
             assertNull(name.orElse(null));
             assertEquals("default", name.orElse("default"));
 
-            // run
-            ScopedValue.runWhere(name, "duke", () -> {
+            // where
+            ScopedValue.where(name, "duke").run(() -> {
                 assertEquals("duke", name.orElse(null));
                 assertEquals("duke", name.orElse("default"));
             });
 
-            // call
-            ScopedValue.callWhere(name, "duke", () -> {
+            // callWhere
+            ScopedValue.where(name, "duke").call(() -> {
                 assertEquals("duke", name.orElse(null));
                 assertEquals("duke", name.orElse("default"));
                 return null;
@@ -250,13 +204,13 @@ class ScopedValueAPI {
             ScopedValue<String> name = ScopedValue.newInstance();
             assertThrows(FooException.class, () -> name.orElseThrow(FooException::new));
 
-            // run
-            ScopedValue.runWhere(name, "duke", () -> {
+            // where
+            ScopedValue.where(name, "duke").run(() -> {
                 assertEquals("duke", name.orElseThrow(FooException::new));
             });
 
-            // call
-            ScopedValue.callWhere(name, "duke", () -> {
+            // callWhere
+            ScopedValue.where(name, "duke").call(() -> {
                 assertEquals("duke", name.orElseThrow(FooException::new));
                 return null;
             });
@@ -273,7 +227,7 @@ class ScopedValueAPI {
             ScopedValue<String> name = ScopedValue.newInstance();
             ScopedValue<Integer> age = ScopedValue.newInstance();
 
-            // run
+            // Carrier.run
             ScopedValue.where(name, "duke").where(age, 100).run(() -> {
                 assertTrue(name.isBound());
                 assertTrue(age.isBound());
@@ -283,7 +237,7 @@ class ScopedValueAPI {
             assertFalse(name.isBound());
             assertFalse(age.isBound());
 
-            // call
+            // Carrier.call
             ScopedValue.where(name, "duke").where(age, 100).call(() -> {
                 assertTrue(name.isBound());
                 assertTrue(age.isBound());
@@ -293,18 +247,6 @@ class ScopedValueAPI {
             });
             assertFalse(name.isBound());
             assertFalse(age.isBound());
-
-            // get
-            ScopedValue.where(name, "duke").where(age, 100).get(() -> {
-                assertTrue(name.isBound());
-                assertTrue(age.isBound());
-                assertEquals("duke", name.get());
-                assertEquals(100, (int) age.get());
-                return null;
-            });
-            assertFalse(name.isBound());
-            assertFalse(age.isBound());
-
         });
     }
 
@@ -317,12 +259,12 @@ class ScopedValueAPI {
         test(factory, () -> {
             ScopedValue<String> name = ScopedValue.newInstance();
 
-            // run
-            ScopedValue.runWhere(name, "duke", () -> {
+            // where
+            ScopedValue.where(name, "duke").run(() -> {
                 assertTrue(name.isBound());
                 assertEquals("duke", name.get());
 
-                ScopedValue.runWhere(name, "duchess", () -> {
+                ScopedValue.where(name, "duchess").run(() -> {
                     assertTrue(name.isBound());
                     assertEquals("duchess", name.get());
                 });
@@ -332,29 +274,12 @@ class ScopedValueAPI {
             });
             assertFalse(name.isBound());
 
-            // call
-            ScopedValue.callWhere(name, "duke", () -> {
+            // callWhere
+            ScopedValue.where(name, "duke").call(() -> {
                 assertTrue(name.isBound());
                 assertEquals("duke", name.get());
 
-                ScopedValue.callWhere(name, "duchess", () -> {
-                    assertTrue(name.isBound());
-                    assertEquals("duchess", name.get());
-                    return null;
-                });
-
-                assertTrue(name.isBound());
-                assertEquals("duke", name.get());
-                return null;
-            });
-            assertFalse(name.isBound());
-
-            // get
-            ScopedValue.getWhere(name, "duke", () -> {
-                assertTrue(name.isBound());
-                assertEquals("duke", name.get());
-
-                ScopedValue.where(name, "duchess").get(() -> {
+                ScopedValue.where(name, "duchess").call(() -> {
                     assertTrue(name.isBound());
                     assertEquals("duchess", name.get());
                     return null;
@@ -377,12 +302,12 @@ class ScopedValueAPI {
         test(factory, () -> {
             ScopedValue<String> name = ScopedValue.newInstance();
 
-            // run
-            ScopedValue.runWhere(name, null, () -> {
+            // where
+            ScopedValue.where(name, null).run(() -> {
                 assertTrue(name.isBound());
                 assertNull(name.get());
 
-                ScopedValue.runWhere(name, "duchess", () -> {
+                ScopedValue.where(name, "duchess").run(() -> {
                     assertTrue(name.isBound());
                     assertTrue("duchess".equals(name.get()));
                 });
@@ -392,29 +317,12 @@ class ScopedValueAPI {
             });
             assertFalse(name.isBound());
 
-            // call
-            ScopedValue.callWhere(name, null, () -> {
+            // callWhere
+            ScopedValue.where(name, null).call(() -> {
                 assertTrue(name.isBound());
                 assertNull(name.get());
 
-                ScopedValue.callWhere(name, "duchess", () -> {
-                    assertTrue(name.isBound());
-                    assertTrue("duchess".equals(name.get()));
-                    return null;
-                });
-
-                assertTrue(name.isBound());
-                assertNull(name.get());
-                return null;
-            });
-            assertFalse(name.isBound());
-
-            // getWhere
-            ScopedValue.getWhere(name, null, () -> {
-                assertTrue(name.isBound());
-                assertNull(name.get());
-
-                ScopedValue.getWhere(name, "duchess", () -> {
+                ScopedValue.where(name, "duchess").call(() -> {
                     assertTrue(name.isBound());
                     assertTrue("duchess".equals(name.get()));
                     return null;
@@ -437,12 +345,12 @@ class ScopedValueAPI {
         test(factory, () -> {
             ScopedValue<String> name = ScopedValue.newInstance();
 
-            // run
-            ScopedValue.runWhere(name, "duke", () -> {
+            // where
+            ScopedValue.where(name, "duke").run(() -> {
                 assertTrue(name.isBound());
                 assertEquals("duke", name.get());
 
-                ScopedValue.runWhere(name, null, () -> {
+                ScopedValue.where(name, null).run(() -> {
                     assertTrue(name.isBound());
                     assertNull(name.get());
                 });
@@ -452,29 +360,12 @@ class ScopedValueAPI {
             });
             assertFalse(name.isBound());
 
-            // call
-            ScopedValue.callWhere(name, "duke", () -> {
+            // callWhere
+            ScopedValue.where(name, "duke").call(() -> {
                 assertTrue(name.isBound());
                 assertEquals("duke", name.get());
 
-                ScopedValue.callWhere(name, null, () -> {
-                    assertTrue(name.isBound());
-                    assertNull(name.get());
-                    return null;
-                });
-
-                assertTrue(name.isBound());
-                assertEquals("duke", name.get());
-                return null;
-            });
-            assertFalse(name.isBound());
-
-            // get
-            ScopedValue.where(name, "duke").get(() -> {
-                assertTrue(name.isBound());
-                assertEquals("duke", name.get());
-
-                ScopedValue.where(name, null).get(() -> {
+                ScopedValue.where(name, null).call(() -> {
                     assertTrue(name.isBound());
                     assertNull(name.get());
                     return null;
@@ -517,16 +408,19 @@ class ScopedValueAPI {
     void testNullPointerException() {
         ScopedValue<String> name = ScopedValue.newInstance();
 
-        assertThrows(NullPointerException.class, () -> ScopedValue.where(null, "value"));
-        assertThrows(NullPointerException.class, () -> ScopedValue.runWhere(null, "value", () -> { }));
-        assertThrows(NullPointerException.class, () -> ScopedValue.getWhere(null, "value", () -> null));
+        assertThrows(NullPointerException.class, () -> ScopedValue.where(null, "duke"));
+
+        assertThrows(NullPointerException.class, () -> ScopedValue.where(null, "duke").run(() -> { }));
+        assertThrows(NullPointerException.class, () -> ScopedValue.where(name, "duke").run(null));
+
+        assertThrows(NullPointerException.class, () -> ScopedValue.where(null, "duke").call(() -> ""));
+        assertThrows(NullPointerException.class, () -> ScopedValue.where(name, "duke").call(null));
 
         assertThrows(NullPointerException.class, () -> name.orElseThrow(null));
 
         var carrier = ScopedValue.where(name, "duke");
-        assertThrows(NullPointerException.class, () -> carrier.where(null, "value"));
+        assertThrows(NullPointerException.class, () -> carrier.where(null, "duke"));
         assertThrows(NullPointerException.class, () -> carrier.get((ScopedValue<?>)null));
-        assertThrows(NullPointerException.class, () -> carrier.get((Supplier<?>)null));
         assertThrows(NullPointerException.class, () -> carrier.run(null));
         assertThrows(NullPointerException.class, () -> carrier.call(null));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
 #include "jfr/dcmd/jfrDcmds.hpp"
 #include "jfr/recorder/service/jfrMemorySizer.hpp"
@@ -150,7 +151,7 @@ bool JfrOptionSet::allow_retransforms() {
 }
 
 bool JfrOptionSet::allow_event_retransforms() {
-  return allow_retransforms() && (DumpSharedSpaces || can_retransform());
+  return allow_retransforms() && (CDSConfig::is_dumping_static_archive() || can_retransform());
 }
 
 // default options for the dcmd parser
@@ -207,7 +208,7 @@ static DCmdArgument<MemorySizeArgument> _dcmd_globalbuffersize(
 static DCmdArgument<jlong> _dcmd_numglobalbuffers(
   "numglobalbuffers",
   "Number of global buffers",
-  "JULONG",
+  "INT",
   false,
   default_num_global_buffers);
 
@@ -221,7 +222,7 @@ static DCmdArgument<MemorySizeArgument> _dcmd_maxchunksize(
 static DCmdArgument<jlong> _dcmd_old_object_queue_size (
   "old-object-queue-size",
   "Maximum number of old objects to track",
-  "JINT",
+  "INT",
   false,
   default_old_object_queue_size);
 
@@ -244,7 +245,7 @@ static DCmdArgument<bool> _dcmd_sample_protection(
 static DCmdArgument<jlong> _dcmd_stackdepth(
   "stackdepth",
   "Stack depth for stacktraces (minimum 1, maximum 2048)",
-  "JULONG",
+  "INT",
   false,
   default_stack_depth);
 

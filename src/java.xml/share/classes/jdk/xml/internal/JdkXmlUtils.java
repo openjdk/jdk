@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
+import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
@@ -50,8 +51,8 @@ import org.xml.sax.XMLReader;
  * Constants for use across JAXP processors.
  */
 public class JdkXmlUtils {
-    public static final boolean IS_WINDOWS = SecuritySupport.getSystemProperty("os.name").contains("Windows");
-    public static final String JAVA_HOME = SecuritySupport.getSystemProperty("java.home");
+    public static final boolean IS_WINDOWS = System.getProperty("os.name").contains("Windows");
+    public static final String JAVA_HOME = System.getProperty("java.home");
 
     private static final String DOM_FACTORY_ID = "javax.xml.parsers.DocumentBuilderFactory";
     private static final String SAX_FACTORY_ID = "javax.xml.parsers.SAXParserFactory";
@@ -154,6 +155,31 @@ public class JdkXmlUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Initialize catalog features, including setting the default values and reading
+     * from the JAXP configuration file and System Properties.
+     *
+     * @param properties the Map object that holds the properties
+     */
+    public static void initCatalogFeatures(Map<String, Object> properties) {
+        CatalogFeatures cf = getCatalogFeatures();
+        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+            properties.put(f.getPropertyName(), cf.get(f));
+        }
+    }
+
+    /**
+     * Creates an instance of a CatalogFeatures with default settings.
+     * Note: the CatalogFeatures is initialized with settings in the following
+     * order:
+     *     Default values -> values in the config -> values set with System Properties
+     *
+     * @return an instance of a CatalogFeatures
+     */
+    public static CatalogFeatures getCatalogFeatures() {
+        return CatalogFeatures.builder().build();
     }
 
     /**
@@ -272,7 +298,7 @@ public class JdkXmlUtils {
             boolean useCatalog, CatalogFeatures catalogFeatures) {
         SAXParserFactory saxFactory;
         XMLReader reader = null;
-        String spSAXDriver = SecuritySupport.getSystemProperty(SAX_DRIVER);
+        String spSAXDriver = System.getProperty(SAX_DRIVER);
         if (spSAXDriver != null) {
             reader = getXMLReaderWXMLReaderFactory();
         } else if (overrideDefaultParser) {
@@ -375,12 +401,11 @@ public class JdkXmlUtils {
      *
      * @return a DocumentBuilderFactory instance.
      */
-    @SuppressWarnings("removal")
     public static DocumentBuilderFactory getDOMFactory(boolean overrideDefaultParser) {
         boolean override = overrideDefaultParser;
         String spDOMFactory = SecuritySupport.getJAXPSystemProperty(DOM_FACTORY_ID);
 
-        if (spDOMFactory != null && System.getSecurityManager() == null) {
+        if (spDOMFactory != null) {
             override = true;
         }
         DocumentBuilderFactory dbf
@@ -402,11 +427,10 @@ public class JdkXmlUtils {
      *
      * @return a SAXParserFactory instance.
      */
-    @SuppressWarnings("removal")
     public static SAXParserFactory getSAXFactory(boolean overrideDefaultParser) {
         boolean override = overrideDefaultParser;
         String spSAXFactory = SecuritySupport.getJAXPSystemProperty(SAX_FACTORY_ID);
-        if (spSAXFactory != null && System.getSecurityManager() == null) {
+        if (spSAXFactory != null) {
             override = true;
         }
 

@@ -60,9 +60,6 @@ TEST_VM(AtomicAddTest, int32) {
 }
 
 TEST_VM(AtomicAddTest, int64) {
-  // Check if 64-bit atomics are available on the machine.
-  if (!VM_Version::supports_cx8()) return;
-
   using Support = AtomicAddTestSupport<int64_t>;
   Support().test_add();
   Support().test_fetch_add();
@@ -109,9 +106,6 @@ TEST_VM(AtomicXchgTest, int32) {
 }
 
 TEST_VM(AtomicXchgTest, int64) {
-  // Check if 64-bit atomics are available on the machine.
-  if (!VM_Version::supports_cx8()) return;
-
   using Support = AtomicXchgTestSupport<int64_t>;
   Support().test();
 }
@@ -349,15 +343,9 @@ TEST_VM(AtomicBitopsTest, uint32) {
 }
 
 TEST_VM(AtomicBitopsTest, int64) {
-  // Check if 64-bit atomics are available on the machine.
-  if (!VM_Version::supports_cx8()) return;
-
   AtomicBitopsTestSupport<int64_t>()();
 }
 
 TEST_VM(AtomicBitopsTest, uint64) {
-  // Check if 64-bit atomics are available on the machine.
-  if (!VM_Version::supports_cx8()) return;
-
   AtomicBitopsTestSupport<uint64_t>()();
 }

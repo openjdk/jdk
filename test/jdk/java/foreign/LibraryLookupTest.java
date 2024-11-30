@@ -23,10 +23,16 @@
 
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.lang.foreign.*;
 import java.lang.foreign.Arena;
 import java.lang.invoke.MethodHandle;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -89,6 +95,37 @@ public class LibraryLookupTest {
             SymbolLookup lookup = SymbolLookup.libraryLookup(LIB_PATH, arena);
             assertTrue(lookup.find("inc\u0000foobar").isEmpty());
         }
+    }
+
+    @Test
+    void testLoadLibraryNonDefaultFileSystem() throws URISyntaxException, IOException {
+        try (FileSystem customFs = fsFromJarOfClass(org.testng.annotations.Test.class)) {
+            try (Arena arena = Arena.ofConfined()) {
+                Path p = customFs.getPath(".");
+                try {
+                    SymbolLookup.libraryLookup(p, arena);
+                    fail("Did not throw IAE");
+                } catch (IllegalArgumentException iae) {
+                    assertTrue(iae.getMessage().contains("not in default file system"));
+                }
+            }
+        }
+    }
+
+    private static FileSystem fsFromJarOfClass(Class<?> clazz) throws URISyntaxException, IOException {
+        String name = clazz.getName();
+        final int lastDot = name.lastIndexOf('.');
+        if (lastDot != -1) {
+            name = name.substring(lastDot + 1);
+        }
+        URI uri = clazz.getResource(name + ".class").toURI();
+        if (uri.getScheme().equals("jar")) {
+            final String[] parts = uri.toString().split("!");
+            if (parts.length == 2) {
+                return FileSystems.newFileSystem(URI.create(parts[0]), new HashMap<>());
+            }
+        }
+        throw new AssertionError("Unable to create file system from " + clazz);
     }
 
     private static MemorySegment loadLibrary(Arena session) {

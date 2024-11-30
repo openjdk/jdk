@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,23 @@ void VM_Version::initialize() {
   intx cache_line_size = Dcache_lineSize(0);
 
 #ifdef COMPILER2
-  MaxVectorSize = 8;
+  int model_ix = get_model_index();
+
+  if ( model_ix >= 7 ) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVX)) {
+      FLAG_SET_ERGO(SuperwordUseVX, true);
+    }
+    if (model_ix > 7 && FLAG_IS_DEFAULT(UseSFPV) && SuperwordUseVX) {
+      FLAG_SET_ERGO(UseSFPV, true);
+    } else if (model_ix == 7 && UseSFPV) {
+      warning("UseSFPV specified, but needs at least Z14.");
+      FLAG_SET_DEFAULT(UseSFPV, false);
+    }
+  } else if (SuperwordUseVX) {
+    warning("SuperwordUseVX specified, but needs at least Z13.");
+    FLAG_SET_DEFAULT(SuperwordUseVX, false);
+  }
+  MaxVectorSize = SuperwordUseVX ? 16 : 8;
 #endif
 
   if (has_PrefetchRaw()) {
@@ -272,6 +288,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
+  if (UseSecondarySupersTable && VM_Version::get_model_index() < 5 /* z196/z11 */) {
+    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
+      warning("UseSecondarySupersTable requires z196 or later.");
+    }
+    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
@@ -287,11 +310,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, true);
   }
 
-  // z/Architecture supports 8-byte compare-exchange operations
-  // (see Atomic::cmpxchg)
-  // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
-  _supports_cx8 = true;
-
   _supports_atomic_getadd4 = VM_Version::has_LoadAndALUAtomicV1();
   _supports_atomic_getadd8 = VM_Version::has_LoadAndALUAtomicV1();
 
@@ -301,6 +319,12 @@ void VM_Version::initialize() {
   // Unaligned accesses are not atomic, of course.
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  }
+
+  // The OptoScheduling information is not maintained in s390.ad.
+  if (OptoScheduling) {
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
   }
 }
 

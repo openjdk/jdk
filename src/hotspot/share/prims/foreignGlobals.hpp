@@ -33,9 +33,8 @@
 
 #include CPU_HEADER(foreignGlobals)
 
-// needs to match StubLocations in Java code.
-// placeholder locations to be filled in by
-// the code gen code
+// Needs to match jdk.internal.foreign.abi.StubLocations in Java code.
+// Placeholder locations to be filled in by the code gen code.
 class StubLocations {
 public:
   enum Location : uint32_t {
@@ -56,11 +55,7 @@ public:
   int data_offset(uint32_t loc) const;
 };
 
-class CallingConventionClosure {
-public:
-  virtual int calling_convention(const BasicType* sig_bt, VMStorage* regs, int num_args) const = 0;
-};
-
+// C++ 'mirror' of jdk.internal.foreign.abi.UpcallLinker.CallRegs
 struct CallRegs {
   GrowableArray<VMStorage> _arg_regs;
   GrowableArray<VMStorage> _ret_regs;
@@ -78,25 +73,32 @@ private:
 public:
   static bool is_foreign_linker_supported();
 
+  // Helpers for translating from the Java to C++ representation
   static const ABIDescriptor parse_abi_descriptor(jobject jabi);
   static const CallRegs parse_call_regs(jobject jconv);
   static VMStorage parse_vmstorage(oop storage);
+
+  // Adapter from SharedRuntime::java_calling_convention to a 'single VMStorage per value' form.
+  // Doesn't assign (invalid) storage for T_VOID entries in the signature, which are instead ignored.
+  static int java_calling_convention(const BasicType* signature, int num_args, GrowableArray<VMStorage>& out_regs);
+
+  // Computes the space (in bytes) that is taken up by stack arguments
+  static int compute_out_arg_bytes(const GrowableArray<VMStorage>& out_regs);
+
+  // Replace placeholders (see class StubLocations above) with actual locations in a stub frame
+  static GrowableArray<VMStorage> replace_place_holders(const GrowableArray<VMStorage>& regs, const StubLocations& locs);
+
+  // The receiver method handle for upcalls is injected manually into the argument list by the upcall stub. We need a
+  // filtered list to generate an argument shuffle for the rest of the arguments.
+  static GrowableArray<VMStorage> upcall_filter_receiver_reg(const GrowableArray<VMStorage>& unfiltered_regs);
+
+  // Oop offsets are not passed on to native code.
+  // Filter out the registers of oop offsets to create a list that we can pass to ArgumentShuffle.
+  static GrowableArray<VMStorage> downcall_filter_offset_regs(const GrowableArray<VMStorage>& regs, BasicType* signature,
+                                                              int num_args, bool& has_objects);
 };
 
-class JavaCallingConvention : public CallingConventionClosure {
-public:
-  int calling_convention(const BasicType* sig_bt, VMStorage* regs, int num_args) const override;
-};
-
-class NativeCallingConvention : public CallingConventionClosure {
-  GrowableArray<VMStorage> _input_regs;
-public:
-  NativeCallingConvention(const GrowableArray<VMStorage>& input_regs)
-   : _input_regs(input_regs) {}
-
-  int calling_convention(const BasicType* sig_bt, VMStorage* out_regs, int num_args) const override;
-};
-
+// Helper class useful for generating spills and fills of a set of registers.
 class RegSpiller {
   GrowableArray<VMStorage> _regs;
   int _spill_size_bytes;
@@ -117,30 +119,35 @@ private:
   static void pd_load_reg(MacroAssembler* masm, int offset, VMStorage reg);
 };
 
-struct Move {
-  VMStorage from;
-  VMStorage to;
-};
-
+// Class used to compute and generate a shuffle between 2 lists of VMStorages.
+// The lists must have the same size.
+// Each VMStorage in the source list (in_regs) is shuffled into the
+// the VMStorage at the same index in the destination list (out_regs).
+// This class helps to automatically compute an order of moves that makes
+// sure not to destroy values accidentally by interfering moves, in case the
+// source and destination registers overlap.
 class ArgumentShuffle {
 private:
+  class ComputeMoveOrder;
+  struct Move {
+    VMStorage from;
+    VMStorage to;
+  };
+
   GrowableArray<Move> _moves;
-  int _out_arg_bytes;
 public:
   ArgumentShuffle(
-    BasicType* in_sig_bt, int num_in_args,
-    BasicType* out_sig_bt, int num_out_args,
-    const CallingConventionClosure* input_conv, const CallingConventionClosure* output_conv,
+    const GrowableArray<VMStorage>& in_regs,
+    const GrowableArray<VMStorage>& out_regs,
     VMStorage shuffle_temp);
 
-  int out_arg_bytes() const { return _out_arg_bytes; }
-  void generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
-    pd_generate(masm, tmp, in_stk_bias, out_stk_bias, locs);
+  void generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const {
+    pd_generate(masm, tmp, in_stk_bias, out_stk_bias);
   }
 
   void print_on(outputStream* os) const;
 private:
-  void pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const;
+  void pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias) const;
 };
 
 #endif // SHARE_PRIMS_FOREIGN_GLOBALS

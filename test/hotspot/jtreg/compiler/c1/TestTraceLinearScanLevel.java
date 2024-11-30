@@ -26,8 +26,8 @@
  * @bug 8251093
  * @summary Sanity check the flag TraceLinearScanLevel with the highest level in a silent HelloWorld program.
  *
- * @requires vm.debug == true & vm.compiler1.enabled
- * @run main/othervm -XX:TraceLinearScanLevel=4 compiler.c1.TestTraceLinearScanLevel
+ * @requires vm.debug == true & vm.compiler1.enabled & vm.compMode != "Xcomp"
+ * @run main/othervm -Xbatch -XX:TraceLinearScanLevel=4 compiler.c1.TestTraceLinearScanLevel
  */
 package compiler.c1;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include <jvmti.h>
 #include <stdio.h>
 #include <string.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 // set by Agent_OnLoad
 static jvmtiEnv* jvmti = nullptr;
@@ -87,7 +87,7 @@ JNIEXPORT void JNICALL
 Java_ThreadStateTest_testGetThreadListStackTraces(JNIEnv* jni, jclass klass, jthread vthread) {
   jthread cthread = get_carrier_thread(jvmti, jni, vthread);
   jthread threads[2] = { cthread, vthread };
-  jvmtiStackInfo* stackInfo = NULL;
+  jvmtiStackInfo* stackInfo = nullptr;
 
   jvmtiError err = jvmti->GetThreadListStackTraces(2, threads, MAX_FRAME_COUNT, &stackInfo);
   check_jvmti_status(jni, err, "testGetThreadState: error in JVMTI GetThreadListStackTraces");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
+#include "gc/shared/bufferNode.hpp"
 
 class G1CardTable;
 
@@ -46,8 +47,6 @@ class G1BarrierSet: public CardTableBarrierSet {
   static G1BarrierSet* g1_barrier_set() {
     return barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
   }
-
-  void invalidate(JavaThread* thread, MemRegion mr);
 
  public:
   G1BarrierSet(G1CardTable* table);
@@ -72,10 +71,8 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  inline void invalidate(MemRegion mr);
-  inline void write_region(JavaThread* thread, MemRegion mr);
-
-  inline void write_ref_array_work(MemRegion mr);
+  inline void write_region(MemRegion mr);
+  void write_region(JavaThread* thread, MemRegion mr);
 
   template <DecoratorSet decorators, typename T>
   void write_ref_field_post(T* field);

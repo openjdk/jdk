@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  */
 /**
  * @test
- * @bug 8276186
+ * @bug 8276186 8174269
  * @summary Checks whether getAvailableLocales() returns at least Locale.ROOT and
  *      Locale.US instances.
- * @run testng/othervm -Djava.locale.providers=COMPAT RequiredAvailableLocalesTest
  * @run testng/othervm -Djava.locale.providers=CLDR RequiredAvailableLocalesTest
  */
 

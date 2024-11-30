@@ -34,6 +34,7 @@ import java.lang.reflect.InvocationTargetException;
 /*
  * @test
  * @bug 6581756
+ * @key printer
  * @library ../../../regtesthelpers
  * @build PassFailJFrame
  * @summary Test printing of images which need to have src area clipped

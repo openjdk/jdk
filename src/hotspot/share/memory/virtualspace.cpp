@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ static char* reserve_memory(char* requested_address, const size_t size,
   // If the memory was requested at a particular address, use
   // os::attempt_reserve_memory_at() to avoid mapping over something
   // important.  If the reservation fails, return null.
-  if (requested_address != 0) {
+  if (requested_address != nullptr) {
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
            p2i(requested_address), alignment);
@@ -314,15 +314,18 @@ ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment)
   return result;
 }
 
-
-ReservedSpace
-ReservedSpace::last_part(size_t partition_size, size_t alignment) {
+ReservedSpace ReservedSpace::last_part(size_t partition_size, size_t alignment) {
   assert(partition_size <= size(), "partition failed");
   ReservedSpace result(base() + partition_size, size() - partition_size,
                        alignment, page_size(), special(), executable());
   return result;
 }
 
+ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size, size_t alignment) {
+  assert(offset + partition_size <= size(), "partition failed");
+  ReservedSpace result(base() + offset, partition_size, alignment, page_size(), special(), executable());
+  return result;
+}
 
 size_t ReservedSpace::page_align_size_up(size_t size) {
   return align_up(size, os::vm_page_size());
@@ -366,6 +369,9 @@ ReservedSpace ReservedSpace::space_for_range(char* base, size_t size, size_t ali
   return space;
 }
 
+// Compressed oop support is not relevant in 32bit builds.
+#ifdef _LP64
+
 static size_t noaccess_prefix_size(size_t alignment) {
   return lcm(os::vm_page_size(), alignment);
 }
@@ -377,7 +383,7 @@ void ReservedHeapSpace::establish_noaccess_prefix() {
   if (base() && base() + _size > (char *)OopEncodingHeapMax) {
     if (true
         WIN64_ONLY(&& !UseLargePages)
-        AIX_ONLY(&& os::vm_page_size() != 64*K)) {
+        AIX_ONLY(&& (os::Aix::supports_64K_mmap_pages() || os::vm_page_size() == 4*K))) {
       // Protect memory at the base of the allocated region.
       // If special, the page was committed (only matters on windows)
       if (!os::protect_memory(_base, _noaccess_prefix, os::MEM_PROT_NONE, _special)) {
@@ -516,9 +522,15 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
   // The necessary attach point alignment for generated wish addresses.
   // This is needed to increase the chance of attaching for mmap and shmat.
+  // AIX is the only platform that uses System V shm for reserving virtual memory.
+  // In this case, the required alignment of the allocated size (64K) and the alignment
+  // of possible start points of the memory region (256M) differ.
+  // This is not reflected by os_allocation_granularity().
+  // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
   const size_t os_attach_point_alignment =
-    AIX_ONLY(SIZE_256M)  // Known shm boundary alignment.
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
     NOT_AIX(os::vm_allocation_granularity());
+
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
   char *aligned_heap_base_min_address = (char *)align_up((void *)HeapBaseMinAddress, alignment);
@@ -585,8 +597,8 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // Try to attach at addresses that are aligned to OopEncodingHeapMax. Disjointbase mode.
     char** addresses = get_attach_addresses_for_disjoint_mode();
     int i = 0;
-    while (addresses[i] &&                                 // End of array not yet reached.
-           ((_base == nullptr) ||                             // No previous try succeeded.
+    while ((addresses[i] != nullptr) &&                    // End of array not yet reached.
+           ((_base == nullptr) ||                          // No previous try succeeded.
             (_base + size >  (char *)OopEncodingHeapMax && // Not zerobased or unscaled address.
              !CompressedOops::is_disjoint_heap_base_address((address)_base)))) {  // Not disjoint address.
       char* const attach_point = addresses[i];
@@ -602,6 +614,8 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     }
   }
 }
+
+#endif // _LP64
 
 ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_size, const char* heap_allocation_directory) : ReservedSpace() {
 
@@ -627,6 +641,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   guarantee(is_aligned(size, alignment), "set by caller");
 
   if (UseCompressedOops) {
+#ifdef _LP64
     initialize_compressed_heap(size, alignment, page_size);
     if (_size > size) {
       // We allocated heap with noaccess prefix.
@@ -634,6 +649,9 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
       // if we had to try at arbitrary address.
       establish_noaccess_prefix();
     }
+#else
+    ShouldNotReachHere();
+#endif // _LP64
   } else {
     initialize(size, alignment, page_size, nullptr, false);
   }
@@ -644,7 +662,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
          "area must be distinguishable from marks for mark-sweep");
 
   if (base() != nullptr) {
-    MemTracker::record_virtual_memory_type((address)base(), mtJavaHeap);
+    MemTracker::record_virtual_memory_tag((address)base(), mtJavaHeap);
   }
 
   if (_fd_for_heap != -1) {
@@ -662,7 +680,7 @@ ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
   initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
-  MemTracker::record_virtual_memory_type((address)base(), mtCode);
+  MemTracker::record_virtual_memory_tag((address)base(), mtCode);
 }
 
 // VirtualSpace

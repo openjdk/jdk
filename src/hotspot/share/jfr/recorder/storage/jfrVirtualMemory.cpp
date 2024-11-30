@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ bool JfrVirtualMemorySegment::initialize(size_t reservation_size_request_bytes) 
                               _rs.base(),
                               _rs.size(),
                               os::vm_page_size());
-  MemTracker::record_virtual_memory_type((address)_rs.base(), mtTracing);
+  MemTracker::record_virtual_memory_tag((address)_rs.base(), mtTracing);
   assert(is_aligned(_rs.base(), os::vm_page_size()), "invariant");
   assert(is_aligned(_rs.size(), os::vm_page_size()), "invariant");
 

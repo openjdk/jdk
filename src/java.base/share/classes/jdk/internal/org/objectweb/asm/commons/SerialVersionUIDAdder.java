@@ -522,4 +522,3 @@ public class SerialVersionUIDAdder extends ClassVisitor {
         }
     }
 }
-

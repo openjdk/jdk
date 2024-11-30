@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -370,7 +370,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
 
   // Split the option string to its colon separated components.
   char* str = copy;
-  char* substrings[4] = {0};
+  char* substrings[4] = {};
   for (int i = 0 ; i < 4; i++) {
     substrings[i] = str;
 
@@ -491,7 +491,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
     return false;
   }
 
-  LogDecorators decorators;
+  LogDecorators decorators = selections.get_default_decorators();
   if (!decorators.parse(decoratorstr, errstream)) {
     return false;
   }
@@ -505,6 +505,12 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       errstream->print_cr("Invalid output index '%s'", outputstr);
       return false;
     }
+  } else if (strcmp(outputstr, StdoutLog->name()) == 0) { // stdout
+    idx = 0;
+    assert(find_output(outputstr) == idx, "sanity check");
+  } else if (strcmp(outputstr, StderrLog->name()) == 0) { // stderr
+    idx = 1;
+    assert(find_output(outputstr) == idx, "sanity check");
   } else { // Output specified using name
     // Normalize the name, stripping quotes and ensures it includes type prefix
     size_t len = strlen(outputstr) + strlen(implicit_output_prefix) + 1;
@@ -608,7 +614,7 @@ void LogConfiguration::print_command_line_help(outputStream* out) {
   out->print_cr("Available log outputs:");
   out->print_cr(" stdout/stderr");
   out->print_cr(" file=<filename>");
-  out->print_cr("  If the filename contains %%p and/or %%t, they will expand to the JVM's PID and startup timestamp, respectively.");
+  out->print_cr("  If the filename contains %%p, %%t and/or %%hn, they will expand to the JVM's PID, startup timestamp and host name, respectively.");
   out->cr();
 
   out->print_cr("Available log output options:");

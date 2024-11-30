@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGESET_HPP
 #define SHARE_GC_SHARED_OOPSTORAGESET_HPP
 
-#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -79,8 +80,8 @@ public:
   static OopStorage* storage(WeakId id) { return get_storage(id); }
   static OopStorage* storage(Id id) { return get_storage(id); }
 
-  static OopStorage* create_strong(const char* name, MEMFLAGS memflags);
-  static OopStorage* create_weak(const char* name, MEMFLAGS memflags);
+  static OopStorage* create_strong(const char* name, MemTag mem_tag);
+  static OopStorage* create_weak(const char* name, MemTag mem_tag);
 
   // Support iteration over the storage objects.
   template<typename StorageId> class Range;
@@ -89,6 +90,8 @@ public:
   template <typename Closure>
   static void strong_oops_do(Closure* cl);
 
+  // Debugging: print location info, if in storage.
+  static bool print_containing(const void* addr, outputStream* st);
 };
 
 ENUMERATOR_VALUE_RANGE(OopStorageSet::StrongId,

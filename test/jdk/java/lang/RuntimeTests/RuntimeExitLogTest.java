@@ -41,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /*
  * @test
  * @summary verify logging of call to System.exit or Runtime.exit.
+ * @requires vm.flagless
  * @run junit/othervm RuntimeExitLogTest
  */
 

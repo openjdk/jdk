@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,12 @@ import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.ClassWriter;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
@@ -117,7 +117,7 @@ public class LinkTaglet extends BaseTaglet {
      * @param refTree       the tree node containing the information, or {@code null} if not available
      * @param refSignature  the normalized signature of the target of the reference
      * @param ref           the target of the reference
-     * @param isLinkPlain   {@code true} if the link should be presented in "plain" font,
+     * @param isPlain       {@code true} if the link should be presented in "plain" font,
      *                      or {@code false} for "code" font
      * @param label         the label for the link,
      *                      or an empty item to use a default label derived from the signature
@@ -130,17 +130,17 @@ public class LinkTaglet extends BaseTaglet {
                                    DocTree refTree,
                                    String refSignature,
                                    Element ref,
-                                   boolean isLinkPlain,
+                                   boolean isPlain,
                                    Content label,
                                    BiConsumer<String, Object[]> reportWarning,
                                    TagletWriter tagletWriter) {
         var config = tagletWriter.configuration;
         var htmlWriter = tagletWriter.htmlWriter;
 
-        Content labelContent = plainOrCode(isLinkPlain, label);
+        Content labelContent = plainOrCode(isPlain, label);
 
         // The signature from the @see tag. We will output this text when a label is not specified.
-        Content text = plainOrCode(isLinkPlain,
+        Content text = plainOrCode(isPlain,
                 Text.of(Objects.requireNonNullElse(refSignature, "")));
 
         CommentHelper ch = utils.getCommentHelper(holder);
@@ -170,13 +170,13 @@ public class LinkTaglet extends BaseTaglet {
             if (refPackage != null && utils.isIncluded(refPackage)) {
                 //@see is referencing an included package
                 if (labelContent.isEmpty()) {
-                    labelContent = plainOrCode(isLinkPlain,
+                    labelContent = plainOrCode(isPlain,
                             Text.of(refPackage.getQualifiedName()));
                 }
                 return htmlWriter.getPackageLink(refPackage, labelContent, refFragment);
             } else {
                 // @see is not referencing an included class, module or package. Check for cross-links.
-                String refModuleName =  ch.getReferencedModuleName(refSignature);
+                String refModuleName = ch.getReferencedModuleName(refSignature);
                 DocLink elementCrossLink = (refPackage != null) ? htmlWriter.getCrossPackageLink(refPackage) :
                         (config.extern.isModule(refModuleName))
                                 ? htmlWriter.getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
@@ -190,11 +190,27 @@ public class LinkTaglet extends BaseTaglet {
                     if (!config.isDocLintReferenceGroupEnabled()) {
                         reportWarning.accept(
                                 "doclet.link.see.reference_not_found",
-                                new Object[] { refSignature});
+                                new Object[] {refSignature});
                     }
                     return htmlWriter.invalidTagOutput(resources.getText("doclet.link.see.reference_invalid"),
-                            Optional.of(labelContent.isEmpty() ? text: labelContent));
+                            Optional.of(labelContent.isEmpty() ? text : labelContent));
                 }
+            }
+        } else if (utils.isTypeParameterElement(ref)) {
+            // This is a type parameter of a generic class, method or constructor
+            if (labelContent.isEmpty()) {
+                labelContent = plainOrCode(isPlain, Text.of(utils.getSimpleName(ref)));
+            }
+            if (refMem == null) {
+                return htmlWriter.getLink(
+                        new HtmlLinkInfo(config, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS, ref.asType())
+                                .label(labelContent));
+            } else {
+                // HtmlLinkFactory does not render type parameters of generic methods as links, so instead of
+                // teaching it how to do it (making the code even more complex) just create the link directly.
+                return htmlWriter.getLink(new HtmlLinkInfo(config, HtmlLinkInfo.Kind.PLAIN, refClass)
+                        .fragment(config.htmlIds.forTypeParam(ref.getSimpleName().toString(), refMem).name())
+                        .label((labelContent)));
             }
         } else if (refFragment == null) {
             // Must be a class reference since refClass is not null and refFragment is null.
@@ -202,12 +218,13 @@ public class LinkTaglet extends BaseTaglet {
                 TypeMirror referencedType = ch.getReferencedType(refTree);
                 if (utils.isGenericType(referencedType)) {
                     // This is a generic type link, use the TypeMirror representation.
-                    return plainOrCode(isLinkPlain, htmlWriter.getLink(
+                    return plainOrCode(isPlain, htmlWriter.getLink(
                             new HtmlLinkInfo(config, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, referencedType)));
                 }
-                labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
+                labelContent = plainOrCode(isPlain, Text.of(utils.getSimpleName(refClass)));
             }
             return htmlWriter.getLink(new HtmlLinkInfo(config, HtmlLinkInfo.Kind.PLAIN, refClass)
+                    .skipPreview(isPlain)
                     .label(labelContent));
         } else if (refMem == null) {
             // This is a fragment reference since refClass and refFragment are not null but refMem is null.
@@ -237,16 +254,13 @@ public class LinkTaglet extends BaseTaglet {
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
-                if (htmlWriter instanceof ClassWriter cw) {
-                    containing = cw.getTypeElement();
-                } else if (!utils.isPublic(containing)) {
-                    reportWarning.accept("doclet.link.see.reference_not_accessible",
-                            new Object[] { utils.getFullyQualifiedName(containing)});
-                } else {
-                    if (!config.isDocLintReferenceGroupEnabled()) {
-                        reportWarning.accept("doclet.link.see.reference_not_found",
-                                new Object[] { refSignature });
+                if (utils.configuration.docEnv.isSelected(refMem)) {
+                    if (htmlWriter instanceof ClassWriter cw) {
+                        containing = cw.getTypeElement();
                     }
+                } else {
+                    reportWarning.accept("doclet.link.see.reference_not_accessible",
+                            new Object[]{refMem});
                 }
             }
             String refMemName = refFragment;
@@ -267,7 +281,7 @@ public class LinkTaglet extends BaseTaglet {
 
             return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, containing,
                     refMem, (labelContent.isEmpty()
-                            ? plainOrCode(isLinkPlain, Text.of(refMemName))
+                            ? plainOrCode(isPlain, Text.of(refMemName))
                             : labelContent), null, false);
         }
     }

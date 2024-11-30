@@ -313,10 +313,10 @@ final class SMFParser {
             // reset current tick to 0
             long tick = 0;
 
-            // reset current status byte to 0 (invalid value).
+            // reset current running status byte to 0 (invalid value).
             // this should cause us to throw an InvalidMidiDataException if we don't
             // get a valid status byte from the beginning of the track.
-            int status = 0;
+            int runningStatus = 0;
             boolean endOfTrackFound = false;
 
             while (!trackFinished() && !endOfTrackFound) {
@@ -333,10 +333,17 @@ final class SMFParser {
                 // check for new status
                 int byteValue = readUnsigned();
 
+                int status;
                 if (byteValue >= 0x80) {
                     status = byteValue;
+
+                    // update running status (only for channel messages)
+                    if ((status & 0xF0) != 0xF0) {
+                        runningStatus = status;
+                    }
                 } else {
-                    data1 = byteValue;
+                    status = runningStatus;
+                    data1  = byteValue;
                 }
 
                 switch (status & 0xF0) {

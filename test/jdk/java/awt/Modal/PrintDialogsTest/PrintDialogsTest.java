@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,76 @@
 /*
  * @test
  * @bug 8055836 8057694 8055752
- * @summary Check if Print and Page Setup dialogs lock other windows;
+ * @summary Check if Print and Page Setup dialogs block other windows;
  *          check also correctness of modal behavior for other dialogs.
- *
- * @run applet/manual=yesno PrintDialogsTest.html
+ * @library /java/awt/regtesthelpers
+ * @run main/manual PrintDialogsTest
  */
 
 
-import java.applet.Applet;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Checkbox;
+import java.awt.CheckboxGroup;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.EventQueue;
+import java.awt.GridLayout;
+import java.awt.Label;
+import java.awt.Panel;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 
-public class PrintDialogsTest extends Applet implements ActionListener {
+public class PrintDialogsTest extends Panel implements ActionListener {
+
+    static final String INSTRUCTIONS = """
+        This test is free format, which means there is no enforced or guided sequence.
+
+        Please select each of
+        (a) The dialog parent type.
+        (b) The dialog modality type
+        (c) The print dialog type (Print dialog or Page Setup dialog)
+
+        Once the choices have been made click the "Start test" button.
+
+        Three windows will appear
+        (1) A Frame or a Dialog - in the case you selected "Dialog" as the parent type
+        (2) a Window (ie an undecorated top-level)
+        (3) A dialog with two buttons "Open" and "Finish"
+
+        Now check as follows whether modal blocking works as expected.
+        Windows (1) and (2) contain a button which you should be able to press
+        ONLY if you selected "Non-modal", or "Modeless" for modality type.
+        In other cases window (3) will block input to (1) and (2)
+
+        Then push the "Open" button on the Dialog to show the printing dialog and check
+        if it blocks the rest of the application - ie all of windows (1), (2) and (3)
+        should ALWAYS be blocked when the print dialog is showing.
+        Now cancel the printing dialog and check the correctness of modal blocking
+        behavior for the Dialog again.
+        To close all the 3 test windows please push the "Finish" button.
+
+        Repeat all the above for different combinations, which should include
+        using all of the Dialog parent choices and all of the Dialog Modality types.
+
+        If any behave incorrectly, note the combination of choices and press Fail.
+
+        If all behave correctly, press Pass.
+    """;
+
+    public static void main(String[] args) throws Exception {
+
+         PassFailJFrame.builder()
+             .instructions(INSTRUCTIONS)
+             .rows(35)
+             .columns(60)
+             .testUI(PrintDialogsTest::createUI)
+             .testTimeOut(10)
+             .build()
+             .awaitAndCheck();
+    }
 
     private Button btnTest;
     private Checkbox  cbPage, cbPrint,
@@ -48,6 +103,14 @@ public class PrintDialogsTest extends Applet implements ActionListener {
 
     private CheckboxGroup groupDialog, groupParent, groupModType;
 
+    private static Frame createUI() {
+        Frame frame = new Frame("Dialog Modality Testing");
+        PrintDialogsTest test = new PrintDialogsTest();
+        test.createGUI();
+        frame.add(test);
+        frame.pack();
+        return frame;
+    }
 
     public void actionPerformed(ActionEvent e) {
 
@@ -99,13 +162,13 @@ public class PrintDialogsTest extends Applet implements ActionListener {
 
         setLayout(new BorderLayout());
 
-        setSize(350, 200);
         Panel panel = new Panel();
-        panel.setLayout(new GridLayout(18, 1));
+        panel.setLayout(new GridLayout(21, 1));
 
         btnTest = new Button("Start test");
         btnTest.addActionListener(this);
         panel.add(btnTest);
+        panel.add(new Label(" ")); // spacing
 
 
         panel.add(new Label("Dialog parent:"));
@@ -123,6 +186,7 @@ public class PrintDialogsTest extends Applet implements ActionListener {
         panel.add(cbHiddFrm);
         panel.add(cbDlg);
         panel.add(cbFrm);
+        panel.add(new Label(" ")); // spacing
 
         panel.add(new Label("Dialog modality type:"));
         groupModType = new CheckboxGroup();
@@ -139,7 +203,7 @@ public class PrintDialogsTest extends Applet implements ActionListener {
         panel.add(cbDocModal);
         panel.add(cbTKModal);
         panel.add(cbModeless);
-        add(panel);
+        panel.add(new Label(" ")); // spacing
 
         panel.add(new Label("Print dialog type:"));
         groupDialog = new CheckboxGroup();
@@ -148,13 +212,6 @@ public class PrintDialogsTest extends Applet implements ActionListener {
         panel.add(cbPage);
         panel.add(cbPrint);
 
-        validate();
-        setVisible(true);
-    }
-
-    public void start() {
-        try {
-            EventQueue.invokeAndWait(this::createGUI);
-        } catch (Exception e) {}
+        add(panel);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -74,7 +74,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * @author Eric Ye, IBM
  * @author Sunitha Reddy, SUN Microsystems
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 public class XMLDocumentFragmentScannerImpl
         extends XMLScanner
@@ -342,6 +342,13 @@ public class XMLDocumentFragmentScannerImpl
      * of accessing external dtd or entity references
      */
     protected String fAccessExternalDTD = EXTERNAL_ACCESS_DEFAULT;
+
+    /**
+     * Properties to determine whether to use a user-specified Catalog:
+     * Feature USE_CATALOG, Resolve and Catalog File
+     */
+    protected boolean fUseCatalog = true;
+    protected String fCatalogFile;
 
     /**
      * standard uri conformant (strict uri).
@@ -1367,7 +1374,8 @@ public class XMLDocumentFragmentScannerImpl
                         fAttributes.getLength() > fElementAttributeLimit){
                     fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
                                                  "ElementAttributeLimit",
-                                                 new Object[]{rawname, fElementAttributeLimit },
+                                                 new Object[]{rawname, fElementAttributeLimit,
+                                                     XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT.systemProperty() },
                                                  XMLErrorReporter.SEVERITY_FATAL_ERROR );
                 }
 
@@ -1878,7 +1886,7 @@ public class XMLDocumentFragmentScannerImpl
             reportFatalError("MaxElementDepthLimit", new Object[]{elementName,
                 fLimitAnalyzer.getTotalValue(Limit.MAX_ELEMENT_DEPTH_LIMIT),
                 fSecurityManager.getLimit(Limit.MAX_ELEMENT_DEPTH_LIMIT),
-                "maxElementDepth"});
+                Limit.MAX_ELEMENT_DEPTH_LIMIT.systemProperty()});
         }
     }
 

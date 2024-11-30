@@ -23,4 +23,16 @@ ThisEscape.java:396:17: compiler.warn.possible.this.escape
 ThisEscape.java:401:30: compiler.warn.possible.this.escape.location
 ThisEscape.java:444:28: compiler.warn.possible.this.escape
 ThisEscape.java:473:27: compiler.warn.possible.this.escape
-25 warnings
+ThisEscape.java:596:28: compiler.warn.possible.this.escape
+ThisEscape.java:592:50: compiler.warn.possible.this.escape.location
+ThisEscape.java:608:28: compiler.warn.possible.this.escape
+ThisEscape.java:605:54: compiler.warn.possible.this.escape.location
+ThisEscape.java:619:18: compiler.warn.possible.this.escape
+ThisEscape.java:617:54: compiler.warn.possible.this.escape.location
+ThisEscape.java:627:27: compiler.warn.possible.this.escape
+ThisEscape.java:648:55: compiler.warn.possible.this.escape
+ThisEscape.java:652:55: compiler.warn.possible.this.escape
+ThisEscape.java:672:18: compiler.warn.possible.this.escape
+ThisEscape.java:669:48: compiler.warn.possible.this.escape.location
+ThisEscape.java:726:32: compiler.warn.possible.this.escape
+37 warnings

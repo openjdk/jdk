@@ -27,8 +27,6 @@
 
 #include "runtime/javaThread.hpp"
 
-// this utility could be useful for non cx8 platforms
-
 class JfrSpinlockHelper {
  private:
   volatile int* const _lock;

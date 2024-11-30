@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,25 +24,15 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.components.CodeRelabeler;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.CharacterRange;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.instruction.LabelTarget;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
-import jdk.internal.classfile.instruction.LookupSwitchInstruction;
-import jdk.internal.classfile.instruction.SwitchCase;
-import jdk.internal.classfile.instruction.TableSwitchInstruction;
-
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Label;
+import java.lang.classfile.components.CodeRelabeler;
+import java.lang.classfile.instruction.*;
 import java.util.function.BiFunction;
 
 public record CodeRelabelerImpl(BiFunction<Label, CodeBuilder, Label> mapFunction) implements CodeRelabeler {
 
-    @Override
     public Label relabel(Label label, CodeBuilder cob) {
         return mapFunction.apply(label, cob);
     }
@@ -51,18 +41,18 @@ public record CodeRelabelerImpl(BiFunction<Label, CodeBuilder, Label> mapFunctio
     public void accept(CodeBuilder cob, CodeElement coe) {
         switch (coe) {
             case BranchInstruction bi ->
-                cob.branchInstruction(
+                cob.branch(
                         bi.opcode(),
                         relabel(bi.target(), cob));
             case LookupSwitchInstruction lsi ->
-                cob.lookupSwitchInstruction(
+                cob.lookupswitch(
                         relabel(lsi.defaultTarget(), cob),
                         lsi.cases().stream().map(c ->
                                 SwitchCase.of(
                                         c.caseValue(),
                                         relabel(c.target(), cob))).toList());
             case TableSwitchInstruction tsi ->
-                cob.tableSwitchInstruction(
+                cob.tableswitch(
                         tsi.lowValue(),
                         tsi.highValue(),
                         relabel(tsi.defaultTarget(), cob),

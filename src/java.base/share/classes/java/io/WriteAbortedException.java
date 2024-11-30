@@ -57,6 +57,7 @@ public class WriteAbortedException extends ObjectStreamException {
      * @param s   String describing the exception.
      * @param ex  Exception causing the abort.
      */
+    @SuppressWarnings("this-escape")
     public WriteAbortedException(String s, Exception ex) {
         super(s);
         initCause(null);  // Disallow subsequent initCause

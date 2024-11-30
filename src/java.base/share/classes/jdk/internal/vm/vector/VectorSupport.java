@@ -114,6 +114,13 @@ public class VectorSupport {
     public static final int VECTOR_OP_EXPM1 = 117;
     public static final int VECTOR_OP_HYPOT = 118;
 
+    public static final int VECTOR_OP_SADD  = 119;
+    public static final int VECTOR_OP_SSUB  = 120;
+    public static final int VECTOR_OP_SUADD = 121;
+    public static final int VECTOR_OP_SUSUB = 122;
+    public static final int VECTOR_OP_UMIN  = 123;
+    public static final int VECTOR_OP_UMAX  = 124;
+
     // See src/hotspot/share/opto/subnode.hpp
     //     struct BoolTest, and enclosed enum mask
     public static final int BT_eq = 0;  // 0000
@@ -263,6 +270,20 @@ public class VectorSupport {
       return defaultImpl.apply(sh);
     }
 
+    public interface WrapShuffleIndexesOperation<SH extends VectorShuffle<?>> {
+        SH apply(SH sh);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <E,
+     SH extends VectorShuffle<E>>
+    SH wrapShuffleIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
+                          WrapShuffleIndexesOperation<SH> defaultImpl) {
+       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+       return defaultImpl.apply(sh);
+    }
+
     /* ============================================================================ */
     public interface IndexOperation<V extends Vector<?>,
                                     S extends VectorSpecies<?>> {
@@ -381,6 +402,24 @@ public class VectorSupport {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, m);
     }
+    /* ============================================================================ */
+
+    public interface SelectFromTwoVector<V extends Vector<?>> {
+        V apply(V v1, V v2, V v3);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     E>
+    V selectFromTwoVectorOp(Class<? extends V> vClass, Class<E> eClass, int length,
+                            V v1, V v2, V v3,
+                            SelectFromTwoVector<V> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, v3);
+    }
+
+    /* ============================================================================ */
 
     /* ============================================================================ */
 
@@ -421,7 +460,7 @@ public class VectorSupport {
      S extends VectorSpecies<E>>
     VM load(Class<? extends VM> vmClass, Class<E> eClass,
             int length,
-            Object base, long offset,
+            Object base, long offset, boolean fromSegment,
             C container, long index, S s,
             LoadOperation<C, VM, S> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -445,7 +484,7 @@ public class VectorSupport {
      S extends VectorSpecies<E>,
      M extends VectorMask<E>>
     V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
-                 int length, Object base, long offset,
+                 int length, Object base, long offset, boolean fromSegment,
                  M m, int offsetInRange,
                  C container, long index, S s,
                  LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
@@ -494,7 +533,7 @@ public class VectorSupport {
      V extends VectorPayload>
     void store(Class<?> vClass, Class<?> eClass,
                int length,
-               Object base, long offset,
+               Object base, long offset, boolean fromSegment,
                V v, C container, long index,
                StoreVectorOperation<C, V> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -515,7 +554,7 @@ public class VectorSupport {
      E>
     void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
                      int length,
-                     Object base, long offset,
+                     Object base, long offset, boolean fromSegment,
                      V v, M m, C container, long index,
                      StoreVectorMaskedOperation<C, V, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
@@ -603,6 +642,23 @@ public class VectorSupport {
                   VectorRearrangeOp<V, SH, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, sh, m);
+    }
+
+    public interface VectorSelectFromOp<V extends Vector<?>,
+                                        M extends VectorMask<?>> {
+        V apply(V v1, V v2, M m);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     M  extends VectorMask<E>,
+     E>
+    V selectFromOp(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+                   int length, V v1, V v2, M m,
+                   VectorSelectFromOp<V, M> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, m);
     }
 
     /* ============================================================================ */

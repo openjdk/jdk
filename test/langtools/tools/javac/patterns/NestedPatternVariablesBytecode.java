@@ -26,13 +26,9 @@
  * @bug 8268748
  * @summary Javac generates error opcodes when using nest pattern variables
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NestedPatternVariablesBytecode
@@ -43,8 +39,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -84,12 +80,12 @@ public class NestedPatternVariablesBytecode extends TestRunner {
                 .outdir(curPath)
                 .run();
 
-        cf = Classfile.of().parse(curPath.resolve("NestedPatterVariablesTest.class"));
+        cf = ClassFile.of().parse(curPath.resolve("NestedPatterVariablesTest.class"));
         MethodModel testMethod = cf.methods().stream()
                                   .filter(this::isTestMethod)
                                   .findAny()
                                   .orElseThrow();
-        CodeAttribute code_attribute = testMethod.findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute code_attribute = testMethod.findAttribute(Attributes.code()).orElseThrow();
 
         List<String> actualCode = getCodeInstructions(code_attribute);
         List<String> expectedCode = Arrays.asList(

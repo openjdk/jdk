@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
@@ -64,6 +63,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -72,10 +72,12 @@
 #include "services/runtimeService.hpp"
 #include "symbolengine.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
 #if INCLUDE_JFR
@@ -132,7 +134,7 @@ static FILETIME process_kernel_time;
 #elif defined(_M_AMD64)
   #define __CPU__ amd64
 #else
-  #define __CPU__ i486
+  #error "Unknown CPU"
 #endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
@@ -281,11 +283,6 @@ void os::run_periodic_checks(outputStream* st) {
   return;
 }
 
-#ifndef _WIN64
-// previous UnhandledExceptionFilter, if there is one
-static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = nullptr;
-#endif
-
 static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 void os::init_system_properties_values() {
@@ -397,11 +394,6 @@ void os::init_system_properties_values() {
   #undef EXT_DIR
   #undef BIN_DIR
   #undef PACKAGE_DIR
-
-#ifndef _WIN64
-  // set our UnhandledExceptionFilter and save any previous one
-  prev_uef_handler = SetUnhandledExceptionFilter(Uncaught_Exception_Handler);
-#endif
 
   // Done
   return;
@@ -516,7 +508,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads.
 // Called with the associated Thread* as the argument.
-static unsigned __stdcall thread_native_entry(void* t) {
+static unsigned thread_native_entry(void* t) {
   Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
@@ -840,22 +832,43 @@ julong os::win32::available_memory() {
   return (julong)ms.ullAvailPhys;
 }
 
+jlong os::total_swap_space() {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
+  return (jlong) ms.ullTotalPageFile;
+}
+
+jlong os::free_swap_space() {
+  MEMORYSTATUSEX ms;
+  ms.dwLength = sizeof(ms);
+  GlobalMemoryStatusEx(&ms);
+  return (jlong) ms.ullAvailPageFile;
+}
+
 julong os::physical_memory() {
   return win32::physical_memory();
+}
+
+size_t os::rss() {
+  size_t rss = 0;
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+  BOOL ret = GetProcessMemoryInfo(
+      GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmex, sizeof(pmex));
+  if (ret) {
+    rss = pmex.WorkingSetSize;
+  }
+  return rss;
 }
 
 bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
-#ifdef _LP64
   *limit = (size_t)ms.ullAvailVirtual;
   return true;
-#else
-  // Limit to 1400m because of the 2gb address space wall
-  *limit = MIN2((size_t)1400*M, (size_t)ms.ullAvailVirtual);
-  return true;
-#endif
 }
 
 int os::active_processor_count() {
@@ -867,21 +880,119 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  DWORD_PTR lpProcessAffinityMask = 0;
-  DWORD_PTR lpSystemAffinityMask = 0;
-  int proc_count = processor_count();
-  if (proc_count <= sizeof(UINT_PTR) * BitsPerByte &&
-      GetProcessAffinityMask(GetCurrentProcess(), &lpProcessAffinityMask, &lpSystemAffinityMask)) {
-    // Nof active processors is number of bits in process affinity mask
-    int bitcount = 0;
-    while (lpProcessAffinityMask != 0) {
-      lpProcessAffinityMask = lpProcessAffinityMask & (lpProcessAffinityMask-1);
-      bitcount++;
-    }
-    return bitcount;
-  } else {
-    return proc_count;
+  bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+  if (UseAllWindowsProcessorGroups && !schedules_all_processor_groups && !win32::processor_group_warning_displayed()) {
+    win32::set_processor_group_warning_displayed(true);
+    FLAG_SET_DEFAULT(UseAllWindowsProcessorGroups, false);
+    warning("The UseAllWindowsProcessorGroups flag is not supported on this Windows version and will be ignored.");
   }
+
+  DWORD active_processor_groups = 0;
+  DWORD processors_in_job_object = win32::active_processors_in_job_object(&active_processor_groups);
+
+  if (processors_in_job_object > 0) {
+    if (schedules_all_processor_groups) {
+      // If UseAllWindowsProcessorGroups is enabled then all the processors in the job object
+      // can be used. Otherwise, we will fall through to inspecting the process affinity mask.
+      // This will result in using only the subset of the processors in the default processor
+      // group allowed by the job object i.e. only 1 processor group will be used and only
+      // the processors in that group that are allowed by the job object will be used.
+      // This preserves the behavior where older OpenJDK versions always used one processor
+      // group regardless of whether they were launched in a job object.
+      if (!UseAllWindowsProcessorGroups && active_processor_groups > 1) {
+        if (!win32::job_object_processor_group_warning_displayed()) {
+          win32::set_job_object_processor_group_warning_displayed(true);
+          warning("The Windows job object has enabled multiple processor groups (%d) but the UseAllWindowsProcessorGroups flag is off. Some processors might not be used.", active_processor_groups);
+        }
+      } else {
+        return processors_in_job_object;
+      }
+    } else {
+      if (active_processor_groups > 1 && !win32::job_object_processor_group_warning_displayed()) {
+        win32::set_job_object_processor_group_warning_displayed(true);
+        warning("The Windows job object has enabled multiple processor groups (%d) but only 1 is supported on this Windows version. Some processors might not be used.", active_processor_groups);
+      }
+      return processors_in_job_object;
+    }
+  }
+
+  DWORD logical_processors = 0;
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+
+  USHORT group_count = 0;
+  bool use_process_affinity_mask = false;
+  bool got_process_group_affinity = false;
+
+  if (GetProcessGroupAffinity(GetCurrentProcess(), &group_count, nullptr) == 0) {
+    DWORD last_error = GetLastError();
+    if (last_error == ERROR_INSUFFICIENT_BUFFER) {
+      if (group_count > 0) {
+        got_process_group_affinity = true;
+
+        if (group_count == 1) {
+          use_process_affinity_mask = true;
+        }
+      } else {
+        warning("Unexpected group count of 0 from GetProcessGroupAffinity.");
+        assert(false, "Group count must not be 0.");
+      }
+    } else {
+      char buf[512];
+      size_t buf_len = os::lasterror(buf, sizeof(buf));
+      warning("Attempt to get process group affinity failed: %s", buf_len != 0 ? buf : "<unknown error>");
+    }
+  } else {
+    warning("Unexpected GetProcessGroupAffinity success result.");
+    assert(false, "Unexpected GetProcessGroupAffinity success result");
+  }
+
+  // Fall back to SYSTEM_INFO.dwNumberOfProcessors if the process group affinity could not be determined.
+  if (!got_process_group_affinity) {
+    return si.dwNumberOfProcessors;
+  }
+
+  // If the process it not in a job and the process group affinity is exactly 1 group
+  // then get the number of available logical processors from the process affinity mask
+  if (use_process_affinity_mask) {
+    DWORD_PTR lpProcessAffinityMask = 0;
+    DWORD_PTR lpSystemAffinityMask = 0;
+    if (GetProcessAffinityMask(GetCurrentProcess(), &lpProcessAffinityMask, &lpSystemAffinityMask) != 0) {
+      // Number of active processors is number of bits in process affinity mask
+      logical_processors = population_count(lpProcessAffinityMask);
+
+      if (logical_processors > 0) {
+        return logical_processors;
+      } else {
+        // We only check the process affinity mask if GetProcessGroupAffinity determined that there was
+        // only 1 active group. In this case, GetProcessAffinityMask will not set the affinity mask to 0.
+        warning("Unexpected process affinity mask of 0 from GetProcessAffinityMask.");
+        assert(false, "Found unexpected process affinity mask: 0");
+      }
+    } else {
+      char buf[512];
+      size_t buf_len = os::lasterror(buf, sizeof(buf));
+      warning("Attempt to get the process affinity mask failed: %s", buf_len != 0 ? buf : "<unknown error>");
+    }
+
+    // Fall back to SYSTEM_INFO.dwNumberOfProcessors if the process affinity mask could not be determined.
+    return si.dwNumberOfProcessors;
+  }
+
+  if (UseAllWindowsProcessorGroups) {
+    // There are no processor affinity restrictions at this point so we can return
+    // the overall processor count if the OS automatically schedules threads across
+    // all processors on the system. Note that older operating systems can
+    // correctly report processor count but will not schedule threads across
+    // processor groups unless the application explicitly uses group affinity APIs
+    // to assign threads to processor groups. On these older operating systems, we
+    // will continue to use the dwNumberOfProcessors field.
+    if (schedules_all_processor_groups) {
+      logical_processors = processor_count();
+    }
+  }
+
+  return logical_processors == 0 ? si.dwNumberOfProcessors : logical_processors;
 }
 
 uint os::processor_id() {
@@ -1161,41 +1272,53 @@ void os::shutdown() {
 
 static HANDLE dumpFile = nullptr;
 
-// Check if dump file can be created.
-void os::check_dump_limit(char* buffer, size_t buffsz) {
-  bool status = true;
+// Check if core dump is active and if a core dump file can be created
+void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
-    jio_snprintf(buffer, buffsz, "CreateCoredumpOnCrash is disabled from command line");
-    status = false;
-  }
-
+    jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
+    VMError::record_coredump_status(buffer, false);
+  } else {
+    bool success = true;
+    bool warn = true;
 #ifndef ASSERT
-  if (!os::win32::is_windows_server() && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
-    jio_snprintf(buffer, buffsz, "Minidumps are not enabled by default on client versions of Windows");
-    status = false;
-  }
+    if (!os::win32::is_windows_server() && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+      jio_snprintf(buffer, bufferSize, "Minidumps are not enabled by default on client versions of Windows");
+      success = false;
+      warn = true;
+    }
 #endif
 
-  if (status) {
-    const char* cwd = get_current_directory(nullptr, 0);
-    int pid = current_process_id();
-    if (cwd != nullptr) {
-      jio_snprintf(buffer, buffsz, "%s\\hs_err_pid%u.mdmp", cwd, pid);
-    } else {
-      jio_snprintf(buffer, buffsz, ".\\hs_err_pid%u.mdmp", pid);
+    if (success) {
+      if (!check_only) {
+        const char* cwd = get_current_directory(nullptr, 0);
+        int pid = current_process_id();
+        if (cwd != nullptr) {
+          jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp", cwd, pid);
+        } else {
+          jio_snprintf(buffer, bufferSize, ".\\hs_err_pid%u.mdmp", pid);
+        }
+
+        if (dumpFile == nullptr &&
+            (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
+            == INVALID_HANDLE_VALUE) {
+          jio_snprintf(buffer, bufferSize, "Failed to create minidump file (0x%x).", GetLastError());
+          success = false;
+        }
+      } else {
+        // For now on Windows, there are no more checks that we can do
+        warn = false;
+      }
     }
 
-    if (dumpFile == nullptr &&
-       (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
-                 == INVALID_HANDLE_VALUE) {
-      jio_snprintf(buffer, buffsz, "Failed to create minidump file (0x%x).", GetLastError());
-      status = false;
+    if (!check_only) {
+      VMError::record_coredump_status(buffer, success);
+    } else if (warn) {
+      warning("CreateCoredumpOnCrash specified, but %s", buffer);
     }
   }
-  VMError::record_coredump_status(buffer, status);
 }
 
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
   MINIDUMP_EXCEPTION_INFORMATION* pmei;
@@ -1267,7 +1390,15 @@ void  os::dll_unload(void *lib) {
 }
 
 void* os::dll_lookup(void *lib, const char *name) {
-  return (void*)::GetProcAddress((HMODULE)lib, name);
+  ::SetLastError(0); // Clear old pending errors
+  void* ret = ::GetProcAddress((HMODULE)lib, name);
+  if (ret == nullptr) {
+    char buf[512];
+    if (os::lasterror(buf, sizeof(buf)) > 0) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, buf);
+    }
+  }
+  return ret;
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -1398,9 +1529,12 @@ const char* os::get_current_directory(char *buf, size_t buflen) {
   return _getcwd(buf, n);
 }
 
+void os::prepare_native_symbols() {
+}
+
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
-#ifdef _WIN64
+
 // Helper routine which returns true if address in
 // within the NTDLL address space.
 //
@@ -1422,7 +1556,6 @@ static bool _addr_in_ntdll(address addr) {
     return false;
   }
 }
-#endif
 
 struct _modinfo {
   address addr;
@@ -1600,7 +1733,6 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   } arch_t;
 
   static const arch_t arch_array[] = {
-    {IMAGE_FILE_MACHINE_I386,      (char*)"IA 32"},
     {IMAGE_FILE_MACHINE_AMD64,     (char*)"AMD 64"},
     {IMAGE_FILE_MACHINE_ARM64,     (char*)"ARM 64"}
   };
@@ -1608,11 +1740,9 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_ARM64;
 #elif (defined _M_AMD64)
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_AMD64;
-#elif (defined _M_IX86)
-  static const uint16_t running_arch = IMAGE_FILE_MACHINE_I386;
 #else
   #error Method os::dll_load requires that one of following \
-         is defined :_M_AMD64 or _M_IX86 or _M_ARM64
+         is defined :_M_AMD64 or _M_ARM64
 #endif
 
 
@@ -1640,14 +1770,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load %s-bit .dll on a %s-bit platform",
-                lib_arch_str, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load %s-bit .dll on a %s-bit platform",
+                 lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                lib_arch, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                 lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
@@ -1715,17 +1845,6 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   if (nl != nullptr) *nl = '\0';
 }
 
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // Starting with Visual Studio 2015, vsnprint is C99 compliant.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
-}
-
 static inline time_t get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
@@ -1767,52 +1886,13 @@ void os::print_os_info(outputStream* st) {
 }
 
 void os::win32::print_windows_version(outputStream* st) {
-  VS_FIXEDFILEINFO *file_info;
-  TCHAR kernel32_path[MAX_PATH];
-  UINT len, ret;
-
   bool is_workstation = !IsWindowsServer();
 
-  // Get the full path to \Windows\System32\kernel32.dll and use that for
-  // determining what version of Windows we're running on.
-  len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
-  ret = GetSystemDirectory(kernel32_path, len);
-  if (ret == 0 || ret > len) {
-    st->print_cr("Call to GetSystemDirectory failed");
-    return;
-  }
-  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
-
-  DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
-  if (version_size == 0) {
-    st->print_cr("Call to GetFileVersionInfoSize failed");
-    return;
-  }
-
-  LPTSTR version_info = (LPTSTR)os::malloc(version_size, mtInternal);
-  if (version_info == nullptr) {
-    st->print_cr("Failed to allocate version_info");
-    return;
-  }
-
-  if (!GetFileVersionInfo(kernel32_path, 0, version_size, version_info)) {
-    os::free(version_info);
-    st->print_cr("Call to GetFileVersionInfo failed");
-    return;
-  }
-
-  if (!VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len)) {
-    os::free(version_info);
-    st->print_cr("Call to VerQueryValue failed");
-    return;
-  }
-
-  int major_version = HIWORD(file_info->dwProductVersionMS);
-  int minor_version = LOWORD(file_info->dwProductVersionMS);
-  int build_number = HIWORD(file_info->dwProductVersionLS);
-  int build_minor = LOWORD(file_info->dwProductVersionLS);
+  int major_version = windows_major_version();
+  int minor_version = windows_minor_version();
+  int build_number = windows_build_number();
+  int build_minor = windows_build_minor();
   int os_vers = major_version * 1000 + minor_version;
-  os::free(version_info);
 
   st->print(" Windows ");
   switch (os_vers) {
@@ -1861,7 +1941,10 @@ void os::win32::print_windows_version(outputStream* st) {
       // - 2016 GA 10/2016 build: 14393
       // - 2019 GA 11/2018 build: 17763
       // - 2022 GA 08/2021 build: 20348
-      if (build_number > 20347) {
+      // - 2025 Preview build   : 26040
+      if (build_number > 26039) {
+        st->print("Server 2025");
+      } else if (build_number > 20347) {
         st->print("Server 2022");
       } else if (build_number > 17762) {
         st->print("Server 2019");
@@ -1908,6 +1991,12 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   if (proc_count < 1) {
     SYSTEM_INFO si;
     GetSystemInfo(&si);
+
+    // This is the number of logical processors in the current processor group only and is therefore
+    // at most 64. The GetLogicalProcessorInformation function is used to compute the total number
+    // of processors. However, it requires memory to be allocated for the processor information buffer.
+    // Since this method is used in paths where memory allocation should not be done (i.e. after a crash),
+    // only the number of processors in the current group will be returned.
     proc_count = si.dwNumberOfProcessors;
   }
 
@@ -1937,7 +2026,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
     }
 
     if (same_vals_for_all_cpus && max_mhz != -1) {
-      st->print_cr("Processor Information for all %d processors :", proc_count);
+      st->print_cr("Processor Information for the first %d processors :", proc_count);
       st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d", max_mhz, current_mhz, mhz_limit);
       return;
     }
@@ -1993,13 +2082,6 @@ void os::print_memory_info(outputStream* st) {
              (int64_t) ms.ullTotalPageFile >> 20);
     st->print("(AvailPageFile size " INT64_FORMAT "M)",
              (int64_t) ms.ullAvailPageFile >> 20);
-
-    // on 32bit Total/AvailVirtual are interesting (show us how close we get to 2-4 GB per process borders)
-#if defined(_M_IX86)
-    st->print(", user-mode portion of virtual address-space " INT64_FORMAT "M ",
-             (int64_t) ms.ullTotalVirtual >> 20);
-    st->print("(" INT64_FORMAT "M free)", (int64_t) ms.ullAvailVirtual >> 20);
-#endif
   } else {
     st->print(", GlobalMemoryStatusEx did not succeed so we miss some memory values.");
   }
@@ -2031,7 +2113,17 @@ bool os::signal_sent_by_kill(const void* siginfo) {
 }
 
 void os::print_siginfo(outputStream *st, const void* siginfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  // If we are here because of an assert/guarantee, we suppress
+  // printing the siginfo, because it is only an implementation
+  // detail capturing the context for said assert/guarantee.
+  if (VMError::was_assert_poison_crash(siginfo)) {
+    return;
+  }
+#endif
+
   const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
+
   st->print("siginfo:");
 
   char tmp[64];
@@ -2119,19 +2211,6 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[MAX_PATH - 1] = '\0';
 }
 
-
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-#ifndef _WIN64
-  st->print("_");
-#endif
-}
-
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-#ifndef _WIN64
-  st->print("@%d", args_size  * sizeof(int));
-#endif
-}
 
 // This method is a copy of JDK's sysGetLastErrorString
 // from src/windows/hpi/src/system_md.c
@@ -2357,8 +2436,6 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   #define PC_NAME Pc
 #elif defined(_M_AMD64)
   #define PC_NAME Rip
-#elif defined(_M_IX86)
-  #define PC_NAME Eip
 #else
   #error unknown architecture
 #endif
@@ -2466,9 +2543,9 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   PCONTEXT ctx = exceptionInfo->ContextRecord;
   address pc = (address)ctx->Rip;
-  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7 || pc[0] == 0xF7,
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && pc[1] == 0xF7) || pc[0] == 0xF7,
             "not an idiv opcode, pc[0] = 0x%x and pc[1] = 0x%x", pc[0], pc[1]);
-  guarantee(pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8 || (pc[1] & ~0x7) == 0xF8,
+  guarantee((pc[0] >= Assembler::REX && pc[0] <= Assembler::REX_WRXB && (pc[2] & ~0x7) == 0xF8) || (pc[1] & ~0x7) == 0xF8,
             "cannot handle non-register operands, pc[0] = 0x%x, pc[1] = 0x%x and pc[2] = 0x%x", pc[0], pc[1], pc[2]);
   if (pc[0] == 0xF7) {
     // set correct result values and continue after idiv instruction
@@ -2482,21 +2559,12 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   ctx->Rdx = (DWORD)0;             // remainder
   // Continue the execution
 #else
-  PCONTEXT ctx = exceptionInfo->ContextRecord;
-  address pc = (address)ctx->Eip;
-  guarantee(pc[0] == 0xF7, "not an idiv opcode(0xF7), the actual value = 0x%x", pc[1]);
-  guarantee((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands, the actual value = 0x%x", pc[1]);
-  guarantee(ctx->Eax == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->Eax, min_jint);
-  // set correct result values and continue after idiv instruction
-  ctx->Eip = (DWORD)pc + 2;        // idiv reg, reg  is 2 bytes
-  ctx->Eax = (DWORD)min_jint;      // result
-  ctx->Edx = (DWORD)0;             // remainder
-  // Continue the execution
+  #error unknown architecture
 #endif
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-#if defined(_M_AMD64) || defined(_M_IX86)
+#if defined(_M_AMD64)
 //-----------------------------------------------------------------------------
 static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by native method modifying control word
@@ -2511,16 +2579,6 @@ static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   case EXCEPTION_FLT_STACK_CHECK:
   case EXCEPTION_FLT_UNDERFLOW: {
     PCONTEXT ctx = exceptionInfo->ContextRecord;
-#ifndef  _WIN64
-    jint fp_control_word = (* (jint*) StubRoutines::x86::addr_fpu_cntrl_wrd_std());
-    if (fp_control_word != ctx->FloatSave.ControlWord) {
-      // Restore FPCW and mask out FLT exceptions
-      ctx->FloatSave.ControlWord = fp_control_word | 0xffffffc0;
-      // Mask out pending FLT exceptions
-      ctx->FloatSave.StatusWord &=  0xffffff00;
-      return true;
-    }
-#else // !_WIN64
     // On Windows, the mxcsr control bits are non-volatile across calls
     // See also CR 6192333
     //
@@ -2531,28 +2589,10 @@ static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
       ctx->MxCsr = MxCsr;
       return true;
     }
-#endif // !_WIN64
   }
   }
 
   return false;
-}
-#endif
-
-#ifndef _WIN64
-static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  if (handle_FLT_exception(exceptionInfo)) {
-    return EXCEPTION_CONTINUE_EXECUTION;
-  }
-
-  // we only override this on 32 bits, so only check it there
-  if (prev_uef_handler != nullptr) {
-    // We didn't handle this exception so pass it to the previous
-    // UnhandledExceptionFilter.
-    return (prev_uef_handler)(exceptionInfo);
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
 
@@ -2575,95 +2615,32 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
-  address pc = (address) exceptionInfo->ContextRecord->Eip;
+  #error unknown architecture
 #endif
   Thread* t = Thread::current_or_null_safe();
 
-#ifndef _WIN64
-  // Execution protection violation - win32 running on AMD64 only
-  // Handled first to avoid misdiagnosis as a "normal" access violation;
-  // This is safe to do because we have a new/unique ExceptionInformation
-  // code for this condition.
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    int exception_subcode = (int) exception_record->ExceptionInformation[0];
-    address addr = (address) exception_record->ExceptionInformation[1];
-
-    if (exception_subcode == EXCEPTION_INFO_EXEC_VIOLATION) {
-      size_t page_size = os::vm_page_size();
-
-      // Make sure the pc and the faulting address are sane.
-      //
-      // If an instruction spans a page boundary, and the page containing
-      // the beginning of the instruction is executable but the following
-      // page is not, the pc and the faulting address might be slightly
-      // different - we still want to unguard the 2nd page in this case.
-      //
-      // 15 bytes seems to be a (very) safe value for max instruction size.
-      bool pc_is_near_addr =
-        (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
-      bool instr_spans_page_boundary =
-        (align_down((intptr_t) pc ^ (intptr_t) addr,
-                         (intptr_t) page_size) > 0);
-
-      if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
-        static volatile address last_addr =
-          (address) os::non_memory_address_word();
-
-        // In conservative mode, don't unguard unless the address is in the VM
-        if (UnguardOnExecutionViolation > 0 && addr != last_addr &&
-            (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
-
-          // Set memory to RWX and retry
-          address page_start = align_down(addr, page_size);
-          bool res = os::protect_memory((char*) page_start, page_size,
-                                        os::MEM_PROT_RWX);
-
-          log_debug(os)("Execution protection violation "
-                        "at " INTPTR_FORMAT
-                        ", unguarding " INTPTR_FORMAT ": %s", p2i(addr),
-                        p2i(page_start), (res ? "success" : os::strerror(errno)));
-
-          // Set last_addr so if we fault again at the same address, we don't
-          // end up in an endless loop.
-          //
-          // There are two potential complications here.  Two threads trapping
-          // at the same address at the same time could cause one of the
-          // threads to think it already unguarded, and abort the VM.  Likely
-          // very rare.
-          //
-          // The other race involves two threads alternately trapping at
-          // different addresses and failing to unguard the page, resulting in
-          // an endless loop.  This condition is probably even more unlikely
-          // than the first.
-          //
-          // Although both cases could be avoided by using locks or thread
-          // local last_addr, these solutions are unnecessary complication:
-          // this handler is a best-effort safety net, not a complete solution.
-          // It is disabled by default and should only be used as a workaround
-          // in case we missed any no-execute-unsafe VM code.
-
-          last_addr = addr;
-
-          return EXCEPTION_CONTINUE_EXECUTION;
-        }
-      }
-
-      // Last unguard failed or not unguarding
-      tty->print_raw_cr("Execution protection violation");
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
-      report_error(t, exception_code, addr, exception_record,
-                   exceptionInfo->ContextRecord);
-#endif
-      return EXCEPTION_CONTINUE_SEARCH;
-    }
-  }
-#endif // _WIN64
-
-#if defined(_M_AMD64) || defined(_M_IX86)
+#if defined(_M_AMD64)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
+  }
+
+#if !defined(PRODUCT)
+  if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
+      VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
+    // Verify that OS save/restore APX registers.
+    VM_Version::clear_apx_test_state();
+    return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
+  }
+#endif
+#endif
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (VMError::was_assert_poison_crash(exception_record)) {
+    if (handle_assert_poison_fault(exceptionInfo)) {
+      return EXCEPTION_CONTINUE_EXECUTION;
+    }
   }
 #endif
 
@@ -2725,7 +2702,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             return Handle_Exception(exceptionInfo, stub);
           }
         }
-#ifdef _WIN64
         // If it's a legal stack address map the entire region in
         if (thread->is_in_usable_stack(addr)) {
           addr = (address)((uintptr_t)addr &
@@ -2734,7 +2710,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                             !ExecMem);
           return EXCEPTION_CONTINUE_EXECUTION;
         }
-#endif
         // Null pointer exception.
         if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
           address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
@@ -2745,7 +2720,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return EXCEPTION_CONTINUE_SEARCH;
       }
 
-#ifdef _WIN64
       // Special care for fast JNI field accessors.
       // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks
       // in and the heap gets shrunk before the field access.
@@ -2753,7 +2727,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       if (slowcase_pc != (address)-1) {
         return Handle_Exception(exceptionInfo, slowcase_pc);
       }
-#endif
 
       // Stack overflow or null pointer exception in native code.
 #if !defined(USE_VECTORED_EXCEPTION_HANDLING)
@@ -2765,18 +2738,18 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
-      CompiledMethod* nm = nullptr;
+      nmethod* nm = nullptr;
       if (in_java) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+        nm = (cb != nullptr) ? cb->as_nmethod_or_null() : nullptr;
       }
 
-      bool is_unsafe_arraycopy = (in_native || in_java) && UnsafeCopyMemory::contains_pc(pc);
-      if (((in_vm || in_native || is_unsafe_arraycopy) && thread->doing_unsafe_access()) ||
+      bool is_unsafe_memory_access = (in_native || in_java) && UnsafeMemoryAccess::contains_pc(pc);
+      if (((in_vm || in_native || is_unsafe_memory_access) && thread->doing_unsafe_access()) ||
           (nm != nullptr && nm->has_unsafe_access())) {
         address next_pc =  Assembler::locate_next_instruction(pc);
-        if (is_unsafe_arraycopy) {
-          next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
+        if (is_unsafe_memory_access) {
+          next_pc = UnsafeMemoryAccess::page_error_continue_pc(pc);
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::handle_unsafe_access(thread, next_pc));
       }
@@ -2806,7 +2779,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       } // switch
     }
 
-#if defined(_M_AMD64) || defined(_M_IX86)
+#if defined(_M_AMD64)
     if ((in_java || in_native) && handle_FLT_exception(exceptionInfo)) {
       return EXCEPTION_CONTINUE_EXECUTION;
     }
@@ -2817,14 +2790,14 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
         CodeBlob* cb = CodeCache::find_blob(pc);
-        if (cb != nullptr && cb->is_compiled()) {
-          CompiledMethod* cm = cb->as_compiled_method();
+        if (cb != nullptr && cb->is_nmethod()) {
+          nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = cm->is_method_handle_return(pc) ?
-            cm->deopt_mh_handler_begin() :
-            cm->deopt_handler_begin();
-          assert(cm->insts_contains_inclusive(pc), "");
-          cm->set_original_pc(&fr, pc);
+          address deopt = nm->is_method_handle_return(pc) ?
+            nm->deopt_mh_handler_begin() :
+            nm->deopt_handler_begin();
+          assert(nm->insts_contains_inclusive(pc), "");
+          nm->set_original_pc(&fr, pc);
           // Set pc to handler
           exceptionInfo->ContextRecord->PC_NAME = (DWORD64)deopt;
           return EXCEPTION_CONTINUE_EXECUTION;
@@ -2850,7 +2823,7 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
-  address pc = (address) exceptionInfo->ContextRecord->Eip;
+  #error unknown architecture
 #endif
 
   // Fast path for code part of the code cache
@@ -2889,63 +2862,6 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
   }
 
   return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
-}
-#endif
-
-#ifndef _WIN64
-// Special care for fast JNI accessors.
-// jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in and
-// the heap gets shrunk before the field access.
-// Need to install our own structured exception handler since native code may
-// install its own.
-LONG WINAPI fastJNIAccessorExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    address pc = (address) exceptionInfo->ContextRecord->Eip;
-    address addr = JNI_FastGetField::find_slowcase_pc(pc);
-    if (addr != (address)-1) {
-      return Handle_Exception(exceptionInfo, addr);
-    }
-  }
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#define DEFINE_FAST_GETFIELD(Return, Fieldname, Result)                     \
-  Return JNICALL jni_fast_Get##Result##Field_wrapper(JNIEnv *env,           \
-                                                     jobject obj,           \
-                                                     jfieldID fieldID) {    \
-    __try {                                                                 \
-      return (*JNI_FastGetField::jni_fast_Get##Result##Field_fp)(env,       \
-                                                                 obj,       \
-                                                                 fieldID);  \
-    } __except(fastJNIAccessorExceptionFilter((_EXCEPTION_POINTERS*)        \
-                                              _exception_info())) {         \
-    }                                                                       \
-    return 0;                                                               \
-  }
-
-DEFINE_FAST_GETFIELD(jboolean, bool,   Boolean)
-DEFINE_FAST_GETFIELD(jbyte,    byte,   Byte)
-DEFINE_FAST_GETFIELD(jchar,    char,   Char)
-DEFINE_FAST_GETFIELD(jshort,   short,  Short)
-DEFINE_FAST_GETFIELD(jint,     int,    Int)
-DEFINE_FAST_GETFIELD(jlong,    long,   Long)
-DEFINE_FAST_GETFIELD(jfloat,   float,  Float)
-DEFINE_FAST_GETFIELD(jdouble,  double, Double)
-
-address os::win32::fast_jni_accessor_wrapper(BasicType type) {
-  switch (type) {
-  case T_BOOLEAN: return (address)jni_fast_GetBooleanField_wrapper;
-  case T_BYTE:    return (address)jni_fast_GetByteField_wrapper;
-  case T_CHAR:    return (address)jni_fast_GetCharField_wrapper;
-  case T_SHORT:   return (address)jni_fast_GetShortField_wrapper;
-  case T_INT:     return (address)jni_fast_GetIntField_wrapper;
-  case T_LONG:    return (address)jni_fast_GetLongField_wrapper;
-  case T_FLOAT:   return (address)jni_fast_GetFloatField_wrapper;
-  case T_DOUBLE:  return (address)jni_fast_GetDoubleField_wrapper;
-  default:        ShouldNotReachHere();
-  }
-  return (address)-1;
 }
 #endif
 
@@ -3022,7 +2938,7 @@ class NUMANodeListHolder {
 
 static size_t _large_page_size = 0;
 
-static bool request_lock_memory_privilege() {
+bool os::win32::request_lock_memory_privilege() {
   HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE,
                                 os::current_process_id());
 
@@ -3206,14 +3122,14 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   return p_buf;
 }
 
-static size_t large_page_init_decide_size() {
+size_t os::win32::large_page_init_decide_size() {
   // print a warning if any large page related flag is specified on command line
   bool warn_on_failure = !FLAG_IS_DEFAULT(UseLargePages) ||
                          !FLAG_IS_DEFAULT(LargePageSizeInBytes);
 
-#define WARN(msg) if (warn_on_failure) { warning(msg); }
+#define WARN(...) if (warn_on_failure) { warning(__VA_ARGS__); }
 
-  if (!request_lock_memory_privilege()) {
+  if (!os::win32::request_lock_memory_privilege()) {
     WARN("JVM cannot use large page memory because it does not have enough privilege to lock pages in memory.");
     return 0;
   }
@@ -3224,15 +3140,21 @@ static size_t large_page_init_decide_size() {
     return 0;
   }
 
-#if defined(IA32) || defined(AMD64)
-  if (size > 4*M || LargePageSizeInBytes > 4*M) {
-    WARN("JVM cannot use large pages bigger than 4mb.");
-    return 0;
+#if defined(AMD64)
+  if (!EnableAllLargePageSizesForWindows) {
+    if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
+      WARN("JVM cannot use large pages bigger than 4mb.");
+      return 0;
+    }
   }
 #endif
 
-  if (LargePageSizeInBytes > 0 && LargePageSizeInBytes % size == 0) {
-    size = LargePageSizeInBytes;
+  if (LargePageSizeInBytes > 0) {
+    if (LargePageSizeInBytes % size == 0) {
+      size = LargePageSizeInBytes;
+    } else {
+      WARN("The specified large page size (%d) is not a multiple of the minimum large page size (%d), defaulting to minimum page size.", LargePageSizeInBytes, size);
+    }
   }
 
 #undef WARN
@@ -3245,12 +3167,23 @@ void os::large_page_init() {
     return;
   }
 
-  _large_page_size = large_page_init_decide_size();
+  _large_page_size = os::win32::large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
+#if !defined(IA32)
+    if (EnableAllLargePageSizesForWindows) {
+      size_t min_size = GetLargePageMinimum();
+
+      // Populate _page_sizes with large page sizes less than or equal to _large_page_size, ensuring each page size is double the size of the previous one.
+      for (size_t page_size = min_size; page_size < _large_page_size; page_size *= 2) {
+        _page_sizes.add(page_size);
+      }
+    }
+#endif
+
     _page_sizes.add(_large_page_size);
   }
-
+  // Set UseLargePages based on whether a large page size was successfully determined
   UseLargePages = _large_page_size != 0;
 }
 
@@ -3291,13 +3224,8 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
-#ifdef _LP64
   HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
     (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
-#else
-  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
-    0, (DWORD)size, nullptr);
-#endif
   if (fileMapping == nullptr) {
     if (GetLastError() == ERROR_DISK_FULL) {
       vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
@@ -3327,10 +3255,11 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc) {
-  assert((alignment & (os::vm_allocation_granularity() - 1)) == 0,
-         "Alignment must be a multiple of allocation granularity (page size)");
-  assert((size & (alignment -1)) == 0, "size must be 'alignment' aligned");
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag = mtNone) {
+  assert(is_aligned(alignment, os::vm_allocation_granularity()),
+      "Alignment must be a multiple of allocation granularity (page size)");
+  assert(is_aligned(size, os::vm_allocation_granularity()),
+      "Size must be a multiple of allocation granularity (page size)");
 
   size_t extra_size = size + alignment;
   assert(extra_size >= size, "overflow, size is too large to allow alignment");
@@ -3339,8 +3268,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   static const int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
-    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc) :
-                                         os::reserve_memory(extra_size);
+    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
+                                         os::reserve_memory(extra_size, false, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3356,11 +3285,12 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
-    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc) :
-                                     os::attempt_reserve_memory_at(aligned_base, size);
+    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
+                                     os::attempt_reserve_memory_at(aligned_base, size, false, mem_tag);
   }
 
-  assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts?", max_attempts);
+  assert(aligned_base != nullptr,
+      "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
 }
@@ -3370,8 +3300,8 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
-  return map_or_reserve_memory_aligned(size, alignment, fd);
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
+  return map_or_reserve_memory_aligned(size, alignment, fd, mem_tag);
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -3430,10 +3360,6 @@ bool os::can_commit_large_page_memory() {
   // and committed in a single VirtualAlloc() call. This may change in the
   // future, but with Windows 2003 it's not possible to commit on demand.
   return false;
-}
-
-bool os::can_execute_large_page_memory() {
-  return true;
 }
 
 static char* reserve_large_pages_individually(size_t size, char* req_addr, bool exec) {
@@ -3516,7 +3442,6 @@ static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exe
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
                                     bool exec) {
   assert(UseLargePages, "only for large pages");
-  assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
   assert(is_aligned(addr, alignment), "Must be");
   assert(is_aligned(addr, page_size), "Must be");
 
@@ -3525,11 +3450,17 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
     return nullptr;
   }
 
+  // Ensure GetLargePageMinimum() returns a valid positive value
+  size_t large_page_min = GetLargePageMinimum();
+  if (large_page_min <= 0) {
+    return nullptr;
+  }
+
   // The requested alignment can be larger than the page size, for example with G1
   // the alignment is bound to the heap region size. So this reservation needs to
   // ensure that the requested alignment is met. When there is a requested address
   // this solves it self, since it must be properly aligned already.
-  if (addr == nullptr && alignment > page_size) {
+  if (addr == nullptr && alignment > large_page_min) {
     return reserve_large_pages_aligned(bytes, alignment, exec);
   }
 
@@ -3795,7 +3726,12 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+void os::pd_disclaim_memory(char *addr, size_t bytes) { }
+
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
 bool os::numa_topology_changed()                       { return false; }
@@ -3823,11 +3759,6 @@ int os::numa_get_group_id_for_address(const void* address) {
 
 bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
-}
-
-char *os::scan_pages(char *start, char* end, page_info* page_expected,
-                     page_info* page_found) {
-  return end;
 }
 
 char* os::non_memory_address_word() {
@@ -3983,6 +3914,200 @@ bool   os::win32::_is_windows_server         = false;
 // including the latest one (as of this writing - Windows Server 2012 R2)
 bool   os::win32::_has_exit_bug              = true;
 
+int    os::win32::_major_version             = 0;
+int    os::win32::_minor_version             = 0;
+int    os::win32::_build_number              = 0;
+int    os::win32::_build_minor               = 0;
+
+bool   os::win32::_processor_group_warning_displayed = false;
+bool   os::win32::_job_object_processor_group_warning_displayed = false;
+
+void getWindowsInstallationType(char* buffer, int bufferSize) {
+  HKEY hKey;
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+
+  DWORD valueLength = bufferSize;
+
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  // Open the registry key
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+    // Return empty buffer if key cannot be opened
+    return;
+  }
+
+  // Query the value
+  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+    RegCloseKey(hKey);
+    buffer[0] = '\0';
+    return;
+  }
+
+  RegCloseKey(hKey);
+}
+
+bool isNanoServer() {
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  getWindowsInstallationType(installationType, BUFFER_SIZE);
+  return (strcmp(installationType, "Nano Server") == 0);
+}
+
+void os::win32::initialize_windows_version() {
+  assert(_major_version == 0, "windows version already initialized.");
+
+  VS_FIXEDFILEINFO *file_info;
+  TCHAR kernel32_path[MAX_PATH];
+  UINT len, ret;
+  char error_msg_buffer[512];
+
+  // Get the full path to \Windows\System32\kernel32.dll and use that for
+  // determining what version of Windows we're running on.
+  len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
+  ret = GetSystemDirectory(kernel32_path, len);
+  if (ret == 0 || ret > len) {
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Attempt to determine system directory failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
+    return;
+  }
+
+  if (isNanoServer()) {
+    // On Windows Nanoserver the kernel32.dll is located in the forwarders subdirectory
+    strncat(kernel32_path, "\\forwarders\\kernel32.dll", MAX_PATH - ret);
+  } else {
+    strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+  }
+
+  DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
+  if (version_size == 0) {
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Failed to determine whether the OS can retrieve version information from kernel32.dll: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
+    return;
+  }
+
+  LPTSTR version_info = (LPTSTR)os::malloc(version_size, mtInternal);
+  if (version_info == nullptr) {
+    warning("os::malloc() failed to allocate %ld bytes for GetFileVersionInfo buffer", version_size);
+    return;
+  }
+
+  if (GetFileVersionInfo(kernel32_path, 0, version_size, version_info) == 0) {
+    os::free(version_info);
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Attempt to retrieve version information from kernel32.dll failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
+    return;
+  }
+
+  if (VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len) == 0) {
+    os::free(version_info);
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Attempt to determine Windows version from kernel32.dll failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
+    return;
+  }
+
+  _major_version = HIWORD(file_info->dwProductVersionMS);
+  _minor_version = LOWORD(file_info->dwProductVersionMS);
+  _build_number  = HIWORD(file_info->dwProductVersionLS);
+  _build_minor   = LOWORD(file_info->dwProductVersionLS);
+
+  os::free(version_info);
+}
+
+bool os::win32::is_windows_11_or_greater() {
+  if (IsWindowsServer()) {
+    return false;
+  }
+
+  // Windows 11 starts at build 22000 (Version 21H2)
+  return (windows_major_version() == 10 && windows_build_number() >= 22000) || (windows_major_version() > 10);
+}
+
+bool os::win32::is_windows_server_2022_or_greater() {
+  if (!IsWindowsServer()) {
+    return false;
+  }
+
+  // Windows Server 2022 starts at build 20348.169
+  return (windows_major_version() == 10 && windows_build_number() >= 20348) || (windows_major_version() > 10);
+}
+
+DWORD os::win32::active_processors_in_job_object(DWORD* active_processor_groups) {
+  if (active_processor_groups != nullptr) {
+    *active_processor_groups = 0;
+  }
+  BOOL is_in_job_object = false;
+  if (IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object) == 0) {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to determine whether the process is running in a job failed: %s", buf_len != 0 ? buf : "<unknown error>");
+    return 0;
+  }
+
+  if (!is_in_job_object) {
+    return 0;
+  }
+
+  DWORD processors = 0;
+
+  LPVOID job_object_information = nullptr;
+  DWORD job_object_information_length = 0;
+
+  if (QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, nullptr, 0, &job_object_information_length) != 0) {
+    warning("Unexpected QueryInformationJobObject success result.");
+    assert(false, "Unexpected QueryInformationJobObject success result");
+    return 0;
+  }
+
+  DWORD last_error = GetLastError();
+  if (last_error == ERROR_INSUFFICIENT_BUFFER) {
+    DWORD group_count = job_object_information_length / sizeof(GROUP_AFFINITY);
+
+    job_object_information = os::malloc(job_object_information_length, mtInternal);
+    if (job_object_information != nullptr) {
+        if (QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, job_object_information, job_object_information_length, &job_object_information_length) != 0) {
+          DWORD groups_found = job_object_information_length / sizeof(GROUP_AFFINITY);
+          if (groups_found != group_count) {
+            warning("Unexpected processor group count: %ld. Expected %ld processor groups.", groups_found, group_count);
+            assert(false, "Unexpected group count");
+          }
+
+          GROUP_AFFINITY* group_affinity_data = ((GROUP_AFFINITY*)job_object_information);
+          for (DWORD i = 0; i < groups_found; i++, group_affinity_data++) {
+            DWORD processors_in_group = population_count(group_affinity_data->Mask);
+            processors += processors_in_group;
+            if (active_processor_groups != nullptr && processors_in_group > 0) {
+              (*active_processor_groups)++;
+            }
+          }
+
+          if (processors == 0) {
+            warning("Could not determine processor count from the job object.");
+            assert(false, "Must find at least 1 logical processor");
+          }
+        } else {
+          char buf[512];
+          size_t buf_len = os::lasterror(buf, sizeof(buf));
+          warning("Attempt to query job object information failed: %s", buf_len != 0 ? buf : "<unknown error>");
+        }
+
+        os::free(job_object_information);
+    } else {
+        warning("os::malloc() failed to allocate %ld bytes for QueryInformationJobObject", job_object_information_length);
+    }
+  } else {
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    warning("Attempt to query job object information failed: %s", buf_len != 0 ? buf : "<unknown error>");
+    assert(false, "Unexpected QueryInformationJobObject error code");
+    return 0;
+  }
+
+  log_debug(os)("Process is running in a job with %d active processors.", processors);
+  return processors;
+}
+
 void os::win32::initialize_system_info() {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
@@ -3990,7 +4115,20 @@ void os::win32::initialize_system_info() {
   OSInfo::set_vm_allocation_granularity(si.dwAllocationGranularity);
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
-  set_processor_count(si.dwNumberOfProcessors);
+
+  DWORD processors = 0;
+  bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+  if (schedules_all_processor_groups) {
+    processors = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+    if (processors == 0) {
+      char buf[512];
+      size_t buf_len = os::lasterror(buf, sizeof(buf));
+      warning("Attempt to determine the processor count from GetActiveProcessorCount() failed: %s", buf_len != 0 ? buf : "<unknown error>");
+      assert(false, "Must find at least 1 logical processor");
+    }
+  }
+
+  set_processor_count(processors > 0 ? processors : si.dwNumberOfProcessors);
 
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
@@ -4244,7 +4382,7 @@ static void exit_process_or_thread(Ept what, int exit_code) {
   }
 
   // Should not reach here
-  os::infinite_sleep();
+  ::abort();
 }
 
 #undef EXIT_TIMEOUT
@@ -4269,36 +4407,11 @@ bool os::message_box(const char* title, const char* message) {
   return result == IDYES;
 }
 
-#ifndef PRODUCT
-#ifndef _WIN64
-// Helpers to check whether NX protection is enabled
-int nx_exception_filter(_EXCEPTION_POINTERS *pex) {
-  if (pex->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION &&
-      pex->ExceptionRecord->NumberParameters > 0 &&
-      pex->ExceptionRecord->ExceptionInformation[0] ==
-      EXCEPTION_INFO_EXEC_VIOLATION) {
-    return EXCEPTION_EXECUTE_HANDLER;
-  }
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-void nx_check_protection() {
-  // If NX is enabled we'll get an exception calling into code on the stack
-  char code[] = { (char)0xC3 }; // ret
-  void *code_ptr = (void *)code;
-  __try {
-    __asm call code_ptr
-  } __except(nx_exception_filter((_EXCEPTION_POINTERS*)_exception_info())) {
-    tty->print_raw_cr("NX protection detected.");
-  }
-}
-#endif // _WIN64
-#endif // PRODUCT
-
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
   _initial_pid = _getpid();
 
+  win32::initialize_windows_version();
   win32::initialize_system_info();
   win32::setmode_streams();
   _page_sizes.add(os::vm_page_size());
@@ -4313,9 +4426,6 @@ void os::init(void) {
     fatal("DuplicateHandle failed\n");
   }
   main_thread_id = (int) GetCurrentThreadId();
-
-  // initialize fast thread access - only used for 32-bit
-  win32::initialize_thread_ptr_offset();
 }
 
 // To install functions for atexit processing
@@ -4331,11 +4441,7 @@ static jint initSock();
 // HotSpot guard pages is added later.
 size_t os::_compiler_thread_min_stack_allowed = 48 * K;
 size_t os::_java_thread_min_stack_allowed = 40 * K;
-#ifdef _LP64
 size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
-#else
-size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-#endif // _LP64
 
 // If stack_commit_size is 0, windows will reserve the default size,
 // but only commit a small portion of it.  This stack size is the size of this
@@ -4345,6 +4451,12 @@ size_t os::_os_min_stack_allowed = 64 * K;
 
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
+  const char* auto_schedules_message = "Host Windows OS automatically schedules threads across all processor groups.";
+  const char* no_auto_schedules_message = "Host Windows OS does not automatically schedule threads across all processor groups.";
+
+  bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+  log_debug(os)(schedules_all_processor_groups ? auto_schedules_message : no_auto_schedules_message);
+  log_debug(os)("%d logical processors found.", processor_count());
 
   // This could be set any time but all platforms
   // have to set it the same so we have to mirror Solaris.
@@ -4355,16 +4467,6 @@ jint os::init_2(void) {
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
   topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
-#endif
-
-  // for debugging float code generation bugs
-#if defined(ASSERT) && !defined(_WIN64)
-  static long fp_control_word = 0;
-  __asm { fstcw fp_control_word }
-  // see Intel PPro Manual, Vol. 2, p 7-16
-  const long invalid   = 0x01;
-  fp_control_word |= invalid;
-  __asm { fldcw fp_control_word }
 #endif
 
   // Check and sets minimum stack sizes against command line options
@@ -4389,11 +4491,6 @@ jint os::init_2(void) {
       warning("os::init_2 atexit(perfMemory_exit_helper) failed");
     }
   }
-
-#ifndef _WIN64
-  // Print something if NX is enabled (win32 on AMD64)
-  NOT_PRODUCT(if (PrintMiscellaneous && Verbose) nx_check_protection());
-#endif
 
   // initialize thread priority policy
   prio_init();
@@ -4778,12 +4875,6 @@ int os::loadavg(double loadavg[], int nelem) {
   return -1;
 }
 
-
-// DontYieldALot=false by default: dutifully perform all yields as requested by JVM_Yield()
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
 int os::open(const char *path, int oflag, int mode) {
   errno_t err;
   wchar_t* wide_path = wide_abs_unc_path(path, err);
@@ -4866,13 +4957,6 @@ bool os::dir_is_empty(const char* path) {
   }
 
   return is_empty;
-}
-
-// create binary file, rewriting existing file if required
-int os::create_binary_file(const char* path, bool rewrite_existing) {
-  int oflags = _O_CREAT | _O_WRONLY | _O_BINARY;
-  oflags |= rewrite_existing ? _O_TRUNC : _O_EXCL;
-  return ::open(path, oflags, _S_IREAD | _S_IWRITE);
 }
 
 // return current position of file pointer
@@ -5048,6 +5132,28 @@ void os::funlockfile(FILE* fp) {
   _unlock_file(fp);
 }
 
+char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+
+  if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
+    assert(false, "os::realpath: invalid arguments.");
+    errno = EINVAL;
+    return nullptr;
+  }
+
+  char* result = nullptr;
+  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  if (p != nullptr) {
+    if (strlen(p) < outbuflen) {
+      strcpy(outbuf, p);
+      result = outbuf;
+    } else {
+      errno = ENAMETOOLONG;
+    }
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+  }
+  return result;
+}
+
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
@@ -5153,22 +5259,6 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 
   return base;
 }
-
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // This OS does not allow existing memory maps to be remapped so we
-  // would have to unmap the memory before we remap it.
-
-  // Because there is a small window between unmapping memory and mapping
-  // it in again with different protections, CDS archives are mapped RW
-  // on windows, so this function isn't called.
-  ShouldNotReachHere();
-  return nullptr;
-}
-
 
 // Unmap a block of memory.
 // Returns true=success, otherwise false.
@@ -5359,7 +5449,8 @@ int PlatformEvent::park(jlong Millis) {
       phri = new HighResolutionInterval(prd);
     }
     rv = ::WaitForSingleObject(_ParkHandle, prd);
-    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed");
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
     if (rv == WAIT_TIMEOUT) {
       Millis -= prd;
     }
@@ -5397,8 +5488,17 @@ void PlatformEvent::park() {
   // TODO: consider a brief spin here, gated on the success of recent
   // spin attempts by this thread.
   while (_Event < 0) {
+    // The following code is only here to maintain the
+    // characteristics/performance from when an ObjectMonitor
+    // "responsible" thread used to issue timed parks.
+    HighResolutionInterval *phri = nullptr;
+    if (!ForceTimeHighResolution) {
+      phri = new HighResolutionInterval((jlong)1);
+    }
     DWORD rv = ::WaitForSingleObject(_ParkHandle, INFINITE);
-    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed");
+    delete phri; // if it is null, harmless
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
   }
 
   // Usually we'll find _Event == 0 at this point, but as
@@ -5461,16 +5561,25 @@ void Parker::park(bool isAbsolute, jlong time) {
   JavaThread* thread = JavaThread::current();
 
   // Don't wait if interrupted or already triggered
-  if (thread->is_interrupted(false) ||
-      WaitForSingleObject(_ParkHandle, 0) == WAIT_OBJECT_0) {
+  if (thread->is_interrupted(false)) {
     ResetEvent(_ParkHandle);
     return;
   } else {
-    ThreadBlockInVM tbivm(thread);
-    OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
+    DWORD rv = WaitForSingleObject(_ParkHandle, 0);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+    if (rv == WAIT_OBJECT_0) {
+      ResetEvent(_ParkHandle);
+      return;
+    } else {
+      ThreadBlockInVM tbivm(thread);
+      OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
 
-    WaitForSingleObject(_ParkHandle, time);
-    ResetEvent(_ParkHandle);
+      rv = WaitForSingleObject(_ParkHandle, time);
+      assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+      assert(rv == WAIT_OBJECT_0 || rv == WAIT_TIMEOUT, "WaitForSingleObject failed with return value: %lu", rv);
+      ResetEvent(_ParkHandle);
+    }
   }
 }
 
@@ -5479,11 +5588,23 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+// Platform Mutex/Monitor implementation
+
+PlatformMutex::PlatformMutex() {
+  InitializeCriticalSection(&_mutex);
+}
+
 PlatformMutex::~PlatformMutex() {
   DeleteCriticalSection(&_mutex);
 }
 
-// Platform Monitor implementation
+PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+}
+
+PlatformMonitor::~PlatformMonitor() {
+  // There is no DeleteConditionVariable API
+}
 
 // Must already be locked
 int PlatformMonitor::wait(uint64_t millis) {
@@ -5546,7 +5667,9 @@ int os::fork_and_exec(const char* cmd) {
 
   if (rslt) {
     // Wait until child process exits.
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD rv = WaitForSingleObject(pi.hProcess, INFINITE);
+    assert(rv != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+    assert(rv == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", rv);
 
     GetExitCodeProcess(pi.hProcess, &exit_code);
 
@@ -5618,13 +5741,6 @@ ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-// WINDOWS CONTEXT Flags for THREAD_SAMPLING
-#if defined(IA32)
-  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT | CONTEXT_EXTENDED_REGISTERS)
-#elif defined(AMD64) || defined(_M_ARM64)
-  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
-#endif
-
 // returns true if thread could be suspended,
 // false otherwise
 static bool do_suspend(HANDLE* h) {
@@ -5647,7 +5763,7 @@ static void do_resume(HANDLE* h) {
 // retrieve a suspend/resume context capable handle
 // from the tid. Caller validates handle return value.
 void get_thread_handle_for_extended_context(HANDLE* h,
-                                            OSThread::thread_id_t tid) {
+                                            DWORD tid) {
   if (h != nullptr) {
     *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
   }
@@ -5669,7 +5785,7 @@ void SuspendedThreadTask::internal_do_task() {
 
   // suspend the thread
   if (do_suspend(&h)) {
-    ctxt.ContextFlags = sampling_context_flags;
+    ctxt.ContextFlags = (CONTEXT_FULL | CONTEXT_FLOATING_POINT);
     // get thread context
     GetThreadContext(h, &ctxt);
     SuspendedThreadTaskContext context(_thread, &ctxt);
@@ -5715,7 +5831,6 @@ void* os::get_default_process_handle() {
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name
 // which is used to find statically linked in agents.
-// Additionally for windows, takes into account __stdcall names.
 // Parameters:
 //            sym_name: Symbol in library we are looking for
 //            lib_name: Name of library to look in, null for shared libs.
@@ -5756,24 +5871,11 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   if (agent_entry_name == nullptr) {
     return nullptr;
   }
+
+  strcpy(agent_entry_name, sym_name);
   if (lib_name != nullptr) {
-    const char *p = strrchr(sym_name, '@');
-    if (p != nullptr && p != sym_name) {
-      // sym_name == _Agent_OnLoad@XX
-      strncpy(agent_entry_name, sym_name, (p - sym_name));
-      agent_entry_name[(p-sym_name)] = '\0';
-      // agent_entry_name == _Agent_OnLoad
-      strcat(agent_entry_name, "_");
-      strncat(agent_entry_name, lib_name, name_len);
-      strcat(agent_entry_name, p);
-      // agent_entry_name == _Agent_OnLoad_lib_name@XX
-    } else {
-      strcpy(agent_entry_name, sym_name);
-      strcat(agent_entry_name, "_");
-      strncat(agent_entry_name, lib_name, name_len);
-    }
-  } else {
-    strcpy(agent_entry_name, sym_name);
+    strcat(agent_entry_name, "_");
+    strncat(agent_entry_name, lib_name, name_len);
   }
   return agent_entry_name;
 }
@@ -5810,19 +5912,6 @@ int os::get_signal_number(const char* name) {
     }
   }
   return -1;
-}
-
-// Fast current thread access
-
-int os::win32::_thread_ptr_offset = 0;
-
-static void call_wrapper_dummy() {}
-
-// We need to call the os_exception_wrapper once so that it sets
-// up the offset from FS of the thread pointer.
-void os::win32::initialize_thread_ptr_offset() {
-  os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
-                           nullptr, methodHandle(), nullptr, nullptr);
 }
 
 bool os::supports_map_sync() {
@@ -5899,7 +5988,7 @@ bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
 // Helper for print_one_mapping: print n words, both as hex and ascii.
 // Use Safefetch for all values.
 static void print_snippet(const void* p, outputStream* st) {
-  static const int num_words = LP64_ONLY(3) NOT_LP64(6);
+  static const int num_words = 3;
   static const int num_bytes = num_words * sizeof(int);
   intptr_t v[num_words];
   const int errval = 0xDE210244;
@@ -5942,8 +6031,7 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
     if (first_line) {
       st->print("Base " PTR_FORMAT ": ", p2i(allocation_base));
     } else {
-      st->print_raw(NOT_LP64 ("                 ")
-                    LP64_ONLY("                         "));
+      st->print_raw("                         ");
     }
     address region_start = (address)minfo->BaseAddress;
     address region_end = region_start + minfo->RegionSize;
@@ -6043,7 +6131,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
       // Here, we advance the probe pointer by alloc granularity. But if the range to print
       //  is large, this may take a long time. Therefore lets stop right away if the address
       //  is outside of what we know are valid addresses on Windows. Also, add a loop fuse.
-      static const address end_virt = (address)(LP64_ONLY(0x7ffffffffffULL) NOT_LP64(3*G));
+      static const address end_virt = (address)(0x7ffffffffffULL);
       if (p >= end_virt) {
         break;
       } else {
@@ -6095,4 +6183,27 @@ void os::print_user_info(outputStream* st) {
 
 void os::print_active_locale(outputStream* st) {
   // not implemented yet
+}
+
+static CONTEXT _saved_assert_context;
+static EXCEPTION_RECORD _saved_exception_record;
+static bool _has_saved_context = false;
+
+void os::save_assert_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  const EXCEPTION_POINTERS* ep = static_cast<const EXCEPTION_POINTERS*>(ucVoid);
+  memcpy(&_saved_assert_context, ep->ContextRecord, sizeof(CONTEXT));
+  memcpy(&_saved_exception_record, ep->ExceptionRecord, sizeof(EXCEPTION_RECORD));
+  _has_saved_context = true;
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+  assert(sigInfo != nullptr, "invariant");
+  if (_has_saved_context) {
+    *sigInfo = &_saved_exception_record;
+    return &_saved_assert_context;
+  }
+  *sigInfo = nullptr;
+  return nullptr;
 }

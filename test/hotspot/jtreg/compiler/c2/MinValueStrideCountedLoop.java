@@ -31,17 +31,41 @@ package compiler.c2;
  *                   -XX:CompileCommand=compileonly,*MinValueStrideCountedLoop::test*
  *                   compiler.c2.MinValueStrideCountedLoop
  */
+
+/*
+ * @test
+ * @bug 8316719
+ * @summary Loop increment should not be transformed into unsigned comparison
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-UseLoopPredicate
+ *                   -XX:CompileCommand=compileonly,*MinValueStrideCountedLoop::test*
+ *                   compiler.c2.MinValueStrideCountedLoop
+ */
 public class MinValueStrideCountedLoop {
     static int limit = 0;
     static int res = 0;
+    static int[] array = new int[1];
+    static boolean b;
 
-    static void test() {
+    static void test1() {
         for (int i = 0; i >= limit + -2147483647; i += -2147483648) {
             res += 42;
         }
     }
 
+    static int test2(int init, int limit) {
+        int res = 0;
+        int i = init;
+        do {
+            if (b) { }
+            res += array[i];
+            i += -2147483648;
+        } while (i >= limit + -2147483647);
+        return res;
+    }
+
     public static void main(String[] args) {
-        test();
+        test1();
+        test2(0, 0);
     }
 }

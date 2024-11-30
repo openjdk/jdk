@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "jni_tools.h"
-#include "agent_common.h"
-#include "jvmti_tools.h"
+#include "jni_tools.hpp"
+#include "agent_common.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -37,7 +37,7 @@ static jlong timeout = 0;
 /* test objects */
 static jrawMonitorID access_lock;
 static jvmtiPhase phase;
-static const char* setVerboseMode = NULL;
+static const char* setVerboseMode = nullptr;
 
 /* ========================================================================== */
 
@@ -54,7 +54,7 @@ JNIEXPORT jint JNI_OnLoad_gf08t003(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv *jvmti = NULL;
+    jvmtiEnv *jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -64,10 +64,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    setVerboseMode = nsk_jvmti_findOptionStringValue("setVerboseMode", NULL);
+    setVerboseMode = nsk_jvmti_findOptionStringValue("setVerboseMode", nullptr);
 
     if (strcmp(setVerboseMode, "y") == 0 || strcmp(setVerboseMode, "yes") == 0) {
         if (!NSK_JVMTI_VERIFY(jvmti->SetVerboseFlag(JVMTI_VERBOSE_JNI, JNI_TRUE))) {

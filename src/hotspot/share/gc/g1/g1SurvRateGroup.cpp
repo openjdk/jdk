@@ -23,10 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
@@ -57,10 +56,6 @@ void G1SurvRateGroup::reset() {
 
   // Seed initial _surv_rate_pred and _accum_surv_rate_pred values
   guarantee(_stats_arrays_length == 1, "invariant" );
-  guarantee(_surv_rate_predictors[0] != nullptr, "invariant" );
-  const double initial_surv_rate = 0.4;
-  _surv_rate_predictors[0]->add(initial_surv_rate);
-  _last_pred = _accum_surv_rate_pred[0] = initial_surv_rate;
 
   _num_added_regions = 0;
 }
@@ -75,8 +70,12 @@ void G1SurvRateGroup::stop_adding_regions() {
     _surv_rate_predictors = REALLOC_C_HEAP_ARRAY(TruncatedSeq*, _surv_rate_predictors, _num_added_regions, mtGC);
 
     for (size_t i = _stats_arrays_length; i < _num_added_regions; ++i) {
+      // Initialize predictors and accumulated survivor rate predictions.
       _surv_rate_predictors[i] = new TruncatedSeq(10);
+      _surv_rate_predictors[i]->add(InitialSurvivorRate);
+      _accum_surv_rate_pred[i] = ((i == 0) ? 0.0 : _accum_surv_rate_pred[i-1]) + InitialSurvivorRate;
     }
+    _last_pred = InitialSurvivorRate;
 
     _stats_arrays_length = _num_added_regions;
   }
@@ -85,7 +84,7 @@ void G1SurvRateGroup::stop_adding_regions() {
 void G1SurvRateGroup::record_surviving_words(uint age, size_t surv_words) {
   assert(is_valid_age(age), "age is %u not between 0 and %u", age, _num_added_regions);
 
-  double surv_rate = (double)surv_words / HeapRegion::GrainWords;
+  double surv_rate = (double)surv_words / G1HeapRegion::GrainWords;
   _surv_rate_predictors[age]->add(surv_rate);
 }
 
@@ -94,6 +93,19 @@ void G1SurvRateGroup::all_surviving_words_recorded(const G1Predictions& predicto
     fill_in_last_surv_rates();
   }
   finalize_predictions(predictor);
+}
+
+double G1SurvRateGroup::accum_surv_rate_pred(uint age) const {
+  assert(_stats_arrays_length > 0, "invariant" );
+  double result;
+  if (age < _stats_arrays_length) {
+    result = _accum_surv_rate_pred[age];
+  } else {
+    double diff = (double)(age - _stats_arrays_length + 1);
+    result = _accum_surv_rate_pred[_stats_arrays_length - 1] + diff * _last_pred;
+  }
+  assert(result <= (age + 1.0), "Accumulated survivor rate %.2f must be smaller than age+1 %u", result, age + 1);
+  return result;
 }
 
 void G1SurvRateGroup::fill_in_last_surv_rates() {

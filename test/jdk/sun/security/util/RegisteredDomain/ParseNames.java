@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8228969 8244087 8255266 8302182
+ * @bug 8228969 8244087 8255266 8302182 8331864
  * @modules java.base/sun.security.util
  * @summary unit test for RegisteredDomain
  */

@@ -57,7 +57,7 @@ jlong JNICALL jfr_class_id(JNIEnv* env, jclass jvm, jclass jc);
 
 jstring JNICALL jfr_get_pid(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip);
+jlong JNICALL jfr_stacktrace_id(JNIEnv* env, jclass jvm, jint skip, jlong stack_filter_id);
 
 jlong JNICALL jfr_elapsed_frequency(JNIEnv* env, jclass jvm);
 
@@ -101,7 +101,7 @@ jboolean JNICALL jfr_is_available(JNIEnv* env, jclass jvm);
 
 jdouble JNICALL jfr_time_conv_factor(JNIEnv* env, jclass jvm);
 
-jlong JNICALL jfr_type_id(JNIEnv* env, jobject jvm, jclass jc);
+jlong JNICALL jfr_type_id(JNIEnv* env, jclass jvm, jclass jc);
 
 void JNICALL jfr_set_repository_location(JNIEnv* env, jclass jvm, jstring location);
 
@@ -113,7 +113,7 @@ jobject JNICALL jfr_get_event_writer(JNIEnv* env, jclass jvm);
 
 jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size);
+void JNICALL jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size);
 
 jlong JNICALL jfr_commit(JNIEnv* env, jclass cls, jlong next_position);
 void JNICALL jfr_flush(JNIEnv* env, jclass jvm);
@@ -127,9 +127,9 @@ void JNICALL jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jboolean for
 
 jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_set_cutoff(JNIEnv* env, jclass jvm, jlong event_type_id, jlong cutoff_ticks);
-
 jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
+
+void JNICALL jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong id, jlong value);
 
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean, jboolean);
 
@@ -157,7 +157,15 @@ jboolean JNICALL jfr_is_containerized(JNIEnv* env, jclass jvm);
 
 jlong JNICALL jfr_host_total_memory(JNIEnv* env, jclass jvm);
 
+jlong JNICALL jfr_host_total_swap_memory(JNIEnv* env, jclass jvm);
+
 void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
+
+jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods);
+
+void JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
+
+jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
 
 #ifdef __cplusplus
 }

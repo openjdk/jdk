@@ -31,6 +31,9 @@
 class G1CollectedHeap;
 
 class G1HeapTransition {
+  struct DetailedUsage;
+  class DetailedUsageClosure;
+
   struct Data {
     size_t _eden_length;
     size_t _survivor_length;

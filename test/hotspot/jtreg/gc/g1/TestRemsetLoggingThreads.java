@@ -44,14 +44,12 @@ import jdk.test.lib.process.ProcessTools;
 public class TestRemsetLoggingThreads {
 
   private static void runTest(int refinementThreads, int workerThreads) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                         "-XX:+UnlockDiagnosticVMOptions",
-                                                                         "-Xlog:gc+remset+exit=trace",
-                                                                         "-XX:G1ConcRefinementThreads=" + refinementThreads,
-                                                                         "-XX:ParallelGCThreads=" + workerThreads,
-                                                                         "-version");
-
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                "-XX:+UnlockDiagnosticVMOptions",
+                                                                "-Xlog:gc+remset+exit=trace",
+                                                                "-XX:G1ConcRefinementThreads=" + refinementThreads,
+                                                                "-XX:ParallelGCThreads=" + workerThreads,
+                                                                "-version");
 
     String pattern = "Concurrent refinement threads times \\(s\\)$";
     Matcher m = Pattern.compile(pattern, Pattern.MULTILINE).matcher(output.getStdout());

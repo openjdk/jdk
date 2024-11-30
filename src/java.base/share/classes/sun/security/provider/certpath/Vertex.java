@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ final class Vertex {
         sb.append("Subject:    ").append
                 (x509Cert.getSubjectX500Principal()).append("\n");
         sb.append("SerialNum:  ").append
-                (x509Cert.getSerialNumber().toString(16)).append("\n");
+                (Debug.toString(x509Cert.getSerialNumber())).append("\n");
         sb.append("Expires:    ").append
                 (x509Cert.getNotAfter().toString()).append("\n");
         boolean[] iUID = x509Cert.getIssuerUniqueID();

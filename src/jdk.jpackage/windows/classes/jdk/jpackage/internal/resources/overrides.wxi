@@ -28,4 +28,4 @@ to disable (the value doesn't matter).
 Should be defined to enable upgrades and undefined to disable upgrades.
 By default it is defined, use <?undef JpAllowUpgrades?> to disable.
 -->
-<Include/>
+<Include xmlns="http://schemas.microsoft.com/wix/2006/wi"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 // The following must be named "jvm", as there are extern references to it in AWT
 JavaVM *jvm = NULL;
+static BOOL isNSApplicationOwner = NO;
 static JNIEnv *appKitEnv = NULL;
 static jobject appkitThreadGroup = NULL;
 static NSString* JavaRunLoopMode = @"AWTRunLoopMode";
@@ -59,12 +60,20 @@ static inline void attachCurrentThread(void** env) {
                                            nil];
 }
 
++ (void)setApplicationOwner:(BOOL)owner {
+    isNSApplicationOwner = owner;
+}
+
 + (JNIEnv*)getJNIEnv {
 AWT_ASSERT_APPKIT_THREAD;
-    if (appKitEnv == NULL) {
-        attachCurrentThread((void **)&appKitEnv);
+    if (isNSApplicationOwner) {
+        if (appKitEnv == NULL) {
+            attachCurrentThread((void **)&appKitEnv);
+        }
+        return appKitEnv;
+    } else {
+        return [ThreadUtilities getJNIEnvUncached];
     }
-    return appKitEnv;
 }
 
 + (JNIEnv*)getJNIEnvUncached {

@@ -195,8 +195,7 @@ public class GCHelper {
                                                            "Survivor",
                                                            "Starts Humongous",
                                                            "Continues Humongous",
-                                                           "Old",
-                                                           "Archive"
+                                                           "Old"
                                                          };
 
         g1HeapRegionTypes = Collections.unmodifiableList(Arrays.asList(g1HeapRegionTypeLiterals));

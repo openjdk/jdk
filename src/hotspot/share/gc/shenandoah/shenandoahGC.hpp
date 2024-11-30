@@ -50,12 +50,14 @@ public:
   enum ShenandoahDegenPoint {
     _degenerated_unset,
     _degenerated_outside_cycle,
+    _degenerated_roots,
     _degenerated_mark,
     _degenerated_evac,
     _degenerated_updaterefs,
     _DEGENERATED_LIMIT
   };
 
+  // Returns false if the collection was cancelled, true otherwise.
   virtual bool collect(GCCause::Cause cause) = 0;
   static const char* degen_point_to_string(ShenandoahDegenPoint point);
 

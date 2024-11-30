@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,9 @@ public final class FileServerHandler implements HttpHandler {
     private static final List<String> SUPPORTED_METHODS = List.of("HEAD", "GET");
     private static final List<String> UNSUPPORTED_METHODS =
             List.of("CONNECT", "DELETE", "OPTIONS", "PATCH", "POST", "PUT", "TRACE");
+    private static final String FAVICON_RESOURCE_PATH =
+            "/sun/net/httpserver/simpleserver/resources/favicon.ico";
+    private static final String FAVICON_LAST_MODIFIED = "Mon, 23 May 1995 11:11:11 GMT";
 
     private final Path root;
     private final UnaryOperator<String> mimeTable;
@@ -159,7 +162,7 @@ public final class FileServerHandler implements HttpHandler {
 
     private static void discardRequestBody(HttpExchange exchange) throws IOException {
         try (InputStream is = exchange.getRequestBody()) {
-            is.readAllBytes();
+            is.skip(Integer.MAX_VALUE);
         }
     }
 
@@ -249,6 +252,31 @@ public final class FileServerHandler implements HttpHandler {
         Path htm = path.resolve("index.htm");
         return Files.exists(html) ? html : Files.exists(htm) ? htm : null;
     }
+
+    private static boolean isFavIconRequest(HttpExchange exchange) {
+        return "/favicon.ico".equals(exchange.getRequestURI().getPath());
+    }
+
+    private void serveDefaultFavIcon(HttpExchange exchange, boolean writeBody)
+            throws IOException
+    {
+        var respHdrs = exchange.getResponseHeaders();
+        try (var stream = getClass().getModule().getResourceAsStream(FAVICON_RESOURCE_PATH)) {
+            var bytes = stream.readAllBytes();
+            respHdrs.set("Content-Type", "image/x-icon");
+            respHdrs.set("Last-Modified", FAVICON_LAST_MODIFIED);
+            if (writeBody) {
+                exchange.sendResponseHeaders(200, bytes.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(bytes);
+                }
+            } else {
+                respHdrs.set("Content-Length", Integer.toString(bytes.length));
+                exchange.sendResponseHeaders(200, -1);
+            }
+        }
+    }
+
 
     private void serveFile(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException
@@ -371,17 +399,26 @@ public final class FileServerHandler implements HttpHandler {
         assert List.of("GET", "HEAD").contains(exchange.getRequestMethod());
         try (exchange) {
             discardRequestBody(exchange);
+            boolean isHeadRequest = exchange.getRequestMethod().equals("HEAD");
             Path path = mapToPath(exchange, root);
             if (path != null) {
                 exchange.setAttribute("request-path", path.toString());  // store for OutputFilter
                 if (!Files.exists(path) || !Files.isReadable(path) || isHiddenOrSymLink(path)) {
                     handleNotFound(exchange);
-                } else if (exchange.getRequestMethod().equals("HEAD")) {
+                } else if (isHeadRequest) {
                     handleHEAD(exchange, path);
                 } else {
                     handleGET(exchange, path);
                 }
             } else {
+                if (isFavIconRequest(exchange)) {
+                    try {
+                        serveDefaultFavIcon(exchange, !isHeadRequest);
+                        return;
+                    } catch (IOException ignore) {
+                        // fall through to send the not-found response
+                    }
+                }
                 exchange.setAttribute("request-path", "could not resolve request URI path");
                 handleNotFound(exchange);
             }

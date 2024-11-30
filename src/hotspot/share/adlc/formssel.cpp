@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,15 +210,16 @@ bool InstructForm::is_pinned(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",          index)) return true;
-  if (_matrule->find_type("If",            index)) return true;
-  if (_matrule->find_type("CountedLoopEnd",index)) return true;
-  if (_matrule->find_type("Return",        index)) return true;
-  if (_matrule->find_type("Rethrow",       index)) return true;
-  if (_matrule->find_type("TailCall",      index)) return true;
-  if (_matrule->find_type("TailJump",      index)) return true;
-  if (_matrule->find_type("Halt",          index)) return true;
-  if (_matrule->find_type("Jump",          index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("If",               index)) return true;
+  if (_matrule->find_type("CountedLoopEnd",   index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
+  if (_matrule->find_type("Jump",             index)) return true;
 
   return is_parm(globals);
 }
@@ -228,12 +229,13 @@ bool InstructForm::is_projection(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",    index)) return true;
-  if (_matrule->find_type("Return",  index)) return true;
-  if (_matrule->find_type("Rethrow", index)) return true;
-  if (_matrule->find_type("TailCall",index)) return true;
-  if (_matrule->find_type("TailJump",index)) return true;
-  if (_matrule->find_type("Halt",    index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
 
   return false;
 }
@@ -376,6 +378,7 @@ bool InstructForm::is_ideal_return() const {
   if (_matrule->find_type("Rethrow",index)) return true;
   if (_matrule->find_type("TailCall",index)) return true;
   if (_matrule->find_type("TailJump",index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
 
   return false;
 }
@@ -794,6 +797,7 @@ bool InstructForm::captures_bottom_type(FormDict &globals) const {
        !strcmp(_matrule->_rChild->_opType,"StrInflatedCopy") ||
        !strcmp(_matrule->_rChild->_opType,"VectorCmpMasked")||
        !strcmp(_matrule->_rChild->_opType,"VectorMaskGen")||
+       !strcmp(_matrule->_rChild->_opType,"VerifyVectorAlignment")||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeP") ||
        !strcmp(_matrule->_rChild->_opType,"CompareAndExchangeN"))) return true;
   else if ( is_ideal_load() == Form::idealP )                return true;
@@ -893,6 +897,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"Rethrow"   )==0 ||
       strcmp(_matrule->_opType,"TailCall"  )==0 ||
       strcmp(_matrule->_opType,"TailJump"  )==0 ||
+      strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
       strcmp(_matrule->_opType,"Halt"      )==0 )
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
@@ -1497,6 +1502,24 @@ void InstructForm::output(FILE *fp) {
   if (_peephole)  _peephole->output(fp);
 }
 
+void InstructForm::forms_do(FormClosure *f) {
+  if (_cisc_spill_alternate) f->do_form(_cisc_spill_alternate);
+  if (_short_branch_form) f->do_form(_short_branch_form);
+  _localNames.forms_do(f);
+  if (_matrule) f->do_form(_matrule);
+  if (_opcode) f->do_form(_opcode);
+  if (_insencode) f->do_form(_insencode);
+  if (_constant) f->do_form(_constant);
+  if (_attribs) f->do_form(_attribs);
+  if (_predicate) f->do_form(_predicate);
+  _effects.forms_do(f);
+  if (_exprule) f->do_form(_exprule);
+  if (_rewrule) f->do_form(_rewrule);
+  if (_format) f->do_form(_format);
+  if (_peephole) f->do_form(_peephole);
+  assert(_components.count() == 0, "skip components");
+}
+
 void MachNodeForm::dump() {
   output(stderr);
 }
@@ -1614,6 +1637,14 @@ void EncodeForm::output(FILE *fp) {          // Write info to output files
   }
   fprintf(fp,"-------------------- end  EncodeForm --------------------\n");
 }
+
+void EncodeForm::forms_do(FormClosure* f) {
+  const char *name;
+  for (_eclasses.reset(); (name = _eclasses.iter()) != nullptr;) {
+    f->do_form((EncClass*)_encClass[name]);
+  }
+}
+
 //------------------------------EncClass---------------------------------------
 EncClass::EncClass(const char *name)
   : _localNames(cmpstr,hashstr, Form::arena), _name(name) {
@@ -1702,6 +1733,15 @@ void EncClass::output(FILE *fp) {
     }
   }
 
+}
+
+void EncClass::forms_do(FormClosure *f) {
+  _parameter_type.reset();
+  const char *type = _parameter_type.iter();
+  for ( ; type != nullptr ; type = _parameter_type.iter() ) {
+    f->do_form_by_name(type);
+  }
+  _localNames.forms_do(f);
 }
 
 //------------------------------Opcode-----------------------------------------
@@ -1832,6 +1872,15 @@ void InsEncode::output(FILE *fp) {
   } // done with encodings
 
   fprintf(fp,"\n");
+}
+
+void InsEncode::forms_do(FormClosure *f) {
+  _encoding.reset();
+  NameAndList *encoding = (NameAndList*)_encoding.iter();
+  for( ; encoding != nullptr; encoding = (NameAndList*)_encoding.iter() ) {
+    // just check name, other operands will be checked as instruction parameters
+    f->do_form_by_name(encoding->name());
+  }
 }
 
 //------------------------------Effect-----------------------------------------
@@ -1967,6 +2016,19 @@ void ExpandRule::output(FILE *fp) {         // Write info to output files
   }
 }
 
+void ExpandRule::forms_do(FormClosure *f) {
+  NameAndList *expand_instr = nullptr;
+  // Iterate over the instructions 'node' expands into
+  for(reset_instructions(); (expand_instr = iter_instructions()) != nullptr; ) {
+    f->do_form_by_name(expand_instr->name());
+  }
+  _newopers.reset();
+  const char* oper = _newopers.iter();
+  for(; oper != nullptr; oper = _newopers.iter()) {
+    f->do_form_by_name(oper);
+  }
+}
+
 //------------------------------RewriteRule------------------------------------
 RewriteRule::RewriteRule(char* params, char* block)
   : _tempParams(params), _tempBlock(block) { };  // Constructor
@@ -1981,6 +2043,12 @@ void RewriteRule::output(FILE *fp) {         // Write info to output files
   fprintf(fp,"\nRewrite Rule:\n%s\n%s\n",
           (_tempParams?_tempParams:""),
           (_tempBlock?_tempBlock:""));
+}
+
+void RewriteRule::forms_do(FormClosure *f) {
+  if (_condition) f->do_form(_condition);
+  if (_instrs) f->do_form(_instrs);
+  if (_opers) f->do_form(_opers);
 }
 
 
@@ -2063,6 +2131,13 @@ void OpClassForm::output(FILE *fp) {
     fprintf(fp,"%s, ",name);
   }
   fprintf(fp,"\n");
+}
+
+void OpClassForm::forms_do(FormClosure* f) {
+  const char *name;
+  for(_oplst.reset(); (name = _oplst.iter()) != nullptr;) {
+    f->do_form_by_name(name);
+  }
 }
 
 
@@ -2690,6 +2765,22 @@ void OperandForm::output(FILE *fp) {
   if (_format)     _format->dump();
 }
 
+void OperandForm::forms_do(FormClosure* f) {
+  if (_matrule)    f->do_form(_matrule);
+  if (_interface)  f->do_form(_interface);
+  if (_attribs)    f->do_form(_attribs);
+  if (_predicate)  f->do_form(_predicate);
+  if (_constraint) f->do_form(_constraint);
+  if (_construct)  f->do_form(_construct);
+  if (_format)     f->do_form(_format);
+  _localNames.forms_do(f);
+  const char* opclass = nullptr;
+  for ( _classes.reset(); (opclass = _classes.iter()) != nullptr; ) {
+    f->do_form_by_name(opclass);
+  }
+  assert(_components.count() == 0, "skip _compnets");
+}
+
 //------------------------------Constraint-------------------------------------
 Constraint::Constraint(const char *func, const char *arg)
   : _func(func), _arg(arg) {
@@ -2709,6 +2800,10 @@ void Constraint::dump() {
 void Constraint::output(FILE *fp) {           // Write info to output files
   assert((_func != nullptr && _arg != nullptr),"missing constraint function or arg");
   fprintf(fp,"Constraint: %s ( %s )\n", _func, _arg);
+}
+
+void Constraint::forms_do(FormClosure *f) {
+  f->do_form_by_name(_arg);
 }
 
 //------------------------------Predicate--------------------------------------
@@ -3538,6 +3633,12 @@ void MatchNode::output(FILE *fp) {
   }
 }
 
+void MatchNode::forms_do(FormClosure *f) {
+  f->do_form_by_name(_name);
+  if (_lChild) f->do_form(_lChild);
+  if (_rChild) f->do_form(_rChild);
+}
+
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
     "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
@@ -3553,7 +3654,6 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
 #if INCLUDE_SHENANDOAHGC
     "ShenandoahCompareAndSwapN", "ShenandoahCompareAndSwapP", "ShenandoahWeakCompareAndSwapP", "ShenandoahWeakCompareAndSwapN", "ShenandoahCompareAndExchangeP", "ShenandoahCompareAndExchangeN",
 #endif
-    "StoreCM",
     "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
     "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
     "ClearArray"
@@ -3605,6 +3705,7 @@ int InstructForm::needs_base_oop_edge(FormDict &globals) const {
 
   return _matrule ? _matrule->needs_base_oop_edge() : 0;
 }
+
 
 
 //-------------------------cisc spilling methods-------------------------------
@@ -3856,15 +3957,15 @@ void MatchNode::count_commutative_op(int& count) {
     "AndI","AndL",
     "MaxI","MinI","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulF","MulD",
-    "OrI","OrL",
-    "XorI","XorL"
+    "OrI","OrL", "XorI","XorL",
+    "UMax","UMin"
   };
 
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
     "AndV", "OrV", "XorV",
-    "MaxV", "MinV"
+    "MaxV", "MinV", "UMax","UMin"
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
@@ -4238,7 +4339,7 @@ bool MatchRule::is_vector() const {
     "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV",
+    "MaxV", "MinV", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
@@ -4251,17 +4352,17 @@ bool MatchRule::is_vector() const {
     "LShiftVB","LShiftVS","LShiftVI","LShiftVL",
     "RShiftVB","RShiftVS","RShiftVI","RShiftVL",
     "URShiftVB","URShiftVS","URShiftVI","URShiftVL",
-    "ReplicateB","ReplicateS","ReplicateI","ReplicateL","ReplicateF","ReplicateD","ReverseV","ReverseBytesV",
+    "Replicate","ReverseV","ReverseBytesV",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
-    "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
-    "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
+    "SelectFromTwoVector", "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
+    "VectorRearrange", "VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
-    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     "RoundVF", "RoundVD",
@@ -4331,6 +4432,18 @@ void MatchRule::output(FILE *fp) {
   fprintf(fp,"\n   nesting depth = %d\n", _depth);
   if (_result) fprintf(fp,"   Result Type = %s", _result);
   fprintf(fp,"\n");
+}
+
+void MatchRule::forms_do(FormClosure* f) {
+  // keep sync with MatchNode::forms_do
+  f->do_form_by_name(_name);
+  if (_lChild) f->do_form(_lChild);
+  if (_rChild) f->do_form(_rChild);
+
+  // handle next rule
+  if (_next) {
+    f->do_form(_next);
+  }
 }
 
 //------------------------------Attribute--------------------------------------

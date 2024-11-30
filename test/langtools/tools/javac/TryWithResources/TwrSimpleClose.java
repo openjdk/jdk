@@ -26,12 +26,8 @@
  * @bug 8194978
  * @summary Verify than an appropriate number of close method invocations is generated.
  * @library /tools/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox TwrSimpleClose
  * @run main TwrSimpleClose
  */
@@ -57,10 +53,10 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
 
 import toolbox.ToolBox;
 
@@ -102,10 +98,10 @@ public class TwrSimpleClose {
             }
 
             byte[] data = fm.classBytes.values().iterator().next();
-            ClassModel cf = Classfile.of().parse(new ByteArrayInputStream(data).readAllBytes());
+            ClassModel cf = ClassFile.of().parse(new ByteArrayInputStream(data).readAllBytes());
 
             for (MethodModel m : cf.methods()) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {
                     if (ce instanceof InvokeInstruction ins && ins.opcode() == Opcode.INVOKEVIRTUAL) {
                         MemberRefEntry method = ins.method();

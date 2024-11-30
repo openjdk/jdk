@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.IOException;
 import java.lang.annotation.Repeatable;
@@ -60,7 +60,7 @@ public abstract class LocalVariableTestBase extends TestBase {
     public LocalVariableTestBase(Class<?> clazz) {
         this.clazz = clazz;
         try {
-            this.classFile = Classfile.of().parse(getClassFile(clazz).toPath());
+            this.classFile = ClassFile.of().parse(getClassFile(clazz).toPath());
         } catch (IOException e) {
             throw new IllegalArgumentException("Can't read classfile for specified class", e);
         }
@@ -104,7 +104,7 @@ public abstract class LocalVariableTestBase extends TestBase {
             String mName = m.methodName().stringValue();
             if (methodName.equals(mName)) {
                 System.out.println("Testing local variable table in method " + mName);
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElse(null);
                 assert code_attribute != null;
                 List<? extends VariableTable> variableTables = getVariableTables(code_attribute);
                 generalLocalVariableTableCheck(variableTables);

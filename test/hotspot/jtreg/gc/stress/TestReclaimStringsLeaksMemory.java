@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,14 +55,14 @@ public class TestReclaimStringsLeaksMemory {
     public static void main(String[] args) throws Exception {
         ArrayList<String> baseargs = new ArrayList<>(Arrays.asList("-Xms256M",
                                                                    "-Xmx256M",
-                                                                   "-Xlog:gc*,stringtable*=debug:gc.log",
+                                                                   "-Xlog:gc*,stringtable*=debug,oopstorage+blocks=debug:gc.log",
                                                                    "-XX:NativeMemoryTracking=summary",
                                                                    "-XX:+UnlockDiagnosticVMOptions",
                                                                    "-XX:+PrintNMTStatistics" ));
         baseargs.addAll(Arrays.asList(args));
         baseargs.add(GCTest.class.getName());
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(baseargs);
-        verifySymbolMemoryUsageNotTooHigh(new OutputAnalyzer(pb.start()));
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(baseargs);
+        verifySymbolMemoryUsageNotTooHigh(output);
     }
 
     private static void verifySymbolMemoryUsageNotTooHigh(OutputAnalyzer output) throws Exception {

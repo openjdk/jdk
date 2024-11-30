@@ -242,11 +242,14 @@ public class SequenceInputStream extends InputStream {
         if (getClass() == SequenceInputStream.class) {
             long transferred = 0;
             while (in != null) {
+                long numTransferred = in.transferTo(out);
+                // increment the total transferred byte count
+                // only if we haven't already reached the Long.MAX_VALUE
                 if (transferred < Long.MAX_VALUE) {
                     try {
-                        transferred = Math.addExact(transferred, in.transferTo(out));
+                        transferred = Math.addExact(transferred, numTransferred);
                     } catch (ArithmeticException ignore) {
-                        return Long.MAX_VALUE;
+                        transferred = Long.MAX_VALUE;
                     }
                 }
                 nextStream();

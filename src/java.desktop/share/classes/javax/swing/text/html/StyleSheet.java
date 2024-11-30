@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,53 @@
  */
 package javax.swing.text.html;
 
-import sun.swing.SwingUtilities2;
-import java.util.*;
-import java.awt.*;
-import java.io.*;
-import java.net.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Shape;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.EmptyStackException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Stack;
+import java.util.StringTokenizer;
+import java.util.Vector;
+
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.UIManager;
-import javax.swing.border.*;
+import javax.swing.border.BevelBorder;
+import javax.swing.border.Border;
 import javax.swing.event.ChangeListener;
-import javax.swing.text.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.View;
+
+import sun.swing.SwingUtilities2;
 
 /**
  * Support for defining the visual characteristics of
@@ -688,7 +724,7 @@ public class StyleSheet extends StyleContext {
      * to return an AttributeSet that provides some sort of
      * attribute conversion.
      *
-     * @param a The set of attributes to be represented in the
+     * @param a The set of attributes to be represented in
      *  the compact form.
      */
     protected SmallAttributeSet createSmallAttributeSet(AttributeSet a) {
@@ -704,7 +740,7 @@ public class StyleSheet extends StyleContext {
      * to return a MutableAttributeSet that provides some sort of
      * attribute conversion.
      *
-     * @param a The set of attributes to be represented in the
+     * @param a The set of attributes to be represented in
      *  the larger form.
      */
     protected MutableAttributeSet createLargeAttributeSet(AttributeSet a) {
@@ -2137,7 +2173,7 @@ public class StyleSheet extends StyleContext {
         /**
          * Returns a string that represents the value
          * of the HTML.Attribute.TYPE attribute.
-         * If this attributes is not defined, then
+         * If this attributes is not defined,
          * then the type defaults to "disc" unless
          * the tag is on Ordered list.  In the case
          * of the latter, the default type is "decimal".
@@ -2355,7 +2391,7 @@ public class StyleSheet extends StyleContext {
             // Position shape to the middle of the html text.
             int gap = isLeftToRight ? - (bulletgap + size/3) : (aw + bulletgap);
             int x = ax + gap;
-            int y = Math.max(ay, ay + (int)Math.ceil(ah/2));
+            int y = Math.max(ay, ay + ah/2);
 
             if (type == CSS.Value.SQUARE) {
                 g.drawRect(x, y, size/3, size/3);
@@ -2817,10 +2853,31 @@ public class StyleSheet extends StyleContext {
             return doGetAttribute(key);
         }
 
+        /**
+         * Merges the current value of the 'text-decoration' property
+         * with the value from parent.
+         */
+        private Object getTextDecoration(Object value) {
+            AttributeSet parent = getResolveParent();
+            if (parent == null) {
+                return value;
+            }
+
+            Object parentValue = parent.getAttribute(CSS.Attribute.TEXT_DECORATION);
+            return parentValue == null
+                   ? value
+                   : CSS.mergeTextDecoration(value + "," + parentValue);
+        }
+
         Object doGetAttribute(Object key) {
             Object retValue = super.getAttribute(key);
             if (retValue != null) {
-                return retValue;
+                if (key != CSS.Attribute.TEXT_DECORATION) {
+                    return retValue;
+                } else {
+                    // Merge current value with parent
+                    return getTextDecoration(retValue);
+                }
             }
 
             if (key == CSS.Attribute.FONT_SIZE) {

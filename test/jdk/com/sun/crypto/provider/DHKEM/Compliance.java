@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@
  * @bug 8297878
  * @summary Key Encapsulation Mechanism API
  * @library /test/lib
+ * @build java.base/com.sun.crypto.provider.EvenKEMImpl
  * @modules java.base/com.sun.crypto.provider
+ * @run main/othervm Compliance
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
@@ -45,18 +47,19 @@ import java.util.function.Consumer;
 
 import com.sun.crypto.provider.DHKEM;
 
+import static com.sun.crypto.provider.EvenKEMImpl.isEven;
+
 public class Compliance {
 
     public static void main(String[] args) throws Exception {
         basic();
         conform();
         determined();
-        try {
-            Security.insertProviderAt(new ProviderImpl(), 1);
-            delayed();
-        } finally {
-            Security.removeProvider("XP");
-        }
+        // Patch an alternate DHKEM in SunEC which is ahead of SunJCE
+        // in security provider listing.
+        Security.getProvider("SunEC")
+                .put("KEM.DHKEM", "com.sun.crypto.provider.EvenKEMImpl");
+        delayed();
     }
 
     // Encapsulated conformance checks
@@ -220,34 +223,6 @@ public class Compliance {
         return enc2;
     }
 
-    public static class ProviderImpl extends Provider {
-        ProviderImpl() {
-            super("XP", "1", "XP");
-            put("KEM.DHKEM", "Compliance$KEMImpl");
-        }
-    }
-
-    static boolean isEven(Key k) {
-        return Arrays.hashCode(k.getEncoded()) % 2 == 0;
-    }
-
-    public static class KEMImpl extends DHKEM {
-
-        @Override
-        public EncapsulatorSpi engineNewEncapsulator(PublicKey pk, AlgorithmParameterSpec spec, SecureRandom secureRandom)
-                throws InvalidAlgorithmParameterException, InvalidKeyException {
-            if (!isEven(pk)) throw new InvalidKeyException("Only accept even keys");
-            return super.engineNewEncapsulator(pk, spec, secureRandom);
-        }
-
-        @Override
-        public DecapsulatorSpi engineNewDecapsulator(PrivateKey sk, AlgorithmParameterSpec spec)
-                throws InvalidAlgorithmParameterException, InvalidKeyException {
-            if (!isEven(sk)) throw new InvalidKeyException("Only accept even keys");
-            return super.engineNewDecapsulator(sk, spec);
-        }
-    }
-
     // Ensure delayed provider selection
     static void delayed() throws Exception {
         KeyPairGenerator g = KeyPairGenerator.getInstance("X25519");
@@ -266,7 +241,7 @@ public class Compliance {
         KEM.Encapsulator eodd = kem.newEncapsulator(odd);
         KEM.Encapsulator eeven = kem.newEncapsulator(even);
         Asserts.assertEQ(eodd.providerName(), "SunJCE");
-        Asserts.assertEQ(eeven.providerName(), "XP");
+        Asserts.assertEQ(eeven.providerName(), "SunEC");
     }
 
     static ECPublicKey badECKey() {

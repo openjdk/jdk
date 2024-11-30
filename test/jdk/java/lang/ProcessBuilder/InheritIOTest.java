@@ -25,6 +25,7 @@
  * @test
  * @bug 8023130 8166026
  * @summary Unit test for java.lang.ProcessBuilder inheritance of standard output and standard error streams
+ * @requires vm.flagless
  * @library /test/lib
  * @build jdk.test.lib.process.*
  * @run testng InheritIOTest

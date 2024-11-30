@@ -47,7 +47,7 @@ public class TestProcessStart {
     public static void main(String[] args) throws Throwable {
 
         try (Recording recording = new Recording()) {
-            recording.enable(EVENT_NAME);
+            recording.enable(EVENT_NAME).withStackTrace();
             recording.start();
             List<String> commandList = new ArrayList<>();
             if (Platform.isWindows()) {
@@ -74,6 +74,7 @@ public class TestProcessStart {
                 Events.assertField(event, "pid").equal(p.pid());
                 Events.assertField(event, "directory").equal(pb.directory().toString());
                 Events.assertField(event, "command").equal(command.toString());
+                Events.assertTopFrame(event, TestProcessStart.class, "main");
             }
         }
     }

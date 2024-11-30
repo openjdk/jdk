@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ public class HeapFilter extends DebugeeClass {
         log = new Log(out, argHandler);
         testObjects = new Object[]{new TaggedClass(),
                                    new UntaggedClass()};
-        log.enableVerbose(true);
         log.display("Verifying reachable objects.");
         status = checkStatus(status);
         testObjects = null;

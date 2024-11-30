@@ -27,6 +27,8 @@ default: build
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include JavaCompilation.gmk
 
 TARGETS :=

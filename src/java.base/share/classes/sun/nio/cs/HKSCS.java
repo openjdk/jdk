@@ -355,6 +355,7 @@ public class HKSCS {
                 return encodeBufferLoop(src, dst);
         }
 
+        @SuppressWarnings("this-escape")
         private byte[] repl = replacement();
         protected void implReplaceWith(byte[] newReplacement) {
             repl = newReplacement;

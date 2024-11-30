@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
 
 #include "gc/g1/g1BatchedTask.hpp"
-#include "gc/g1/g1EvacFailure.hpp"
 
 class FreeCSetStats;
 
@@ -40,12 +39,12 @@ class G1ParScanThreadStateSet;
 // - Recalculate Used (s)
 // - Sample Collection Set Candidates (s)
 // - Clear Card Table
-// - Restore retained regions (on evacuation failure)
+// - Restore evac failure regions (on evacuation failure)
 class G1PostEvacuateCollectionSetCleanupTask1 : public G1BatchedTask {
   class MergePssTask;
   class RecalculateUsedTask;
   class SampleCollectionSetCandidatesTask;
-  class RestoreRetainedRegionsTask;
+  class RestoreEvacFailureRegionsTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask1(G1ParScanThreadStateSet* per_thread_states,
@@ -57,7 +56,6 @@ public:
 // - Update Derived Pointers (s)
 // - Clear Retained Region Data (on evacuation failure)
 // - Redirty Logged Cards
-// - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
 // - Resize TLABs
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
@@ -68,7 +66,6 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
 
   class ProcessEvacuationFailedRegionsTask;
   class RedirtyLoggedCardsTask;
-  class RestorePreservedMarksTask;
   class FreeCollectionSetTask;
   class ResizeTLABsTask;
 

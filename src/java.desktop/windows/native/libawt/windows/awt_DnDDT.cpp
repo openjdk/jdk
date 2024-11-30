@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,13 @@
 #include <shellapi.h>
 #include <memory.h>
 
+// awt_ole.h must be included before awt.h, since the latter redefines malloc
+// to Do_Not_Use_Malloc, etc, and that will break awt_ole.h.
+#include "awt_ole.h"
 #include "awt_DataTransferer.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDropTargetContextPeer.h"
 #include "awt_Container.h"
-#include "awt_ole.h"
 #include "awt_Toolkit.h"
 #include "awt_DnDDT.h"
 #include "awt_DnDDS.h"
@@ -40,9 +42,9 @@
 // forwards
 
 extern "C" {
-    DWORD __cdecl convertActionsToDROPEFFECT(jint actions);
-    jint  __cdecl convertDROPEFFECTToActions(DWORD effects);
-    DWORD __cdecl mapModsToDROPEFFECT(DWORD, DWORD);
+    DWORD convertActionsToDROPEFFECT(jint actions);
+    jint  convertDROPEFFECTToActions(DWORD effects);
+    DWORD mapModsToDROPEFFECT(DWORD, DWORD);
 } // extern "C"
 
 
@@ -93,7 +95,7 @@ AwtDropTarget::~AwtDropTarget() {
  * QueryInterface
  */
 
-HRESULT __stdcall AwtDropTarget::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
+HRESULT AwtDropTarget::QueryInterface(REFIID riid, void __RPC_FAR *__RPC_FAR *ppvObject) {
     if ( IID_IUnknown == riid ||
          IID_IDropTarget == riid )
     {
@@ -109,7 +111,7 @@ HRESULT __stdcall AwtDropTarget::QueryInterface(REFIID riid, void __RPC_FAR *__R
  * AddRef
  */
 
-ULONG __stdcall AwtDropTarget::AddRef() {
+ULONG AwtDropTarget::AddRef() {
     return (ULONG)++m_refs;
 }
 
@@ -117,7 +119,7 @@ ULONG __stdcall AwtDropTarget::AddRef() {
  * Release
  */
 
-ULONG __stdcall AwtDropTarget::Release() {
+ULONG AwtDropTarget::Release() {
     int refs;
 
     if ((refs = --m_refs) == 0) delete this;
@@ -139,7 +141,7 @@ static void ScaleDown(POINT &cp, HWND m_window) {
  * DragEnter
  */
 
-HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
+HRESULT AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
     AwtToolkit::GetInstance().isDnDTargetActive = TRUE;
     if (NULL != m_pIDropTargetHelper) {
@@ -223,7 +225,7 @@ HRESULT __stdcall AwtDropTarget::DragEnter(IDataObject __RPC_FAR *pDataObj, DWOR
  * DragOver
  */
 
-HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
+HRESULT AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->DragOver(
@@ -280,7 +282,7 @@ HRESULT __stdcall AwtDropTarget::DragOver(DWORD grfKeyState, POINTL pt, DWORD __
  * DragLeave
  */
 
-HRESULT __stdcall AwtDropTarget::DragLeave() {
+HRESULT AwtDropTarget::DragLeave() {
     TRY_NO_VERIFY;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->DragLeave();
@@ -321,7 +323,7 @@ HRESULT __stdcall AwtDropTarget::DragLeave() {
  * Drop
  */
 
-HRESULT __stdcall AwtDropTarget::Drop(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
+HRESULT AwtDropTarget::Drop(IDataObject __RPC_FAR *pDataObj, DWORD grfKeyState, POINTL pt, DWORD __RPC_FAR *pdwEffect) {
     TRY;
     if (NULL != m_pIDropTargetHelper) {
         m_pIDropTargetHelper->Drop(
@@ -1001,7 +1003,7 @@ jobject AwtDropTarget::GetData(jlong fmt)
  *
  */
 
-int __cdecl AwtDropTarget::_compar(const void* first, const void* second) {
+int AwtDropTarget::_compar(const void* first, const void* second) {
     FORMATETC *fp = (FORMATETC *)first;
     FORMATETC *sp = (FORMATETC *)second;
 

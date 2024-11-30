@@ -28,14 +28,17 @@
 #include "gc/shenandoah/shenandoahGC.hpp"
 
 class VM_ShenandoahDegeneratedGC;
+class ShenandoahGeneration;
 
 class ShenandoahDegenGC : public ShenandoahGC {
   friend class VM_ShenandoahDegeneratedGC;
 private:
   const ShenandoahDegenPoint  _degen_point;
+  ShenandoahGeneration* _generation;
+  bool _abbreviated;
 
 public:
-  ShenandoahDegenGC(ShenandoahDegenPoint degen_point);
+  ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation);
   bool collect(GCCause::Cause cause);
 
 private:
@@ -48,6 +51,7 @@ private:
   void op_finish_mark();
   void op_prepare_evacuation();
   void op_cleanup_early();
+
   void op_evacuate();
   void op_init_updaterefs();
   void op_updaterefs();
@@ -58,7 +62,12 @@ private:
   void op_degenerated_futile();
   void op_degenerated_fail();
 
+  // Turns this degenerated cycle into a full gc without leaving the safepoint
+  void upgrade_to_full();
+
   const char* degen_event_message(ShenandoahDegenPoint point) const;
+
+  bool has_in_place_promotions(const ShenandoahHeap* heap) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHDEGENERATEDGC_HPP

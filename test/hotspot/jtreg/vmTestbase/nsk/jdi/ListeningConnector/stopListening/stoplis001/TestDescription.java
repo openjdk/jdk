@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,10 @@
  *       argument map is the same with the one given for the previous
  *       ListeningConnector.startListening() invocation.
  *
- *     NOTE: this test is tagged "nonconcurrent" because it uses the default
- *     "javadebug" shmem file, as do some other tests.
- *
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdi.ListeningConnector.stopListening.stoplis001
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ListeningConnector.stopListening.stoplis001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

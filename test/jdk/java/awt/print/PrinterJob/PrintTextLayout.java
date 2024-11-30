@@ -25,7 +25,7 @@
  * @test
  * @bug 4480930
  * @summary TextLayout prints as filled shapes
- * @author prr
+ * @key printer
  * @run main/manual PrintTextLayout
  */
 

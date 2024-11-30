@@ -330,6 +330,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ movq(r13, xtmp4);
   __ movq(r12, xtmp3);
 
+  __ vzeroupper();
   __ leave();
   __ ret(0);
 

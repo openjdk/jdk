@@ -1,0 +1,11 @@
+SUNWprivate_1.1 {
+  global:
+    *;
+
+  local:
+    __bss_start;
+    _edata;
+    _end;
+    _fini;
+    _init;
+};

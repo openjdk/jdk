@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,10 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import jdk.internal.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.util.function.Consumer;
 
-import jdk.internal.classfile.Classfile;
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageLocation;
 
@@ -172,6 +173,11 @@ public class JImageValidator {
 
     public static void validate(Path jimage, List<String> expectedLocations,
             List<String> unexpectedPaths) throws IOException {
+        validate(jimage, expectedLocations, unexpectedPaths, _ -> {});
+    }
+
+    public static void validate(Path jimage, List<String> expectedLocations,
+            List<String> unexpectedPaths, Consumer<byte[]> classChecker) throws IOException {
         BasicImageReader reader = BasicImageReader.open(jimage);
         // Validate expected locations
         List<String> seenLocations = new ArrayList<>();
@@ -195,6 +201,7 @@ public class JImageValidator {
                         throw new IOException("NULL RESOURCE " + s);
                     }
                     readClass(r);
+                    classChecker.accept(r);
                 } catch (IOException ex) {
                     System.err.println(s + " ERROR " + ex);
                     throw ex;
@@ -222,11 +229,11 @@ public class JImageValidator {
         return moduleExecutionTime;
     }
 
-    public static void readClass(byte[] clazz) throws IOException{
-        var errors = Classfile.of().parse(clazz).verify(
+    public static void readClass(byte[] clazz) throws IOException {
+        var errors = ClassFile.of(
                 //resolution of all classes as interfaces cancels assignability verification
-                cls -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface(),
-                null);
+                ClassFile.ClassHierarchyResolverOption.of(cls -> ClassHierarchyResolver.ClassHierarchyInfo.ofInterface()))
+                .verify(clazz);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

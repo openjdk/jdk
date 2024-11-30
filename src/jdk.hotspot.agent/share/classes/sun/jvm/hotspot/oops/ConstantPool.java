@@ -227,7 +227,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return Double.longBitsToDouble(getLongAt(index));
   }
 
-  public int getFieldOrMethodAt(int which) {
+  public int getFieldOrMethodAt(int which, int code) {
     if (DEBUG) {
       System.err.print("ConstantPool.getFieldOrMethodAt(" + which + "): new index = ");
     }
@@ -237,7 +237,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
       i = which;
     } else {
       // change byte-ordering and go via cache
-      i = cache.getEntryAt(0xFFFF & which).getConstantPoolIndex();
+      i = to_cp_index(which, code);
     }
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getTagAt(i).isFieldOrMethod(), "Corrupted constant pool");
@@ -269,10 +269,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
       case Bytecodes._invokespecial:
       case Bytecodes._invokestatic:
       case Bytecodes._invokevirtual:
-        // TODO: handle resolved method entries with new structure
+        return getCache().getMethodEntryAt(index).getConstantPoolIndex();
       default:
-        // change byte-ordering and go via cache
-        return remapInstructionOperandFromCache(index);
+        throw new InternalError("Unexpected bytecode: " + code);
     }
   }
 
@@ -307,24 +306,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return getSymbolAt(signatureIndex);
   }
 
-  public static boolean isInvokedynamicIndex(int i) { return (i < 0); }
-
-  public static int  decodeInvokedynamicIndex(int i) { Assert.that(isInvokedynamicIndex(i),  ""); return ~i; }
-
-  // The invokedynamic points at a CP cache entry.  This entry points back
-  // at the original CP entry (CONSTANT_InvokeDynamic) and also (via f2) at an entry
-  // in the resolved_references array (which provides the appendix argument).
-  public int invokedynamicCPCacheIndex(int index) {
-    Assert.that(isInvokedynamicIndex(index), "should be a invokedynamic index");
-    return decodeInvokedynamicIndex(index);
-  }
-
-  ConstantPoolCacheEntry invokedynamicCPCacheEntryAt(int index) {
-    // decode index that invokedynamic points to.
-    int cpCacheIndex = invokedynamicCPCacheIndex(index);
-    return getCache().getEntryAt(cpCacheIndex);
-  }
-
   public int uncachedGetNameAndTypeRefIndexAt(int cp_index) {
     if (getTagAt(cp_index).isInvokeDynamic() || getTagAt(cp_index).isDynamicConstant()) {
       int poolIndex = invokeDynamicNameAndTypeRefIndexAt(cp_index);
@@ -339,14 +320,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   public int getNameAndTypeRefIndexAt(int index, int code) {
     return uncachedGetNameAndTypeRefIndexAt(to_cp_index(index, code));
-  }
-
-  private int remapInstructionOperandFromCache(int operand) {
-    int cpc_index = operand;
-    // DEBUG_ONLY(cpc_index -= CPCACHE_INDEX_TAG);
-    // assert((int)(u2)cpc_index == cpc_index, "clean u2");
-    int member_index = getCache().getEntryAt(cpc_index).getConstantPoolIndex();
-    return member_index;
   }
 
   public int invokeDynamicNameAndTypeRefIndexAt(int which) {
@@ -372,15 +345,15 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   // returns null, if not resolved.
-  public Klass getFieldOrMethodKlassRefAt(int which) {
-    int refIndex = getFieldOrMethodAt(which);
+  public Klass getFieldOrMethodKlassRefAt(int which, int code) {
+    int refIndex = getFieldOrMethodAt(which, code);
     int klassIndex = extractLowShortFromInt(refIndex);
     return getKlassAt(klassIndex);
   }
 
   // returns null, if not resolved.
   public Method getMethodRefAt(int which, int code) {
-    Klass klass = getFieldOrMethodKlassRefAt(which);
+    Klass klass = getFieldOrMethodKlassRefAt(which, code);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which, code);
     Symbol sig  = getSignatureRefAt(which, code);
@@ -393,7 +366,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
 
   // returns null, if not resolved.
   public Field getFieldRefAt(int which, int code) {
-    InstanceKlass klass = (InstanceKlass)getFieldOrMethodKlassRefAt(which);
+    InstanceKlass klass = (InstanceKlass)getFieldOrMethodKlassRefAt(which, code);
     if (klass == null) return null;
     Symbol name = getNameRefAt(which, code);
     Symbol sig  = getSignatureRefAt(which, code);

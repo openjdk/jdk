@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,9 @@ import java.lang.ref.Reference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -182,7 +184,8 @@ public class VThreadInHeapDump {
             theApp = new VThreadInHeapDumpTarg();
 
             List<String> extraVMArgs = new ArrayList<>();
-            extraVMArgs.add("-Djdk.virtualThreadScheduler.parallelism=1");
+            extraVMArgs.add("-Djdk.virtualThreadScheduler.maxPoolSize=1");
+            extraVMArgs.add("-Xlog:heapdump");
             extraVMArgs.addAll(Arrays.asList(extraOptions));
             LingeredApp.startApp(theApp, extraVMArgs.toArray(new String[0]));
 
@@ -222,11 +225,22 @@ public class VThreadInHeapDump {
             // Log all threads with stack traces and stack references.
             List<ThreadObject> threads = snapshot.getThreads();
             List<Root> roots = Collections.list(snapshot.getRoots());
+            // And detect thread object duplicates.
+            Set<Long> uniqueThreads = new HashSet<>();
+
             log("Threads:");
             for (ThreadObject thread: threads) {
+                JavaHeapObject threadObj = snapshot.findThing(thread.getId());
+                JavaClass threadClass = threadObj.getClazz();
                 StackTrace st = thread.getStackTrace();
                 StackFrame[] frames = st.getFrames();
-                log("thread " + thread.getIdString() + ", " + frames.length + " frames");
+                log("thread " + thread.getIdString() + " (" + threadClass.getName() + "), " + frames.length + " frames");
+
+                if (uniqueThreads.contains(thread.getId())) {
+                    log(" - ERROR: duplicate");
+                } else {
+                    uniqueThreads.add(thread.getId());
+                }
 
                 List<Root> stackRoots = findStackRoot(roots, thread);
                 for (int i = 0; i < frames.length; i++) {
@@ -249,11 +263,14 @@ public class VThreadInHeapDump {
                 }
             }
 
+            if (threads.size() != uniqueThreads.size()) {
+                throw new RuntimeException("Thread duplicates detected (" + (threads.size() - uniqueThreads.size()) + ")");
+            }
+
             // Verify objects from thread stacks are dumped.
             test(snapshot, VThreadInHeapDumpTarg.VThreadMountedReferenced.class);
             test(snapshot, VThreadInHeapDumpTarg.PThreadReferenced.class);
-            // Dumping of unmounted vthreads is not implemented yet
-            //test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
+            test(snapshot, VThreadInHeapDumpTarg.VThreadUnmountedReferenced.class);
         }
 
     }

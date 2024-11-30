@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "nmt/mallocHeader.inline.hpp"
+#include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
@@ -38,12 +39,13 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
-#include "services/mallocLimit.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
 void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
@@ -59,10 +61,27 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
   }
 }
 
+void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+  // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
+  // copy is going on, because their size is adjusted using this
+  // buffer in make_adjustment().
+  ThreadCritical tc;
+  s->_all_mallocs = _all_mallocs;
+  size_t total_size = 0;
+  size_t total_count = 0;
+  for (int index = 0; index < mt_number_of_tags; index ++) {
+    s->_malloc[index] = _malloc[index];
+    total_size += s->_malloc[index].malloc_size();
+    total_count += s->_malloc[index].malloc_count();
+  }
+  // malloc counters may be updated concurrently
+  s->_all_mallocs.set_size_and_count(total_size, total_count);
+}
+
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
-  for (int index = 0; index < mt_number_of_types; index ++) {
+  for (int index = 0; index < mt_number_of_tags; index ++) {
     amount += _malloc[index].arena_size();
   }
   return amount;
@@ -72,28 +91,32 @@ size_t MallocMemorySnapshot::total_arena() const {
 // from total chunks to get total free chunk size
 void MallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
-  int chunk_idx = NMTUtil::flag_to_index(mtChunk);
+  int chunk_idx = NMTUtil::tag_to_index(mtChunk);
   _malloc[chunk_idx].record_free(arena_size);
   _all_mallocs.deallocate(arena_size);
 }
 
 void MallocMemorySummary::initialize() {
-  assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
-  ::new ((void*)_snapshot)MallocMemorySnapshot();
   MallocLimitHandler::initialize(MallocLimit);
 }
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
@@ -105,16 +128,22 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
   return true;
 }
 
-bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
-
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
+bool MallocMemorySummary::category_limit_reached(MemTag mem_tag, size_t s, size_t so_far, const malloclimit* limit) {
 
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
-  NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+  NMTUtil::tag_to_enum_name(mem_tag), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
@@ -138,20 +167,20 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 }
 
 // Record a malloc memory allocation
-void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
+void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_tag,
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");
   assert(malloc_base != nullptr, "precondition");
 
-  MallocMemorySummary::record_malloc(size, flags);
+  MallocMemorySummary::record_malloc(size, mem_tag);
   uint32_t mst_marker = 0;
   if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::allocation_at(stack, size, &mst_marker, flags);
+    MallocSiteTable::allocation_at(stack, size, &mst_marker, mem_tag);
   }
 
   // Uses placement global new operator to initialize malloc header
-  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, flags, mst_marker);
+  MallocHeader* const header = ::new (malloc_base)MallocHeader(size, mem_tag, mst_marker);
   void* const memblock = (void*)((char*)malloc_base + sizeof(MallocHeader));
 
   // The alignment check: 8 bytes alignment for 32 bit systems.
@@ -163,7 +192,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   {
     const MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
     assert(header2->size() == size, "Wrong size");
-    assert(header2->flags() == flags, "Wrong flags");
+    assert(header2->mem_tag() == mem_tag, "Wrong memory tag");
   }
 #endif
 
@@ -184,7 +213,7 @@ void* MallocTracker::record_free_block(void* memblock) {
 }
 
 void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
-  MallocMemorySummary::record_free(free_info.size, free_info.flags);
+  MallocMemorySummary::record_free(free_info.size, free_info.mem_tag);
   if (MemTracker::tracking_level() == NMT_detail) {
     MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
   }
@@ -197,6 +226,8 @@ void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
 // crash, even when encountering unmapped memory.
 bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
   assert(MemTracker::enabled(), "NMT not enabled");
+
+#if !INCLUDE_ASAN
 
   address addr = (address)p;
 
@@ -212,7 +243,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
     const uint8_t* const end = here - (0x1000 + sizeof(MallocHeader)); // stop searching after 4k
     for (; here >= end; here -= smallest_possible_alignment) {
       // JDK-8306561: cast to a MallocHeader needs to guarantee it can reside in readable memory
-      if (!os::is_readable_range(here, here + sizeof(MallocHeader) - 1)) {
+      if (!os::is_readable_range(here, here + sizeof(MallocHeader))) {
         // Probably OOB, give up
         break;
       }
@@ -265,15 +296,18 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
                  p2i(p), where,
                  (block->is_dead() ? "dead" : "live"),
                  p2i(block + 1), // lets print the payload start, not the header
-                 block->size(), NMTUtil::flag_to_enum_name(block->flags()));
+                 block->size(), NMTUtil::tag_to_enum_name(block->mem_tag()));
     if (MemTracker::tracking_level() == NMT_detail) {
       NativeCallStack ncs;
-      if (block->get_stack(ncs)) {
+      if (MallocSiteTable::access_stack(ncs, *block)) {
         ncs.print_on(st);
         st->cr();
       }
     }
     return true;
   }
+
+#endif // !INCLUDE_ASAN
+
   return false;
 }

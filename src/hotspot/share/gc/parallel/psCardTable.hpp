@@ -73,7 +73,7 @@ class PSCardTable: public CardTable {
                                       _preprocessing_active_workers(0) {}
 
   // Scavenge support
-  void pre_scavenge(HeapWord* old_gen_bottom, uint active_workers);
+  void pre_scavenge(uint active_workers);
   // Scavenge contents of stripes with the given index.
   void scavenge_contents_parallel(ObjectStartArray* start_array,
                                   HeapWord* old_gen_bottom,

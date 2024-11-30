@@ -431,7 +431,7 @@ static cmsFormatterAlphaFn FormattersAlpha[6][6] = {
 
 // This function computes the distance from each component to the next one in bytes.
 static
-void ComputeIncrementsForChunky(cmsUInt32Number Format,
+cmsBool ComputeIncrementsForChunky(cmsUInt32Number Format,
                                 cmsUInt32Number ComponentStartingOrder[],
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
@@ -445,7 +445,7 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
 
        // Sanity check
        if (total_chans <= 0 || total_chans >= cmsMAXCHANNELS)
-           return;
+           return FALSE;
 
         memset(channels, 0, sizeof(channels));
 
@@ -482,13 +482,15 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
 
        for (i = 0; i < extra; i++)
               ComponentStartingOrder[i] = channels[i + nchannels];
+
+       return TRUE;
 }
 
 
 
 //  On planar configurations, the distance is the stride added to any non-negative
 static
-void ComputeIncrementsForPlanar(cmsUInt32Number Format,
+cmsBool ComputeIncrementsForPlanar(cmsUInt32Number Format,
                                 cmsUInt32Number BytesPerPlane,
                                 cmsUInt32Number ComponentStartingOrder[],
                                 cmsUInt32Number ComponentPointerIncrements[])
@@ -502,7 +504,7 @@ void ComputeIncrementsForPlanar(cmsUInt32Number Format,
 
        // Sanity check
        if (total_chans <= 0 || total_chans >= cmsMAXCHANNELS)
-           return;
+           return FALSE;
 
        memset(channels, 0, sizeof(channels));
 
@@ -538,28 +540,28 @@ void ComputeIncrementsForPlanar(cmsUInt32Number Format,
 
        for (i = 0; i < extra; i++)
               ComponentStartingOrder[i] = channels[i + nchannels];
+
+       return TRUE;
 }
 
 
 
 // Dispatcher por chunky and planar RGB
 static
-void  ComputeComponentIncrements(cmsUInt32Number Format,
+cmsBool ComputeComponentIncrements(cmsUInt32Number Format,
                                  cmsUInt32Number BytesPerPlane,
                                  cmsUInt32Number ComponentStartingOrder[],
                                  cmsUInt32Number ComponentPointerIncrements[])
 {
        if (T_PLANAR(Format)) {
 
-              ComputeIncrementsForPlanar(Format,  BytesPerPlane, ComponentStartingOrder, ComponentPointerIncrements);
+              return ComputeIncrementsForPlanar(Format,  BytesPerPlane, ComponentStartingOrder, ComponentPointerIncrements);
        }
        else {
-              ComputeIncrementsForChunky(Format,  ComponentStartingOrder, ComponentPointerIncrements);
+              return ComputeIncrementsForChunky(Format,  ComponentStartingOrder, ComponentPointerIncrements);
        }
 
 }
-
-
 
 // Handles extra channels copying alpha if requested by the flags
 void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
@@ -595,8 +597,10 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
         return;
 
     // Compute the increments
-    ComputeComponentIncrements(p->InputFormat, Stride->BytesPerPlaneIn, SourceStartingOrder, SourceIncrements);
-    ComputeComponentIncrements(p->OutputFormat, Stride->BytesPerPlaneOut, DestStartingOrder, DestIncrements);
+    if (!ComputeComponentIncrements(p->InputFormat, Stride->BytesPerPlaneIn, SourceStartingOrder, SourceIncrements))
+        return;
+    if (!ComputeComponentIncrements(p->OutputFormat, Stride->BytesPerPlaneOut, DestStartingOrder, DestIncrements))
+        return;
 
     // Check for conversions 8, 16, half, float, dbl
     copyValueFn = _cmsGetFormatterAlpha(p->ContextID, p->InputFormat, p->OutputFormat);

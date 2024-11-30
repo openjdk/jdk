@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author or authors.
+ * Copyright (c) 2002-2021, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,17 +8,17 @@
  */
 package jdk.internal.org.jline.reader.impl;
 
-import jdk.internal.org.jline.reader.Candidate;
-import jdk.internal.org.jline.reader.CompletingParsedLine;
-import jdk.internal.org.jline.reader.CompletionMatcher;
-import jdk.internal.org.jline.reader.LineReader;
-import jdk.internal.org.jline.utils.AttributedString;
-
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import jdk.internal.org.jline.reader.Candidate;
+import jdk.internal.org.jline.reader.CompletingParsedLine;
+import jdk.internal.org.jline.reader.CompletionMatcher;
+import jdk.internal.org.jline.reader.LineReader;
+import jdk.internal.org.jline.utils.AttributedString;
 
 public class CompletionMatcherImpl implements CompletionMatcher {
     protected Predicate<String> exact;
@@ -26,8 +26,7 @@ public class CompletionMatcherImpl implements CompletionMatcher {
     private Map<String, List<Candidate>> matching;
     private boolean caseInsensitive;
 
-    public CompletionMatcherImpl() {
-    }
+    public CompletionMatcherImpl() {}
 
     protected void reset(boolean caseInsensitive) {
         this.caseInsensitive = caseInsensitive;
@@ -37,8 +36,13 @@ public class CompletionMatcherImpl implements CompletionMatcher {
     }
 
     @Override
-    public void compile(Map<LineReader.Option, Boolean> options, boolean prefix, CompletingParsedLine line
-            , boolean caseInsensitive, int errors, String originalGroupName) {
+    public void compile(
+            Map<LineReader.Option, Boolean> options,
+            boolean prefix,
+            CompletingParsedLine line,
+            boolean caseInsensitive,
+            int errors,
+            String originalGroupName) {
         reset(caseInsensitive);
         defaultMatchers(options, prefix, line, caseInsensitive, errors, originalGroupName);
     }
@@ -47,15 +51,18 @@ public class CompletionMatcherImpl implements CompletionMatcher {
     public List<Candidate> matches(List<Candidate> candidates) {
         matching = Collections.emptyMap();
         Map<String, List<Candidate>> sortedCandidates = sort(candidates);
-        for (Function<Map<String, List<Candidate>>,
-                Map<String, List<Candidate>>> matcher : matchers) {
+        for (Function<Map<String, List<Candidate>>, Map<String, List<Candidate>>> matcher : matchers) {
             matching = matcher.apply(sortedCandidates);
             if (!matching.isEmpty()) {
                 break;
             }
         }
-        return !matching.isEmpty() ? matching.entrySet().stream().flatMap(e -> e.getValue().stream()).distinct().collect(Collectors.toList())
-                                   : new ArrayList<>();
+        return !matching.isEmpty()
+                ? matching.entrySet().stream()
+                        .flatMap(e -> e.getValue().stream())
+                        .distinct()
+                        .collect(Collectors.toList())
+                : new ArrayList<>();
     }
 
     @Override
@@ -63,10 +70,12 @@ public class CompletionMatcherImpl implements CompletionMatcher {
         if (matching == null) {
             throw new IllegalStateException();
         }
-        return matching.values().stream().flatMap(Collection::stream)
+        return matching.values().stream()
+                .flatMap(Collection::stream)
                 .filter(Candidate::complete)
                 .filter(c -> exact.test(c.value()))
-                .findFirst().orElse(null);
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -84,8 +93,13 @@ public class CompletionMatcherImpl implements CompletionMatcher {
     /**
      * Default JLine matchers
      */
-    protected void defaultMatchers(Map<LineReader.Option, Boolean> options, boolean prefix, CompletingParsedLine line
-            , boolean caseInsensitive, int errors, String originalGroupName) {
+    protected void defaultMatchers(
+            Map<LineReader.Option, Boolean> options,
+            boolean prefix,
+            CompletingParsedLine line,
+            boolean caseInsensitive,
+            int errors,
+            String originalGroupName) {
         // Find matchers
         // TODO: glob completion
         String wd = line.word();
@@ -94,8 +108,7 @@ public class CompletionMatcherImpl implements CompletionMatcher {
         if (prefix) {
             matchers = new ArrayList<>(Arrays.asList(
                     simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).startsWith(wp)),
-                    simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).contains(wp))
-            ));
+                    simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).contains(wp))));
             if (LineReader.Option.COMPLETE_MATCHER_TYPO.isSet(options)) {
                 matchers.add(typoMatcher(wp, errors, caseInsensitive, originalGroupName));
             }
@@ -109,14 +122,14 @@ public class CompletionMatcherImpl implements CompletionMatcher {
                 Pattern p1 = Pattern.compile(Pattern.quote(wp) + ".*" + Pattern.quote(ws) + ".*");
                 Pattern p2 = Pattern.compile(".*" + Pattern.quote(wp) + ".*" + Pattern.quote(ws) + ".*");
                 matchers = new ArrayList<>(Arrays.asList(
-                        simpleMatcher(s -> p1.matcher(caseInsensitive ? s.toLowerCase() : s).matches()),
-                        simpleMatcher(s -> p2.matcher(caseInsensitive ? s.toLowerCase() : s).matches())
-                ));
+                        simpleMatcher(s -> p1.matcher(caseInsensitive ? s.toLowerCase() : s)
+                                .matches()),
+                        simpleMatcher(s -> p2.matcher(caseInsensitive ? s.toLowerCase() : s)
+                                .matches())));
             } else {
                 matchers = new ArrayList<>(Arrays.asList(
                         simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).startsWith(wdi)),
-                        simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).contains(wdi))
-                ));
+                        simpleMatcher(s -> (caseInsensitive ? s.toLowerCase() : s).contains(wdi))));
             }
             if (LineReader.Option.COMPLETE_MATCHER_CAMELCASE.isSet(options)) {
                 matchers.add(simpleMatcher(s -> camelMatch(wd, 0, s, 0)));
@@ -128,18 +141,20 @@ public class CompletionMatcherImpl implements CompletionMatcher {
         }
     }
 
-    protected Function<Map<String, List<Candidate>>,
-            Map<String, List<Candidate>>> simpleMatcher(Predicate<String> predicate) {
+    protected Function<Map<String, List<Candidate>>, Map<String, List<Candidate>>> simpleMatcher(
+            Predicate<String> predicate) {
         return m -> m.entrySet().stream()
                 .filter(e -> predicate.test(e.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    protected Function<Map<String, List<Candidate>>,
-            Map<String, List<Candidate>>> typoMatcher(String word, int errors, boolean caseInsensitive, String originalGroupName) {
+    protected Function<Map<String, List<Candidate>>, Map<String, List<Candidate>>> typoMatcher(
+            String word, int errors, boolean caseInsensitive, String originalGroupName) {
         return m -> {
             Map<String, List<Candidate>> map = m.entrySet().stream()
-                    .filter(e -> ReaderUtils.distance(word, caseInsensitive ? e.getKey().toLowerCase() : e.getKey()) < errors)
+                    .filter(e -> ReaderUtils.distance(
+                                    word, caseInsensitive ? e.getKey().toLowerCase() : e.getKey())
+                            < errors)
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             if (map.size() > 1) {
                 map.computeIfAbsent(word, w -> new ArrayList<>())
@@ -178,7 +193,8 @@ public class CompletionMatcherImpl implements CompletionMatcher {
         Map<String, List<Candidate>> sortedCandidates = new HashMap<>();
         for (Candidate candidate : candidates) {
             sortedCandidates
-                    .computeIfAbsent(AttributedString.fromAnsi(candidate.value()).toString(), s -> new ArrayList<>())
+                    .computeIfAbsent(
+                            AttributedString.fromAnsi(candidate.value()).toString(), s -> new ArrayList<>())
                     .add(candidate);
         }
         return sortedCandidates;
@@ -206,5 +222,4 @@ public class CompletionMatcherImpl implements CompletionMatcher {
         }
         return new String(s1, 0, len);
     }
-
 }

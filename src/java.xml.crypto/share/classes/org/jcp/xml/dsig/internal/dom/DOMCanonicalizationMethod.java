@@ -33,10 +33,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.w3c.dom.Element;
+import javax.xml.crypto.Data;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.crypto.dsig.TransformException;
+import javax.xml.crypto.dsig.TransformService;
 
-import javax.xml.crypto.*;
-import javax.xml.crypto.dsig.*;
+import org.w3c.dom.Element;
 
 /**
  * DOM-based abstract implementation of CanonicalizationMethod.

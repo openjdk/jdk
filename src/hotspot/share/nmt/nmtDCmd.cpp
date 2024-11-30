@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,8 +137,10 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
       output()->print_cr("No detail baseline for comparison");
     }
   } else if (_statistics.value()) {
-    if (check_detail_tracking_level(output())) {
+    if (MemTracker::enabled()) {
       MemTracker::tuning_statistics(output());
+    } else {
+      output()->print_cr("Native memory tracking is not enabled");
     }
   } else {
     ShouldNotReachHere();

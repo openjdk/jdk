@@ -28,6 +28,14 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  public:
+  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
+  void fast_lock_lightweight(ConditionRegister flag, Register obj, Register box,
+                             Register tmp1, Register tmp2, Register tmp3);
+  void fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
+                               Register tmp1, Register tmp2, Register tmp3);
+
+  void load_narrow_klass_compact_c2(Register dst, Register obj, int disp);
+
   // Intrinsics for CompactStrings
   // Compress char[] to byte[] by compressing 16 bytes at once.
   void string_compress_16(Register src, Register dst, Register cnt,

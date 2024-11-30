@@ -34,11 +34,10 @@ class UpcallLinker {
 private:
   static JavaThread* maybe_attach_and_get_thread();
 
-  static JavaThread* on_entry(UpcallStub::FrameData* context, jobject receiver);
+  static JavaThread* on_entry(UpcallStub::FrameData* context);
   static void on_exit(UpcallStub::FrameData* context);
 public:
-  static address make_upcall_stub(jobject mh, Method* entry,
-                                  BasicType* in_sig_bt, int total_in_args,
+  static address make_upcall_stub(jobject mh, Symbol* signature,
                                   BasicType* out_sig_bt, int total_out_args,
                                   BasicType ret_type,
                                   jobject jabi, jobject jconv,

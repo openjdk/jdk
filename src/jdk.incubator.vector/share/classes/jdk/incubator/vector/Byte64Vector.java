@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class Byte64Vector extends ByteVector {
                                    VectorMask<Byte> m) {
         return (Byte64Vector)
             super.selectFromTemplate((Byte64Vector) v,
-                                     (Byte64Mask) m);  // specialize
+                                     Byte64Mask.class, (Byte64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte64Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte64Vector)
+            super.selectFromTemplate((Byte64Vector) v1, (Byte64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -844,6 +851,13 @@ final class Byte64Vector extends ByteVector {
             return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
+        @Override
+        @ForceInline
+        public Byte64Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Byte64Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Byte64Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
+        }
+
         @ForceInline
         @Override
         public Byte64Shuffle rearrange(VectorShuffle<Byte> shuffle) {
@@ -877,6 +891,12 @@ final class Byte64Vector extends ByteVector {
         return super.fromArray0Template(Byte64Mask.class, a, offset, (Byte64Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ByteVector fromArray0(byte[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Byte> m) {
+        return super.fromArray0Template(Byte64Mask.class, a, offset, indexMap, mapOffset, (Byte64Mask) m);
+    }
 
 
     @ForceInline

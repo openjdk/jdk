@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "memory/allocation.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -45,6 +45,7 @@
 #include "runtime/init.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
@@ -463,23 +464,14 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
       } else if (waitingToLockMonitor != nullptr) {
         if (waitingToLockMonitor->has_owner()) {
           currentThread = Threads::owning_thread_from_monitor(t_list, waitingToLockMonitor);
-          if (currentThread == nullptr) {
-            // This function is called at a safepoint so the JavaThread
-            // that owns waitingToLockMonitor should be findable, but
-            // if it is not findable, then the previous currentThread is
-            // blocked permanently. We record this as a deadlock.
-            num_deadlocks++;
-
-            // add this cycle to the deadlocks list
-            if (deadlocks == nullptr) {
-              deadlocks = cycle;
-            } else {
-              last->set_next(cycle);
-            }
-            last = cycle;
-            cycle = new DeadlockCycle();
-            break;
-          }
+          // If currentThread is null we would like to know if the owner
+          // is an unmounted vthread (no JavaThread*), because if it's not,
+          // it would mean the previous currentThread is blocked permanently
+          // and we should record this as a deadlock. Since there is currently
+          // no fast way to determine if the owner is indeed an unmounted
+          // vthread we never record this as a deadlock. Note: unless there
+          // is a bug in the VM, or a thread exits without releasing monitors
+          // acquired through JNI, null should imply an unmounted vthread owner.
         }
       } else {
         if (concurrent_locks) {
@@ -687,7 +679,7 @@ ThreadStackTrace::~ThreadStackTrace() {
   }
 }
 
-void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHashtable* table, bool full) {
+void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsView* monitors, bool full) {
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
 
   if (_thread->has_last_Java_frame()) {
@@ -695,7 +687,7 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHasht
                         RegisterMap::UpdateMap::include,
                         RegisterMap::ProcessFrames::include,
                         RegisterMap::WalkContinuation::skip);
-
+    ResourceMark rm(VMThread::vm_thread());
     // If full, we want to print both vthread and carrier frames
     vframe* start_vf = !full && _thread->is_vthread_mounted()
       ? _thread->carrier_last_java_vframe(&reg_map)
@@ -723,17 +715,7 @@ void ThreadStackTrace::dump_stack_at_safepoint(int maxDepth, ObjectMonitorsHasht
     // Iterate inflated monitors and find monitors locked by this thread
     // that are not found in the stack, e.g. JNI locked monitors:
     InflatedMonitorsClosure imc(this);
-    if (table != nullptr) {
-      // Get the ObjectMonitors locked by the target thread, if any,
-      // and does not include any where owner is set to a stack lock
-      // address in the target thread:
-      ObjectMonitorsHashtable::PtrList* list = table->get_entry(_thread);
-      if (list != nullptr) {
-        ObjectSynchronizer::monitors_iterate(&imc, list, _thread);
-      }
-    } else {
-      ObjectSynchronizer::monitors_iterate(&imc, _thread);
-    }
+    monitors->visit(&imc, _thread);
   }
 }
 
@@ -988,9 +970,9 @@ ThreadSnapshot::~ThreadSnapshot() {
 }
 
 void ThreadSnapshot::dump_stack_at_safepoint(int max_depth, bool with_locked_monitors,
-                                             ObjectMonitorsHashtable* table, bool full) {
+                                             ObjectMonitorsView* monitors, bool full) {
   _stack_trace = new ThreadStackTrace(_thread, with_locked_monitors);
-  _stack_trace->dump_stack_at_safepoint(max_depth, table, full);
+  _stack_trace->dump_stack_at_safepoint(max_depth, monitors, full);
 }
 
 
@@ -1062,8 +1044,8 @@ void DeadlockCycle::print_on_with(ThreadsList * t_list, outputStream* st) const 
         // that owns waitingToLockMonitor should be findable, but
         // if it is not findable, then the previous currentThread is
         // blocked permanently.
-        st->print_cr("%s UNKNOWN_owner_addr=" PTR_FORMAT, owner_desc,
-                  p2i(waitingToLockMonitor->owner()));
+        st->print_cr("%s UNKNOWN_owner_addr=" INT64_FORMAT, owner_desc,
+                     waitingToLockMonitor->owner());
         continue;
       }
     } else {

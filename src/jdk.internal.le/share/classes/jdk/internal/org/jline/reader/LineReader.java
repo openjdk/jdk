@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author or authors.
+ * Copyright (c) 2002-2023, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -21,7 +21,7 @@ import jdk.internal.org.jline.utils.AttributedString;
 
 /** Read lines from the console, with input editing.
  *
- * <h3>Thread safety</h3>
+ * <h2>Thread safety</h2>
  * The <code>LineReader</code> implementations are not thread safe,
  * thus you should not attempt to use a single reader in several threads.
  * Any attempt to call one of the <code>readLine</code> call while one is
@@ -31,7 +31,7 @@ import jdk.internal.org.jline.utils.AttributedString;
  * {@link #printAbove(String)} or {@link #printAbove(AttributedString)} at
  * any time to allow text to be printed above the current prompt.
  *
- * <h3>Prompt strings</h3>
+ * <h2>Prompt strings</h2>
  * It is traditional for an interactive console-based program
  * to print a short prompt string to signal that the user is expected
  * to type a command.  JLine supports 3 kinds of prompt string:
@@ -81,7 +81,6 @@ import jdk.internal.org.jline.utils.AttributedString;
  * </dd>
  * </dl>
  */
-
 public interface LineReader {
 
     /**
@@ -284,6 +283,7 @@ public interface LineReader {
     String MAIN = "main";
     String EMACS = "emacs";
     String SAFE = ".safe";
+    String DUMB = "dumb";
     String MENU = "menu";
 
     //
@@ -301,6 +301,7 @@ public interface LineReader {
      * they are displayed in a list below the field to be completed
      */
     String MENU_LIST_MAX = "menu-list-max";
+
     String DISABLE_HISTORY = "disable-history";
     String DISABLE_COMPLETION = "disable-completion";
     String EDITING_MODE = "editing-mode";
@@ -317,18 +318,23 @@ public interface LineReader {
     String ORIGINAL_GROUP_NAME = "ORIGINAL_GROUP_NAME";
     /** Completion style for displaying groups name */
     String COMPLETION_STYLE_GROUP = "COMPLETION_STYLE_GROUP";
+
     String COMPLETION_STYLE_LIST_GROUP = "COMPLETION_STYLE_LIST_GROUP";
     /** Completion style for displaying the current selected item */
     String COMPLETION_STYLE_SELECTION = "COMPLETION_STYLE_SELECTION";
+
     String COMPLETION_STYLE_LIST_SELECTION = "COMPLETION_STYLE_LIST_SELECTION";
     /** Completion style for displaying the candidate description */
     String COMPLETION_STYLE_DESCRIPTION = "COMPLETION_STYLE_DESCRIPTION";
+
     String COMPLETION_STYLE_LIST_DESCRIPTION = "COMPLETION_STYLE_LIST_DESCRIPTION";
     /** Completion style for displaying the matching part of candidates */
     String COMPLETION_STYLE_STARTING = "COMPLETION_STYLE_STARTING";
+
     String COMPLETION_STYLE_LIST_STARTING = "COMPLETION_STYLE_LIST_STARTING";
     /** Completion style for displaying the list */
     String COMPLETION_STYLE_BACKGROUND = "COMPLETION_STYLE_BACKGROUND";
+
     String COMPLETION_STYLE_LIST_BACKGROUND = "COMPLETION_STYLE_LIST_BACKGROUND";
     /**
      * Set the template for prompts for secondary (continuation) lines.
@@ -389,6 +395,26 @@ public interface LineReader {
      * For shorter buffer sizes auto-suggestions are not resolved.
      */
     String SUGGESTIONS_MIN_BUFFER_SIZE = "suggestions-min-buffer-size";
+
+    /**
+     * Max number of times a command can be repeated.
+     */
+    String MAX_REPEAT_COUNT = "max-repeat-count";
+
+    /**
+     * Number of spaces to display a tabulation, the default is 4.
+     */
+    String TAB_WIDTH = "tab-width";
+
+    /**
+     * Name of inputrc to read at line reader creation time.
+     */
+    String INPUT_RC_FILE_NAME = "input-rc-file-name";
+
+    /**
+     * Prefix to automatically delegate variables to system properties
+     */
+    String SYSTEM_PROPERTY_PREFIX = "system-property-prefix";
 
     Map<String, KeyMap<Binding>> defaultKeyMaps();
 
@@ -469,8 +495,7 @@ public interface LineReader {
         EMPTY_WORD_OPTIONS(true),
 
         /** Disable the undo feature */
-        DISABLE_UNDO
-        ;
+        DISABLE_UNDO;
 
         private final boolean def;
 
@@ -611,7 +636,8 @@ public interface LineReader {
      * @throws EndOfFileException if an EOF has been found (using Ctrl-D for example)
      * @throws java.io.IOError in case of other i/o errors
      */
-    String readLine(String prompt, String rightPrompt, Character mask, String buffer) throws UserInterruptException, EndOfFileException;
+    String readLine(String prompt, String rightPrompt, Character mask, String buffer)
+            throws UserInterruptException, EndOfFileException;
 
     /**
      * Read a line from the <i>in</i> {@link InputStream}, and return the line
@@ -631,7 +657,8 @@ public interface LineReader {
      * @throws EndOfFileException if an EOF has been found (using Ctrl-D for example)
      * @throws java.io.IOError in case of other i/o errors
      */
-    String readLine(String prompt, String rightPrompt, MaskingCallback maskingCallback, String buffer) throws UserInterruptException, EndOfFileException;
+    String readLine(String prompt, String rightPrompt, MaskingCallback maskingCallback, String buffer)
+            throws UserInterruptException, EndOfFileException;
 
     /**
      * Prints a line above the prompt and redraw everything.
@@ -702,7 +729,7 @@ public interface LineReader {
     void runMacro(String macro);
 
     /**
-     * Read a mouse event when the {@link jdk.internal.org.jline.utils.InfoCmp.Capability#key_mouse} sequence
+     * Read a mouse event when the {@link org.jline.utils.InfoCmp.Capability#key_mouse} sequence
      * has just been read on the input stream.
      * Compared to {@link Terminal#readMouseEvent()}, this method takes into account keys
      * that have been pushed back using {@link #runMacro(String)}.
@@ -750,4 +777,9 @@ public interface LineReader {
     void setAutosuggestion(SuggestionType type);
 
     SuggestionType getAutosuggestion();
+
+    /**
+     * Clear any internal buffers.
+     */
+    void zeroOut();
 }

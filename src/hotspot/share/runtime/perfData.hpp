@@ -61,6 +61,9 @@ enum CounterNS {
   JAVA_THREADS,         // Threads System name spaces
   COM_THREADS,
   SUN_THREADS,
+  JAVA_THREADS_CPUTIME, // Thread CPU time name spaces
+  COM_THREADS_CPUTIME,
+  SUN_THREADS_CPUTIME,
   JAVA_PROPERTY,        // Java Property name spaces
   COM_PROPERTY,
   SUN_PROPERTY,
@@ -319,7 +322,8 @@ class PerfData : public CHeapObj<mtInternal> {
     // PerfData memory region. This redundancy is maintained for
     // security reasons as the PerfMemory region may be in shared
     // memory.
-    const char* name() { return _name; }
+    const char* name() const { return _name; }
+    bool name_equals(const char* name) const;
 
     // returns the variability classification associated with this item
     Variability variability() { return _v; }
@@ -576,7 +580,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
     PerfDataArray* _set;
 
     // method to search for a instrumentation object by name
-    static bool by_name(void* name, PerfData* pd);
+    static bool by_name(const char* name, PerfData* pd);
 
   protected:
     // we expose the implementation here to facilitate the clone
@@ -827,11 +831,20 @@ class PerfTraceTime : public StackObj {
 
   public:
     inline PerfTraceTime(PerfLongCounter* timerp) : _timerp(timerp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _t.start();
     }
 
-    ~PerfTraceTime();
+    const char* name() const {
+      assert(_timerp != nullptr, "sanity");
+      return _timerp->name();
+    }
+
+    ~PerfTraceTime() {
+      if (!UsePerfData || !_t.is_active()) { return; }
+      _t.stop();
+      _timerp->inc(_t.ticks());
+    }
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the
@@ -860,7 +873,7 @@ class PerfTraceTimedEvent : public PerfTraceTime {
 
   public:
     inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp): PerfTraceTime(timerp), _eventp(eventp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _eventp->inc();
     }
 

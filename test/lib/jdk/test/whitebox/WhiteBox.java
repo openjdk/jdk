@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,6 @@ public class WhiteBox {
    * untrusted code.
    */
   public synchronized static WhiteBox getWhiteBox() {
-    @SuppressWarnings("removal")
-    SecurityManager sm = System.getSecurityManager();
-    if (sm != null) {
-      sm.checkPermission(new WhiteBoxPermission("getInstance"));
-    }
     return instance;
   }
 
@@ -99,8 +94,15 @@ public class WhiteBox {
   }
 
   // Runtime
-  // Make sure class name is in the correct format
+
+  // Returns the potentially abridged form of `str` as it would be
+  // printed by the VM.
+  public native String printString(String str, int maxLength);
+
+  public native void lockAndStuckInSafepoint();
+
   public int countAliveClasses(String name) {
+    // Make sure class name is in the correct format
     return countAliveClasses0(name.replace('.', '/'));
   }
   private native int countAliveClasses0(String name);
@@ -119,6 +121,12 @@ public class WhiteBox {
     return isMonitorInflated0(obj);
   }
 
+  public native long getInUseMonitorCount();
+
+  public native int getLockStackCapacity();
+
+  public native boolean supportsRecursiveLightweightLocking();
+
   public native void forceSafepoint();
 
   public native void forceClassLoaderStatsSafepoint();
@@ -127,17 +135,6 @@ public class WhiteBox {
   public         long getConstantPool(Class<?> aClass) {
     Objects.requireNonNull(aClass);
     return getConstantPool0(aClass);
-  }
-
-  private native int getConstantPoolCacheIndexTag0();
-  public         int getConstantPoolCacheIndexTag() {
-    return getConstantPoolCacheIndexTag0();
-  }
-
-  private native int getConstantPoolCacheLength0(Class<?> aClass);
-  public         int getConstantPoolCacheLength(Class<?> aClass) {
-    Objects.requireNonNull(aClass);
-    return getConstantPoolCacheLength0(aClass);
   }
 
   private native Object[] getResolvedReferences0(Class<?> aClass);
@@ -167,6 +164,18 @@ public class WhiteBox {
   public         int getFieldCPIndex(Class<?> aClass, int index) {
     Objects.requireNonNull(aClass);
     return getFieldCPIndex0(aClass, index);
+  }
+
+  private native int getMethodEntriesLength0(Class<?> aClass);
+  public         int getMethodEntriesLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getMethodEntriesLength0(aClass);
+  }
+
+  private native int getMethodCPIndex0(Class<?> aClass, int index);
+  public         int getMethodCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getMethodCPIndex0(aClass, index);
   }
 
   private native int getIndyInfoLength0(Class<?> aClass);
@@ -521,19 +530,25 @@ public class WhiteBox {
   public native long metaspaceCapacityUntilGC();
   public native long metaspaceSharedRegionAlignment();
 
+  public native void cleanMetaspaces();
+
   // Metaspace Arena Tests
   public native long createMetaspaceTestContext(long commit_limit, long reserve_limit);
   public native void destroyMetaspaceTestContext(long context);
   public native void purgeMetaspaceTestContext(long context);
   public native void printMetaspaceTestContext(long context);
-  public native long getTotalCommittedWordsInMetaspaceTestContext(long context);
-  public native long getTotalUsedWordsInMetaspaceTestContext(long context);
+  public native long getTotalCommittedBytesInMetaspaceTestContext(long context);
+  public native long getTotalUsedBytesInMetaspaceTestContext(long context);
   public native long createArenaInTestContext(long context, boolean is_micro);
   public native void destroyMetaspaceTestArena(long arena);
-  public native long allocateFromMetaspaceTestArena(long arena, long word_size);
-  public native void deallocateToMetaspaceTestArena(long arena, long p, long word_size);
+  public native long allocateFromMetaspaceTestArena(long arena, long size);
+  public native void deallocateToMetaspaceTestArena(long arena, long p, long size);
 
   public native long maxMetaspaceAllocationSize();
+
+  // Word size measured in bytes
+  public native long wordSize();
+  public native long rootChunkWordSize();
 
   // Don't use these methods directly
   // Use jdk.test.whitebox.gc.GC class instead.
@@ -755,15 +770,13 @@ public class WhiteBox {
   public native void printOsInfo();
   public native long hostPhysicalMemory();
   public native long hostPhysicalSwap();
+  public native int hostCPUs();
 
   // Decoder
   public native void disableElfSectionCache();
 
   // Resolved Method Table
   public native long resolvedMethodItemsCount();
-
-  // Protection Domain Table
-  public native int protectionDomainRemovedCount();
 
   public native int getKlassMetadataSize(Class<?> c);
 
@@ -784,7 +797,12 @@ public class WhiteBox {
 
   public native void unlockCritical();
 
+  public native void pinObject(Object o);
+
+  public native void unpinObject(Object o);
+
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 
   public native void preTouchMemory(long addr, long size);
+  public native long rss();
 }

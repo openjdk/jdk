@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 /*
  * @test
  * @summary It tests (almost) all keytool behaviors with NSS.
- * @library /test/lib /test/jdk/sun/security/pkcs11
+ * @library /test/lib /test/jdk/sun/security/pkcs11 /java/security/testlibrary
  * @modules java.base/sun.security.tools.keytool
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -58,8 +58,9 @@ public class NssTest {
 
         Path dbPath = srcPath.getParent().getParent()
                 .resolve("pkcs11").resolve("nss").resolve("db");
-        Files.copy(dbPath.resolve("cert8.db"), Paths.get("cert8.db"));
-        Files.copy(dbPath.resolve("key3.db"), Paths.get("key3.db"));
-        Files.copy(dbPath.resolve("secmod.db"), Paths.get("secmod.db"));
+        Path destDir = Path.of( "tmpdb");
+        Files.createDirectory(destDir);
+        Files.copy(dbPath.resolve("cert9.db"), destDir.resolve("cert9.db"));
+        Files.copy(dbPath.resolve("key4.db"), destDir.resolve("key4.db"));
     }
 }

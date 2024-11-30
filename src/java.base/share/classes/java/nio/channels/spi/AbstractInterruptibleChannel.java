@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.InterruptibleChannel;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import sun.nio.ch.Interruptible;
-
 
 /**
  * Base implementation class for interruptible channels.
@@ -89,10 +89,26 @@ public abstract class AbstractInterruptibleChannel
     private final Object closeLock = new Object();
     private volatile boolean closed;
 
+    // invoked if a Thread is interrupted when blocked in an I/O op
+    private final Interruptible interruptor;
+
     /**
      * Initializes a new instance of this class.
      */
-    protected AbstractInterruptibleChannel() { }
+    protected AbstractInterruptibleChannel() {
+        this.interruptor = new Interruptible() {
+            @Override
+            public void interrupt(Thread target) {
+                AbstractInterruptibleChannel.this.trySetTarget(target);
+            }
+            @Override
+            public void postInterrupt() {
+                try {
+                    AbstractInterruptibleChannel.this.close();
+                } catch (IOException x) { }
+            }
+        };
+    }
 
     /**
      * Closes this channel.
@@ -139,8 +155,15 @@ public abstract class AbstractInterruptibleChannel
 
     // -- Interruption machinery --
 
-    private Interruptible interruptor;
-    private volatile Thread interrupted;
+    private static final Unsafe U = Unsafe.getUnsafe();
+    private static final long INTERRUPTED_TARGET =
+        U.objectFieldOffset(AbstractInterruptibleChannel.class, "interruptedTarget");
+    private volatile Object interruptedTarget;  // Thread or placeholder object
+
+    private void trySetTarget(Thread target) {
+        // can't use VarHandle here as CAS may park on first usage
+        U.compareAndSetReference(this, INTERRUPTED_TARGET, null, target);
+    }
 
     /**
      * Marks the beginning of an I/O operation that might block indefinitely.
@@ -151,24 +174,12 @@ public abstract class AbstractInterruptibleChannel
      * closing and interruption for this channel.  </p>
      */
     protected final void begin() {
-        if (interruptor == null) {
-            interruptor = new Interruptible() {
-                    public void interrupt(Thread target) {
-                        synchronized (closeLock) {
-                            if (closed)
-                                return;
-                            closed = true;
-                            interrupted = target;
-                            try {
-                                AbstractInterruptibleChannel.this.implCloseChannel();
-                            } catch (IOException x) { }
-                        }
-                    }};
-        }
         blockedOn(interruptor);
         Thread me = Thread.currentThread();
-        if (me.isInterrupted())
+        if (me.isInterrupted()) {
             interruptor.interrupt(me);
+            interruptor.postInterrupt();
+        }
     }
 
     /**
@@ -194,10 +205,14 @@ public abstract class AbstractInterruptibleChannel
         throws AsynchronousCloseException
     {
         blockedOn(null);
-        Thread interrupted = this.interrupted;
-        if (interrupted != null && interrupted == Thread.currentThread()) {
-            this.interrupted = null;
-            throw new ClosedByInterruptException();
+        Object interruptedTarget = this.interruptedTarget;
+        if (interruptedTarget != null) {
+            interruptor.postInterrupt();
+            if (interruptedTarget == Thread.currentThread()) {
+                // replace with dummy object to avoid retaining reference to this thread
+                this.interruptedTarget = new Object();
+                throw new ClosedByInterruptException();
+            }
         }
         if (!completed && closed)
             throw new AsynchronousCloseException();

@@ -59,8 +59,7 @@ public class TestPLABOutput {
             GCTest.class.getName()
             };
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(arguments);
 
         output.shouldHaveExitValue(0);
 

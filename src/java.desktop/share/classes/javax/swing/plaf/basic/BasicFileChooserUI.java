@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,6 +643,9 @@ public class BasicFileChooserUI extends FileChooserUI {
         public void mouseClicked(MouseEvent evt) {
             // Note: we can't depend on evt.getSource() because of backward
             // compatibility
+            if (!getFileChooser().isEnabled()) {
+                return;
+            }
             if (list != null &&
                 SwingUtilities.isLeftMouseButton(evt) &&
                 (evt.getClickCount()%2 == 0)) {
@@ -693,7 +696,6 @@ public class BasicFileChooserUI extends FileChooserUI {
             if(!evt.getValueIsAdjusting()) {
                 JFileChooser chooser = getFileChooser();
                 FileSystemView fsv = chooser.getFileSystemView();
-                @SuppressWarnings("unchecked")
                 JList<?> list = (JList)evt.getSource();
 
                 int fsm = chooser.getFileSelectionMode();

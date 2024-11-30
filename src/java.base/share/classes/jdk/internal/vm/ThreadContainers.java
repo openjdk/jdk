@@ -208,7 +208,7 @@ public class ThreadContainers {
      * Root container that "contains" all platform threads not started in a container.
      * It may include all virtual threads started directly with the Thread API.
      */
-    private static abstract class RootContainer extends ThreadContainer {
+    private abstract static class RootContainer extends ThreadContainer {
         protected RootContainer() {
             super(true);
         }

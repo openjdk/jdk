@@ -30,6 +30,7 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "runtime/atomic.hpp"
 
 inline Klass* ConstantPool::resolved_klass_at(int which) const {  // Used by Compiler
@@ -51,8 +52,24 @@ inline int ConstantPool::resolved_field_entries_length() const {
     return cache()->resolved_field_entries_length();
 }
 
+inline ResolvedMethodEntry* ConstantPool::resolved_method_entry_at(int method_index) {
+    return cache()->resolved_method_entry_at(method_index);
+}
+
+inline int ConstantPool::resolved_method_entries_length() const {
+    return cache()->resolved_method_entries_length();
+}
+
+inline oop ConstantPool::appendix_if_resolved(int method_index) const {
+  ResolvedMethodEntry* entry = cache()->resolved_method_entry_at(method_index);
+  if (!entry->has_appendix())
+    return nullptr;
+  const int ref_index = entry->resolved_references_index();
+  return resolved_reference_at(ref_index);
+}
+
 inline u2 ConstantPool::invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-  return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
+  return cache()->resolved_indy_entry_at(indy_index)->constant_pool_index();
 }
 
 inline ResolvedIndyEntry* ConstantPool::resolved_indy_entry_at(int index) {
@@ -65,5 +82,9 @@ inline int ConstantPool::resolved_indy_entries_length() const {
 
 inline oop ConstantPool::resolved_reference_from_indy(int index) const {
   return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
+}
+
+inline oop ConstantPool::resolved_reference_from_method(int index) const {
+  return resolved_references()->obj_at(cache()->resolved_method_entry_at(index)->resolved_references_index());
 }
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP

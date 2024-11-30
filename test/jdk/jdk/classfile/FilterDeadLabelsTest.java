@@ -27,15 +27,15 @@
  * @run junit FilterDeadLabelsTest
  */
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.function.Consumer;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.Signature;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Signature;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -58,7 +58,7 @@ class FilterDeadLabelsTest {
 
     @Test
     void testFilterDeadLabels() {
-        var cc = Classfile.of(Classfile.DeadLabelsOption.DROP_DEAD_LABELS);
+        var cc = ClassFile.of(ClassFile.DeadLabelsOption.DROP_DEAD_LABELS);
         var code = cc.parse(cc.build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
@@ -66,15 +66,15 @@ class FilterDeadLabelsTest {
                 }))).methods().get(0).code().get();
 
         assertTrue(code.exceptionHandlers().isEmpty());
-        code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).ifPresent(a -> assertTrue(a.localVariables().isEmpty()));
-        code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).ifPresent(a -> assertTrue(a.localVariableTypes().isEmpty()));
-        code.findAttribute(Attributes.CHARACTER_RANGE_TABLE).ifPresent(a -> assertTrue(a.characterRangeTable().isEmpty()));
+        code.findAttribute(Attributes.localVariableTable()).ifPresent(a -> assertTrue(a.localVariables().isEmpty()));
+        code.findAttribute(Attributes.localVariableTypeTable()).ifPresent(a -> assertTrue(a.localVariableTypes().isEmpty()));
+        code.findAttribute(Attributes.characterRangeTable()).ifPresent(a -> assertTrue(a.characterRangeTable().isEmpty()));
     }
 
     @ParameterizedTest
     @MethodSource("deadLabelFragments")
     void testThrowOnDeadLabels(Consumer<CodeBuilder> fragment) {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("cls"), clb ->
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
                     fragment.accept(cob);

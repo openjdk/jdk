@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -841,7 +841,7 @@ AWT_ASSERT_APPKIT_THREAD;
         isDisabled = !awtWindow.isEnabled;
     }
 
-    if (menuBar == nil) {
+    if (menuBar == nil && [ApplicationDelegate sharedDelegate] != nil) {
         menuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
         isDisabled = NO;
     }
@@ -1024,7 +1024,11 @@ AWT_ASSERT_APPKIT_THREAD;
             NSRect contentRect = [self.nsWindow contentRectForFrameRect:frame];
 
             // Check if the click happened in the non-client area (title bar)
-            if (p.y >= (frame.origin.y + contentRect.size.height)) {
+            // Also, non-client area includes the edges at left, right and botton of frame
+            if ((p.y >= (frame.origin.y + contentRect.size.height)) ||
+                (p.x >= (frame.origin.x + contentRect.size.width - 3)) ||
+                (fabs(frame.origin.x - p.x) < 3) ||
+                (fabs(frame.origin.y - p.y) < 3)) {
                 JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
                 jobject platformWindow = (*env)->NewLocalRef(env, self.javaPlatformWindow);
                 if (platformWindow != NULL) {
@@ -1230,7 +1234,7 @@ JNI_COCOA_ENTER(env);
         window.javaMenuBar = menuBar;
 
         CMenuBar* actualMenuBar = menuBar;
-        if (actualMenuBar == nil) {
+        if (actualMenuBar == nil && [ApplicationDelegate sharedDelegate] != nil) {
             actualMenuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
         }
 
@@ -1697,6 +1701,7 @@ JNI_COCOA_ENTER(env);
             int shieldLevel = CGShieldingWindowLevel();
             window.preFullScreenLevel = [nsWindow level];
             [nsWindow setLevel: shieldLevel];
+            [nsWindow makeKeyAndOrderFront: nil];
 
             NSRect screenRect = [[nsWindow screen] frame];
             [nsWindow setFrame:screenRect display:YES];

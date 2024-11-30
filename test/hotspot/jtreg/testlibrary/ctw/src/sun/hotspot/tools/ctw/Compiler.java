@@ -41,9 +41,15 @@ import java.util.stream.Collectors;
  */
 public class Compiler {
 
+    // Call GC after compiling as many methods. This would remove the stale methods.
+    // This threshold should balance the GC overhead and the cost of keeping lots
+    // of stale methods around.
+    private static final long GC_METHOD_THRESHOLD = Long.getLong("gcMethodThreshold", 100);
+
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
-    private static final AtomicLong METHOD_COUNT = new AtomicLong(0L);
+    private static final AtomicLong METHOD_COUNT = new AtomicLong();
+    private static final AtomicLong METHODS_SINCE_LAST_GC = new AtomicLong();
 
     private Compiler() { }
 
@@ -83,6 +89,21 @@ public class Compiler {
             executor.execute(new CompileMethodCommand(id, e));
         }
         METHOD_COUNT.addAndGet(methodCount);
+
+        // See if we need to schedule a GC
+        while (true) {
+            long current = METHODS_SINCE_LAST_GC.get();
+            long update = current + methodCount;
+            if (update >= GC_METHOD_THRESHOLD) {
+                update = 0;
+            }
+            if (METHODS_SINCE_LAST_GC.compareAndSet(current, update)) {
+                if (update == 0) {
+                    executor.execute(() -> System.gc());
+                }
+                break;
+            }
+        }
     }
 
     private static void preloadClasses(String className, long id,

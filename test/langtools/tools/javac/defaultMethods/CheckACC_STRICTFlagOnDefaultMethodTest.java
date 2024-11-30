@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,21 @@
  * @test
  * @bug 8012723
  * @summary strictfp interface misses strictfp modifer on default method
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
- * @compile -source 16 -target 16 CheckACC_STRICTFlagOnDefaultMethodTest.java
+ * @library /tools/lib /test/lib
+ * @enablePreview
  * @run main CheckACC_STRICTFlagOnDefaultMethodTest
  */
 
-import jdk.internal.classfile.*;
-import java.io.File;
-import java.io.IOException;
+import jdk.test.lib.compiler.CompilerUtils;
+import toolbox.ToolBox;
+
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.IOException;
 
 public class CheckACC_STRICTFlagOnDefaultMethodTest {
     private static final String AssertionErrorMessage =
@@ -47,18 +47,29 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
         "please check output";
     private static final String offendingMethodErrorMessage =
         "Method %s of class %s doesn't have the ACC_STRICT access flag";
+    private static final String SOURCE = """
+            strictfp interface StrictfpInterface {
+                default void default_interface_method() {}
+                static void static_interface_method() {}
+            }
+            """;
 
     private List<String> errors = new ArrayList<>();
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args)
+            throws IOException {
         new CheckACC_STRICTFlagOnDefaultMethodTest().run();
     }
 
-    private void run() throws IOException {
-        String testClasses = System.getProperty("test.classes");
-        check(testClasses,
-                "CheckACC_STRICTFlagOnDefaultMethodTest$StrictfpInterface.class");
-        if (errors.size() > 0) {
+    private void run()
+            throws IOException {
+        Path src = Path.of("src");
+        Path out = Path.of("out");
+        ToolBox toolBox = new ToolBox();
+        toolBox.writeJavaFiles(src, SOURCE);
+        CompilerUtils.compile(src, out, "--release", "16");
+        check(out, "StrictfpInterface.class");
+        if (!errors.isEmpty()) {
             for (String error: errors) {
                 System.err.println(error);
             }
@@ -66,12 +77,12 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
         }
     }
 
-    void check(String dir, String... fileNames) throws IOException {
+    void check(Path dir, String... fileNames) throws IOException {
         for (String fileName : fileNames) {
-            ClassModel classFileToCheck = Classfile.of().parse(new File(dir, fileName).toPath());
+            ClassModel classFileToCheck = ClassFile.of().parse(dir.resolve(fileName));
 
             for (MethodModel method : classFileToCheck.methods()) {
-                if ((method.flags().flagsMask() & Classfile.ACC_STRICT) == 0) {
+                if ((method.flags().flagsMask() & ClassFile.ACC_STRICT) == 0) {
                     errors.add(String.format(offendingMethodErrorMessage,
                             method.methodName().stringValue(),
                             classFileToCheck.thisClass().asInternalName()));
@@ -79,10 +90,4 @@ public class CheckACC_STRICTFlagOnDefaultMethodTest {
             }
         }
     }
-
-    strictfp interface StrictfpInterface {
-        default void default_interface_method() {}
-        static void static_interface_method() {}
-    }
-
 }

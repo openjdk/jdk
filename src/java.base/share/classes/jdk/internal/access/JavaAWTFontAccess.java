@@ -23,11 +23,11 @@
  * questions.
  */
 
+package jdk.internal.access;
+
 /**
  * SharedSecrets interface used for the access from java.text.Bidi
  */
-
-package jdk.internal.access;
 
 public interface JavaAWTFontAccess {
 

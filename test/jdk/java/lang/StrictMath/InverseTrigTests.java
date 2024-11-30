@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,9 @@ public class InverseTrigTests {
 
         failures += testAgainstTranslitCommon();
 
-        failures += testAgainstTranslitAsin();
-        failures += testAgainstTranslitAcos();
-        failures += testAgainstTranslitAtan();
+        failures += testAsin();
+        failures += testAcos();
+        failures += testAtan();
 
         if (failures > 0) {
             System.err.println("Testing the inverse trig functions incurred "
@@ -113,7 +113,7 @@ public class InverseTrigTests {
     /**
      * Test StrictMath.asin against transliteration port of asin.
      */
-    private static int testAgainstTranslitAsin() {
+    private static int testAsin() {
         int failures = 0;
 
         // Probe near decision points in the FDLIBM algorithm.
@@ -132,13 +132,25 @@ public class InverseTrigTests {
             failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, InverseTrigTest.ASIN);
         }
 
+        // Empirical worst-case points in other libraries with larger
+        // worst-case error than FDLIBM
+        double [][] testCases = {
+            {-0x1.00d44cccfa99p-1,  -0x1.0d0a6a0e79e15p-1},
+            {-0x1.0239000439deep-1, -0x1.0ea71ea2a7cd7p-1},
+            {+0x1.0479b37d95e5cp-1,  0x1.1143fafdc5b2cp-1},
+            {-0x1.2ef2481799c7cp-1, -0x1.442d10aa50906p-1},
+        };
+        for (double[] testCase : testCases) {
+            failures += testAsinCase(testCase[0], testCase[1]);
+        }
+
         return failures;
     }
 
     /**
      * Test StrictMath.acos against transliteration port of acos.
      */
-    private static int testAgainstTranslitAcos() {
+    private static int testAcos() {
         int failures = 0;
 
         // Probe near decision points in the FDLIBM algorithm.
@@ -154,13 +166,26 @@ public class InverseTrigTests {
             failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, InverseTrigTest.ACOS);
         }
 
+        // Empirical worst-case points in other libraries with larger
+        // worst-case error than FDLIBM
+        double [][] testCases = {
+            {+0x1.35b03e336a82bp-1,  0x1.d7a84ec2f6707p-1},
+            {-0x1.8d313198a2e03p-53, 0x1.921fb54442d19p0},
+            {-0x1.010fd0ad6aa41p-1,  0x1.0c63a8cd23befp1},
+            {+0x1.251869c3f7881p-1,  0x1.ec2ff0c102684p-1},
+            {+0x1.266637a3d2bbcp-1,  0x1.ea98637533648p-1},
+        };
+        for (double[] testCase : testCases) {
+            failures += testAcosCase(testCase[0], testCase[1]);
+        }
+
         return failures;
     }
 
     /**
      * Test StrictMath.atan against transliteration port of atan
      */
-    private static int testAgainstTranslitAtan() {
+    private static int testAtan() {
         int failures = 0;
 
         // Probe near decision points in the FDLIBM algorithm.
@@ -177,7 +202,21 @@ public class InverseTrigTests {
         };
 
         for (double testPoint : decisionPoints) {
-            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000,  InverseTrigTest.ATAN);
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, InverseTrigTest.ATAN);
+        }
+
+        // Empirical worst-case points in other libraries with larger
+        // worst-case error than FDLIBM
+        double [][] testCases = {
+            {+0x1.0103fc4ebaaa8p+1,  0x1.1bd5c375c97b5p0},
+            {+0x1.01e0be37af68fp+1,  0x1.1c2d45ec82765p0},
+            {-0x1.60370d15396b7p-1, -0x1.348461c347fd9p-1},
+            {+0x1.032b4811f3dc5p+0,  0x1.9545fd233ee14p-1},
+            {+0x1.52184b1b9bd9bp+0,  0x1.d86de33c93814p-1},
+            {-0x1.0684fa9fa7481p+0, -0x1.988f9da70b11ap-1},
+        };
+        for (double[] testCase : testCases) {
+            failures += testAtanCase(testCase[0], testCase[1]);
         }
 
         return failures;

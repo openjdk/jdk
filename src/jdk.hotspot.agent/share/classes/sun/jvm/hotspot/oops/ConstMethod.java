@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,13 +317,9 @@ public class ConstMethod extends Metadata {
       return -1;
     }
 
-    if (Assert.ASSERTS_ENABLED) {
-        Assert.that(0 <= bci && bci < getCodeSize(),
-                    "illegal bci(" + bci + ") codeSize(" + getCodeSize() + ")");
-    }
     int bestBCI  =  0;
     int bestLine = -1;
-    if (hasLineNumberTable()) {
+    if (0 <= bci && bci < getCodeSize() && hasLineNumberTable()) {
       // The line numbers are a short array of 2-tuples [start_pc, line_number].
       // Not necessarily sorted and not necessarily one-to-one.
       CompressedLineNumberReadStream stream =

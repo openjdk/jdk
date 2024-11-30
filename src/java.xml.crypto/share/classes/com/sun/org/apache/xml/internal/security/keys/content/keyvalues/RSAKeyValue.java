@@ -93,6 +93,7 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
     }
 
     /** {@inheritDoc} */
+    @Override
     public PublicKey getPublicKey() throws XMLSecurityException {
         try {
             KeyFactory rsaFactory = KeyFactory.getInstance("RSA");
@@ -115,6 +116,7 @@ public class RSAKeyValue extends SignatureElementProxy implements KeyValueConten
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseLocalName() {
         return Constants._TAG_RSAKEYVALUE;
     }

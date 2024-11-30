@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/macros.hpp"
 
 #include <type_traits>
@@ -55,11 +56,13 @@ enum ScopedFenceType {
 
 class Atomic : AllStatic {
 public:
-  // Atomic operations on int64 types are not available on all 32-bit
-  // platforms. If atomic ops on int64 are defined here they must only
-  // be used from code that verifies they are available at runtime and
-  // can provide an alternative action if not - see supports_cx8() for
-  // a means to test availability.
+  // Atomic operations on int64 types are required to be available on
+  // all platforms. At a minimum a 64-bit cmpxchg must be available
+  // from which other atomic operations can be constructed if needed.
+  // The legacy `Abstract_VMVersion::supports_cx8()` function used to
+  // indicate if this support existed, allowing for alternative lock-
+  // based mechanism to be used. But today this function is required
+  // to return true and in the future will be removed entirely.
 
   // The memory operations that are mentioned with each of the atomic
   // function families come from src/share/vm/runtime/orderAccess.hpp,
@@ -1116,7 +1119,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
   uint8_t canon_compare_value = compare_value;
   volatile uint32_t* aligned_dest
     = reinterpret_cast<volatile uint32_t*>(align_down(dest, sizeof(uint32_t)));
-  size_t offset = pointer_delta(dest, aligned_dest, 1);
+  uint32_t offset = checked_cast<uint32_t>(pointer_delta(dest, aligned_dest, 1));
 
   uint32_t idx = (Endian::NATIVE == Endian::BIG)
                    ? (sizeof(uint32_t) - 1 - offset)

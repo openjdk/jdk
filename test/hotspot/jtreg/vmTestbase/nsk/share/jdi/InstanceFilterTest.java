@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 package nsk.share.jdi;
 
 import com.sun.jdi.ObjectReference;
-import nsk.share.Consts;
 import nsk.share.TestBug;
 
 import java.io.PrintStream;
@@ -39,7 +38,10 @@ import java.util.List;
  */
 public class InstanceFilterTest extends EventFilterTest {
     public static void main(String[] argv) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String[] argv, PrintStream out) {

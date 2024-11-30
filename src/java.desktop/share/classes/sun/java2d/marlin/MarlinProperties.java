@@ -25,9 +25,7 @@
 
 package sun.java2d.marlin;
 
-import java.security.AccessController;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
-import sun.security.action.GetPropertyAction;
 
 public final class MarlinProperties {
 
@@ -288,24 +286,18 @@ public final class MarlinProperties {
     }
 
     // system property utilities
-    @SuppressWarnings("removal")
     static String getString(final String key, final String def) {
-        return AccessController.doPrivileged(
-                  new GetPropertyAction(key, def));
+        return System.getProperty(key, def);
     }
 
-    @SuppressWarnings("removal")
     static boolean getBoolean(final String key, final String def) {
-        return Boolean.parseBoolean(AccessController.doPrivileged(
-                  new GetPropertyAction(key, def)));
+        return Boolean.parseBoolean(System.getProperty(key, def));
     }
 
     static int getInteger(final String key, final int def,
                                  final int min, final int max)
     {
-        @SuppressWarnings("removal")
-        final String property = AccessController.doPrivileged(
-                                    new GetPropertyAction(key));
+        final String property = System.getProperty(key);
 
         int value = def;
         if (property != null) {
@@ -334,9 +326,7 @@ public final class MarlinProperties {
                                    final double min, final double max)
     {
         double value = def;
-        @SuppressWarnings("removal")
-        final String property = AccessController.doPrivileged(
-                                    new GetPropertyAction(key));
+        final String property = System.getProperty(key);
 
         if (property != null) {
             try {

@@ -144,4 +144,3 @@ public class FieldRemapper extends FieldVisitor {
                 .orDeprecatedValue(createAnnotationRemapper(annotationVisitor));
     }
 }
-

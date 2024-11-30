@@ -22,7 +22,7 @@
  *
  */
 
-#include "gc/g1/g1CodeBlobClosure.hpp"
+#include "gc/g1/g1NMethodClosure.hpp"
 #include "gc/g1/g1OopClosures.hpp"
 #include "memory/iterator.hpp"
 
@@ -45,12 +45,12 @@ public:
   G1ParCopyClosure<G1BarrierNoOptRoots, should_mark> _oops_in_nmethod;
 
   G1CLDScanClosure                _clds;
-  G1CodeBlobClosure               _codeblobs;
+  G1NMethodClosure                _nmethods;
 
   G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty) :
     _oops(g1h, pss),
     _oops_in_cld(g1h, pss),
     _oops_in_nmethod(g1h, pss),
     _clds(&_oops_in_cld, process_only_dirty),
-    _codeblobs(pss->worker_id(), &_oops_in_nmethod, should_mark) {}
+    _nmethods(pss->worker_id(), &_oops_in_nmethod, should_mark) {}
 };

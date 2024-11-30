@@ -148,6 +148,7 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
     jbyte* nativeKeyInfoArrayRaw = NULL;
     jbyte* nativeKeyInfoWrappedKeyArrayRaw = NULL;
     unsigned int sensitiveAttributePosition = (unsigned int)-1;
+    unsigned int valueLenAttributePosition = (unsigned int)-1;
     unsigned int i = 0U;
     unsigned long totalDataSize = 0UL, attributesCount = 0UL;
     unsigned long totalCkAttributesSize = 0UL, totalNativeKeyInfoArraySize = 0UL;
@@ -217,6 +218,8 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
             if ((ckpAttributes+i)->type == CKA_SENSITIVE) {
                  sensitiveAttributePosition = attributesCount;
                  TRACE0("DEBUG: GetNativeKeyInfo key is sensitive");
+            } else if ((ckpAttributes+i)->type == CKA_VALUE_LEN) {
+                valueLenAttributePosition = attributesCount;
             }
             attributesCount++;
         }
@@ -293,6 +296,14 @@ Java_sun_security_pkcs11_wrapper_PKCS11_getNativeKeyInfo
             (CK_ATTRIBUTE_PTR)nativeKeyInfoArrayRawCkAttributes,
             attributesCount);
     if (ckAssertReturnValueOK(env, rv) != CK_ASSERT_OK) {
+        goto cleanup;
+    }
+
+    if (class == CKO_SECRET_KEY && (valueLenAttributePosition != (unsigned int)-1) &&
+            *(CK_ULONG*)(((CK_ATTRIBUTE_PTR)(((CK_ATTRIBUTE_PTR)nativeKeyInfoArrayRawCkAttributes)
+                    +valueLenAttributePosition))->pValue) > 256UL) {
+        // NSS' NSC_UnwrapKey does not accept CKO_SECRET_KEY keys with length greater
+        // than 256 (MAX_KEY_LEN - pkcs11i.h). Handle these keys as non-extractable.
         goto cleanup;
     }
 

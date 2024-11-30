@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
@@ -60,6 +62,7 @@ import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
@@ -196,6 +199,9 @@ public class ClassReader {
     /** The minor version number of the class file being read. */
     int minorVersion;
 
+    /** true if the class file being read is a preview class file. */
+    boolean previewClassFile;
+
     /** UTF-8 validation level */
     Convert.Validation utf8validation;
 
@@ -214,6 +220,12 @@ public class ClassReader {
      * A table to hold the access flags of the method parameters.
      */
     int[] parameterAccessFlags;
+
+    /**
+     * A table to hold the access flags of the method parameters,
+     * for all parameters including synthetic and mandated ones.
+     */
+    int[] allParameterAccessFlags;
 
     /**
      * A table to hold annotations for method parameters.
@@ -306,7 +318,7 @@ public class ClassReader {
             c.members_field.enter(sym);
     }
 
-/************************************************************************
+/* **********************************************************************
  * Error Diagnoses
  ***********************************************************************/
 
@@ -336,7 +348,7 @@ public class ClassReader {
             dcfh);
     }
 
-/************************************************************************
+/* **********************************************************************
  * Buffer Access
  ***********************************************************************/
 
@@ -376,7 +388,7 @@ public class ClassReader {
         return res;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Constant Pool Access
  ***********************************************************************/
 
@@ -435,7 +447,7 @@ public class ClassReader {
         return set;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Types
  ***********************************************************************/
 
@@ -588,8 +600,21 @@ public class ClassReader {
                 ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                outer = new ClassType(outer, sigToTypes('>'), t) {
+                List<Type> actuals = sigToTypes('>');
+                List<Type> formals = ((ClassType)t.type.tsym.type).typarams_field;
+                if (formals != null) {
+                    if (actuals.isEmpty())
+                        actuals = formals;
+                }
+                /* actualsCp is final as it will be captured by the inner class below. We could avoid defining
+                 * this additional local variable and depend on field ClassType::typarams_field which `actuals` is
+                 * assigned to but then we would have a dependendy on the internal representation of ClassType which
+                 * could change in the future
+                 */
+                final List<Type> actualsCp = actuals;
+                outer = new ClassType(outer, actuals, t) {
                         boolean completed = false;
+                        boolean typeArgsSet = false;
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public Type getEnclosingType() {
                             if (!completed) {
@@ -619,7 +644,27 @@ public class ClassReader {
                         public void setEnclosingType(Type outer) {
                             throw new UnsupportedOperationException();
                         }
-                    };
+
+                        @Override
+                        public List<Type> getTypeArguments() {
+                            if (!typeArgsSet) {
+                                typeArgsSet = true;
+                                List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
+                                if (formalsCp != null && !formalsCp.isEmpty()) {
+                                    if (actualsCp.length() == formalsCp.length()) {
+                                        List<Type> a = actualsCp;
+                                        List<Type> f = formalsCp;
+                                        while (a.nonEmpty()) {
+                                            a.head = a.head.withTypeVar(f.head);
+                                            a = a.tail;
+                                            f = f.tail;
+                                        }
+                                    }
+                                }
+                            }
+                            return super.getTypeArguments();
+                        }
+                };
                 switch (signature[sigp++]) {
                 case ';':
                     if (sigp < siglimit && signature[sigp] == '.') {
@@ -789,7 +834,7 @@ public class ClassReader {
         }
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Attributes
  ***********************************************************************/
 
@@ -1110,12 +1155,15 @@ public class ClassReader {
                     int newbp = bp + attrlen;
                     if (saveParameterNames) {
                         int numEntries = nextByte();
+                        allParameterAccessFlags = new int[numEntries];
                         parameterNameIndicesMp = new int[numEntries];
                         parameterAccessFlags = new int[numEntries];
+                        int allParamIndex = 0;
                         int index = 0;
                         for (int i = 0; i < numEntries; i++) {
                             int nameIndex = nextChar();
                             int flags = nextChar();
+                            allParameterAccessFlags[allParamIndex++] = flags;
                             if ((flags & (Flags.MANDATED | Flags.SYNTHETIC)) != 0) {
                                 continue;
                             }
@@ -1155,7 +1203,9 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE)) {
+                                if (flags.contains(RequiresFlag.TRANSITIVE) &&
+                                    (majorVersion != Version.MAX().major || !previewClassFile) &&
+                                    !preview.participatesInPreview(syms, msym)) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
                                 }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {
@@ -1296,7 +1346,7 @@ public class ClassReader {
                         for (int i = 0; i < numberOfPermittedSubtypes; i++) {
                             subtypes.add(poolReader.getClass(nextChar()));
                         }
-                        ((ClassSymbol)sym).permitted = subtypes.toList();
+                        ((ClassSymbol)sym).setPermittedSubclasses(subtypes.toList());
                     }
                 }
             },
@@ -1460,7 +1510,7 @@ public class ClassReader {
         return null;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Java-language annotations
  ***********************************************************************/
 
@@ -1509,7 +1559,7 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.valueBasedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == TYP);
                 sym.flags_field |= VALUE_BASED;
-            } else if (proxy.type.tsym.flatName() == syms.restrictedType.tsym.flatName()) {
+            } else if (proxy.type.tsym.flatName() == syms.restrictedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == MTH);
                 sym.flags_field |= RESTRICTED;
             } else {
@@ -1557,7 +1607,16 @@ public class ClassReader {
         if (parameterAnnotations == null) {
             parameterAnnotations = new ParameterAnnotations[numParameters];
         } else if (parameterAnnotations.length != numParameters) {
-            throw badClassFile("bad.runtime.invisible.param.annotations", meth);
+            //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
+            //provide annotations for a different number of parameters, ignore:
+            if (lintClassfile) {
+                log.warning(LintCategory.CLASSFILE, Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
+            }
+            for (int pnum = 0; pnum < numParameters; pnum++) {
+                readAnnotations();
+            }
+            parameterAnnotations = null;
+            return ;
         }
         for (int pnum = 0; pnum < numParameters; pnum++) {
             if (parameterAnnotations[pnum] == null) {
@@ -2138,7 +2197,7 @@ public class ClassReader {
 
         Type resolvePossibleProxyType(Type t) {
             if (t instanceof ProxyType proxyType) {
-                Assert.check(requestingOwner.owner.kind == MDL);
+                Assert.check(requestingOwner.owner instanceof ModuleSymbol);
                 ModuleSymbol prevCurrentModule = currentModule;
                 currentModule = (ModuleSymbol) requestingOwner.owner;
                 try {
@@ -2261,14 +2320,314 @@ public class ClassReader {
                 currentClassFile = classFile;
                 List<Attribute.TypeCompound> newList = deproxyTypeCompoundList(proxies);
                 sym.setTypeAttributes(newList.prependList(sym.getRawTypeAttributes()));
+                addTypeAnnotationsToSymbol(sym, newList);
             } finally {
                 currentClassFile = previousClassFile;
             }
         }
     }
 
+    /**
+     * Rewrites types in the given symbol to include type annotations.
+     *
+     * <p>The list of type annotations includes annotations for all types in the signature of the
+     * symbol. Associating the annotations with the correct type requires interpreting the JVMS
+     * 4.7.20-A target_type to locate the correct type to rewrite, and then interpreting the JVMS
+     * 4.7.20.2 type_path to associate the annotation with the correct contained type.
+     */
+    private void addTypeAnnotationsToSymbol(Symbol s, List<Attribute.TypeCompound> attributes) {
+        try {
+            new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
+        } catch (CompletionFailure ex) {
+            JavaFileObject prev = log.useSource(currentClassFile);
+            try {
+                log.error(Errors.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
+            } finally {
+                log.useSource(prev);
+            }
+        }
+    }
 
-/************************************************************************
+    private static class TypeAnnotationSymbolVisitor
+            extends Types.DefaultSymbolVisitor<Void, Void> {
+
+        private final List<Attribute.TypeCompound> attributes;
+
+        private TypeAnnotationSymbolVisitor(List<Attribute.TypeCompound> attributes) {
+            this.attributes = attributes;
+        }
+
+        /**
+         * A supertype_index value of 65535 specifies that the annotation appears on the superclass
+         * in an extends clause of a class declaration, see JVMS 4.7.20.1
+         */
+        public static final int SUPERCLASS_INDEX = 65535;
+
+        @Override
+        public Void visitClassSymbol(Symbol.ClassSymbol s, Void unused) {
+            ClassType t = (ClassType) s.type;
+            int i = 0;
+            ListBuffer<Type> interfaces = new ListBuffer<>();
+            for (Type itf : t.interfaces_field) {
+                interfaces.add(addTypeAnnotations(itf, classExtends(i++)));
+            }
+            t.interfaces_field = interfaces.toList();
+            t.supertype_field = addTypeAnnotations(t.supertype_field, classExtends(SUPERCLASS_INDEX));
+            if (t.typarams_field != null) {
+                t.typarams_field =
+                        rewriteTypeParameters(
+                                t.typarams_field, TargetType.CLASS_TYPE_PARAMETER_BOUND);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitMethodSymbol(Symbol.MethodSymbol s, Void unused) {
+            Type t = s.type;
+            if (t.hasTag(TypeTag.FORALL)) {
+                Type.ForAll fa = (Type.ForAll) t;
+                fa.tvars = rewriteTypeParameters(fa.tvars, TargetType.METHOD_TYPE_PARAMETER_BOUND);
+                t = fa.qtype;
+            }
+            MethodType mt = (MethodType) t;
+            ListBuffer<Type> argtypes = new ListBuffer<>();
+            int i = 0;
+            for (Symbol.VarSymbol param : s.params) {
+                param.type = addTypeAnnotations(param.type, methodFormalParameter(i++));
+                argtypes.add(param.type);
+            }
+            mt.argtypes = argtypes.toList();
+            ListBuffer<Type> thrown = new ListBuffer<>();
+            i = 0;
+            for (Type thrownType : mt.thrown) {
+                thrown.add(addTypeAnnotations(thrownType, thrownType(i++)));
+            }
+            mt.thrown = thrown.toList();
+            /* possible information loss if the type of the method is void then we can't add type
+             * annotations to it
+             */
+            if (!mt.restype.hasTag(TypeTag.VOID)) {
+                mt.restype = addTypeAnnotations(mt.restype, TargetType.METHOD_RETURN);
+            }
+
+            Type recvtype = mt.recvtype != null ? mt.recvtype : s.implicitReceiverType();
+            if (recvtype != null) {
+                Type annotated = addTypeAnnotations(recvtype, TargetType.METHOD_RECEIVER);
+                if (annotated != recvtype) {
+                    mt.recvtype = annotated;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitVarSymbol(Symbol.VarSymbol s, Void unused) {
+            s.type = addTypeAnnotations(s.type, TargetType.FIELD);
+            return null;
+        }
+
+        @Override
+        public Void visitSymbol(Symbol s, Void unused) {
+            return null;
+        }
+
+        private List<Type> rewriteTypeParameters(List<Type> tvars, TargetType boundType) {
+            ListBuffer<Type> tvarbuf = new ListBuffer<>();
+            int typeVariableIndex = 0;
+            for (Type tvar : tvars) {
+                Type bound = tvar.getUpperBound();
+                if (bound.isCompound()) {
+                    ClassType ct = (ClassType) bound;
+                    int boundIndex = 0;
+                    if (ct.supertype_field != null) {
+                        ct.supertype_field =
+                                addTypeAnnotations(
+                                        ct.supertype_field,
+                                        typeParameterBound(
+                                                boundType, typeVariableIndex, boundIndex++));
+                    }
+                    ListBuffer<Type> itfbuf = new ListBuffer<>();
+                    for (Type itf : ct.interfaces_field) {
+                        itfbuf.add(
+                                addTypeAnnotations(
+                                        itf,
+                                        typeParameterBound(
+                                                boundType, typeVariableIndex, boundIndex++)));
+                    }
+                    ct.interfaces_field = itfbuf.toList();
+                } else {
+                    bound =
+                            addTypeAnnotations(
+                                    bound,
+                                    typeParameterBound(
+                                            boundType,
+                                            typeVariableIndex,
+                                            bound.isInterface() ? 1 : 0));
+                }
+                ((TypeVar) tvar).setUpperBound(bound);
+                tvarbuf.add(tvar);
+                typeVariableIndex++;
+            }
+            return tvarbuf.toList();
+        }
+
+        private Type addTypeAnnotations(Type type, TargetType targetType) {
+            return addTypeAnnotations(type, pos -> pos.type == targetType);
+        }
+
+        private Type addTypeAnnotations(Type type, Predicate<TypeAnnotationPosition> filter) {
+            Assert.checkNonNull(type);
+
+            // Find type annotations that match the given target type
+            ListBuffer<Attribute.TypeCompound> filtered = new ListBuffer<>();
+            for (Attribute.TypeCompound attribute : this.attributes) {
+                if (filter.test(attribute.position)) {
+                    filtered.add(attribute);
+                }
+            }
+            if (filtered.isEmpty()) {
+                return type;
+            }
+
+            // Group the matching annotations by their type path. Each group of annotations will be
+            // added to a type at that location.
+            Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>>
+                    attributesByPath = new HashMap<>();
+            for (Attribute.TypeCompound attribute : filtered.toList()) {
+                attributesByPath
+                        .computeIfAbsent(attribute.position.location, k -> new ListBuffer<>())
+                        .add(attribute);
+            }
+
+            // Rewrite the type and add the annotations
+            type = new TypeAnnotationStructuralTypeMapping(attributesByPath).visit(type, List.nil());
+
+            return type;
+        }
+
+        private static Predicate<TypeAnnotationPosition> typeParameterBound(
+                TargetType targetType, int parameterIndex, int boundIndex) {
+            return pos ->
+                    pos.type == targetType
+                            && pos.parameter_index == parameterIndex
+                            && pos.bound_index == boundIndex;
+        }
+
+        private static Predicate<TypeAnnotationPosition> methodFormalParameter(int index) {
+            return pos ->
+                    pos.type == TargetType.METHOD_FORMAL_PARAMETER && pos.parameter_index == index;
+        }
+
+        private static Predicate<TypeAnnotationPosition> thrownType(int index) {
+            return pos -> pos.type == TargetType.THROWS && pos.type_index == index;
+        }
+
+        private static Predicate<TypeAnnotationPosition> classExtends(int index) {
+            return pos -> pos.type == TargetType.CLASS_EXTENDS && pos.type_index == index;
+        }
+    }
+
+    /**
+     * A type mapping that rewrites the type to include type annotations.
+     *
+     * <p>This logic is similar to {@link Type.StructuralTypeMapping}, but also tracks the path to
+     * the contained types being rewritten, and so cannot easily share the existing logic.
+     */
+    private static final class TypeAnnotationStructuralTypeMapping
+            extends Types.TypeMapping<List<TypeAnnotationPosition.TypePathEntry>> {
+
+        private final Map<List<TypeAnnotationPosition.TypePathEntry>,
+                ListBuffer<Attribute.TypeCompound>> attributesByPath;
+
+        private TypeAnnotationStructuralTypeMapping(
+                Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>>
+                    attributesByPath) {
+            this.attributesByPath = attributesByPath;
+        }
+
+
+        @Override
+        public Type visitClassType(ClassType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            // As described in JVMS 4.7.20.2, type annotations on nested types are located with
+            // 'left-to-right' steps starting on 'the outermost part of the type for which a type
+            // annotation is admissible'. So the current path represents the outermost containing
+            // type of the type being visited, and we add type path steps for every contained nested
+            // type.
+            Type outer = t.getEnclosingType();
+            Type outer1 = outer != Type.noType ? visit(outer, path) : outer;
+            for (Type curr = t.getEnclosingType();
+                    curr != Type.noType;
+                    curr = curr.getEnclosingType()) {
+                path = path.append(TypeAnnotationPosition.TypePathEntry.INNER_TYPE);
+            }
+            List<Type> typarams = t.getTypeArguments();
+            List<Type> typarams1 = rewriteTypeParams(path, typarams);
+            if (outer1 != outer || typarams != typarams1) {
+                t = new ClassType(outer1, typarams1, t.tsym, t.getMetadata());
+            }
+            return reannotate(t, path);
+        }
+
+        private List<Type> rewriteTypeParams(
+                List<TypeAnnotationPosition.TypePathEntry> path, List<Type> typarams) {
+            var i = IntStream.iterate(0, x -> x + 1).iterator();
+            return typarams.map(typaram -> visit(typaram,
+                    path.append(new TypeAnnotationPosition.TypePathEntry(
+                            TypeAnnotationPosition.TypePathEntryKind.TYPE_ARGUMENT, i.nextInt()))));
+        }
+
+        @Override
+        public Type visitWildcardType(
+                WildcardType wt, List<TypeAnnotationPosition.TypePathEntry> path) {
+            Type t = wt.type;
+            if (t != null) {
+                t = visit(t, path.append(TypeAnnotationPosition.TypePathEntry.WILDCARD));
+            }
+            if (t != wt.type) {
+                wt = new WildcardType(t, wt.kind, wt.tsym, wt.bound, wt.getMetadata());
+            }
+            return reannotate(wt, path);
+        }
+
+        @Override
+        public Type visitArrayType(ArrayType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            Type elemtype = t.elemtype;
+            Type elemtype1 =
+                    visit(elemtype, path.append(TypeAnnotationPosition.TypePathEntry.ARRAY));
+            if (elemtype1 != elemtype)  {
+                t = new ArrayType(elemtype1, t.tsym, t.getMetadata());
+            }
+            return reannotate(t, path);
+        }
+
+        @Override
+        public Type visitType(Type t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            return reannotate(t, path);
+        }
+
+        Type reannotate(Type type, List<TypeAnnotationPosition.TypePathEntry> path) {
+            List<Attribute.TypeCompound> attributes = attributesForPath(path);
+            if (attributes.isEmpty()) {
+                return type;
+            }
+            // Runtime-visible and -invisible annotations are completed separately, so if the same
+            // type has annotations from both it will get annotated twice.
+            TypeMetadata.Annotations existing = type.getMetadata(TypeMetadata.Annotations.class);
+            if (existing != null) {
+                existing.annotationBuffer().addAll(attributes);
+                return type;
+            }
+            return type.annotatedType(attributes);
+        }
+
+        List<Attribute.TypeCompound> attributesForPath(
+                List<TypeAnnotationPosition.TypePathEntry> path) {
+            ListBuffer<Attribute.TypeCompound> attributes = attributesByPath.remove(path);
+            return attributes != null ? attributes.toList() : List.nil();
+        }
+    }
+
+/* **********************************************************************
  * Reading Symbols
  ***********************************************************************/
 
@@ -2293,7 +2652,8 @@ public class ClassReader {
         char rawFlags = nextChar();
         long flags = adjustMethodFlags(rawFlags);
         Name name = poolReader.getName(nextChar());
-        Type type = poolReader.getType(nextChar());
+        Type descriptorType = poolReader.getType(nextChar());
+        Type type = descriptorType;
         if (currentOwner.isInterface() &&
                 (flags & ABSTRACT) == 0 && !name.equals(names.clinit)) {
             if (majorVersion > Version.V52.major ||
@@ -2310,6 +2670,7 @@ public class ClassReader {
             }
         }
         validateMethodType(name, type);
+        boolean forceLocal = false;
         if (name == names.init && currentOwner.hasOuterInstance()) {
             // Sometimes anonymous classes don't have an outer
             // instance, however, there is no reliable way to tell so
@@ -2317,7 +2678,8 @@ public class ClassReader {
             // ditto for local classes. Local classes that have an enclosing method set
             // won't pass the "hasOuterInstance" check above, but those that don't have an
             // enclosing method (i.e. from initializers) will pass that check.
-            boolean local = !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
+            boolean local = forceLocal =
+                    !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
             if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
                                       type.getReturnType(),
@@ -2338,6 +2700,7 @@ public class ClassReader {
             currentOwner = prevOwner;
         }
         validateMethodType(name, m.type);
+        adjustParameterAnnotations(m, descriptorType, forceLocal);
         setParameters(m, type);
 
         if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
@@ -2465,17 +2828,141 @@ public class ClassReader {
             nameIndexMp++;
             annotationIndex++;
         }
-        if (parameterAnnotations != null && parameterAnnotations.length != annotationIndex) {
-            throw badClassFile("bad.runtime.invisible.param.annotations", sym);
-        }
+        Assert.check(parameterAnnotations == null ||
+                     parameterAnnotations.length == annotationIndex);
         Assert.checkNull(sym.params);
         sym.params = params.toList();
         parameterAnnotations = null;
         parameterNameIndicesLvt = null;
         parameterNameIndicesMp = null;
+        allParameterAccessFlags = null;
         parameterAccessFlags = null;
     }
 
+    void adjustParameterAnnotations(MethodSymbol sym, Type methodDescriptor,
+                                    boolean forceLocal) {
+        if (parameterAnnotations == null) {
+            return ;
+        }
+
+        //the specification for Runtime(In)VisibleParameterAnnotations does not
+        //enforce any mapping between the method parameters and the recorded
+        //parameter annotation. Attempt a number of heuristics to adjust the
+        //adjust parameterAnnotations to the percieved number of parameters:
+
+        int methodParameterCount = sym.type.getParameterTypes().size();
+
+        if (methodParameterCount == parameterAnnotations.length) {
+            //we've got exactly as many parameter annotations as are parameters
+            //of the method (after considering a possible Signature attribute),
+            //no need to do anything. the parameter creation code will use
+            //the 1-1 mapping to restore the annotations:
+            return ;
+        }
+
+        if (allParameterAccessFlags != null) {
+            //MethodParameters attribute present, use it:
+
+            //count the number of non-synthetic and non-mandatory parameters:
+            int realParameters = 0;
+
+            for (int i = 0; i < allParameterAccessFlags.length; i++) {
+                if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                    realParameters++;
+                }
+            }
+
+            int methodDescriptorParameterCount = methodDescriptor.getParameterTypes().size();
+
+            if (realParameters == parameterAnnotations.length &&
+                allParameterAccessFlags.length == methodDescriptorParameterCount) {
+                //if we have parameter annotations for each non-synthetic/mandatory parameter,
+                //and if Signature was not present, expand the parameterAnnotations to cover
+                //all the method descriptor's parameters:
+                if (sym.type == methodDescriptor) {
+                    ParameterAnnotations[] newParameterAnnotations =
+                            new ParameterAnnotations[methodParameterCount];
+                    int srcIndex = 0;
+
+                    for (int i = 0; i < methodParameterCount; i++) {
+                        if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                            newParameterAnnotations[i] = parameterAnnotations[srcIndex++];
+                        }
+                    }
+
+                    parameterAnnotations = newParameterAnnotations;
+                } else {
+                    dropParameterAnnotations();
+                }
+            } else if (realParameters == methodParameterCount &&
+                       methodDescriptorParameterCount == parameterAnnotations.length &&
+                       allParameterAccessFlags.length == methodDescriptorParameterCount) {
+                //if there are as many parameter annotations as parameters in
+                //the method descriptor, and as many real parameters as parameters
+                //in the method's type (after accounting for Signature), shrink
+                //the parameterAnnotations to only cover the parameters from
+                //the method's type:
+                ParameterAnnotations[] newParameterAnnotations =
+                        new ParameterAnnotations[methodParameterCount];
+                int targetIndex = 0;
+
+                for (int i = 0; i < parameterAnnotations.length; i++) {
+                    if ((allParameterAccessFlags[i] & (SYNTHETIC | MANDATED)) == 0) {
+                        newParameterAnnotations[targetIndex++] = parameterAnnotations[i];
+                    }
+                }
+
+                parameterAnnotations = newParameterAnnotations;
+            } else {
+                dropParameterAnnotations();
+            }
+            return ;
+        }
+
+        if (!sym.isConstructor()) {
+            //if the number of parameter annotations and the number of parameters
+            //don't match, we don't have any heuristics to map one to the other
+            //unless the method is a constructor:
+            dropParameterAnnotations();
+            return ;
+        }
+
+        if (sym.owner.isEnum()) {
+            if (methodParameterCount == parameterAnnotations.length + 2 &&
+                sym.type == methodDescriptor) {
+                //handle constructors of enum types without the Signature attribute -
+                //there are the two synthetic parameters (name and ordinal) in the
+                //constructor, but there may be only parameter annotations for the
+                //real non-synthetic parameters:
+                ParameterAnnotations[] newParameterAnnotations = new ParameterAnnotations[parameterAnnotations.length + 2];
+                System.arraycopy(parameterAnnotations, 0, newParameterAnnotations, 2, parameterAnnotations.length);
+                parameterAnnotations = newParameterAnnotations;
+                return ;
+            }
+        } else if (sym.owner.isDirectlyOrIndirectlyLocal() || forceLocal) {
+            //local class may capture the enclosing instance (as the first parameter),
+            //and local variables (as trailing parameters)
+            //if there are less parameter annotations than parameters, put the existing
+            //ones starting with offset:
+            if (methodParameterCount > parameterAnnotations.length &&
+                sym.type == methodDescriptor) {
+                ParameterAnnotations[] newParameterAnnotations = new ParameterAnnotations[methodParameterCount];
+                System.arraycopy(parameterAnnotations, 0, newParameterAnnotations, 1, parameterAnnotations.length);
+                parameterAnnotations = newParameterAnnotations;
+                return ;
+            }
+        }
+
+        //no heuristics worked, drop the annotations:
+        dropParameterAnnotations();
+    }
+
+    private void dropParameterAnnotations() {
+        parameterAnnotations = null;
+        if (lintClassfile) {
+            log.warning(LintCategory.CLASSFILE, Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
+        }
+    }
     /**
      * Creates the parameter at the position {@code mpIndex} in the parameter list of the owning method.
      * Flags are optionally read from the MethodParameters attribute.
@@ -2491,7 +2978,7 @@ public class ClassReader {
                 && parameterAccessFlags[mpIndex] != 0) {
             flags |= parameterAccessFlags[mpIndex];
         }
-        if (parameterNameIndicesMp != null
+        if (parameterNameIndicesMp != null && mpIndex < parameterNameIndicesMp.length
                 // if name_index is 0, then we might still get a name from the LocalVariableTable
                 && parameterNameIndicesMp[mpIndex] != 0) {
             argName = optPoolEntry(parameterNameIndicesMp[mpIndex], poolReader::getName, names.empty);
@@ -2619,7 +3106,7 @@ public class ClassReader {
         for (int i = 0; i < methodCount; i++) skipMember();
         readClassAttrs(c);
 
-        if (c.permitted != null && !c.permitted.isEmpty()) {
+        if (!c.getPermittedSubclasses().isEmpty()) {
             c.flags_field |= SEALED;
         }
 
@@ -2703,7 +3190,7 @@ public class ClassReader {
         majorVersion = nextChar();
         int maxMajor = Version.MAX().major;
         int maxMinor = Version.MAX().minor;
-        boolean previewClassFile =
+        previewClassFile =
                 minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
         if (majorVersion > maxMajor ||
             majorVersion * 1000 + minorVersion <
@@ -2736,14 +3223,6 @@ public class ClassReader {
             signatureBuffer = new byte[ns];
         }
         readClass(c);
-        if (previewClassFile) {
-            if ((c.flags_field & SYNTHETIC) != 0 &&
-                    c.owner.kind == PCK &&
-                    (c.flags_field & AUXILIARY) == 0 &&
-                    (c.flags_field & FINAL) != 0) {
-                c.flags_field |= UNNAMED_CLASS;
-            }
-        }
     }
 
     public void readClassFile(ClassSymbol c) {
@@ -2819,7 +3298,7 @@ public class ClassReader {
      */
     public boolean filling = false;
 
-/************************************************************************
+/* **********************************************************************
  * Adjusting flags
  ***********************************************************************/
 

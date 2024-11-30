@@ -31,6 +31,7 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepoint.hpp"
 
 WorkerTaskDispatcher::WorkerTaskDispatcher() :
     _task(nullptr),
@@ -141,40 +142,44 @@ void WorkerThreads::threads_do(ThreadClosure* tc) const {
   }
 }
 
-void WorkerThreads::set_indirectly_suspendible_threads() {
+template <typename Function>
+void WorkerThreads::threads_do_f(Function function) const {
+  for (uint i = 0; i < _created_workers; i++) {
+    function(_workers[i]);
+  }
+}
+
+void WorkerThreads::set_indirect_states() {
 #ifdef ASSERT
-  class SetIndirectlySuspendibleThreadClosure : public ThreadClosure {
-    virtual void do_thread(Thread* thread) {
+  const bool is_suspendible = Thread::current()->is_suspendible_thread();
+  const bool is_safepointed = Thread::current()->is_VM_thread() && SafepointSynchronize::is_at_safepoint();
+
+  threads_do_f([&](Thread* thread) {
+    assert(!thread->is_indirectly_suspendible_thread(), "Unexpected");
+    assert(!thread->is_indirectly_safepoint_thread(), "Unexpected");
+    if (is_suspendible) {
       thread->set_indirectly_suspendible_thread();
     }
-  };
-
-  if (Thread::current()->is_suspendible_thread()) {
-    SetIndirectlySuspendibleThreadClosure cl;
-    threads_do(&cl);
-  }
+    if (is_safepointed) {
+      thread->set_indirectly_safepoint_thread();
+    }
+  });
 #endif
 }
 
-void WorkerThreads::clear_indirectly_suspendible_threads() {
+void WorkerThreads::clear_indirect_states() {
 #ifdef ASSERT
-  class ClearIndirectlySuspendibleThreadClosure : public ThreadClosure {
-    virtual void do_thread(Thread* thread) {
-      thread->clear_indirectly_suspendible_thread();
-    }
-  };
-
-  if (Thread::current()->is_suspendible_thread()) {
-    ClearIndirectlySuspendibleThreadClosure cl;
-    threads_do(&cl);
-  }
+  threads_do_f([&](Thread* thread) {
+    thread->clear_indirectly_suspendible_thread();
+    thread->clear_indirectly_safepoint_thread();
+  });
 #endif
 }
 
 void WorkerThreads::run_task(WorkerTask* task) {
-  set_indirectly_suspendible_threads();
+  set_indirect_states();
   _dispatcher.coordinator_distribute_task(task, _active_workers);
-  clear_indirectly_suspendible_threads();
+  clear_indirect_states();
 }
 
 void WorkerThreads::run_task(WorkerTask* task, uint num_workers) {

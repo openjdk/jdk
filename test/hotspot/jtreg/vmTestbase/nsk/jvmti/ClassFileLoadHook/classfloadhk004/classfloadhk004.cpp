@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -43,7 +43,7 @@ static jlong timeout = 0;
 #define NEW_BYTECODE_FIELD_NAME  "newClassBytes"
 
 static jint newClassSize = 0;
-static unsigned char* newClassBytes = NULL;
+static unsigned char* newClassBytes = nullptr;
 
 static volatile int eventsCount = 0;
 
@@ -54,14 +54,14 @@ static int getBytecode(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls,
                                     const char fieldName[], const char fieldSig[],
                                     jint* size, unsigned char* *bytes) {
 
-    jfieldID fieldID = NULL;
-    jbyteArray array = NULL;
+    jfieldID fieldID = nullptr;
+    jbyteArray array = nullptr;
     jbyte* elements;
     int i;
 
     NSK_DISPLAY1("Find static field: %s\n", fieldName);
     if (!NSK_JNI_VERIFY(jni, (fieldID =
-            jni->GetStaticFieldID(cls, fieldName, fieldSig)) != NULL)) {
+            jni->GetStaticFieldID(cls, fieldName, fieldSig)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -69,7 +69,7 @@ static int getBytecode(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls,
 
     NSK_DISPLAY1("Get classfile bytes array from static field: %s\n", fieldName);
     if (!NSK_JNI_VERIFY(jni, (array = (jbyteArray)
-            jni->GetStaticObjectField(cls, fieldID)) != NULL)) {
+            jni->GetStaticObjectField(cls, fieldID)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -83,7 +83,7 @@ static int getBytecode(jvmtiEnv* jvmti, JNIEnv* jni, jclass cls,
 
     {
         jboolean isCopy;
-        if (!NSK_JNI_VERIFY(jni, (elements = jni->GetByteArrayElements(array, &isCopy)) != NULL)) {
+        if (!NSK_JNI_VERIFY(jni, (elements = jni->GetByteArrayElements(array, &isCopy)) != nullptr)) {
             nsk_jvmti_setFailStatus();
         return NSK_FALSE;
         }
@@ -121,11 +121,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     {
         NSK_DISPLAY0(">>> Obtain classloader and instrumented bytecode of tested class\n");
         {
-            jclass debugeeClass = NULL;
+            jclass debugeeClass = nullptr;
 
             NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_CLASS_NAME);
             if (!NSK_JNI_VERIFY(jni, (debugeeClass =
-                    jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
+                    jni->FindClass(DEBUGEE_CLASS_NAME)) != nullptr)) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -143,7 +143,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             jvmtiEvent event = JVMTI_EVENT_CLASS_FILE_LOAD_HOOK;
 
             NSK_DISPLAY1("Enable event: %s\n", "CLASS_FILE_LOAD_HOOK");
-            if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, NULL)))
+            if (!NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, &event, nullptr)))
                 return;
             NSK_DISPLAY0("  ... event enabled\n");
 
@@ -155,7 +155,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
                 return;
 
             NSK_DISPLAY1("Disable event: %s\n", "CLASS_FILE_LOAD_HOOK");
-            if (NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_DISABLE, 1, &event, NULL))) {
+            if (NSK_VERIFY(nsk_jvmti_enableEvents(JVMTI_DISABLE, 1, &event, nullptr))) {
                 NSK_DISPLAY0("  ... event disabled\n");
             }
 
@@ -196,7 +196,7 @@ callbackClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
                         nsk_null_string(name), (void*)loader, (void*)class_being_redefined,
                         (void*)class_data, (int)class_data_len);
 
-    if (name != NULL && (strcmp(name, TESTED_CLASS_NAME) == 0)) {
+    if (name != nullptr && (strcmp(name, TESTED_CLASS_NAME) == 0)) {
         NSK_DISPLAY1("SUCCESS! CLASS_FILE_LOAD_HOOK for tested class: %s\n", TESTED_CLASS_NAME);
         eventsCount++;
 
@@ -207,20 +207,20 @@ callbackClassFileLoadHook(jvmtiEnv *jvmti, JNIEnv *jni,
         }
 
         NSK_DISPLAY1("Check pointer to new_class_data_len: 0x%p\n", (void*)new_class_data_len);
-        if (new_class_data_len == NULL) {
-            NSK_COMPLAIN1("NULL new_class_data_len pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
+        if (new_class_data_len == nullptr) {
+            NSK_COMPLAIN1("null new_class_data_len pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
                                                     (void*)new_class_data_len);
             nsk_jvmti_setFailStatus();
         }
 
         NSK_DISPLAY1("Check pointer to new_class_data: 0x%p\n", (void*)new_class_data);
-        if (new_class_data == NULL) {
-            NSK_COMPLAIN1("NULL new_class_data pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
+        if (new_class_data == nullptr) {
+            NSK_COMPLAIN1("null new_class_data pointer passed to CLASS_FILE_LOAD_HOOK: 0x%p\n",
                                                     (void*)new_class_data);
             nsk_jvmti_setFailStatus();
         }
 
-        if (new_class_data_len != NULL && new_class_data != NULL) {
+        if (new_class_data_len != nullptr && new_class_data != nullptr) {
             NSK_DISPLAY2("Replace with new bytecode: 0x%p:%d\n",
                                         (void*)newClassBytes, (int)newClassSize);
             if (nsk_getVerboseMode()) {
@@ -248,7 +248,7 @@ JNIEXPORT jint JNI_OnLoad_classfloadhk004(JavaVM *jvm, char *options, void *rese
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -258,7 +258,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY1("Add required capability: %s\n", "can_generate_eraly_class_hook_events");
@@ -287,7 +287,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("  ... set\n");
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

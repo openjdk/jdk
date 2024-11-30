@@ -40,7 +40,11 @@ void GCOverheadChecker::check_gc_overhead_limit(GCOverheadTester* time_overhead,
                                                 bool is_full_gc,
                                                 GCCause::Cause gc_cause,
                                                 SoftRefPolicy* soft_ref_policy) {
-
+  if (is_full_gc) {
+    // Explicit Full GC would do the clearing of soft-refs as well
+    // So reset in the beginning
+    soft_ref_policy->set_should_clear_all_soft_refs(false);
+  }
   // Ignore explicit GC's.  Exiting here does not set the flag and
   // does not reset the count.
   if (GCCause::is_user_requested_gc(gc_cause) ||

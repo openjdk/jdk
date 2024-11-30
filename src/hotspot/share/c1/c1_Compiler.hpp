@@ -60,7 +60,7 @@ class Compiler: public AbstractCompiler {
   static bool is_intrinsic_supported(vmIntrinsics::ID id);
 
   // Size of the code buffer
-  static int code_buffer_size();
+  static uint code_buffer_size();
 };
 
 #endif // SHARE_C1_C1_COMPILER_HPP

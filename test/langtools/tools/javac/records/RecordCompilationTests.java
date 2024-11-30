@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,14 @@
  *
  * @test
  * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647 8294020
+ *      8332600
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
+ * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
  *      java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @run junit/othervm -DuseAP=false RecordCompilationTests
@@ -69,11 +66,11 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeMirror;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.FieldInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.FieldInstruction;
 
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
@@ -140,6 +137,7 @@ class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.repeated.modifier", "public public record R(String foo) { }");
         assertFail("compiler.err.repeated.modifier", "private private record R(String foo) { }");
         assertFail("compiler.err.already.defined", "record R(int x, int x) {}");
+        assertFail("compiler.err.already.defined", "record R(int x, int x, int x) {}");
         for (String s : List.of("var", "record"))
             assertFail("compiler.err.restricted.type.not.allowed.here", "record R(# x) { }", s);
         for (String s : List.of("public", "protected", "private", "static", "final", "transient", "volatile",
@@ -403,11 +401,11 @@ class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.invalid.canonical.constructor.in.record",
                    "record R(int x, int y) { public R(int y, int x) { this.x = this.y = 0; }}");
 
-        // first invocation should be one to the canonical
-        assertFail("compiler.err.first.statement.must.be.call.to.another.constructor",
+        // constructor is not canonical, so it must only invoke another constructor
+        assertFail("compiler.err.non.canonical.constructor.invoke.another.constructor",
                 "record R(int x, int y) { public R(int y, int x, int z) { this.x = this.y = 0; } }");
 
-        assertFail("compiler.err.first.statement.must.be.call.to.another.constructor",
+        assertFail("compiler.err.non.canonical.constructor.invoke.another.constructor",
                 "record R(int x, int y) { public R(int y, int x, int z) { super(); this.x = this.y = 0; } }");
 
         assertOK("record R(int x, int y) { " +
@@ -1297,7 +1295,7 @@ class RecordCompilationTests extends CompilationTestCase {
             int numberOfFieldRefs = 0;
             for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (fileEntry.getName().endsWith("R.class")) {
-                    ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                    ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                     for (PoolEntry pe : classFile.constantPool()) {
                         if (pe instanceof FieldRefEntry fieldRefEntry) {
                             numberOfFieldRefs++;
@@ -1321,10 +1319,10 @@ class RecordCompilationTests extends CompilationTestCase {
         File dir = assertOK(true, "record R(int i, String s) { R {} }");
         for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
             if (fileEntry.getName().equals("R.class")) {
-                ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                 for (MethodModel method : classFile.methods()) {
                     if (method.methodName().equalsString("<init>")) {
-                        CodeAttribute code_attribute = method.findAttribute(Attributes.CODE).orElseThrow();
+                        CodeAttribute code_attribute = method.findAttribute(Attributes.code()).orElseThrow();
                         for (CodeElement ce : code_attribute.elementList()) {
                             if (ce instanceof Instruction instruction && instruction.opcode() == Opcode.PUTFIELD) {
                                 if (putField1 != null && putField2 != null) {
@@ -1360,7 +1358,7 @@ class RecordCompilationTests extends CompilationTestCase {
         try {
             String[] testOptions = {};
             setCompileOptions(testOptions);
-            assertFail("compiler.err.illegal.start.of.type",
+            assertFail("compiler.err.statement.not.expected",
                     "class R {\n" +
                             "    record RR(int i) {\n" +
                             "        return null;\n" +
@@ -1469,7 +1467,7 @@ class RecordCompilationTests extends CompilationTestCase {
 
                 File dir = assertOK(true, code);
 
-                ClassModel classFile = Classfile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
+                ClassModel classFile = ClassFile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
 
                 // field first
                 Assert.check(classFile.fields().size() == 1);
@@ -1572,7 +1570,7 @@ class RecordCompilationTests extends CompilationTestCase {
 
         File dir = assertOK(true, code);
 
-        ClassModel classFile = Classfile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
+        ClassModel classFile = ClassFile.of().parse(findClassFileOrFail(dir, "R.class").toPath());
 
         // field first
         Assert.check(classFile.fields().size() == 1);
@@ -1617,7 +1615,7 @@ class RecordCompilationTests extends CompilationTestCase {
         }
         assert tAnno != null;
         Assert.check(tAnno.targetInfo().targetType().name().equals(positionType));
-        String annotationName = tAnno.classSymbol().displayName();
+        String annotationName = tAnno.annotation().classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
     private void checkAnno(Attribute<?> rAnnos,
@@ -1788,11 +1786,11 @@ class RecordCompilationTests extends CompilationTestCase {
         File dir = assertOK(true, "record R() {}");
         for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
             if (fileEntry.getName().equals("R.class")) {
-                ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                 for (MethodModel method : classFile.methods())
                     switch (method.methodName().stringValue()) {
                         case "toString", "equals", "hashCode" ->
-                            Assert.check(((method.flags().flagsMask() & Classfile.ACC_PUBLIC) != 0) && ((method.flags().flagsMask() & Classfile.ACC_FINAL) != 0));
+                            Assert.check(((method.flags().flagsMask() & ClassFile.ACC_PUBLIC) != 0) && ((method.flags().flagsMask() & ClassFile.ACC_FINAL) != 0));
                         default -> {}
                     }
             }
@@ -1821,7 +1819,7 @@ class RecordCompilationTests extends CompilationTestCase {
             File dir = assertOK(true, "class R {# record RR() {} }", a);
             for (final File fileEntry : Objects.requireNonNull(dir.listFiles())) {
                 if (fileEntry.getName().equals("R$RR.class")) {
-                    ClassModel classFile = Classfile.of().parse(fileEntry.toPath());
+                    ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                     for (MethodModel method : classFile.methods())
                         if (method.methodName().equalsString("<init>")) {
                             Assert.check(method.flags().flagsMask() == accessFlag(a),
@@ -1844,9 +1842,9 @@ class RecordCompilationTests extends CompilationTestCase {
 
     private int accessFlag(String access) {
         return switch (access) {
-            case "private" -> Classfile.ACC_PRIVATE;
-            case "protected" -> Classfile.ACC_PROTECTED;
-            case "public" -> Classfile.ACC_PUBLIC;
+            case "private" -> ClassFile.ACC_PRIVATE;
+            case "protected" -> ClassFile.ACC_PROTECTED;
+            case "public" -> ClassFile.ACC_PUBLIC;
             case "" -> 0;
             default -> throw new AssertionError();
         };

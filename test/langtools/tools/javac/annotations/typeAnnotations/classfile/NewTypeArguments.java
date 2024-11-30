@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.lang.annotation.*;
 import java.io.*;
 import java.net.URL;
@@ -31,12 +31,8 @@ import java.util.List;
 /*
  * @test ClassLiterals
  * @summary test that new type arguments are emitted to classfile
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 public class NewTypeArguments extends ClassfileTestHelper{

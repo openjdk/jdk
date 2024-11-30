@@ -110,6 +110,17 @@ void VM_Version::initialize() {
     FLAG_SET_ERGO(TrapBasedRangeChecks, false);
   }
 
+  // Power7 and later.
+  if (PowerArchitecturePPC64 > 6) {
+    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
+      FLAG_SET_ERGO(UsePopCountInstruction, true);
+    }
+  }
+
+  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
+    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
+  }
+
   if (PowerArchitecturePPC64 >= 8) {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
@@ -169,6 +180,17 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseByteReverseInstructions, false);
     }
   }
+
+  if (OptimizeFill) {
+    warning("OptimizeFill is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptimizeFill, false);
+  }
+
+  if (OptoScheduling) {
+    // The OptoScheduling information is not maintained in ppd.ad.
+    warning("OptoScheduling is not supported on this CPU.");
+    FLAG_SET_DEFAULT(OptoScheduling, false);
+  }
 #endif
 
   // Create and print feature-string.
@@ -199,10 +221,6 @@ void VM_Version::initialize() {
   if (Verbose) {
     print_features();
   }
-
-  // PPC64 supports 8-byte compare-exchange operations (see Atomic::cmpxchg)
-  // and 'atomic long memory ops' (see Unsafe_GetLongVolatile).
-  _supports_cx8 = true;
 
   // Used by C1.
   _supports_atomic_getset4 = true;
@@ -342,6 +360,13 @@ void VM_Version::initialize() {
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
+  }
+
+  if (UseSecondarySupersTable && PowerArchitecturePPC64 < 7) {
+    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
+      warning("UseSecondarySupersTable requires Power7 or later.");
+    }
+    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
   }
 
 #ifdef COMPILER2

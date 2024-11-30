@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,9 +33,9 @@ extern "C" {
 #define STATUS_FAILED 2
 #define PASSED 0
 
-#define RETURN_FAILED errCode = STATUS_FAILED; fflush(0); return errCode
+#define RETURN_FAILED errCode = STATUS_FAILED; fflush(nullptr); return errCode
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 
@@ -51,7 +51,7 @@ static int errCode = PASSED;
 
 static const char *sig_exp       = "()J";
 static const char *name_exp      = "activeMethod";
-static jmethodID midActiveMethod = NULL;
+static jmethodID midActiveMethod = nullptr;
 
 void JNICALL
 MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
@@ -59,7 +59,7 @@ MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
 
     if (method == midActiveMethod) {
         printf("#### MethodExit event occurred ####\n");
-        fflush(0);
+        fflush(nullptr);
         meth_exit_gen_events++;
     }
 }
@@ -70,7 +70,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
 
     if (method == midActiveMethod) {
         printf("#### FramePop event occurred ####\n");
-        fflush(0);
+        fflush(nullptr);
         pop_frame_gen_events++;
     }
 }
@@ -84,13 +84,13 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_suspThread(JNIEnv *env,
     }
 
     jclass clazz = env->GetObjectClass(earlyretThr);
-    if (clazz == NULL) {
+    if (clazz == nullptr) {
         printf("Cannot get class of thread object\n");
         RETURN_FAILED;
     }
 
     midActiveMethod = env->GetMethodID(clazz, name_exp, sig_exp);
-    if (midActiveMethod == NULL) {
+    if (midActiveMethod == nullptr) {
         printf("Cannot find Method ID for method %s\n", name_exp);
         RETURN_FAILED;
     }
@@ -120,7 +120,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_resThread(JNIEnv *env,
         return JNI_ERR;
     }
     printf("<<<<<<<< ResumeThread() is successfully done\n");
-    fflush(0);
+    fflush(nullptr);
     return PASSED;
 }
 
@@ -137,7 +137,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_doForceEarlyReturn(JNIEnv *env
      * that ForceEarlyReturn correctly generates them */
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_METHOD_EXIT, NULL);
+        JVMTI_EVENT_METHOD_EXIT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable METHOD_EXIT event: %s (%d)\n",
                TranslateError(err), err);
@@ -147,7 +147,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_doForceEarlyReturn(JNIEnv *env
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_FRAME_POP, NULL);
+        JVMTI_EVENT_FRAME_POP, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable FRAME_POP event: %s (%d)\n",
                TranslateError(err), err);
@@ -176,7 +176,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_doForceEarlyReturn(JNIEnv *env
         RETURN_FAILED;
     }
     printf("Check #1 PASSED: ForceEarlyReturn() is successfully done\n");
-    fflush(0);
+    fflush(nullptr);
 
     return(errCode);
 }
@@ -197,7 +197,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong error code from a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -268,7 +268,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretbase_check(JNIEnv *env, jclass cls)
                "events generated correctly\n");
         errCode = PASSED;
     }
-    fflush(0);
+    fflush(nullptr);
     return errCode;
 }
 

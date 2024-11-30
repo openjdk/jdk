@@ -37,18 +37,21 @@ and instead just tweak the existing one.
 
 First cd into the libpng folder and run the following script.
 
+    shopt -s nullglob
     for f in *.c *.h;
-    do
-      # replace tabs with spaces
-      expand ${f} > ${f}.tmp;
-      mv ${f}.tmp $f;
+         do
+            # replace tabs with spaces
+            expand ${f} > ${f}.tmp
+            mv ${f}.tmp $f
 
-      # fix line endings to LF
-      sed -i -e 's/\r$//g' ${f};
+            # fix line endings to LF
+            sed -e 's/\r$//g' ${f} > ${f}.tmp
+            mv ${f}.tmp $f
 
-      # remove trailing spaces
-      sed -i -e 's/[ ]* $//g' ${f};
-    done
+            # remove trailing spaces
+            sed -e 's/[ ]* $//g' ${f} > ${f}.tmp
+            mv ${f}.tmp $f
+         done
 
 6) As with all native code, run it through the official build systems, in case
 the updated code trigger any fatal warnings with the official compilers.

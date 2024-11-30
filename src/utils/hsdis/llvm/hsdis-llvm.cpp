@@ -328,6 +328,7 @@ class hsdis_backend : public hsdis_backend_base {
 };
 
 
+JNIEXPORT
 void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
                             unsigned char* buffer, uintptr_t length,
                             event_callback_t  event_callback_arg,  void* event_stream_arg,
@@ -342,6 +343,7 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
 }
 
 /* This is the compatability interface for older version of hotspot */
+JNIEXPORT
 void* decode_instructions(void* start_pv, void* end_pv,
                     event_callback_t  event_callback_arg,  void* event_stream_arg,
                     printf_callback_t printf_callback_arg, void* printf_stream_arg,

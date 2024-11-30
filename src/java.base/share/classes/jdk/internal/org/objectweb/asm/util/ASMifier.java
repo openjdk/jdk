@@ -75,7 +75,7 @@ import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.TypePath;
 
 /**
- * A {@link Printer} that prints the ASM code to generate the classes if visits.
+ * A {@link Printer} that prints the ASM code to generate the classes it visits.
  *
  * @author Eric Bruneton
  */
@@ -141,6 +141,10 @@ public class ASMifier extends Printer {
         classVersions.put(Opcodes.V17, "V17");
         classVersions.put(Opcodes.V18, "V18");
         classVersions.put(Opcodes.V19, "V19");
+        classVersions.put(Opcodes.V20, "V20");
+        classVersions.put(Opcodes.V21, "V21");
+        classVersions.put(Opcodes.V22, "V22");
+        classVersions.put(Opcodes.V23, "V23");
         CLASS_VERSIONS = Collections.unmodifiableMap(classVersions);
     }
 
@@ -1641,4 +1645,3 @@ public class ASMifier extends Printer {
         stringBuilder.append(labelNames.get(label));
     }
 }
-

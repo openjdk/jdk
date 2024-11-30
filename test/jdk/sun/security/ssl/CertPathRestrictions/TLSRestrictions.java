@@ -231,7 +231,7 @@ public class TLSRestrictions {
 
             // Run client on another JVM so that its properties cannot be in conflict
             // with server's.
-            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJvm(
+            OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
                     "-Dcert.dir=" + CERT_DIR,
                     "-Djava.security.debug=certpath",
                     "-classpath",

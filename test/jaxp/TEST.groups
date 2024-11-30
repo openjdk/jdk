@@ -20,6 +20,14 @@
 #  questions.
 #
 
+# All tests
+
+all = \
+    :jaxp_all
+
+jaxp_all = \
+    /
+
 # Tiered testing definitions
 
 # No jaxp tests are tier 1.
@@ -34,6 +42,3 @@ tier3 =
 
 # No tier 4 tests.
 tier4 =
-
-jaxp_all = \
-    javax/xml/jaxp

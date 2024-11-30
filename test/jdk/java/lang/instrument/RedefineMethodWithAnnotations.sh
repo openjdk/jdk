@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ cp "${TESTSRC}"/RedefineMethodWithAnnotationsAnnotations.java \
     RedefineMethodWithAnnotationsTarget.java \
     RedefineMethodWithAnnotationsAnnotations.java
 
-"${JAVA}" ${TESTVMOPTS} -javaagent:RedefineMethodWithAnnotationsAgent.jar \
+"${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} -javaagent:RedefineMethodWithAnnotationsAgent.jar \
     -XX:+UnlockDiagnosticVMOptions -XX:+StressLdcRewrite -XX:+IgnoreUnrecognizedVMOptions \
     -cp "${TESTCLASSES}" RedefineMethodWithAnnotationsApp > output.log 2>&1
 cat output.log

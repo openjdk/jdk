@@ -65,7 +65,7 @@ public abstract class DeclarationSnippet extends PersistentSnippet {
         this.bodyReferences = bodyReferences;
     }
 
-    /**** internal access ****/
+    //*** internal access ****
 
     /**
      * @return the corralled guts

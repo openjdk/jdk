@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,14 +205,12 @@ public abstract class CardTerminals {
         CARD_ABSENT,
         /**
          * CardTerminals for which a card insertion was detected during the
-         * latest call to {@linkplain State#waitForChange waitForChange()}
-         * call.
+         * latest call to {@linkplain CardTerminals#waitForChange() waitForChange()}.
          */
         CARD_INSERTION,
         /**
          * CardTerminals for which a card removal was detected during the
-         * latest call to {@linkplain State#waitForChange waitForChange()}
-         * call.
+         * latest call to {@linkplain CardTerminals#waitForChange() waitForChange()}.
          */
         CARD_REMOVAL,
     }

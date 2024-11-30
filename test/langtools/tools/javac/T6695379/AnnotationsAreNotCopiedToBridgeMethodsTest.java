@@ -26,12 +26,8 @@
  * @bug 6695379
  * @summary Copy method annotations and parameter annotations to synthetic
  * bridge methods
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.util
  * @run main AnnotationsAreNotCopiedToBridgeMethodsTest
  */
@@ -45,8 +41,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 public class AnnotationsAreNotCopiedToBridgeMethodsTest {
@@ -64,12 +60,12 @@ public class AnnotationsAreNotCopiedToBridgeMethodsTest {
     }
 
     <A extends Attribute<A>> void checkClassFile(final Path cfilePath) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfilePath);
+        ClassModel classFile = ClassFile.of().parse(cfilePath);
         for (MethodModel method : classFile.methods()) {
-            if ((method.flags().flagsMask() & Classfile.ACC_BRIDGE) != 0) {
-                Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS),
+            if ((method.flags().flagsMask() & ClassFile.ACC_BRIDGE) != 0) {
+                Assert.checkNonNull(method.findAttribute(Attributes.runtimeVisibleAnnotations()),
                         "Annotations hasn't been copied to bridge method");
-                Assert.checkNonNull(method.findAttribute(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS),
+                Assert.checkNonNull(method.findAttribute(Attributes.runtimeVisibleParameterAnnotations()),
                         "Annotations hasn't been copied to bridge method");
             }
         }

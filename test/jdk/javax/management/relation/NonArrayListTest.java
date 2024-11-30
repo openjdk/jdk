@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,10 @@
 import java.util.*;
 import javax.management.*;
 import javax.management.relation.*;
-import javax.management.loading.MLet;
+import javax.management.timer.Timer;
 
 public class NonArrayListTest {
 
-    @SuppressWarnings("removal") // use of MLet
     public static void main(String[] args) throws Exception {
         MBeanServer mbs = MBeanServerFactory.createMBeanServer();
         RelationService rs = new RelationService(true);
@@ -51,18 +50,18 @@ public class NonArrayListTest {
                                                           RelationServiceMBean.class,
                                                           false);
 
-        ObjectName mlet1Name = new ObjectName("r:type=MLet,instance=1");
-        ObjectName mlet2Name = new ObjectName("r:type=MLet,instance=2");
-        mbs.createMBean(MLet.class.getName(), mlet1Name);
-        mbs.createMBean(MLet.class.getName(), mlet2Name);
+        ObjectName mb1Name = new ObjectName("r:type=Timer,instance=1");
+        ObjectName mb2Name = new ObjectName("r:type=Timer,instance=2");
+        mbs.createMBean(Timer.class.getName(), mb1Name);
+        mbs.createMBean(Timer.class.getName(), mb2Name);
 
-        RoleInfo leftRoleInfo = new RoleInfo("left", MLet.class.getName());
-        RoleInfo rightRoleInfo = new RoleInfo("right", MLet.class.getName());
+        RoleInfo leftRoleInfo = new RoleInfo("left", Timer.class.getName());
+        RoleInfo rightRoleInfo = new RoleInfo("right", Timer.class.getName());
 
         ArrayList leftRoleValues =
-            new ArrayList(Arrays.asList(new ObjectName[] {mlet1Name}));
+            new ArrayList(Arrays.asList(new ObjectName[] {mb1Name}));
         ArrayList rightRoleValues =
-            new ArrayList(Arrays.asList(new ObjectName[] {mlet2Name}));
+            new ArrayList(Arrays.asList(new ObjectName[] {mb2Name}));
         Role leftRole = new Role("left", leftRoleValues);
         Role rightRole = new Role("right", rightRoleValues);
 

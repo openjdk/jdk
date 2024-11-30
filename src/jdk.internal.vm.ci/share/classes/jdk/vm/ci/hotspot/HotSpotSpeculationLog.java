@@ -207,11 +207,14 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         return result;
     }
 
+    /**
+     * @return {@code true} if the given speculation can be performed, i.e., it never failed so far, otherwise
+     * return {@code false}. Note, that this method returns consistent results for any given speculation for the
+     * entire lifetime of the enclosing SpeculationLog object. This means that speculations failed during a
+     * compilation will not be updated.
+     */
     @Override
     public boolean maySpeculate(SpeculationReason reason) {
-        if (failedSpeculations == null) {
-            collectFailedSpeculations();
-        }
         if (failedSpeculations != null && failedSpeculations.length != 0) {
             byte[] encoding = encode(reason);
             return !contains(failedSpeculations, 0, encoding);

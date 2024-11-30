@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,14 +61,16 @@ public class IntrinsicPredicates {
 
     public static final BooleanSupplier MD5_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", null, null),
+              new OrPredicate(new CPUSpecificPredicate("riscv64.*", null, null),
               // x86 variants
               new OrPredicate(new CPUSpecificPredicate("amd64.*",   null, null),
               new OrPredicate(new CPUSpecificPredicate("i386.*",    null, null),
-                              new CPUSpecificPredicate("x86.*",     null, null))));
+                              new CPUSpecificPredicate("x86.*",     null, null)))));
 
     public static final BooleanSupplier SHA1_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] { "sha1" }, null),
-              new OrPredicate(new CPUSpecificPredicate("riscv64.*", new String[] { "sha1" }, null),
+              // SHA-1 intrinsic is implemented with scalar instructions on riscv64
+              new OrPredicate(new CPUSpecificPredicate("riscv64.*", null, null),
               new OrPredicate(new CPUSpecificPredicate("s390.*",    new String[] { "sha1" }, null),
               // x86 variants
               new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] { "sha" },  null),
@@ -77,7 +79,7 @@ public class IntrinsicPredicates {
 
     public static final BooleanSupplier SHA256_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] { "sha256"       }, null),
-              new OrPredicate(new CPUSpecificPredicate("riscv64.*", new String[] { "sha256"       }, null),
+              new OrPredicate(new CPUSpecificPredicate("riscv64.*", new String[] { "zvkn"         }, null),
               new OrPredicate(new CPUSpecificPredicate("s390.*",    new String[] { "sha256"       }, null),
               new OrPredicate(new CPUSpecificPredicate("ppc64.*",   new String[] { "sha"          }, null),
               new OrPredicate(new CPUSpecificPredicate("ppc64le.*", new String[] { "sha"          }, null),
@@ -90,7 +92,7 @@ public class IntrinsicPredicates {
 
     public static final BooleanSupplier SHA512_INSTRUCTION_AVAILABLE
             = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] { "sha512"       }, null),
-              new OrPredicate(new CPUSpecificPredicate("riscv64.*", new String[] { "sha512"       }, null),
+              new OrPredicate(new CPUSpecificPredicate("riscv64.*", new String[] { "zvkn"         }, null),
               new OrPredicate(new CPUSpecificPredicate("s390.*",    new String[] { "sha512"       }, null),
               new OrPredicate(new CPUSpecificPredicate("ppc64.*",   new String[] { "sha"          }, null),
               new OrPredicate(new CPUSpecificPredicate("ppc64le.*", new String[] { "sha"          }, null),
@@ -102,8 +104,10 @@ public class IntrinsicPredicates {
                               new CPUSpecificPredicate("x86_64",    new String[] { "avx2", "bmi2" }, null))))))))));
 
     public static final BooleanSupplier SHA3_INSTRUCTION_AVAILABLE
-            // sha3 is only implemented on aarch64 for now
-            = new CPUSpecificPredicate("aarch64.*", new String[] {"sha3"          }, null);
+            // sha3 is only implemented on aarch64 and avx512 for now
+            = new OrPredicate(new CPUSpecificPredicate("aarch64.*", new String[] {"sha3"               }, null),
+              new OrPredicate(new CPUSpecificPredicate("amd64.*",   new String[] {"avx512f", "avx512bw"}, null),
+                              new CPUSpecificPredicate("x86_64",    new String[] {"avx512f", "avx512bw"}, null)));
 
     public static final BooleanSupplier ANY_SHA_INSTRUCTION_AVAILABLE
             = new OrPredicate(IntrinsicPredicates.SHA1_INSTRUCTION_AVAILABLE,

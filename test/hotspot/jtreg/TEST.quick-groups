@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -969,7 +969,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/GetMethodName/methname003/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage003/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage004/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage005/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectSize/objsize001/TestDescription.java \

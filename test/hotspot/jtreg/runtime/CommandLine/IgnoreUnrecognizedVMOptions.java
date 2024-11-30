@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,60 +75,52 @@ public class IgnoreUnrecognizedVMOptions {
     runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:StackRedPages=0", "-version");
 
     /*
-      #1.3 develop & notproduct flag on debug VM:
-                                      develop & !product_build        notproduct & !product_build
-                                      -XX:+DeoptimizeALot             -XX:+VerifyCodeCache
-      -IgnoreUnrecognizedVMOptions               OK                            OK
-      +IgnoreUnrecognizedVMOptions               OK                            OK
+      #1.3 develop flag on debug VM:
+                                      develop & !product_build
+                                      -XX:+DeoptimizeALot
+      -IgnoreUnrecognizedVMOptions               OK
+      +IgnoreUnrecognizedVMOptions               OK
     */
     if (!product) {
       runJavaAndCheckExitValue(true, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(true, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+VerifyCodeCache", "-version");
       runJavaAndCheckExitValue(true, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(true, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyCodeCache", "-version");
     }
 
     /*
-      #1.4 develop & notproduct flag on product VM:
-                                    develop & !product_build           notproduct & product_build
-                                    -XX:+DeoptimizeALot                -XX:+VerifyCodeCache
-      -IgnoreUnrecognizedVMOptions               ERR                           ERR
-      +IgnoreUnrecognizedVMOptions               OK                            OK
+      #1.4 develop flag on product VM:
+                                    develop & product_build
+                                    -XX:+DeoptimizeALot
+      -IgnoreUnrecognizedVMOptions               ERR
+      +IgnoreUnrecognizedVMOptions               OK
     */
     if (product) {
       runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+VerifyCodeCache", "-version");
       runJavaAndCheckExitValue(true, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(true, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+VerifyCodeCache", "-version");
     }
 
 
     /*
-      #1.5 malformed develop & notproduct flag on debug VM:
-                                  develop & !product_build             notproduct & !product_build
-                                  -XX:DeoptimizeALot                   -XX:VerifyCodeCache
-      -IgnoreUnrecognizedVMOptions               ERR                           ERR
-      +IgnoreUnrecognizedVMOptions               ERR                           ERR
+      #1.5 malformed develop flag on debug VM:
+                                  develop & !product_build
+                                  -XX:DeoptimizeALot
+      -IgnoreUnrecognizedVMOptions               ERR
+      +IgnoreUnrecognizedVMOptions               ERR
     */
     if (!product) {
       runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:VerifyCodeCache", "-version");
       runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:VerifyCodeCache", "-version");
     }
 
     /*
-      #1.6 malformed develop & notproduct flag on product VM:
-                                    develop & !product_build           notproduct & product_build
-                                    -XX:DeoptimizeALot                 -XX:VerifyCodeCache
-      -IgnoreUnrecognizedVMOptions               ERR                           ERR
-      +IgnoreUnrecognizedVMOptions               OK                            OK
+      #1.6 malformed develop flag on product VM:
+                                    develop & !product_build
+                                    -XX:DeoptimizeALot
+      -IgnoreUnrecognizedVMOptions               ERR
+      +IgnoreUnrecognizedVMOptions               OK
     */
     if (product) {
       runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:VerifyCodeCache", "-version");
       runJavaAndCheckExitValue(true, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:DeoptimizeALot", "-version");
-      runJavaAndCheckExitValue(true, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:VerifyCodeCache", "-version");
     }
 
     /*

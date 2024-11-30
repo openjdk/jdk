@@ -23,12 +23,15 @@
  * questions.
  */
 
+import jdk.internal.javac.ParticipatesInPreview;
+
 /**
  * Defines the API for JDK Flight Recorder.
  *
  * @moduleGraph
  * @since 9
  */
+@ParticipatesInPreview
 module jdk.jfr {
     exports jdk.jfr;
     exports jdk.jfr.consumer;

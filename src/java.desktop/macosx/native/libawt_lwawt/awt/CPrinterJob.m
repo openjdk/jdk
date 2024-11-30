@@ -383,6 +383,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     DECLARE_METHOD(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
     DECLARE_METHOD(jm_setDestinationFile, sjc_CPrinterJob, "setDestinationFile", "(Ljava/lang/String;)V");
     DECLARE_METHOD(jm_setSides, sjc_CPrinterJob, "setSides", "(I)V");
+    DECLARE_METHOD(jm_setOutputBin, sjc_CPrinterJob, "setOutputBin", "(Ljava/lang/String;)V");
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];
@@ -449,6 +450,13 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
             (*env)->CallVoidMethod(env, dstPrinterJob, jm_setSides, sides); // AWT_THREADING Safe (known object)
             CHECK_EXCEPTION();
         }
+
+        NSString* outputBin = [[src printSettings] objectForKey:@"OutputBin"];
+        if (outputBin != nil) {
+            jstring outputBinName = NSStringToJavaString(env, outputBin);
+            (*env)->CallVoidMethod(env, dstPrinterJob, jm_setOutputBin, outputBinName);
+            CHECK_EXCEPTION();
+        }
     }
 }
 
@@ -468,6 +476,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     DECLARE_METHOD(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
     DECLARE_METHOD(jm_getDestinationFile, sjc_CPrinterJob, "getDestinationFile", "()Ljava/lang/String;");
     DECLARE_METHOD(jm_getSides, sjc_CPrinterJob, "getSides", "()I");
+    DECLARE_METHOD(jm_getOutputBin, sjc_CPrinterJob, "getOutputBin", "()Ljava/lang/String;");
 
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
@@ -536,6 +545,15 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
         PMPrintSettings printSettings = dst.PMPrintSettings;
         if (PMSetDuplex(printSettings, duplexMode) == noErr) {
             [dst updateFromPMPrintSettings];
+        }
+    }
+
+    jobject outputBin = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getOutputBin);
+    CHECK_EXCEPTION();
+    if (outputBin != NULL) {
+        NSString *nsOutputBinStr = JavaStringToNSString(env, outputBin);
+        if (nsOutputBinStr != nil) {
+            [[dst printSettings] setObject:nsOutputBinStr forKey:@"OutputBin"];
         }
     }
 }

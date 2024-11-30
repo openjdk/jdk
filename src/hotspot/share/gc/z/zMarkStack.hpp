@@ -52,7 +52,7 @@ public:
 };
 
 template <typename T>
-class ZStackList {
+class ZCACHE_ALIGNED ZStackList {
 private:
   uintptr_t   _base;
   T* volatile _head;

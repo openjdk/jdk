@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,6 +219,7 @@ public class TestSerializedForm extends JavadocTester {
                 """
                     <a href="pkg2/Fields.html" title="class in pkg2">Fields</a>[] singleArray""",
                 """
-                    java.lang.Class&lt;<a href="pkg2/Fields.html" title="type parameter in Fields">E</a>&gt; someClass""");
+                    java.lang.Class&lt;<a href="pkg2/Fields.html#type-param-E" title="type paramete\
+                    r in Fields">E</a>&gt; someClass""");
     }
 }

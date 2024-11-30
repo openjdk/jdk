@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,12 @@ public class BasicSliderUI extends SliderUI{
 
     /**
      * Constructs a {@code BasicSliderUI}.
+     *
+     * @since 16
+     * @deprecated This constructor was exposed erroneously and will be removed in a future release.
+     *             Use {@link #BasicSliderUI(JSlider)} instead.
      */
+    @Deprecated(since = "23", forRemoval = true)
     public BasicSliderUI() {}
 
     /**
@@ -2075,9 +2080,11 @@ public class BasicSliderUI extends SliderUI{
         }
 
         /**
-         * Returns if scrolling should occur
-         * @param direction the direction.
-         * @return if scrolling should occur
+         * Returns if scrolling should occur.
+         *
+         * @param  direction the direction
+         * @return {@code true} if scrolling should occur, otherwise
+         *         {@code false}
          */
         public boolean shouldScroll(int direction) {
             Rectangle r = thumbRect;

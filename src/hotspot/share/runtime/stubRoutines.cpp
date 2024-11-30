@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/continuation.hpp"
@@ -40,10 +41,10 @@
 #include "opto/runtime.hpp"
 #endif
 
-UnsafeCopyMemory* UnsafeCopyMemory::_table                      = nullptr;
-int UnsafeCopyMemory::_table_length                             = 0;
-int UnsafeCopyMemory::_table_max_length                         = 0;
-address UnsafeCopyMemory::_common_exit_stub_pc                  = nullptr;
+UnsafeMemoryAccess* UnsafeMemoryAccess::_table                  = nullptr;
+int UnsafeMemoryAccess::_table_length                           = 0;
+int UnsafeMemoryAccess::_table_max_length                       = 0;
+address UnsafeMemoryAccess::_common_exit_stub_pc                = nullptr;
 
 // Implementation of StubRoutines - for a description
 // of how to extend it, see the header file.
@@ -60,11 +61,6 @@ address StubRoutines::_call_stub_entry                          = nullptr;
 
 address StubRoutines::_catch_exception_entry                    = nullptr;
 address StubRoutines::_forward_exception_entry                  = nullptr;
-address StubRoutines::_throw_AbstractMethodError_entry          = nullptr;
-address StubRoutines::_throw_IncompatibleClassChangeError_entry = nullptr;
-address StubRoutines::_throw_NullPointerException_at_call_entry = nullptr;
-address StubRoutines::_throw_StackOverflowError_entry           = nullptr;
-address StubRoutines::_throw_delayed_StackOverflowError_entry   = nullptr;
 jint    StubRoutines::_verify_oop_count                         = 0;
 address StubRoutines::_verify_oop_subroutine_entry              = nullptr;
 address StubRoutines::_atomic_xchg_entry                        = nullptr;
@@ -109,6 +105,8 @@ address StubRoutines::_checkcast_arraycopy_uninit        = nullptr;
 address StubRoutines::_unsafe_arraycopy                  = nullptr;
 address StubRoutines::_generic_arraycopy                 = nullptr;
 
+address StubRoutines::_unsafe_setmemory                  = nullptr;
+
 address StubRoutines::_jbyte_fill;
 address StubRoutines::_jshort_fill;
 address StubRoutines::_jint_fill;
@@ -129,6 +127,8 @@ address StubRoutines::_chacha20Block                       = nullptr;
 address StubRoutines::_base64_encodeBlock                  = nullptr;
 address StubRoutines::_base64_decodeBlock                  = nullptr;
 address StubRoutines::_poly1305_processBlocks              = nullptr;
+address StubRoutines::_intpoly_montgomeryMult_P256         = nullptr;
+address StubRoutines::_intpoly_assign                      = nullptr;
 
 address StubRoutines::_md5_implCompress      = nullptr;
 address StubRoutines::_md5_implCompressMB    = nullptr;
@@ -143,6 +143,8 @@ address StubRoutines::_sha3_implCompressMB   = nullptr;
 
 address StubRoutines::_updateBytesCRC32 = nullptr;
 address StubRoutines::_crc_table_adr =    nullptr;
+
+address StubRoutines::_string_indexof_array[4]   =    { nullptr };
 
 address StubRoutines::_crc32c_table_addr = nullptr;
 address StubRoutines::_updateBytesCRC32C = nullptr;
@@ -169,26 +171,29 @@ address StubRoutines::_dlibm_sin_cos_huge = nullptr;
 address StubRoutines::_dlibm_reduce_pi04l = nullptr;
 address StubRoutines::_dlibm_tan_cot_huge = nullptr;
 address StubRoutines::_dtan = nullptr;
+address StubRoutines::_dtanh = nullptr;
 
 address StubRoutines::_f2hf = nullptr;
 address StubRoutines::_hf2f = nullptr;
 
-address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
-address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP] = {{nullptr}, {nullptr}};
+address StubRoutines::_vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
+address StubRoutines::_vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_VECTOR_OP_MATH] = {{nullptr}, {nullptr}};
 
+address StubRoutines::_method_entry_barrier = nullptr;
 address StubRoutines::_array_sort = nullptr;
 address StubRoutines::_array_partition  = nullptr;
 
 address StubRoutines::_cont_thaw          = nullptr;
 address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
-
-JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
-JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
-JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
-JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
+address StubRoutines::_cont_preempt_stub = nullptr;
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
+address StubRoutines::_upcall_stub_load_target = nullptr;
+
+address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
+address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
+
 
 // Initialization
 //
@@ -198,14 +203,14 @@ address StubRoutines::_upcall_stub_exception_handler = nullptr;
 
 extern void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind); // only interface to generators
 
-void UnsafeCopyMemory::create_table(int max_size) {
-  UnsafeCopyMemory::_table = new UnsafeCopyMemory[max_size];
-  UnsafeCopyMemory::_table_max_length = max_size;
+void UnsafeMemoryAccess::create_table(int max_size) {
+  UnsafeMemoryAccess::_table = new UnsafeMemoryAccess[max_size];
+  UnsafeMemoryAccess::_table_max_length = max_size;
 }
 
-bool UnsafeCopyMemory::contains_pc(address pc) {
-  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
-    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
+bool UnsafeMemoryAccess::contains_pc(address pc) {
+  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
+    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return true;
     }
@@ -213,9 +218,9 @@ bool UnsafeCopyMemory::contains_pc(address pc) {
   return false;
 }
 
-address UnsafeCopyMemory::page_error_continue_pc(address pc) {
-  for (int i = 0; i < UnsafeCopyMemory::_table_length; i++) {
-    UnsafeCopyMemory* entry = &UnsafeCopyMemory::_table[i];
+address UnsafeMemoryAccess::page_error_continue_pc(address pc) {
+  for (int i = 0; i < UnsafeMemoryAccess::_table_length; i++) {
+    UnsafeMemoryAccess* entry = &UnsafeMemoryAccess::_table[i];
     if (pc >= entry->start_pc() && pc < entry->end_pc()) {
       return entry->error_exit_pc();
     }
@@ -515,20 +520,20 @@ StubRoutines::select_arraycopy_function(BasicType t, bool aligned, bool disjoint
 #undef RETURN_STUB_PARM
 }
 
-UnsafeCopyMemoryMark::UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
+UnsafeMemoryAccessMark::UnsafeMemoryAccessMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc) {
   _cgen = cgen;
   _ucm_entry = nullptr;
   if (add_entry) {
     address err_exit_pc = nullptr;
     if (!continue_at_scope_end) {
-      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeCopyMemory::common_exit_stub_pc();
+      err_exit_pc = error_exit_pc != nullptr ? error_exit_pc : UnsafeMemoryAccess::common_exit_stub_pc();
     }
     assert(err_exit_pc != nullptr || continue_at_scope_end, "error exit not set");
-    _ucm_entry = UnsafeCopyMemory::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
+    _ucm_entry = UnsafeMemoryAccess::add_to_table(_cgen->assembler()->pc(), nullptr, err_exit_pc);
   }
 }
 
-UnsafeCopyMemoryMark::~UnsafeCopyMemoryMark() {
+UnsafeMemoryAccessMark::~UnsafeMemoryAccessMark() {
   if (_ucm_entry != nullptr) {
     _ucm_entry->set_end_pc(_cgen->assembler()->pc());
     if (_ucm_entry->error_exit_pc() == nullptr) {

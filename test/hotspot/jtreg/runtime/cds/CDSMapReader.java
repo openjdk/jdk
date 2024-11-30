@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ This is a simple parser for parsing the output of
 The map file contains patterns like this for the heap objects:
 
 ======================================================================
-0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String
+0x00000000ffe00000: @@ Object (0xffe00000) java.lang.String ""
  - klass: 'java/lang/String' 0x0000000800010220
  - fields (3 words):
  - private 'hash' 'I' @12  0 (0x00000000)
@@ -149,11 +149,11 @@ public class CDSMapReader {
 
     // (one address)
     // 0x00000007ffc00000: @@ Object java.lang.String
-    static Pattern objPattern1 = Pattern.compile("^0x([0-9a-f]+): @@ Object (.*)");
+    static Pattern objPattern1 = Pattern.compile("^0x([0-9a-f]+): @@ Object ([^ ]*)");
 
     // (two addresses)
     // 0x00000007ffc00000: @@ Object (0xfff80000) java.lang.String
-    static Pattern objPattern2 = Pattern.compile("^0x([0-9a-f]+): @@ Object [(]0x([0-9a-f]+)[)] (.*)");
+    static Pattern objPattern2 = Pattern.compile("^0x([0-9a-f]+): @@ Object [(]0x([0-9a-f]+)[)] ([^ ]*)");
 
     //  - klass: 'java/lang/String' 0x0000000800010290
     static Pattern instanceObjKlassPattern = Pattern.compile("^ - klass: '([^']+)' 0x([0-9a-f]+)");
@@ -174,6 +174,10 @@ public class CDSMapReader {
     // (two addresses)
     //  - final 'key' 'Ljava/lang/Object;' @16 0x00000007ffc68260 (0xfff8d04c) java.lang.String
     static Pattern oopFieldPattern2 = Pattern.compile(" - [^']* '([^']+)'.*@([0-9]+) 0x([0-9a-f]+) [(]0x([0-9a-f]+)[)] (.*)");
+
+    // (injected module_entry)
+    //  - injected 'module_entry' 'J' @16 0 (0x0000000000000000)
+    static Pattern moduleEntryPattern = Pattern.compile("- injected 'module_entry' 'J' @[0-9]+[ ]+([0-9]+)");
 
     private static Matcher match(String line, Pattern pattern) {
         Matcher m = pattern.matcher(line);
@@ -218,6 +222,11 @@ public class CDSMapReader {
                         heapObject.addOopField(m.group(1), m.group(2), m.group(3), m.group(4));
                     } else if ((m = match(line, oopFieldPattern1)) != null) {
                         heapObject.addOopField(m.group(1), m.group(2), m.group(3), null);
+                    } else if ((m = match(line, moduleEntryPattern)) != null) {
+                        String value = m.group(1);
+                        if (!value.equals("0")) {
+                            throw new RuntimeException("module_entry should be 0 but found: " + line);
+                        }
                     }
                 }
             }

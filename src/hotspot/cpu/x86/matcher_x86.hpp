@@ -93,7 +93,7 @@
   static bool narrow_klass_use_complex_address() {
     NOT_LP64(ShouldNotCallThis();)
     assert(UseCompressedClassPointers, "only for compressed klass code");
-    return (LogKlassAlignmentInBytes <= 3);
+    return (CompressedKlassPointers::shift() <= 3);
   }
 
   // Prefer ConN+DecodeN over ConP.
@@ -152,6 +152,16 @@
   // Does the CPU supports vector variable shift instructions?
   static bool supports_vector_variable_shifts(void) {
     return (UseAVX >= 2);
+  }
+
+  // Does target support predicated operation emulation.
+  static bool supports_vector_predicate_op_emulation(int vopc, int vlen, BasicType bt) {
+    switch(vopc) {
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(bt) && VM_Version::supports_avx2();
+      default:
+        return false;
+    }
   }
 
   // Does the CPU supports vector variable rotate instructions?
@@ -214,6 +224,9 @@
         return 7;
       case Op_MulVL:
         return VM_Version::supports_avx512vldq() ? 0 : 6;
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
+        return is_subword_type(ety) ? 50 : 0;
       case Op_VectorCastF2X: // fall through
       case Op_VectorCastD2X:
         return is_floating_point_type(ety) ? 0 : (is_subword_type(ety) ? 35 : 30);
@@ -245,6 +258,19 @@
       case Op_RoundD: {
         return 30;
       }
+    }
+  }
+
+  // Is SIMD sort supported for this CPU?
+  static bool supports_simd_sort(BasicType bt) {
+    if (VM_Version::supports_avx512dq()) {
+      return true;
+    }
+    else if (VM_Version::supports_avx2() && !is_double_word_type(bt)) {
+      return true;
+    }
+    else {
+      return false;
     }
   }
 

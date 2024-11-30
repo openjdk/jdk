@@ -37,6 +37,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.concurrent.ConcurrentHashMap;
 import static sun.awt.SunHints.*;
+import sun.java2d.pipe.OutlineTextRenderer;
 
 
 public class FileFontStrike extends PhysicalStrike {
@@ -107,6 +108,7 @@ public class FileFontStrike extends PhysicalStrike {
     boolean useNatives;
     NativeStrike[] nativeStrikes;
 
+    static final int MAX_IMAGE_SIZE = OutlineTextRenderer.THRESHHOLD;
     /* Used only for communication to native layer */
     private int intPtSize;
 
@@ -313,8 +315,7 @@ public class FileFontStrike extends PhysicalStrike {
              * work to the FM case.
              */
             float advance = getGlyphAdvance(glyphCode, false);
-            StrikeCache.unsafe.putFloat(ptr + StrikeCache.xAdvanceOffset,
-                                        advance);
+            StrikeCache.setGlyphXAdvance(ptr, advance);
             return ptr;
         } else {
             if (FontUtilities.isLogging()) {
@@ -663,8 +664,7 @@ public class FileFontStrike extends PhysicalStrike {
                 glyphPtr = getCachedGlyphPtr(glyphCode);
             }
             if (glyphPtr != 0L) {
-                advance = StrikeCache.unsafe.getFloat
-                    (glyphPtr + StrikeCache.xAdvanceOffset);
+                advance = StrikeCache.getGlyphXAdvance(glyphPtr);
 
             } else {
                 advance = fileFont.getGlyphAdvance(pScalerContext, glyphCode);
@@ -697,6 +697,20 @@ public class FileFontStrike extends PhysicalStrike {
     void getGlyphImageBounds(int glyphCode, Point2D.Float pt,
                              Rectangle result) {
 
+        if (intPtSize > MAX_IMAGE_SIZE) {
+            Rectangle.Float obds = getGlyphOutlineBounds(glyphCode);
+            if (obds.isEmpty()) {
+                Rectangle bds = getGlyphOutline(glyphCode, pt.x, pt.y).getBounds();
+                result.setBounds(bds);
+            } else {
+                result.x = (int)Math.floor(pt.x + obds.getX() + 0.5f);
+                result.y = (int)Math.floor(pt.y + obds.getY() + 0.5f);
+                result.width = (int)Math.floor(obds.getWidth() + 0.5f);
+                result.height = (int)Math.floor(obds.getHeight() + 0.5f);
+            }
+            return;
+        }
+
         long ptr = getGlyphImagePtr(glyphCode);
         float topLeftX, topLeftY;
 
@@ -710,15 +724,13 @@ public class FileFontStrike extends PhysicalStrike {
             return;
         }
 
-        topLeftX = StrikeCache.unsafe.getFloat(ptr+StrikeCache.topLeftXOffset);
-        topLeftY = StrikeCache.unsafe.getFloat(ptr+StrikeCache.topLeftYOffset);
+        topLeftX = StrikeCache.getGlyphTopLeftX(ptr);
+        topLeftY = StrikeCache.getGlyphTopLeftY(ptr);
 
         result.x = (int)Math.floor(pt.x + topLeftX + 0.5f);
         result.y = (int)Math.floor(pt.y + topLeftY + 0.5f);
-        result.width =
-            StrikeCache.unsafe.getShort(ptr+StrikeCache.widthOffset)  &0x0ffff;
-        result.height =
-            StrikeCache.unsafe.getShort(ptr+StrikeCache.heightOffset) &0x0ffff;
+        result.width = StrikeCache.getGlyphWidth(ptr) & 0x0ffff;
+        result.height = StrikeCache.getGlyphHeight(ptr) & 0x0ffff;
 
         /* HRGB LCD text may have padding that is empty. This is almost always
          * going to be when topLeftX is -2 or less.
@@ -739,25 +751,22 @@ public class FileFontStrike extends PhysicalStrike {
 
     private int getGlyphImageMinX(long ptr, int origMinX) {
 
-        int width = StrikeCache.unsafe.getChar(ptr+StrikeCache.widthOffset);
-        int height = StrikeCache.unsafe.getChar(ptr+StrikeCache.heightOffset);
-        int rowBytes =
-            StrikeCache.unsafe.getChar(ptr+StrikeCache.rowBytesOffset);
+        int width = StrikeCache.getGlyphWidth(ptr);
+        int height = StrikeCache.getGlyphHeight(ptr);
+        int rowBytes = StrikeCache.getGlyphRowBytes(ptr);
 
         if (rowBytes == width) {
             return origMinX;
         }
 
-        long pixelData =
-            StrikeCache.unsafe.getAddress(ptr + StrikeCache.pixelDataOffset);
-
-        if (pixelData == 0L) {
+        if (StrikeCache.getGlyphImagePtr(ptr) == 0L) {
             return origMinX;
         }
 
+        byte[] pixelData = StrikeCache.getGlyphPixelBytes(ptr);
         for (int y=0;y<height;y++) {
             for (int x=0;x<3;x++) {
-                if (StrikeCache.unsafe.getByte(pixelData+y*rowBytes+x) != 0) {
+                if (pixelData[(y*rowBytes)+x] != 0) {
                     return origMinX;
                 }
             }
@@ -803,10 +812,8 @@ public class FileFontStrike extends PhysicalStrike {
         }
         if (glyphPtr != 0L) {
             metrics = new Point2D.Float();
-            metrics.x = StrikeCache.unsafe.getFloat
-                (glyphPtr + StrikeCache.xAdvanceOffset);
-            metrics.y = StrikeCache.unsafe.getFloat
-                (glyphPtr + StrikeCache.yAdvanceOffset);
+            metrics.x = StrikeCache.getGlyphXAdvance(glyphPtr);
+            metrics.y = StrikeCache.getGlyphYAdvance(glyphPtr);
             /* advance is currently in device space, need to convert back
              * into user space.
              * This must not include the translation component. */

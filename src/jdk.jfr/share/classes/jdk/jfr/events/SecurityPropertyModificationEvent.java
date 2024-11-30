@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,9 @@ import jdk.jfr.internal.RemoveFields;
 @Label("Security Property Modification")
 @Name("jdk.SecurityPropertyModification")
 @Description("Modification of Security property")
-@MirrorEvent(className = "jdk.internal.event.SecurityPropertyModificationEvent")
 @RemoveFields("duration")
-public final class SecurityPropertyModificationEvent extends AbstractJDKEvent {
+@StackFilter({"java.security.Security::setProperty"})
+public final class SecurityPropertyModificationEvent extends MirrorEvent {
     @Label("Key")
     public String key;
 

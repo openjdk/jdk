@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,28 @@
 #ifndef SHARE_GC_G1_G1FULLGCRESETMETADATATASK_HPP
 #define SHARE_GC_G1_G1FULLGCRESETMETADATATASK_HPP
 #include "gc/g1/g1FullGCTask.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 
 class G1FullGCResetMetadataTask : public G1FullGCTask {
   G1FullCollector* _collector;
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
 
-  class G1ResetMetadataClosure : public HeapRegionClosure {
+  class G1ResetMetadataClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1FullCollector* _collector;
 
-    void reset_region_metadata(HeapRegion* hr);
+    void reset_region_metadata(G1HeapRegion* hr);
     // Scrub all runs of dead objects within the given region by putting filler
     // objects and updating the corresponding BOT. If update_bot_for_live is true,
     // also update the BOT for live objects.
-    void scrub_skip_compacting_region(HeapRegion* hr, bool update_bot_for_live);
+    void scrub_skip_compacting_region(G1HeapRegion* hr, bool update_bot_for_live);
 
-    void reset_skip_compacting(HeapRegion* r);
+    void reset_skip_compacting(G1HeapRegion* r);
 
   public:
     G1ResetMetadataClosure(G1FullCollector* collector);
 
-    bool do_heap_region(HeapRegion* hr);
+    bool do_heap_region(G1HeapRegion* hr);
   };
 
 public:

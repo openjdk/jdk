@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,50 +26,55 @@
 #define SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP
 
 #include "gc/serial/cardTableRS.hpp"
+#include "gc/serial/defNewGeneration.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.hpp"
 
 #define VM_STRUCTS_SERIALGC(nonstatic_field,                                                                \
                             volatile_nonstatic_field,                                                       \
                             static_field)                                                                   \
+  nonstatic_field(Generation,                        _reserved,              MemRegion)                     \
+  nonstatic_field(Generation,                        _virtual_space,         VirtualSpace)                  \
+                                                                                                            \
   nonstatic_field(TenuredGeneration,                 _rs,                    CardTableRS*)                  \
-  nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetSharedArray*) \
+  nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetTable*)       \
   nonstatic_field(TenuredGeneration,                 _shrink_factor,         size_t)                        \
   nonstatic_field(TenuredGeneration,                 _capacity_at_prologue,  size_t)                        \
   nonstatic_field(TenuredGeneration,                 _used_at_prologue,      size_t)                        \
   nonstatic_field(TenuredGeneration,                 _min_heap_delta_bytes,  size_t)                        \
-  nonstatic_field(TenuredGeneration,                 _the_space,             TenuredSpace*)                 \
+  nonstatic_field(TenuredGeneration,                 _the_space,             ContiguousSpace*)              \
                                                                                                             \
-  nonstatic_field(DefNewGeneration,                  _old_gen,               Generation*)                   \
+  nonstatic_field(DefNewGeneration,                  _old_gen,               TenuredGeneration*)            \
   nonstatic_field(DefNewGeneration,                  _tenuring_threshold,    uint)                          \
   nonstatic_field(DefNewGeneration,                  _age_table,             AgeTable)                      \
   nonstatic_field(DefNewGeneration,                  _eden_space,            ContiguousSpace*)              \
   nonstatic_field(DefNewGeneration,                  _from_space,            ContiguousSpace*)              \
   nonstatic_field(DefNewGeneration,                  _to_space,              ContiguousSpace*)              \
                                                                                                             \
-  nonstatic_field(SerialBlockOffsetTable,            _array,                 SerialBlockOffsetSharedArray*) \
+  nonstatic_field(SerialBlockOffsetTable,            _reserved,              MemRegion)                     \
+  nonstatic_field(SerialBlockOffsetTable,            _vs,                    VirtualSpace)                  \
+  nonstatic_field(SerialBlockOffsetTable,            _offset_base,           u_char*)                       \
                                                                                                             \
-  nonstatic_field(SerialBlockOffsetSharedArray,      _reserved,              MemRegion)                     \
-  nonstatic_field(SerialBlockOffsetSharedArray,      _vs,                    VirtualSpace)                  \
-  nonstatic_field(SerialBlockOffsetSharedArray,      _offset_array,          u_char*)                       \
-                                                                                                            \
-  nonstatic_field(TenuredSpace,                      _offsets,               SerialBlockOffsetTable)
+  nonstatic_field(SerialHeap,                        _young_gen,             DefNewGeneration*)             \
+  nonstatic_field(SerialHeap,                        _old_gen,               TenuredGeneration*)            \
 
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
-  declare_type(SerialHeap,                   GenCollectedHeap)                \
+  declare_toplevel_type(Generation)                                           \
+  declare_type(SerialHeap,                   CollectedHeap)                   \
   declare_type(TenuredGeneration,            Generation)                      \
-  declare_type(TenuredSpace,                 ContiguousSpace)                 \
                                                                               \
   declare_type(DefNewGeneration,             Generation)                      \
   declare_type(CardTableRS, CardTable)                                        \
                                                                               \
   declare_toplevel_type(TenuredGeneration*)                                   \
-  declare_toplevel_type(SerialBlockOffsetSharedArray)                         \
   declare_toplevel_type(SerialBlockOffsetTable)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \
-                                  declare_constant_with_value)
+                                  declare_constant_with_value)                \
+  declare_constant(Generation::LogOfGenGrain)                                 \
+  declare_constant(Generation::GenGrain)
 
 #endif // SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP

@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6575247 8170579
+ * @key printer
  * @summary  Verifies if Banner page is printed
  * @requires os.family == "solaris"
  * @run main/manual BannerTest

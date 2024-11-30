@@ -42,7 +42,7 @@ import jdk.test.lib.Asserts;
 public class DeleteTempJarTest {
 
     public static void main(String[] args) throws Exception {
-        String tmpFile = ProcessTools.executeTestJvm(DeleteTempJar.class.getName())
+        String tmpFile = ProcessTools.executeTestJava(DeleteTempJar.class.getName())
                                      .shouldHaveExitValue(0)
                                      .getStdout();
 

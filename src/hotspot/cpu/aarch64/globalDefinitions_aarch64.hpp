@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,6 +42,12 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 // and Operational Models for ARMv8"
 #define CPU_MULTI_COPY_ATOMIC
 
+// The expected size in bytes of a cache line.
+#define DEFAULT_CACHE_LINE_SIZE 64
+
+// The default padding size for data structures to avoid false sharing.
+#define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
+
 // According to the ARMv8 ARM, "Concurrent modification and execution
 // of instructions can lead to the resulting instruction performing
 // any behavior that can be achieved by executing any sequence of
@@ -69,5 +75,7 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #endif
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
+
+#define USE_TRAMPOLINE_STUB_FIX_OWNER
 
 #endif // CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP

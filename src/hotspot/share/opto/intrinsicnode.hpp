@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,7 +239,7 @@ public:
 //------------------------------CopySign-----------------------------------------
 class CopySignDNode : public Node {
  protected:
-  CopySignDNode(Node* in1, Node* in2, Node* in3) : Node(0, in1, in2, in3) {}
+  CopySignDNode(Node* in1, Node* in2, Node* in3) : Node(nullptr, in1, in2, in3) {}
  public:
   static CopySignDNode* make(PhaseGVN& gvn, Node* in1, Node* in2);
   virtual int Opcode() const;
@@ -249,7 +249,7 @@ class CopySignDNode : public Node {
 
 class CopySignFNode : public Node {
  public:
-  CopySignFNode(Node* in1, Node* in2) : Node(0, in1, in2) {}
+  CopySignFNode(Node* in1, Node* in2) : Node(nullptr, in1, in2) {}
   virtual int Opcode() const;
   const Type* bottom_type() const { return TypeLong::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
@@ -258,7 +258,7 @@ class CopySignFNode : public Node {
 //------------------------------Signum-------------------------------------------
 class SignumDNode : public Node {
  protected:
-  SignumDNode(Node* in1, Node* in2, Node* in3) : Node(0, in1, in2, in3) {}
+  SignumDNode(Node* in1, Node* in2, Node* in3) : Node(nullptr, in1, in2, in3) {}
  public:
   static SignumDNode* make(PhaseGVN& gvn, Node* in);
   virtual int Opcode() const;
@@ -268,7 +268,7 @@ class SignumDNode : public Node {
 
 class SignumFNode : public Node {
  protected:
-  SignumFNode(Node* in1, Node* in2, Node* in3) : Node(0, in1, in2, in3) {}
+  SignumFNode(Node* in1, Node* in2, Node* in3) : Node(nullptr, in1, in2, in3) {}
  public:
   static SignumFNode* make(PhaseGVN& gvn, Node* in);
   virtual int Opcode() const;
@@ -306,7 +306,7 @@ class ExpandBitsNode : public TypeNode {
 //---------- IsInfiniteFNode -----------------------------------------------------
 class IsInfiniteFNode : public Node {
   public:
-  IsInfiniteFNode(Node* in1) : Node(0, in1) {}
+  IsInfiniteFNode(Node* in1) : Node(nullptr, in1) {}
   virtual int   Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -315,7 +315,7 @@ class IsInfiniteFNode : public Node {
 //---------- IsInfiniteDNode -----------------------------------------------------
 class IsInfiniteDNode : public Node {
   public:
-  IsInfiniteDNode(Node* in1) : Node(0, in1) {}
+  IsInfiniteDNode(Node* in1) : Node(nullptr, in1) {}
   virtual int   Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -324,7 +324,7 @@ class IsInfiniteDNode : public Node {
 //---------- IsFiniteFNode -----------------------------------------------------
 class IsFiniteFNode : public Node {
   public:
-  IsFiniteFNode(Node* in1) : Node(0, in1) {}
+  IsFiniteFNode(Node* in1) : Node(nullptr, in1) {}
   virtual int   Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -333,7 +333,7 @@ class IsFiniteFNode : public Node {
 //---------- IsFiniteDNode -----------------------------------------------------
 class IsFiniteDNode : public Node {
   public:
-  IsFiniteDNode(Node* in1) : Node(0, in1) {}
+  IsFiniteDNode(Node* in1) : Node(nullptr, in1) {}
   virtual int   Opcode() const;
   const Type* bottom_type() const { return TypeInt::BOOL; }
   virtual uint ideal_reg() const { return Op_RegI; }

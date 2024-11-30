@@ -66,6 +66,7 @@ import jdk.dynalink.linker.LinkRequest;
 
 /**
  * Default simple implementation of {@link LinkRequest}.
+ * @since 9
  */
 public class SimpleLinkRequest implements LinkRequest {
 

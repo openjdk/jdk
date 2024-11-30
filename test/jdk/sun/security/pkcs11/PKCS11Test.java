@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -55,10 +54,14 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import jdk.test.lib.Platform;
+import jdk.test.lib.Utils;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
@@ -74,14 +77,13 @@ public abstract class PKCS11Test {
     static final char SEP = File.separatorChar;
     // directory corresponding to BASE in the /closed hierarchy
     static final String CLOSED_BASE;
-    private static final String DEFAULT_POLICY = BASE + SEP + ".." + SEP + "policy";
     private static final String PKCS11_REL_PATH = "sun/security/pkcs11";
     private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
     private static final SecureRandom srdm = new SecureRandom();
 
     // Version of the NSS artifact. This coincides with the version of
     // the NSS version
-    private static final String NSS_BUNDLE_VERSION = "3.91";
+    private static final String NSS_BUNDLE_VERSION = "3.101";
     private static final String NSSLIB = "jpg.tests.jdk.nsslib";
 
     static double nss_version = -1;
@@ -108,9 +110,6 @@ public abstract class PKCS11Test {
         String p1 = absBase.substring(0, k);
         String p2 = absBase.substring(k);
         CLOSED_BASE = p1 + "/../closed" + p2;
-
-        // set it as a system property to make it available in policy file
-        System.setProperty("closed.base", CLOSED_BASE);
     }
 
     static {
@@ -120,8 +119,6 @@ public abstract class PKCS11Test {
             // ignore
         }
     }
-
-    private boolean enableSM = false;
 
     public static Provider newPKCS11Provider() {
         ServiceLoader<Provider> sl = ServiceLoader.load(java.security.Provider.class);
@@ -169,22 +166,6 @@ public abstract class PKCS11Test {
     }
 
     public static void main(PKCS11Test test, String[] args) throws Exception {
-        if (args != null) {
-            if (args.length > 0) {
-                if ("sm".equals(args[0])) {
-                    test.enableSM = true;
-                } else {
-                    throw new RuntimeException("Unknown Command, use 'sm' as "
-                            + "first argument to enable security manager");
-                }
-            }
-            if (test.enableSM) {
-                System.setProperty("java.security.policy",
-                        (args.length > 1) ? BASE + SEP + args[1]
-                                : DEFAULT_POLICY);
-            }
-        }
-
         Provider[] oldProviders = Security.getProviders();
         try {
             System.out.println("Beginning test run " + test.getClass().getName() + "...");
@@ -232,7 +213,17 @@ public abstract class PKCS11Test {
                 throw new RuntimeException("Test root directory not found");
             }
         }
-        PKCS11_BASE = new File(cwd, PKCS11_REL_PATH.replace('/', SEP)).getAbsolutePath();
+        File pkcs11 = new File(cwd, PKCS11_REL_PATH.replace('/', SEP));
+        if (!new File(pkcs11, "nss/p11-nss.txt").exists()) {
+            // this test might be in the closed
+            pkcs11 = new File(new File(cwd, "../../../open/test/jdk"),
+                    PKCS11_REL_PATH.replace('/', SEP));
+            if (!new File(pkcs11, "nss/p11-nss.txt").exists()) {
+                throw new RuntimeException("Not a PKCS11 directory"
+                        + pkcs11.getAbsolutePath());
+            }
+        }
+        PKCS11_BASE = pkcs11.getAbsolutePath();
         return PKCS11_BASE;
     }
 
@@ -258,28 +249,11 @@ public abstract class PKCS11Test {
 
     static Path getNSSLibPath(String library) throws Exception {
         String osid = getOsId();
-        String[] nssLibDirs = getNssLibPaths(osid);
-        if (nssLibDirs == null) {
-            System.out.println("Warning: unsupported OS: " + osid
-                    + ", please initialize NSS library location, skipping test");
-            return null;
-        }
-        if (nssLibDirs.length == 0) {
-            System.out.println("Warning: NSS not supported on this platform, skipping test");
-            return null;
-        }
-
-        Path nssLibPath = null;
-        for (String dir : nssLibDirs) {
-            Path libPath = Paths.get(dir).resolve(System.mapLibraryName(library));
-            if (Files.exists(libPath)) {
-                nssLibPath = libPath;
-                break;
-            }
-        }
+        Path libraryName = Path.of(System.mapLibraryName(library));
+        Path nssLibPath = fetchNssLib(osid, libraryName);
         if (nssLibPath == null) {
-            System.out.println("Warning: can't find NSS library on this machine, skipping test");
-            return null;
+            throw new SkippedException("Warning: unsupported OS: " + osid
+                    + ", please initialize NSS library location, skipping test");
         }
         return nssLibPath;
     }
@@ -502,14 +476,13 @@ public abstract class PKCS11Test {
             return null;
         }
 
-        String base = getBase();
-
+        String nssConfigDir = copyNssFiles();
         String libfile = libdir + System.mapLibraryName(nss_library);
 
         String customDBdir = System.getProperty("CUSTOM_DB_DIR");
         String dbdir = (customDBdir != null) ?
                 customDBdir :
-                base + SEP + "nss" + SEP + "db";
+                nssConfigDir + SEP + "db";
         // NSS always wants forward slashes for the config path
         dbdir = dbdir.replace('\\', '/');
 
@@ -519,7 +492,7 @@ public abstract class PKCS11Test {
         System.setProperty("pkcs11test.nss.db", dbdir);
         return (customConfig != null) ?
                 customConfig :
-                base + SEP + "nss" + SEP + customConfigName;
+                nssConfigDir + SEP + customConfigName;
     }
 
     // Generate a vector of supported elliptic curves of a given provider
@@ -605,73 +578,6 @@ public abstract class PKCS11Test {
         return parameters.getParameterSpec(ECParameterSpec.class);
     }
 
-    // Location of the NSS libraries on each supported platform
-    private static Map<String, String[]> getOsMap() {
-        if (osMap != null) {
-            return osMap;
-        }
-
-        osMap = new HashMap<>();
-        osMap.put("Linux-i386-32", new String[]{
-                "/usr/lib/i386-linux-gnu/",
-                "/usr/lib32/",
-                "/usr/lib/"});
-        osMap.put("Linux-amd64-64", new String[]{
-                "/usr/lib/x86_64-linux-gnu/",
-                "/usr/lib/x86_64-linux-gnu/nss/",
-                "/usr/lib64/"});
-        osMap.put("Linux-ppc64-64", new String[]{"/usr/lib64/"});
-        osMap.put("Linux-ppc64le-64", new String[]{
-                 "/usr/lib/powerpc64le-linux-gnu/",
-                 "/usr/lib/powerpc64le-linux-gnu/nss/",
-                 "/usr/lib64/"});
-        osMap.put("Linux-s390x-64", new String[]{"/usr/lib64/"});
-        osMap.put("Windows-x86-32", new String[]{});
-        osMap.put("Windows-amd64-64", new String[]{});
-        osMap.put("MacOSX-x86_64-64", new String[]{});
-        osMap.put("Linux-arm-32", new String[]{
-                "/usr/lib/arm-linux-gnueabi/nss/",
-                "/usr/lib/arm-linux-gnueabihf/nss/"});
-        osMap.put("Linux-aarch64-64", new String[] {
-                "/usr/lib/aarch64-linux-gnu/",
-                "/usr/lib/aarch64-linux-gnu/nss/",
-                "/usr/lib64/" });
-        return osMap;
-    }
-
-    private static String[] getNssLibPaths(String osId) {
-        String[] preferablePaths = getPreferableNssLibPaths(osId);
-        if (preferablePaths.length != 0) {
-            return preferablePaths;
-        } else {
-            return getOsMap().get(osId);
-        }
-    }
-
-    private static String[] getPreferableNssLibPaths(String osId) {
-        List<String> nssLibPaths = new ArrayList<>();
-
-        String customNssLibPaths = System.getProperty("test.nss.lib.paths");
-        if (customNssLibPaths == null) {
-            // If custom local NSS lib path is not provided,
-            // try to download NSS libs from artifactory
-            String path = fetchNssLib(osId);
-            if (path != null) {
-                nssLibPaths.add(path);
-            }
-        } else {
-            String[] paths = customNssLibPaths.split(",");
-            for (String path : paths) {
-                if (!path.endsWith(File.separator)) {
-                    nssLibPaths.add(path + File.separator);
-                } else {
-                    nssLibPaths.add(path);
-                }
-            }
-        }
-
-        return nssLibPaths.toArray(new String[0]);
-    }
 
     public static String toString(byte[] b) {
         if (b == null) {
@@ -810,34 +716,42 @@ public abstract class PKCS11Test {
         return data;
     }
 
-    private static String fetchNssLib(String osId) {
+    private static Path fetchNssLib(String osId, Path libraryName) {
         switch (osId) {
             case "Windows-amd64-64":
-                return fetchNssLib(WINDOWS_X64.class);
+                return fetchNssLib(WINDOWS_X64.class, libraryName);
 
             case "MacOSX-x86_64-64":
-                return fetchNssLib(MACOSX_X64.class);
+                return fetchNssLib(MACOSX_X64.class, libraryName);
 
             case "MacOSX-aarch64-64":
-                return fetchNssLib(MACOSX_AARCH64.class);
+                return fetchNssLib(MACOSX_AARCH64.class, libraryName);
 
             case "Linux-amd64-64":
-                return fetchNssLib(LINUX_X64.class);
+                if (Platform.isOracleLinux7()) {
+                    throw new SkippedException("Skipping Oracle Linux prior to v8");
+                } else {
+                    return fetchNssLib(LINUX_X64.class, libraryName);
+                }
 
             case "Linux-aarch64-64":
-                throw new SkippedException("Per JDK-8319128, skipping Linux aarch64 platforms.");
+                if (Platform.isOracleLinux7()) {
+                    throw new SkippedException("Skipping Oracle Linux prior to v8");
+                } else {
+                    return fetchNssLib(LINUX_AARCH64.class, libraryName);
+                }
             default:
                 return null;
         }
     }
 
-    private static String fetchNssLib(Class<?> clazz) {
-        String path = null;
+    private static Path fetchNssLib(Class<?> clazz, Path libraryName) {
+        Path path = null;
         try {
-            path = ArtifactResolver.resolve(clazz).entrySet().stream()
-                    .findAny().get().getValue() + File.separator + "nss"
-                    + File.separator + "lib" + File.separator;
-        } catch (ArtifactResolverException e) {
+            Path p = ArtifactResolver.resolve(clazz).entrySet().stream()
+                    .findAny().get().getValue();
+            path = findNSSLibrary(p, libraryName);
+        } catch (ArtifactResolverException | IOException e) {
             Throwable cause = e.getCause();
             if (cause == null) {
                 System.out.println("Cannot resolve artifact, "
@@ -847,8 +761,42 @@ public abstract class PKCS11Test {
                         + "\nPlease make sure the artifact is available.", e);
             }
         }
-        Policy.setPolicy(null); // Clear the policy created by JIB if any
         return path;
+    }
+
+    private static Path findNSSLibrary(Path path, Path libraryName) throws IOException {
+        try(Stream<Path> files = Files.find(path, 10,
+                (tp, attr) -> tp.getFileName().equals(libraryName))) {
+
+            return files.findAny()
+                        .orElseThrow(() ->
+                            new RuntimeException("NSS library \"" + libraryName + "\" was not found in " + path));
+        }
+    }
+
+    //Copy the nss config files to the current directory for tests. Returns the destination path
+    private static String copyNssFiles() throws Exception {
+        String nss = "nss";
+        String db = "db";
+        Path nssDirSource = Path.of(getBase()).resolve(nss);
+        Path nssDirDestination = Path.of(".").resolve(nss);
+
+        // copy files from nss directory
+        copyFiles(nssDirSource, nssDirDestination);
+        // copy files from nss/db directory
+        copyFiles(nssDirSource.resolve(db), nssDirDestination.resolve(db));
+        return nssDirDestination.toString();
+    }
+
+    private static void copyFiles(Path dirSource, Path dirDestination) throws IOException {
+        List<Path> sourceFiles = Arrays
+                .stream(dirSource.toFile().listFiles())
+                .filter(File::isFile)
+                .map(File::toPath)
+                .collect(Collectors.toList());
+        List<Path> destFiles = Utils.copyFiles(sourceFiles, dirDestination,
+                StandardCopyOption.REPLACE_EXISTING);
+        destFiles.forEach((Path file) -> file.toFile().setWritable(true));
     }
 
     public abstract void main(Provider p) throws Exception;
@@ -862,25 +810,13 @@ public abstract class PKCS11Test {
             return;
         }
 
-        // set a security manager and policy before a test case runs,
-        // and disable them after the test case finished
-        try {
-            if (enableSM) {
-                System.setSecurityManager(new SecurityManager());
-            }
-            long start = System.currentTimeMillis();
-            System.out.printf(
-                    "Running test with provider %s (security manager %s) ...%n",
-                    p.getName(), enableSM ? "enabled" : "disabled");
-            main(p);
-            long stop = System.currentTimeMillis();
-            System.out.println("Completed test with provider " + p.getName() +
-                    " (" + (stop - start) + " ms).");
-        } finally {
-            if (enableSM) {
-                System.setSecurityManager(null);
-            }
-        }
+        long start = System.currentTimeMillis();
+        System.out.printf(
+                "Running test with provider %s...%n", p.getName());
+        main(p);
+        long stop = System.currentTimeMillis();
+        System.out.println("Completed test with provider " + p.getName() +
+                " (" + (stop - start) + " ms).");
     }
 
     // Check support for a curve with a provided Vector of EC support

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,6 @@
  */
 
 package javax.lang.model;
-
-import java.util.Collections;
-import java.util.Set;
-import java.util.HashSet;
 
 /**
  * Source versions of the Java programming language.
@@ -74,7 +70,14 @@ public enum SourceVersion {
      *  21: pattern matching for switch and record patterns (string
      *      templates in preview, unnamed patterns and variables in
      *      preview, unnamed classes and instance main methods in preview)
-     *  22: tbd
+     *  22: unnamed variables & patterns (statements before super(...)
+     *      in preview, string templates in second preview, implicitly
+     *      declared classes and instance main methods in second preview)
+     *  23: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in preview, module Import Declarations in preview,
+     *      implicitly declared classes and instance main in third
+     *      preview, flexible constructor bodies in second preview)
+     *  24: tbd
      */
 
     /**
@@ -205,7 +208,7 @@ public enum SourceVersion {
      * @see <a href="https://openjdk.org/jeps/213">
      * JEP 213: Milling Project Coin</a>
      */
-     RELEASE_9,
+    RELEASE_9,
 
     /**
      * The version introduced by the Java Platform, Standard Edition
@@ -392,9 +395,9 @@ public enum SourceVersion {
      * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
      * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
      * @see <a href="https://openjdk.org/jeps/440">
-     * Record Patterns</a>
+     * JEP 440: Record Patterns</a>
      * @see <a href="https://openjdk.org/jeps/441">
-     * Pattern Matching for switch</a>
+     * JEP 441: Pattern Matching for switch</a>
      */
     RELEASE_21,
 
@@ -402,13 +405,42 @@ public enum SourceVersion {
      * The version introduced by the Java Platform, Standard Edition
      * 22.
      *
+     * Additions in this release include unnamed variables and unnamed
+     * patterns.
+     *
      * @since 22
      *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se22/html/index.html">
      * <cite>The Java Language Specification, Java SE 22 Edition</cite></a>
+     * @see <a href="https://openjdk.org/jeps/456">
+     * JEP 456: Unnamed Variables &amp; Patterns</a>
      */
     RELEASE_22,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 23.
+     *
+     * @since 23
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se23/html/index.html">
+     * <cite>The Java Language Specification, Java SE 23 Edition</cite></a>
+     */
+    RELEASE_23,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 24.
+     *
+     * @since 24
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se24/html/index.html">
+     * <cite>The Java Language Specification, Java SE 24 Edition</cite></a>
+     */
+    RELEASE_24,
     ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
@@ -418,7 +450,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_22;
+        return RELEASE_24;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -433,7 +465,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(22, intVersion)):
+            valueOf("RELEASE_" + Math.min(24, intVersion)):
             RELEASE_10;
     }
 
@@ -444,7 +476,7 @@ public enum SourceVersion {
      *
      * @apiNote This method is included alongside {@link latest} to
      * allow identification of situations where the language model API
-     * is running on a platform version different than the latest
+     * is running on a platform version different from the latest
      * version modeled by the API. One way that sort of situation can
      * occur is if an IDE or similar tool is using the API to model
      * source version <i>N</i> while running on platform version
@@ -470,8 +502,7 @@ public enum SourceVersion {
      * followed only by characters for which {@link
      * Character#isJavaIdentifierPart(int)} returns {@code true}.
      * This pattern matches regular identifiers, keywords, contextual
-     * keywords, and the literals {@code "true"},
-     * {@code "false"}, {@code "null"}.
+     * keywords, boolean literals, and the null literal.
      *
      * The method returns {@code false} for all other strings.
      *
@@ -564,14 +595,14 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
-     * or null literal in the latest source version.
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
+     * or the null literal in the latest source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
      *
      * @param s the string to check
-     * @return {@code true} if {@code s} is a keyword, or boolean
-     * literal, or null literal, {@code false} otherwise.
+     * @return {@code true} if {@code s} is a keyword, a boolean
+     * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
      * @jls 3.10.8 The Null Literal
@@ -581,15 +612,15 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
-     * or null literal in the given source version.
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
+     * or the null literal in the given source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
      *
      * @param s the string to check
      * @param version the version to use
-     * @return {@code true} if {@code s} is a keyword, or boolean
-     * literal, or null literal, {@code false} otherwise.
+     * @return {@code true} if {@code s} is a keyword, a boolean
+     * literal, or the null literal, {@code false} otherwise.
      * @jls 3.9 Keywords
      * @jls 3.10.3 Boolean Literals
      * @jls 3.10.8 The Null Literal

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -311,9 +312,6 @@ public class GenerateCurrencyData {
             checkCurrencyCode(newCurrency);
             String timeString = currencyInfo.substring(4, length - 4);
             long time = format.parse(timeString).getTime();
-            if (Math.abs(time - System.currentTimeMillis()) > ((long) 10) * 365 * 24 * 60 * 60 * 1000) {
-                throw new RuntimeException("time is more than 10 years from present: " + time);
-            }
             specialCaseCutOverTimes[specialCaseCount] = time;
             specialCaseOldCurrencies[specialCaseCount] = oldCurrency;
             specialCaseOldCurrenciesDefaultFractionDigits[specialCaseCount] = getDefaultFractionDigits(oldCurrency);
@@ -339,9 +337,15 @@ public class GenerateCurrencyData {
                 validCurrencyCodes.substring(i * 7 + 3, i * 7 + 6));
             checkCurrencyCode(currencyCode);
             int tableEntry = mainTable[(currencyCode.charAt(0) - 'A') * A_TO_Z + (currencyCode.charAt(1) - 'A')];
-            if (tableEntry == INVALID_COUNTRY_ENTRY ||
-                    (tableEntry & SPECIAL_CASE_COUNTRY_MASK) != 0 ||
-                    (tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) != (currencyCode.charAt(2) - 'A')) {
+
+            // Do not allow a future currency to be classified as an otherCurrency,
+            // otherwise it will leak out into Currency:getAvailableCurrencies
+            boolean futureCurrency = Arrays.asList(specialCaseNewCurrencies).contains(currencyCode);
+            boolean simpleCurrency = (tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) == (currencyCode.charAt(2) - 'A');
+
+            // If neither a simple currency, or one defined in the future
+            // then the current currency is applicable to be added to the otherTable
+            if (!futureCurrency && !simpleCurrency) {
                 if (otherCurrenciesCount == maxOtherCurrencies) {
                     throw new RuntimeException("too many other currencies");
                 }

@@ -33,7 +33,6 @@
 #include <sun_awt_windows_WMenuItemPeer.h>
 #include <java_awt_Menu.h>
 #include <sun_awt_windows_WMenuPeer.h>
-#include <java_awt_MenuComponent.h>
 #include <java_awt_FontMetrics.h>
 
 class AwtMenu;

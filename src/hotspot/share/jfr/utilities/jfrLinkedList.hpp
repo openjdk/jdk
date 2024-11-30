@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,15 @@ class JfrLinkedList : public AllocPolicy {
   bool is_empty() const;
   bool is_nonempty() const;
   void add(NodePtr node);
+  void add_list(NodePtr first);
   NodePtr remove();
   template <typename Callback>
   void iterate(Callback& cb);
   NodePtr head() const;
   NodePtr excise(NodePtr prev, NodePtr node);
   bool in_list(const NodeType* node) const;
+  NodePtr cut();
+  void clear();
  private:
   NodePtr _head;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,16 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Optional;
-
-import jdk.internal.classfile.Attribute;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.constantpool.ConstantPool;
 
 public class AbstractDirectBuilder<M> {
     protected final SplitConstantPool constantPool;
-    protected final ClassfileImpl context;
+    protected final ClassFileImpl context;
     protected final AttributeHolder attributes = new AttributeHolder();
     protected M original;
 
-    public AbstractDirectBuilder(SplitConstantPool constantPool, ClassfileImpl context) {
+    public AbstractDirectBuilder(SplitConstantPool constantPool, ClassFileImpl context) {
         this.constantPool = constantPool;
         this.context = context;
     }
@@ -43,8 +42,8 @@ public class AbstractDirectBuilder<M> {
         return constantPool;
     }
 
-    public Optional<M> original() {
-        return Optional.ofNullable(original);
+    public boolean canWriteDirect(ConstantPool source) {
+        return constantPool().canWriteDirect(source);
     }
 
     public void setOriginal(M original) {
@@ -52,7 +51,7 @@ public class AbstractDirectBuilder<M> {
     }
 
     public void writeAttribute(Attribute<?> a) {
-        if (Util.isAttributeAllowed(a, context.attributesProcessingOption())) {
+        if (Util.isAttributeAllowed(a, context)) {
             attributes.withAttribute(a);
         }
     }

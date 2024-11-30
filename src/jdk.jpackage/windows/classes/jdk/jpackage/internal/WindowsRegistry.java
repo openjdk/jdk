@@ -28,6 +28,7 @@ package jdk.jpackage.internal;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("restricted")
 final class WindowsRegistry {
 
     // Currently we only support HKEY_LOCAL_MACHINE. Native implementation will

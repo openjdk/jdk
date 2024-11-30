@@ -84,7 +84,7 @@ final class PBEKey implements SecretKey {
         // Use the cleaner to zero the key when no longer referenced
         final byte[] k = this.key;
         cleanable = CleanerFactory.cleaner().register(this,
-                () -> java.util.Arrays.fill(k, (byte)0x00));
+                () -> Arrays.fill(k, (byte)0x00));
     }
 
     public byte[] getEncoded() {
@@ -196,7 +196,7 @@ final class PBEKey implements SecretKey {
         // Use cleaner to zero the key when no longer referenced
         final byte[] k = this.key;
         cleanable = CleanerFactory.cleaner().register(this,
-                () -> java.util.Arrays.fill(k, (byte)0x00));
+                () -> Arrays.fill(k, (byte)0x00));
     }
 
 

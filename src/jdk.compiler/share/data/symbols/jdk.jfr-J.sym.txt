@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 # ##########################################################
 #
 class name jdk/jfr/consumer/RecordedObject
-header extends java/lang/Object sealed true flags 21
+header extends java/lang/Object sealed true permittedSubclasses jdk/jfr/consumer/RecordedEvent,jdk/jfr/consumer/RecordedClassLoader,jdk/jfr/consumer/RecordedClass,jdk/jfr/consumer/RecordedMethod,jdk/jfr/consumer/RecordedStackTrace,jdk/jfr/consumer/RecordedFrame,jdk/jfr/consumer/RecordedThread,jdk/jfr/consumer/RecordedThreadGroup flags 21
 
 class name jdk/jfr/consumer/RecordedThread
 method name isVirtual descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;VIRTUAL_THREADS;,reflective=Ztrue)

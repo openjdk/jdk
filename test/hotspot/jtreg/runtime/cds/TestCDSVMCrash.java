@@ -25,48 +25,46 @@
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
  * @requires vm.cds
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestCDSVMCrash
  * @bug 8306583
  */
 
- import jdk.test.lib.cds.CDSTestUtils;
- import jdk.test.lib.process.OutputAnalyzer;
- import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
- public class TestCDSVMCrash {
+public class TestCDSVMCrash {
 
-     public static void main(String[] args) throws Exception {
-         if (args.length == 1) {
-             // This should guarantee to throw:
-             // java.lang.OutOfMemoryError: Requested array size exceeds VM limit
-             try {
-                 Object[] oa = new Object[Integer.MAX_VALUE];
-                 throw new Error("OOME not triggered");
-             } catch (OutOfMemoryError err) {
-                 throw new Error("OOME didn't abort JVM!");
-             }
-         }
-         // else this is the main test
-         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
-                  "-XX:-CreateCoredumpOnCrash", "-Xmx128m", "-Xshare:on", TestCDSVMCrash.class.getName(),"throwOOME");
-         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-         // executeAndLog should throw an exception in the VM crashed
-         try {
+    static Object[] oa;
+
+    public static void main(String[] args) throws Exception {
+        if (args.length == 1) {
+            // This should guarantee to throw:
+            // java.lang.OutOfMemoryError: Requested array size exceeds VM limit
+            try {
+                oa = new Object[Integer.MAX_VALUE];
+                throw new Error("OOME not triggered");
+            } catch (OutOfMemoryError err) {
+                throw new Error("OOME didn't abort JVM!");
+            }
+        }
+        // else this is the main test
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
+                                                                      "-XX:-CreateCoredumpOnCrash", "-Xmx128m",
+                                                                      "-Xshare:on", TestCDSVMCrash.class.getName(),
+                                                                      "throwOOME");
+        // executeAndLog should throw an exception in the VM crashed
+        try {
             CDSTestUtils.executeAndLog(pb, "cds_vm_crash");
             throw new Error("Expected VM to crash");
-         } catch(RuntimeException e) {
+        } catch(RuntimeException e) {
             if (!e.getMessage().equals("Hotspot crashed")) {
-              throw new Error("Expected message: Hotspot crashed");
+                throw new Error("Expected message: Hotspot crashed");
             }
-         }
-         int exitValue = output.getExitValue();
-         if (0 == exitValue) {
-             //expecting a non zero value
-             throw new Error("Expected to get non zero exit value");
-         }
-        output.shouldContain("A fatal error has been detected by the Java Runtime Environment");
+        }
         System.out.println("PASSED");
-     }
- }
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,11 @@ public final class ImplicitFields {
     private final List<String> fields = new ArrayList<>(4);
 
     public ImplicitFields(Class<?> eventClass) {
-        fields.add(START_TIME); // for completeness, not really needed
+        fields.add(START_TIME);
         fields.add(DURATION);
         fields.add(STACK_TRACE);
         fields.add(EVENT_THREAD);
-        for (Class<?> c = eventClass; jdk.internal.event.Event.class != c; c = c.getSuperclass()) {
+        for (Class<?> c = eventClass; !Utils.isEventBaseClass(c); c = c.getSuperclass()) {
             RemoveFields rf = c.getAnnotation(RemoveFields.class);
             if (rf != null) {
                 for (String value : rf.value()) {

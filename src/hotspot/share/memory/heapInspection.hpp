@@ -108,9 +108,8 @@ class KlassInfoTable: public StackObj {
   size_t _size_of_instances_in_words;
 
   // An aligned reference address (typically the least
-  // address in the perm gen) used for hashing klass
-  // objects.
-  HeapWord* _ref;
+  // address in the metaspace) used for hashing klasses.
+  uintptr_t _ref;
 
   KlassInfoBucket* _buckets;
   uint hash(const Klass* p);

@@ -114,7 +114,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongMinValueMinus1(boolean flag, boolean flag2) {
         long l = flag ? -1 : Long.MIN_VALUE;
@@ -129,7 +129,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L}, counts = {IRNode.STORE_I, "1"})
     public static void testLongMinValuePlus1(boolean flag, boolean flag2) {
         long l = flag ? -1 : Long.MIN_VALUE;
@@ -144,7 +144,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testLongMinValueUnderflowOnce(boolean flag, boolean flag2) {
         long l = flag ? Long.MIN_VALUE/2 : Long.MIN_VALUE/2 + 1;
@@ -159,7 +159,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_L, "1"})
     public static void testLongMinValueUnderflowOnceTwice(boolean flag, boolean flag2) {
         long l = flag ? Long.MIN_VALUE/2 : Long.MIN_VALUE/2 + 1;
@@ -174,7 +174,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testLongMinValueUnderflowTwice(boolean flag, boolean flag2) {
         long l = flag ? Long.MIN_VALUE/2 : Long.MIN_VALUE/2 + 1;
@@ -189,7 +189,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testLongMaxValueOverflowOnce(boolean flag, boolean flag2) {
         long l = flag2 ? Long.MAX_VALUE/2 - 1 : Long.MAX_VALUE/2;
@@ -204,7 +204,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_L, "1"})
     public static void testLongMaxValueOverflowOnceTwice(boolean flag, boolean flag2) {
         long l = flag2 ? Long.MAX_VALUE/2 - 1 : Long.MAX_VALUE/2;
@@ -219,7 +219,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testLongMaxValueOverflowTwice(boolean flag, boolean flag2) {
         long l = flag2 ? Long.MAX_VALUE/2 - 1 : Long.MAX_VALUE/2;
@@ -234,7 +234,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
     public static void testLongProductsOverflowOnceAtMin(boolean flag, boolean flag2) {
         long l = flag ? Long.MAX_VALUE/2 + 1 : Long.MAX_VALUE/2 + 2;
@@ -251,7 +251,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
     public static void testLongProductsOverflowOnceAtMax(boolean flag, boolean flag2) {
         // 88971434439113593 * 311 = Long.MAX_VALUE*3 + 2 --cast to long--> Long.MAX_VALUE
@@ -269,7 +269,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
     public static void testLongProductsUnderflowOnceAtMin(boolean flag, boolean flag2) {
         long l = flag ? Long.MIN_VALUE/3 - 1 : Long.MIN_VALUE/3 - 2;
@@ -286,7 +286,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
     public static void testLongProductsUnderflowOnceAtMax(boolean flag, boolean flag2) {
         // -6917529027641081856 * 4 = Long.MIN_VALUE*3 --cast to long--> Long.MIN_VALUE
@@ -304,7 +304,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongProductsDifferentNumberOfOverflow(boolean flag, boolean flag2) {
         // 88971434439113593 * 311 = Long.MAX_VALUE*3 + 2 --cast to long--> Long.MAX_VALUE // Overflown once
@@ -322,7 +322,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongProductsDifferentNumberOfUnderflows(boolean flag, boolean flag2) {
         // -6917529027641081856 * 4 = Long.MIN_VALUE*3 --cast to long--> Long.MIN_VALUE // Underflown once
@@ -340,7 +340,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongNotSameOverflow1(boolean flag, boolean flag2) {
         long l = flag ? 1 : Long.MAX_VALUE;
@@ -355,7 +355,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongNotSameOverflow2(boolean flag, boolean flag2) {
         long l = flag ? 1 : Long.MIN_VALUE;
@@ -370,7 +370,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongNotSameOverflow3(boolean flag, boolean flag2) {
         long l = flag ? -1 : Long.MIN_VALUE;
@@ -385,7 +385,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongNotSameOverflow4(boolean flag, boolean flag2) {
         long l = flag ? -1 : Long.MAX_VALUE;
@@ -400,7 +400,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
     public static void testLongNotSameOverflow5(boolean flag, boolean flag2) {
         long l = flag ? Long.MIN_VALUE : Long.MAX_VALUE;
@@ -492,7 +492,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntMinValueMinus1(boolean flag, boolean flag2) {
         int l = flag ? -1 : Integer.MIN_VALUE;
@@ -508,7 +508,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L}, counts = {IRNode.STORE_I, "1"})
     public static void testIntMinValuePlus1(boolean flag, boolean flag2) {
         int l = flag ? -1 : Integer.MIN_VALUE;
@@ -523,7 +523,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testIntMinValueUnderflowOnce(boolean flag, boolean flag2) {
         int l = flag ? Integer.MIN_VALUE/2 : Integer.MIN_VALUE/2 + 1;
@@ -538,7 +538,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_I, "1"})
     public static void testIntMinValueUnderflowOnceTwice(boolean flag, boolean flag2) {
         int l = flag ? Integer.MIN_VALUE/2 : Integer.MIN_VALUE/2 + 1;
@@ -553,7 +553,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testIntMinValueUnderflowTwice(boolean flag, boolean flag2) {
         int l = flag ? Integer.MIN_VALUE/2 : Integer.MIN_VALUE/2 + 1;
@@ -568,7 +568,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testIntMaxValueOverflowOnce(boolean flag, boolean flag2) {
         int l = flag2 ? Integer.MAX_VALUE/2 - 1 : Integer.MAX_VALUE/2;
@@ -583,7 +583,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_I, "1"})
     public static void testIntMaxValueOverflowOnceTwice(boolean flag, boolean flag2) {
         int l = flag2 ? Integer.MAX_VALUE/2 - 1 : Integer.MAX_VALUE/2;
@@ -598,7 +598,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
     public static void testIntMaxValueOverflowTwice(boolean flag, boolean flag2) {
         int l = flag2 ? Integer.MAX_VALUE/2 - 1 : Integer.MAX_VALUE/2;
@@ -613,7 +613,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
     public static void testIntProductsOverflowOnceAtMin(boolean flag, boolean flag2) {
         int l = flag ? Integer.MAX_VALUE/2 + 1 : Integer.MAX_VALUE/2 + 2;
@@ -630,7 +630,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
     public static void testIntProductsOverflowOnceAtMax(boolean flag, boolean flag2) {
         // 63786643 * 101 = Integer.MAX_VALUE*3 + 2 --cast to int--> Integer.MAX_VALUE
@@ -648,7 +648,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
     public static void testIntProductsUnderflowOnceAtMin(boolean flag, boolean flag2) {
         int l = flag ? Integer.MIN_VALUE/3 - 1 : Integer.MIN_VALUE/3 - 2;
@@ -665,7 +665,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
     public static void testIntProductsUnderflowOnceAtMax(boolean flag, boolean flag2) {
         // -1610612736 * 4 = Integer.MIN_VALUE*3 --cast to int--> Integer.MIN_VALUE
@@ -683,7 +683,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntProductsDifferentNumberOfOverflow(boolean flag, boolean flag2) {
         // 63786643 * 101 = Integer.MAX_VALUE*3 + 2 --cast to int--> Integer.MAX_VALUE // Overflown once
@@ -701,7 +701,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntProductsDifferentNumberOfUnderflows(boolean flag, boolean flag2) {
         // -1610612736 * 4 = Integer.MIN_VALUE*3 --cast to int--> Integer.MIN_VALUE // Underflown once
@@ -719,7 +719,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntNotSameOverflow1(boolean flag, boolean flag2) {
         int l = flag ? 1 : Integer.MAX_VALUE;
@@ -734,7 +734,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntNotSameOverflow2(boolean flag, boolean flag2) {
         int l = flag ? 1 : Integer.MIN_VALUE;
@@ -749,7 +749,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntNotSameOverflow3(boolean flag, boolean flag2) {
         int l = flag ? -1 : Integer.MIN_VALUE;
@@ -764,7 +764,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntNotSameOverflow4(boolean flag, boolean flag2) {
         int l = flag ? -1 : Integer.MAX_VALUE;
@@ -779,7 +779,7 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.TRUE, Argument.FALSE})
+    @Arguments(values = {Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
     public static void testIntNotSameOverflow5(boolean flag, boolean flag2) {
         int l = flag ? Integer.MIN_VALUE : Integer.MAX_VALUE;

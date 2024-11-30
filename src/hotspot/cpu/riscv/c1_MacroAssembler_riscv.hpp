@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2015, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -59,14 +59,16 @@ using MacroAssembler::null_check;
   // hdr     : must be x10, contents destroyed
   // obj     : must point to the object to lock, contents preserved
   // disp_hdr: must point to the displaced header location, contents preserved
+  // temp : temporary register, must not be scratch register t0 or t1
   // returns code offset at which to add null check debug information
-  int lock_object  (Register swap, Register obj, Register disp_hdr, Label& slow_case);
+  int lock_object(Register swap, Register obj, Register disp_hdr, Register temp, Label& slow_case);
 
   // unlocking
   // hdr     : contents destroyed
   // obj     : must point to the object to lock, contents preserved
   // disp_hdr: must be x10 & must point to the displaced header location, contents destroyed
-  void unlock_object(Register swap, Register obj, Register lock, Label& slow_case);
+  // temp : temporary register, must not be scratch register t0 or t1
+  void unlock_object(Register swap, Register obj, Register lock, Register temp, Label& slow_case);
 
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation
@@ -93,13 +95,14 @@ using MacroAssembler::null_check;
   };
 
   // allocation of arrays
-  // obj        : will contain pointer to allocated object
-  // len        : array length in number of elements
-  // t          : temp register - contents destroyed
-  // header_size: size of object header in words
-  // f          : element scale factor
-  // slow_case  : exit to slow case implementation if fast allocation fails
-  void allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int header_size, int f, Register klass, Label& slow_case);
+  // obj                 : will contain pointer to allocated object
+  // len                 : array length in number of elements
+  // t                   : temp register - contents destroyed
+  // base_offset_in_bytes: offset of first array element, in bytes
+  // f                   : element scale factor
+  // slow_case           : exit to slow case implementation if fast allocation fails
+  // zero_array          : zero the allocated array or not
+  void allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int base_offset_in_bytes, int f, Register klass, Label& slow_case, bool zero_array);
 
   int  rsp_offset() const { return _rsp_offset; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ static double estimated_gc_workers(double serial_gc_time, double parallelizable_
 }
 
 static uint discrete_young_gc_workers(double gc_workers) {
-  return clamp<uint>(ceil(gc_workers), 1, ZYoungGCThreads);
+  return clamp<uint>((uint)ceil(gc_workers), 1, ZYoungGCThreads);
 }
 
 static double select_young_gc_workers(const ZDirectorStats& stats, double serial_gc_time, double parallelizable_gc_time, double alloc_rate_sd_percent, double time_until_oom) {
@@ -143,11 +143,11 @@ static double select_young_gc_workers(const ZDirectorStats& stats, double serial
   return gc_workers;
 }
 
-ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                  double serial_gc_time_passed,
-                                                  double parallel_gc_time_passed,
-                                                  bool conservative_alloc_rate,
-                                                  size_t capacity) {
+static ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                         double serial_gc_time_passed,
+                                                         double parallel_gc_time_passed,
+                                                         bool conservative_alloc_rate,
+                                                         size_t capacity) {
   if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
     return ZDriverRequest(GCCause::_no_gc, ZYoungGCThreads, 0);
@@ -214,9 +214,9 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
   return ZDriverRequest(GCCause::_z_allocation_rate, actual_gc_workers, 0);
 }
 
-ZDriverRequest rule_soft_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                       double serial_gc_time_passed,
-                                                       double parallel_gc_time_passed) {
+static ZDriverRequest rule_soft_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                              double serial_gc_time_passed,
+                                                              double parallel_gc_time_passed) {
     return rule_minor_allocation_rate_dynamic(stats,
                                               0.0 /* serial_gc_time_passed */,
                                               0.0 /* parallel_gc_time_passed */,
@@ -224,9 +224,9 @@ ZDriverRequest rule_soft_minor_allocation_rate_dynamic(const ZDirectorStats& sta
                                               stats._heap._soft_max_heap_size /* capacity */);
 }
 
-ZDriverRequest rule_semi_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                            double serial_gc_time_passed,
-                                                            double parallel_gc_time_passed) {
+static ZDriverRequest rule_semi_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                                   double serial_gc_time_passed,
+                                                                   double parallel_gc_time_passed) {
   return rule_minor_allocation_rate_dynamic(stats,
                                             0.0 /* serial_gc_time_passed */,
                                             0.0 /* parallel_gc_time_passed */,
@@ -234,9 +234,9 @@ ZDriverRequest rule_semi_hard_minor_allocation_rate_dynamic(const ZDirectorStats
                                             ZHeap::heap()->max_capacity() /* capacity */);
 }
 
-ZDriverRequest rule_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
-                                                       double serial_gc_time_passed,
-                                                       double parallel_gc_time_passed) {
+static ZDriverRequest rule_hard_minor_allocation_rate_dynamic(const ZDirectorStats& stats,
+                                                              double serial_gc_time_passed,
+                                                              double parallel_gc_time_passed) {
   return rule_minor_allocation_rate_dynamic(stats,
                                             0.0 /* serial_gc_time_passed */,
                                             0.0 /* parallel_gc_time_passed */,
@@ -426,7 +426,7 @@ static bool rule_major_warmup(const ZDirectorStats& stats) {
   const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
   const size_t used = stats._heap._used;
   const double used_threshold_percent = (stats._old_stats._cycle._nwarmup_cycles + 1) * 0.1;
-  const size_t used_threshold = soft_max_capacity * used_threshold_percent;
+  const size_t used_threshold = (size_t)(soft_max_capacity * used_threshold_percent);
 
   log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
                           used_threshold_percent * 100, used / M, used_threshold / M);
@@ -488,7 +488,8 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
 
   // Calculate the GC cost for each reclaimed byte
   const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
-  const double current_old_gc_time_per_bytes_freed = double(old_gc_time) / double(reclaimed_per_old_gc);
+  const double current_old_gc_time_per_bytes_freed = reclaimed_per_old_gc == 0 ? std::numeric_limits<double>::infinity()
+                                                                               : (double(old_gc_time) / double(reclaimed_per_old_gc));
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -497,13 +498,13 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
   // Doing an old collection makes subsequent young collections more efficient.
   // Calculate the number of young collections ahead that we will try to amortize
   // the cost of doing an old collection for.
-  const int lookahead = stats._heap._total_collections - stats._old_stats._general._total_collections_at_start;
+  const uint lookahead = stats._heap._total_collections - stats._old_stats._general._total_collections_at_start;
 
   // Calculate extra young collection overhead predicted for a number of future
   // young collections, due to not freeing up memory in the old generation.
   const double extra_young_gc_time_for_lookahead = extra_young_gc_time * lookahead;
 
-  log_debug(gc, director)("Rule Major: Allocation Rate, ExtraYoungGCTime: %.3fs, OldGCTime: %.3fs, Lookahead: %d, ExtraYoungGCTimeForLookahead: %.3fs",
+  log_debug(gc, director)("Rule Major: Allocation Rate, ExtraYoungGCTime: %.3fs, OldGCTime: %.3fs, Lookahead: %u, ExtraYoungGCTimeForLookahead: %.3fs",
                           extra_young_gc_time, old_gc_time, lookahead, extra_young_gc_time_for_lookahead);
 
   // If we continue doing as many minor collections as we already did since the
@@ -524,12 +525,29 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
 }
 
 static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
+  if (!stats._old_stats._cycle._is_time_trustable) {
+    return 1.0;
+  }
+
   const double young_gc_time = gc_time(stats._young_stats);
   const double old_gc_time = gc_time(stats._old_stats);
   const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;
   const size_t reclaimed_per_old_gc = stats._old_stats._stat_heap._reclaimed_avg;
   const double current_young_bytes_freed_per_gc_time = double(reclaimed_per_young_gc) / double(young_gc_time);
   const double current_old_bytes_freed_per_gc_time = double(reclaimed_per_old_gc) / double(old_gc_time);
+
+  if (current_young_bytes_freed_per_gc_time == 0.0) {
+    if (current_old_bytes_freed_per_gc_time == 0.0) {
+      // Neither young nor old collections have reclaimed any memory.
+      // Give them equal priority.
+      return 1.0;
+    }
+
+    // Only old collections have reclaimed memory.
+    // Prioritize old.
+    return ZOldGCThreads;
+  }
+
   const double old_vs_young_efficiency_ratio = current_old_bytes_freed_per_gc_time / current_young_bytes_freed_per_gc_time;
 
   return old_vs_young_efficiency_ratio;
@@ -561,7 +579,7 @@ static bool rule_major_proactive(const ZDirectorStats& stats) {
   // passed since the previous GC. This helps avoid superfluous GCs when running
   // applications with very low allocation rate.
   const size_t used_after_last_gc = stats._old_stats._stat_heap._used_at_relocate_end;
-  const size_t used_increase_threshold = stats._heap._soft_max_heap_size * 0.10; // 10%
+  const size_t used_increase_threshold = (size_t)(stats._heap._soft_max_heap_size * 0.10); // 10%
   const size_t used_threshold = used_after_last_gc + used_increase_threshold;
   const size_t used = stats._heap._used;
   const double time_since_last_gc = stats._old_stats._cycle._time_since_last;
@@ -834,7 +852,7 @@ void ZDirector::evaluate_rules() {
 }
 
 bool ZDirector::wait_for_tick() {
-  const uint64_t interval_ms = MILLIUNITS / decision_hz;
+  const uint64_t interval_ms = MILLIUNITS / DecisionHz;
 
   ZLocker<ZConditionLock> locker(&_monitor);
 

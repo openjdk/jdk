@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,10 @@ public class waitingthreads002 {
     //------------------------------------------------------- immutable common methods
 
     public static void main(String argv[]) {
-        System.exit(Consts.JCK_STATUS_BASE + run(argv, System.out));
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     private static void display(String msg) {
@@ -119,6 +122,9 @@ public class waitingthreads002 {
                     if (thread.name().indexOf(waitingthreads002a.threadNamePrefix) >= 0 &&
                            thread.status() == ThreadReference.THREAD_STATUS_MONITOR ) {
                         waitingCount++;
+                        // Virtual threads are not present in result returned by objRef.waitingThreads().
+                        if (!thread.isVirtual()) {
+                        }
                     }
                 }
             }
@@ -156,7 +162,9 @@ public class waitingthreads002 {
                     objRef = (ObjectReference) debuggeeClass.getValue(debuggeeClass.fieldByName(fieldName));
                     try {
                         List waitingThreads = objRef.waitingThreads();
-                        if (waitingThreads.size() != waitingthreads002a.threadCount) {
+                        final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
+                        final int expWaitingCount = vthreadMode ? 0 : waitingthreads002a.threadCount;
+                        if (waitingThreads.size() != expWaitingCount) {
                             exitStatus = Consts.TEST_FAILED;
                             complain("waitingThreads method returned list with unexpected size for " + fieldName +
                                 "\n\t expected value : " + waitingthreads002a.threadCount + "; got one : " + waitingThreads.size());

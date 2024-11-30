@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,7 @@
  *          java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocTrackingVerify
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=summary MallocTrackingVerify
  *
  */
 
@@ -53,11 +54,6 @@ public class MallocTrackingVerify {
     public static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String args[]) throws Exception {
-        OutputAnalyzer output;
-
-        // Grab my own PID
-        String pid = Long.toString(ProcessTools.getProcessId());
-        ProcessBuilder pb = new ProcessBuilder();
 
         Random random = Utils.getRandomInstance();
         // Allocate small amounts of memory with random pseudo call stack
@@ -74,9 +70,10 @@ public class MallocTrackingVerify {
             }
         }
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary" });
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=4KB, committed=4KB)");
+        NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
+                "Test (reserved=4KB, committed=4KB)",
+                "(malloc=4KB #" + mallocd_memory.size() + ") (at peak)"
+        );
 
         // Free
         for (MallocMemory mem : mallocd_memory) {
@@ -84,10 +81,11 @@ public class MallocTrackingVerify {
         }
 
         // Run 'jcmd <pid> VM.native_memory summary', check for expected output
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid,
-                "VM.native_memory", "summary" });
-        output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("Test (reserved=");
+        NMTTestUtils.runJcmdSummaryReportAndCheckOutput(
+                "Test (reserved=0KB, committed=0KB)",
+                "(malloc=0KB) (peak=4KB #" + + mallocd_memory.size() + ")"
+        );
+
     }
 
     static class MallocMemory {

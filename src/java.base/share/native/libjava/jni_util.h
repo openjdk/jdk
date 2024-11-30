@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #define JNI_UTIL_H
 
 #include "jni.h"
+#include "jni_util_md.h"
 #include "jlong.h"
 
 #ifdef __cplusplus
@@ -354,9 +355,6 @@ enum {
 JNIEXPORT void InitializeEncoding(JNIEnv *env, const char *name);
 
 void* getProcessHandle();
-
-void buildJniFunctionName(const char *sym, const char *cname,
-                          char *jniEntryName);
 
 jstring getLastErrorString(JNIEnv *env);
 

@@ -26,17 +26,13 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * @test Wildcards
  * @bug 6843077 8006775
  * @summary test that annotations target wildcards get emitted to classfile
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 public class Wildcards extends ClassfileTestHelper {
     public static void main(String[] args) throws Exception {

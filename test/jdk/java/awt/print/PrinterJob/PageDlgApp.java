@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 /**
  * @test
  * @bug 8067059
+ * @key printer
  * @run main/manual PageDlgApp
  * @summary Test if cancelling dialog returns null when
  *          PrinterJob.pageDialog() with DialogSelectionType.NATIVE is called

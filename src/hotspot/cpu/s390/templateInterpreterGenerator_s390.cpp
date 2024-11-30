@@ -40,6 +40,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -658,12 +659,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
     __ load_resolved_indy_entry(cache, index);
     __ z_llgh(size, in_bytes(ResolvedIndyEntry::num_parameters_offset()), cache);
   } else {
-    const int flags_offset = in_bytes(ConstantPoolCache::base_offset() +
-                                      ConstantPoolCacheEntry::flags_offset());
-    __ get_cache_and_index_at_bcp(cache, index, 1, index_size);
-
-    // #args is in rightmost byte of the _flags field.
-    __ z_llgc(size, Address(cache, index, flags_offset + (sizeof(size_t) - 1)));
+    assert(index_size == sizeof(u2), "Can only be u2");
+    __ load_method_entry(cache, index);
+    __ load_sized_value(size, Address(cache, in_bytes(ResolvedMethodEntry::num_parameters_offset())), sizeof(u2), false /*is_signed*/);
   }
   __ z_sllg(size, size, Interpreter::logStackElementSize); // Each argument size in bytes.
   __ z_agr(Z_esp, size);                                   // Pop arguments.
@@ -722,6 +720,11 @@ address TemplateInterpreterGenerator::generate_safept_entry_for (TosState state,
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for (vtos));
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  return nullptr;
+}
+
 
 //
 // Helpers for commoning out cases in the various type of method entries.
@@ -852,9 +855,9 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
 
   // Note also that the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  AddressLiteral stub(StubRoutines::throw_StackOverflowError_entry());
-  __ load_absolute_address(tmp1, StubRoutines::throw_StackOverflowError_entry());
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  AddressLiteral stub(SharedRuntime::throw_StackOverflowError_entry());
+  __ load_absolute_address(tmp1, SharedRuntime::throw_StackOverflowError_entry());
   __ z_br(tmp1);
 
   // If you get to here, then there is enough stack space.
@@ -1226,6 +1229,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : /* runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt); not available */ break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;

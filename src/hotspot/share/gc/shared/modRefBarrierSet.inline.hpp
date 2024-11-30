@@ -54,7 +54,7 @@ void ModRefBarrierSet::write_ref_array(HeapWord* start, size_t count) {
   // If compressed oops were not being used, these should already be aligned
   assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
          "Expected heap word alignment of start and end");
-  write_ref_array_work(MemRegion(aligned_start, aligned_end));
+  write_region(MemRegion(aligned_start, aligned_end));
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -138,7 +138,7 @@ inline void ModRefBarrierSet::AccessBarrier<decorators, BarrierSetT>::
 clone_in_heap(oop src, oop dst, size_t size) {
   Raw::clone(src, dst, size);
   BarrierSetT *bs = barrier_set_cast<BarrierSetT>(barrier_set());
-  bs->invalidate(MemRegion((HeapWord*)(void*)dst, size));
+  bs->write_region(MemRegion((HeapWord*)(void*)dst, size));
 }
 
 #endif // SHARE_GC_SHARED_MODREFBARRIERSET_INLINE_HPP

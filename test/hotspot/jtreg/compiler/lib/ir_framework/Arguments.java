@@ -27,8 +27,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * This annotation is used to specify well-defined {@link Argument} values for test methods (specifying {@link Test}) when
- * used as part of a <b>base test</b> or <b>checked test</b>.
+ * This annotation is used for test methods (see {@link Test}) to specify what values should be passed as arguments.
+ * One can either specify the individual arguments with values (see {@link Argument}), or use
+ * a setup method (see {@link Setup}) to define more complex arguments and/or even set fields values.
+ * This annotation can only be applied to a <b>normal test</b>.
  *
  * @see Argument
  * @see Test
@@ -37,7 +39,11 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Arguments {
     /**
-     * Get the argument value.
+     * Get the argument values.
      */
-    Argument[] value();
+    Argument[] values() default {};
+    /**
+     * Get the setup method name.
+     */
+    String setup() default "";
 }

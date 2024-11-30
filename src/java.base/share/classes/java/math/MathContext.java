@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,8 @@ public final class MathContext implements Serializable {
      * A {@code MathContext} object with a precision setting
      * matching the precision of the IEEE 754-2019 decimal32 format, 7 digits, and a
      * rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}.
-     * Note the exponent range of decimal32 is <em>not</em> used for
-     * rounding.
+     * Note the exponent range of decimal32 (min exponent of -95, max
+     * exponent of 96) is <em>not</em> used for rounding.
      */
     public static final MathContext DECIMAL32 =
         new MathContext(7, RoundingMode.HALF_EVEN);
@@ -92,8 +92,8 @@ public final class MathContext implements Serializable {
      * A {@code MathContext} object with a precision setting
      * matching the precision of the IEEE 754-2019 decimal64 format, 16 digits, and a
      * rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}.
-     * Note the exponent range of decimal64 is <em>not</em> used for
-     * rounding.
+     * Note the exponent range of decimal64 (min exponent of -383, max
+     * exponent of 384) is <em>not</em> used for rounding.
      */
     public static final MathContext DECIMAL64 =
         new MathContext(16, RoundingMode.HALF_EVEN);
@@ -102,8 +102,8 @@ public final class MathContext implements Serializable {
      * A {@code MathContext} object with a precision setting
      * matching the precision of the IEEE 754-2019 decimal128 format, 34 digits, and a
      * rounding mode of {@link RoundingMode#HALF_EVEN HALF_EVEN}.
-     * Note the exponent range of decimal64 is <em>not</em> used for
-     * rounding.
+     * Note the exponent range of decimal128 (min exponent of -6143,
+     * max exponent of 6144) is <em>not</em> used for rounding.
      */
     public static final MathContext DECIMAL128 =
         new MathContext(34, RoundingMode.HALF_EVEN);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +72,11 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services-summary">Services</a></li>""");
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#services-summary" tabindex="0">Services</a></li>
+                    </ol>""");
 
     }
 
@@ -97,10 +98,11 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li><a href="#module-description">Description</a>&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#services-summary">Services</a></li>""");
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    <li><a href="#services-summary" tabindex="0">Services</a></li>
+                    </ol>""");
 
     }
 
@@ -120,10 +122,10 @@ public class TestModuleServicesLink extends JavadocTester {
 
         checkOutput("m/module-summary.html", true,
                 """
-                    <li>Description&nbsp;|&nbsp;</li>
-                    <li>Modules&nbsp;|&nbsp;</li>
-                    <li><a href="#packages-summary">Packages</a>&nbsp;|&nbsp;</li>
-                    <li>Services</li>""");
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#packages-summary" tabindex="0">Packages</a></li>
+                    </ol>""");
     }
 
 }

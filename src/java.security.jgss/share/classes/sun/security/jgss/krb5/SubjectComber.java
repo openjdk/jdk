@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.util.Set;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KeyTab;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This utility looks through the current Subject and retrieves private
  * credentials for the desired client/server principals.
@@ -48,8 +50,6 @@ import javax.security.auth.kerberos.KeyTab;
  */
 
 class SubjectComber {
-
-    private static final boolean DEBUG = Krb5Util.DEBUG;
 
     /**
      * Default constructor
@@ -114,8 +114,8 @@ class SubjectComber {
                         }
                     }
                     // Check passed, we can add now
-                    if (DEBUG) {
-                        System.out.println("Found " + credClass.getSimpleName()
+                    if (DEBUG != null) {
+                        DEBUG.println("Found " + credClass.getSimpleName()
                                 + " " + t);
                     }
                     if (oneOnly) {
@@ -132,8 +132,8 @@ class SubjectComber {
                     KerberosKey t = iterator.next();
                     String name = t.getPrincipal().getName();
                     if (serverPrincipal == null || serverPrincipal.equals(name)) {
-                         if (DEBUG) {
-                             System.out.println("Found " +
+                         if (DEBUG != null) {
+                             DEBUG.println("Found " +
                                      credClass.getSimpleName() + " for " + name);
                          }
                          if (oneOnly) {
@@ -155,8 +155,8 @@ class SubjectComber {
                                 KerberosTicket ticket)) {
                             continue;
                         }
-                        if (DEBUG) {
-                            System.out.println("Found ticket for "
+                        if (DEBUG != null) {
+                            DEBUG.println("Found ticket for "
                                                 + ticket.getClient()
                                                 + " to go to "
                                                 + ticket.getServer()
@@ -171,15 +171,15 @@ class SubjectComber {
                                 iterator.remove();
                                 try {
                                     ticket.destroy();
-                                    if (DEBUG) {
-                                        System.out.println("Removed and destroyed "
+                                    if (DEBUG != null) {
+                                        DEBUG.println("Removed and destroyed "
                                                     + "the expired Ticket \n"
                                                     + ticket);
 
                                     }
                                 } catch (DestroyFailedException dfe) {
-                                    if (DEBUG) {
-                                        System.out.println("Expired ticket not" +
+                                    if (DEBUG != null) {
+                                        DEBUG.println("Expired ticket not" +
                                                 " destroyed successfully. " + dfe);
                                     }
                                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,21 +34,17 @@ import javax.swing.SwingUtilities;
 public class JColorChooserDnDTest {
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(new Runnable() {
-
-            @Override
-            public void run() {
-                JFrame frame = new JFrame();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                JPanel panel = new JPanel();
-                JColorChooser colorChooser = new JColorChooser();
-                colorChooser.setDragEnabled(true);
-                panel.setBorder(BorderFactory.createTitledBorder("JColorChoosers"));
-                panel.add(colorChooser);
-                frame.setContentPane(panel);
-                frame.pack();
-                frame.setVisible(true);
-            }
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame();
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            JPanel panel = new JPanel();
+            JColorChooser colorChooser = new JColorChooser();
+            colorChooser.setDragEnabled(true);
+            panel.setBorder(BorderFactory.createTitledBorder("JColorChoosers"));
+            panel.add(colorChooser);
+            frame.setContentPane(panel);
+            frame.pack();
+            frame.setVisible(true);
         });
     }
 }

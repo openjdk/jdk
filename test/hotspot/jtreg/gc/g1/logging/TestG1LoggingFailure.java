@@ -63,7 +63,7 @@ public class TestG1LoggingFailure {
     }
 
     private static void startVM(List<String> options) throws Throwable, RuntimeException {
-        OutputAnalyzer out = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer out = ProcessTools.executeTestJava(options);
 
         out.shouldNotContain("pure virtual method called");
 

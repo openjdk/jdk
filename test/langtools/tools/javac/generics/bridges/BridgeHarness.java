@@ -26,12 +26,8 @@
  * @bug 8013789
  * @summary Compiler should emit bridges in interfaces
  * @library /tools/javac/lib
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor BridgeHarness
@@ -39,7 +35,7 @@
  */
 
 import com.sun.source.util.JavacTask;
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.util.List;
 
@@ -147,7 +143,7 @@ public class BridgeHarness {
      */
     protected void checkBridges(JavaFileObject jfo) {
         try (InputStream is = jfo.openInputStream()) {
-            ClassModel cf = Classfile.of().parse(is.readAllBytes());
+            ClassModel cf = ClassFile.of().parse(is.readAllBytes());
             System.err.println("checking: " + cf.thisClass().asInternalName());
 
             List<Bridge> bridgeList = bridgesMap.get(cf.thisClass().asInternalName());
@@ -157,7 +153,7 @@ public class BridgeHarness {
             }
 
             for (MethodModel m : cf.methods()) {
-                if ((m.flags().flagsMask() & (Classfile.ACC_SYNTHETIC | Classfile.ACC_BRIDGE)) != 0) {
+                if ((m.flags().flagsMask() & (ClassFile.ACC_SYNTHETIC | ClassFile.ACC_BRIDGE)) != 0) {
                     //this is a bridge - see if there's a match in the bridge list
                     Bridge match = null;
                     for (Bridge b : bridgeList) {

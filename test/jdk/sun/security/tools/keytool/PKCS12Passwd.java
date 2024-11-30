@@ -108,7 +108,7 @@ public class PKCS12Passwd {
 
         check("p12", "newpass", "newpass");
 
-        // Conversely, a JKS keystore can be laoded as a PKCS12, and it follows
+        // Conversely, a JKS keystore can be loaded as a PKCS12, and it follows
         // PKCS12 rules that both passwords are changed at the same time and
         // some commands are rejected.
 

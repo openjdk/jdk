@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,11 +139,8 @@ class WindowsChannelFactory {
      *
      * @param   pathForWindows
      *          The path of the file to open/create
-     * @param   pathToCheck
-     *          The path used for permission checks (if security manager)
      */
     static FileChannel newFileChannel(String pathForWindows,
-                                      String pathToCheck,
                                       Set<? extends OpenOption> options,
                                       long pSecurityDescriptor)
         throws WindowsException
@@ -165,9 +162,9 @@ class WindowsChannelFactory {
         if (flags.append && flags.truncateExisting)
             throw new IllegalArgumentException("APPEND + TRUNCATE_EXISTING not allowed");
 
-        FileDescriptor fdObj = open(pathForWindows, pathToCheck, flags, pSecurityDescriptor);
-        return FileChannelImpl.open(fdObj, pathForWindows, flags.read,
-                flags.write, flags.direct, null);
+        FileDescriptor fdObj = open(pathForWindows, flags, pSecurityDescriptor);
+        return FileChannelImpl.open(fdObj, pathForWindows, flags.read, flags.write,
+                (flags.sync || flags.dsync), flags.direct, null);
     }
 
     /**
@@ -175,13 +172,10 @@ class WindowsChannelFactory {
      *
      * @param   pathForWindows
      *          The path of the file to open/create
-     * @param   pathToCheck
-     *          The path used for permission checks (if security manager)
      * @param   pool
      *          The thread pool that the channel is associated with
      */
     static AsynchronousFileChannel newAsynchronousFileChannel(String pathForWindows,
-                                                              String pathToCheck,
                                                               Set<? extends OpenOption> options,
                                                               long pSecurityDescriptor,
                                                               ThreadPool pool)
@@ -204,7 +198,7 @@ class WindowsChannelFactory {
         // open file for overlapped I/O
         FileDescriptor fdObj;
         try {
-            fdObj = open(pathForWindows, pathToCheck, flags, pSecurityDescriptor);
+            fdObj = open(pathForWindows, flags, pSecurityDescriptor);
         } catch (WindowsException x) {
             x.rethrowAsIOException(pathForWindows);
             return null;
@@ -212,7 +206,7 @@ class WindowsChannelFactory {
 
         // create the AsynchronousFileChannel
         try {
-            return WindowsAsynchronousFileChannelImpl.open(fdObj, flags.read, flags.write, pool);
+            return WindowsAsynchronousFileChannelImpl.open(fdObj, pathForWindows, flags.read, flags.write, pool);
         } catch (IOException x) {
             // IOException is thrown if the file handle cannot be associated
             // with the completion port. All we can do is close the file.
@@ -226,7 +220,6 @@ class WindowsChannelFactory {
      * encapsulating the handle to the open file.
      */
     private static FileDescriptor open(String pathForWindows,
-                                       String pathToCheck,
                                        Flags flags,
                                        long pSecurityDescriptor)
         throws WindowsException
@@ -289,20 +282,6 @@ class WindowsChannelFactory {
             if (flags.noFollowLinks || flags.deleteOnClose)
                 okayToFollowLinks = false;
             dwFlagsAndAttributes |= FILE_FLAG_OPEN_REPARSE_POINT;
-        }
-
-        // permission check
-        if (pathToCheck != null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                if (flags.read)
-                    sm.checkRead(pathToCheck);
-                if (flags.write)
-                    sm.checkWrite(pathToCheck);
-                if (flags.deleteOnClose)
-                    sm.checkDelete(pathToCheck);
-            }
         }
 
         // open file

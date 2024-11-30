@@ -51,14 +51,14 @@ package jdk.internal.icu.lang;
 public final class UCharacterDirection implements UCharacterEnums.ECharacterDirection {
 
     // private constructor =========================================
-    ///CLOVER:OFF
+    // CLOVER:OFF
     /**
      * Private constructor to prevent initialization
      */
     private UCharacterDirection()
     {
     }
-    ///CLOVER:ON
+    // CLOVER:ON
 
     /**
      * Gets the name of the argument direction

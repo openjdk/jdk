@@ -65,7 +65,7 @@ public class MainModuleOnly {
     private static Path moduleDir2 = null;
     private static Path destJar = null;
 
-    private static final String jarFileError = "A jar file is not the one used while building the shared archive file:";
+    private static final String jarFileError = "This file is not the one used while building the shared archive file:";
 
     public static void buildTestModule() throws Exception {
 
@@ -194,8 +194,10 @@ public class MainModuleOnly {
         output = TestCommon.createArchive(destJar.toString(), appClasses,
                                           "--module-path", MODS_DIR.toString(),
                                           "-m", mainModule);
-        output.shouldHaveExitValue(1)
-              .shouldMatch("Error: non-empty directory.*com.simple");
+        // After JDK-8328313, non-empty module path directory won't be included
+        // in the shared paths table.
+        output.shouldHaveExitValue(0)
+              .shouldNotMatch("Error: non-empty directory.*com.simple");
 
         // test module path with very long length
         //

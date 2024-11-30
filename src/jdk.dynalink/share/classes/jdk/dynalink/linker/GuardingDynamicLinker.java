@@ -87,6 +87,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * Languages can export linkers to other language runtimes for
  * {@link DynamicLinkerFactory#setClassLoader(ClassLoader) automatic discovery}
  * using a {@link GuardingDynamicLinkerExporter}.
+ * @since 9
  */
 public interface GuardingDynamicLinker {
     /**

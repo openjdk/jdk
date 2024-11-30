@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,27 +27,41 @@
 
 #include "gc/parallel/objectStartArray.hpp"
 
-// Optimized for finding the first object that crosses into
-// a given block. The blocks contain the offset of the last
-// object in that block. Scroll backwards by one, and the first
-// object hit should be at the beginning of the block
-HeapWord* ObjectStartArray::object_start(HeapWord* addr) const {
-  assert_covered_region_contains(addr);
-  jbyte* block = block_for_addr(addr);
-  HeapWord* scroll_forward = offset_addr_for_block(block--);
-  while (scroll_forward > addr) {
-    scroll_forward = offset_addr_for_block(block--);
-  }
+HeapWord* ObjectStartArray::object_start(HeapWord* const addr) const {
+  HeapWord* cur_block = block_start_reaching_into_card(addr);
 
-  HeapWord* next = scroll_forward;
-  while (next <= addr) {
-    scroll_forward = next;
-    next += cast_to_oop(next)->size();
+  while (true) {
+    HeapWord* next_block = cur_block + cast_to_oop(cur_block)->size();
+    if (next_block > addr) {
+      assert(cur_block <= addr, "postcondition");
+      return cur_block;
+    }
+    // Because the BOT is precise, we should never step into the next card
+    // (i.e. crossing the card boundary).
+    assert(!is_crossing_card_boundary(next_block, addr), "must be");
+    cur_block = next_block;
   }
-  assert(scroll_forward <= addr, "wrong order for current and arg");
-  assert(addr <= next, "wrong order for arg and next");
-  return scroll_forward;
 }
 
+HeapWord* ObjectStartArray::block_start_reaching_into_card(HeapWord* const addr) const {
+  const uint8_t* entry = entry_for_addr(addr);
+
+  uint8_t offset;
+  while (true) {
+    offset = *entry;
+
+    if (offset < CardTable::card_size_in_words()) {
+      break;
+    }
+
+    // The excess of the offset from N_words indicates a power of Base
+    // to go back by.
+    size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
+    entry -= n_cards_back;
+  }
+
+  HeapWord* q = addr_for_entry(entry);
+  return q - offset;
+}
 
 #endif // SHARE_GC_PARALLEL_OBJECTSTARTARRAY_INLINE_HPP

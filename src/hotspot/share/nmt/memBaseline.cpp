@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,11 +61,11 @@ int compare_malloc_site(const MallocSite& s1, const MallocSite& s2) {
   return s1.call_stack()->compare(*s2.call_stack());
 }
 
-// Sort into allocation site addresses and memory type order for baseline comparison
+// Sort into allocation site addresses and memory tag order for baseline comparison
 int compare_malloc_site_and_type(const MallocSite& s1, const MallocSite& s2) {
   int res = compare_malloc_site(s1, s2);
   if (res == 0) {
-    res = (int)(NMTUtil::flag_to_index(s1.flag()) - NMTUtil::flag_to_index(s2.flag()));
+    res = (int)(NMTUtil::tag_to_index(s1.mem_tag()) - NMTUtil::tag_to_index(s2.mem_tag()));
   }
 
   return res;
@@ -82,14 +82,10 @@ int compare_virtual_memory_site(const VirtualMemoryAllocationSite& s1,
 class MallocAllocationSiteWalker : public MallocSiteWalker {
  private:
   SortedLinkedList<MallocSite, compare_malloc_size> _malloc_sites;
-  size_t         _count;
 
   // Entries in MallocSiteTable with size = 0 and count = 0,
   // when the malloc site is not longer there.
  public:
-  MallocAllocationSiteWalker() : _count(0) { }
-
-  inline size_t count() const { return _count; }
 
   LinkedList<MallocSite>* malloc_sites() {
     return &_malloc_sites;
@@ -98,7 +94,6 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   bool do_malloc_site(const MallocSite* site) {
     if (site->size() > 0) {
       if (_malloc_sites.add(*site) != nullptr) {
-        _count++;
         return true;
       } else {
         return false;  // OOM
@@ -110,25 +105,23 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   }
 };
 
-// Compare virtual memory region's base address
-int compare_virtual_memory_base(const ReservedMemoryRegion& r1, const ReservedMemoryRegion& r2) {
-  return r1.compare(r2);
-}
-
 // Walk all virtual memory regions for baselining
 class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
  private:
-  SortedLinkedList<ReservedMemoryRegion, compare_virtual_memory_base>
-                _virtual_memory_regions;
-  size_t        _count;
-
+  typedef LinkedListImpl<ReservedMemoryRegion, AnyObj::C_HEAP, mtNMT,
+                         AllocFailStrategy::RETURN_NULL> EntryList;
+  EntryList _virtual_memory_regions;
+  DEBUG_ONLY(address _last_base;)
  public:
-  VirtualMemoryAllocationWalker() : _count(0) { }
+  VirtualMemoryAllocationWalker() {
+    DEBUG_ONLY(_last_base = nullptr);
+  }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
+    assert(rgn->base() >= _last_base, "region unordered?");
+    DEBUG_ONLY(_last_base = rgn->base());
     if (rgn->size() > 0) {
       if (_virtual_memory_regions.add(*rgn) != nullptr) {
-        _count ++;
         return true;
       } else {
         return false;
@@ -144,10 +137,14 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
   }
 };
 
-
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
+  {
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
+  }
+
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
 }
 
@@ -155,11 +152,6 @@ bool MemBaseline::baseline_allocation_sites() {
   // Malloc allocation sites
   MallocAllocationSiteWalker malloc_walker;
   if (!MallocSiteTable::walk_malloc_site(&malloc_walker)) {
-    return false;
-  }
-
-  // Walk simple thread stacks
-  if (!ThreadStackTracker::walk_simple_thread_stack_site(&malloc_walker)) {
     return false;
   }
 
@@ -201,7 +193,6 @@ void MemBaseline::baseline(bool summaryOnly) {
     baseline_allocation_sites();
     _baseline_type = Detail_baselined;
   }
-
 }
 
 int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
@@ -216,7 +207,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   const ReservedMemoryRegion* rgn;
   VirtualMemoryAllocationSite* site;
   while ((rgn = itr.next()) != nullptr) {
-    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->flag());
+    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->mem_tag());
     site = allocation_sites.find(tmp);
     if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =

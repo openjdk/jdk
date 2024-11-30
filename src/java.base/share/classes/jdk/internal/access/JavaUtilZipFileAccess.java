@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.internal.access;
 
+import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.jar.JarEntry;
@@ -38,11 +39,11 @@ public interface JavaUtilZipFileAccess {
     public List<String> getManifestAndSignatureRelatedFiles(JarFile zip);
     public String getManifestName(JarFile zip, boolean onlyIfSignatureRelatedFiles);
     public int getManifestNum(JarFile zip);
-    public int[] getMetaInfVersions(JarFile zip);
+    public BitSet getMetaInfVersions(JarFile zip, String name);
     public Enumeration<JarEntry> entries(ZipFile zip);
     public Stream<JarEntry> stream(ZipFile zip);
     public Stream<String> entryNameStream(ZipFile zip);
-    public void setExtraAttributes(ZipEntry ze, int extraAttrs);
-    public int getExtraAttributes(ZipEntry ze);
+    public void setExternalFileAttributes(ZipEntry ze, int externalFileAttributes);
+    public int getExternalFileAttributes(ZipEntry ze);
 }
 

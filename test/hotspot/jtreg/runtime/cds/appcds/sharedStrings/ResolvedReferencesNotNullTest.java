@@ -26,6 +26,7 @@
  * @bug 8313638
  * @summary Testing resolved references array to ensure elements are non-null
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox ResolvedReferencesWb ResolvedReferencesTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

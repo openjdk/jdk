@@ -25,7 +25,7 @@
 
 package com.sun.tools.javap;
 
-import jdk.internal.classfile.Instruction;
+import java.lang.classfile.Instruction;
 
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ bool CompilationPolicy::force_comp_at_level_simple(const methodHandle& method) {
 }
 
 CompLevel CompilationPolicy::comp_level(Method* method) {
-  CompiledMethod *nm = method->code();
+  nmethod *nm = method->code();
   if (nm != nullptr && nm->is_in_use()) {
     return (CompLevel)nm->comp_level();
   }
@@ -229,7 +229,7 @@ class LoopPredicate : AllStatic {
 public:
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
-    if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
+    if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
       scale *= threshold_scaling;
     }
     switch(cur_level) {
@@ -267,7 +267,7 @@ class CallPredicate : AllStatic {
 public:
   static bool apply_scaled(const methodHandle& method, CompLevel cur_level, int i, int b, double scale) {
     double threshold_scaling;
-    if (CompilerOracle::has_option_value(method, CompileCommand::CompileThresholdScaling, threshold_scaling)) {
+    if (CompilerOracle::has_option_value(method, CompileCommandEnum::CompileThresholdScaling, threshold_scaling)) {
       scale *= threshold_scaling;
     }
     switch(cur_level) {
@@ -455,7 +455,7 @@ void CompilationPolicy::initialize() {
       c2_size = C2Compiler::initial_code_buffer_size();
 #endif
       size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
-      int max_count = (ReservedCodeCacheSize - (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3))) / (int)buffer_size;
+      int max_count = (ReservedCodeCacheSize - (int)CompilerConfig::min_code_cache_size()) / (int)buffer_size;
       if (count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
         count = MAX2(max_count, c1_only ? 1 : 2);
@@ -708,7 +708,7 @@ void CompilationPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
 }
 
 nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle& inlinee,
-                                      int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS) {
+                                      int branch_bci, int bci, CompLevel comp_level, nmethod* nm, TRAPS) {
   if (PrintTieredEvents) {
     print_event(bci == InvocationEntryBci ? CALL : LOOP, method(), inlinee(), bci, comp_level);
   }
@@ -1026,7 +1026,7 @@ CompLevel CompilationPolicy::common(const methodHandle& method, CompLevel cur_le
   if (force_comp_at_level_simple(method)) {
     next_level = CompLevel_simple;
   } else {
-    if (is_trivial(method)) {
+    if (is_trivial(method) || method->is_native()) {
       next_level = CompilationModeFlag::disable_intermediate() ? CompLevel_full_optimization : CompLevel_simple;
     } else {
       switch(cur_level) {
@@ -1137,7 +1137,7 @@ CompLevel CompilationPolicy::loop_event(const methodHandle& method, CompLevel cu
 
 // Handle the invocation event.
 void CompilationPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
-                                                      CompLevel level, CompiledMethod* nm, TRAPS) {
+                                                      CompLevel level, nmethod* nm, TRAPS) {
   if (should_create_mdo(mh, level)) {
     create_mdo(mh, THREAD);
   }
@@ -1152,7 +1152,7 @@ void CompilationPolicy::method_invocation_event(const methodHandle& mh, const me
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
 void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
-                                                     int bci, CompLevel level, CompiledMethod* nm, TRAPS) {
+                                                     int bci, CompLevel level, nmethod* nm, TRAPS) {
   if (should_create_mdo(mh, level)) {
     create_mdo(mh, THREAD);
   }

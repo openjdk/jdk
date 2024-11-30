@@ -27,7 +27,6 @@
 #include "asm/assembler.inline.hpp"
 #include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -377,21 +376,6 @@ void os::print_context(outputStream* st, const void* ucVoid) {
   st->print_cr("No context information.");
 }
 
-void os::print_tos_pc(outputStream *st, const void* ucVoid) {
-  const ucontext_t* uc = (const ucontext_t*)ucVoid;
-
-  address sp = (address)os::Linux::ucontext_get_sp(uc);
-  print_tos(st, sp);
-  st->cr();
-
-  // Note: it may be unsafe to inspect memory near pc. For example, pc may
-  // point to garbage if entry point in an nmethod is corrupted. Leave
-  // this at the end, and hope for the best.
-  address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc);
-  st->cr();
-}
-
 void os::print_register_info(outputStream *st, const void *context, int& continuation) {
   st->print_cr("No register info.");
 }
@@ -470,22 +454,6 @@ extern "C" {
     memmove(to, from, count * 8);
   }
 };
-
-/////////////////////////////////////////////////////////////////////////////
-// Implementations of atomic operations not supported by processors.
-//  -- http://gcc.gnu.org/onlinedocs/gcc-4.2.1/gcc/Atomic-Builtins.html
-
-#ifndef _LP64
-extern "C" {
-  long long unsigned int __sync_val_compare_and_swap_8(
-    volatile void *ptr,
-    long long unsigned int oldval,
-    long long unsigned int newval) {
-    ShouldNotCallThis();
-    return 0; // silence compiler warnings
-  }
-};
-#endif // !_LP64
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {

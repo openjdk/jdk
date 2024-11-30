@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -51,6 +52,7 @@
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -285,6 +287,10 @@ void ZGeneration::desynchronize_relocation() {
   _relocate.desynchronize();
 }
 
+bool ZGeneration::is_relocate_queue_active() const {
+  return _relocate.is_queue_active();
+}
+
 void ZGeneration::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   _freed = 0;
@@ -293,7 +299,7 @@ void ZGeneration::reset_statistics() {
   _page_allocator->reset_statistics(_id);
 }
 
-ssize_t ZGeneration::freed() const {
+size_t ZGeneration::freed() const {
   return _freed;
 }
 
@@ -433,7 +439,7 @@ public:
   virtual void doit() {
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
-    IsGCActiveMark gc_active_mark;
+    IsSTWGCActiveMark gc_active_mark;
 
     // Verify before operation
     ZVerify::before_zoperation();
@@ -442,11 +448,15 @@ public:
     _success = do_operation();
 
     // Update statistics
-    ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
+    ZStatSample(ZSamplerJavaThreads, (uint64_t)Threads::number_of_threads());
   }
 
   virtual void doit_epilogue() {
     Heap_lock->unlock();
+
+    // GC thread root traversal likely used OopMapCache a lot, which
+    // might have created lots of old entries. Trigger the cleanup now.
+    OopMapCache::try_trigger_cleanup();
   }
 
   bool success() const {
@@ -860,7 +870,7 @@ void ZGenerationYoung::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Flip remembered set bits
@@ -1212,7 +1222,7 @@ void ZGenerationOld::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Update statistics
@@ -1276,6 +1286,10 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
 }
 
+bool ZGenerationOld::uses_clear_all_soft_reference_policy() const {
+  return _reference_processor.uses_clear_all_soft_reference_policy();
+}
+
 class ZRendezvousHandshakeClosure : public HandshakeClosure {
 public:
   ZRendezvousHandshakeClosure()
@@ -1315,6 +1329,10 @@ void ZGenerationOld::process_non_strong_references() {
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
+
+  ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* unregister_nmethods_during_purge */,
+                            true /* lock_nmethod_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();
@@ -1492,7 +1510,7 @@ void ZGenerationOld::remap_young_roots() {
   uint remap_nworkers = clamp(ZGeneration::young()->workers()->active_workers() + prev_nworkers, 1u, ZOldGCThreads);
   _workers.set_active_workers(remap_nworkers);
 
-  // TODO: The STS joiner is only needed to satisfy z_assert_is_barrier_safe that doesn't
+  // TODO: The STS joiner is only needed to satisfy ZBarrier::assert_is_state_barrier_safe that doesn't
   // understand the driver locker. Consider making the assert aware of the driver locker.
   SuspendibleThreadSetJoiner sts_joiner;
 

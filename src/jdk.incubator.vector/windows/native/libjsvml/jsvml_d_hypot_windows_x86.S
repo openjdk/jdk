@@ -27,19 +27,19 @@
 
 INCLUDE globals_vectorApiSupport_windows.S.inc
 IFNB __VECTOR_API_MATH_INTRINSICS_WINDOWS
-	OPTION DOTNAME
+        OPTION DOTNAME
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST0:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot2_ha_e9
+        ALIGN     16
+        PUBLIC __jsvml_hypot2_ha_e9
 
-__jsvml_hypot2_ha_e9	PROC	EXPORT
+__jsvml_hypot2_ha_e9    PROC    EXPORT
 
 _B1_1::
 
@@ -178,64 +178,64 @@ _B1_11::
 
 __jsvml_hypot2_ha_e9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot2_ha_e9_B1_B3:
-	DD	801537
-	DD	2675771
-	DD	1222703
-	DD	1292326
-	DD	1173533
-	DD	1112084
-	DD	2818315
+        DD      801537
+        DD      2675771
+        DD      1222703
+        DD      1292326
+        DD      1173533
+        DD      1112084
+        DD      2818315
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B1_1
-	DD	imagerel _B1_6
-	DD	imagerel _unwind___jsvml_hypot2_ha_e9_B1_B3
+        DD      imagerel _B1_1
+        DD      imagerel _B1_6
+        DD      imagerel _unwind___jsvml_hypot2_ha_e9_B1_B3
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot2_ha_e9_B6_B10:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B1_1
-	DD	imagerel _B1_6
-	DD	imagerel _unwind___jsvml_hypot2_ha_e9_B1_B3
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B1_1
+        DD      imagerel _B1_6
+        DD      imagerel _unwind___jsvml_hypot2_ha_e9_B1_B3
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B1_6
-	DD	imagerel _B1_11
-	DD	imagerel _unwind___jsvml_hypot2_ha_e9_B6_B10
+        DD      imagerel _B1_6
+        DD      imagerel _B1_11
+        DD      imagerel _unwind___jsvml_hypot2_ha_e9_B6_B10
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST1:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot4_ha_e9
+        ALIGN     16
+        PUBLIC __jsvml_hypot4_ha_e9
 
-__jsvml_hypot4_ha_e9	PROC	EXPORT
+__jsvml_hypot4_ha_e9    PROC    EXPORT
 
 _B2_1::
 
@@ -391,70 +391,70 @@ _B2_11::
 
 __jsvml_hypot4_ha_e9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot4_ha_e9_B1_B3:
-	DD	800513
-	DD	4903991
-	DD	2189359
-	DD	2344998
-	DD	2091037
-	DD	1964052
-	DD	5046539
+        DD      800513
+        DD      4903991
+        DD      2189359
+        DD      2344998
+        DD      2091037
+        DD      1964052
+        DD      5046539
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B2_1
-	DD	imagerel _B2_6
-	DD	imagerel _unwind___jsvml_hypot4_ha_e9_B1_B3
+        DD      imagerel _B2_1
+        DD      imagerel _B2_6
+        DD      imagerel _unwind___jsvml_hypot4_ha_e9_B1_B3
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot4_ha_e9_B6_B10:
-	DD	1065249
-	DD	1860673
-	DD	1913911
-	DD	186415
-	DD	309289
-	DD	436259
-	DD	563229
-	DD	690196
-	DD	817163
-	DD	imagerel _B2_1
-	DD	imagerel _B2_6
-	DD	imagerel _unwind___jsvml_hypot4_ha_e9_B1_B3
+        DD      1065249
+        DD      1860673
+        DD      1913911
+        DD      186415
+        DD      309289
+        DD      436259
+        DD      563229
+        DD      690196
+        DD      817163
+        DD      imagerel _B2_1
+        DD      imagerel _B2_6
+        DD      imagerel _unwind___jsvml_hypot4_ha_e9_B1_B3
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B2_6
-	DD	imagerel _B2_11
-	DD	imagerel _unwind___jsvml_hypot4_ha_e9_B6_B10
+        DD      imagerel _B2_6
+        DD      imagerel _B2_11
+        DD      imagerel _unwind___jsvml_hypot4_ha_e9_B6_B10
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST2:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot1_ha_l9
+        ALIGN     16
+        PUBLIC __jsvml_hypot1_ha_l9
 
-__jsvml_hypot1_ha_l9	PROC	EXPORT
+__jsvml_hypot1_ha_l9    PROC    EXPORT
 
 _B3_1::
 
@@ -574,44 +574,44 @@ _B3_7::
 
 __jsvml_hypot1_ha_l9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot1_ha_l9_B1_B6:
-	DD	939777
-	DD	1954903
-	DD	1009743
-	DD	1275969
-	DD	1153075
-	DD	1091621
-	DD	1243160
-	DD	2687243
+        DD      939777
+        DD      1954903
+        DD      1009743
+        DD      1275969
+        DD      1153075
+        DD      1091621
+        DD      1243160
+        DD      2687243
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B3_1
-	DD	imagerel _B3_7
-	DD	imagerel _unwind___jsvml_hypot1_ha_l9_B1_B6
+        DD      imagerel _B3_1
+        DD      imagerel _B3_7
+        DD      imagerel _unwind___jsvml_hypot1_ha_l9_B1_B6
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST3:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot2_ha_l9
+        ALIGN     16
+        PUBLIC __jsvml_hypot2_ha_l9
 
-__jsvml_hypot2_ha_l9	PROC	EXPORT
+__jsvml_hypot2_ha_l9    PROC    EXPORT
 
 _B4_1::
 
@@ -745,66 +745,66 @@ _B4_11::
 
 __jsvml_hypot2_ha_l9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot2_ha_l9_B1_B3:
-	DD	1068289
-	DD	2937933
-	DD	1075269
-	DD	1345592
-	DD	1284143
-	DD	1419302
-	DD	1161245
-	DD	1239060
-	DD	3080459
+        DD      1068289
+        DD      2937933
+        DD      1075269
+        DD      1345592
+        DD      1284143
+        DD      1419302
+        DD      1161245
+        DD      1239060
+        DD      3080459
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B4_1
-	DD	imagerel _B4_6
-	DD	imagerel _unwind___jsvml_hypot2_ha_l9_B1_B3
+        DD      imagerel _B4_1
+        DD      imagerel _B4_6
+        DD      imagerel _unwind___jsvml_hypot2_ha_l9_B1_B3
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot2_ha_l9_B6_B10:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B4_1
-	DD	imagerel _B4_6
-	DD	imagerel _unwind___jsvml_hypot2_ha_l9_B1_B3
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B4_1
+        DD      imagerel _B4_6
+        DD      imagerel _unwind___jsvml_hypot2_ha_l9_B1_B3
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B4_6
-	DD	imagerel _B4_11
-	DD	imagerel _unwind___jsvml_hypot2_ha_l9_B6_B10
+        DD      imagerel _B4_6
+        DD      imagerel _B4_11
+        DD      imagerel _unwind___jsvml_hypot2_ha_l9_B6_B10
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST4:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot4_ha_l9
+        ALIGN     16
+        PUBLIC __jsvml_hypot4_ha_l9
 
-__jsvml_hypot4_ha_l9	PROC	EXPORT
+__jsvml_hypot4_ha_l9    PROC    EXPORT
 
 _B5_1::
 
@@ -950,70 +950,70 @@ _B5_11::
 
 __jsvml_hypot4_ha_l9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot4_ha_l9_B1_B3:
-	DD	933889
-	DD	4904000
-	DD	2324536
-	DD	1804335
-	DD	2205734
-	DD	1951773
-	DD	2091028
-	DD	5046539
+        DD      933889
+        DD      4904000
+        DD      2324536
+        DD      1804335
+        DD      2205734
+        DD      1951773
+        DD      2091028
+        DD      5046539
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B5_1
-	DD	imagerel _B5_6
-	DD	imagerel _unwind___jsvml_hypot4_ha_l9_B1_B3
+        DD      imagerel _B5_1
+        DD      imagerel _B5_6
+        DD      imagerel _unwind___jsvml_hypot4_ha_l9_B1_B3
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot4_ha_l9_B6_B10:
-	DD	931873
-	DD	1598520
-	DD	1651758
-	DD	194598
-	DD	317472
-	DD	440346
-	DD	563220
-	DD	681995
-	DD	imagerel _B5_1
-	DD	imagerel _B5_6
-	DD	imagerel _unwind___jsvml_hypot4_ha_l9_B1_B3
+        DD      931873
+        DD      1598520
+        DD      1651758
+        DD      194598
+        DD      317472
+        DD      440346
+        DD      563220
+        DD      681995
+        DD      imagerel _B5_1
+        DD      imagerel _B5_6
+        DD      imagerel _unwind___jsvml_hypot4_ha_l9_B1_B3
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B5_6
-	DD	imagerel _B5_11
-	DD	imagerel _unwind___jsvml_hypot4_ha_l9_B6_B10
+        DD      imagerel _B5_6
+        DD      imagerel _B5_11
+        DD      imagerel _unwind___jsvml_hypot4_ha_l9_B6_B10
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST5:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot2_ha_ex
+        ALIGN     16
+        PUBLIC __jsvml_hypot2_ha_ex
 
-__jsvml_hypot2_ha_ex	PROC	EXPORT
+__jsvml_hypot2_ha_ex    PROC    EXPORT
 
 _B6_1::
 
@@ -1167,65 +1167,65 @@ _B6_11::
 
 __jsvml_hypot2_ha_ex ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot2_ha_ex_B1_B3:
-	DD	934657
-	DD	2806851
-	DD	1140795
-	DD	1349683
-	DD	1091626
-	DD	1300513
-	DD	1239060
-	DD	2949387
+        DD      934657
+        DD      2806851
+        DD      1140795
+        DD      1349683
+        DD      1091626
+        DD      1300513
+        DD      1239060
+        DD      2949387
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B6_1
-	DD	imagerel _B6_6
-	DD	imagerel _unwind___jsvml_hypot2_ha_ex_B1_B3
+        DD      imagerel _B6_1
+        DD      imagerel _B6_6
+        DD      imagerel _unwind___jsvml_hypot2_ha_ex_B1_B3
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot2_ha_ex_B6_B10:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B6_1
-	DD	imagerel _B6_6
-	DD	imagerel _unwind___jsvml_hypot2_ha_ex_B1_B3
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B6_1
+        DD      imagerel _B6_6
+        DD      imagerel _unwind___jsvml_hypot2_ha_ex_B1_B3
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B6_6
-	DD	imagerel _B6_11
-	DD	imagerel _unwind___jsvml_hypot2_ha_ex_B6_B10
+        DD      imagerel _B6_6
+        DD      imagerel _B6_11
+        DD      imagerel _unwind___jsvml_hypot2_ha_ex_B6_B10
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST6:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot1_ha_ex
+        ALIGN     16
+        PUBLIC __jsvml_hypot1_ha_ex
 
-__jsvml_hypot1_ha_ex	PROC	EXPORT
+__jsvml_hypot1_ha_ex    PROC    EXPORT
 
 _B7_1::
 
@@ -1364,44 +1364,44 @@ _B7_7::
 
 __jsvml_hypot1_ha_ex ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot1_ha_ex_B1_B6:
-	DD	939521
-	DD	1954902
-	DD	1280074
-	DD	1087553
-	DD	1161267
-	DD	1034277
-	DD	1234967
-	DD	2687243
+        DD      939521
+        DD      1954902
+        DD      1280074
+        DD      1087553
+        DD      1161267
+        DD      1034277
+        DD      1234967
+        DD      2687243
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B7_1
-	DD	imagerel _B7_7
-	DD	imagerel _unwind___jsvml_hypot1_ha_ex_B1_B6
+        DD      imagerel _B7_1
+        DD      imagerel _B7_7
+        DD      imagerel _unwind___jsvml_hypot1_ha_ex_B1_B6
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST7:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot8_ha_z0
+        ALIGN     16
+        PUBLIC __jsvml_hypot8_ha_z0
 
-__jsvml_hypot8_ha_z0	PROC	EXPORT
+__jsvml_hypot8_ha_z0    PROC    EXPORT
 
 _B8_1::
 
@@ -1588,81 +1588,81 @@ _B8_16::
 
 __jsvml_hypot8_ha_z0 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot8_ha_z0_B1_B9:
-	DD	286977
-	DD	11392097
-	DD	11469067
+        DD      286977
+        DD      11392097
+        DD      11469067
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B8_1
-	DD	imagerel _B8_11
-	DD	imagerel _unwind___jsvml_hypot8_ha_z0_B1_B9
+        DD      imagerel _B8_1
+        DD      imagerel _B8_11
+        DD      imagerel _unwind___jsvml_hypot8_ha_z0_B1_B9
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot8_ha_z0_B11_B15:
-	DD	3472641
-	DD	9131261
-	DD	8942834
-	DD	9004264
-	DD	9057502
-	DD	153814
-	DD	411851
-	DD	669888
-	DD	927925
-	DD	1185962
-	DD	1443999
-	DD	1767572
-	DD	2025609
-	DD	2283646
-	DD	2541683
-	DD	2799720
-	DD	3057757
-	DD	3315794
-	DD	3573831
-	DD	3831868
-	DD	4089905
-	DD	8682278
-	DD	8743709
-	DD	8805140
-	DD	8866571
-	DD	11392000
-	DD	11469056
+        DD      3472641
+        DD      9131261
+        DD      8942834
+        DD      9004264
+        DD      9057502
+        DD      153814
+        DD      411851
+        DD      669888
+        DD      927925
+        DD      1185962
+        DD      1443999
+        DD      1767572
+        DD      2025609
+        DD      2283646
+        DD      2541683
+        DD      2799720
+        DD      3057757
+        DD      3315794
+        DD      3573831
+        DD      3831868
+        DD      4089905
+        DD      8682278
+        DD      8743709
+        DD      8805140
+        DD      8866571
+        DD      11392000
+        DD      11469056
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B8_11
-	DD	imagerel _B8_16
-	DD	imagerel _unwind___jsvml_hypot8_ha_z0_B11_B15
+        DD      imagerel _B8_11
+        DD      imagerel _B8_16
+        DD      imagerel _unwind___jsvml_hypot8_ha_z0_B11_B15
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST8:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_hypot1_ha_e9
+        ALIGN     16
+        PUBLIC __jsvml_hypot1_ha_e9
 
-__jsvml_hypot1_ha_e9	PROC	EXPORT
+__jsvml_hypot1_ha_e9    PROC    EXPORT
 
 _B9_1::
 
@@ -1789,44 +1789,44 @@ _B9_7::
 
 __jsvml_hypot1_ha_e9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_hypot1_ha_e9_B1_B6:
-	DD	938753
-	DD	1954899
-	DD	1288267
-	DD	1226818
-	DD	1169460
-	DD	1042470
-	DD	1112088
-	DD	2687243
+        DD      938753
+        DD      1954899
+        DD      1288267
+        DD      1226818
+        DD      1169460
+        DD      1042470
+        DD      1112088
+        DD      2687243
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B9_1
-	DD	imagerel _B9_7
-	DD	imagerel _unwind___jsvml_hypot1_ha_e9_B1_B6
+        DD      imagerel _B9_1
+        DD      imagerel _B9_7
+        DD      imagerel _unwind___jsvml_hypot1_ha_e9_B1_B6
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST9:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_dhypot_ha_cout_rare_internal
+        ALIGN     16
+        PUBLIC __jsvml_dhypot_ha_cout_rare_internal
 
-__jsvml_dhypot_ha_cout_rare_internal	PROC
+__jsvml_dhypot_ha_cout_rare_internal    PROC
 
 _B10_1::
 
@@ -2175,1294 +2175,1294 @@ _B10_25::
 
 __jsvml_dhypot_ha_cout_rare_internal ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_dhypot_ha_cout_rare_internal_B1_B22:
-	DD	403713
-	DD	256041
-	DD	194595
-	DD	3221680653
+        DD      403713
+        DD      256041
+        DD      194595
+        DD      3221680653
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B10_1
-	DD	imagerel _B10_25
-	DD	imagerel _unwind___jsvml_dhypot_ha_cout_rare_internal_B1_B22
+        DD      imagerel _B10_1
+        DD      imagerel _B10_25
+        DD      imagerel _unwind___jsvml_dhypot_ha_cout_rare_internal_B1_B22
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_RDATA	SEGMENT     READ PAGE   'DATA'
-	ALIGN  32
-	PUBLIC __jsvml_dhypot_ha_data_internal
-__jsvml_dhypot_ha_data_internal	DD	0
-	DD	4294950912
-	DD	0
-	DD	4294950912
-	DD	0
-	DD	4294950912
-	DD	0
-	DD	4294950912
-	DD	0
-	DD	4294950912
-	DD	0
-	DD	4294950912
-	DD	0
-	DD	4294950912
-	DD	0
-	DD	4294950912
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	3218046976
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	1070694400
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	3218341888
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	1071120384
-	DD	0
-	DD	3219128320
-	DD	0
-	DD	3219128320
-	DD	0
-	DD	3219128320
-	DD	0
-	DD	3219128320
-	DD	0
-	DD	3219128320
-	DD	0
-	DD	3219128320
-	DD	0
-	DD	3219128320
-	DD	0
-	DD	3219128320
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	6291456
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1002438656
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	1141899264
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1082126336
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1078951936
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-_vmldHypotHATab	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072689152
-	DD	0
-	DD	1072685056
-	DD	0
-	DD	1072680960
-	DD	0
-	DD	1072676864
-	DD	0
-	DD	1072672768
-	DD	0
-	DD	1072668672
-	DD	0
-	DD	1072665600
-	DD	0
-	DD	1072661504
-	DD	0
-	DD	1072657408
-	DD	0
-	DD	1072653312
-	DD	0
-	DD	1072649216
-	DD	0
-	DD	1072646144
-	DD	0
-	DD	1072642048
-	DD	0
-	DD	1072637952
-	DD	0
-	DD	1072634880
-	DD	0
-	DD	1072630784
-	DD	0
-	DD	1072626688
-	DD	0
-	DD	1072623616
-	DD	0
-	DD	1072619520
-	DD	0
-	DD	1072615424
-	DD	0
-	DD	1072612352
-	DD	0
-	DD	1072608256
-	DD	0
-	DD	1072605184
-	DD	0
-	DD	1072601088
-	DD	0
-	DD	1072598016
-	DD	0
-	DD	1072593920
-	DD	0
-	DD	1072590848
-	DD	0
-	DD	1072586752
-	DD	0
-	DD	1072583680
-	DD	0
-	DD	1072580608
-	DD	0
-	DD	1072576512
-	DD	0
-	DD	1072573440
-	DD	0
-	DD	1072570368
-	DD	0
-	DD	1072566272
-	DD	0
-	DD	1072563200
-	DD	0
-	DD	1072560128
-	DD	0
-	DD	1072556032
-	DD	0
-	DD	1072552960
-	DD	0
-	DD	1072549888
-	DD	0
-	DD	1072546816
-	DD	0
-	DD	1072542720
-	DD	0
-	DD	1072539648
-	DD	0
-	DD	1072536576
-	DD	0
-	DD	1072533504
-	DD	0
-	DD	1072530432
-	DD	0
-	DD	1072527360
-	DD	0
-	DD	1072523264
-	DD	0
-	DD	1072520192
-	DD	0
-	DD	1072517120
-	DD	0
-	DD	1072514048
-	DD	0
-	DD	1072510976
-	DD	0
-	DD	1072507904
-	DD	0
-	DD	1072504832
-	DD	0
-	DD	1072501760
-	DD	0
-	DD	1072498688
-	DD	0
-	DD	1072495616
-	DD	0
-	DD	1072492544
-	DD	0
-	DD	1072489472
-	DD	0
-	DD	1072486400
-	DD	0
-	DD	1072483328
-	DD	0
-	DD	1072480256
-	DD	0
-	DD	1072478208
-	DD	0
-	DD	1072475136
-	DD	0
-	DD	1072472064
-	DD	0
-	DD	1072468992
-	DD	0
-	DD	1072465920
-	DD	0
-	DD	1072462848
-	DD	0
-	DD	1072459776
-	DD	0
-	DD	1072457728
-	DD	0
-	DD	1072454656
-	DD	0
-	DD	1072451584
-	DD	0
-	DD	1072448512
-	DD	0
-	DD	1072446464
-	DD	0
-	DD	1072443392
-	DD	0
-	DD	1072440320
-	DD	0
-	DD	1072437248
-	DD	0
-	DD	1072435200
-	DD	0
-	DD	1072432128
-	DD	0
-	DD	1072429056
-	DD	0
-	DD	1072427008
-	DD	0
-	DD	1072423936
-	DD	0
-	DD	1072420864
-	DD	0
-	DD	1072418816
-	DD	0
-	DD	1072415744
-	DD	0
-	DD	1072412672
-	DD	0
-	DD	1072410624
-	DD	0
-	DD	1072407552
-	DD	0
-	DD	1072405504
-	DD	0
-	DD	1072402432
-	DD	0
-	DD	1072400384
-	DD	0
-	DD	1072397312
-	DD	0
-	DD	1072395264
-	DD	0
-	DD	1072392192
-	DD	0
-	DD	1072390144
-	DD	0
-	DD	1072387072
-	DD	0
-	DD	1072385024
-	DD	0
-	DD	1072381952
-	DD	0
-	DD	1072379904
-	DD	0
-	DD	1072376832
-	DD	0
-	DD	1072374784
-	DD	0
-	DD	1072371712
-	DD	0
-	DD	1072369664
-	DD	0
-	DD	1072366592
-	DD	0
-	DD	1072364544
-	DD	0
-	DD	1072362496
-	DD	0
-	DD	1072359424
-	DD	0
-	DD	1072357376
-	DD	0
-	DD	1072355328
-	DD	0
-	DD	1072352256
-	DD	0
-	DD	1072350208
-	DD	0
-	DD	1072347136
-	DD	0
-	DD	1072345088
-	DD	0
-	DD	1072343040
-	DD	0
-	DD	1072340992
-	DD	0
-	DD	1072337920
-	DD	0
-	DD	1072335872
-	DD	0
-	DD	1072333824
-	DD	0
-	DD	1072330752
-	DD	0
-	DD	1072328704
-	DD	0
-	DD	1072326656
-	DD	0
-	DD	1072324608
-	DD	0
-	DD	1072321536
-	DD	0
-	DD	1072319488
-	DD	0
-	DD	1072317440
-	DD	0
-	DD	1072315392
-	DD	0
-	DD	1072313344
-	DD	0
-	DD	1072310272
-	DD	0
-	DD	1072308224
-	DD	0
-	DD	1072306176
-	DD	0
-	DD	1072304128
-	DD	0
-	DD	1072302080
-	DD	0
-	DD	1072300032
-	DD	0
-	DD	1072296960
-	DD	0
-	DD	1072294912
-	DD	0
-	DD	1072292864
-	DD	0
-	DD	1072290816
-	DD	0
-	DD	1072288768
-	DD	0
-	DD	1072286720
-	DD	0
-	DD	1072284672
-	DD	0
-	DD	1072282624
-	DD	0
-	DD	1072280576
-	DD	0
-	DD	1072278528
-	DD	0
-	DD	1072275456
-	DD	0
-	DD	1072273408
-	DD	0
-	DD	1072271360
-	DD	0
-	DD	1072269312
-	DD	0
-	DD	1072267264
-	DD	0
-	DD	1072265216
-	DD	0
-	DD	1072263168
-	DD	0
-	DD	1072261120
-	DD	0
-	DD	1072259072
-	DD	0
-	DD	1072257024
-	DD	0
-	DD	1072254976
-	DD	0
-	DD	1072252928
-	DD	0
-	DD	1072250880
-	DD	0
-	DD	1072248832
-	DD	0
-	DD	1072246784
-	DD	0
-	DD	1072244736
-	DD	0
-	DD	1072243712
-	DD	0
-	DD	1072241664
-	DD	0
-	DD	1072239616
-	DD	0
-	DD	1072237568
-	DD	0
-	DD	1072235520
-	DD	0
-	DD	1072233472
-	DD	0
-	DD	1072231424
-	DD	0
-	DD	1072229376
-	DD	0
-	DD	1072227328
-	DD	0
-	DD	1072225280
-	DD	0
-	DD	1072223232
-	DD	0
-	DD	1072222208
-	DD	0
-	DD	1072220160
-	DD	0
-	DD	1072218112
-	DD	0
-	DD	1072216064
-	DD	0
-	DD	1072214016
-	DD	0
-	DD	1072211968
-	DD	0
-	DD	1072210944
-	DD	0
-	DD	1072208896
-	DD	0
-	DD	1072206848
-	DD	0
-	DD	1072204800
-	DD	0
-	DD	1072202752
-	DD	0
-	DD	1072201728
-	DD	0
-	DD	1072199680
-	DD	0
-	DD	1072197632
-	DD	0
-	DD	1072195584
-	DD	0
-	DD	1072193536
-	DD	0
-	DD	1072192512
-	DD	0
-	DD	1072190464
-	DD	0
-	DD	1072188416
-	DD	0
-	DD	1072186368
-	DD	0
-	DD	1072185344
-	DD	0
-	DD	1072183296
-	DD	0
-	DD	1072181248
-	DD	0
-	DD	1072179200
-	DD	0
-	DD	1072178176
-	DD	0
-	DD	1072176128
-	DD	0
-	DD	1072174080
-	DD	0
-	DD	1072173056
-	DD	0
-	DD	1072171008
-	DD	0
-	DD	1072168960
-	DD	0
-	DD	1072167936
-	DD	0
-	DD	1072165888
-	DD	0
-	DD	1072163840
-	DD	0
-	DD	1072161792
-	DD	0
-	DD	1072160768
-	DD	0
-	DD	1072158720
-	DD	0
-	DD	1072157696
-	DD	0
-	DD	1072155648
-	DD	0
-	DD	1072153600
-	DD	0
-	DD	1072152576
-	DD	0
-	DD	1072150528
-	DD	0
-	DD	1072148480
-	DD	0
-	DD	1072147456
-	DD	0
-	DD	1072145408
-	DD	0
-	DD	1072143360
-	DD	0
-	DD	1072142336
-	DD	0
-	DD	1072140288
-	DD	0
-	DD	1072139264
-	DD	0
-	DD	1072137216
-	DD	0
-	DD	1072135168
-	DD	0
-	DD	1072134144
-	DD	0
-	DD	1072132096
-	DD	0
-	DD	1072131072
-	DD	0
-	DD	1072129024
-	DD	0
-	DD	1072128000
-	DD	0
-	DD	1072125952
-	DD	0
-	DD	1072124928
-	DD	0
-	DD	1072122880
-	DD	0
-	DD	1072120832
-	DD	0
-	DD	1072119808
-	DD	0
-	DD	1072117760
-	DD	0
-	DD	1072116736
-	DD	0
-	DD	1072114688
-	DD	0
-	DD	1072113664
-	DD	0
-	DD	1072111616
-	DD	0
-	DD	1072110592
-	DD	0
-	DD	1072108544
-	DD	0
-	DD	1072107520
-	DD	0
-	DD	1072105472
-	DD	0
-	DD	1072104448
-	DD	0
-	DD	1072102400
-	DD	0
-	DD	1072101376
-	DD	0
-	DD	1072099328
-	DD	0
-	DD	1072098304
-	DD	0
-	DD	1072096256
-	DD	0
-	DD	1072095232
-	DD	0
-	DD	1072094208
-	DD	0
-	DD	1072092160
-	DD	0
-	DD	1072091136
-	DD	0
-	DD	1072089088
-	DD	0
-	DD	1072088064
-	DD	0
-	DD	1072086016
-	DD	0
-	DD	1072084992
-	DD	0
-	DD	1072082944
-	DD	0
-	DD	1072081920
-	DD	0
-	DD	1072080896
-	DD	0
-	DD	1072078848
-	DD	0
-	DD	1072075776
-	DD	0
-	DD	1072073728
-	DD	0
-	DD	1072070656
-	DD	0
-	DD	1072067584
-	DD	0
-	DD	1072064512
-	DD	0
-	DD	1072061440
-	DD	0
-	DD	1072059392
-	DD	0
-	DD	1072056320
-	DD	0
-	DD	1072053248
-	DD	0
-	DD	1072051200
-	DD	0
-	DD	1072048128
-	DD	0
-	DD	1072045056
-	DD	0
-	DD	1072043008
-	DD	0
-	DD	1072039936
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072034816
-	DD	0
-	DD	1072031744
-	DD	0
-	DD	1072029696
-	DD	0
-	DD	1072026624
-	DD	0
-	DD	1072024576
-	DD	0
-	DD	1072021504
-	DD	0
-	DD	1072019456
-	DD	0
-	DD	1072016384
-	DD	0
-	DD	1072014336
-	DD	0
-	DD	1072011264
-	DD	0
-	DD	1072009216
-	DD	0
-	DD	1072006144
-	DD	0
-	DD	1072004096
-	DD	0
-	DD	1072002048
-	DD	0
-	DD	1071998976
-	DD	0
-	DD	1071996928
-	DD	0
-	DD	1071993856
-	DD	0
-	DD	1071991808
-	DD	0
-	DD	1071989760
-	DD	0
-	DD	1071986688
-	DD	0
-	DD	1071984640
-	DD	0
-	DD	1071982592
-	DD	0
-	DD	1071979520
-	DD	0
-	DD	1071977472
-	DD	0
-	DD	1071975424
-	DD	0
-	DD	1071972352
-	DD	0
-	DD	1071970304
-	DD	0
-	DD	1071968256
-	DD	0
-	DD	1071966208
-	DD	0
-	DD	1071964160
-	DD	0
-	DD	1071961088
-	DD	0
-	DD	1071959040
-	DD	0
-	DD	1071956992
-	DD	0
-	DD	1071954944
-	DD	0
-	DD	1071952896
-	DD	0
-	DD	1071949824
-	DD	0
-	DD	1071947776
-	DD	0
-	DD	1071945728
-	DD	0
-	DD	1071943680
-	DD	0
-	DD	1071941632
-	DD	0
-	DD	1071939584
-	DD	0
-	DD	1071937536
-	DD	0
-	DD	1071935488
-	DD	0
-	DD	1071933440
-	DD	0
-	DD	1071930368
-	DD	0
-	DD	1071928320
-	DD	0
-	DD	1071926272
-	DD	0
-	DD	1071924224
-	DD	0
-	DD	1071922176
-	DD	0
-	DD	1071920128
-	DD	0
-	DD	1071918080
-	DD	0
-	DD	1071916032
-	DD	0
-	DD	1071913984
-	DD	0
-	DD	1071911936
-	DD	0
-	DD	1071909888
-	DD	0
-	DD	1071907840
-	DD	0
-	DD	1071905792
-	DD	0
-	DD	1071903744
-	DD	0
-	DD	1071901696
-	DD	0
-	DD	1071900672
-	DD	0
-	DD	1071898624
-	DD	0
-	DD	1071896576
-	DD	0
-	DD	1071894528
-	DD	0
-	DD	1071892480
-	DD	0
-	DD	1071890432
-	DD	0
-	DD	1071888384
-	DD	0
-	DD	1071886336
-	DD	0
-	DD	1071884288
-	DD	0
-	DD	1071883264
-	DD	0
-	DD	1071881216
-	DD	0
-	DD	1071879168
-	DD	0
-	DD	1071877120
-	DD	0
-	DD	1071875072
-	DD	0
-	DD	1071873024
-	DD	0
-	DD	1071872000
-	DD	0
-	DD	1071869952
-	DD	0
-	DD	1071867904
-	DD	0
-	DD	1071865856
-	DD	0
-	DD	1071864832
-	DD	0
-	DD	1071862784
-	DD	0
-	DD	1071860736
-	DD	0
-	DD	1071858688
-	DD	0
-	DD	1071856640
-	DD	0
-	DD	1071855616
-	DD	0
-	DD	1071853568
-	DD	0
-	DD	1071851520
-	DD	0
-	DD	1071850496
-	DD	0
-	DD	1071848448
-	DD	0
-	DD	1071846400
-	DD	0
-	DD	1071844352
-	DD	0
-	DD	1071843328
-	DD	0
-	DD	1071841280
-	DD	0
-	DD	1071839232
-	DD	0
-	DD	1071838208
-	DD	0
-	DD	1071836160
-	DD	0
-	DD	1071834112
-	DD	0
-	DD	1071833088
-	DD	0
-	DD	1071831040
-	DD	0
-	DD	1071830016
-	DD	0
-	DD	1071827968
-	DD	0
-	DD	1071825920
-	DD	0
-	DD	1071824896
-	DD	0
-	DD	1071822848
-	DD	0
-	DD	1071821824
-	DD	0
-	DD	1071819776
-	DD	0
-	DD	1071817728
-	DD	0
-	DD	1071816704
-	DD	0
-	DD	1071814656
-	DD	0
-	DD	1071813632
-	DD	0
-	DD	1071811584
-	DD	0
-	DD	1071810560
-	DD	0
-	DD	1071808512
-	DD	0
-	DD	1071806464
-	DD	0
-	DD	1071805440
-	DD	0
-	DD	1071803392
-	DD	0
-	DD	1071802368
-	DD	0
-	DD	1071800320
-	DD	0
-	DD	1071799296
-	DD	0
-	DD	1071797248
-	DD	0
-	DD	1071796224
-	DD	0
-	DD	1071794176
-	DD	0
-	DD	1071793152
-	DD	0
-	DD	1071791104
-	DD	0
-	DD	1071790080
-	DD	0
-	DD	1071788032
-	DD	0
-	DD	1071787008
-	DD	0
-	DD	1071784960
-	DD	0
-	DD	1071783936
-	DD	0
-	DD	1071782912
-	DD	0
-	DD	1071780864
-	DD	0
-	DD	1071779840
-	DD	0
-	DD	1071777792
-	DD	0
-	DD	1071776768
-	DD	0
-	DD	1071774720
-	DD	0
-	DD	1071773696
-	DD	0
-	DD	1071772672
-	DD	0
-	DD	1071770624
-	DD	0
-	DD	1071769600
-	DD	0
-	DD	1071767552
-	DD	0
-	DD	1071766528
-	DD	0
-	DD	1071765504
-	DD	0
-	DD	1071763456
-	DD	0
-	DD	1071762432
-	DD	0
-	DD	1071760384
-	DD	0
-	DD	1071759360
-	DD	0
-	DD	1071758336
-	DD	0
-	DD	1071756288
-	DD	0
-	DD	1071755264
-	DD	0
-	DD	1071754240
-	DD	0
-	DD	1071752192
-	DD	0
-	DD	1071751168
-	DD	0
-	DD	1071750144
-	DD	0
-	DD	1071748096
-	DD	0
-	DD	1071747072
-	DD	0
-	DD	1071746048
-	DD	0
-	DD	1071744000
-	DD	0
-	DD	1071742976
-	DD	0
-	DD	1071741952
-	DD	0
-	DD	1071739904
-	DD	0
-	DD	1071738880
-	DD	0
-	DD	1071737856
-	DD	0
-	DD	1071736832
-	DD	0
-	DD	1071734784
-	DD	0
-	DD	1071733760
-	DD	0
-	DD	1071732736
-	DD	0
-	DD	1071730688
-	DD	0
-	DD	1071729664
-	DD	0
-	DD	1071728640
-	DD	0
-	DD	1071727616
-	DD	0
-	DD	1071725568
-	DD	0
-	DD	1071724544
-	DD	0
-	DD	1071723520
-	DD	0
-	DD	1071722496
-	DD	0
-	DD	1071720448
-	DD	0
-	DD	1071719424
-	DD	0
-	DD	1071718400
-	DD	0
-	DD	1071717376
-	DD	0
-	DD	1071715328
-	DD	0
-	DD	1071714304
-	DD	0
-	DD	1071713280
-	DD	0
-	DD	1071712256
-	DD	0
-	DD	1071711232
-	DD	0
-	DD	1071709184
-	DD	0
-	DD	1071708160
-	DD	0
-	DD	1071707136
-	DD	0
-	DD	1071706112
-	DD	0
-	DD	1071705088
-	DD	0
-	DD	1071704064
-	DD	0
-	DD	1071702016
-	DD	0
-	DD	1071700992
-	DD	0
-	DD	1071699968
-	DD	0
-	DD	1071698944
-	DD	0
-	DD	1071697920
-	DD	0
-	DD	1071696896
-	DD	0
-	DD	1071694848
-	DD	0
-	DD	1071693824
-	DD	0
-	DD	1071692800
-	DD	0
-	DD	1071691776
-	DD	0
-	DD	1071690752
-	DD	0
-	DD	1071689728
-	DD	0
-	DD	1071688704
-	DD	0
-	DD	1071686656
-	DD	0
-	DD	1071685632
-	DD	0
-	DD	1071684608
-	DD	0
-	DD	1071683584
-	DD	0
-	DD	1071682560
-	DD	0
-	DD	1071681536
-	DD	0
-	DD	1071680512
-	DD	0
-	DD	1071679488
-	DD	0
-	DD	1071677440
-	DD	0
-	DD	1071676416
-	DD	0
-	DD	1071675392
-	DD	0
-	DD	1071674368
-	DD	0
-	DD	1071673344
-	DD	0
-	DD	1071672320
-	DD	0
-	DD	1071671296
-	DD	0
-	DD	1071670272
-	DD	0
-	DD	1071669248
-	DD	0
-	DD	1071668224
-	DD	0
-	DD	1071667200
-	DD	0
-	DD	1071666176
-	DD	0
-	DD	1071665152
-	DD	0
-	DD	1071663104
-	DD	0
-	DD	1071662080
-	DD	0
-	DD	1071661056
-	DD	0
-	DD	1071660032
-	DD	0
-	DD	1071659008
-	DD	0
-	DD	1071657984
-	DD	0
-	DD	1071656960
-	DD	0
-	DD	1071655936
-	DD	0
-	DD	1071654912
-	DD	0
-	DD	1071653888
-	DD	0
-	DD	1071652864
-	DD	0
-	DD	1071651840
-	DD	0
-	DD	1071650816
-	DD	0
-	DD	1071649792
-	DD	0
-	DD	1071648768
-	DD	0
-	DD	1071647744
-	DD	0
-	DD	1071646720
-	DD	0
-	DD	1071645696
-	DD	0
-	DD	0
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1073741824
-	DD	33554432
-	DD	1101004800
-_RDATA	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
-EXTRN	__ImageBase:PROC
-EXTRN	_fltused:BYTE
+_RDATA  SEGMENT     READ PAGE   'DATA'
+        ALIGN  32
+        PUBLIC __jsvml_dhypot_ha_data_internal
+__jsvml_dhypot_ha_data_internal DD      0
+        DD      4294950912
+        DD      0
+        DD      4294950912
+        DD      0
+        DD      4294950912
+        DD      0
+        DD      4294950912
+        DD      0
+        DD      4294950912
+        DD      0
+        DD      4294950912
+        DD      0
+        DD      4294950912
+        DD      0
+        DD      4294950912
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      3218046976
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      1070694400
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      3218341888
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      1071120384
+        DD      0
+        DD      3219128320
+        DD      0
+        DD      3219128320
+        DD      0
+        DD      3219128320
+        DD      0
+        DD      3219128320
+        DD      0
+        DD      3219128320
+        DD      0
+        DD      3219128320
+        DD      0
+        DD      3219128320
+        DD      0
+        DD      3219128320
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      6291456
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1002438656
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      1141899264
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1082126336
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1078951936
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+_vmldHypotHATab DD      0
+        DD      1072693248
+        DD      0
+        DD      1072689152
+        DD      0
+        DD      1072685056
+        DD      0
+        DD      1072680960
+        DD      0
+        DD      1072676864
+        DD      0
+        DD      1072672768
+        DD      0
+        DD      1072668672
+        DD      0
+        DD      1072665600
+        DD      0
+        DD      1072661504
+        DD      0
+        DD      1072657408
+        DD      0
+        DD      1072653312
+        DD      0
+        DD      1072649216
+        DD      0
+        DD      1072646144
+        DD      0
+        DD      1072642048
+        DD      0
+        DD      1072637952
+        DD      0
+        DD      1072634880
+        DD      0
+        DD      1072630784
+        DD      0
+        DD      1072626688
+        DD      0
+        DD      1072623616
+        DD      0
+        DD      1072619520
+        DD      0
+        DD      1072615424
+        DD      0
+        DD      1072612352
+        DD      0
+        DD      1072608256
+        DD      0
+        DD      1072605184
+        DD      0
+        DD      1072601088
+        DD      0
+        DD      1072598016
+        DD      0
+        DD      1072593920
+        DD      0
+        DD      1072590848
+        DD      0
+        DD      1072586752
+        DD      0
+        DD      1072583680
+        DD      0
+        DD      1072580608
+        DD      0
+        DD      1072576512
+        DD      0
+        DD      1072573440
+        DD      0
+        DD      1072570368
+        DD      0
+        DD      1072566272
+        DD      0
+        DD      1072563200
+        DD      0
+        DD      1072560128
+        DD      0
+        DD      1072556032
+        DD      0
+        DD      1072552960
+        DD      0
+        DD      1072549888
+        DD      0
+        DD      1072546816
+        DD      0
+        DD      1072542720
+        DD      0
+        DD      1072539648
+        DD      0
+        DD      1072536576
+        DD      0
+        DD      1072533504
+        DD      0
+        DD      1072530432
+        DD      0
+        DD      1072527360
+        DD      0
+        DD      1072523264
+        DD      0
+        DD      1072520192
+        DD      0
+        DD      1072517120
+        DD      0
+        DD      1072514048
+        DD      0
+        DD      1072510976
+        DD      0
+        DD      1072507904
+        DD      0
+        DD      1072504832
+        DD      0
+        DD      1072501760
+        DD      0
+        DD      1072498688
+        DD      0
+        DD      1072495616
+        DD      0
+        DD      1072492544
+        DD      0
+        DD      1072489472
+        DD      0
+        DD      1072486400
+        DD      0
+        DD      1072483328
+        DD      0
+        DD      1072480256
+        DD      0
+        DD      1072478208
+        DD      0
+        DD      1072475136
+        DD      0
+        DD      1072472064
+        DD      0
+        DD      1072468992
+        DD      0
+        DD      1072465920
+        DD      0
+        DD      1072462848
+        DD      0
+        DD      1072459776
+        DD      0
+        DD      1072457728
+        DD      0
+        DD      1072454656
+        DD      0
+        DD      1072451584
+        DD      0
+        DD      1072448512
+        DD      0
+        DD      1072446464
+        DD      0
+        DD      1072443392
+        DD      0
+        DD      1072440320
+        DD      0
+        DD      1072437248
+        DD      0
+        DD      1072435200
+        DD      0
+        DD      1072432128
+        DD      0
+        DD      1072429056
+        DD      0
+        DD      1072427008
+        DD      0
+        DD      1072423936
+        DD      0
+        DD      1072420864
+        DD      0
+        DD      1072418816
+        DD      0
+        DD      1072415744
+        DD      0
+        DD      1072412672
+        DD      0
+        DD      1072410624
+        DD      0
+        DD      1072407552
+        DD      0
+        DD      1072405504
+        DD      0
+        DD      1072402432
+        DD      0
+        DD      1072400384
+        DD      0
+        DD      1072397312
+        DD      0
+        DD      1072395264
+        DD      0
+        DD      1072392192
+        DD      0
+        DD      1072390144
+        DD      0
+        DD      1072387072
+        DD      0
+        DD      1072385024
+        DD      0
+        DD      1072381952
+        DD      0
+        DD      1072379904
+        DD      0
+        DD      1072376832
+        DD      0
+        DD      1072374784
+        DD      0
+        DD      1072371712
+        DD      0
+        DD      1072369664
+        DD      0
+        DD      1072366592
+        DD      0
+        DD      1072364544
+        DD      0
+        DD      1072362496
+        DD      0
+        DD      1072359424
+        DD      0
+        DD      1072357376
+        DD      0
+        DD      1072355328
+        DD      0
+        DD      1072352256
+        DD      0
+        DD      1072350208
+        DD      0
+        DD      1072347136
+        DD      0
+        DD      1072345088
+        DD      0
+        DD      1072343040
+        DD      0
+        DD      1072340992
+        DD      0
+        DD      1072337920
+        DD      0
+        DD      1072335872
+        DD      0
+        DD      1072333824
+        DD      0
+        DD      1072330752
+        DD      0
+        DD      1072328704
+        DD      0
+        DD      1072326656
+        DD      0
+        DD      1072324608
+        DD      0
+        DD      1072321536
+        DD      0
+        DD      1072319488
+        DD      0
+        DD      1072317440
+        DD      0
+        DD      1072315392
+        DD      0
+        DD      1072313344
+        DD      0
+        DD      1072310272
+        DD      0
+        DD      1072308224
+        DD      0
+        DD      1072306176
+        DD      0
+        DD      1072304128
+        DD      0
+        DD      1072302080
+        DD      0
+        DD      1072300032
+        DD      0
+        DD      1072296960
+        DD      0
+        DD      1072294912
+        DD      0
+        DD      1072292864
+        DD      0
+        DD      1072290816
+        DD      0
+        DD      1072288768
+        DD      0
+        DD      1072286720
+        DD      0
+        DD      1072284672
+        DD      0
+        DD      1072282624
+        DD      0
+        DD      1072280576
+        DD      0
+        DD      1072278528
+        DD      0
+        DD      1072275456
+        DD      0
+        DD      1072273408
+        DD      0
+        DD      1072271360
+        DD      0
+        DD      1072269312
+        DD      0
+        DD      1072267264
+        DD      0
+        DD      1072265216
+        DD      0
+        DD      1072263168
+        DD      0
+        DD      1072261120
+        DD      0
+        DD      1072259072
+        DD      0
+        DD      1072257024
+        DD      0
+        DD      1072254976
+        DD      0
+        DD      1072252928
+        DD      0
+        DD      1072250880
+        DD      0
+        DD      1072248832
+        DD      0
+        DD      1072246784
+        DD      0
+        DD      1072244736
+        DD      0
+        DD      1072243712
+        DD      0
+        DD      1072241664
+        DD      0
+        DD      1072239616
+        DD      0
+        DD      1072237568
+        DD      0
+        DD      1072235520
+        DD      0
+        DD      1072233472
+        DD      0
+        DD      1072231424
+        DD      0
+        DD      1072229376
+        DD      0
+        DD      1072227328
+        DD      0
+        DD      1072225280
+        DD      0
+        DD      1072223232
+        DD      0
+        DD      1072222208
+        DD      0
+        DD      1072220160
+        DD      0
+        DD      1072218112
+        DD      0
+        DD      1072216064
+        DD      0
+        DD      1072214016
+        DD      0
+        DD      1072211968
+        DD      0
+        DD      1072210944
+        DD      0
+        DD      1072208896
+        DD      0
+        DD      1072206848
+        DD      0
+        DD      1072204800
+        DD      0
+        DD      1072202752
+        DD      0
+        DD      1072201728
+        DD      0
+        DD      1072199680
+        DD      0
+        DD      1072197632
+        DD      0
+        DD      1072195584
+        DD      0
+        DD      1072193536
+        DD      0
+        DD      1072192512
+        DD      0
+        DD      1072190464
+        DD      0
+        DD      1072188416
+        DD      0
+        DD      1072186368
+        DD      0
+        DD      1072185344
+        DD      0
+        DD      1072183296
+        DD      0
+        DD      1072181248
+        DD      0
+        DD      1072179200
+        DD      0
+        DD      1072178176
+        DD      0
+        DD      1072176128
+        DD      0
+        DD      1072174080
+        DD      0
+        DD      1072173056
+        DD      0
+        DD      1072171008
+        DD      0
+        DD      1072168960
+        DD      0
+        DD      1072167936
+        DD      0
+        DD      1072165888
+        DD      0
+        DD      1072163840
+        DD      0
+        DD      1072161792
+        DD      0
+        DD      1072160768
+        DD      0
+        DD      1072158720
+        DD      0
+        DD      1072157696
+        DD      0
+        DD      1072155648
+        DD      0
+        DD      1072153600
+        DD      0
+        DD      1072152576
+        DD      0
+        DD      1072150528
+        DD      0
+        DD      1072148480
+        DD      0
+        DD      1072147456
+        DD      0
+        DD      1072145408
+        DD      0
+        DD      1072143360
+        DD      0
+        DD      1072142336
+        DD      0
+        DD      1072140288
+        DD      0
+        DD      1072139264
+        DD      0
+        DD      1072137216
+        DD      0
+        DD      1072135168
+        DD      0
+        DD      1072134144
+        DD      0
+        DD      1072132096
+        DD      0
+        DD      1072131072
+        DD      0
+        DD      1072129024
+        DD      0
+        DD      1072128000
+        DD      0
+        DD      1072125952
+        DD      0
+        DD      1072124928
+        DD      0
+        DD      1072122880
+        DD      0
+        DD      1072120832
+        DD      0
+        DD      1072119808
+        DD      0
+        DD      1072117760
+        DD      0
+        DD      1072116736
+        DD      0
+        DD      1072114688
+        DD      0
+        DD      1072113664
+        DD      0
+        DD      1072111616
+        DD      0
+        DD      1072110592
+        DD      0
+        DD      1072108544
+        DD      0
+        DD      1072107520
+        DD      0
+        DD      1072105472
+        DD      0
+        DD      1072104448
+        DD      0
+        DD      1072102400
+        DD      0
+        DD      1072101376
+        DD      0
+        DD      1072099328
+        DD      0
+        DD      1072098304
+        DD      0
+        DD      1072096256
+        DD      0
+        DD      1072095232
+        DD      0
+        DD      1072094208
+        DD      0
+        DD      1072092160
+        DD      0
+        DD      1072091136
+        DD      0
+        DD      1072089088
+        DD      0
+        DD      1072088064
+        DD      0
+        DD      1072086016
+        DD      0
+        DD      1072084992
+        DD      0
+        DD      1072082944
+        DD      0
+        DD      1072081920
+        DD      0
+        DD      1072080896
+        DD      0
+        DD      1072078848
+        DD      0
+        DD      1072075776
+        DD      0
+        DD      1072073728
+        DD      0
+        DD      1072070656
+        DD      0
+        DD      1072067584
+        DD      0
+        DD      1072064512
+        DD      0
+        DD      1072061440
+        DD      0
+        DD      1072059392
+        DD      0
+        DD      1072056320
+        DD      0
+        DD      1072053248
+        DD      0
+        DD      1072051200
+        DD      0
+        DD      1072048128
+        DD      0
+        DD      1072045056
+        DD      0
+        DD      1072043008
+        DD      0
+        DD      1072039936
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072034816
+        DD      0
+        DD      1072031744
+        DD      0
+        DD      1072029696
+        DD      0
+        DD      1072026624
+        DD      0
+        DD      1072024576
+        DD      0
+        DD      1072021504
+        DD      0
+        DD      1072019456
+        DD      0
+        DD      1072016384
+        DD      0
+        DD      1072014336
+        DD      0
+        DD      1072011264
+        DD      0
+        DD      1072009216
+        DD      0
+        DD      1072006144
+        DD      0
+        DD      1072004096
+        DD      0
+        DD      1072002048
+        DD      0
+        DD      1071998976
+        DD      0
+        DD      1071996928
+        DD      0
+        DD      1071993856
+        DD      0
+        DD      1071991808
+        DD      0
+        DD      1071989760
+        DD      0
+        DD      1071986688
+        DD      0
+        DD      1071984640
+        DD      0
+        DD      1071982592
+        DD      0
+        DD      1071979520
+        DD      0
+        DD      1071977472
+        DD      0
+        DD      1071975424
+        DD      0
+        DD      1071972352
+        DD      0
+        DD      1071970304
+        DD      0
+        DD      1071968256
+        DD      0
+        DD      1071966208
+        DD      0
+        DD      1071964160
+        DD      0
+        DD      1071961088
+        DD      0
+        DD      1071959040
+        DD      0
+        DD      1071956992
+        DD      0
+        DD      1071954944
+        DD      0
+        DD      1071952896
+        DD      0
+        DD      1071949824
+        DD      0
+        DD      1071947776
+        DD      0
+        DD      1071945728
+        DD      0
+        DD      1071943680
+        DD      0
+        DD      1071941632
+        DD      0
+        DD      1071939584
+        DD      0
+        DD      1071937536
+        DD      0
+        DD      1071935488
+        DD      0
+        DD      1071933440
+        DD      0
+        DD      1071930368
+        DD      0
+        DD      1071928320
+        DD      0
+        DD      1071926272
+        DD      0
+        DD      1071924224
+        DD      0
+        DD      1071922176
+        DD      0
+        DD      1071920128
+        DD      0
+        DD      1071918080
+        DD      0
+        DD      1071916032
+        DD      0
+        DD      1071913984
+        DD      0
+        DD      1071911936
+        DD      0
+        DD      1071909888
+        DD      0
+        DD      1071907840
+        DD      0
+        DD      1071905792
+        DD      0
+        DD      1071903744
+        DD      0
+        DD      1071901696
+        DD      0
+        DD      1071900672
+        DD      0
+        DD      1071898624
+        DD      0
+        DD      1071896576
+        DD      0
+        DD      1071894528
+        DD      0
+        DD      1071892480
+        DD      0
+        DD      1071890432
+        DD      0
+        DD      1071888384
+        DD      0
+        DD      1071886336
+        DD      0
+        DD      1071884288
+        DD      0
+        DD      1071883264
+        DD      0
+        DD      1071881216
+        DD      0
+        DD      1071879168
+        DD      0
+        DD      1071877120
+        DD      0
+        DD      1071875072
+        DD      0
+        DD      1071873024
+        DD      0
+        DD      1071872000
+        DD      0
+        DD      1071869952
+        DD      0
+        DD      1071867904
+        DD      0
+        DD      1071865856
+        DD      0
+        DD      1071864832
+        DD      0
+        DD      1071862784
+        DD      0
+        DD      1071860736
+        DD      0
+        DD      1071858688
+        DD      0
+        DD      1071856640
+        DD      0
+        DD      1071855616
+        DD      0
+        DD      1071853568
+        DD      0
+        DD      1071851520
+        DD      0
+        DD      1071850496
+        DD      0
+        DD      1071848448
+        DD      0
+        DD      1071846400
+        DD      0
+        DD      1071844352
+        DD      0
+        DD      1071843328
+        DD      0
+        DD      1071841280
+        DD      0
+        DD      1071839232
+        DD      0
+        DD      1071838208
+        DD      0
+        DD      1071836160
+        DD      0
+        DD      1071834112
+        DD      0
+        DD      1071833088
+        DD      0
+        DD      1071831040
+        DD      0
+        DD      1071830016
+        DD      0
+        DD      1071827968
+        DD      0
+        DD      1071825920
+        DD      0
+        DD      1071824896
+        DD      0
+        DD      1071822848
+        DD      0
+        DD      1071821824
+        DD      0
+        DD      1071819776
+        DD      0
+        DD      1071817728
+        DD      0
+        DD      1071816704
+        DD      0
+        DD      1071814656
+        DD      0
+        DD      1071813632
+        DD      0
+        DD      1071811584
+        DD      0
+        DD      1071810560
+        DD      0
+        DD      1071808512
+        DD      0
+        DD      1071806464
+        DD      0
+        DD      1071805440
+        DD      0
+        DD      1071803392
+        DD      0
+        DD      1071802368
+        DD      0
+        DD      1071800320
+        DD      0
+        DD      1071799296
+        DD      0
+        DD      1071797248
+        DD      0
+        DD      1071796224
+        DD      0
+        DD      1071794176
+        DD      0
+        DD      1071793152
+        DD      0
+        DD      1071791104
+        DD      0
+        DD      1071790080
+        DD      0
+        DD      1071788032
+        DD      0
+        DD      1071787008
+        DD      0
+        DD      1071784960
+        DD      0
+        DD      1071783936
+        DD      0
+        DD      1071782912
+        DD      0
+        DD      1071780864
+        DD      0
+        DD      1071779840
+        DD      0
+        DD      1071777792
+        DD      0
+        DD      1071776768
+        DD      0
+        DD      1071774720
+        DD      0
+        DD      1071773696
+        DD      0
+        DD      1071772672
+        DD      0
+        DD      1071770624
+        DD      0
+        DD      1071769600
+        DD      0
+        DD      1071767552
+        DD      0
+        DD      1071766528
+        DD      0
+        DD      1071765504
+        DD      0
+        DD      1071763456
+        DD      0
+        DD      1071762432
+        DD      0
+        DD      1071760384
+        DD      0
+        DD      1071759360
+        DD      0
+        DD      1071758336
+        DD      0
+        DD      1071756288
+        DD      0
+        DD      1071755264
+        DD      0
+        DD      1071754240
+        DD      0
+        DD      1071752192
+        DD      0
+        DD      1071751168
+        DD      0
+        DD      1071750144
+        DD      0
+        DD      1071748096
+        DD      0
+        DD      1071747072
+        DD      0
+        DD      1071746048
+        DD      0
+        DD      1071744000
+        DD      0
+        DD      1071742976
+        DD      0
+        DD      1071741952
+        DD      0
+        DD      1071739904
+        DD      0
+        DD      1071738880
+        DD      0
+        DD      1071737856
+        DD      0
+        DD      1071736832
+        DD      0
+        DD      1071734784
+        DD      0
+        DD      1071733760
+        DD      0
+        DD      1071732736
+        DD      0
+        DD      1071730688
+        DD      0
+        DD      1071729664
+        DD      0
+        DD      1071728640
+        DD      0
+        DD      1071727616
+        DD      0
+        DD      1071725568
+        DD      0
+        DD      1071724544
+        DD      0
+        DD      1071723520
+        DD      0
+        DD      1071722496
+        DD      0
+        DD      1071720448
+        DD      0
+        DD      1071719424
+        DD      0
+        DD      1071718400
+        DD      0
+        DD      1071717376
+        DD      0
+        DD      1071715328
+        DD      0
+        DD      1071714304
+        DD      0
+        DD      1071713280
+        DD      0
+        DD      1071712256
+        DD      0
+        DD      1071711232
+        DD      0
+        DD      1071709184
+        DD      0
+        DD      1071708160
+        DD      0
+        DD      1071707136
+        DD      0
+        DD      1071706112
+        DD      0
+        DD      1071705088
+        DD      0
+        DD      1071704064
+        DD      0
+        DD      1071702016
+        DD      0
+        DD      1071700992
+        DD      0
+        DD      1071699968
+        DD      0
+        DD      1071698944
+        DD      0
+        DD      1071697920
+        DD      0
+        DD      1071696896
+        DD      0
+        DD      1071694848
+        DD      0
+        DD      1071693824
+        DD      0
+        DD      1071692800
+        DD      0
+        DD      1071691776
+        DD      0
+        DD      1071690752
+        DD      0
+        DD      1071689728
+        DD      0
+        DD      1071688704
+        DD      0
+        DD      1071686656
+        DD      0
+        DD      1071685632
+        DD      0
+        DD      1071684608
+        DD      0
+        DD      1071683584
+        DD      0
+        DD      1071682560
+        DD      0
+        DD      1071681536
+        DD      0
+        DD      1071680512
+        DD      0
+        DD      1071679488
+        DD      0
+        DD      1071677440
+        DD      0
+        DD      1071676416
+        DD      0
+        DD      1071675392
+        DD      0
+        DD      1071674368
+        DD      0
+        DD      1071673344
+        DD      0
+        DD      1071672320
+        DD      0
+        DD      1071671296
+        DD      0
+        DD      1071670272
+        DD      0
+        DD      1071669248
+        DD      0
+        DD      1071668224
+        DD      0
+        DD      1071667200
+        DD      0
+        DD      1071666176
+        DD      0
+        DD      1071665152
+        DD      0
+        DD      1071663104
+        DD      0
+        DD      1071662080
+        DD      0
+        DD      1071661056
+        DD      0
+        DD      1071660032
+        DD      0
+        DD      1071659008
+        DD      0
+        DD      1071657984
+        DD      0
+        DD      1071656960
+        DD      0
+        DD      1071655936
+        DD      0
+        DD      1071654912
+        DD      0
+        DD      1071653888
+        DD      0
+        DD      1071652864
+        DD      0
+        DD      1071651840
+        DD      0
+        DD      1071650816
+        DD      0
+        DD      1071649792
+        DD      0
+        DD      1071648768
+        DD      0
+        DD      1071647744
+        DD      0
+        DD      1071646720
+        DD      0
+        DD      1071645696
+        DD      0
+        DD      0
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1073741824
+        DD      33554432
+        DD      1101004800
+_RDATA  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
+EXTRN   __ImageBase:PROC
+EXTRN   _fltused:BYTE
 ENDIF
-	END
+        END

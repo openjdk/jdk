@@ -200,11 +200,15 @@ public class URLEncoder {
      * This method uses the supplied charset to obtain the bytes for unsafe
      * characters.
      * <p>
-     * <em><strong>Note:</strong> The <a href=
+     * If the input string is malformed, or if the input cannot be mapped
+     * to a valid byte sequence in the given {@code Charset}, then the
+     * erroneous input will be replaced with the {@code Charset}'s
+     * {@linkplain CharsetEncoder##cae replacement values}.
+     *
+     * @apiNote The <a href=
      * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
      * World Wide Web Consortium Recommendation</a> states that
-     * UTF-8 should be used. Not doing so may introduce incompatibilities.</em>
-     *
+     * UTF-8 should be used. Not doing so may introduce incompatibilities.
      * @param   s   {@code String} to be translated.
      * @param charset the given charset
      * @return  the translated {@code String}.

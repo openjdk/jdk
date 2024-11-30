@@ -24,10 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.util.HashSet;
@@ -62,7 +61,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
 
         if (catchBlock == null) {
             if (tryBlock.reachable()) {
-                b.branchInstruction(Opcode.GOTO, tryCatchEnd);
+                b.branch(Opcode.GOTO, tryCatchEnd);
             }
         }
 
@@ -76,7 +75,7 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
         if (catchBlock != null) {
             catchBlock.end();
             if (catchBlock.reachable()) {
-                b.branchInstruction(Opcode.GOTO, tryCatchEnd);
+                b.branch(Opcode.GOTO, tryCatchEnd);
             }
         }
 

@@ -33,6 +33,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -69,8 +72,7 @@ public class Debuggee implements Closeable {
         private String address = null;
         private boolean suspended = true;
         private String onthrow = "";
-        private boolean waitForPortPrint = true;
-        private String expectedOutputBeforeThrow = "";
+        private static final String LAUNCH_ECHO_STRING = "Listen Args:";
 
         private Launcher(String mainClass) {
             this.mainClass = mainClass;
@@ -103,11 +105,8 @@ public class Debuggee implements Closeable {
             return this;
         }
 
-        // required to pass non null port with address and emit string before the throw
-        public Launcher enableOnThrow(String value, String expectedOutputBeforeThrow) {
-            this.onthrow = value;
-            this.waitForPortPrint = false;
-            this.expectedOutputBeforeThrow = expectedOutputBeforeThrow;
+        public Launcher enableOnThrow(String exceptionClassName) {
+            this.onthrow = exceptionClassName;
             return this;
         }
 
@@ -116,7 +115,7 @@ public class Debuggee implements Closeable {
             if (vmOptions != null) {
                 debuggeeArgs.add(vmOptions);
             }
-            String onthrowArgs = onthrow.isEmpty() ? "" : ",onthrow=" + onthrow + ",launch=exit";
+            String onthrowArgs = onthrow.isEmpty() ? "" : ",onthrow=" + onthrow + ",launch=echo " + LAUNCH_ECHO_STRING;
             debuggeeArgs.add("-agentlib:jdwp=transport=" + transport
                     + (address == null ? "" : ",address=" + address)
                     + ",server=y,suspend=" + (suspended ? "y" : "n")
@@ -127,33 +126,38 @@ public class Debuggee implements Closeable {
         }
 
         public Debuggee launch(String name) {
-            return new Debuggee(prepare(), name, waitForPortPrint, expectedOutputBeforeThrow);
+            return new Debuggee(prepare(), name,
+                onthrow.isEmpty() ?
+                    JDWP::parseListenAddress :
+                    Launcher::parseLaunchEchoListenAddress
+            );
         }
         public Debuggee launch() {
             return launch("debuggee");
         }
+
+        /**
+         * Parses debuggee output to get listening transport and address, printed by `launch=echo`.
+         * Returns null if the string specified does not contain required info.
+         */
+        private static JDWP.ListenAddress parseLaunchEchoListenAddress(String debuggeeOutput) {
+            Pattern listenRegexp = Pattern.compile(LAUNCH_ECHO_STRING + " \\b(.+)\\b \\b(.+)\\b");
+            Matcher m = listenRegexp.matcher(debuggeeOutput);
+            if (m.find()) {
+                return new JDWP.ListenAddress(m.group(1), m.group(2));
+            }
+            return null;
+        }
     }
 
-    // starts the process, waits for "Listening for transport" output and detects transport/address
-    private Debuggee(ProcessBuilder pb, String name, boolean waitForPortPrint, String expectedOutputBeforeThrow) {
+    // starts the process, waits until the provided addressDetector detects transport/address from the process output
+    private Debuggee(ProcessBuilder pb, String name, Function<String, JDWP.ListenAddress> addressDetector) {
         JDWP.ListenAddress[] listenAddress = new JDWP.ListenAddress[1];
-        if (!waitForPortPrint) {
-            try {
-                p = ProcessTools.startProcess(name, pb, s -> {output.add(s);}, s -> {
-                    return s.equals(expectedOutputBeforeThrow);
-                }, 30, TimeUnit.SECONDS);
-            } catch (IOException | InterruptedException | TimeoutException ex) {
-                throw new RuntimeException("failed to launch debuggee", ex);
-            }
-            transport = null;
-            address = null;
-            return;
-        }
         try {
             p = ProcessTools.startProcess(name, pb,
                     s -> output.add(s),  // output consumer
-                    s -> {  // warm-up predicate
-                        listenAddress[0] = JDWP.parseListenAddress(s);
+                    s -> {
+                        listenAddress[0] = addressDetector.apply(s);
                         return listenAddress[0] != null;
                     },
                     30, TimeUnit.SECONDS);
@@ -211,5 +215,4 @@ public class Debuggee implements Closeable {
             p.destroy();
         }
     }
-
 }

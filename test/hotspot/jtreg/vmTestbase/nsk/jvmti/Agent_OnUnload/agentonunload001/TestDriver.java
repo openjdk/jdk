@@ -53,7 +53,7 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestDriver {
     public static void main(String[] args) throws Exception {
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(
+        OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "-agentlib:agentonunload001=-waittime=5",
                 nsk.jvmti.Agent_OnUnload.agentonunload001.class.getName());
         oa.shouldHaveExitValue(95);

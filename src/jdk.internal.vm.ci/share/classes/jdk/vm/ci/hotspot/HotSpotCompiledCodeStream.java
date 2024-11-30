@@ -563,6 +563,7 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             writeInt("entryBCI", nmethod.entryBCI);
             writeLong("compileState", nmethod.compileState);
             writeBoolean("hasUnsafeAccess", nmethod.hasUnsafeAccess);
+            writeBoolean("hasScopedAccess", nmethod.hasScopedAccess());
             writeInt("id", nmethod.id);
         }
 

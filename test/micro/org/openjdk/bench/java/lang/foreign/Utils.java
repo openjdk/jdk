@@ -22,13 +22,13 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
 public class Utils {
 
-    static final Unsafe unsafe;
+    public static final Unsafe unsafe;
 
     //setup unsafe
     static {

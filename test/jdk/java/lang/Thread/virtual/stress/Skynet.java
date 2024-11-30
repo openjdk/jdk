@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,15 @@
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
  * @requires !vm.debug | vm.gc != "Z"
- * @run main/othervm/timeout=300 -Xmx1g Skynet
+ * @run main/othervm/timeout=300 -Xmx1500m Skynet
  */
-
 /*
- * @test id=ZSinglegen
+ * @test id=Z
  * @requires vm.debug == true & vm.continuations
- * @requires vm.gc.ZSinglegen
+ * @requires vm.gc.Z
  * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
- *     -XX:+UseZGC -XX:-ZGenerational
- *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
- */
-
-/*
- * @test id=ZGenerational
- * @requires vm.debug == true & vm.continuations
- * @requires vm.gc.ZGenerational
- * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
- *     -XX:+UseZGC -XX:+ZGenerational
- *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
+ *     -XX:+UseZGC
+ *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1500m Skynet
  */
 
 import java.util.concurrent.BlockingQueue;
@@ -69,7 +59,7 @@ public class Skynet {
         long end = System.currentTimeMillis();
         System.out.format("Result: %d in %s ms%n", sum, (end-start));
         if (sum != expected)
-            throw new AssertionError("unexpected result!");
+            throw new RuntimeException("Expected " + expected);
     }
 
     static void skynet(Channel<Long> result, int num, int size, int div) {
