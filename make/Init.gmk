@@ -37,7 +37,7 @@ default:
 # serially, regardless of -j.
 .NOTPARALLEL:
 
-ifeq ($(HAS_SPEC),)
+ifeq ($(HAS_SPEC), )
   ##############################################################################
   # This is the default mode. We have not been recursively called with a SPEC.
   ##############################################################################
@@ -168,7 +168,7 @@ ifeq ($(HAS_SPEC),)
     endif
 
     make-info:
-        ifneq ($(findstring $(LOG_LEVEL),info debug trace),)
+        ifneq ($(findstring $(LOG_LEVEL), info debug trace), )
 	  $(info Running make as '$(strip $(MAKE) $(MFLAGS) \
 	      $(COMMAND_LINE_VARIABLES) $(MAKECMDGOALS))')
         endif

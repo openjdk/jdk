@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,7 @@ runs:
   using: composite
   steps:
     - name: 'Install MSYS2'
-      # use a specific release of msys2/setup-msys2 to prevent jtreg build failures on newer release
-      uses: msys2/setup-msys2@7efe20baefed56359985e327d329042cde2434ff
+      uses: msys2/setup-msys2@v2.22.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal

@@ -65,7 +65,7 @@ runs:
 
     - name: 'Check cache for BootJDK'
       id: get-cached-bootjdk
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: bootjdk/jdk
         key: boot-jdk-${{ inputs.platform }}-${{ steps.sha256.outputs.value }}

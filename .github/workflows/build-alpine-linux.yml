@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,12 @@
 # questions.
 #
 
-name: 'Build (macos)'
+name: 'Build (alpine-linux)'
 
 on:
   workflow_call:
     inputs:
       platform:
-        required: true
-        type: string
-      runs-on:
         required: true
         type: string
       extra-conf-options:
@@ -45,8 +42,8 @@ on:
         required: false
         type: string
         default: '[ "debug", "release" ]'
-      xcode-toolset-version:
-        required: true
+      apk-extra-packages:
+        required: false
         type: string
       configure-arguments:
         required: false
@@ -56,9 +53,11 @@ on:
         type: string
 
 jobs:
-  build-macos:
+  build-linux:
     name: build
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ubuntu-22.04
+    container:
+      image: alpine:3.20
 
     strategy:
       fail-fast: false
@@ -67,33 +66,22 @@ jobs:
         include:
           - debug-level: debug
             flags: --with-debug-level=fastdebug
-            suffix: -debug
+            suffix: -debug+
 
     steps:
       - name: 'Checkout the JDK source'
         uses: actions/checkout@v4
 
+      - name: 'Install toolchain and dependencies'
+        run: |
+          apk update
+          apk add alpine-sdk alsa-lib-dev autoconf bash cups-dev cups-libs fontconfig-dev freetype-dev grep libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev linux-headers wget zip ${{ inputs.apk-extra-packages }}
+
       - name: 'Get the BootJDK'
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
         with:
-          platform: ${{ inputs.platform }}
-
-      - name: 'Get JTReg'
-        id: jtreg
-        uses: ./.github/actions/get-jtreg
-
-      - name: 'Get GTest'
-        id: gtest
-        uses: ./.github/actions/get-gtest
-
-      - name: 'Install toolchain and dependencies'
-        run: |
-          # Run Homebrew installation and xcode-select
-          brew install autoconf make
-          sudo xcode-select --switch /Applications/Xcode_${{ inputs.xcode-toolset-version }}.app/Contents/Developer
-          # This will make GNU make available as 'make' and not only as 'gmake'
-          echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
+          platform: alpine-linux-x64
 
       - name: 'Configure'
         run: >
@@ -102,8 +90,6 @@ jobs:
           ${{ matrix.flags }}
           --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
-          --with-jtreg=${{ steps.jtreg.outputs.path }}
-          --with-gtest=${{ steps.gtest.outputs.path }}
           --with-zlib=system
           --with-jmod-compress=zip-1
           ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (

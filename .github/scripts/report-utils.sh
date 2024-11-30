@@ -1,5 +1,6 @@
+#!/bin/bash
 #
-# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,32 +24,18 @@
 # questions.
 #
 
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
-################################################################################
-#
-# Concatenate exported.symbols files for modules into a single global file.
-#
-
-GLOBAL_SYMBOLS_FILE := $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
-
-EXPORTED_SYMBOLS_MODULES := java.base jdk.jdwp.agent
-
-MODULES_SYMBOLS_FILES := $(foreach module, $(EXPORTED_SYMBOLS_MODULES), \
-    $(SUPPORT_OUTPUTDIR)/modules_libs/$(module)/$(module).symbols)
-
-$(GLOBAL_SYMBOLS_FILE): $(MODULES_SYMBOLS_FILES)
-	$(call LogInfo, Generating global exported.symbols file)
-	$(call MakeTargetDir)
-	$(CAT) $^ > $@
-
-TARGETS += $(GLOBAL_SYMBOLS_FILE)
-
-################################################################################
-
-all: $(TARGETS)
-
-.PHONY: default all
+function truncate_summary() {
+  # With large hs_errs, the summary can easily exceed 1024 kB, the limit set by Github
+  # Trim it down if so.
+  summary_size=$(wc -c < $GITHUB_STEP_SUMMARY)
+  if [[ $summary_size -gt 1000000 ]]; then
+    # Trim to below 1024 kB, and cut off after the last detail group
+    head -c 1000000 $GITHUB_STEP_SUMMARY | tac | sed -n -e '/<\/details>/,$ p' | tac > $GITHUB_STEP_SUMMARY.tmp
+    mv $GITHUB_STEP_SUMMARY.tmp $GITHUB_STEP_SUMMARY
+    (
+      echo ''
+      echo ':x: **WARNING: Summary is too large and has been truncated.**'
+      echo ''
+    )  >> $GITHUB_STEP_SUMMARY
+  fi
+}
