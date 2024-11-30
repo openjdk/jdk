@@ -20,20 +20,20 @@ or royalty is hereby granted, provided that you include the following on ALL
 copies of the software and documentation or portions thereof, including
 modifications, that you make:
 
-1.	The full text of this NOTICE in a location viewable to users of the
-redistributed or derivative work. 
+1.      The full text of this NOTICE in a location viewable to users of the
+redistributed or derivative work.
 
-2.	Any pre-existing intellectual property disclaimers, notices, or terms
+2.      Any pre-existing intellectual property disclaimers, notices, or terms
 and conditions. If none exist, a short notice of the following form (hypertext
 is preferred, text is permitted) should be used within the body of any
 redistributed or derivative code: "Copyright © [$date-of-software] World Wide
 Web Consortium, (Massachusetts Institute of Technology, Institut National de
 Recherche en Informatique et en Automatique, Keio University). All Rights
-Reserved. http://www.w3.org/Consortium/Legal/" 
+Reserved. http://www.w3.org/Consortium/Legal/"
 
-3.	Notice of any changes or modifications to the W3C files, including the
+3.      Notice of any changes or modifications to the W3C files, including the
 date changes were made. (We recommend you provide URIs to the location from
-which the code is derived.) 
+which the code is derived.)
 
 THIS SOFTWARE AND DOCUMENTATION IS PROVIDED "AS IS," AND COPYRIGHT HOLDERS MAKE
 NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED

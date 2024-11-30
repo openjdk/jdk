@@ -5,7 +5,7 @@
 From: https://www.w3.org/copyright/software-license-2023/
 Copied on 2024/10/15
 
-License 
+License
 
 By obtaining and/or copying this work, you (the licensee) agree that you have
 read, understood, and will comply with the following terms and conditions.

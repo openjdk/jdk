@@ -6,7 +6,7 @@ From: https://www.w3.org/copyright/document-license-2023
 
 Copied 10/15/2024
 
-License 
+License
 
 By using and/or copying this document, or the W3C document from which this
 statement is linked, you (the licensee) agree that you have read, understood,

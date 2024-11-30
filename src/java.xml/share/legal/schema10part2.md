@@ -6,7 +6,7 @@ Software and Document license - 2023 version
 
 Copied from:  https://www.w3.org/copyright/software-license-2023
 
-License 
+License
 
 By obtaining and/or copying this work, you (the licensee) agree that you have
 read, understood, and will comply with the following terms and conditions.
@@ -27,7 +27,7 @@ modifications:
     [$year-of-document] World Wide Web Consortium.
     https://www.w3.org/copyright/software-license-2023/"
 
-Disclaimers 
+Disclaimers
 
 THIS WORK IS PROVIDED "AS IS," AND COPYRIGHT HOLDERS MAKE NO REPRESENTATIONS OR
 WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO, WARRANTIES OF
