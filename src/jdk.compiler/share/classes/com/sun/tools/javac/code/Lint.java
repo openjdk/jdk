@@ -28,9 +28,8 @@ package com.sun.tools.javac.code;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.sun.tools.javac.main.Option;
@@ -399,7 +398,7 @@ public class Lint {
     }
 
     /**
-     * Obtain the set of lint warning categories suppressed at the given symbol's declaration.
+     * Obtain the set of recognized lint warning categories suppressed at the given symbol's declaration.
      *
      * <p>
      * This set can be non-empty only if the symbol is annotated with either
@@ -416,7 +415,7 @@ public class Lint {
     }
 
     /**
-     * Retrieve the lint categories suppressed by the given @SuppressWarnings annotation.
+     * Retrieve the recognized lint categories suppressed by the given @SuppressWarnings annotation.
      *
      * @param annotation @SuppressWarnings annotation, or null
      * @return set of lint categories, possibly empty but never null
@@ -429,19 +428,27 @@ public class Lint {
         return suppressionsFrom(Stream.of(annotation).map(anno -> anno.attribute));
     }
 
-    // Find the @SuppressWarnings annotation in the attribute stream and extract the suppressions
+    // Find the @SuppressWarnings annotation in the given stream and extract the recognized suppressions
     private EnumSet<LintCategory> suppressionsFrom(Stream<Attribute.Compound> attributes) {
         initializeIfNeeded();
-        return attributes
+        EnumSet<LintCategory> result = LintCategory.newEmptySet();
+        attributes
           .filter(attribute -> attribute.type.tsym == syms.suppressWarningsType.tsym)
-          .map(attribute -> attribute.member(names.value))
-          .flatMap(attribute -> Stream.of(((Attribute.Array)attribute).values))
-          .map(Attribute.Constant.class::cast)
-          .map(elem -> elem.value)
-          .map(String.class::cast)
-          .map(LintCategory::get)
-          .filter(Objects::nonNull)
-          .collect(Collectors.toCollection(LintCategory::newEmptySet));
+          .map(this::suppressionsFrom)
+          .forEach(result::addAll);
+        return result;
+    }
+
+    // Given a @SuppressWarnings annotation, extract the recognized suppressions
+    private EnumSet<LintCategory> suppressionsFrom(Attribute.Compound suppressWarnings) {
+        EnumSet<LintCategory> result = LintCategory.newEmptySet();
+        Attribute.Array values = (Attribute.Array)suppressWarnings.member(names.value);
+        for (Attribute value : values.values) {
+            Optional.of((String)((Attribute.Constant)value).value)
+              .map(LintCategory::get)
+              .ifPresent(result::add);
+        }
+        return result;
     }
 
     private void initializeIfNeeded() {
