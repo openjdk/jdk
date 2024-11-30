@@ -209,11 +209,13 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
      */
     private void applyForceBasedAdjustment(LayoutNode node, List<LayoutNode> assignedNeighbors, Collection<LayoutNode> allNodes) {
         // Constants for force-based adjustment
-        final int ITERATIONS = 50; // Number of simulation iterations.
-        final double REPULSION_CONSTANT = 1000; // Magnitude of repulsive forces.
-        final double SPRING_CONSTANT = 0.2; // Strength of attractive forces to neighbors.
-        final double DAMPING = 0.8; // Damping factor to reduce displacement and ensure convergence.
-        final double IDEAL_LENGTH = 100; // Ideal distance between a node and its neighbors.
+        final int ITERATIONS = 50; // Number of simulation iterations
+        final double REPULSION_CONSTANT = 1000; // Magnitude of repulsive forces (Coulomb's law)
+        final double SPRING_CONSTANT = 0.2; // Strength of attractive forces to neighbors (Hooke's law)
+        final double DAMPING = 0.8; // Factor to reduce displacement and ensure stability
+        final double IDEAL_LENGTH = 100; // Desired distance between a node and its neighbors
+        final double MAX_FORCE = 1000; // Upper limit for the magnitude of applied forces
+        final double CONVERGENCE_THRESHOLD = 0.01; // Force threshold for stopping early
 
         double posX = node.getX();
         double posY = node.getY();
@@ -232,9 +234,9 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
                 double distanceSquared = deltaX * deltaX + deltaY * deltaY;
                 double distance = Math.sqrt(distanceSquared);
 
-                // If distance is zero, add small random noise to deltaX and deltaY
-                if (distance == 0) {
-                    deltaX = random.nextDouble() * 0.1 - 0.05; // Random value between -0.05 and 0.05
+                // Avoid division by zero by introducing a minimum distance
+                if (distance < 1e-6) {
+                    deltaX = random.nextDouble() * 0.1 - 0.05;
                     deltaY = random.nextDouble() * 0.1 - 0.05;
                     distanceSquared = deltaX * deltaX + deltaY * deltaY;
                     distance = Math.sqrt(distanceSquared);
@@ -242,6 +244,10 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
 
                 // Repulsive force (Coulomb's law)
                 double repulsiveForce = REPULSION_CONSTANT / distanceSquared;
+
+                // Normalize force to prevent large displacements
+                if (repulsiveForce > MAX_FORCE) repulsiveForce = MAX_FORCE;
+
                 netForceX += (deltaX / distance) * repulsiveForce;
                 netForceY += (deltaY / distance) * repulsiveForce;
             }
@@ -252,9 +258,8 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
                 double deltaY = neighbor.getY() - posY;
                 double distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-                // If distance is zero, add small random noise to deltaX and deltaY
-                if (distance == 0) {
-                    deltaX = random.nextDouble() * 0.1 - 0.05; // Random value between -0.05 and 0.05
+                if (distance < 1e-6) {
+                    deltaX = random.nextDouble() * 0.1 - 0.05;
                     deltaY = random.nextDouble() * 0.1 - 0.05;
                     distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 }
@@ -262,22 +267,44 @@ public class FreeInteractiveLayoutManager extends LayoutManager implements Layou
                 // Attractive force (Hooke's law)
                 double displacement = distance - IDEAL_LENGTH;
                 double attractiveForce = SPRING_CONSTANT * displacement;
+
+                if (attractiveForce > MAX_FORCE) attractiveForce = MAX_FORCE;
+
                 netForceX += (deltaX / distance) * attractiveForce;
                 netForceY += (deltaY / distance) * attractiveForce;
             }
 
-            // Update displacement with damping
+            // Apply damping and update displacement
             dx = (dx + netForceX) * DAMPING;
             dy = (dy + netForceY) * DAMPING;
 
-            // Update node position
+            // Scale displacement if it's too large
+            double displacementMagnitude = Math.sqrt(dx * dx + dy * dy);
+            if (displacementMagnitude > MAX_FORCE) {
+                dx *= MAX_FORCE / displacementMagnitude;
+                dy *= MAX_FORCE / displacementMagnitude;
+            }
+
+            // Update position
             posX += dx;
             posY += dy;
+
+            // Stop early if the net force is negligible
+            if (Math.abs(netForceX) < CONVERGENCE_THRESHOLD && Math.abs(netForceY) < CONVERGENCE_THRESHOLD) {
+                break;
+            }
+
+            // Validate position to avoid invalid or extreme values
+            if (Double.isNaN(posX) || Double.isInfinite(posX) || Double.isNaN(posY) || Double.isInfinite(posY)) {
+                posX = node.getX(); // Reset to original position
+                posY = node.getY();
+                break;
+            }
         }
 
         // Set final position
-        node.setX((int) posX);
-        node.setY((int) posY);
+        node.setX((int) Math.round(posX));
+        node.setY((int) Math.round(posY));
     }
 
     // Utility method: position around a given node
