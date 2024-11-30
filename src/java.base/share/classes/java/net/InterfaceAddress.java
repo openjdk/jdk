@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,10 @@ public class InterfaceAddress {
     private short        maskLength = 0;
 
     /*
-     * Package private constructor. Can't be built directly, instances are
-     * obtained through the NetworkInterface class.
+     * Private constructor. Not to be constructed by Java code, instances
+     * are obtained from native code through the NetworkInterface class.
      */
-    InterfaceAddress() {
+    private InterfaceAddress() {
     }
 
     /**
