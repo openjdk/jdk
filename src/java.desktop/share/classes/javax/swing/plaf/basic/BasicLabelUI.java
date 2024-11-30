@@ -66,7 +66,6 @@ public class BasicLabelUI extends LabelUI implements  PropertyChangeListener
     * name in defaults table under the key "LabelUI".
     */
     protected static BasicLabelUI labelUI = new BasicLabelUI();
-    private static final Object BASIC_LABEL_UI_KEY = new Object();
 
     private Rectangle paintIconR = new Rectangle();
     private Rectangle paintTextR = new Rectangle();

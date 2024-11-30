@@ -93,7 +93,6 @@ public class DefaultTableCellRenderer extends JLabel
     * <code>getTableCellRendererComponent</code> method and set the border
     * of the returned component directly.
     */
-    private static final Border SAFE_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
     private static final Border DEFAULT_NO_FOCUS_BORDER = new EmptyBorder(1, 1, 1, 1);
     /**
      * A border without focus.

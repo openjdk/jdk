@@ -158,27 +158,30 @@ class TimerQueue implements Runnable
                     DelayedTimer runningTimer = queue.take();
                     Timer timer = runningTimer.getTimer();
                     timer.getLock().lock();
-                    DelayedTimer delayedTimer = timer.delayedTimer;
-                    if (delayedTimer == runningTimer) {
-                        /*
-                         * Timer is not removed (delayedTimer != null)
-                         * or not removed and added (runningTimer == delayedTimer)
-                         * after we get it from the queue and before the
-                         * lock on the timer is acquired
-                         */
-                        timer.post(); // have timer post an event
-                        timer.delayedTimer = null;
-                        if (timer.isRepeats()) {
-                            delayedTimer.setTime(now()
-                                + TimeUnit.MILLISECONDS.toNanos(
-                                      timer.getDelay()));
-                            addTimer(delayedTimer);
+                    try {
+                        DelayedTimer delayedTimer = timer.delayedTimer;
+                        if (delayedTimer == runningTimer) {
+                            /*
+                             * Timer is not removed (delayedTimer != null)
+                             * or not removed and added (runningTimer == delayedTimer)
+                             * after we get it from the queue and before the
+                             * lock on the timer is acquired
+                             */
+                            timer.post(); // have timer post an event
+                            timer.delayedTimer = null;
+                            if (timer.isRepeats()) {
+                                delayedTimer.setTime(now()
+                                    + TimeUnit.MILLISECONDS.toNanos(
+                                          timer.getDelay()));
+                                addTimer(delayedTimer);
+                            }
                         }
+    
+                        // Allow run other threads on systems without kernel threads
+                        timer.getLock().newCondition().awaitNanos(1);
+                    } finally {
+                        timer.getLock().unlock();
                     }
-
-                    // Allow run other threads on systems without kernel threads
-                    timer.getLock().newCondition().awaitNanos(1);
-                    timer.getLock().unlock();
                 } catch (InterruptedException ie) {
                     // Shouldn't ignore InterruptedExceptions here, so AppContext
                     // is disposed gracefully, see 6799345 for details

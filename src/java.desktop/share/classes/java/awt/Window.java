@@ -3023,7 +3023,7 @@ public class Window extends Container implements Accessible {
          setModalExclusionType(et); // since 6.0
          boolean aot = f.get("alwaysOnTop", false);
          if(aot) {
-             setAlwaysOnTop(aot); // since 1.5; subject to permission check
+             setAlwaysOnTop(aot);
          }
          shape = (Shape)f.get("shape", null);
          opacity = (Float)f.get("opacity", 1.0f);
