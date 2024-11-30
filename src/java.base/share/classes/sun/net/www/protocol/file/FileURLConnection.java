@@ -108,7 +108,7 @@ public class FileURLConnection extends URLConnection {
                 if (contentType != null) {
                     properties.add(CONTENT_TYPE, contentType);
                 }
-                properties.add(CONTENT_LENGTH, String.valueOf(length));
+                properties.add(CONTENT_LENGTH, Long.toString(length));
 
                 /*
                  * Format the last-modified field into the preferred
