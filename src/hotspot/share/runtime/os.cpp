@@ -22,6 +22,9 @@
  *
  */
 
+// Stopgap fix until FORBID_C_FUNCTION can work properly with LTO
+#define DISABLE_POISONING_STOPGAP
+
 #include "precompiled.hpp"
 #include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.hpp"
