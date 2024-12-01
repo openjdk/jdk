@@ -225,19 +225,23 @@
 //         alias.
 //
 //   - Native (off-heap) base (MemPointer::base().is_native()):
-//     It is a pointer into off-heap memory. We do not know if it points at the beginning or into the
-//     middle of some off-heap allocated memory. We have no guarantees about the alignment either. All
-//     we require, is that it is a summand with a scale = 1, and that it is accepted as a
-//     MemPointer::is_native_memory_base_candidate. It can thus be one of these:
-//     TODO continue talking about alignment use case -> why want a good base that is probably aligned,
-//     and it must be same for different MemPointer if possible -> challenging
+//     When we decompose a pointer to native memory, it is at first not clear that there is a base address.
+//     Even if we could know that there is some base address to which we add index offsets, we cannot know
+//     if this reference address points to the beginning of a native memory allocation or into the middle,
+//     or outside it. We also have no guarantee for alignment with such a base address.
+//     Still: we would like to find such a base if possible, and if two pointers are similar (i.e. have the
+//     same summands), we would like to find the same base. Further, it is reasonable to speculatively
+//     assume that such base addresses are aligned (need to add this speculative check in  JDK-8323582).
+//     A base pointer must have scale = 1, and be accepted byMemPointer::is_native_memory_base_candidate.
+//     It can thus be one of these:
 //      (1) CastX2P
 //          This is simply some arbitrary long cast to a pointer. It may be computed as an addition of
 //          multiple long and even int values. In some cases this means that we could have further
-//          decomposed the CastX2P further, but at that point it is even harder to tell what should be
-//          a good candidate for a native memory base. TODO
+//          decomposed the CastX2P, but at that point it is even harder to tell what should be a good
+//          candidate for a native memory base.
 //      (2) LoadL from field jdk.internal.foreign.NativeMemorySegmentImpl.min
-//          This is especially interesting because it holds the address() of a native MemorySegment.
+//          This would be preferrable over CastX2P, because it holds the address() of a native
+//          MemorySegment, i.e. we know it points to the beginning of that MemorySegment.
 //
 // -----------------------------------------------------------------------------------------
 //
