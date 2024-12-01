@@ -565,17 +565,25 @@ private:
   private:
     MemNode* _mem;
     const VPointer* _vpointer;
+    int _original_index;
 
   public:
     // Empty, for GrowableArray
-    MemOp() : _mem(nullptr), _vpointer(nullptr) {}
-    MemOp(MemNode* mem, const VPointer* vpointer) : _mem(mem), _vpointer(vpointer) {}
+    MemOp() :
+      _mem(nullptr),
+      _vpointer(nullptr),
+      _original_index(-1) {}
+    MemOp(MemNode* mem, const VPointer* vpointer, int original_index) :
+      _mem(mem),
+      _vpointer(vpointer),
+      _original_index(original_index) {}
 
     MemNode* mem() const { return _mem; }
     const VPointer& vpointer() const { return *_vpointer; }
+    int original_index() const { return _original_index; }
 
     static int cmp_by_group(MemOp* a, MemOp* b);
-    static int cmp_by_group_and_con(MemOp* a, MemOp* b);
+    static int cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b);
   };
   void create_adjacent_memop_pairs();
   void collect_valid_memops(GrowableArray<MemOp>& memops);

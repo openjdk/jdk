@@ -510,7 +510,7 @@ int SuperWord::MemOp::cmp_by_group(MemOp* a, MemOp* b) {
                                   b->vpointer().mem_pointer());
 }
 
-int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
+int SuperWord::MemOp::cmp_by_group_and_con_and_original_index(MemOp* a, MemOp* b) {
   // Group
   int cmp_group = cmp_by_group(a, b);
   if (cmp_group != 0) { return cmp_group; }
@@ -519,6 +519,8 @@ int SuperWord::MemOp::cmp_by_group_and_con(MemOp* a, MemOp* b) {
   jint a_con = a->vpointer().mem_pointer().con().value();
   jint b_con = b->vpointer().mem_pointer().con().value();
   RETURN_CMP_VALUE_IF_NOT_EQUAL(a_con, b_con);
+
+  RETURN_CMP_VALUE_IF_NOT_EQUAL(a->original_index(), b->original_index());
 
   return 0;
 }
@@ -537,7 +539,10 @@ void SuperWord::create_adjacent_memop_pairs() {
   //           This decreases the work.
   //  - VPointer con: Sorting by VPointer con inside the group allows us to perform a sliding
   //                  window algorithm, to determine adjacent memops efficiently.
-  memops.sort(MemOp::cmp_by_group_and_con);
+  // Since GrowableArray::sort relies on qsort, the sort is not stable on its own. This can lead
+  // to worse packing in some cases. To make the sort stable, our last cmp criterion is the
+  // original index, i.e. the position in the memops array before sorting.
+  memops.sort(MemOp::cmp_by_group_and_con_and_original_index);
 
 #ifndef PRODUCT
   if (is_trace_superword_adjacent_memops()) {
@@ -557,12 +562,13 @@ void SuperWord::create_adjacent_memop_pairs() {
 
 // Collect all memops that could potentially be vectorized.
 void SuperWord::collect_valid_memops(GrowableArray<MemOp>& memops) {
+  int original_index = 0;
   for_each_mem([&] (MemNode* mem, int bb_idx) {
     const VPointer& p = vpointer(mem);
     if (p.is_valid() &&
         !mem->is_LoadStore() &&
         is_java_primitive(mem->memory_type())) {
-      memops.append(MemOp(mem, &p));
+      memops.append(MemOp(mem, &p, original_index++));
     }
   });
 }
