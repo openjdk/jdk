@@ -538,6 +538,22 @@ public:
 #endif
 };
 
+// Parsing calls the callback on every decomposed node. These are all the
+// nodes on the paths from the pointer to the summand variables, i.e. the
+// "inner" nodes of the pointer expression. This callback is for example
+// used in SuperWord::unrolling_analysis to collect all inner nodes of a
+// pointer expression.
+class MemPointerParserCallback : public StackObj {
+private:
+  static MemPointerParserCallback _empty;
+
+public:
+  virtual void callback(Node* n) { /* do nothing by default */ }
+
+  // Singleton for default arguments.
+  static MemPointerParserCallback& empty() { return _empty; }
+};
+
 // Decomposed form of the pointer sub-expression of "pointer".
 //
 //   pointer = SUM(summands) + con
@@ -674,6 +690,11 @@ private:
   }
 
 public:
+  // Parse pointer of MemNode. Delegates to MemPointerParser::parse.
+  MemPointer(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
+             const MemNode* mem,
+             MemPointerParserCallback& callback = MemPointerParserCallback::empty());
+
   static MemPointer make_trivial(Node* pointer,
                                  const jint size
                                  NOT_PRODUCT(COMMA const TraceMemPointer& trace)) {
@@ -778,22 +799,6 @@ public:
 };
 
 class MemPointerParser : public StackObj {
-public:
-  // Parsing calls the callback on every decomposed node. These are all the
-  // nodes on the paths from the pointer to the summand variables, i.e. the
-  // "inner" nodes of the pointer expression. This callback allows collecting
-  // all such nodes of a pointer expression.
-  class DecomposedNodeCallback : public StackObj {
-  private:
-    static DecomposedNodeCallback _empty;
-
-  public:
-    virtual void callback(Node* n) { /* do nothing by default */ }
-
-    // Singleton for default arguments.
-    static DecomposedNodeCallback& empty() { return _empty; }
-  };
-
 private:
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
@@ -809,7 +814,7 @@ private:
 
 public:
   MemPointerParser(const MemNode* mem,
-                   DecomposedNodeCallback& callback
+                   MemPointerParserCallback& callback
                    NOT_PRODUCT(COMMA const TraceMemPointer& trace)) :
     NOT_PRODUCT(_trace(trace) COMMA)
     _mem(mem),
@@ -818,7 +823,7 @@ public:
 
   static MemPointer parse(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
                           const MemNode* mem,
-                          DecomposedNodeCallback& callback = DecomposedNodeCallback::empty()) {
+                          MemPointerParserCallback& callback = MemPointerParserCallback::empty()) {
     assert(mem->is_Store() || mem->is_Load(), "only stores and loads are allowed");
     ResourceMark rm;
     MemPointerParser parser(mem, callback NOT_PRODUCT(COMMA trace));
@@ -840,9 +845,9 @@ public:
 private:
   const MemPointer& mem_pointer() const { return _mem_pointer; }
 
-  MemPointer parse(DecomposedNodeCallback& callback);
+  MemPointer parse(MemPointerParserCallback& callback);
 
-  void parse_sub_expression(const MemPointerSummand& summand, DecomposedNodeCallback& callback);
+  void parse_sub_expression(const MemPointerSummand& summand, MemPointerParserCallback& callback);
   static bool sub_expression_has_native_base_candidate(Node* n);
 
   bool is_safe_to_decompose_op(const int opc, const NoOverflowInt& scale) const;

@@ -50,7 +50,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
 }
 
 // Collect ignored loop nodes during VPointer parsing.
-class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerParser::DecomposedNodeCallback {
+class SuperWordUnrollingAnalysisIgnoredNodes : public MemPointerParserCallback {
 private:
   const VLoop&     _vloop;
   const Node_List& _body;

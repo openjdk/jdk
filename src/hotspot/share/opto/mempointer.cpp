@@ -28,11 +28,18 @@
 #include "utilities/resourceHash.hpp"
 #include "classfile/vmSymbols.hpp"
 
-MemPointerParser::DecomposedNodeCallback MemPointerParser::DecomposedNodeCallback::_empty;
+MemPointerParserCallback MemPointerParserCallback::_empty;
+
+MemPointer::MemPointer(NOT_PRODUCT(const TraceMemPointer& trace COMMA)
+                       const MemNode* mem,
+                       MemPointerParserCallback& callback) :
+  MemPointer(MemPointerParser::parse(NOT_PRODUCT(trace COMMA)
+                                     mem,
+                                     callback)) {}
 
 // Recursively parse the pointer expression with a DFS all-path traversal
 // (i.e. with node repetitions), starting at the pointer.
-MemPointer MemPointerParser::parse(DecomposedNodeCallback& callback) {
+MemPointer MemPointerParser::parse(MemPointerParserCallback& callback) {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
@@ -91,7 +98,7 @@ MemPointer MemPointerParser::parse(DecomposedNodeCallback& callback) {
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
 // current node, and see if it can be decomposed into further summands, or if the current
 // summand is terminal.
-void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, DecomposedNodeCallback& callback) {
+void MemPointerParser::parse_sub_expression(const MemPointerSummand& summand, MemPointerParserCallback& callback) {
   Node* n = summand.variable();
   const NoOverflowInt scale = summand.scale();
   const NoOverflowInt one(1);

@@ -723,8 +723,6 @@ private:
 //
 class VPointer : public ArenaObj {
 private:
-  typedef MemPointerParser::DecomposedNodeCallback DecomposedNodeCallback;
-
   const VLoop& _vloop;
   const MemPointer _mem_pointer;
 
@@ -744,11 +742,11 @@ private:
 public:
   VPointer(const MemNode* mem,
            const VLoop& vloop,
-           DecomposedNodeCallback& callback = DecomposedNodeCallback::empty()) :
+           MemPointerParserCallback& callback = MemPointerParserCallback::empty()) :
     VPointer(vloop,
-             MemPointerParser::parse(NOT_PRODUCT(vloop.mptrace() COMMA)
-                                     mem,
-                                     callback))
+             MemPointer(NOT_PRODUCT(vloop.mptrace() COMMA)
+                        mem,
+                        callback))
   {
 #ifndef PRODUCT
     if (vloop.mptrace().is_trace_parsing()) {
