@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,20 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package com.sun.hotspot.igv.util;
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP
 
-import java.util.Arrays;
+#include "gc/shared/gcCause.hpp"
+#include "gc/shenandoah/shenandoahConcurrentGC.hpp"
+#include "gc/shenandoah/shenandoahVerifier.hpp"
 
-public class Statistics {
+class ShenandoahOldGeneration;
 
-    public static int median(int[] values) {
-        Arrays.sort(values);
-        if (values.length % 2 == 0) {
-            return (values[values.length / 2 - 1] + values[values.length / 2]) / 2;
-        } else {
-            return values[values.length / 2];
-        }
-    }
-}
+class ShenandoahOldGC : public ShenandoahConcurrentGC {
+ public:
+  ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption);
+  bool collect(GCCause::Cause cause) override;
+
+ protected:
+  void op_final_mark() override;
+
+ private:
+  ShenandoahOldGeneration* _old_generation;
+  ShenandoahSharedFlag& _allow_preemption;
+};
+
+
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHOLDGC_HPP

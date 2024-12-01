@@ -1128,6 +1128,147 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
 
 #undef INSN
 
+// cmov
+void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    xorr(t0, cmp1, cmp2);
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  bne(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    xorr(t0, cmp1, cmp2);
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0 , src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  beq(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    slt(t0, cmp2, cmp1);
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  bgt(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    sltu(t0, cmp2, cmp1);
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  bgtu(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    slt(t0, cmp1, cmp2);
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  blt(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    sltu(t0, cmp1, cmp2);
+    czero_eqz(dst, dst, t0);
+    czero_nez(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  bltu(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    slt(t0, cmp1, cmp2);
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  bge(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    sltu(t0, cmp1, cmp2);
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  bgeu(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    slt(t0, cmp2, cmp1);
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  ble(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
+void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src) {
+  if (UseZicond) {
+    sltu(t0, cmp2, cmp1);
+    czero_nez(dst, dst, t0);
+    czero_eqz(t0,  src, t0);
+    orr(dst, dst, t0);
+    return;
+  }
+  Label no_set;
+  bleu(cmp1, cmp2, no_set);
+  mv(dst, src);
+  bind(no_set);
+}
+
 // Float compare branch instructions
 
 #define INSN(NAME, FLOATCMP, BRANCH)                                                                                    \
@@ -2320,41 +2461,6 @@ void MacroAssembler::load_long_misaligned(Register dst, Address src, Register tm
   }
 }
 
-
-// reverse bytes in halfword in lower 16 bits and sign-extend
-// Rd[15:0] = Rs[7:0] Rs[15:8] (sign-extend to 64 bits)
-void MacroAssembler::revb_h_h(Register Rd, Register Rs, Register tmp) {
-  if (UseZbb) {
-    rev8(Rd, Rs);
-    srai(Rd, Rd, 48);
-    return;
-  }
-  assert_different_registers(Rs, tmp);
-  assert_different_registers(Rd, tmp);
-  srli(tmp, Rs, 8);
-  andi(tmp, tmp, 0xFF);
-  slli(Rd, Rs, 56);
-  srai(Rd, Rd, 48); // sign-extend
-  orr(Rd, Rd, tmp);
-}
-
-// reverse bytes in lower word and sign-extend
-// Rd[31:0] = Rs[7:0] Rs[15:8] Rs[23:16] Rs[31:24] (sign-extend to 64 bits)
-void MacroAssembler::revb_w_w(Register Rd, Register Rs, Register tmp1, Register tmp2) {
-  if (UseZbb) {
-    rev8(Rd, Rs);
-    srai(Rd, Rd, 32);
-    return;
-  }
-  assert_different_registers(Rs, tmp1, tmp2);
-  assert_different_registers(Rd, tmp1, tmp2);
-  revb_h_w_u(Rd, Rs, tmp1, tmp2);
-  slli(tmp2, Rd, 48);
-  srai(tmp2, tmp2, 32); // sign-extend
-  srli(Rd, Rd, 16);
-  orr(Rd, Rd, tmp2);
-}
-
 // reverse bytes in halfword in lower 16 bits and zero-extend
 // Rd[15:0] = Rs[7:0] Rs[15:8] (zero-extend to 64 bits)
 void MacroAssembler::revb_h_h_u(Register Rd, Register Rs, Register tmp) {
@@ -2391,56 +2497,28 @@ void MacroAssembler::revb_h_w_u(Register Rd, Register Rs, Register tmp1, Registe
   orr(Rd, Rd, tmp2);
 }
 
-// This method is only used for revb_h
-// Rd = Rs[47:0] Rs[55:48] Rs[63:56]
-void MacroAssembler::revb_h_helper(Register Rd, Register Rs, Register tmp1, Register tmp2) {
-  assert_different_registers(Rs, tmp1, tmp2);
-  assert_different_registers(Rd, tmp1);
-  srli(tmp1, Rs, 48);
-  andi(tmp2, tmp1, 0xFF);
-  slli(tmp2, tmp2, 8);
-  srli(tmp1, tmp1, 8);
-  orr(tmp1, tmp1, tmp2);
-  slli(Rd, Rs, 16);
-  orr(Rd, Rd, tmp1);
-}
-
-// reverse bytes in each halfword
-// Rd[63:0] = Rs[55:48] Rs[63:56] Rs[39:32] Rs[47:40] Rs[23:16] Rs[31:24] Rs[7:0] Rs[15:8]
-void MacroAssembler::revb_h(Register Rd, Register Rs, Register tmp1, Register tmp2) {
-  if (UseZbb) {
-    assert_different_registers(Rs, tmp1);
-    assert_different_registers(Rd, tmp1);
-    rev8(Rd, Rs);
-    zero_extend(tmp1, Rd, 32);
-    roriw(tmp1, tmp1, 16);
-    slli(tmp1, tmp1, 32);
-    srli(Rd, Rd, 32);
-    roriw(Rd, Rd, 16);
-    zero_extend(Rd, Rd, 32);
-    orr(Rd, Rd, tmp1);
-    return;
-  }
-  assert_different_registers(Rs, tmp1, tmp2);
-  assert_different_registers(Rd, tmp1, tmp2);
-  revb_h_helper(Rd, Rs, tmp1, tmp2);
-  for (int i = 0; i < 3; ++i) {
-    revb_h_helper(Rd, Rd, tmp1, tmp2);
-  }
-}
-
-// reverse bytes in each word
-// Rd[63:0] = Rs[39:32] Rs[47:40] Rs[55:48] Rs[63:56] Rs[7:0] Rs[15:8] Rs[23:16] Rs[31:24]
+// reverse bytes in lower word, sign-extend
+// Rd[32:0] = Rs[7:0] Rs[15:8] Rs[23:16] Rs[31:24]
 void MacroAssembler::revb_w(Register Rd, Register Rs, Register tmp1, Register tmp2) {
   if (UseZbb) {
     rev8(Rd, Rs);
-    rori(Rd, Rd, 32);
+    srai(Rd, Rd, 32);
     return;
   }
   assert_different_registers(Rs, tmp1, tmp2);
   assert_different_registers(Rd, tmp1, tmp2);
-  revb(Rd, Rs, tmp1, tmp2);
-  ror_imm(Rd, Rd, 32);
+  andi(tmp1, Rs, 0xFF);
+  slli(tmp1, tmp1, 8);
+  for (int step = 8; step < 24; step += 8) {
+    srli(tmp2, Rs, step);
+    andi(tmp2, tmp2, 0xFF);
+    orr(tmp1, tmp1, tmp2);
+    slli(tmp1, tmp1, 8);
+  }
+  srli(Rd, Rs, 24);
+  andi(Rd, Rd, 0xFF);
+  orr(Rd, tmp1, Rd);
+  sign_extend(Rd, Rd, 32);
 }
 
 // reverse bytes in doubleword
