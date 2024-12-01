@@ -245,7 +245,7 @@ public class FormView extends ComponentView implements ActionListener {
      * Creates a component for an &lt;INPUT&gt; element based on the
      * value of the "type" attribute.
      *
-     * @param attr  set of attributes associated with the &lt;INPUT&gt; element.
+     * @param attr set of attributes associated with the &lt;INPUT&gt; element.
      * @param model the value of the StyleConstants.ModelAttribute
      * @return the component.
      */
