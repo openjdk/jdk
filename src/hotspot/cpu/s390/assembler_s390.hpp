@@ -122,14 +122,14 @@ class RelAddr {
     return is_in_range_of_RelAddr(target, pc, true);
   }
   static bool is_in_range_of_RelAddr16(ptrdiff_t distance) {
-    return is_in_range_of_RelAddr((address)distance, 0, true);
+    return is_in_range_of_RelAddr((address)distance, nullptr, true);
   }
 
   static bool is_in_range_of_RelAddr32(address target, address pc) {
     return is_in_range_of_RelAddr(target, pc, false);
   }
   static bool is_in_range_of_RelAddr32(ptrdiff_t distance) {
-    return is_in_range_of_RelAddr((address)distance, 0, false);
+    return is_in_range_of_RelAddr((address)distance, nullptr, false);
   }
 
   static int pcrel_off(address target, address pc, bool shortForm) {
@@ -149,14 +149,14 @@ class RelAddr {
     return pcrel_off(target, pc, true);
   }
   static int pcrel_off16(ptrdiff_t distance) {
-    return pcrel_off((address)distance, 0, true);
+    return pcrel_off((address)distance, nullptr, true);
   }
 
   static int pcrel_off32(address target, address pc) {
     return pcrel_off(target, pc, false);
   }
   static int pcrel_off32(ptrdiff_t distance) {
-    return pcrel_off((address)distance, 0, false);
+    return pcrel_off((address)distance, nullptr, false);
   }
 
   static ptrdiff_t inv_pcrel_off16(int offset) {
