@@ -42,8 +42,7 @@ public class InterfaceAddress {
     private short        maskLength = 0;
 
     /*
-     * Private constructor. Not to be constructed by Java code, instances
-     * are obtained from native code through the NetworkInterface class.
+     * This constructor is called via JNI in NetworkInterface.c
      */
     private InterfaceAddress() {
     }
