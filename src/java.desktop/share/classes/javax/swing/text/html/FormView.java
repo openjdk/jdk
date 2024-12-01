@@ -193,7 +193,7 @@ public class FormView extends ComponentView implements ActionListener {
     protected Component createComponent() {
         AttributeSet attr = getElement().getAttributes();
         HTML.Tag t = (HTML.Tag)
-            attr.getAttribute(StyleConstants.NameAttribute);
+                attr.getAttribute(StyleConstants.NameAttribute);
         JComponent c = null;
         Object model = attr.getAttribute(StyleConstants.ModelAttribute);
 
@@ -211,7 +211,7 @@ public class FormView extends ComponentView implements ActionListener {
                                                          HTML.Attribute.SIZE,
                                                          1);
                 list.setVisibleRowCount(size);
-                list.setSelectionModel((ListSelectionModel)model);
+                list.setSelectionModel((ListSelectionModel) model);
                 c = new JScrollPane(list);
             } else {
                 @SuppressWarnings("unchecked")
@@ -241,12 +241,11 @@ public class FormView extends ComponentView implements ActionListener {
         return c;
     }
 
-
     /**
      * Creates a component for an &lt;INPUT&gt; element based on the
      * value of the "type" attribute.
      *
-     * @param attr set of attributes associated with the &lt;INPUT&gt; element.
+     * @param attr  set of attributes associated with the &lt;INPUT&gt; element.
      * @param model the value of the StyleConstants.ModelAttribute
      * @return the component.
      */
@@ -266,7 +265,7 @@ public class FormView extends ComponentView implements ActionListener {
             }
             JButton button = new JButton(value);
             if (model != null) {
-                button.setModel((ButtonModel)model);
+                button.setModel((ButtonModel) model);
                 button.addActionListener(this);
             }
             c = button;
@@ -279,7 +278,7 @@ public class FormView extends ComponentView implements ActionListener {
             }
             JButton button;
             try {
-                URL base = ((HTMLDocument)getElement().getDocument()).getBase();
+                URL base = ((HTMLDocument) getElement().getDocument()).getBase();
                 @SuppressWarnings("deprecation")
                 URL srcURL = new URL(base, srcAtt);
                 ImageIcon icon = new ImageIcon(srcURL, altAtt);
@@ -290,7 +289,7 @@ public class FormView extends ComponentView implements ActionListener {
                 button = new JButton(altAtt);
             }
             if (model != null) {
-                button.setModel((ButtonModel)model);
+                button.setModel((ButtonModel) model);
                 button.addMouseListener(new MouseEventListener());
             }
             c = button;
@@ -298,13 +297,13 @@ public class FormView extends ComponentView implements ActionListener {
         } else if (type.equals("checkbox")) {
             c = new JCheckBox();
             if (model != null) {
-                ((JCheckBox)c).setModel((JToggleButton.ToggleButtonModel) model);
+                ((JCheckBox) c).setModel((JToggleButton.ToggleButtonModel) model);
             }
             maxIsPreferred = 3;
         } else if (type.equals("radio")) {
             c = new JRadioButton();
             if (model != null) {
-                ((JRadioButton)c).setModel((JToggleButton.ToggleButtonModel)model);
+                ((JRadioButton) c).setModel((JToggleButton.ToggleButtonModel) model);
             }
             maxIsPreferred = 3;
         } else if (type.equals("text")) {
@@ -315,8 +314,7 @@ public class FormView extends ComponentView implements ActionListener {
             if (size > 0) {
                 field = new JTextField();
                 field.setColumns(size);
-            }
-            else {
+            } else {
                 field = new JTextField();
                 field.setColumns(20);
             }
@@ -341,19 +339,19 @@ public class FormView extends ComponentView implements ActionListener {
         } else if (type.equals("file")) {
             JTextField field = new JTextField();
             if (model != null) {
-                field.setDocument((Document)model);
+                field.setDocument((Document) model);
             }
             int size = HTML.getIntegerAttributeValue(attr, HTML.Attribute.SIZE,
                                                      -1);
             field.setColumns((size > 0) ? size : 20);
             JButton browseButton = new JButton(UIManager.getString
-                                           ("FormView.browseFileButtonText"));
+                    ("FormView.browseFileButtonText"));
             Box box = Box.createHorizontalBox();
             box.add(field);
             box.add(Box.createHorizontalStrut(5));
             box.add(browseButton);
             browseButton.addActionListener(new BrowseFileAction(
-                                           attr, (Document)model));
+                                           attr, (Document) model));
             c = box;
             maxIsPreferred = 3;
         }
@@ -395,8 +393,7 @@ public class FormView extends ComponentView implements ActionListener {
                     "javax.swing.plaf.basic.BasicComboBoxUI$Handler";
             for (ListDataListener listener : listModel.getListDataListeners()) {
                 if (listenerClass1.equals(listener.getClass().getName())
-                        || listenerClass2.equals(listener.getClass().getName()))
-                {
+                        || listenerClass2.equals(listener.getClass().getName())) {
                     listModel.removeListDataListener(listener);
                 }
             }
@@ -410,8 +407,7 @@ public class FormView extends ComponentView implements ActionListener {
             AbstractDocument docModel = (AbstractDocument) model;
             for (DocumentListener listener : docModel.getDocumentListeners()) {
                 if (listenerClass1.equals(listener.getClass().getName())
-                        || listenerClass2.equals(listener.getClass().getName()))
-                {
+                        || listenerClass2.equals(listener.getClass().getName())) {
                     docModel.removeDocumentListener(listener);
                 }
             }
@@ -426,32 +422,31 @@ public class FormView extends ComponentView implements ActionListener {
      * axis of interest.
      *
      * @param axis may be either View.X_AXIS or View.Y_AXIS
-     * @return   the span the view would like to be rendered into &gt;= 0.
-     *           Typically the view is told to render into the span
-     *           that is returned, although there is no guarantee.
-     *           The parent may choose to resize or break the view.
+     * @return the span the view would like to be rendered into &gt;= 0.
+     *         Typically the view is told to render into the span
+     *         that is returned, although there is no guarantee.
+     *         The parent may choose to resize or break the view.
      * @throws IllegalArgumentException for an invalid axis
      */
     public float getMaximumSpan(int axis) {
         switch (axis) {
-        case View.X_AXIS:
-            if ((maxIsPreferred & 1) == 1) {
-                super.getMaximumSpan(axis);
-                return getPreferredSpan(axis);
-            }
-            return super.getMaximumSpan(axis);
-        case View.Y_AXIS:
-            if ((maxIsPreferred & 2) == 2) {
-                super.getMaximumSpan(axis);
-                return getPreferredSpan(axis);
-            }
-            return super.getMaximumSpan(axis);
-        default:
-            break;
+            case View.X_AXIS:
+                if ((maxIsPreferred & 1) == 1) {
+                    super.getMaximumSpan(axis);
+                    return getPreferredSpan(axis);
+                }
+                return super.getMaximumSpan(axis);
+            case View.Y_AXIS:
+                if ((maxIsPreferred & 2) == 2) {
+                    super.getMaximumSpan(axis);
+                    return getPreferredSpan(axis);
+                }
+                return super.getMaximumSpan(axis);
+            default:
+                break;
         }
         return super.getMaximumSpan(axis);
     }
-
 
     /**
      * Responsible for processing the ActionEvent.
@@ -470,7 +465,6 @@ public class FormView extends ComponentView implements ActionListener {
     public void actionPerformed(ActionEvent evt) {
         Element element = getElement();
         StringBuilder dataBuffer = new StringBuilder();
-        HTMLDocument doc = (HTMLDocument)getDocument();
         AttributeSet attr = element.getAttributes();
 
         String type = (String) attr.getAttribute(HTML.Attribute.TYPE);
@@ -489,7 +483,6 @@ public class FormView extends ComponentView implements ActionListener {
             }
         }
     }
-
 
     /**
      * This method is responsible for submitting the form data.
@@ -524,7 +517,7 @@ public class FormView extends ComponentView implements ActionListener {
             @SuppressWarnings("deprecation")
             var _unused = actionURL = (action == null)
                 ? new URL(base.getProtocol(), base.getHost(),
-                                        base.getPort(), base.getFile())
+                          base.getPort(), base.getFile())
                 : new URL(base, action);
             if (!isPostMethod) {
                 String query = data.toString();
@@ -625,15 +618,12 @@ public class FormView extends ComponentView implements ActionListener {
     protected void imageSubmit(String imageData) {
 
         StringBuilder dataBuffer = new StringBuilder();
-        Element elem = getElement();
-        HTMLDocument hdoc = (HTMLDocument)elem.getDocument();
         getFormData(dataBuffer);
         if (dataBuffer.length() > 0) {
             dataBuffer.append('&');
         }
         dataBuffer.append(imageData);
         submitData(dataBuffer.toString());
-        return;
     }
 
     /**
@@ -642,9 +632,9 @@ public class FormView extends ComponentView implements ActionListener {
      * image.  If name is defined it is encoded using
      * the URLEncoder.encode() method and the
      * image data is returned in the following format:
-     *      name + ".x" +"="+ x +"&"+ name +".y"+"="+ y
+     *     name + ".x" + "=" + x + "&" + name + ".y" + "=" + y
      * otherwise,
-     *      "x="+ x +"&y="+ y
+     *     "x=" + x + "&y=" + y
      *
      * @param point associated with the mouse click.
      * @return the image data.
@@ -660,14 +650,13 @@ public class FormView extends ComponentView implements ActionListener {
 
         String data;
         if (name == null || name.isEmpty()) {
-            data = "x="+ x +"&y="+ y;
+            data = "x=" + x + "&y=" + y;
         } else {
             name = URLEncoder.encode(name);
-            data = name + ".x" +"="+ x +"&"+ name +".y"+"="+ y;
+            data = name + ".x" + "=" + x + "&" + name + ".y" + "=" + y;
         }
         return data;
     }
-
 
     /*
      * The following methods provide functionality required to
@@ -677,7 +666,6 @@ public class FormView extends ComponentView implements ActionListener {
      * case of reset, reinitialize each model to its
      * initial state.
      */
-
 
     /**
      * Returns the Element representing the <code>FORM</code>.
@@ -702,7 +690,7 @@ public class FormView extends ComponentView implements ActionListener {
      * of the same form whose element triggered the submit
      * action.
      *
-     * @param buffer        the buffer that contains that data to submit
+     * @param buffer the buffer that contains that data to submit
      */
     private void getFormData(StringBuilder buffer) {
         Element formE = getFormElement();
@@ -712,7 +700,7 @@ public class FormView extends ComponentView implements ActionListener {
 
             while ((next = it.next()) != null) {
                 if (isControl(next)) {
-                    String type = (String)next.getAttributes().getAttribute
+                    String type = (String) next.getAttributes().getAttribute
                                        (HTML.Attribute.TYPE);
 
                     if (type != null && type.equals("submit") &&
@@ -736,32 +724,30 @@ public class FormView extends ComponentView implements ActionListener {
      * The format in which data is appended depends
      * on the type of the form element.  Essentially
      * data is loaded in name/value pairs.
-     *
      */
     private void loadElementDataIntoBuffer(Element elem, StringBuilder buffer) {
 
         AttributeSet attr = elem.getAttributes();
-        String name = (String)attr.getAttribute(HTML.Attribute.NAME);
+        String name = (String) attr.getAttribute(HTML.Attribute.NAME);
         if (name == null) {
             return;
         }
         String value = null;
-        HTML.Tag tag = (HTML.Tag)elem.getAttributes().getAttribute
-                                  (StyleConstants.NameAttribute);
+        HTML.Tag tag = (HTML.Tag) elem.getAttributes().getAttribute
+                                   (StyleConstants.NameAttribute);
 
         if (tag == HTML.Tag.INPUT) {
             value = getInputElementData(attr);
-        } else if (tag ==  HTML.Tag.TEXTAREA) {
+        } else if (tag == HTML.Tag.TEXTAREA) {
             value = getTextAreaData(attr);
         } else if (tag == HTML.Tag.SELECT) {
             loadSelectData(attr, buffer);
         }
 
-        if (name != null && value != null) {
+        if (value != null) {
             appendBuffer(buffer, name, value);
         }
     }
-
 
     /**
      * Returns the data associated with an &lt;INPUT&gt; form
@@ -777,11 +763,10 @@ public class FormView extends ComponentView implements ActionListener {
         String value = null;
 
         if (type.equals("text") || type.equals("password")) {
-            Document doc = (Document)model;
+            Document doc = (Document) model;
             try {
                 value = doc.getText(0, doc.getLength());
             } catch (BadLocationException e) {
-                value = null;
             }
         } else if (type.equals("submit") || type.equals("hidden")) {
             value = (String) attr.getAttribute(HTML.Attribute.VALUE);
@@ -789,7 +774,7 @@ public class FormView extends ComponentView implements ActionListener {
                 value = "";
             }
         } else if (type.equals("radio") || type.equals("checkbox")) {
-            ButtonModel m = (ButtonModel)model;
+            ButtonModel m = (ButtonModel) model;
             if (m.isSelected()) {
                 value = (String) attr.getAttribute(HTML.Attribute.VALUE);
                 if (value == null) {
@@ -797,7 +782,7 @@ public class FormView extends ComponentView implements ActionListener {
                 }
             }
         } else if (type.equals("file")) {
-            Document doc = (Document)model;
+            Document doc = (Document) model;
             String path;
 
             try {
@@ -818,14 +803,13 @@ public class FormView extends ComponentView implements ActionListener {
      * Document model.
      */
     private String getTextAreaData(AttributeSet attr) {
-        Document doc = (Document)attr.getAttribute(StyleConstants.ModelAttribute);
+        Document doc = (Document) attr.getAttribute(StyleConstants.ModelAttribute);
         try {
             return doc.getText(0, doc.getLength());
         } catch (BadLocationException e) {
             return null;
         }
     }
-
 
     /**
      * Loads the buffer with the data associated with the Select
@@ -834,7 +818,7 @@ public class FormView extends ComponentView implements ActionListener {
      */
     private void loadSelectData(AttributeSet attr, StringBuilder buffer) {
 
-        String name = (String)attr.getAttribute(HTML.Attribute.NAME);
+        String name = (String) attr.getAttribute(HTML.Attribute.NAME);
         if (name == null) {
             return;
         }
@@ -855,8 +839,8 @@ public class FormView extends ComponentView implements ActionListener {
                 }
             }
         } else if (m instanceof ComboBoxModel) {
-            ComboBoxModel<?> model = (ComboBoxModel)m;
-            Option option = (Option)model.getSelectedItem();
+            ComboBoxModel<?> model = (ComboBoxModel) m;
+            Option option = (Option) model.getSelectedItem();
             if (option != null) {
                 String value = option.getValue();
                 if (value != null) {
@@ -909,14 +893,13 @@ public class FormView extends ComponentView implements ActionListener {
             while ((next = it.next()) != null) {
                 if (next == elem) {
                     found = true;
-                }
-                else if (found && isControl(next)) {
+                } else if (found && isControl(next)) {
                     AttributeSet elemAttr = next.getAttributes();
 
                     if (HTMLDocument.matchNameAttribute
                                      (elemAttr, HTML.Tag.INPUT)) {
-                        String type = (String)elemAttr.getAttribute
-                                                  (HTML.Attribute.TYPE);
+                        String type = (String) elemAttr.getAttribute
+                                                   (HTML.Attribute.TYPE);
 
                         if ("text".equals(type) || "password".equals(type)) {
                             return false;
@@ -933,7 +916,7 @@ public class FormView extends ComponentView implements ActionListener {
      * to its initial state by reinitializing the models
      * associated with each form element to their initial
      * values.
-     *
+     * <p>
      * param elem the element that triggered the reset
      */
     void resetForm() {
@@ -949,16 +932,16 @@ public class FormView extends ComponentView implements ActionListener {
                     Object m = elemAttr.getAttribute(StyleConstants.
                                                      ModelAttribute);
                     if (m instanceof TextAreaDocument) {
-                        TextAreaDocument doc = (TextAreaDocument)m;
+                        TextAreaDocument doc = (TextAreaDocument) m;
                         doc.reset();
                     } else if (m instanceof PlainDocument) {
                         try {
-                            PlainDocument doc =  (PlainDocument)m;
+                            PlainDocument doc = (PlainDocument) m;
                             doc.remove(0, doc.getLength());
                             if (HTMLDocument.matchNameAttribute
                                              (elemAttr, HTML.Tag.INPUT)) {
-                                String value = (String)elemAttr.
-                                           getAttribute(HTML.Attribute.VALUE);
+                                String value = (String) elemAttr.
+                                        getAttribute(HTML.Attribute.VALUE);
                                 if (value != null) {
                                     doc.insertString(0, value, null);
                                 }
@@ -984,17 +967,16 @@ public class FormView extends ComponentView implements ActionListener {
                             model.setSelectedItem(option);
                         }
                     } else if (m instanceof JToggleButton.ToggleButtonModel) {
-                        boolean checked = ((String)elemAttr.getAttribute
+                        boolean checked = ((String) elemAttr.getAttribute
                                            (HTML.Attribute.CHECKED) != null);
                         JToggleButton.ToggleButtonModel model =
-                                        (JToggleButton.ToggleButtonModel)m;
+                                        (JToggleButton.ToggleButtonModel) m;
                         model.setSelected(checked);
                     }
                 }
             }
         }
     }
-
 
     /**
      * BrowseFileAction is used for input type == file. When the user
