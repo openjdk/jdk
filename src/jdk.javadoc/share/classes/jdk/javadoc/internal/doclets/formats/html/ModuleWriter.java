@@ -42,7 +42,6 @@ import javax.lang.model.util.ElementFilter;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import jdk.javadoc.doclet.DocletEnvironment.ModuleMode;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
@@ -614,8 +613,9 @@ public class ModuleWriter extends HtmlDocletWriter {
                     String aepPreviewText = resources.getText("doclet.Indirect_Exports_Summary");
                     ContentBuilder tableCaption = new ContentBuilder(
                             Text.of(aepPreviewText),
-                            HtmlTree.SUP(links.createLink(previewRequiresTransitiveId,
-                                         contents.previewMark)));
+                            HtmlTree.SUP(HtmlStyles.previewMark,
+                                    links.createLink(previewRequiresTransitiveId,
+                                            contents.previewMark)));
                     var aepPreviewTable = getTable2(tableCaption, indirectPackagesHeader);
                     addIndirectPackages(aepPreviewTable, indirectPackages,
                                         m -> m.equals(javaBase));

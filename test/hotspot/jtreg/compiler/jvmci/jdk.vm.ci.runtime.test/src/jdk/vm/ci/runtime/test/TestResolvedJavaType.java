@@ -197,6 +197,16 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
+    public void isConcreteTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            boolean expected = c.isArray() || !isAbstract(c.getModifiers());
+            boolean actual = type.isConcrete();
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
     public void lambdaInternalNameTest() {
         // Verify that the last dot in lambda types is properly handled when transitioning from
         // internal name to java

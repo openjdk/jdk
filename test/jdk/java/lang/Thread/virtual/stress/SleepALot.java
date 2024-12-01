@@ -25,7 +25,7 @@
  * @test
  * @summary Stress test Thread.sleep
  * @requires vm.debug != true & vm.continuations
- * @run main/othervm SleepALot 500000
+ * @run main SleepALot 500000
  */
 
 /*

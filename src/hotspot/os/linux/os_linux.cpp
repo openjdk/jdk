@@ -461,26 +461,17 @@ bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu
 }
 
 #ifndef SYS_gettid
-// i386: 224, ia64: 1105, amd64: 186, sparc: 143
-  #ifdef __ia64__
-    #define SYS_gettid 1105
+// i386: 224, amd64: 186, sparc: 143
+  #if defined(__i386__)
+    #define SYS_gettid 224
+  #elif defined(__amd64__)
+    #define SYS_gettid 186
+  #elif defined(__sparc__)
+    #define SYS_gettid 143
   #else
-    #ifdef __i386__
-      #define SYS_gettid 224
-    #else
-      #ifdef __amd64__
-        #define SYS_gettid 186
-      #else
-        #ifdef __sparc__
-          #define SYS_gettid 143
-        #else
-          #error define gettid for the arch
-        #endif
-      #endif
-    #endif
+    #error "Define SYS_gettid for this architecture"
   #endif
-#endif
-
+#endif // SYS_gettid
 
 // pid_t gettid()
 //
@@ -1778,8 +1769,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_386;
 #elif   (defined AMD64) || (defined X32)
   static  Elf32_Half running_arch_code=EM_X86_64;
-#elif  (defined IA64)
-  static  Elf32_Half running_arch_code=EM_IA_64;
 #elif  (defined __sparc) && (defined _LP64)
   static  Elf32_Half running_arch_code=EM_SPARCV9;
 #elif  (defined __sparc) && (!defined _LP64)
@@ -1812,7 +1801,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_LOONGARCH;
 #else
     #error Method os::dll_load requires that one of following is defined:\
-        AARCH64, ALPHA, ARM, AMD64, IA32, IA64, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
+        AARCH64, ALPHA, ARM, AMD64, IA32, LOONGARCH64, M68K, MIPS, MIPSEL, PARISC, __powerpc__, __powerpc64__, RISCV, S390, SH, __sparc
 #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -2719,8 +2708,6 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
   strncpy(cpuinfo, "ARM", length);
 #elif defined(IA32)
   strncpy(cpuinfo, "x86_32", length);
-#elif defined(IA64)
-  strncpy(cpuinfo, "IA64", length);
 #elif defined(PPC)
   strncpy(cpuinfo, "PPC64", length);
 #elif defined(RISCV)

@@ -92,7 +92,6 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.font.FontDesignMetrics;
@@ -188,10 +187,6 @@ public class SwingUtilities2 {
     /** Client Property key for the text maximal offsets for BasicMenuItemUI */
     public static final StringUIClientPropertyKey BASICMENUITEMUI_MAX_TEXT_OFFSET =
         new StringUIClientPropertyKey ("maxTextOffset");
-
-    // security stuff
-    private static final String UntrustedClipboardAccess =
-        "UNTRUSTED_CLIPBOARD_ACCESS_KEY";
 
     //all access to  charsBuffer is to be synchronized on charsBufferLock
     private static final int CHAR_BUFFER_SIZE = 100;
@@ -1458,123 +1453,14 @@ public class SwingUtilities2 {
         }
     }
 
-    /*
-     * here goes the fix for 4856343 [Problem with applet interaction
-     * with system selection clipboard]
-     *
-     * NOTE. In case isTrustedContext() no checking
-     * are to be performed
-     */
-
     /**
-    * checks the security permissions for accessing system clipboard
-    *
-    * for untrusted context (see isTrustedContext) checks the
-    * permissions for the current event being handled
+    * checks if the system clipboard can be accessed.
+    * This is true in a headful environment, false in a headless one
     *
     */
    public static boolean canAccessSystemClipboard() {
-       boolean canAccess = false;
-       if (!GraphicsEnvironment.isHeadless()) {
-           @SuppressWarnings("removal")
-           SecurityManager sm = System.getSecurityManager();
-           if (sm == null) {
-               canAccess = true;
-           } else {
-               try {
-                   sm.checkPermission(AWTPermissions.ACCESS_CLIPBOARD_PERMISSION);
-                   canAccess = true;
-               } catch (SecurityException e) {
-               }
-               if (canAccess && ! isTrustedContext()) {
-                   canAccess = canCurrentEventAccessSystemClipboard(true);
-               }
-           }
-       }
-       return canAccess;
+       return !GraphicsEnvironment.isHeadless();
    }
-    /**
-    * Returns true if EventQueue.getCurrentEvent() has the permissions to
-     * access the system clipboard
-     */
-    public static boolean canCurrentEventAccessSystemClipboard() {
-        return  isTrustedContext()
-            || canCurrentEventAccessSystemClipboard(false);
-    }
-
-    /**
-     * Returns true if the given event has permissions to access the
-     * system clipboard
-     *
-     * @param e AWTEvent to check
-     */
-    public static boolean canEventAccessSystemClipboard(AWTEvent e) {
-        return isTrustedContext()
-            || canEventAccessSystemClipboard(e, false);
-    }
-
-    /**
-     * Returns true if the given event is current gesture for
-     * accessing clipboard
-     *
-     * @param ie InputEvent to check
-     */
-    @SuppressWarnings("deprecation")
-    private static boolean isAccessClipboardGesture(InputEvent ie) {
-        boolean allowedGesture = false;
-        if (ie instanceof KeyEvent) { //we can validate only keyboard gestures
-            KeyEvent ke = (KeyEvent)ie;
-            int keyCode = ke.getKeyCode();
-            int keyModifiers = ke.getModifiers();
-            switch(keyCode) {
-            case KeyEvent.VK_C:
-            case KeyEvent.VK_V:
-            case KeyEvent.VK_X:
-                allowedGesture = (keyModifiers == InputEvent.CTRL_MASK);
-                break;
-            case KeyEvent.VK_INSERT:
-                allowedGesture = (keyModifiers == InputEvent.CTRL_MASK ||
-                                  keyModifiers == InputEvent.SHIFT_MASK);
-                break;
-            case KeyEvent.VK_COPY:
-            case KeyEvent.VK_PASTE:
-            case KeyEvent.VK_CUT:
-                allowedGesture = true;
-                break;
-            case KeyEvent.VK_DELETE:
-                allowedGesture = ( keyModifiers == InputEvent.SHIFT_MASK);
-                break;
-            }
-        }
-        return allowedGesture;
-    }
-
-    /**
-     * Returns true if e has the permissions to
-     * access the system clipboard and if it is allowed gesture (if
-     * checkGesture is true)
-     *
-     * @param e AWTEvent to check
-     * @param checkGesture boolean
-     */
-    private static boolean canEventAccessSystemClipboard(AWTEvent e,
-                                                        boolean checkGesture) {
-        if (EventQueue.isDispatchThread()) {
-            /*
-             * Checking event permissions makes sense only for event
-             * dispatching thread
-             */
-            if (e instanceof InputEvent
-                && (! checkGesture || isAccessClipboardGesture((InputEvent)e))) {
-                return AWTAccessor.getInputEventAccessor().
-                        canAccessSystemClipboard((InputEvent) e);
-            } else {
-                return false;
-            }
-        } else {
-            return true;
-        }
-    }
 
     /**
      * Utility method that throws SecurityException if SecurityManager is set
@@ -1588,31 +1474,6 @@ public class SwingUtilities2 {
                 && !Modifier.isPublic(modifiers)) {
             throw new SecurityException("Resource is not accessible");
         }
-    }
-
-    /**
-     * Returns true if EventQueue.getCurrentEvent() has the permissions to
-     * access the system clipboard and if it is allowed gesture (if
-     * checkGesture true)
-     *
-     * @param checkGesture boolean
-     */
-    private static boolean canCurrentEventAccessSystemClipboard(boolean
-                                                               checkGesture) {
-        AWTEvent event = EventQueue.getCurrentEvent();
-        return canEventAccessSystemClipboard(event, checkGesture);
-    }
-
-    /**
-     * see RFE 5012841 [Per AppContect security permissions] for the
-     * details
-     *
-     */
-    @SuppressWarnings("removal")
-    private static boolean isTrustedContext() {
-        return (System.getSecurityManager() == null)
-            || (AppContext.getAppContext().
-                get(UntrustedClipboardAccess) == null);
     }
 
     public static String displayPropertiesToCSS(Font font, Color fg) {
