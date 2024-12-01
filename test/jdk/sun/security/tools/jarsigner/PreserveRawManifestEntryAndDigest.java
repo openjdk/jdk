@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,9 @@
  */
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -46,7 +43,6 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipEntry;
 import jdk.security.jarsigner.JarSigner;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.util.JarUtils;
 import org.testng.annotations.BeforeTest;
@@ -247,9 +243,8 @@ public class PreserveRawManifestEntryAndDigest {
      * @see "concise_jarsigner.sh"
      */
     String[] getExpectedJarSignerOutputUpdatedContentNotValidatedBySignerA(
-            String jarFilename, String digestalg,
             String firstAddedFilename, String secondAddedFilename) {
-        final String TS = ".{28,29}"; // matches a timestamp
+        final String TS = ".{28,34}"; // matches a timestamp
         List<String> expLines = new ArrayList<>();
         expLines.add("s k   *\\d+ " + TS + " META-INF/MANIFEST[.]MF");
         expLines.add("      *\\d+ " + TS + " META-INF/B[.]SF");
@@ -351,7 +346,6 @@ public class PreserveRawManifestEntryAndDigest {
         assertMatchByLines(
                 fromFirstToSecondEmptyLine(o.getStdout().split("\\R")),
                 getExpectedJarSignerOutputUpdatedContentNotValidatedBySignerA(
-                        jarFilename4, digestalg,
                         firstAddedFilename, secondAddedFilename));
 
         // double-check reading the files with a verifying JarFile
@@ -467,14 +461,14 @@ public class PreserveRawManifestEntryAndDigest {
     }
 
     /**
-     * Breaks {@code line} at 70 bytes even though the name says 72 but when
-     * also counting the line delimiter ("{@code \r\n}") the line totals to 72
-     * bytes.
-     * Borrowed from {@link Manifest#make72Safe} before JDK 11
+     * Pre JDK 11, {@link Manifest#write(OutputStream)} would inject
+     * line breaks after 70 bytes instead of 72 bytes as mandated by
+     * the JAR File Specification.
      *
-     * @see Manifest#make72Safe
+     * This method injects line breaks after 70 bytes to simulate pre
+     * JDK 11 manifests.
      */
-    static void make72Safe(StringBuffer line) {
+    static void injectLineBreaksAt70Bytes(StringBuffer line) {
         int length = line.length();
         if (length > 72) {
             int index = 70;
@@ -516,7 +510,7 @@ public class PreserveRawManifestEntryAndDigest {
                     buf[0].append(line.substring(1));
                 } else {
                     if (buf[0] != null) {
-                        make72Safe(buf[0]);
+                        injectLineBreaksAt70Bytes(buf[0]);
                         sb.append(buf[0].toString());
                         sb.append("\r\n");
                     }
@@ -524,7 +518,7 @@ public class PreserveRawManifestEntryAndDigest {
                     buf[0].append(line);
                 }
             });
-            make72Safe(buf[0]);
+            injectLineBreaksAt70Bytes(buf[0]);
             sb.append(buf[0].toString());
             sb.append("\r\n");
             return sb.toString().getBytes(UTF_8);

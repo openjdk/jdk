@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.TypeAnnotation;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeAnnotation;
+import java.lang.classfile.attribute.CodeAttribute;
 
 /**
  * Annotate instructions with details about type annotations.
@@ -76,10 +76,10 @@ public class TypeAnnotationWriter extends InstructionDetailWriter {
         pcMap = new HashMap<>();
         codeAttribute = attr;
         check(NoteKind.VISIBLE,
-                m.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS)
+                m.findAttribute(Attributes.runtimeVisibleTypeAnnotations())
                         .map(a -> a.annotations()));
         check(NoteKind.INVISIBLE,
-                m.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS)
+                m.findAttribute(Attributes.runtimeInvisibleTypeAnnotations())
                         .map(a -> a.annotations()));
     }
 

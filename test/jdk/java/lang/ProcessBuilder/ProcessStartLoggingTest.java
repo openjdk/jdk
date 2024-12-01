@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /*
  * @test
  * @summary verify logging of ProcessBuilder.start()
+ * @requires vm.flagless
  * @run junit/othervm ProcessStartLoggingTest
  */
 public class ProcessStartLoggingTest {

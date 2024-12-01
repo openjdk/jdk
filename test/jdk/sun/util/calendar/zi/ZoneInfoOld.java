@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,14 +51,14 @@ import sun.util.calendar.CalendarDate;
  * for the {@link #getOffset(int,int,int,int,int,int) getOffset}
  * method that takes Gregorian calendar date fields.
  * <p>
- * This table covers transitions from 1900 until 2037 (as of version
- * 1.4), Before 1900, it assumes that there was no daylight saving
+ * This table covers transitions from 1900 until 2100 (as of version
+ * 23), Before 1900, it assumes that there was no daylight saving
  * time and the <code>getOffset</code> methods always return the
  * {@link #getRawOffset} value. No Local Mean Time is supported. If a
  * specified date is beyond the transition table and this time zone is
- * supposed to observe daylight saving time in 2037, it delegates
+ * supposed to observe daylight saving time in 2100, it delegates
  * operations to a {@link java.util.SimpleTimeZone SimpleTimeZone}
- * object created using the daylight saving time schedule as of 2037.
+ * object created using the daylight saving time schedule as of 2100.
  * <p>
  * The date items, transitions, GMT offset(s), etc. are read from a database
  * file. See {@link ZoneInfoFile} for details.
@@ -85,17 +85,10 @@ public class ZoneInfoOld extends TimeZone {
     private static final long ABBR_MASK = 0xf00L;
     private static final int TRANSITION_NSHIFT = 12;
 
-    // Flag for supporting JDK backward compatible IDs, such as "EST".
-    static final boolean USE_OLDMAPPING;
-    static {
-      String oldmapping = System.getProperty("sun.timezone.ids.oldmapping", "false").toLowerCase(Locale.ROOT);
-      USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
-    }
-
     // IDs having conflicting data between Olson and JDK 1.1
-    static final String[] conflictingIDs = {
-        "EST", "MST", "HST"
-    };
+    static final Map<String, String> conflictingIDs = Map.of(
+        "EST", "America/Panama",
+        "MST", "America/Phoenix");
 
     private static final CalendarSystem gcal = CalendarSystem.getGregorianCalendar();
 
@@ -653,18 +646,6 @@ public class ZoneInfoOld extends TimeZone {
     public static TimeZone getTimeZone(String ID) {
         String givenID = null;
 
-        /*
-         * If old JDK compatibility is specified, get the old alias
-         * name.
-         */
-        if (USE_OLDMAPPING) {
-            String compatibleID = TzIDOldMapping.MAP.get(ID);
-            if (compatibleID != null) {
-                givenID = ID;
-                ID = compatibleID;
-            }
-        }
-
         ZoneInfoOld zi = ZoneInfoFile.getZoneInfoOld(ID);
         if (zi == null) {
             // if we can't create an object for the ID, try aliases.
@@ -842,12 +823,8 @@ public class ZoneInfoOld extends TimeZone {
          if (aliases == null) {
              aliases = ZoneInfoFile.getZoneAliases();
              if (aliases != null) {
-                 if (!USE_OLDMAPPING) {
-                     // Remove the conflicting IDs from the alias table.
-                     for (String key : conflictingIDs) {
-                         aliases.remove(key);
-                     }
-                 }
+                 // Replace old mappings from `jdk11_backward`
+                 aliases.putAll(conflictingIDs);
                  aliasTable = new SoftReference<Map<String, String>>(aliases);
              }
          }

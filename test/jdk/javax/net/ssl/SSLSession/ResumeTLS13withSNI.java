@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,13 +438,11 @@ public class ResumeTLS13withSNI {
     private static TrustManagerFactory makeTrustManagerFactory(String tsPath,
             char[] pass) throws GeneralSecurityException, IOException {
         TrustManagerFactory tmf;
-        KeyStore ts = KeyStore.getInstance("JKS");
 
-        try (FileInputStream fsIn = new FileInputStream(tsPath)) {
-            ts.load(fsIn, pass);
-            tmf = TrustManagerFactory.getInstance("SunX509");
-            tmf.init(ts);
-        }
+        KeyStore ts = KeyStore.getInstance(new File(tsPath), pass);
+        tmf = TrustManagerFactory.getInstance("SunX509");
+        tmf.init(ts);
+
         return tmf;
     }
 
@@ -463,13 +461,11 @@ public class ResumeTLS13withSNI {
     private static KeyManagerFactory makeKeyManagerFactory(String ksPath,
             char[] pass) throws GeneralSecurityException, IOException {
         KeyManagerFactory kmf;
-        KeyStore ks = KeyStore.getInstance("JKS");
 
-        try (FileInputStream fsIn = new FileInputStream(ksPath)) {
-            ks.load(fsIn, pass);
-            kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, pass);
-        }
+        KeyStore ks = KeyStore.getInstance(new File(ksPath), pass);
+        kmf = KeyManagerFactory.getInstance("SunX509");
+        kmf.init(ks, pass);
+
         return kmf;
     }
 

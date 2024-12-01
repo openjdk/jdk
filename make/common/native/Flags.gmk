@@ -1,0 +1,225 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains functionality related to setting up compiler and linker
+# flags, based on various more abstract sources of compilation description,
+# like optimization level.
+
+################################################################################
+# $1 is the prefix of the file to be compiled
+# $2 is the prefix of the library, i.e. $$($1_BASE)
+define SetupCompileFileFlags
+  ifeq ($$($1_OPTIMIZATION), )
+    $1_OPT_CFLAGS := $$($2_OPT_CFLAGS)
+    $1_OPT_CXXFLAGS := $$($2_OPT_CXXFLAGS)
+  else
+    ifeq ($$($1_OPTIMIZATION), NONE)
+      $1_OPT_CFLAGS := $(C_O_FLAG_NONE)
+      $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NONE)
+    else ifeq ($$($1_OPTIMIZATION), LOW)
+      $1_OPT_CFLAGS := $(C_O_FLAG_NORM)
+      $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NORM)
+    else ifeq ($$($1_OPTIMIZATION), HIGH)
+      $1_OPT_CFLAGS := $(C_O_FLAG_HI)
+      $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HI)
+    else ifeq ($$($1_OPTIMIZATION), HIGHEST)
+      $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST)
+      $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST)
+    else ifeq ($$($1_OPTIMIZATION), HIGHEST_JVM)
+      $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST_JVM)
+      $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST_JVM)
+    else ifeq ($$($1_OPTIMIZATION), SIZE)
+      $1_OPT_CFLAGS := $(C_O_FLAG_SIZE)
+      $1_OPT_CXXFLAGS := $(CXX_O_FLAG_SIZE)
+    else
+      $$(error Unknown value for file OPTIMIZATION: $$($1_OPTIMIZATION))
+    endif
+  endif
+
+  ifneq ($$($2_PRECOMPILED_HEADER), )
+    ifeq ($$(filter $$($1_FILENAME), $$($2_PRECOMPILED_HEADER_EXCLUDE)), )
+      $1_USE_PCH_FLAGS := $$($2_USE_PCH_FLAGS)
+    endif
+  endif
+
+  ifneq ($(DISABLE_WARNING_PREFIX), )
+    $1_WARNINGS_FLAGS := $$(addprefix $(DISABLE_WARNING_PREFIX), \
+      $$($2_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$$($1_FILENAME)) \
+      $$($2_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)_$$($1_FILENAME)))
+  endif
+
+  $1_BASE_CFLAGS :=  $$($2_CFLAGS) $$($2_EXTRA_CFLAGS) \
+      $$($2_SYSROOT_CFLAGS)
+  $1_BASE_CXXFLAGS := $$($2_CXXFLAGS) $$($2_EXTRA_CXXFLAGS) \
+      $$($2_SYSROOT_CFLAGS) $$($1_EXTRA_CXXFLAGS)
+  $1_BASE_ASFLAGS := $$($2_ASFLAGS) $$($2_EXTRA_ASFLAGS)
+endef
+
+################################################################################
+define SetupCompilerFlags
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS, TOOLCHAIN_TYPE and
+  # OPENJDK_TARGET_OS plus OPENJDK_TARGET_CPU pair dependent variables for CFLAGS.
+  $1_EXTRA_CFLAGS := $$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CFLAGS_$(OPENJDK_TARGET_OS)) \
+      $$($1_CFLAGS_$(TOOLCHAIN_TYPE)) \
+      $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU))
+
+  ifneq ($(DEBUG_LEVEL), release)
+    # Pickup extra debug dependent variables for CFLAGS
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_debug)
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)_debug)
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_debug)
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU)_debug)
+  else
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_release)
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_$(OPENJDK_TARGET_OS_TYPE)_release)
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_release)
+    $1_EXTRA_CFLAGS += $$($1_CFLAGS_$(OPENJDK_TARGET_OS)_$(OPENJDK_TARGET_CPU)_release)
+  endif
+  ifeq ($(STATIC_LIBS), true)
+    $1_EXTRA_CFLAGS += $$(STATIC_LIBS_CFLAGS)
+  endif
+
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and/or TOOLCHAIN_TYPE
+  # dependent variables for CXXFLAGS.
+  $1_EXTRA_CXXFLAGS := $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)) \
+      $$($1_CXXFLAGS_$(TOOLCHAIN_TYPE))
+
+  ifneq ($(DEBUG_LEVEL), release)
+    # Pickup extra debug dependent variables for CXXFLAGS
+    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_debug)
+    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_TYPE)_debug)
+    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_debug)
+  else
+    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_release)
+    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_TYPE)_release)
+    $1_EXTRA_CXXFLAGS += $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_release)
+  endif
+  ifeq ($(STATIC_LIBS), true)
+    $1_EXTRA_CXXFLAGS += $$(STATIC_LIB_CFLAGS)
+  endif
+
+  # If no C++ flags are explicitly set, default to using the C flags.
+  # After that, we can set additional C++ flags that should not interfere
+  # with the mechanism for copying the C flags by default.
+  ifeq ($$($1_CXXFLAGS), )
+    $1_CXXFLAGS := $$($1_CFLAGS)
+  endif
+  ifeq ($$(strip $$($1_EXTRA_CXXFLAGS)), )
+    $1_EXTRA_CXXFLAGS := $$($1_EXTRA_CFLAGS)
+  endif
+
+  $$(call SetIfEmpty, $1_COMPILE_WITH_DEBUG_SYMBOLS, $$(COMPILE_WITH_DEBUG_SYMBOLS))
+
+  ifeq ($(STATIC_LIBS), true)
+    # For release builds where debug symbols are configured to be moved to
+    # separate debuginfo files, disable debug symbols for static libs instead.
+    # We don't currently support this configuration and we don't want symbol
+    # information in release builds unless explicitly asked to provide it.
+    ifeq ($(DEBUG_LEVEL), release)
+      ifeq ($(COPY_DEBUG_SYMBOLS), true)
+        $1_COMPILE_WITH_DEBUG_SYMBOLS := false
+      endif
+    endif
+  endif
+
+  ifeq ($$($1_COMPILE_WITH_DEBUG_SYMBOLS), true)
+    $1_EXTRA_CFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_CXXFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_ASFLAGS += $$(ASFLAGS_DEBUG_SYMBOLS)
+  endif
+
+  # Pass the library name for static JNI library naming
+  ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    $1_EXTRA_CFLAGS += -DLIBRARY_NAME=$$($1_NAME)
+    $1_EXTRA_CXXFLAGS += -DLIBRARY_NAME=$$($1_NAME)
+  endif
+
+  # Pick up disabled warnings, if possible on this platform.
+  ifneq ($(DISABLE_WARNING_PREFIX), )
+    $1_EXTRA_CFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), \
+        $$(DISABLED_WARNINGS) \
+        $$(DISABLED_WARNINGS_C) \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_C_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)) \
+        $$($1_DISABLED_WARNINGS_C_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)))
+    $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), \
+        $$(DISABLED_WARNINGS) \
+        $$(DISABLED_WARNINGS_CXX) \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_CXX_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)) \
+        $$($1_DISABLED_WARNINGS_CXX_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS)))
+  endif
+
+  # Check if warnings should be considered errors.
+  # Pick first binary and toolchain specific, then binary specific, then general setting.
+  ifeq ($$($1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE)), )
+    ifeq ($$($1_WARNINGS_AS_ERRORS), )
+      $1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE) := $$(WARNINGS_AS_ERRORS)
+    else
+      $1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE) := $$($1_WARNINGS_AS_ERRORS)
+    endif
+  endif
+
+  ifeq ($$($1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE)), true)
+    $1_EXTRA_CFLAGS += $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_EXTRA_CXXFLAGS += $(CFLAGS_WARNINGS_ARE_ERRORS)
+  endif
+
+  ifeq (NONE, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_NONE)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NONE)
+  else ifeq (LOW, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_NORM)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_NORM)
+  else ifeq (HIGH, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_HI)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HI)
+  else ifeq (HIGHEST, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST)
+  else ifeq (HIGHEST_JVM, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_HIGHEST_JVM)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_HIGHEST_JVM)
+  else ifeq (SIZE, $$($1_OPTIMIZATION))
+    $1_OPT_CFLAGS := $(C_O_FLAG_SIZE)
+    $1_OPT_CXXFLAGS := $(CXX_O_FLAG_SIZE)
+  else ifneq (, $$($1_OPTIMIZATION))
+    $$(error Unknown value for OPTIMIZATION: $$($1_OPTIMIZATION))
+  endif
+endef
+
+################################################################################
+define SetupLinkerFlags
+  # Pickup extra OPENJDK_TARGET_OS_TYPE, OPENJDK_TARGET_OS and TOOLCHAIN_TYPE
+  # dependent variables for LDFLAGS and LIBS, and additionally the pair dependent
+  # TOOLCHAIN_TYPE plus OPENJDK_TARGET_OS
+  $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS)) \
+      $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)) $$($1_LDFLAGS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
+  $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS)) \
+      $$($1_LIBS_$(TOOLCHAIN_TYPE)) $$($1_LIBS_$(TOOLCHAIN_TYPE)_$(OPENJDK_TARGET_OS))
+endef

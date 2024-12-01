@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,45 +24,14 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.components.CodeStackTracker;
-import jdk.internal.classfile.instruction.ArrayLoadInstruction;
-import jdk.internal.classfile.instruction.ArrayStoreInstruction;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.ConvertInstruction;
-import jdk.internal.classfile.instruction.ExceptionCatch;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
-import jdk.internal.classfile.instruction.LabelTarget;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.LookupSwitchInstruction;
-import jdk.internal.classfile.instruction.MonitorInstruction;
-import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
-import jdk.internal.classfile.instruction.NewObjectInstruction;
-import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.internal.classfile.instruction.NopInstruction;
-import jdk.internal.classfile.instruction.OperatorInstruction;
-import jdk.internal.classfile.instruction.ReturnInstruction;
-import jdk.internal.classfile.instruction.StackInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
-import jdk.internal.classfile.instruction.TableSwitchInstruction;
-import jdk.internal.classfile.instruction.ThrowInstruction;
-import jdk.internal.classfile.instruction.TypeCheckInstruction;
-
-import java.util.AbstractCollection;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.components.CodeStackTracker;
+import java.lang.classfile.instruction.*;
+import java.util.*;
 import java.util.function.Consumer;
 
 public final class CodeStackTrackerImpl implements CodeStackTracker {
@@ -146,7 +115,7 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
 
     private void push(TypeKind type) {
         if (stack != null) {
-            if (type != TypeKind.VoidType) stack.push(type);
+            if (type != TypeKind.VOID) stack.push(type);
         } else {
             maxSize = null;
         }
@@ -228,15 +197,15 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
             case MonitorInstruction i ->
                 pop(1);
             case NewMultiArrayInstruction i -> {
-                pop(i.dimensions());push(TypeKind.ReferenceType);
+                pop(i.dimensions());push(TypeKind.REFERENCE);
             }
             case NewObjectInstruction i ->
-                push(TypeKind.ReferenceType);
+                push(TypeKind.REFERENCE);
             case NewPrimitiveArrayInstruction i -> {
-                pop(1);push(TypeKind.ReferenceType);
+                pop(1);push(TypeKind.REFERENCE);
             }
             case NewReferenceArrayInstruction i -> {
-                pop(1);push(TypeKind.ReferenceType);
+                pop(1);push(TypeKind.REFERENCE);
             }
             case NopInstruction i -> {}
             case OperatorInstruction i -> {
@@ -329,15 +298,15 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
             case TypeCheckInstruction i -> {
                 switch (i.opcode()) {
                     case CHECKCAST -> {
-                        pop(1);push(TypeKind.ReferenceType);
+                        pop(1);push(TypeKind.REFERENCE);
                     }
                     case INSTANCEOF -> {
-                        pop(1);push(TypeKind.IntType);
+                        pop(1);push(TypeKind.INT);
                     }
                 }
             }
             case ExceptionCatch i ->
-                map.put(i.handler(), new Stack(new Item(TypeKind.ReferenceType, null), 1, 1));
+                map.put(i.handler(), new Stack(new Item(TypeKind.REFERENCE, null), 1, 1));
             case LabelTarget i ->
                 stack = map.getOrDefault(i.label(), stack);
             default -> {}

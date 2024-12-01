@@ -38,7 +38,7 @@ public class SuspendNoFlagTest {
             "test.classes", ".");
 
     public static void main(String[] args) throws Throwable {
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-classpath",
+        OutputAnalyzer output = ProcessTools.executeTestJava("-classpath",
                 TEST_CLASSES,
                 "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n",
                 "HelloWorld");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import jdk.jpackage.test.AdditionalLauncher;
 /*
  * @test
  * @summary jpackage with --type app-image --app-image "appImage" --mac-sign
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @library base
  * @build SigningBase
@@ -54,17 +54,24 @@ import jdk.jpackage.test.AdditionalLauncher;
  * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningAppImageTwoStepsTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningAppImageTwoStepsTest
  */
 public class SigningAppImageTwoStepsTest {
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public void test(boolean signAppImage) throws Exception {
+    // ({"sign or not", "signing-key or sign-identity"})
+    // Sign and signing-key
+    @Parameter({"true", "true"})
+    // Sign and sign-identity
+    @Parameter({"true", "false"})
+    // Unsigned
+    @Parameter({"false", "true"})
+    public void test(String... testArgs) throws Exception {
+        boolean signAppImage = Boolean.parseBoolean(testArgs[0]);
+        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
+
         SigningCheck.checkCertificates(SigningBase.DEFAULT_INDEX);
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
@@ -76,10 +83,15 @@ public class SigningAppImageTwoStepsTest {
                 .setArgumentValue("--dest", appimageOutput);
         if (signAppImage) {
             appImageCmd.addArguments("--mac-sign",
-                    "--mac-signing-key-user-name",
-                    SigningBase.getDevName(SigningBase.DEFAULT_INDEX),
                     "--mac-signing-keychain",
                     SigningBase.getKeyChain());
+            if (signingKey) {
+                appImageCmd.addArguments("--mac-signing-key-user-name",
+                    SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
+            } else {
+                appImageCmd.addArguments("--mac-app-image-sign-identity",
+                    SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
+            }
         }
 
         // Add addtional launcher
@@ -97,9 +109,14 @@ public class SigningAppImageTwoStepsTest {
         cmd.setPackageType(PackageType.IMAGE)
             .addArguments("--app-image", appImageCmd.outputBundle().toAbsolutePath())
             .addArguments("--mac-sign")
-            .addArguments("--mac-signing-key-user-name",
-                SigningBase.getDevName(SigningBase.DEFAULT_INDEX))
             .addArguments("--mac-signing-keychain", SigningBase.getKeyChain());
+        if (signingKey) {
+            cmd.addArguments("--mac-signing-key-user-name",
+                SigningBase.getDevName(SigningBase.DEFAULT_INDEX));
+        } else {
+            cmd.addArguments("--mac-app-image-sign-identity",
+                SigningBase.getAppCert(SigningBase.DEFAULT_INDEX));
+        }
         cmd.executeAndAssertImageCreated();
 
         // Should be signed app image

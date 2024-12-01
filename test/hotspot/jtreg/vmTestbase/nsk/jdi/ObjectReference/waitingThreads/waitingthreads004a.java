@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,13 +96,17 @@ public class waitingthreads004a {
                 }
 
                 pipe.println(waitingthreads004.SIGNAL_GO);
-                receiveSignal(waitingthreads004.SIGNAL_QUIT);
+                receiveSignal(waitingthreads004.SIGNAL_GO);
             }
             display("exited: synchronized (waitnotifyObj) {}");
 
             synchronized (lockingObject) {
                 display("entered and notifyAll: synchronized (lockingObject) {}");
                 lockingObject.notifyAll();
+
+                // tested thread must be blocked on re-entering monitor in lockingObject.wait()
+                pipe.println(waitingthreads004.SIGNAL_GO);
+                receiveSignal(waitingthreads004.SIGNAL_QUIT);
             }
             display("exited: synchronized (lockingObject) {}");
 

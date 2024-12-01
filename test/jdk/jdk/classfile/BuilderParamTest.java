@@ -23,17 +23,17 @@
 
 /*
  * @test
- * @summary Testing Classfile builder parameters.
+ * @summary Testing ClassFile builder parameters.
  * @run junit BuilderParamTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.constant.ConstantDescs.CD_void;
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BuilderParamTest {
     @Test
     void testDirectBuilder() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         cc.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0,
                           mb -> mb.withCode(xb -> {

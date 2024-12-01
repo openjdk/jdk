@@ -81,4 +81,3 @@ public interface ASMifierSupport {
     void asmify(
             StringBuilder outputBuilder, String visitorVariableName, Map<Label, String> labelNames);
 }
-

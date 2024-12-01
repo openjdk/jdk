@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import jdk.jpackage.test.AdditionalLauncher;
 /*
  * @test
  * @summary jpackage with --type app-image --mac-sign
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @library /test/lib
  * @library base
  * @build SigningBase
@@ -53,30 +53,41 @@ import jdk.jpackage.test.AdditionalLauncher;
  * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningAppImageTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @requires (os.family == "mac")
- * @run main/othervm -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningAppImageTest
  */
 public class SigningAppImageTest {
 
     @Test
-    @Parameter({"true", "0"}) // ({"sign or not", "certificate index"})
-    @Parameter({"true", "1"})
-    @Parameter({"false", "-1"})
+    // ({"sign or not", "signing-key or sign-identity", "certificate index"})
+    // Sign, signing-key and ASCII certificate
+    @Parameter({"true", "true", SigningBase.ASCII_INDEX})
+    // Sign, signing-key and UNICODE certificate
+    @Parameter({"true", "true", SigningBase.UNICODE_INDEX})
+    // Sign, signing-indentity and UNICODE certificate
+    @Parameter({"true", "false", SigningBase.UNICODE_INDEX})
+    // Unsigned
+    @Parameter({"false", "true", "-1"})
     public void test(String... testArgs) throws Exception {
         boolean doSign = Boolean.parseBoolean(testArgs[0]);
-        int certIndex = Integer.parseInt(testArgs[1]);
+        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
+        int certIndex = Integer.parseInt(testArgs[2]);
 
         SigningCheck.checkCertificates(certIndex);
 
         JPackageCommand cmd = JPackageCommand.helloAppImage();
         if (doSign) {
             cmd.addArguments("--mac-sign",
-                    "--mac-signing-key-user-name",
-                    SigningBase.getDevName(certIndex),
                     "--mac-signing-keychain",
                     SigningBase.getKeyChain());
+            if (signingKey) {
+                cmd.addArguments("--mac-signing-key-user-name",
+                        SigningBase.getDevName(certIndex));
+            } else {
+                cmd.addArguments("--mac-app-image-sign-identity",
+                        SigningBase.getAppCert(certIndex));
+            }
         }
         AdditionalLauncher testAL = new AdditionalLauncher("testAL");
         testAL.applyTo(cmd);

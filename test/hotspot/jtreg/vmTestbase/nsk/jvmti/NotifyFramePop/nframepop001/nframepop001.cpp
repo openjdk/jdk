@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,15 +33,15 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jmethodID mid1, mid2;
 
-static jthread currThread = NULL, popThread = NULL;
-static jclass currClass = NULL, popClass = NULL;
-static jmethodID currMethod = NULL, popMethod = NULL;
+static jthread currThread = nullptr, popThread = nullptr;
+static jclass currClass = nullptr, popClass = nullptr;
+static jmethodID currMethod = nullptr, popMethod = nullptr;
 static jboolean currFlag = JNI_FALSE, popFlag = JNI_FALSE;
 static jint currLoc = 0, popLoc = 0;
 
@@ -133,7 +133,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -190,7 +190,7 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_getMethIds(JNIEnv *env, jclass cl) {
 
     if (caps.can_generate_frame_pop_events) {
         err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-            JVMTI_EVENT_FRAME_POP, NULL);
+            JVMTI_EVENT_FRAME_POP, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable FRAME_POP event: %s (%d)\n",
                    TranslateError(err), err);
@@ -200,14 +200,14 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_getMethIds(JNIEnv *env, jclass cl) {
     }
 
     mid1 = env->GetMethodID(cl, "meth01", "(I)V");
-    if (mid1 == NULL) {
+    if (mid1 == nullptr) {
         printf("Cannot find method \"meth01\"\n");
         result = STATUS_FAILED;
         return;
     }
 
     mid2 = env->GetMethodID(cl, "meth02", "(I)V");
-    if (mid2 == NULL) {
+    if (mid2 == nullptr) {
         printf("Cannot find method \"meth02\"\n");
         result = STATUS_FAILED;
         return;
@@ -215,7 +215,7 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_getMethIds(JNIEnv *env, jclass cl) {
 
     if (caps.can_generate_exception_events) {
         err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-            JVMTI_EVENT_EXCEPTION_CATCH, NULL);
+            JVMTI_EVENT_EXCEPTION_CATCH, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable EXCEPTION_CATCH event: %s (%d)\n",
                    TranslateError(err), err);
@@ -245,7 +245,7 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_setFramePopNotif(JNIEnv *env,
     currThread = env->NewGlobalRef(thr);
 
     currClass = env->FindClass("nsk/jvmti/NotifyFramePop/nframepop001a");
-    if (currClass == NULL) {
+    if (currClass == nullptr) {
         printf("Cannot find nsk.jvmti.NotifyFramePop.nframepop001a class!\n");
         result = STATUS_FAILED;
         return;
@@ -253,7 +253,7 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_setFramePopNotif(JNIEnv *env,
     currClass = (jclass) env->NewGlobalRef(currClass);
 
     currMethod = env->GetMethodID(currClass, "run", "()V");
-    if (currMethod == NULL) {
+    if (currMethod == nullptr) {
         printf("Cannot find method \"run\"\n");
         result = STATUS_FAILED;
     }
@@ -319,9 +319,9 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_checkFrame(JNIEnv *env,
         result = STATUS_FAILED;
     }
 
-    currThread = NULL; popThread = NULL;
-    currClass = NULL; popClass = NULL;
-    currMethod = NULL; popMethod = NULL;
+    currThread = nullptr; popThread = nullptr;
+    currClass = nullptr; popClass = nullptr;
+    currMethod = nullptr; popMethod = nullptr;
     currFlag = JNI_FALSE; popFlag = JNI_FALSE;
     currLoc = 0; popLoc = 0;
 }

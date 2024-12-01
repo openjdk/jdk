@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "runtime/os.hpp"
 #include <string.h>
 
@@ -315,35 +317,63 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
         error(VALUE_ERROR, "Cannot use string value for a %s flag", flag_type_names[option_key->flag_type]);
         return false;
       } else {
-        char* s = NEW_C_HEAP_ARRAY(char, v->str.length+1,  mtCompiler);
+        char* s = NEW_C_HEAP_ARRAY(char, v->str.length + 1, mtCompiler);
         strncpy(s, v->str.start, v->str.length + 1);
         s[v->str.length] = '\0';
-        (set->*test)((void *)&s);
+
+        bool valid = true;
 
         if (strncmp(option_key->name, "ControlIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, false/*disabled_all*/);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in ControlIntrinsic: %s", validator.what());
-            return false;
           }
         } else if (strncmp(option_key->name, "DisableIntrinsic", 16) == 0) {
           ControlIntrinsicValidator validator(s, true/*disabled_all*/);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (!valid) {
             error(VALUE_ERROR, "Unrecognized intrinsic detected in DisableIntrinsic: %s", validator.what());
-            return false;
+          }
+        }
+#if !defined(PRODUCT) && defined(COMPILER2)
+        else if (strncmp(option_key->name, "TraceAutoVectorization", 22) == 0) {
+          TraceAutoVectorizationTagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_auto_vectorization_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutoVectorization: %s", validator.what());
+          }
+        } else if (strncmp(option_key->name, "TraceMergeStores", 16) == 0) {
+          TraceMergeStores::TagValidator validator(s, false);
+
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_trace_merge_stores_tags(validator.tags());
+          } else {
+            error(VALUE_ERROR, "Unrecognized tag name detected in TraceMergeStores: %s", validator.what());
           }
         } else if (strncmp(option_key->name, "PrintIdealPhase", 15) == 0) {
-          uint64_t mask = 0;
-          PhaseNameValidator validator(s, mask);
+          PhaseNameValidator validator(s);
 
-          if (!validator.is_valid()) {
+          valid = validator.is_valid();
+          if (valid) {
+            set->set_ideal_phase_name_set(validator.phase_name_set());
+          } else {
             error(VALUE_ERROR, "Unrecognized phase name detected in PrintIdealPhase: %s", validator.what());
-            return false;
           }
-          set->set_ideal_phase_mask(mask);
         }
+#endif
+
+        if (!valid) {
+          FREE_C_HEAP_ARRAY(char, s);
+          return false;
+        }
+        (set->*test)((void *)&s);  // Takes ownership.
       }
       break;
 

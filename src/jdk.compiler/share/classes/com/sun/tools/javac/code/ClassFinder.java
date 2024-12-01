@@ -226,7 +226,7 @@ public class ClassFinder {
     }
 
 
-/************************************************************************
+/* **********************************************************************
  * Temporary ct.sym replacement
  *
  * The following code is a temporary substitute for the ct.sym mechanism
@@ -241,7 +241,7 @@ public class ClassFinder {
      * available from the module system.
      */
     long getSupplementaryFlags(ClassSymbol c) {
-        if (jrtIndex == null || !jrtIndex.isInJRT(c.classfile) || c.name == names.module_info) {
+        if (c.name == names.module_info) {
             return 0;
         }
 
@@ -257,17 +257,22 @@ public class ClassFinder {
             try {
                 ModuleSymbol owningModule = packge.modle;
                 if (owningModule == syms.noModule) {
-                    JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
-                    Profile minProfile = Profile.DEFAULT;
-                    if (ctSym.proprietary)
-                        newFlags |= PROPRIETARY;
-                    if (ctSym.minProfile != null)
-                        minProfile = Profile.lookup(ctSym.minProfile);
-                    if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
-                        newFlags |= NOT_IN_PROFILE;
+                    if (jrtIndex != null && jrtIndex.isInJRT(c.classfile)) {
+                        JRTIndex.CtSym ctSym = jrtIndex.getCtSym(packge.flatName());
+                        Profile minProfile = Profile.DEFAULT;
+                        if (ctSym.proprietary)
+                            newFlags |= PROPRIETARY;
+                        if (ctSym.minProfile != null)
+                            minProfile = Profile.lookup(ctSym.minProfile);
+                        if (profile != Profile.DEFAULT && minProfile.value > profile.value) {
+                            newFlags |= NOT_IN_PROFILE;
+                        }
                     }
                 } else if (owningModule.name == names.jdk_unsupported) {
                     newFlags |= PROPRIETARY;
+                } else {
+                    // don't accumulate user modules in supplementaryFlags
+                    return 0;
                 }
             } catch (IOException ignore) {
             }
@@ -278,7 +283,7 @@ public class ClassFinder {
 
     private Map<PackageSymbol, Long> supplementaryFlags;
 
-/************************************************************************
+/* **********************************************************************
  * Loading Classes
  ***********************************************************************/
 
@@ -444,9 +449,6 @@ public class ClassFinder {
         if (c.members_field == null) {
             try {
                 c.complete();
-                if ((c.flags_field & UNNAMED_CLASS) != 0) {
-                    syms.removeClass(ps.modle, flatname);
-                }
             } catch (CompletionFailure ex) {
                 if (absent) {
                     syms.removeClass(ps.modle, flatname);
@@ -458,7 +460,7 @@ public class ClassFinder {
         return c;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Loading Packages
  ***********************************************************************/
 

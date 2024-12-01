@@ -215,9 +215,12 @@ public class SynthProgressBarUI extends BasicProgressBarUI
         SynthContext context = getContext(c);
 
         SynthLookAndFeel.update(context, g);
-        context.getPainter().paintProgressBarBackground(context,
-                          g, 0, 0, c.getWidth(), c.getHeight(),
-                          progressBar.getOrientation());
+
+        if (((JProgressBar) c).isBorderPainted()) {
+            context.getPainter().paintProgressBarBackground(context,
+                    g, 0, 0, c.getWidth(), c.getHeight(),
+                    progressBar.getOrientation());
+        }
         paint(context, g);
     }
 

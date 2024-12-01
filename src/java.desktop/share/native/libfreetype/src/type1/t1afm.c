@@ -405,7 +405,7 @@
 #else /* T1_CONFIG_OPTION_NO_AFM */
 
   /* ANSI C doesn't like empty source files */
-  typedef int  _t1_afm_dummy;
+  typedef int  t1_afm_dummy_;
 
 #endif /* T1_CONFIG_OPTION_NO_AFM */
 

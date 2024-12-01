@@ -69,7 +69,7 @@ typedef struct CDSFileMapRegion {
   size_t  _ptrmap_offset;     // Bitmap for relocating native pointer fields in archived heap objects.
                               // (The base address is the bottom of the BM region).
   size_t  _ptrmap_size_in_bits;
-  char*   _mapped_base;       // Actually mapped address (NULL if this region is not mapped).
+  char*   _mapped_base;       // Actually mapped address (null if this region is not mapped).
 } CDSFileMapRegion;
 
 // This portion of the archive file header must remain unchanged for

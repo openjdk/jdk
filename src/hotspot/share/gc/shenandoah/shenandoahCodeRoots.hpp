@@ -39,45 +39,16 @@ class ShenandoahNMethodTable;
 class ShenandoahNMethodTableSnapshot;
 class WorkerThreads;
 
-class ShenandoahParallelCodeHeapIterator {
-  friend class CodeCache;
-private:
-  CodeHeap*     _heap;
-  shenandoah_padding(0);
-  volatile int  _claimed_idx;
-  volatile bool _finished;
-  shenandoah_padding(1);
-public:
-  ShenandoahParallelCodeHeapIterator(CodeHeap* heap);
-  void parallel_blobs_do(CodeBlobClosure* f);
-};
-
-class ShenandoahParallelCodeCacheIterator {
-  friend class CodeCache;
-private:
-  ShenandoahParallelCodeHeapIterator* _iters;
-  int                       _length;
-
-  NONCOPYABLE(ShenandoahParallelCodeCacheIterator);
-
-public:
-  ShenandoahParallelCodeCacheIterator(const GrowableArray<CodeHeap*>* heaps);
-  ~ShenandoahParallelCodeCacheIterator();
-  void parallel_blobs_do(CodeBlobClosure* f);
-};
-
 class ShenandoahCodeRootsIterator {
   friend class ShenandoahCodeRoots;
 protected:
-  ShenandoahParallelCodeCacheIterator _par_iterator;
-  ShenandoahSharedFlag _seq_claimed;
   ShenandoahNMethodTableSnapshot* _table_snapshot;
 
 public:
   ShenandoahCodeRootsIterator();
   ~ShenandoahCodeRootsIterator();
 
-  void possibly_parallel_blobs_do(CodeBlobClosure *f);
+  void possibly_parallel_nmethods_do(NMethodClosure *f);
 };
 
 class ShenandoahCodeRoots : public AllStatic {
@@ -88,7 +59,6 @@ public:
   static void initialize();
   static void register_nmethod(nmethod* nm);
   static void unregister_nmethod(nmethod* nm);
-  static void flush_nmethod(nmethod* nm);
 
   static ShenandoahNMethodTable* table() {
     return _nmethod_table;

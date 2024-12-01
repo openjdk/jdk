@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,18 @@
  */
 package com.sun.java.swing.plaf.gtk;
 
-import javax.swing.*;
-import javax.swing.plaf.synth.*;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+
+import javax.swing.AbstractButton;
+import javax.swing.JComponent;
+import javax.swing.plaf.synth.Region;
+import javax.swing.plaf.synth.SynthConstants;
+import javax.swing.plaf.synth.SynthContext;
+import javax.swing.plaf.synth.SynthGraphicsUtils;
+
+import sun.swing.MnemonicHandler;
 
 /**
  * @author Joshua Outwater
@@ -49,6 +56,11 @@ class GTKGraphicsUtils extends SynthGraphicsUtils {
         int componentState = context.getComponentState();
 
         String themeName = GTKLookAndFeel.getGtkThemeName();
+
+        if (MnemonicHandler.isMnemonicHidden()) {
+            mnemonicIndex = -1;
+        }
+
         if (themeName != null && themeName.startsWith("blueprint") &&
             shouldShadowText(context.getRegion(), componentState)) {
 
@@ -115,7 +127,8 @@ class GTKGraphicsUtils extends SynthGraphicsUtils {
                 g.setColor(color);
             }
         }
-        super.paintText(context, g, text, bounds, mnemonicIndex);
+        super.paintText(context, g, text, bounds,
+                        MnemonicHandler.isMnemonicHidden() ? -1 : mnemonicIndex);
     }
 
     private static boolean shouldShadowText(Region id, int state) {

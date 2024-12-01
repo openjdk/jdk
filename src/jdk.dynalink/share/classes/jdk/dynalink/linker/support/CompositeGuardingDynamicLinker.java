@@ -72,6 +72,7 @@ import jdk.dynalink.linker.LinkerServices;
  * A {@link GuardingDynamicLinker} that delegates sequentially to a list of
  * other guarding dynamic linkers in its
  * {@link #getGuardedInvocation(LinkRequest, LinkerServices)}.
+ * @since 9
  */
 public class CompositeGuardingDynamicLinker implements GuardingDynamicLinker {
 

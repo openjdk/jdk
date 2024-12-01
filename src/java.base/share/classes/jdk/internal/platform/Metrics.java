@@ -71,8 +71,25 @@ public interface Metrics {
      */
     public String getProvider();
 
+    /**
+     * Determines whether or not the underlying system
+     * has useful metrics (a.k.a. is containerized).
+     *
+     * @implNote
+     * Note that Metrics on some systems aren't useful.
+     * For example on a regular Linux system with cgroups
+     * present, with no limits enforced and not running in
+     * a container, Metric aren't useful. This can be used
+     * in order to determine if the system is containerized.
+     *
+     * @return true when the JVM runs in containerized mode.
+     *         false otherwise.
+     *
+     */
+    public boolean isContainerized();
 
-    /*****************************************************************
+
+    /* ***************************************************************
      * CPU Accounting Subsystem
      ****************************************************************/
 
@@ -123,7 +140,7 @@ public interface Metrics {
      */
     public long getCpuSystemUsage();
 
-    /*****************************************************************
+    /* ***************************************************************
      * CPU Scheduling Metrics
      ****************************************************************/
 
@@ -215,7 +232,7 @@ public interface Metrics {
      */
     public long getEffectiveCpuCount();
 
-    /*****************************************************************
+    /* ***************************************************************
      * CPU Sets
      ****************************************************************/
 
@@ -271,7 +288,7 @@ public interface Metrics {
      */
     public int[] getEffectiveCpuSetMems();
 
-    /*****************************************************************
+    /* ***************************************************************
      * Memory Subsystem
      ****************************************************************/
 
@@ -352,7 +369,7 @@ public interface Metrics {
      */
     public long getMemorySoftLimit();
 
-    /*****************************************************************
+    /* ***************************************************************
      * pids subsystem
      ****************************************************************/
 
@@ -373,7 +390,7 @@ public interface Metrics {
      */
     public long getPidsCurrent();
 
-    /*****************************************************************
+    /* ***************************************************************
      * BlKIO Subsystem
      ****************************************************************/
 

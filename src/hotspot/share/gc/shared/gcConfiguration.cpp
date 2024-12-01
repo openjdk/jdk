@@ -43,14 +43,15 @@ GCName GCConfiguration::young_collector() const {
   }
 
   if (UseZGC) {
-    if (ZGenerational) {
-      return ZMinor;
-    } else {
-      return NA;
-    }
+    return ZMinor;
   }
 
   if (UseShenandoahGC) {
+#if INCLUDE_SHENANDOAHGC
+    if (ShenandoahCardBarrier) {
+      return ShenandoahYoung;
+    }
+#endif
     return NA;
   }
 
@@ -66,15 +67,16 @@ GCName GCConfiguration::old_collector() const {
     return ParallelOld;
   }
 
-  if (UseZGC) {
-    if (ZGenerational) {
-      return ZMajor;
-    } else {
-      return Z;
-    }
+if (UseZGC) {
+    return ZMajor;
   }
 
   if (UseShenandoahGC) {
+#if INCLUDE_SHENANDOAHGC
+    if (ShenandoahCardBarrier) {
+      return ShenandoahOld;
+    }
+#endif
     return Shenandoah;
   }
 

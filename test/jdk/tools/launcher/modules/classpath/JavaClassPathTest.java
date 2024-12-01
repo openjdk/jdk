@@ -200,7 +200,7 @@ public class JavaClassPathTest {
     }
 
     private OutputAnalyzer execute(List<String> options) throws Throwable {
-        // can't use ProcessTools.createJavaProcessBuilder as it always adds -cp
+        // can't use ProcessTools.createLimitedTestJavaProcessBuilder as it always adds -cp
         ProcessBuilder pb = new ProcessBuilder(
                 Stream.concat(Stream.of(JDKToolFinder.getTestJDKTool("java")),
                               options.stream()

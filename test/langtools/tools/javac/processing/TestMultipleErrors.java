@@ -19,8 +19,8 @@ public class TestMultipleErrors extends JavacTestingAbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (Element root : roundEnv.getRootElements()) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, "error1", root);
-            processingEnv.getMessager().printMessage(Kind.ERROR, "error2", root);
+            processingEnv.getMessager().printError("error1", root);
+            processingEnv.getMessager().printError("error2", root);
 
             Trees trees = Trees.instance(processingEnv);
             TreePath path = trees.getPath(root);

@@ -70,6 +70,8 @@ class os::Bsd {
   // Real-time clock functions
   static void clock_init(void);
 
+  static void *dlopen_helper(const char *path, int mode, char *ebuf, int ebuflen);
+
   // Stack repair handling
 
   // none present

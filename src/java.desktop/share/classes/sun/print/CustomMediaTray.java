@@ -27,6 +27,9 @@ package sun.print;
 
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Objects;
+import java.util.Map;
+import java.util.HashMap;
 
 import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.Media;
@@ -35,6 +38,7 @@ import javax.print.attribute.standard.MediaTray;
 public class CustomMediaTray extends MediaTray {
     private static ArrayList<String> customStringTable = new ArrayList<>();
     private static ArrayList<MediaTray> customEnumTable = new ArrayList<>();
+    private static Map<NameChoiceItem, CustomMediaTray> customMap = new HashMap<>();
     private String choiceName;
 
     private CustomMediaTray(int x) {
@@ -93,4 +97,36 @@ public class CustomMediaTray extends MediaTray {
       return customEnumTable.toArray(enumTable);
     }
 
+    public static CustomMediaTray create(String name, String choice) {
+        NameChoiceItem key = new NameChoiceItem(name, choice);
+        CustomMediaTray value = customMap.get(key);
+        if (value == null) {
+            value = new CustomMediaTray(name, choice);
+            customMap.put(key, value);
+        }
+        return value;
+    }
+
+    private static class NameChoiceItem {
+
+        private final String name;
+        private final String choice;
+
+        public NameChoiceItem(String name, String choice) {
+            this.name = name;
+            this.choice = choice;
+        }
+
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (object == null || getClass() != object.getClass()) return false;
+            NameChoiceItem that = (NameChoiceItem) object;
+            return Objects.equals(this.name, that.name)
+                    && Objects.equals(this.choice, that.choice);
+        }
+
+        public int hashCode() {
+            return Objects.hash(name, choice);
+        }
+    }
 }

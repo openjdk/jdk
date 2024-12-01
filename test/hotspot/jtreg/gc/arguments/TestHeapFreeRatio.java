@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package gc.arguments;
  * @test TestHeapFreeRatio
  * @bug 8025661
  * @summary Test parsing of -Xminf and -Xmaxf
+ * @requires vm.opt.MinHeapFreeRatio == null & vm.opt.MaxHeapFreeRatio == null
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -47,11 +48,10 @@ public class TestHeapFreeRatio {
   }
 
   private static void testMinMaxFreeRatio(String min, String max, Validation type) throws Exception {
-    ProcessBuilder pb = GCArguments.createJavaProcessBuilder(
+    OutputAnalyzer output = GCArguments.executeTestJava(
         "-Xminf" + min,
         "-Xmaxf" + max,
         "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
     switch (type) {
     case VALID:

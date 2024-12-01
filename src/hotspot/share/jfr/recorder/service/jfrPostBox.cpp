@@ -112,7 +112,6 @@ void JfrPostBox::asynchronous_post(int msg) {
 void JfrPostBox::synchronous_post(int msg) {
   assert(is_synchronous(msg), "invariant");
   assert(!JfrMsg_lock->owned_by_self(), "should not hold JfrMsg_lock here!");
-  NoHandleMark nhm;
   ThreadBlockInVM transition(JavaThread::current());
   MonitorLocker msg_lock(JfrMsg_lock, Mutex::_no_safepoint_check_flag);
   deposit(msg);

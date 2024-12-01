@@ -59,6 +59,16 @@ public:
   static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,
                                       TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void verify_archived_modules() NOT_CDS_JAVA_HEAP_RETURN;
+  static void dump_main_module_name() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static void dump_addmods_names() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_addmods_names(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+  static const char* get_addmods_names_as_sorted_string() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  static char* _archived_main_module_name;
+  static char* _archived_addmods_names;
+#endif
 
   // Provides the java.lang.Module for the unnamed module defined
   // to the boot loader.

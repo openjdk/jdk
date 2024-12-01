@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestSmallHeap
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @summary Test ZGC with small heaps
  * @library / /test/lib
  * @run driver gc.z.TestSmallHeap 16M 32M 64M 128M 256M 512M 1024M
@@ -53,16 +53,15 @@ public class TestSmallHeap {
 
     public static void main(String[] args) throws Exception {
         for (var maxCapacity: args) {
-            ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
-                                        "-XX:+UseZGC",
-                                        "-XX:+ZGenerational",
-                                        "-Xlog:gc,gc+init,gc+reloc,gc+heap",
-                                        "-Xmx" + maxCapacity,
-                                        Test.class.getName()))
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .shouldContain("Success")
-                .shouldHaveExitValue(0);
+            ProcessTools.executeTestJava(
+                "-XX:+UseZGC",
+                "-Xlog:gc,gc+init,gc+reloc,gc+heap",
+                "-Xmx" + maxCapacity,
+                Test.class.getName())
+                    .outputTo(System.out)
+                    .errorTo(System.out)
+                    .shouldContain("Success")
+                    .shouldHaveExitValue(0);
         }
     }
 }

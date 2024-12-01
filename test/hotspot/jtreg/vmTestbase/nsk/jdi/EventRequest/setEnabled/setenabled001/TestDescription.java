@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@
  *          /test/lib
  * @build nsk.jdi.EventRequest.setEnabled.setenabled001
  *        nsk.jdi.EventRequest.setEnabled.setenabled001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.EventRequest.setEnabled.setenabled001
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}

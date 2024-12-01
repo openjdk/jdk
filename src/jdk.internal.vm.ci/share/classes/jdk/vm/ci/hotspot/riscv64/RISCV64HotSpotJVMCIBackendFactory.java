@@ -61,9 +61,6 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         if (config.avoidUnalignedAccesses) {
             flags.add(RISCV64.Flag.AvoidUnalignedAccesses);
         }
-        if (config.nearCpool) {
-            flags.add(RISCV64.Flag.NearCpool);
-        }
         if (config.traceTraps) {
             flags.add(RISCV64.Flag.TraceTraps);
         }
@@ -78,9 +75,6 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
         }
         if (config.useZbb) {
             flags.add(RISCV64.Flag.UseZbb);
-        }
-        if (config.useRVVForBigIntegerShiftIntrinsics) {
-            flags.add(RISCV64.Flag.UseRVVForBigIntegerShiftIntrinsics);
         }
 
         return flags;
@@ -99,7 +93,7 @@ public class RISCV64HotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFac
     }
 
     private static RegisterConfig createRegisterConfig(RISCV64HotSpotVMConfig config, TargetDescription target) {
-        return new RISCV64HotSpotRegisterConfig(target, config.useCompressedOops, config.linuxOs);
+        return new RISCV64HotSpotRegisterConfig(target, config.useCompressedOops, target.linuxOs);
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntime runtime, TargetDescription target, RegisterConfig regConfig) {

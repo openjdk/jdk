@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 #ifndef SHARE_OOPS_KLASS_HPP
 #define SHARE_OOPS_KLASS_HPP
 
-#include "memory/iterator.hpp"
-#include "memory/memRegion.hpp"
+#include "oops/klassFlags.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -59,11 +58,10 @@ class fieldDescriptor;
 class klassVtable;
 class ModuleEntry;
 class PackageEntry;
-class ParCompactionManager;
-class PSPromotionManager;
 class vtableEntry;
 
 class Klass : public Metadata {
+
   friend class VMStructs;
   friend class JVMCIVMStructs;
  public:
@@ -159,11 +157,19 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
+  // Bitmap and hash code used by hashed secondary supers.
+  uintx    _secondary_supers_bitmap;
+  uint8_t  _hash_slot;
+
+  markWord _prototype_header;   // Used to initialize objects' header
+
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
                                 // Keep it away from the beginning of a Klass to avoid cacheline
                                 // contention that may happen when a nearby object is modified.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
+                                // Some flags created by the JVM, not in the class file itself,
+                                // are in _misc_flags below.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
@@ -185,19 +191,23 @@ private:
     _has_archived_enum_objs                = 1 << 4,
     // This class was not loaded from a classfile in the module image
     // or classpath.
-    _is_generated_shared_class             = 1 << 5
+    _is_generated_shared_class             = 1 << 5,
+    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
+    _has_aot_initialized_mirror            = 1 << 6,
+    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
+    // method during the production run?
+    _is_runtime_setup_required             = 1 << 7,
   };
 #endif
+
+  KlassFlags  _misc_flags;
 
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
 protected:
 
-  // Constructor
   Klass(KlassKind kind);
-  Klass() : _kind(UnknownKlassKind) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
-
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
+  Klass();
 
  public:
   int kind() { return _kind; }
@@ -232,7 +242,9 @@ protected:
   void set_secondary_super_cache(Klass* k) { _secondary_super_cache = k; }
 
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
-  void set_secondary_supers(Array<Klass*>* k) { _secondary_supers = k; }
+  void set_secondary_supers(Array<Klass*>* k, uintx bitmap);
+
+  uint8_t hash_slot() const { return _hash_slot; }
 
   // Return the element of the _super chain of the given depth.
   // If there is no such element, return either null or this.
@@ -366,6 +378,23 @@ protected:
     NOT_CDS(return false;)
   }
 
+  void set_has_aot_initialized_mirror() {
+    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
+  }
+  bool has_aot_initialized_mirror() const {
+    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_runtime_setup_required() {
+    assert(has_aot_initialized_mirror(), "sanity");
+    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
+  }
+  bool is_runtime_setup_required() const {
+    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
+    NOT_CDS(return false;)
+  }
+
   bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
     CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
     NOT_CDS(return false;)
@@ -383,7 +412,32 @@ protected:
   void     set_subklass(Klass* s);
   void     set_next_sibling(Klass* s);
 
+ private:
+  static uint8_t compute_hash_slot(Symbol* s);
+  static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
+  static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
+
+  bool search_secondary_supers(Klass* k) const;
+  bool lookup_secondary_supers_table(Klass *k) const;
+  bool linear_search_secondary_supers(const Klass* k) const;
+  bool fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const;
+
  public:
+  // Secondary supers table support
+  static Array<Klass*>* pack_secondary_supers(ClassLoaderData* loader_data,
+                                              GrowableArray<Klass*>* primaries,
+                                              GrowableArray<Klass*>* secondaries,
+                                              uintx& bitmap,
+                                              TRAPS);
+
+  static uintx   compute_secondary_supers_bitmap(Array<Klass*>* secondary_supers);
+  static uint8_t compute_home_slot(Klass* k, uintx bitmap);
+
+  static constexpr int SECONDARY_SUPERS_TABLE_SIZE = sizeof(_secondary_supers_bitmap) * 8;
+  static constexpr int SECONDARY_SUPERS_TABLE_MASK = SECONDARY_SUPERS_TABLE_SIZE - 1;
+
+  static constexpr uintx SECONDARY_SUPERS_BITMAP_EMPTY    = 0;
+  static constexpr uintx SECONDARY_SUPERS_BITMAP_FULL     = ~(uintx)0;
 
   // Compiler support
   static ByteSize super_offset()                 { return byte_offset_of(Klass, _super); }
@@ -400,6 +454,10 @@ protected:
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
+  static ByteSize secondary_supers_bitmap_offset()
+                                                 { return byte_offset_of(Klass, _secondary_supers_bitmap); }
+  static ByteSize hash_slot_offset()             { return byte_offset_of(Klass, _hash_slot); }
+  static ByteSize misc_flags_offset()            { return byte_offset_of(Klass, _misc_flags._flags); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -499,22 +557,11 @@ protected:
 
   // subclass check
   bool is_subclass_of(const Klass* k) const;
+
   // subtype check: true if is_subclass_of, or if k is interface and receiver implements it
-  bool is_subtype_of(Klass* k) const {
-    juint    off = k->super_check_offset();
-    Klass* sup = *(Klass**)( (address)this + off );
-    const juint secondary_offset = in_bytes(secondary_super_cache_offset());
-    if (sup == k) {
-      return true;
-    } else if (off != secondary_offset) {
-      return false;
-    } else {
-      return search_secondary_supers(k);
-    }
-  }
+  bool is_subtype_of(Klass* k) const;
 
-  bool search_secondary_supers(Klass* k) const;
-
+public:
   // Find LCA in class hierarchy
   Klass *LCA( Klass *k );
 
@@ -554,6 +601,8 @@ protected:
 
   inline oop klass_holder() const;
 
+  inline void keep_alive() const;
+
  protected:
 
   // Error handling when length > max_length or length < 0
@@ -583,7 +632,7 @@ protected:
     if (has_archived_mirror_index()) {
       // _java_mirror is not a valid OopHandle but rather an encoded reference in the shared heap
       return false;
-    } else if (_java_mirror.ptr_raw() == nullptr) {
+    } else if (_java_mirror.is_empty()) {
       return false;
     } else {
       return true;
@@ -664,17 +713,23 @@ protected:
   bool is_super() const                 { return _access_flags.is_super(); }
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
-  bool has_finalizer() const            { return _access_flags.has_finalizer(); }
-  void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
-  bool is_hidden() const                { return access_flags().is_hidden_class(); }
-  void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
-  bool is_value_based()                 { return _access_flags.is_value_based_class(); }
-  void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+  bool has_finalizer() const            { return _misc_flags.has_finalizer(); }
+  void set_has_finalizer()              { _misc_flags.set_has_finalizer(true); }
+  bool is_hidden() const                { return _misc_flags.is_hidden_class(); }
+  void set_is_hidden()                  { _misc_flags.set_is_hidden_class(true); }
+  bool is_value_based() const           { return _misc_flags.is_value_based_class(); }
+  void set_is_value_based()             { _misc_flags.set_is_value_based_class(true); }
+
+  klass_flags_t misc_flags() const      { return _misc_flags.value(); }
 
   inline bool is_non_strong_hidden() const;
 
   bool is_cloneable() const;
   void set_is_cloneable();
+
+  inline markWord prototype_header() const;
+  inline void set_prototype_header(markWord header);
+  static ByteSize prototype_header_offset() { return in_ByteSize(offset_of(Klass, _prototype_header)); }
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
@@ -712,6 +767,8 @@ protected:
   virtual void oop_print_value_on(oop obj, outputStream* st);
   virtual void oop_print_on      (oop obj, outputStream* st);
 
+  void print_secondary_supers_on(outputStream* st) const;
+
   virtual const char* internal_name() const = 0;
 
   // Verification
@@ -726,6 +783,12 @@ protected:
 
   // for error reporting
   static bool is_valid(Klass* k);
+
+  static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
+
+  // Returns true if this Klass needs to be addressable via narrow Klass ID.
+  inline bool needs_narrow_id() const;
+
 };
 
 #endif // SHARE_OOPS_KLASS_HPP

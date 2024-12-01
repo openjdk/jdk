@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@
  *      -g:lines,source,vars
  *      newclass01 newclass02 newclass03 newclass04 newclass05 newclass06 newclass07 newclass08 newclass09 newclass10
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.VirtualMachine.redefineClasses.redefineclasses004
  *      ./bin
  *      -verbose

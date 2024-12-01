@@ -45,13 +45,11 @@ class Arm {
 
   static address _idiv_irem_entry;
   static address _partial_subtype_check;
-  static address _method_entry_barrier;
 
  public:
 
   static address idiv_irem_entry() { return _idiv_irem_entry; }
   static address partial_subtype_check() { return _partial_subtype_check; }
-  static address method_entry_barrier() { return _method_entry_barrier; }
 };
 
   static bool returns_to_call_stub(address return_pc) {

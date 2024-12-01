@@ -26,7 +26,6 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A simple visitor for tree nodes.
@@ -300,6 +299,8 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  the result of {@code defaultAction}
+     *
+     * @since 14
      */
     @Override
     public R visitSwitchExpression(SwitchExpressionTree node, P p) {
@@ -629,19 +630,6 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
     }
 
     /**
-     * {@inheritDoc} This implementation calls {@code defaultAction}.
-     *
-     * @param node {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
-     */
-    @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
-    public R visitStringTemplate(StringTemplateTree node, P p) {
-        return defaultAction(node, p);
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @implSpec This implementation calls {@code defaultAction}.
@@ -649,10 +637,9 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  the result of {@code defaultAction}
-     * @since 21
+     * @since 22
      */
     @Override
-    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
     public R visitAnyPattern(AnyPatternTree node, P p) {
         return defaultAction(node, p);
     }
@@ -1062,6 +1049,8 @@ public class SimpleTreeVisitor <R,P> implements TreeVisitor<R,P> {
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  the result of {@code defaultAction}
+     *
+     * @since 14
      */
     @Override
     public R visitYield(YieldTree node, P p) {

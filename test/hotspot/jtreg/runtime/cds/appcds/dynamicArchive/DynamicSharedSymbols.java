@@ -90,7 +90,8 @@ public class DynamicSharedSymbols extends DynamicArchiveTestBase {
         ProcessBuilder pb = new ProcessBuilder();
         pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), Long.toString(pid), "VM.symboltable", "-verbose"});
         OutputAnalyzer output = CDSTestUtils.executeAndLog(pb, "jcmd-symboltable");
-        output.shouldContain("17 2: jdk/test/lib/apps\n");
+        output.shouldContain("17 3: jdk/test/lib/apps\n");  // 3 because a TempSymbol will be found in the TempSymbolCleanupDelayer queue.
+                   // Note: we might want to drain the queue before CDS dumps but this is correct for now, unless the queue length changes.
         output.shouldContain("Dynamic shared symbols:\n");
         output.shouldContain("5 65535: Hello\n");
 

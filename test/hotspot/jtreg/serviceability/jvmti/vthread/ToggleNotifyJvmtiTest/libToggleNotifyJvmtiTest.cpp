@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <jvmti.h>
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -34,13 +34,13 @@ static volatile int vthread_ended_cnt = 0;
 static volatile int thread_started_cnt = 0;
 static volatile int thread_ended_cnt = 0;
 
-static jrawMonitorID agent_lock = NULL;
+static jrawMonitorID agent_lock = nullptr;
 static volatile jboolean agent_started = JNI_FALSE;
 
 static void check_and_print_thread_names(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread,
                                          bool is_virtual, const char* msg) {
-  jthread cthread = NULL;
-  jthread vthread = NULL;
+  jthread cthread = nullptr;
+  jthread vthread = nullptr;
 
   if (is_virtual) {
     vthread = thread;
@@ -52,7 +52,7 @@ static void check_and_print_thread_names(jvmtiEnv *jvmti, JNIEnv* jni, jthread t
     cthread = thread;
   }
   char* ctname = get_thread_name(jvmti, jni, cthread);
-  char* vtname = vthread == NULL ? NULL : get_thread_name(jvmti, jni, vthread);
+  char* vtname = vthread == nullptr ? nullptr : get_thread_name(jvmti, jni, vthread);
 
   LOG("Event: %s virtual: %d ct: %s vt: %s\n", msg, is_virtual, ctname, vtname);
 
@@ -158,22 +158,22 @@ jint agent_init(JavaVM *jvm, char *options, void *reserved) {
       LOG("Agent init: error in JVMTI AddCapabilities: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       LOG("Agent init: error in JVMTI SetEventNotificationMode: %s (%d)\n", TranslateError(err), err);
       return JNI_ERR;

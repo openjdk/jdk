@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
@@ -48,15 +48,12 @@ import javax.tools.JavaFileManager.Location;
 
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.comp.AttrContext;
-import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
@@ -126,68 +123,6 @@ public class WorkArounds {
     // TODO: implement in either jx.l.m API (preferred) or DocletEnvironment.
     FileObject getJavaFileObject(PackageElement packageElement) {
         return ((PackageSymbol)packageElement).sourcefile;
-    }
-
-    // TODO: needs to ported to jx.l.m.
-    public TypeElement searchClass(TypeElement klass, String className) {
-        TypeElement te;
-
-        // search by qualified name in current module first
-        ModuleElement me = utils.containingModule(klass);
-        if (me != null) {
-            te = elementUtils.getTypeElement(me, className);
-            if (te != null) {
-                return te;
-            }
-        }
-
-        // search inner classes
-        for (TypeElement ite : utils.getClasses(klass)) {
-            TypeElement innerClass = searchClass(ite, className);
-            if (innerClass != null) {
-                return innerClass;
-            }
-        }
-
-        // check in this package
-        te = utils.findClassInPackageElement(utils.containingPackage(klass), className);
-        if (te != null) {
-            return te;
-        }
-
-        ClassSymbol tsym = (ClassSymbol)klass;
-        // make sure that this symbol has been completed
-        // TODO: do we need this anymore ?
-        if (tsym.completer != null) {
-            tsym.complete();
-        }
-
-        // search imports
-        if (tsym.sourcefile != null) {
-
-            //### This information is available only for source classes.
-            Env<AttrContext> compenv = toolEnv.getEnv(tsym);
-            if (compenv == null) {
-                return null;
-            }
-            Names names = tsym.name.table.names;
-            Scope s = compenv.toplevel.namedImportScope;
-            for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == TYP) {
-                    return (TypeElement)sym;
-                }
-            }
-
-            s = compenv.toplevel.starImportScope;
-            for (Symbol sym : s.getSymbolsByName(names.fromString(className))) {
-                if (sym.kind == TYP) {
-                    return (TypeElement)sym;
-                }
-            }
-        }
-
-        // finally, search by qualified name in all modules
-        return elementUtils.getTypeElement(className);
     }
 
     // TODO: jx.l.m ?
@@ -429,6 +364,11 @@ public class WorkArounds {
         }
     }
 
+    public boolean isRestrictedAPI(Element el) {
+        Symbol sym = (Symbol) el;
+        return sym.kind == MTH && (sym.flags() & Flags.RESTRICTED) != 0;
+    }
+
     public boolean isPreviewAPI(Element el) {
         Symbol sym = (Symbol) el;
         return (sym.flags() & Flags.PREVIEW_API) != 0;
@@ -465,7 +405,7 @@ public class WorkArounds {
      * @param feature the name of the PreviewFeature.Feature enum value
      * @return the map of PreviewFeature.JEP annotation element values, or an empty map
      */
-    public Map<? extends ExecutableElement, ? extends AnnotationValue> getJepInfo(String feature) {
+    public Map<String, Object> getJepInfo(String feature) {
         TypeElement featureType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.Feature");
         TypeElement jepType = elementUtils.getTypeElement("jdk.internal.javac.PreviewFeature.JEP");
         var featureVar = featureType.getEnclosedElements().stream()
@@ -473,11 +413,21 @@ public class WorkArounds {
         if (featureVar.isPresent()) {
             for (AnnotationMirror anno : featureVar.get().getAnnotationMirrors()) {
                 if (anno.getAnnotationType().asElement().equals(jepType)) {
-                    return anno.getElementValues();
+                    return anno.getElementValues().entrySet()
+                            .stream()
+                            .collect(Collectors.toMap(
+                                    e -> e.getKey().getSimpleName().toString(),
+                                    e -> e.getValue().getValue()));
                 }
             }
         }
         return Map.of();
     }
 
+    /*
+     * If a similar query is ever added to javax.lang.model, use that instead.
+     */
+    public static boolean isImplicitlyDeclaredClass(Element e) {
+        return e instanceof ClassSymbol c && c.isImplicit();
+    }
 }

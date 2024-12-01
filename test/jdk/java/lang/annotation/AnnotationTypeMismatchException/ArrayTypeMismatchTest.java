@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,26 @@
  * @bug 8266766
  * @summary An array property of a type that is no longer of a type that is a legal member of an
  *          annotation should throw an AnnotationTypeMismatchException.
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @run main ArrayTypeMismatchTest
  */
-
-import jdk.internal.org.objectweb.asm.AnnotationVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationTypeMismatchException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.classfile.AnnotationElement;
+import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
+
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.constant.ConstantDescs.CD_Object;
 
 public class ArrayTypeMismatchTest {
 
@@ -67,8 +73,7 @@ public class ArrayTypeMismatchTest {
             throw new IllegalStateException("Found value: " + value);
         } catch (InvocationTargetException ite) {
             Throwable cause = ite.getCause();
-            if (cause instanceof AnnotationTypeMismatchException) {
-                AnnotationTypeMismatchException e = ((AnnotationTypeMismatchException) cause);
+            if (cause instanceof AnnotationTypeMismatchException e) {
                 if (!e.element().getName().equals("value")) {
                     throw new IllegalStateException("Unexpected element: " + e.element());
                 } else if (!e.foundType().equals("Array with component tag: @")) {
@@ -81,34 +86,35 @@ public class ArrayTypeMismatchTest {
     }
 
     private static byte[] carrierType() {
-        ClassWriter writer = new ClassWriter(0);
-        writer.visit(Opcodes.V1_8, 0, "sample/Carrier", null, Type.getInternalName(Object.class), null);
-        AnnotationVisitor v = writer.visitAnnotation("Lsample/Host;", true);
-        AnnotationVisitor a = v.visitArray("value");
-        a.visitAnnotation(null, Type.getDescriptor(NoAnnotation.class)).visitEnd();
-        a.visitEnd();
-        v.visitEnd();
-        writer.visitEnd();
-        return writer.toByteArray();
+        return ClassFile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
+            clb.withSuperclass(CD_Object);
+            var badAnnotationArray = AnnotationValue.ofArray(AnnotationValue.ofAnnotation(
+                    java.lang.classfile.Annotation.of(
+                            NoAnnotation.class.describeConstable().orElseThrow()
+                    )));
+            clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                    java.lang.classfile.Annotation.of(ClassDesc.of("sample", "Host"),
+                            AnnotationElement.of("value", badAnnotationArray)
+                    )
+            ));
+        });
     }
 
     private static byte[] annotationType() {
-        ClassWriter writer = new ClassWriter(0);
-        writer.visit(Opcodes.V1_8,
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE | Opcodes.ACC_ANNOTATION,
-                "sample/Host",
-                null,
-                Type.getInternalName(Object.class),
-                new String[]{Type.getInternalName(Annotation.class)});
-        AnnotationVisitor a = writer.visitAnnotation(Type.getDescriptor(Retention.class), true);
-        a.visitEnum("value", Type.getDescriptor(RetentionPolicy.class), RetentionPolicy.RUNTIME.name());
-        writer.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_ABSTRACT,
-                "value",
-                Type.getMethodDescriptor(Type.getType(NoAnnotation[].class)),
-                null,
-                null).visitEnd();
-        writer.visitEnd();
-        return writer.toByteArray();
+        return ClassFile.of().build(ClassDesc.of("sample", "Host"), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withInterfaceSymbols(Annotation.class.describeConstable().orElseThrow());
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.ABSTRACT, AccessFlag.INTERFACE,
+                    AccessFlag.ANNOTATION);
+            clb.with(RuntimeVisibleAnnotationsAttribute.of(
+                    java.lang.classfile.Annotation.of(
+                            Retention.class.describeConstable().orElseThrow(),
+                            AnnotationElement.of("value", AnnotationValue.of(RetentionPolicy.RUNTIME))
+                    )
+            ));
+            clb.withMethod("value", MethodTypeDesc.of(NoAnnotation[].class.describeConstable()
+                    .orElseThrow()), ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
+        });
     }
 
     public interface NoAnnotation { }

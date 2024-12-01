@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -41,6 +45,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ModuleElement;
@@ -62,6 +68,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.ResourceIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.RestrictedAPIListBuilder;
 
 /**
  * The class with "start" method, calls individual Writers.
@@ -195,6 +202,11 @@ public class HtmlDoclet extends AbstractDoclet {
             configuration.previewAPIListBuilder = previewBuilder;
             configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.PREVIEW);
         }
+        RestrictedAPIListBuilder restrictedBuilder = new RestrictedAPIListBuilder(configuration);
+        if (!restrictedBuilder.isEmpty()) {
+            configuration.restrictedAPIListBuilder = restrictedBuilder;
+            configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.RESTRICTED);
+        }
 
         super.generateClassFiles(classTree);
     }
@@ -226,7 +238,6 @@ public class HtmlDoclet extends AbstractDoclet {
             messages.error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
         }
-        boolean nodeprecated = options.noDeprecated();
         copyFile(options.helpFile(), DocPath.empty);
         copyFile(options.stylesheetFile(), DocPaths.RESOURCE_FILES);
         for (String stylesheet : options.additionalStylesheets()) {
@@ -247,12 +258,14 @@ public class HtmlDoclet extends AbstractDoclet {
         for (var cp : EnumSet.of(
                 HtmlConfiguration.ConditionalPage.DEPRECATED,
                 HtmlConfiguration.ConditionalPage.PREVIEW,
+                HtmlConfiguration.ConditionalPage.RESTRICTED,
                 HtmlConfiguration.ConditionalPage.NEW)) {
             if (configuration.conditionalPages.contains(cp)) {
                 var w = switch (cp) {
                     case DEPRECATED -> writerFactory.newDeprecatedListWriter();
                     case NEW -> writerFactory.newNewAPIListWriter();
                     case PREVIEW -> writerFactory.newPreviewListWriter();
+                    case RESTRICTED -> writerFactory.newRestrictedListWriter();
                     default -> throw new AssertionError();
                 };
                 w.buildPage();
@@ -270,6 +283,7 @@ public class HtmlDoclet extends AbstractDoclet {
             if (!options.noExternalSpecsPage()){
                 writerFactory.newExternalSpecsWriter().buildPage();
             }
+            writerFactory.newSearchTagsWriter().buildPage();
             writerFactory.newSystemPropertiesWriter().buildPage();
 
             configuration.indexBuilder.addElements();
@@ -295,12 +309,16 @@ public class HtmlDoclet extends AbstractDoclet {
             w.buildPage();
         }
 
+        if (!options.noFonts()) {
+            copyFontResources();
+        }
+
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
-        if (options.stylesheetFile().length() == 0) {
+        if (options.stylesheetFile().isEmpty()) {
             copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
         }
-        copyResource(DocPaths.SCRIPT_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
+        copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
 
@@ -318,6 +336,10 @@ public class HtmlDoclet extends AbstractDoclet {
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
         copyLegalFiles(options.createIndex());
+        // Print a notice if the documentation contains diagnostic markers
+        if (messages.containsDiagnosticMarkers()) {
+            messages.notice("doclet.contains.diagnostic.markers");
+        }
     }
 
     @Override
@@ -334,8 +356,19 @@ public class HtmlDoclet extends AbstractDoclet {
         String legalNotices = configuration.getOptions().legalNotices();
         switch (legalNotices) {
             case "", "default" -> {
-                Path javaHome = Path.of(System.getProperty("java.home"));
-                legalNoticesDir = javaHome.resolve("legal").resolve(getClass().getModule().getName());
+                // use a known resource as a stand-in, because we cannot get the URL for a resources directory
+                var url = HtmlDoclet.class.getResource(
+                        DocPaths.RESOURCES.resolve(DocPaths.LEGAL).resolve(DocPaths.JQUERY_MD).getPath());
+                if (url != null) {
+                    try {
+                        legalNoticesDir = Path.of(url.toURI()).getParent();
+                    } catch (URISyntaxException e) {
+                        // should not happen when running javadoc from a system image
+                        return;
+                    }
+                } else {
+                    return;
+                }
             }
 
             case "none" -> {
@@ -431,6 +464,31 @@ public class HtmlDoclet extends AbstractDoclet {
             f.copyResource(resourcePath, resourceURL, configuration.docResources);
         } else {
             f.copyResource(resourcePath, resourceURL, replaceNewLine);
+        }
+    }
+
+    private void copyFontResources() throws DocletException {
+        DocPath cssPath = DocPaths.FONTS.resolve(DocPaths.DEJAVU_CSS);
+        copyResource(cssPath, DocPaths.RESOURCE_FILES.resolve(cssPath), true);
+
+        try {
+            // Extract font file names from CSS file
+            URL cssURL = HtmlConfiguration.class.getResource(DocPaths.RESOURCES.resolve(cssPath).getPath());
+            Pattern pattern = Pattern.compile("DejaVu[-\\w]+\\.\\w+");
+
+            try (InputStream in = cssURL.openStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Matcher m = pattern.matcher(line);
+                    if (m.find()) {
+                        DocPath fontPath = DocPaths.FONTS.resolve(m.group());
+                        copyResource(fontPath, DocPaths.RESOURCE_FILES.resolve(fontPath), false);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new ResourceIOException(cssPath, e);
         }
     }
 

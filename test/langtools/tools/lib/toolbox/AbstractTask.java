@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import static toolbox.ToolBox.lineSeparator;
 
 /**
@@ -50,7 +51,9 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
     private final Map<OutputKind, String> redirects = new EnumMap<>(OutputKind.class);
     private final Map<String, String> envVars = new HashMap<>();
     private Expect expect = Expect.SUCCESS;
-    int expectedExitCode = 0;
+    //validator for exit codes, first parameter is the exit code
+    //the second the test name:
+    private BiConsumer<Integer, String> exitCodeValidator = null;
 
     /**
      * Create a task that will execute in the specified mode.
@@ -67,7 +70,7 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
      * @return the result of calling {@code run()}
      */
     public Result run(Expect expect) {
-        expect(expect, Integer.MIN_VALUE);
+        expect(expect, (_, _) -> {});
         return run();
     }
 
@@ -84,16 +87,55 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
     }
 
     /**
+     * Sets the expected outcome of the task and calls {@code run()}.
+     * @param expect the expected outcome
+     * @param exitCodeValidator an exit code validator. The first parameter will
+     *                          be the actual exit code, the second test name,
+     *                          should throw TaskError if the exit code is not
+     *                          as expected. Only used if the expected outcome
+     *                          is {@code FAIL}
+     * @return the result of calling {@code run()}
+     */
+    public Result run(Expect expect,
+                      BiConsumer<Integer, String> exitCodeValidator) {
+        expect(expect, exitCodeValidator);
+        return run();
+    }
+
+    /**
      * Sets the expected outcome and expected exit code of the task.
      * The exit code will not be checked if the outcome is
      * {@code Expect.SUCCESS} or if the exit code is set to
      * {@code Integer.MIN_VALUE}.
      * @param expect the expected outcome
-     * @param exitCode the expected exit code
+     * @param expectedExitCode the expected exit code
      */
-    protected void expect(Expect expect, int exitCode) {
+    protected void expect(Expect expect, int expectedExitCode) {
+        expect(expect, (exitCode, testName) -> {
+            if (expectedExitCode != Integer.MIN_VALUE &&
+                exitCode != expectedExitCode) {
+                throw new TaskError("Task " + testName + "failed with unexpected exit code "
+                    + exitCode + ", expected " + expectedExitCode);
+            }
+        });
+    }
+
+    /**
+     * Sets the expected outcome and expected exit code of the task.
+     * The exit code will not be checked if the outcome is
+     * {@code Expect.SUCCESS} or if the exit code is set to
+     * {@code Integer.MIN_VALUE}.
+     * @param expect the expected outcome
+     * @param exitCodeValidator an exit code validator. The first parameter will
+     *                          be the actual exit code, the second test name,
+     *                          should throw TaskError if the exit code is not
+     *                          as expected. Only used if the expected outcome
+     *                          is {@code FAIL}
+     */
+    protected void expect(Expect expect,
+                          BiConsumer<Integer, String> exitCodeValidator) {
         this.expect = expect;
-        this.expectedExitCode = exitCode;
+        this.exitCodeValidator = exitCodeValidator;
     }
 
     /**
@@ -119,11 +161,11 @@ abstract class AbstractTask<T extends AbstractTask<T>> implements Task {
                     throw new TaskError("Task " + name() + " succeeded unexpectedly");
                 }
 
-                if (expectedExitCode != Integer.MIN_VALUE
-                        && result.exitCode != expectedExitCode) {
+                try {
+                    exitCodeValidator.accept(result.exitCode, name());
+                } catch (Throwable t) {
                     result.writeAll();
-                    throw new TaskError("Task " + name() + "failed with unexpected exit code "
-                        + result.exitCode + ", expected " + expectedExitCode);
+                    throw t;
                 }
                 break;
         }

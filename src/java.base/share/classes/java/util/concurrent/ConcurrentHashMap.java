@@ -69,6 +69,8 @@ import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -517,7 +519,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * The largest possible (non-power of two) array size.
      * Needed by toArray and related methods.
      */
-    static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    static final int MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * The default concurrency level for this table. Unused but
@@ -594,7 +596,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
     /** Number of CPUS, to place bounds on some sizings */
-    static final int NCPU = Runtime.getRuntime().availableProcessors();
+    static @Stable int NCPU;
+
+    static {
+        runtimeSetup();
+    }
+
+    // Called from JVM when loading an AOT cache.
+    private static void runtimeSetup() {
+        NCPU = Runtime.getRuntime().availableProcessors();
+    }
 
     /**
      * Serialized pseudo-fields, provided only for jdk7 compatibility.
@@ -847,8 +858,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      *
      * @param m the map
      */
+    @SuppressWarnings("this-escape")
     public ConcurrentHashMap(Map<? extends K, ? extends V> m) {
-        this.sizeCtl = DEFAULT_CAPACITY;
+        this(m.size());
         putAll(m);
     }
 
@@ -1084,7 +1096,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @param m mappings to be stored in this map
      */
     public void putAll(Map<? extends K, ? extends V> m) {
-        tryPresize(m.size());
+        if (table != null) {
+            tryPresize(size() + m.size());
+        }
         for (Map.Entry<? extends K, ? extends V> e : m.entrySet())
             putVal(e.getKey(), e.getValue(), false);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,13 @@ package sun.security.ec;
 
 import java.io.IOException;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
+import sun.security.util.BitArray;
 import sun.security.util.ECParameters;
 import sun.security.util.ECUtil;
 
@@ -44,6 +47,7 @@ import sun.security.x509.*;
  */
 public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = -2462037275160462289L;
 
     @SuppressWarnings("serial") // Type of field is not
@@ -56,7 +60,6 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
      * Construct a key from its components. Used by the
      * ECKeyFactory.
      */
-    @SuppressWarnings("deprecation")
     ECPublicKeyImpl(ECPoint w, ECParameterSpec params)
             throws InvalidKeyException {
         this.w = w;
@@ -64,7 +67,8 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
         // generate the encoding
         algid = new AlgorithmId
             (AlgorithmId.EC_oid, ECParameters.getAlgorithmParameters(params));
-        key = ECUtil.encodePoint(w, params.getCurve());
+        byte[] key = ECUtil.encodePoint(w, params.getCurve());
+        setKey(new BitArray(key.length * 8, key));
     }
 
     /**
@@ -89,17 +93,9 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
         return params;
     }
 
-    // Internal API to get the encoded point. Currently used by SunPKCS11.
-    // This may change/go away depending on what we do with the public API.
-    @SuppressWarnings("deprecation")
-    public byte[] getEncodedPublicValue() {
-        return key.clone();
-    }
-
     /**
      * Parse the key. Called by X509Key.
      */
-    @SuppressWarnings("deprecation")
     protected void parseKeyBits() throws InvalidKeyException {
         AlgorithmParameters algParams = this.algid.getParameters();
         if (algParams == null) {
@@ -109,7 +105,7 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
 
         try {
             params = algParams.getParameterSpec(ECParameterSpec.class);
-            w = ECUtil.decodePoint(key, params.getCurve());
+            w = ECUtil.decodePoint(getKey().toByteArray(), params.getCurve());
         } catch (IOException | InvalidParameterSpecException e) {
             throw new InvalidKeyException("Invalid EC key", e);
         }
@@ -123,10 +119,27 @@ public final class ECPublicKeyImpl extends X509Key implements ECPublicKey {
             + "\n  parameters: " + params;
     }
 
-    protected Object writeReplace() throws java.io.ObjectStreamException {
+    @java.io.Serial
+    private Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PUBLIC,
                         getAlgorithm(),
                         getFormat(),
                         getEncoded());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "ECPublicKeyImpl keys are not directly deserializable");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,37 +31,15 @@
 
 // Test disabled on AIX since we cannot invoke the JVM on the primordial thread.
 
-import java.io.File;
-import java.util.Map;
 import jdk.test.lib.Platform;
-import jdk.test.lib.process.OutputAnalyzer;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import jdk.test.lib.process.ProcessTools;
 
 public class CallerAccessTest {
-    public static void main(String[] args) throws IOException {
-        Path launcher = Paths.get(System.getProperty("test.nativepath"), "CallerAccessTest");
-        ProcessBuilder pb = new ProcessBuilder(launcher.toString());
-        Map<String, String> env = pb.environment();
-
-        String libDir = Platform.libDir().toString();
-        String vmDir = Platform.jvmLibDir().toString();
-
-        // set up shared library path
-        String sharedLibraryPathEnvName = Platform.sharedLibraryPathVariableName();
-        env.compute(sharedLibraryPathEnvName,
-                    (k, v) -> (v == null) ? libDir : v + File.pathSeparator + libDir);
-        env.compute(sharedLibraryPathEnvName,
-                    (k, v) -> (v == null) ? vmDir : v + File.pathSeparator + vmDir);
-
-        System.out.println("Launching: " + launcher + " shared library path: " +
-                           env.get(sharedLibraryPathEnvName));
-        new OutputAnalyzer(pb.start())
-                .outputTo(System.out)
-                .errorTo(System.err)
-                .shouldHaveExitValue(0);
+    public static void main(String[] args) throws Exception {
+        ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("CallerAccessTest");
+        System.out.println("Launching: " + pb.command() + " shared library path: " +
+                           pb.environment().get(Platform.sharedLibraryPathVariableName()));
+        ProcessTools.executeProcess(pb).shouldHaveExitValue(0);
     }
 }
 

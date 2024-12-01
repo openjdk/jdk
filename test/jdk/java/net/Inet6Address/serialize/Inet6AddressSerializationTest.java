@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,16 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 
+import jdk.test.lib.Platform;
+import jdk.test.lib.NetworkConfiguration;
+
 /**
  * @test
  * @bug 8007373
  * @summary jdk7 backward compatibility serialization problem
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ * @run main/othervm Inet6AddressSerializationTest
  */
 
 public class Inet6AddressSerializationTest {
@@ -177,10 +183,17 @@ public class Inet6AddressSerializationTest {
                 .getNetworkInterfaces(); e.hasMoreElements();) {
             NetworkInterface netIF = e.nextElement();
             // Skip (Windows)Teredo Tunneling Pseudo-Interface
+            String dName = netIF.getDisplayName();
             if (isWindows) {
-                String dName = netIF.getDisplayName();
                 if (dName != null && dName.contains("Teredo")) {
                     continue;
+                }
+            }
+            // skip awdl and llw interfaces on macosx
+            if (Platform.isOSX()) {
+                if((dName != null) &&
+                        ((dName.contains("awdl")) || (dName.contains("llw")))) {
+                        continue;
                 }
             }
             for (Enumeration<InetAddress> iadrs = netIF.getInetAddresses(); iadrs
@@ -622,8 +635,8 @@ public class Inet6AddressSerializationTest {
                         + deserializedNetworkInterface);
                 failed = true;
             }
-        } else if (!expectedNetworkInterface
-                .equals(deserializedNetworkInterface)) {
+        } else if (!NetworkConfiguration.isSameInterface(expectedNetworkInterface,
+                      deserializedNetworkInterface)) {
             System.err.println("Error checking "
                     + // versionStr +
                     " NetworkInterface, expected:" + expectedNetworkInterface

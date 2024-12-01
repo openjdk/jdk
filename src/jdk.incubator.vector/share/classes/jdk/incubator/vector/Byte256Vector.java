@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class Byte256Vector extends ByteVector {
                                    VectorMask<Byte> m) {
         return (Byte256Vector)
             super.selectFromTemplate((Byte256Vector) v,
-                                     (Byte256Mask) m);  // specialize
+                                     Byte256Mask.class, (Byte256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte256Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte256Vector)
+            super.selectFromTemplate((Byte256Vector) v1, (Byte256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -892,6 +899,13 @@ final class Byte256Vector extends ByteVector {
             return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
+        @Override
+        @ForceInline
+        public Byte256Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Byte256Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Byte256Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
+        }
+
         @ForceInline
         @Override
         public Byte256Shuffle rearrange(VectorShuffle<Byte> shuffle) {
@@ -925,6 +939,12 @@ final class Byte256Vector extends ByteVector {
         return super.fromArray0Template(Byte256Mask.class, a, offset, (Byte256Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ByteVector fromArray0(byte[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Byte> m) {
+        return super.fromArray0Template(Byte256Mask.class, a, offset, indexMap, mapOffset, (Byte256Mask) m);
+    }
 
 
     @ForceInline

@@ -67,10 +67,10 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.*;
-import static jdk.internal.classfile.Classfile.*;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.constantpool.*;
+import static java.lang.classfile.ClassFile.*;
 
 /**
  *  "Main" class for javap, normally accessed from the command line
@@ -218,6 +218,13 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             @Override
             void process(JavapTask task, String opt, String arg) {
                 task.options.sysInfo = true;
+            }
+        },
+
+        new Option(false, "-verify") {
+            @Override
+            void process(JavapTask task, String opt, String arg) {
+                task.options.verify = true;
             }
         },
 
@@ -542,6 +549,10 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             throw new BadArgs("err.incompatible.options", sb);
         }
 
+        if (!options.showDisassembled && !options.verbose && options.showLineAndLocalVariableTables) {
+            reportWarning("err.incompatible.options", "-l without -c, line number and local variable tables will not be printed");
+        }
+
         if ((classes == null || classes.size() == 0) &&
                 !(noArgs || options.help || options.version || options.fullVersion)) {
             throw new BadArgs("err.no.classes.specified");
@@ -674,7 +685,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         if (options.showInnerClasses) {
             ClassModel cm = cfInfo.cm;
-            var a = cm.findAttribute(jdk.internal.classfile.Attributes.INNER_CLASSES);
+            var a = cm.findAttribute(java.lang.classfile.Attributes.innerClasses());
             if (a.isPresent()) {
                 var inners = a.get();
                 try {
@@ -827,7 +838,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 in = new DigestInputStream(in, md);
                 in = sizeIn = new SizeInputStream(in);
             }
-            ClassModel cm = Classfile.of().parse(in.readAllBytes());
+            ClassModel cm = ClassFile.of().parse(in.readAllBytes());
             byte[] digest = (md == null) ? null : md.digest();
             int size = (sizeIn == null) ? -1 : sizeIn.size();
             return new ClassFileInfo(fo, cm, digest, size);
@@ -860,6 +871,19 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             if (moduleLocation != null) {
                 fo = fileManager.getJavaFileForInput(moduleLocation, className, JavaFileObject.Kind.CLASS);
             } else {
+                if (className.indexOf('.') > 0 || className.indexOf('/') > 0) {
+                    //search for classes with a named package in the JDK modules specifed by --system option first
+                    try {
+                        for (Set<Location> locations: fileManager.listLocationsForModules(StandardLocation.SYSTEM_MODULES)) {
+                            for (Location systemModule: locations) {
+                                fo = fileManager.getJavaFileForInput(systemModule, className, JavaFileObject.Kind.CLASS);
+                                if (fo != null) return fo;
+                            }
+                        }
+                    } catch (UnsupportedOperationException e) {
+                        //skip when listLocationsForModules is not supported
+                    }
+                }
                 fo = fileManager.getJavaFileForInput(StandardLocation.PLATFORM_CLASS_PATH, className, JavaFileObject.Kind.CLASS);
                 if (fo == null)
                     fo = fileManager.getJavaFileForInput(StandardLocation.CLASS_PATH, className, JavaFileObject.Kind.CLASS);

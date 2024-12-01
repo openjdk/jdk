@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public final class Bidi {
      * <p>
      * The RUN_DIRECTION attribute in the text, if present, determines the base
      * direction (left-to-right or right-to-left).  If not present, the base
-     * direction is computes using the Unicode Bidirectional Algorithm, defaulting to left-to-right
+     * direction is computed using the Unicode Bidirectional Algorithm, defaulting to left-to-right
      * if there are no strong directional characters in the text.  This attribute, if
      * present, must be applied to all the text in the paragraph.
      * <p>

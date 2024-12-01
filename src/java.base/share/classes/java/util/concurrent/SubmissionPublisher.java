@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -1059,7 +1061,7 @@ public class SubmissionPublisher<T> implements Publisher<T>,
         final Subscriber<? super T> subscriber;
         final BiConsumer<? super Subscriber<? super T>, ? super Throwable> onNextHandler;
         Executor executor;                 // null on error
-        Thread waiter;                     // blocked producer thread
+        volatile Thread waiter;            // blocked producer thread
         Throwable pendingError;            // holds until onError issued
         BufferedSubscription<T> next;      // used only by publisher
         BufferedSubscription<T> nextRetry; // used only by publisher
@@ -1505,16 +1507,10 @@ public class SubmissionPublisher<T> implements Publisher<T>,
         static final VarHandle QA;
 
         static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                CTL = l.findVarHandle(BufferedSubscription.class, "ctl",
-                                      int.class);
-                DEMAND = l.findVarHandle(BufferedSubscription.class, "demand",
-                                         long.class);
-                QA = MethodHandles.arrayElementVarHandle(Object[].class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            CTL = MhUtil.findVarHandle(l, "ctl", int.class);
+            DEMAND = MhUtil.findVarHandle(l, "demand", long.class);
+            QA = MethodHandles.arrayElementVarHandle(Object[].class);
 
             // Reduce the risk of rare disastrous classloading in first call to
             // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773

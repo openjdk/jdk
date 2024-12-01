@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4638588 4635809 6256068 6270645 8025633 8026567 8162363 8175200
- *      8192850 8182765 8220217 8224052 8237383
+ *      8192850 8182765 8220217 8224052 8237383 8341904
  * @summary Test to make sure that members are inherited properly in the Javadoc.
  *          Verify that inheritance labels are correct.
  * @library ../../lib
@@ -121,9 +121,11 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="class-description" id="class-description">
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="type-signature"><span class="modifiers">public abstract class </span\
                     ><span class="element-name type-name-label">DocumentedNonGenericChild</span>
                     <span class="extends-implements">extends java.lang.Object</span></div>
+                    </div>
                     </section>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
@@ -142,6 +144,7 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
                     -name">parentMethod</span><wbr><span class="parameters">(java.lang.String&nbsp;t\
@@ -149,8 +152,7 @@ public class TestMemberInheritance extends JavadocTester {
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
                     java.lang.IllegalStateException</span></div>
-                    <div class="block">Returns some value with an <span id="inheritedsearchtag" clas\
-                    s="search-tag-result">inherited search tag</span>.</div>""");
+                    <div class="block">Returns some value with an inherited search tag.</div>""");
 
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
@@ -169,10 +171,12 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="parentField">
                     <h3>parentField</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">parentField</\
                     span></div>
                     <div class="block">A field.</div>
+                    </div>
                     </section>""");
 
         checkOutput("pkg3/PrivateGenericParent.PublicChild.html", true,
@@ -185,9 +189,11 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="method(T)">
                     <h3 id="method(java.lang.Object)">method</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">java.lang.String</span>&nbsp;<span class="element-name">metho\
                     d</span><wbr><span class="parameters">(java.lang.String&nbsp;t)</span></div>
+                    </div>
                     </section>""");
 
         checkOutput("index-all.html", true,
@@ -211,10 +217,8 @@ public class TestMemberInheritance extends JavadocTester {
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
-        checkOutput("tag-search-index.js", true,
-                """
-                    {"l":"inherited search tag","h":"pkg2.UndocumentedGenericParent.parentMethod(Str\
-                    ing)","u":"pkg2/DocumentedNonGenericChild.html#inheritedsearchtag"}""");
+        // Search tags from inherited doc comments are not added to the index (8341904).
+        checkOutput("tag-search-index.js", true, "tagSearchIndex = []");
 
     }
 
@@ -231,6 +235,7 @@ public class TestMemberInheritance extends JavadocTester {
                 """
                     <section class="detail" id="parentMethod(T)">
                     <h3 id="parentMethod(java.lang.Object)">parentMethod</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">protected abstract</span>&\
                     nbsp;<span class="return-type">java.lang.String</span>&nbsp;<span class="element\
                     -name">parentMethod</span><wbr><span class="parameters">(java.lang.String&nbsp;t\
@@ -238,8 +243,7 @@ public class TestMemberInheritance extends JavadocTester {
                                                               throws <span class="exceptions">java.lang.IllegalArgumentException,
                     java.lang.InterruptedException,
                     java.lang.IllegalStateException</span></div>
-                    <div class="block">Returns some value with an <span id="inheritedsearchtag" clas\
-                    s="search-tag-result">inherited search tag</span>.</div>""");
+                    <div class="block">Returns some value with an inherited search tag.</div>""");
 
         checkOutput("index-files/index-9.html", true,
                 """
@@ -262,10 +266,8 @@ public class TestMemberInheritance extends JavadocTester {
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentField"}""",
                 """
                     {"p":"pkg2","c":"DocumentedNonGenericChild","l":"parentMethod(String)","u":"parentMethod(T)"}""");
-        checkOutput("tag-search-index.js", true,
-                """
-                    {"l":"inherited search tag","h":"pkg2.UndocumentedGenericParent.parentMethod(Str\
-                    ing)","u":"pkg2/DocumentedNonGenericChild.html#inheritedsearchtag"}""");
+        // Search tags from inherited doc comments are not added to the index (8341904).
+        checkOutput("tag-search-index.js", true, "tagSearchIndex = []");
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class JMXStartStopTest {
 
     private static final boolean verbose = false;
 
-    private static ManagementAgentJcmd jcmd = new ManagementAgentJcmd(TEST_APP_NAME, verbose);
+    private static ManagementAgentJcmd jcmd;
 
     private static void dbg_print(String msg) {
         if (verbose) {
@@ -347,6 +347,7 @@ public class JMXStartStopTest {
                                                 "the requested port not being available");
                     }
                     pid = p.pid();
+                    jcmd = new ManagementAgentJcmd(p, verbose);
                 } catch (TimeoutException e) {
                     if (p != null) {
                         p.destroy();
@@ -398,7 +399,7 @@ public class JMXStartStopTest {
         pbArgs.addAll(Arrays.asList(args));
         pbArgs.add(TEST_APP_NAME);
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(pbArgs);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(pbArgs);
         TestAppRun s = new TestAppRun(pb, name);
         s.start();
         return s;

@@ -29,23 +29,22 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 
-class VM_ParallelGCFailedAllocation : public VM_CollectForAllocation {
- public:
-  VM_ParallelGCFailedAllocation(size_t word_size, uint gc_count);
+class VM_ParallelCollectForAllocation : public VM_CollectForAllocation {
+  bool _is_tlab;
+public:
+  VM_ParallelCollectForAllocation(size_t word_size, bool is_tlab, uint gc_count);
 
   virtual VMOp_Type type() const {
-    return VMOp_ParallelGCFailedAllocation;
+    return VMOp_ParallelCollectForAllocation;
   }
   virtual void doit();
 };
 
-class VM_ParallelGCSystemGC: public VM_GC_Operation {
-  bool _full_gc_succeeded;
+class VM_ParallelGCCollect: public VM_GC_Operation {
  public:
-  VM_ParallelGCSystemGC(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
-  virtual VMOp_Type type() const { return VMOp_ParallelGCSystemGC; }
+  VM_ParallelGCCollect(uint gc_count, uint full_gc_count, GCCause::Cause gc_cause);
+  virtual VMOp_Type type() const { return VMOp_ParallelGCCollect; }
   virtual void doit();
-  bool full_gc_succeeded() const { return _full_gc_succeeded; }
 };
 
 #endif // SHARE_GC_PARALLEL_PSVMOPERATIONS_HPP

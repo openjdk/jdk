@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -40,7 +40,7 @@ typedef struct {
     jboolean is_static;
 } field_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static field_info fields[] = {
@@ -81,12 +81,12 @@ JNIEXPORT jint JNI_OnLoad_getfldnm004(JavaVM *jvm, char *options, void *reserved
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -102,7 +102,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm004_check(JNIEnv *env,
     char *name, *sig, *generic;
     size_t i;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -115,7 +115,7 @@ Java_nsk_jvmti_GetFieldName_getfldnm004_check(JNIEnv *env,
             fid = env->GetFieldID(
                 clazz, fields[i].name, fields[i].sig);
         }
-        if (fid == NULL) {
+        if (fid == nullptr) {
             printf("(%" PRIuPTR ") cannot get field ID for %s:\"%s\"\n",
                    i, fields[i].name, fields[i].sig);
             result = STATUS_FAILED;
@@ -131,12 +131,12 @@ Java_nsk_jvmti_GetFieldName_getfldnm004_check(JNIEnv *env,
         if (printdump == JNI_TRUE) {
             printf(">>> %" PRIuPTR " -- %s:\"%s\"\n", i, name, sig);
         }
-        if (name == NULL || strcmp(name, fields[i].name) != 0) {
+        if (name == nullptr || strcmp(name, fields[i].name) != 0) {
             printf("(%" PRIuPTR ") wrong field name: \"%s\"", i, name);
             printf(", expected: \"%s\"\n", fields[i].name);
             result = STATUS_FAILED;
         }
-        if (sig == NULL || strcmp(sig, fields[i].sig) != 0) {
+        if (sig == nullptr || strcmp(sig, fields[i].sig) != 0) {
             printf("(%" PRIuPTR ") wrong field sig: \"%s\"", i, sig);
             printf(", expected: \"%s\"\n", fields[i].sig);
             result = STATUS_FAILED;

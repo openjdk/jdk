@@ -122,7 +122,7 @@ public final class Canonicalizer {
      * @return a Canonicalizer instance ready for the job
      * @throws InvalidCanonicalizerException
      */
-    public static final Canonicalizer getInstance(String algorithmURI)
+    public static Canonicalizer getInstance(String algorithmURI)
         throws InvalidCanonicalizerException {
         return new Canonicalizer(algorithmURI);
     }

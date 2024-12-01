@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -183,7 +184,7 @@ public class CtwRunner {
         while (!done) {
             String[] cmd = cmd(classStart, classStop);
             try {
-                ProcessBuilder pb = ProcessTools.createTestJvm(cmd);
+                ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
                 String commandLine = pb.command()
                         .stream()
                         .collect(Collectors.joining(" "));
@@ -266,11 +267,10 @@ public class CtwRunner {
     private String[] cmd(long classStart, long classStop) {
         String phase = phaseName(classStart);
         Path file = Paths.get(phase + ".cmd");
-        var rng = Utils.getRandomInstance();
+        Random rng = Utils.getRandomInstance();
 
         ArrayList<String> Args = new ArrayList<String>(Arrays.asList(
                 "-Xbatch",
-                "-XX:-UseCounterDecay",
                 "-XX:-ShowMessageBoxOnError",
                 "-XX:+UnlockDiagnosticVMOptions",
                 // redirect VM output to cerr so it won't collide w/ ctw output
@@ -293,14 +293,28 @@ public class CtwRunner {
                 String.format("-XX:ReplayDataFile=replay_%s_%%p.log", phase),
                 // MethodHandle MUST NOT be compiled
                 "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*",
-                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
                 "-XX:+IgnoreUnrecognizedVMOptions",
+                // Do not pay extra zapping cost for explicit GC invocations
+                "-XX:-ZapUnusedHeapArea",
+                // Stress* are c2-specific stress flags, so IgnoreUnrecognizedVMOptions is needed
                 "-XX:+StressLCM",
                 "-XX:+StressGCM",
                 "-XX:+StressIGVN",
                 "-XX:+StressCCP",
+                "-XX:+StressMacroExpansion",
+                "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
-                "-XX:StressSeed=" + Math.abs(rng.nextInt())));
+                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),
+                // Do not fail on huge methods where StressGCM makes register
+                // allocation allocate lots of memory
+                "-XX:CompileCommand=memlimit,*.*,0"));
+
+        // Use this stress mode 10% of the time as it could make some long-running compilations likely to abort.
+        if (rng.nextInt(10) == 0) {
+            Args.add("-XX:+StressBailout");
+            Args.add("-XX:StressBailoutMean=100000");
+            Args.add("-XX:+CaptureBailoutInformation");
+        }
 
         for (String arg : CTW_EXTRA_ARGS.split(",")) {
             Args.add(arg);

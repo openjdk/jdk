@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,9 +171,13 @@ int RegisterForm::RegMask_Size() {
   // on the stack (stack registers) up to some interesting limit.  Methods
   // that need more parameters will NOT be compiled.  On Intel, the limit
   // is something like 90+ parameters.
-  // Add a few (3 words == 96 bits) for incoming & outgoing arguments to calls.
-  // Round up to the next doubleword size.
-  return (words_for_regs + 3 + 1) & ~1;
+  // - Add a few (3 words == 96 bits) for incoming & outgoing arguments to
+  //   calls.
+  // - Round up to the next doubleword size.
+  // - Add one more word to accommodate a reasonable number of stack locations
+  //   in the register mask regardless of how much slack is created by rounding.
+  //   This was found necessary after adding 16 new registers for APX.
+  return (words_for_regs + 3 + 1 + 1) & ~1;
 }
 
 void RegisterForm::dump() {                  // Debug printer
@@ -196,6 +200,20 @@ void RegisterForm::output(FILE *fp) {          // Write info to output files
     ((AllocClass*)_allocClass[name])->output(fp);
   }
   fprintf(fp,"-------------------- end  RegisterForm --------------------\n");
+}
+
+void RegisterForm::forms_do(FormClosure *f) {
+  const char *name = nullptr;
+  if (_current_ac) f->do_form(_current_ac);
+  for(_rdefs.reset(); (name = _rdefs.iter()) != nullptr;) {
+    f->do_form((RegDef*)_regDef[name]);
+  }
+  for (_rclasses.reset(); (name = _rclasses.iter()) != nullptr;) {
+    f->do_form((RegClass*)_regClass[name]);
+  }
+  for (_aclasses.reset(); (name = _aclasses.iter()) != nullptr;) {
+    f->do_form((AllocClass*)_allocClass[name]);
+  }
 }
 
 //------------------------------RegDef-----------------------------------------
@@ -322,6 +340,13 @@ void RegClass::output(FILE *fp) {           // Write info to output files
   fprintf(fp,"--- done with entries for reg_class %s\n\n",_classid);
 }
 
+void RegClass::forms_do(FormClosure *f) {
+  const char *name = nullptr;
+  for( _regDefs.reset(); (name = _regDefs.iter()) != nullptr; ) {
+    f->do_form((RegDef*)_regDef[name]);
+  }
+}
+
 void RegClass::declare_register_masks(FILE* fp) {
   const char* prefix = "";
   const char* rc_name_to_upper = toUpper(_classid);
@@ -434,6 +459,14 @@ void AllocClass::output(FILE *fp) {       // Write info to output files
     ((RegDef*)_regDef[name])->output(fp);
   }
   fprintf(fp,"--- done with entries for alloc_class %s\n\n",_classid);
+}
+
+void AllocClass::forms_do(FormClosure* f) {
+  const char *name;
+  for(_regDefs.reset(); (name = _regDefs.iter()) != nullptr;) {
+    f->do_form((RegDef*)_regDef[name]);
+  }
+  return;
 }
 
 //==============================Frame Handling=================================
@@ -704,6 +737,15 @@ void Peephole::output(FILE *fp) {         // Write info to output files
   if( _replace != nullptr )     _replace->output(fp);
   // Output the next entry
   if( _next ) _next->output(fp);
+}
+
+void Peephole::forms_do(FormClosure *f) {
+  if (_predicate) f->do_form(_predicate);
+  if (_match) f->do_form(_match);
+  if (_procedure) f->do_form(_procedure);
+  if (_constraint) f->do_form(_constraint);
+  if (_replace) f->do_form(_replace);
+  return;
 }
 
 //----------------------------PeepPredicate------------------------------------

@@ -87,9 +87,9 @@ public class TestOnSpinWaitAArch64DefaultFlags {
         final String cpuModel = cpuFeatures.get(0);
 
         if (isCPUModelNeoverseN1(cpuModel)) {
-            checkFinalFlagsEqualTo(ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-version"),
+            checkFinalFlagsEqualTo(ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintFlagsFinal", "-version"),
                 "isb", "1");
-            checkFinalFlagsEqualTo(ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:OnSpinWaitInstCount=2", "-XX:+PrintFlagsFinal", "-version"),
+            checkFinalFlagsEqualTo(ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:OnSpinWaitInstCount=2", "-XX:+PrintFlagsFinal", "-version"),
                 "isb", "2");
         } else {
             System.out.println("Skip because no defaults for CPU model: " + cpuModel);

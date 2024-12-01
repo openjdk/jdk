@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -386,12 +386,14 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span c\
                     lass="return-type">void</span>&nbsp;<span class="element-name">readObject</span>()
                                     throws <span class="exceptions">java.io.IOException</span></div>
+                    </div>
                     </section>
                     </li>""");
 
         checkOutput("pkg1/C2.html", expectFound,
                 """
                     <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="element-name">C2</span>()</div>
+                    </div>
                     </section>
                     </li>""");
 
@@ -401,6 +403,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                     &nbsp;<span class="return-type"><a href="C1.ModalExclusionType.html" title="enum\
                      class in pkg1">C1.ModalExclusionType</a></span>&nbsp;<span class="element-name">APPLICATION_E\
                     XCLUDE</span></div>
+                    </div>
                     </section>
                     </li>""");
 

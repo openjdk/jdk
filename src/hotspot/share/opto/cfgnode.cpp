@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1883,6 +1883,17 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   return phi;
 }
 
+// Returns the BasicType of a given convert node and a type, with special handling to ensure that conversions to
+// and from half float will return the SHORT basic type, as that wouldn't be returned typically from TypeInt.
+static BasicType get_convert_type(Node* convert, const Type* type) {
+  int convert_op = convert->Opcode();
+  if (type->isa_int() && (convert_op == Op_ConvHF2F || convert_op == Op_ConvF2HF)) {
+    return T_SHORT;
+  }
+
+  return type->basic_type();
+}
+
 //=============================================================================
 //------------------------------simple_data_loop_check-------------------------
 //  Try to determining if the phi node in a simple safe/unsafe data loop.
@@ -2137,8 +2148,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (phi_type->isa_ptr()) {
         const Type* uin_type = phase->type(uin);
         if (!phi_type->isa_oopptr() && !uin_type->isa_oopptr()) {
-          cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency,
-                                               extra_types);
+          cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
         } else {
           // Use a CastPP for a cast to not null and a CheckCastPP for
           // a cast to a new klass (and both if both null-ness and
@@ -2148,8 +2158,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           // null, uin's type must be casted to not null
           if (phi_type->join(TypePtr::NOTNULL) == phi_type->remove_speculative() &&
               uin_type->join(TypePtr::NOTNULL) != uin_type->remove_speculative()) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, TypePtr::NOTNULL,
-                                                 ConstraintCastNode::StrongDependency, extra_types);
+            cast = new CastPPNode(r, uin, TypePtr::NOTNULL, ConstraintCastNode::StrongDependency, extra_types);
           }
 
           // If the type of phi and uin, both casted to not null,
@@ -2161,12 +2170,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
               cast = phase->transform(cast);
               n = cast;
             }
-            cast = ConstraintCastNode::make_cast(Op_CheckCastPP, r, n, phi_type, ConstraintCastNode::StrongDependency,
-                                                 extra_types);
+            cast = new CheckCastPPNode(r, n, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
           if (cast == nullptr) {
-            cast = ConstraintCastNode::make_cast(Op_CastPP, r, uin, phi_type, ConstraintCastNode::StrongDependency,
-                                                 extra_types);
+            cast = new CastPPNode(r, uin, phi_type, ConstraintCastNode::StrongDependency, extra_types);
           }
         }
       } else {
@@ -2557,6 +2564,41 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 #endif
 
+  // Try to convert a Phi with two duplicated convert nodes into a phi of the pre-conversion type and the convert node
+  // proceeding the phi, to de-duplicate the convert node and compact the IR.
+  if (can_reshape && progress == nullptr) {
+    ConvertNode* convert = in(1)->isa_Convert();
+    if (convert != nullptr) {
+      int conv_op = convert->Opcode();
+      bool ok = true;
+
+      // Check the rest of the inputs
+      for (uint i = 2; i < req(); i++) {
+        // Make sure that all inputs are of the same type of convert node
+        if (in(i)->Opcode() != conv_op) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (ok) {
+        // Find the local bottom type to set as the type of the phi
+        const Type* source_type = Type::get_const_basic_type(convert->in_type()->basic_type());
+        const Type* dest_type = convert->bottom_type();
+
+        PhiNode* newphi = new PhiNode(in(0), source_type, nullptr);
+        // Set inputs to the new phi be the inputs of the convert
+        for (uint i = 1; i < req(); i++) {
+          newphi->init_req(i, in(i)->in(1));
+        }
+
+        phase->is_IterGVN()->register_new_node_with_optimizer(newphi, this);
+
+        return ConvertNode::create_convert(get_convert_type(convert, source_type), get_convert_type(convert, dest_type), newphi);
+      }
+    }
+  }
+
   // Phi (VB ... VB) => VB (Phi ...) (Phi ...)
   if (EnableVectorReboxing && can_reshape && progress == nullptr && type()->isa_oopptr()) {
     progress = merge_through_phi(this, phase->is_IterGVN());
@@ -2682,10 +2724,10 @@ Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
           cached_vbox = vbox;
         } else if (vbox->vec_type() != cached_vbox->vec_type()) {
           // TODO: vector type mismatch can be handled with additional reinterpret casts
-          assert(Type::cmp(vbox->vec_type(), cached_vbox->vec_type()) != 0, "inconsistent");
+          assert(!Type::equals(vbox->vec_type(), cached_vbox->vec_type()), "inconsistent");
           return nullptr; // not optimizable: vector type mismatch
         } else if (vbox->box_type() != cached_vbox->box_type()) {
-          assert(Type::cmp(vbox->box_type(), cached_vbox->box_type()) != 0, "inconsistent");
+          assert(!Type::equals(vbox->box_type(), cached_vbox->box_type()), "inconsistent");
           return nullptr; // not optimizable: box type mismatch
         }
       } else {

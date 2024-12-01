@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
-#include "nsk_tools.h"
-#include "jni_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "jni_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -40,7 +40,7 @@ extern "C" {
 
 /* expected class signatures are below */
 static const char *class_sig[][CLS_NUM] = {
-    { "getclsig006", "Lnsk/jvmti/GetClassSignature/getclsig006;", "NULL" },
+    { "getclsig006", "Lnsk/jvmti/GetClassSignature/getclsig006;", "null" },
     { "getclsig006b", "Lnsk/jvmti/GetClassSignature/getclsig006b;",
       "<L:Ljava/lang/String;>Ljava/lang/Object;" },
     { "getclsig006c", "Lnsk/jvmti/GetClassSignature/getclsig006c;",
@@ -51,7 +51,7 @@ static const char *class_sig[][CLS_NUM] = {
       "<E:Lnsk/jvmti/GetClassSignature/getclsig006e;:Lnsk/jvmti/GetClassSignature/getclsig006if;>Ljava/lang/Object;" }
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
     int totRes = PASSED;
@@ -67,7 +67,7 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
             class_sig[idx][0]);
 
         if (strcmp(class_sig[idx][1], sign) != 0 ||
-                strcmp(class_sig[idx][2], (gen_sign == NULL) ? "NULL" : gen_sign) != 0) {
+                strcmp(class_sig[idx][2], (gen_sign == nullptr) ? "null" : gen_sign) != 0) {
             NSK_COMPLAIN5(
                 "TEST FAILED: class: \"%s\" has\n"
                 "\tsignature: \"%s\"\n"
@@ -75,19 +75,19 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
                 "\tExpected: \"%s\"\n"
                 "\t\"%s\"\n\n",
                 class_sig[idx][0],
-                sign, (gen_sign == NULL) ? "NULL" : gen_sign,
+                sign, (gen_sign == nullptr) ? "null" : gen_sign,
                 class_sig[idx][1], class_sig[idx][2]);
             totRes = STATUS_FAILED;
         }
         else
             NSK_DISPLAY2("CHECK PASSED: signature: \"%s\",\n\tgeneric signature: \"%s\"\n",
-                sign, (gen_sign == NULL) ? "NULL" : gen_sign);
+                sign, (gen_sign == nullptr) ? "null" : gen_sign);
 
         NSK_DISPLAY0("Deallocating the signature array\n");
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) sign))) {
             totRes = STATUS_FAILED;
         }
-        if (gen_sign != NULL)
+        if (gen_sign != nullptr)
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) gen_sign))) {
                 totRes = STATUS_FAILED;
             }
@@ -105,7 +105,7 @@ Java_nsk_jvmti_GetClassSignature_getclsig006_check(
     jclass testedCls;
 
     for (i=0; i<CLS_NUM; i++) {
-        if (!NSK_JNI_VERIFY(jni, (testedCls = jni->FindClass(class_sig[i][1])) != NULL)) {
+        if (!NSK_JNI_VERIFY(jni, (testedCls = jni->FindClass(class_sig[i][1])) != nullptr)) {
             NSK_COMPLAIN1("TEST FAILURE: unable to find class \"%s\"\n\n",
                 class_sig[i][0]);
             res = STATUS_FAILED;
@@ -137,7 +137,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     return JNI_OK;

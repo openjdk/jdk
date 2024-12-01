@@ -127,10 +127,10 @@ void ShenandoahClassLoaderDataRoots<CONCURRENT>::cld_do(CLDClosure* clds, uint w
 class ShenandoahParallelOopsDoThreadClosure : public ThreadClosure {
 private:
   OopClosure* _f;
-  CodeBlobClosure* _cf;
+  NMethodClosure* _cf;
   ThreadClosure* _thread_cl;
 public:
-  ShenandoahParallelOopsDoThreadClosure(OopClosure* f, CodeBlobClosure* cf, ThreadClosure* thread_cl) :
+  ShenandoahParallelOopsDoThreadClosure(OopClosure* f, NMethodClosure* cf, ThreadClosure* thread_cl) :
     _f(f), _cf(cf), _thread_cl(thread_cl) {}
 
   void do_thread(Thread* t) {
@@ -152,16 +152,16 @@ public:
 //      we risk executing that code cache blob, and crashing.
 template <typename T>
 void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
-  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations, true /*FIXME*/);
+  MarkingNMethodClosure nmethods_cl(oops, !NMethodToOopClosure::FixRelocations, true /*FIXME*/);
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
   ResourceMark rm;
 
   if (_unload_classes) {
-    _thread_roots.oops_do(oops, &blobs_cl, worker_id);
+    _thread_roots.oops_do(oops, &nmethods_cl, worker_id);
     _cld_roots.always_strong_cld_do(&clds, worker_id);
   } else {
     _thread_roots.oops_do(oops, nullptr, worker_id);
-    _code_roots.code_blobs_do(&blobs_cl, worker_id);
+    _code_roots.nmethods_do(&nmethods_cl, worker_id);
     _cld_roots.cld_do(&clds, worker_id);
   }
 
@@ -170,11 +170,11 @@ void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
 
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAlive* keep_alive) {
-  CodeBlobToOopClosure update_blobs(keep_alive, CodeBlobToOopClosure::FixRelocations);
-  ShenandoahCodeBlobAndDisarmClosure blobs_and_disarm_Cl(keep_alive);
-  CodeBlobToOopClosure* codes_cl = ShenandoahCodeRoots::use_nmethod_barriers_for_mark() ?
-                                   static_cast<CodeBlobToOopClosure*>(&blobs_and_disarm_Cl) :
-                                   static_cast<CodeBlobToOopClosure*>(&update_blobs);
+  NMethodToOopClosure update_nmethods(keep_alive, NMethodToOopClosure::FixRelocations);
+  ShenandoahNMethodAndDisarmClosure nmethods_and_disarm_Cl(keep_alive);
+  NMethodToOopClosure* codes_cl = ShenandoahCodeRoots::use_nmethod_barriers_for_mark() ?
+                                  static_cast<NMethodToOopClosure*>(&nmethods_and_disarm_Cl) :
+                                  static_cast<NMethodToOopClosure*>(&update_nmethods);
 
   CLDToOopClosure clds(keep_alive, ClassLoaderData::_claim_strong);
 
@@ -184,7 +184,7 @@ void ShenandoahRootUpdater::roots_do(uint worker_id, IsAlive* is_alive, KeepAliv
   _cld_roots.cld_do(&clds, worker_id);
 
   // Process heavy-weight/fully parallel roots the last
-  _code_roots.code_blobs_do(codes_cl, worker_id);
+  _code_roots.nmethods_do(codes_cl, worker_id);
   _thread_roots.oops_do(keep_alive, nullptr, worker_id);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class LotsOfUpdatesTest {
     private static final String ULIMIT_SET_CMD = "ulimit -n 2048";
 
     private static final String JAVA_CMD = ProcessTools.getCommandLine(
-            ProcessTools.createJavaProcessBuilder(LotsOfUpdates.class.getName()));
+            ProcessTools.createLimitedTestJavaProcessBuilder(LotsOfUpdates.class.getName()));
 
     public static void main(String[] args) throws Throwable {
         ProcessTools.executeCommand("sh", "-c", ULIMIT_SET_CMD + " && " + JAVA_CMD)

@@ -30,10 +30,11 @@
 #include "gc/g1/g1ConcurrentRefineThread.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FreeIdSet.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/bufferNodeList.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "memory/iterator.hpp"
@@ -358,8 +359,7 @@ class G1RefineBufferedCards : public StackObj {
   void sort_cards(size_t start_index) {
     QuickSort::sort(&_node_buffer[start_index],
                     _node_buffer_capacity - start_index,
-                    compare_cards,
-                    false);
+                    compare_cards);
   }
 
   // Returns the index to the first clean card in the buffer.

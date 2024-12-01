@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -12,24 +12,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
-			<language type="en" draft="unconfirmed">ingles</language>
-			<language type="lmo" draft="unconfirmed">Lombard</language>
+			<language type="en" draft="contributed">ingles</language>
+			<language type="lmo" draft="contributed">Lombard</language>
 		</languages>
 		<scripts>
-			<script type="Latn" draft="unconfirmed">Latin</script>
+			<script type="Latn" draft="contributed">Latin</script>
 		</scripts>
 		<territories>
-			<territory type="IT" draft="unconfirmed">Italia</territory>
+			<territory type="IT" draft="contributed">Italia</territory>
 		</territories>
 		<measurementSystemNames>
-			<measurementSystemName type="metric" draft="unconfirmed">metregh</measurementSystemName>
+			<measurementSystemName type="metric" draft="contributed">metregh</measurementSystemName>
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ — , ; \: ! ? . … ' ’ &quot; “ ” « » ( ) \[ \] \{ \} @ /]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäãā æ ç éèĕêëē íìĭîïī ñ óòŏôöøō œ úùŭûüū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ — , ; \: ! ? . … '’ &quot;“” « » ( ) \[ \] \{ \} @ /]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -37,45 +36,45 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<months>
 					<monthContext type="format">
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">sginer</month>
-							<month type="2" draft="unconfirmed">fevrer</month>
-							<month type="3" draft="unconfirmed">marz</month>
-							<month type="4" draft="unconfirmed">avril</month>
-							<month type="5" draft="unconfirmed">masg</month>
-							<month type="6" draft="unconfirmed">sgiugn</month>
-							<month type="7" draft="unconfirmed">luj</month>
-							<month type="8" draft="unconfirmed">avost</month>
-							<month type="9" draft="unconfirmed">setember</month>
-							<month type="10" draft="unconfirmed">otover</month>
-							<month type="11" draft="unconfirmed">november</month>
-							<month type="12" draft="unconfirmed">dicember</month>
+							<month type="1" draft="contributed">sginer</month>
+							<month type="2" draft="contributed">fevrer</month>
+							<month type="3" draft="contributed">marz</month>
+							<month type="4" draft="contributed">avril</month>
+							<month type="5" draft="contributed">masg</month>
+							<month type="6" draft="contributed">sgiugn</month>
+							<month type="7" draft="contributed">luj</month>
+							<month type="8" draft="contributed">avost</month>
+							<month type="9" draft="contributed">setember</month>
+							<month type="10" draft="contributed">otover</month>
+							<month type="11" draft="contributed">november</month>
+							<month type="12" draft="contributed">dicember</month>
 						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
 						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">domenega</day>
-							<day type="mon" draft="unconfirmed">lundì</day>
-							<day type="tue" draft="unconfirmed">mardì</day>
-							<day type="wed" draft="unconfirmed">mercoldì</day>
-							<day type="thu" draft="unconfirmed">sgiovedì</day>
-							<day type="fri" draft="unconfirmed">venerdì</day>
-							<day type="sat" draft="unconfirmed">sabet</day>
+							<day type="sun" draft="contributed">domenega</day>
+							<day type="mon" draft="contributed">lundì</day>
+							<day type="tue" draft="contributed">mardì</day>
+							<day type="wed" draft="contributed">mercoldì</day>
+							<day type="thu" draft="contributed">sgiovedì</day>
+							<day type="fri" draft="contributed">venerdì</day>
+							<day type="sat" draft="contributed">sabet</day>
 						</dayWidth>
 					</dayContext>
 				</days>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">del matin</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">de sira</dayPeriod>
+							<dayPeriod type="am" draft="contributed">del matin</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">de sira</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<dateTimeFormats>
 					<availableFormats>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
 					</availableFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -83,15 +82,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<timeZoneNames>
 			<metazone type="GMT">
 				<long>
-					<standard draft="unconfirmed">Temp Medi de Greenwich</standard>
+					<standard draft="contributed">Temp Medi de Greenwich</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">’</group>
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed">’</group>
 		</symbols>
 	</numbers>
 	<personNames>

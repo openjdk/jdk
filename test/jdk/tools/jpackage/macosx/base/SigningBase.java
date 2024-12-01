@@ -33,6 +33,8 @@ import jdk.jpackage.test.Executor.Result;
 public class SigningBase {
 
     public static int DEFAULT_INDEX = 0;
+    public static final String ASCII_INDEX = "0";
+    public static final String UNICODE_INDEX = "0";
     private static String [] DEV_NAMES = {
         "jpackage.openjdk.java.net",
         "jpackage.openjdk.java.net (ö)",
@@ -182,22 +184,30 @@ public class SigningBase {
         checkString(output, lookupString);
     }
 
-    private static List<String> pkgutilResult(Path target) {
+    private static List<String> pkgutilResult(Path target, boolean signed) {
         List<String> result = new Executor()
                 .setExecutable("/usr/sbin/pkgutil")
                 .addArguments("--check-signature",
                         target.toString())
-                .executeAndGetOutput();
+                .saveOutput()
+                .execute(signed ? 0 : 1)
+                .getOutput();
 
         return result;
     }
 
-    private static void verifyPkgutilResult(List<String> result, int certIndex) {
+    private static void verifyPkgutilResult(List<String> result, boolean signed,
+                                            int certIndex) {
         result.stream().forEachOrdered(TKit::trace);
-        String lookupString = "Status: signed by";
-        checkString(result, lookupString);
-        lookupString = "1. " + getInstallerCert(certIndex);
-        checkString(result, lookupString);
+        if (signed) {
+            String lookupString = "Status: signed by";
+            checkString(result, lookupString);
+            lookupString = "1. " + getInstallerCert(certIndex);
+            checkString(result, lookupString);
+        } else {
+            String lookupString = "Status: no signature";
+            checkString(result, lookupString);
+        }
     }
 
     public static void verifyCodesign(Path target, boolean signed, int certIndex) {
@@ -228,9 +238,9 @@ public class SigningBase {
         verifySpctlResult(output, target, type, result.getExitCode(), certIndex);
     }
 
-    public static void verifyPkgutil(Path target, int certIndex) {
-        List<String> result = pkgutilResult(target);
-        verifyPkgutilResult(result, certIndex);
+    public static void verifyPkgutil(Path target, boolean signed, int certIndex) {
+        List<String> result = pkgutilResult(target, signed);
+        verifyPkgutilResult(result, signed, certIndex);
     }
 
     public static void verifyAppImageSignature(JPackageCommand appImageCmd,
@@ -247,7 +257,7 @@ public class SigningBase {
         Path appImage = appImageCmd.outputBundle();
         SigningBase.verifyCodesign(appImage, isSigned, SigningBase.DEFAULT_INDEX);
         if (isSigned) {
-            SigningBase.verifySpctl(appImage, "exec", 0);
+            SigningBase.verifySpctl(appImage, "exec", SigningBase.DEFAULT_INDEX);
         }
     }
 

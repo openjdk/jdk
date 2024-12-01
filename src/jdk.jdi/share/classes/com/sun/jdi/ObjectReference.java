@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ public interface ObjectReference extends Value {
      * consequently, may result in application behavior under the
      * debugger that differs from its non-debugged behavior.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
-     * -see {@link VirtualMachine#canBeModified()}.
+     * - see {@link VirtualMachine#canBeModified()}.
      */
     void disableCollection();
 
@@ -317,7 +317,7 @@ public interface ObjectReference extends Value {
      * is necessary only if garbage collection was previously disabled
      * with {@link #disableCollection}.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
-     * -see {@link VirtualMachine#canBeModified()}.
+     * - see {@link VirtualMachine#canBeModified()}.
      */
     void enableCollection();
 
@@ -328,7 +328,7 @@ public interface ObjectReference extends Value {
      * @return <code>true</code> if this {@link ObjectReference} has been collected;
      * <code>false</code> otherwise.
      * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
-     * -see {@link VirtualMachine#canBeModified()}.
+     * - see {@link VirtualMachine#canBeModified()}.
      */
     boolean isCollected();
 
@@ -345,17 +345,18 @@ public interface ObjectReference extends Value {
 
     /**
      * Returns a List containing a {@link ThreadReference} for
-     * each thread currently waiting for this object's monitor.
+     * each platform thread currently waiting for this object's monitor.
      * See {@link ThreadReference#currentContendedMonitor} for
      * information about when a thread is considered to be waiting
      * for a monitor.
      * <p>
      * Not all target VMs support this operation. See
-     * VirtualMachine#canGetMonitorInfo to determine if the
+     * {@link VirtualMachine#canGetMonitorInfo} to determine if the
      * operation is supported.
      *
      * @return a List of {@link ThreadReference} objects. The list
-     * has zero length if no threads are waiting for the monitor.
+     * has zero length if no threads are waiting for the monitor,
+     * or only virtual threads are waiting for the monitor.
      * @throws java.lang.UnsupportedOperationException if the
      * target VM does not support this operation.
      * @throws IncompatibleThreadStateException if any
@@ -366,17 +367,18 @@ public interface ObjectReference extends Value {
         throws IncompatibleThreadStateException;
 
     /**
-     * Returns an {@link ThreadReference} for the thread, if any,
+     * Returns a {@link ThreadReference} for the platform thread, if any,
      * which currently owns this object's monitor.
      * See {@link ThreadReference#ownedMonitors} for a definition
      * of ownership.
      * <p>
      * Not all target VMs support this operation. See
-     * VirtualMachine#canGetMonitorInfo to determine if the
+     * {@link VirtualMachine#canGetMonitorInfo} to determine if the
      * operation is supported.
      *
-     * @return the {@link ThreadReference} which currently owns the
-     * monitor, or null if it is unowned.
+     * @return the {@link ThreadReference} of the platform thread which
+     * currently owns the monitor, or null if the monitor is owned
+     * by a virtual thread or not owned.
      *
      * @throws java.lang.UnsupportedOperationException if the
      * target VM does not support this operation.
@@ -386,13 +388,14 @@ public interface ObjectReference extends Value {
     ThreadReference owningThread() throws IncompatibleThreadStateException;
 
     /**
-     * Returns the number times this object's monitor has been
-     * entered by the current owning thread.
+     * Returns the number of times this object's monitor has been entered by
+     * the current owning thread if the owning thread is platform thread;
+     * Returns 0 if not owned by a platform thread.
      * See {@link ThreadReference#ownedMonitors} for a definition
      * of ownership.
      * <p>
      * Not all target VMs support this operation. See
-     * VirtualMachine#canGetMonitorInfo to determine if the
+     * {@link VirtualMachine#canGetMonitorInfo} to determine if the
      * operation is supported.
      *
      * @see #owningThread
@@ -422,12 +425,12 @@ public interface ObjectReference extends Value {
      * @param maxReferrers  The maximum number of referring objects to return.
      *                      Must be non-negative.  If zero, all referring
      *                      objects are returned.
-     * @return a of List of {@link ObjectReference} objects. If there are
+     * @return a List of {@link ObjectReference} objects. If there are
      *  no objects that reference this object, a zero-length list is returned..
      * @throws java.lang.UnsupportedOperationException if
      * the target virtual machine does not support this
      * operation - see
-     * {@link VirtualMachine#canGetInstanceInfo() canGetInstanceInfo()}
+     * {@link VirtualMachine#canGetInstanceInfo()}
      * @throws java.lang.IllegalArgumentException if maxReferrers is less
      *         than zero.
      * @since 1.6

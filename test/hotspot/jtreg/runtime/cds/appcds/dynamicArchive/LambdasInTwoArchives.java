@@ -93,7 +93,7 @@ public class LambdasInTwoArchives extends DynamicArchiveTestBase {
                 "-Xlog:cds",
                 "-Xlog:cds+lambda",
                 "-cp", appJar, mainClass};
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(launchArgs);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(launchArgs);
         OutputAnalyzer oa = TestCommon.executeAndLog(pb, "lambda-classes");
         oa.shouldHaveExitValue(0);
 

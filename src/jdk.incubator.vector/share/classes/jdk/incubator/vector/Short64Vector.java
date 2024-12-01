@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class Short64Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short64Vector)
             super.selectFromTemplate((Short64Vector) v,
-                                     (Short64Mask) m);  // specialize
+                                     Short64Mask.class, (Short64Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Short64Vector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (Short64Vector)
+            super.selectFromTemplate((Short64Vector) v1, (Short64Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -836,6 +843,13 @@ final class Short64Vector extends ShortVector {
             return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
+        @Override
+        @ForceInline
+        public Short64Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short64Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short64Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
+        }
+
         @ForceInline
         @Override
         public Short64Shuffle rearrange(VectorShuffle<Short> shuffle) {
@@ -869,6 +883,12 @@ final class Short64Vector extends ShortVector {
         return super.fromArray0Template(Short64Mask.class, a, offset, (Short64Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromArray0(short[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Short> m) {
+        return super.fromArray0Template(Short64Mask.class, a, offset, indexMap, mapOffset, (Short64Mask) m);
+    }
 
     @ForceInline
     @Override

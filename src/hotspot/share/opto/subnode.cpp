@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,16 @@ static bool is_cloop_increment(Node* inc) {
 //
 static bool ok_to_convert(Node* inc, Node* var) {
   return !(is_cloop_increment(inc) || var->is_cloop_ind_var());
+}
+
+static bool is_cloop_condition(BoolNode* bol) {
+  for (DUIterator_Fast imax, i = bol->fast_outs(imax); i < imax; i++) {
+    Node* out = bol->fast_out(i);
+    if (out->is_BaseCountedLoopEnd()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 //------------------------------Ideal------------------------------------------
@@ -633,6 +643,14 @@ CmpNode *CmpNode::make(Node *in1, Node *in2, BasicType bt, bool unsigned_comp) {
         return new CmpULNode(in1, in2);
       }
       return new CmpLNode(in1, in2);
+    case T_OBJECT:
+    case T_ARRAY:
+    case T_ADDRESS:
+    case T_METADATA:
+      return new CmpPNode(in1, in2);
+    case T_NARROWOOP:
+    case T_NARROWKLASS:
+      return new CmpNNode(in1, in2);
     default:
       fatal("Not implemented for %s", type2name(bt));
   }
@@ -1556,15 +1574,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jint) c" into "cmpu X (c + min_jint)"
   if (cop == Op_CmpI &&
       cmp1_op == Op_AddI &&
-      !is_cloop_increment(cmp1) &&
-      phase->type(cmp1->in(2)) == TypeInt::MIN) {
+      phase->type(cmp1->in(2)) == TypeInt::MIN &&
+      !is_cloop_condition(this)) {
     if (cmp2_op == Op_ConI) {
       Node* ncmp2 = phase->intcon(java_add(cmp2->get_int(), min_jint));
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddI &&
-               !is_cloop_increment(cmp2) &&
-               phase->type(cmp2->in(2)) == TypeInt::MIN) {
+               phase->type(cmp2->in(2)) == TypeInt::MIN &&
+               !is_cloop_condition(this)) {
       Node* ncmp = phase->transform(new CmpUNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
@@ -1574,15 +1592,15 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // and    "cmp (add X min_jlong) c" into "cmpu X (c + min_jlong)"
   if (cop == Op_CmpL &&
       cmp1_op == Op_AddL &&
-      !is_cloop_increment(cmp1) &&
-      phase->type(cmp1->in(2)) == TypeLong::MIN) {
+      phase->type(cmp1->in(2)) == TypeLong::MIN &&
+      !is_cloop_condition(this)) {
     if (cmp2_op == Op_ConL) {
       Node* ncmp2 = phase->longcon(java_add(cmp2->get_long(), min_jlong));
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), ncmp2));
       return new BoolNode(ncmp, _test._test);
     } else if (cmp2_op == Op_AddL &&
-               !is_cloop_increment(cmp2) &&
-               phase->type(cmp2->in(2)) == TypeLong::MIN) {
+               phase->type(cmp2->in(2)) == TypeLong::MIN &&
+               !is_cloop_condition(this)) {
       Node* ncmp = phase->transform(new CmpULNode(cmp1->in(1), cmp2->in(1)));
       return new BoolNode(ncmp, _test._test);
     }
@@ -1605,25 +1623,8 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test.negate() );
   }
 
-  // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
-  // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
-  if (cop == Op_CmpU &&
-      cmp1_op == Op_AndI) {
-    Node* bound = nullptr;
-    if (_test._test == BoolTest::le) {
-      bound = cmp2;
-    } else if (_test._test == BoolTest::lt &&
-               cmp2->Opcode() == Op_AddI &&
-               cmp2->in(2)->find_int_con(0) == 1) {
-      bound = cmp2->in(1);
-    }
-    if (cmp1->in(2) == bound || cmp1->in(1) == bound) {
-      return ConINode::make(1);
-    }
-  }
-
   // Change ((x & (m - 1)) u< m) into (m > 0)
-  // This is the off-by-one variant of the above
+  // This is the off-by-one variant of ((x & m) u<= m)
   if (cop == Op_CmpU &&
       _test._test == BoolTest::lt &&
       cmp1_op == Op_AndI) {
@@ -1809,9 +1810,39 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
+// Change ((x & m) u<= m) or ((m & x) u<= m) to always true
+// Same with ((x & m) u< m+1) and ((m & x) u< m+1)
+const Type* BoolNode::Value_cmpu_and_mask(PhaseValues* phase) const {
+  Node* cmp = in(1);
+  if (cmp != nullptr && cmp->Opcode() == Op_CmpU) {
+    Node* cmp1 = cmp->in(1);
+    Node* cmp2 = cmp->in(2);
+
+    if (cmp1->Opcode() == Op_AndI) {
+      Node* bound = nullptr;
+      if (_test._test == BoolTest::le) {
+        bound = cmp2;
+      } else if (_test._test == BoolTest::lt && cmp2->Opcode() == Op_AddI && cmp2->in(2)->find_int_con(0) == 1) {
+        bound = cmp2->in(1);
+      }
+
+      if (cmp1->in(2) == bound || cmp1->in(1) == bound) {
+        return TypeInt::ONE;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
+  const Type* t = Value_cmpu_and_mask(phase);
+  if (t != nullptr) {
+    return t;
+  }
+
   return _test.cc2logical( phase->type( in(1) ) );
 }
 

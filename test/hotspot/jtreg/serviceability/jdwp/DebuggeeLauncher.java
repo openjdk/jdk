@@ -69,7 +69,7 @@ public class DebuggeeLauncher implements StreamHandler.Listener {
      */
     public void launchDebuggee() throws Throwable {
 
-        ProcessBuilder pb = ProcessTools.createTestJvm(JDWP_OPT, DEBUGGEE);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(JDWP_OPT, DEBUGGEE);
         p = pb.start();
         StreamHandler inputHandler = new StreamHandler(p.getInputStream(), this);
         StreamHandler errorHandler = new StreamHandler(p.getErrorStream(), l -> System.out.println("[stderr]: " + l));

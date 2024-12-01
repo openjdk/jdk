@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,12 @@
  * questions.
  */
 
-import java.io.IOException;
 import java.util.List;
 
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import tools.javac.combo.CompilationTestCase;
-import tools.javac.combo.JavacTemplateTestBase;
 
-import static java.util.stream.Collectors.toList;
-
-@Test
-public class ExpSwitchNestingTest extends CompilationTestCase {
+class ExpSwitchNestingTest extends CompilationTestCase {
     private static final String RUNNABLE = "Runnable r = () -> { # };";
     private static final String INT_FN = "java.util.function.IntSupplier r = () -> { # };";
     private static final String LABEL = "label: #";
@@ -77,14 +70,16 @@ public class ExpSwitchNestingTest extends CompilationTestCase {
         setProgramShell(SHELL);
     }
 
-    public void testReallySimpleCases() {
+    @Test
+    void testReallySimpleCases() {
         for (String s : CONTAINERS)
             assertOK(s, NOTHING);
         for (String s : CONTAINER_STATEMENTS)
             assertOK(LABEL, s, NOTHING);
     }
 
-    public void testLambda() {
+    @Test
+    void testLambda() {
         assertOK(RUNNABLE, RETURN_N);
         assertOK(RUNNABLE, NOTHING);
         assertOK(INT_FN, RETURN_Z);
@@ -106,7 +101,8 @@ public class ExpSwitchNestingTest extends CompilationTestCase {
         assertFail("compiler.err.undef.label", LABEL, BLOCK, INT_FN, CONTINUE_L);
     }
 
-    public void testEswitch() {
+    @Test
+    void testEswitch() {
         //Int-valued switch expressions
         assertOK(ESWITCH_Z, YIELD_Z);
         assertOK(LABEL, BLOCK, ESWITCH_Z, YIELD_Z);
@@ -151,7 +147,8 @@ public class ExpSwitchNestingTest extends CompilationTestCase {
 
     }
 
-    public void testNestedInExpSwitch() {
+    @Test
+    void testNestedInExpSwitch() {
         assertOK(ESWITCH_Z, IF,     YIELD_Z);
         assertOK(ESWITCH_Z, BLOCK,  YIELD_Z);
         //
@@ -184,7 +181,8 @@ public class ExpSwitchNestingTest extends CompilationTestCase {
         assertOK(ESWITCH_Z, YIELD_Z, BLOCK, DO, IF, YIELD_Z);
     }
 
-    public void testBreakExpressionLabelDisambiguation() {
+    @Test
+    void testBreakExpressionLabelDisambiguation() {
         assertOK(DEF_LABEL_VAR, ESWITCH_Z, YIELD_L);
         assertFail("compiler.err.undef.label", DEF_LABEL_VAR, ESWITCH_Z, BREAK_L);
         assertFail("compiler.err.break.outside.switch.expression", LABEL, FOR, BLOCK, DEF_LABEL_VAR, ESWITCH_Z, BREAK_L);
@@ -194,11 +192,13 @@ public class ExpSwitchNestingTest extends CompilationTestCase {
         //
     }
 
-    public void testFunReturningSwitchExp() {
+    @Test
+    void testFunReturningSwitchExp() {
         assertOK(INT_FN_ESWITCH, YIELD_INT_FN);
     }
 
-    public void testContinueLoops() {
+    @Test
+    void testContinueLoops() {
         assertOK(LABEL, FOR, CONTINUE_L);
         assertOK(LABEL, FOR_EACH, CONTINUE_L);
         assertOK(LABEL, WHILE, CONTINUE_L);

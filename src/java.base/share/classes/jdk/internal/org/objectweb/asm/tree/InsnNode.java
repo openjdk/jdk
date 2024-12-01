@@ -103,4 +103,3 @@ public class InsnNode extends AbstractInsnNode {
         return new InsnNode(opcode).cloneAnnotations(this);
     }
 }
-

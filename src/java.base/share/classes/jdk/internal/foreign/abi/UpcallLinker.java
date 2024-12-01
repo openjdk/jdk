@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.internal.foreign.abi;
 
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -43,13 +42,12 @@ import static java.lang.invoke.MethodHandles.exactInvoker;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
-import static sun.security.action.GetBooleanAction.privilegedGetProperty;
 
 public class UpcallLinker {
     private static final boolean DEBUG =
-        privilegedGetProperty("jdk.internal.foreign.UpcallLinker.DEBUG");
+            Boolean.getBoolean("jdk.internal.foreign.UpcallLinker.DEBUG");
     private static final boolean USE_SPEC = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.UpcallLinker.USE_SPEC", "true"));
+            System.getProperty("jdk.internal.foreign.UpcallLinker.USE_SPEC", "true"));
 
     private static final MethodHandle MH_invokeInterpBindings;
 
@@ -106,6 +104,9 @@ public class UpcallLinker {
             doBindings = insertArguments(exactInvoker(doBindings.type()), 0, doBindings);
             long entryPoint = makeUpcallStub(doBindings, abi, conv,
                     callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
+            if (entryPoint == 0) {
+                throw new OutOfMemoryError("Failed to allocate upcall stub");
+            }
             return UpcallStubs.makeUpcall(entryPoint, scope);
         };
     }
@@ -177,7 +178,7 @@ public class UpcallLinker {
             Object[] returnValues = new Object[invData.retIndexMap.size()];
             if (leaf.type().returnType() != void.class) {
                 BindingInterpreter.unbox(o, invData.callingSequence.returnBindings(),
-                        (storage, type, value) -> returnValues[invData.retIndexMap.get(storage)] = value, null);
+                        (storage, value) -> returnValues[invData.retIndexMap.get(storage)] = value, null);
             }
 
             if (returnValues.length == 0) {
@@ -187,15 +188,10 @@ public class UpcallLinker {
             } else {
                 assert invData.callingSequence.needsReturnBuffer();
 
-                Binding.VMStore[] retMoves = invData.callingSequence.returnBindings().stream()
-                        .filter(Binding.VMStore.class::isInstance)
-                        .map(Binding.VMStore.class::cast)
-                        .toArray(Binding.VMStore[]::new);
-
-                assert returnValues.length == retMoves.length;
+                assert returnValues.length == invData.retMoves().length;
                 int retBufWriteOffset = 0;
-                for (int i = 0; i < retMoves.length; i++) {
-                    Binding.VMStore store = retMoves[i];
+                for (int i = 0; i < invData.retMoves().length; i++) {
+                    Binding.VMStore store = invData.retMoves()[i];
                     Object value = returnValues[i];
                     SharedUtils.writeOverSized(returnBuffer.asSlice(retBufWriteOffset), store.type(), value);
                     retBufWriteOffset += invData.abi.arch.typeSize(store.storage().type());

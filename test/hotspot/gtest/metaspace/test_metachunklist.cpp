@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ TEST_VM(metaspace, metachunklist) {
   size_t total_size = 0;
 
   for (int i = 0; i < 10; i++) {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     context.alloc_chunk_expect_success(&c, ChunkLevelRanges::all_chunks().random_value());
     chunks[i] = c;
     total_size += c->committed_words();
@@ -95,7 +95,7 @@ TEST_VM(metaspace, freechunklist) {
   // Make every other chunk randomly uncommitted, and later we check that committed chunks are sorted in at the front
   // of the lists.
   for (int i = 0; i < 100; i++) {
-    Metachunk* c = NULL;
+    Metachunk* c = nullptr;
     context.alloc_chunk_expect_success(&c, ChunkLevelRanges::all_chunks().random_value());
     bool uncommitted_chunk = i % 3;
     if (uncommitted_chunk) {
@@ -122,7 +122,7 @@ TEST_VM(metaspace, freechunklist) {
   for (chunklevel_t lvl = LOWEST_CHUNK_LEVEL; lvl <= HIGHEST_CHUNK_LEVEL; lvl++) {
     Metachunk* c = lst.remove_first(lvl);
     bool found_uncommitted = false;
-    while (c != NULL) {
+    while (c != nullptr) {
 
       LOG("<-" METACHUNK_FULL_FORMAT, METACHUNK_FULL_FORMAT_ARGS(c));
 
@@ -153,7 +153,7 @@ TEST_VM(metaspace, freechunklist_retrieval) {
 
   ChunkGtestContext context;
   FreeChunkList fcl;
-  Metachunk* c = NULL;
+  Metachunk* c = nullptr;
 
   // For a chunk level which allows us to have partially committed chunks...
   const size_t chunk_word_size = Settings::commit_granule_words() * 4;
@@ -162,19 +162,19 @@ TEST_VM(metaspace, freechunklist_retrieval) {
   // get some chunks:
 
   // ...a completely uncommitted one ...
-  Metachunk* c_0 = NULL;
+  Metachunk* c_0 = nullptr;
   context.alloc_chunk_expect_success(&c_0, lvl, lvl, 0);
 
   // ... a fully committed one ...
-  Metachunk* c_full = NULL;
+  Metachunk* c_full = nullptr;
   context.alloc_chunk_expect_success(&c_full, lvl);
 
   // ... a chunk with one commit granule committed ...
-  Metachunk* c_1g = NULL;
+  Metachunk* c_1g = nullptr;
   context.alloc_chunk_expect_success(&c_1g, lvl, lvl, Settings::commit_granule_words());
 
   // ... a chunk with two commit granules committed.
-  Metachunk* c_2g = NULL;
+  Metachunk* c_2g = nullptr;
   context.alloc_chunk_expect_success(&c_2g, lvl, lvl, Settings::commit_granule_words() * 2);
 
   LOG("c_0: " METACHUNK_FULL_FORMAT, METACHUNK_FULL_FORMAT_ARGS(c_0));

@@ -176,11 +176,6 @@ inline intptr_t* frame::unextended_sp() const {
   return (intptr_t *) -1;
 }
 
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  Unimplemented();
-  return nullptr;
-}
-
 inline int frame::compiled_frame_stack_argsize() const {
   Unimplemented();
   return 0;

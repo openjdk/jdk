@@ -117,7 +117,7 @@ public class TestDisableAutoVectOpcodes {
     }
 
     @Test
-    @IR(failOn = {IRNode.COUNTTRAILINGZEROS_VL})
+    @IR(failOn = {IRNode.COUNT_TRAILING_ZEROS_VL})
     public void testNumberOfTrailingZeros() {
         for (int i = 0; i < SIZE; ++i) {
             inta[i] = Long.numberOfTrailingZeros(longa[i]);
@@ -125,7 +125,7 @@ public class TestDisableAutoVectOpcodes {
     }
 
     @Test
-    @IR(failOn = {IRNode.COUNTLEADINGZEROS_VL})
+    @IR(failOn = {IRNode.COUNT_LEADING_ZEROS_VL})
     public void testNumberOfLeadingZeros() {
         for (int i = 0; i < SIZE; ++i) {
             inta[i] = Long.numberOfLeadingZeros(longa[i]);

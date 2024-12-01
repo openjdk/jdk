@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class Test {
     private static String REGEXP = "^(CodeCache|(CodeHeap.*)): size=\\d+Kb used=\\d+Kb max_used=\\d+Kb free=\\d+Kb";
 
     public static void main(String[] args) throws Exception {
-        var pb = ProcessTools.createTestJvm(
+        var pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:-PrintCodeCache",
                 "-XX:+PrintCodeCacheOnCompilation",
                 "-XX:-Inline",

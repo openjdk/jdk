@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,77 @@
 
 /*
  * @test
- * @bug      4632553 4973607 8026567
+ * @bug      4632553 4973607 8026567 8242564
  * @summary  No need to include type name (class, interface, etc.) before
  *           every single type in class tree.
  *           Make sure class tree includes heirarchy for enums and annotation
  *           types.
- * @library  ../../lib
+ *           Make sure class tree handles undefined types in the class
+ *           hierarchy.
+ * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @build    javadoc.tester.*
+ * @build    toolbox.ToolBox javadoc.tester.*
  * @run main TestClassTree
  */
 
+import java.io.IOException;
+import java.nio.file.Path;
+
 import javadoc.tester.JavadocTester;
+import toolbox.ToolBox;
 
 public class TestClassTree extends JavadocTester {
+
+    private final ToolBox tb = new ToolBox();
 
     public static void main(String... args) throws Exception {
         var tester = new TestClassTree();
         tester.runTests();
+    }
+
+    /**
+     * Given badpkg package containing class ChildClass with UndefinedClass
+     *       base class, implementing UndefinedInterface and a defined
+     *       interface
+     * When the javadoc is generated with '--ignore-source-errors option'
+     * Then javadoc exits successfully
+     * And generates html for the ChildClass with UndefinedClass base class
+     * And UndefinedInterface is not present in html
+     */
+    @Test
+    public void testBadPkg(Path base) throws IOException {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package badpkg;
+                    public class ChildClass extends UndefinedClass
+                        implements UndefinedInterface, Iterable {
+
+                    }
+                    """
+        );
+
+        javadoc("--ignore-source-errors",
+                "-d", base.resolve("badout").toString(),
+                "--no-platform-links",
+                "-sourcepath", src.toString(),
+                "badpkg");
+
+
+        checkExit(Exit.OK);
+        checkOutput("badpkg/package-tree.html", true,
+                """
+                    <li class="circle">badpkg.<a href="ChildClass.html" class="type-name-link" title="\
+                    class in badpkg">ChildClass</a> (implements java.lang.Iterable&lt;T&gt;)</li>
+                    """);
+        checkOutput("badpkg/ChildClass.html", true,
+                """
+                    <div class="type-signature"><span class="modifiers">public class </span>\
+                    <span class="element-name type-name-label">ChildClass</span>
+                    <span class="extends-implements">extends UndefinedClass
+                    implements java.lang.Iterable</span></div>
+                    """);
+        checkOutput("badpkg/ChildClass.html", false, "UndefinedInterface");
     }
 
     @Test

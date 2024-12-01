@@ -44,7 +44,7 @@ public class DoubleAgentTest {
         String jdwpOption = "-agentlib:jdwp=transport=dt_socket"
                          + ",server=y" + ",suspend=n" + ",address=*:0";
 
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-classpath",
+        OutputAnalyzer output = ProcessTools.executeTestJava("-classpath",
                 TEST_CLASSES,
                 jdwpOption, // Notice jdwpOption specified twice
                 jdwpOption,

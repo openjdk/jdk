@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ TEST_VM(CollectedHeap, is_in) {
   uintptr_t epsilon = (uintptr_t) MinObjAlignment;
   uintptr_t outside_heap = (uintptr_t) &epsilon;
 
-  // Test that NULL is not in the heap.
-  ASSERT_FALSE(heap->is_in(NULL)) << "NULL is unexpectedly in the heap";
+  // Test that nullptr is not in the heap.
+  ASSERT_FALSE(heap->is_in(nullptr)) << "null is unexpectedly in the heap";
 
   // Test that a pointer to outside the heap start is reported as outside the heap.
   ASSERT_FALSE(heap->is_in((void*)outside_heap)) << "outside_heap: " << outside_heap

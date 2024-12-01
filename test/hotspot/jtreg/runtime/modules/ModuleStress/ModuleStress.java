@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class ModuleStress {
         //   loaders (boot, application, platform).  Thus there is
         //   not a need to walk those lists at a GC safepoint since
         //   those loaders never die.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
              "-Xbootclasspath/a:.",
              "-Xlog:module=trace",
              "-version");
@@ -85,7 +85,7 @@ public class ModuleStress {
         //   m1x's module readability list and package p2's exportability should
         //   not be walked at a GC safepoint since both modules are defined to
         //   the same loader and thus have the exact same life cycle.
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
              "-Xbootclasspath/a:.",
              "-Xlog:module=trace",
              "ModuleSameCLMain");
@@ -99,7 +99,7 @@ public class ModuleStress {
         //   m1x's module readability list and package p2's exportability list must
         //   be walked at a GC safepoint since both modules are defined to non-builtin
         //   class loaders which could die and thus be unloaded.
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
              "-Xbootclasspath/a:.",
              "-Xlog:module=trace",
              "ModuleNonBuiltinCLMain");
@@ -116,7 +116,7 @@ public class ModuleStress {
         //   m3x is defined to the system class loader, m2x's module readability
         //   list does not have to be walked at a GC safepoint, but package p2's
         //   exportability list does.
-        pb = ProcessTools.createJavaProcessBuilder(
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
              "-Djava.system.class.loader=CustomSystemClassLoader",
              "-Xbootclasspath/a:.",
              "-Xlog:module=trace",

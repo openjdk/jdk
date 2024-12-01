@@ -25,7 +25,7 @@ package gc.z;
 
 /*
  * @test TestPageCacheFlush
- * @requires vm.gc.ZGenerational
+ * @requires vm.gc.Z
  * @summary Test ZGC page cache flushing
  * @library /test/lib
  * @run driver gc.z.TestPageCacheFlush
@@ -68,16 +68,15 @@ public class TestPageCacheFlush {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessTools.executeProcess(ProcessTools.createJavaProcessBuilder(
-                                    "-XX:+UseZGC",
-                                    "-XX:+ZGenerational",
-                                    "-Xms128M",
-                                    "-Xmx128M",
-                                    "-Xlog:gc,gc+init,gc+heap=debug",
-                                    Test.class.getName()))
-                    .outputTo(System.out)
-                    .errorTo(System.out)
-                    .shouldContain("Page Cache Flushed:")
-                    .shouldHaveExitValue(0);
+        ProcessTools.executeTestJava(
+            "-XX:+UseZGC",
+            "-Xms128M",
+            "-Xmx128M",
+            "-Xlog:gc,gc+init,gc+heap=debug",
+            Test.class.getName())
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldContain("Page Cache Flushed:")
+                .shouldHaveExitValue(0);
     }
 }

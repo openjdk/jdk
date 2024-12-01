@@ -38,8 +38,7 @@ import jdk.internal.javac.PreviewFeature;
  *
  * @jls 14.30.1 Kinds of Patterns
  *
- * @since 21
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
 public interface AnyPatternTree extends PatternTree {
 }

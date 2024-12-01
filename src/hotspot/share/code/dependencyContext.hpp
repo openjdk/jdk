@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ class DependencyContext : public StackObj {
   volatile uint64_t*       _last_cleanup_addr;
 
   bool claim_cleanup();
+  static bool delete_on_release();
   void set_dependencies(nmethodBucket* b);
   nmethodBucket* dependencies();
   nmethodBucket* dependencies_not_unloading();
@@ -123,6 +124,7 @@ class DependencyContext : public StackObj {
 
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose);
+  bool is_empty();
 #endif //PRODUCT
   bool is_dependent_nmethod(nmethod* nm);
 };

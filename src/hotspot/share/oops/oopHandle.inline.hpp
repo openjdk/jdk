@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,16 @@ inline void OopHandle::release(OopStorage* storage) {
 }
 
 inline void OopHandle::replace(oop obj) {
-  oop* ptr = ptr_raw();
-  assert(ptr != nullptr, "should not use replace");
-  NativeAccess<>::oop_store(ptr, obj);
+  assert(!is_empty(), "should not use replace");
+  NativeAccess<>::oop_store(_obj, obj);
 }
 
 inline oop OopHandle::xchg(oop new_value) {
   return NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(_obj, new_value);
+}
+
+inline oop OopHandle::cmpxchg(oop old_value, oop new_value) {
+  return NativeAccess<MO_SEQ_CST>::oop_atomic_cmpxchg(_obj, old_value, new_value);
 }
 
 #endif // SHARE_OOPS_OOPHANDLE_INLINE_HPP

@@ -23,9 +23,11 @@
 
 package jdk.httpclient.test.lib.http2;
 
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection.ResponseHeaders;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
+import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.ResetFrame;
 
 import javax.net.ssl.SSLSession;
@@ -38,6 +40,7 @@ import java.net.http.HttpHeaders;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiPredicate;
 
 public class Http2TestExchangeImpl implements Http2TestExchange {
 
@@ -131,8 +134,13 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         return os;
     }
 
-    @Override
     public void sendResponseHeaders(int rCode, long responseLength) throws IOException {
+        sendResponseHeaders(rCode, responseLength, (n,v) -> false);
+    }
+    @Override
+    public void sendResponseHeaders(int rCode, long responseLength,
+                                    BiPredicate<CharSequence, CharSequence> insertionPolicy)
+            throws IOException {
         // Do not set Content-Length for 100, and do not set END_STREAM
         if (rCode == 100) responseLength = 0;
 
@@ -145,15 +153,15 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         rspheadersBuilder.setHeader(":status", Integer.toString(rCode));
         HttpHeaders headers = rspheadersBuilder.build();
 
-        Http2TestServerConnection.ResponseHeaders response
-                = new Http2TestServerConnection.ResponseHeaders(headers);
+        ResponseHeaders response
+                = new ResponseHeaders(headers, insertionPolicy);
         response.streamid(streamid);
         response.setFlag(HeaderFrame.END_HEADERS);
 
 
         if (responseLength < 0 || rCode == 204) {
             response.setFlag(HeadersFrame.END_STREAM);
-            conn.outputQ.put(response);
+            sendResponseHeaders(response);
             // Put a reset frame on the outputQ if there is still unconsumed data in the input stream and output stream
             // is going to be marked closed.
             if (is instanceof BodyInputStream bis && bis.unconsumed()) {
@@ -161,10 +169,19 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
             }
             os.markClosed();
         } else {
-            conn.outputQ.put(response);
+            sendResponseHeaders(response);
         }
         os.goodToGo();
         System.err.println("Sent response headers " + rCode);
+    }
+
+    public void sendResponseHeaders(ResponseHeaders response) throws IOException {
+        conn.outputQ.put(response);
+    }
+
+    @Override
+    public void sendFrames(List<Http2Frame> frames) throws IOException {
+        conn.sendFrames(frames);
     }
 
     @Override
@@ -213,6 +230,11 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         } catch (IOException ex) {
             System.err.println("TestServer: pushPromise exception: " + ex);
         }
+    }
+
+    @Override
+    public String getConnectionKey() {
+        return conn.connectionKey();
     }
 
     private boolean isHeadRequest() {

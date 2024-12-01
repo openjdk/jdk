@@ -25,19 +25,15 @@
  * @test
  * @bug 8022186 8271254
  * @summary javac generates dead code if a try with an empty body has a finalizer
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  *          jdk.compiler/com.sun.tools.javac.util
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.InvokeInstruction;
 import com.sun.tools.javac.util.Assert;
 import java.io.BufferedInputStream;
 import java.nio.file.Files;
@@ -63,12 +59,12 @@ public class DeadCodeGeneratedForEmptyTryTest {
 
     void checkClassFile(final Path path) throws Exception {
         numberOfRefToStr = 0;
-        ClassModel classFile = Classfile.of().parse(
+        ClassModel classFile = ClassFile.of().parse(
                 new BufferedInputStream(Files.newInputStream(path)).readAllBytes());
         constantPool = classFile.constantPool();
         for (MethodModel method: classFile.methods()) {
             if (method.methodName().equalsString("methodToLookFor")) {
-                CodeAttribute codeAtt = method.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAtt = method.findAttribute(Attributes.code()).orElseThrow();
                 codeAtt.elementList().stream()
                         .filter(ce -> ce instanceof Instruction)
                         .forEach(ins -> checkIndirectRefToString((Instruction) ins));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,13 +199,12 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
         }
 
         carryReduce(c, r);
-
     }
 
     /**
      * The field of integers modulo the order of the Curve25519 subgroup
      */
-    public final static class Curve25519OrderField extends IntegerPolynomialModBinP {
+    public static final class Curve25519OrderField extends IntegerPolynomialModBinP {
 
         public Curve25519OrderField() {
             super(26, 10, 252,
@@ -216,7 +215,7 @@ public sealed class IntegerPolynomialModBinP extends IntegerPolynomial {
     /**
      * The field of integers modulo the order of the Curve448 subgroup
      */
-    public final static class Curve448OrderField extends IntegerPolynomialModBinP {
+    public static final class Curve448OrderField extends IntegerPolynomialModBinP {
 
         public Curve448OrderField() {
             super(28, 16, 446,

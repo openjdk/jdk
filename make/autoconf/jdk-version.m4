@@ -23,7 +23,7 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 #
 # Setup version numbers
 #
@@ -93,7 +93,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   UTIL_ARG_WITH(NAME: jdk-rc-name, TYPE: string,
     DEFAULT: $PRODUCT_NAME $JDK_RC_PLATFORM_NAME,
     DESC: [Set JDK RC name. This is used for FileDescription and ProductName
-       properties of MS Windows binaries.],
+        properties of MS Windows binaries.],
     DEFAULT_DESC: [from branding.conf],
     CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(JDK_RC_NAME)
@@ -105,10 +105,19 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     RESULT: COMPANY_NAME,
     DEFAULT: $COMPANY_NAME,
     DESC: [Set vendor name. Among others, used to set the 'java.vendor'
-       and 'java.vm.vendor' system properties.],
+        and 'java.vm.vendor' system properties.],
     DEFAULT_DESC: [from branding.conf],
     CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(COMPANY_NAME)
+
+  # Set the JDK RC Company name
+  # Otherwise uses the value set for "vendor-name".
+  UTIL_ARG_WITH(NAME: jdk-rc-company-name, TYPE: string,
+    DEFAULT: $COMPANY_NAME,
+    DESC: [Set JDK RC company name. This is used for CompanyName properties of MS Windows binaries.],
+    DEFAULT_DESC: [from branding.conf],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
+  AC_SUBST(JDK_RC_COMPANY_NAME)
 
   # The vendor URL, if any
   # Only set VENDOR_URL if '--with-vendor-url' was used and is not empty.

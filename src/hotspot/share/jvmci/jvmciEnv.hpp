@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,21 @@ class JVMCIKlassHandle : public StackObj {
   bool    not_null() const                     { return _klass != nullptr; }
 };
 
+// A helper class to main a strong link to an nmethod that might not otherwise be referenced.  Only
+// one nmethod can be kept alive in this manner.
+class JVMCINMethodHandle : public StackObj {
+  JavaThread* _thread;
+
+ public:
+  JVMCINMethodHandle(JavaThread* thread): _thread(thread) {}
+
+  void set_nmethod(nmethod* nm);
+
+  ~JVMCINMethodHandle() {
+    _thread->clear_live_nmethod();
+  }
+};
+
 // A class that maintains the state needed for compilations requested
 // by the CompileBroker.  It is created in the broker and passed through
 // into the code installation step.
@@ -172,6 +187,7 @@ class JVMCIEnv : public ResourceObj {
   int              _init_error;  // JNI code returned when creating or attaching to a libjvmci isolate.
                                  // If not JNI_OK, the JVMCIEnv is invalid and should not be used apart from
                                  // calling init_error().
+  const char*  _init_error_msg;  // Message for _init_error if available. C heap allocated.
 
   // Translates an exception on the HotSpot heap (i.e., hotspot_env) to an exception on
   // the shared library heap (i.e., jni_env). The translation includes the stack and cause(s) of `throwable`.
@@ -215,6 +231,12 @@ public:
   // this JVMCIEnv context was created for.
   int init_error() {
     return _init_error;
+  }
+
+  // Gets a message describing a non-zero init_error().
+  // Valid as long as this JVMCIEnv is valid.
+  const char* init_error_msg() {
+    return _init_error_msg;
   }
 
   // Checks the value of init_error() and throws an exception in `JVMCI_TRAPS`
@@ -337,6 +359,8 @@ public:
 
   jboolean call_HotSpotJVMCIRuntime_isGCSupported(JVMCIObject runtime, jint gcIdentifier);
 
+  jboolean call_HotSpotJVMCIRuntime_isIntrinsicSupported(JVMCIObject runtime, jint intrinsicIdentifier);
+
   void call_HotSpotJVMCIRuntime_postTranslation(JVMCIObject object, JVMCI_TRAPS);
 
   // Converts the JavaKind.typeChar value in `ch` to a BasicType
@@ -363,11 +387,11 @@ public:
 
   void fthrow_error(const char* file, int line, const char* format, ...) ATTRIBUTE_PRINTF(4, 5);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding CodeBlob*.
+  // Given an instance of HotSpotInstalledCode, return the corresponding CodeBlob*.
   CodeBlob* get_code_blob(JVMCIObject code);
 
-  // Given an instance of HotSpotInstalledCode return the corresponding nmethod.
-  nmethod* get_nmethod(JVMCIObject code);
+  // Given an instance of HotSpotInstalledCode, return the corresponding nmethod.
+  nmethod* get_nmethod(JVMCIObject code, JVMCINMethodHandle& nmethod_handle);
 
   const char* klass_name(JVMCIObject object);
 

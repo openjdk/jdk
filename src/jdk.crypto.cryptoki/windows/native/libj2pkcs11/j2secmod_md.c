@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     void *fAddress = GetProcAddress(hModule, functionName);
     if (fAddress == NULL) {
         char errorMessage[256];
-        _snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
+        snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
         p11ThrowNullPointerException(env, errorMessage);
         return NULL;
     }

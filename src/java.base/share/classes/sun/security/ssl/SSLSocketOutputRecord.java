@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,12 +168,12 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
 
             for (int limit = (offset + length); offset < limit;) {
 
-                int remains = (limit - offset) + (count - position);
-                int fragLen = Math.min(fragLimit, remains);
+                int remains = (limit - offset);
+                int fragLen = Math.min(fragLimit - count + position, remains);
 
                 // use the buf of ByteArrayOutputStream
                 write(source, offset, fragLen);
-                if (remains < fragLimit) {
+                if (remains < fragLen) {
                     return;
                 }
 

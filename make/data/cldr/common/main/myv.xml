@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="myv"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
-			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
-			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ab" draft="unconfirmed">абхазонь кель</language>
 			<language type="ace" draft="unconfirmed">ачехень кель</language>
@@ -32,6 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr" draft="unconfirmed">французонь кель</language>
 			<language type="fr_CA" draft="unconfirmed">Канадань французонь кель</language>
 			<language type="fr_CH" draft="unconfirmed">Швецариянь французонь кель</language>
+			<language type="it" draft="unconfirmed">италиянь кель</language>
 			<language type="ja" draft="unconfirmed">япононь кель</language>
 			<language type="ko" draft="unconfirmed">Кореань кель</language>
 			<language type="myv">эрзянь кель</language>
@@ -39,6 +35,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pt" draft="unconfirmed">португалонь кель</language>
 			<language type="ru" draft="unconfirmed">рузонь кель</language>
 			<language type="und" draft="unconfirmed">асодавикс кель</language>
+			<language type="zh" draft="unconfirmed">китаень кель</language>
 		</languages>
 		<scripts>
 			<script type="Arab" draft="unconfirmed">арабонь сёрма</script>
@@ -181,23 +178,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW" draft="unconfirmed">Зимбабве</territory>
 			<territory type="ZZ" draft="unconfirmed">Асодавикс Ёнкс</territory>
 		</territories>
-		<codePatterns>
-			<codePattern type="language" draft="unconfirmed">{0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">{0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">{0}</codePattern>
-		</codePatterns>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[а б в г д е ё ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ӓ ә є җ ѕ і ҥ ў ѡ џ ѣ ѳ ѵ ѷ]</exemplarCharacters>
-		<exemplarCharacters type="index">[А Б В Г Д Е Ё Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – , ; \: ! ? . … ’ ” » ( ) \[ \] § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters>[а б в г д её ж з и й к л м н о п р с т у ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ӓ ә є җ ѕ і ҥ ў ѡ џ ѣ ѳ ѵѷ]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Б В Г Д ЕЁ Ж З И Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – , ; \: ! ? . … ’ ” » ( ) \[ \] § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -247,15 +233,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">сюк</day>
 							<day type="sat" draft="unconfirmed">шля</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">тар</day>
-							<day type="mon" draft="unconfirmed">атя</day>
-							<day type="tue" draft="unconfirmed">вас</day>
-							<day type="wed" draft="unconfirmed">кун</day>
-							<day type="thu" draft="unconfirmed">кал</day>
-							<day type="fri" draft="unconfirmed">сюк</day>
-							<day type="sat" draft="unconfirmed">шля</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="unconfirmed">таргочистэ</day>
 							<day type="mon" draft="unconfirmed">атяньчистэ</day>
@@ -267,24 +244,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">тар</day>
-							<day type="mon" draft="unconfirmed">атя</day>
-							<day type="tue" draft="unconfirmed">вас</day>
-							<day type="wed" draft="unconfirmed">кун</day>
-							<day type="thu" draft="unconfirmed">кал</day>
-							<day type="fri" draft="unconfirmed">сюк</day>
-							<day type="sat" draft="unconfirmed">шля</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">тар</day>
-							<day type="mon" draft="unconfirmed">атя</day>
-							<day type="tue" draft="unconfirmed">вас</day>
-							<day type="wed" draft="unconfirmed">кун</day>
-							<day type="thu" draft="unconfirmed">кал</day>
-							<day type="fri" draft="unconfirmed">сюк</day>
-							<day type="sat" draft="unconfirmed">шля</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="unconfirmed">таргочи</day>
 							<day type="mon" draft="unconfirmed">атяньчи</day>
@@ -330,22 +289,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="unconfirmed">тедиде</relative>
 				<relative type="1" draft="unconfirmed">сы иестэ</relative>
 			</field>
-			<field type="year-short">
-				<displayName draft="unconfirmed">ие</displayName>
-				<relative type="-1" draft="unconfirmed">мелят</relative>
-				<relative type="0" draft="unconfirmed">тедиде</relative>
-				<relative type="1" draft="unconfirmed">сы иестэ</relative>
-			</field>
-			<field type="year-narrow">
-				<displayName draft="unconfirmed">ие</displayName>
-			</field>
 			<field type="quarter">
-				<displayName draft="unconfirmed">нилеце пелькс</displayName>
-			</field>
-			<field type="quarter-short">
-				<displayName draft="unconfirmed">нилеце пелькс</displayName>
-			</field>
-			<field type="quarter-narrow">
 				<displayName draft="unconfirmed">нилеце пелькс</displayName>
 			</field>
 			<field type="month">
@@ -354,12 +298,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="unconfirmed">те ковсто</relative>
 				<relative type="1" draft="unconfirmed">сы ковсто</relative>
 			</field>
-			<field type="month-short">
-				<displayName draft="unconfirmed">ков</displayName>
-			</field>
-			<field type="month-narrow">
-				<displayName draft="unconfirmed">ков</displayName>
-			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">тарго</displayName>
 				<relative type="-1" draft="unconfirmed">ютазь таргосто</relative>
@@ -367,23 +305,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1" draft="unconfirmed">сы таргосто</relative>
 				<relativePeriod draft="unconfirmed">{0} таргостонть</relativePeriod>
 			</field>
-			<field type="week-short">
-				<displayName draft="unconfirmed">тарго</displayName>
-			</field>
-			<field type="week-narrow">
-				<displayName draft="unconfirmed">тарго</displayName>
-			</field>
 			<field type="day">
 				<displayName draft="unconfirmed">чи</displayName>
 				<relative type="-1" draft="unconfirmed">исяк</relative>
 				<relative type="0" draft="unconfirmed">течи</relative>
 				<relative type="1" draft="unconfirmed">ванды</relative>
-			</field>
-			<field type="day-short">
-				<displayName draft="unconfirmed">чи</displayName>
-			</field>
-			<field type="day-narrow">
-				<displayName draft="unconfirmed">чи</displayName>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">таргоютконь чи</displayName>
@@ -582,17 +508,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Taipei">
 				<exemplarCity draft="unconfirmed">Тайпей</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity draft="unconfirmed">Ужгород</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity draft="unconfirmed">Киев</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity draft="unconfirmed">Симферополь</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity draft="unconfirmed">Запорожье</exemplarCity>
 			</zone>
 			<zone type="America/Boise">
 				<exemplarCity draft="unconfirmed">Бойси</exemplarCity>
@@ -753,12 +673,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 		</timeZoneNames>
 	</dates>
-	<numbers>
-		<defaultNumberingSystem draft="unconfirmed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="unconfirmed">latn</native>
-		</otherNumberingSystems>
-	</numbers>
 	<posix>
 		<messages>
 			<yesstr draft="unconfirmed">истя:и</yesstr>

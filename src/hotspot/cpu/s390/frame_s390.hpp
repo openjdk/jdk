@@ -465,7 +465,6 @@
 
   // Initialize frame members (_pc and _sp must be given)
   inline void setup();
-  const ImmutableOopMap* get_oop_map() const;
 
  // Constructors
 

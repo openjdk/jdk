@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import sun.security.krb5.Config;
 
 /*
  * @test
- * @bug 8164656 8181461 8194486
+ * @bug 8164656 8181461 8194486 8333772
  * @summary krb5.kdc.bad.policy test
  * @library /test/lib
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
@@ -219,13 +219,13 @@ public class KdcPolicy {
                 inDefaults += "udp_preference_limit = 10000\n";
             } else if (r.nextBoolean()) {
                 inRealm += "   udp_preference_limit = 10000\n";
-                inDefaults += "udp_preference_limit = 1\n";
+                inDefaults += "udp_preference_limit = 0\n";
             } // else no settings means UDP
         } else {
             if (r.nextBoolean()) {
-                inDefaults += "udp_preference_limit = 1\n";
+                inDefaults += "udp_preference_limit = 0\n";
             } else {
-                inRealm += "   udp_preference_limit = 1\n";
+                inRealm += "   udp_preference_limit = 0\n";
                 inDefaults += "udp_preference_limit = 10000\n";
             }
         }
@@ -257,16 +257,16 @@ public class KdcPolicy {
     static void test(String... expected) throws Exception {
 
         System.out.println("------------------TEST----------------------");
-        PrintStream oldOut = System.out;
+        PrintStream oldErr = System.err;
         boolean failed = false;
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(bo));
+        System.setErr(new PrintStream(bo));
         try {
             Context.fromUserPass(OneKDC.USER, OneKDC.PASS, false);
         } catch (Exception e) {
             failed = true;
         } finally {
-            System.setOut(oldOut);
+            System.setErr(oldErr);
         }
 
         String[] lines = new String(bo.toByteArray()).split("\n");

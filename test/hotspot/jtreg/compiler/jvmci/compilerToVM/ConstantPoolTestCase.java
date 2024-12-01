@@ -248,10 +248,8 @@ public class ConstantPoolTestCase {
 
     public void test() {
         for (DummyClasses dummyClass : DummyClasses.values()) {
-            boolean isCPCached = WB.getConstantPoolCacheLength(dummyClass.klass) > -1;
-            System.out.printf("Testing dummy %s with constant pool cached = %b%n",
-                              dummyClass.klass,
-                              isCPCached);
+            System.out.printf("Testing dummy %s with constant pool",
+                              dummyClass.klass);
             HotSpotResolvedObjectType holder = CompilerToVMHelper.fromObjectClass(dummyClass.klass);
             jdk.vm.ci.meta.ConstantPool constantPoolCTVM = holder.getConstantPool();
             ConstantPool constantPoolSS = dummyClass.constantPoolSS;

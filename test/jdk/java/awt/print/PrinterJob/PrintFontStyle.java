@@ -21,6 +21,13 @@
  * questions.
  */
 
+/*
+ * Not enabled as a test. Needs some work.
+ * test
+ * @key printer
+ * @run main/manual PrintFontStyle
+ */
+
 import java.awt.*;
 import java.awt.print.*;
 import java.awt.GraphicsEnvironment;

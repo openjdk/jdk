@@ -175,9 +175,13 @@ public class NativeTestHelper {
     }
 
     public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor) {
+        return upcallStub(holder, name, descriptor, Arena.ofAuto());
+    }
+
+    public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor, Arena arena) {
         try {
             MethodHandle target = MethodHandles.lookup().findStatic(holder, name, descriptor.toMethodType());
-            return LINKER.upcallStub(target, descriptor, Arena.ofAuto());
+            return LINKER.upcallStub(target, descriptor, arena);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -195,7 +199,9 @@ public class NativeTestHelper {
         return result;
     }
 
-    public record TestValue (Object value, Consumer<Object> check) {}
+    public record TestValue (Object value, Consumer<Object> check) {
+        public void check(Object actual) { check.accept(actual); }
+    }
 
     public static TestValue genTestValue(MemoryLayout layout, SegmentAllocator allocator) {
         return genTestValue(DEFAULT_RANDOM, layout, allocator);
@@ -236,6 +242,9 @@ public class NativeTestHelper {
             return new TestValue(value, actual -> assertEquals(actual, value));
         } else if (layout instanceof ValueLayout.OfShort) {
             short value = (short) random.nextInt();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfChar) {
+            char value = (char) random.nextInt();
             return new TestValue(value, actual -> assertEquals(actual, value));
         } else if (layout instanceof ValueLayout.OfInt) {
             int value = random.nextInt();

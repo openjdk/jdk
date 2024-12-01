@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,12 +49,10 @@ class GetPeerHostServer extends Thread
         try {
             SSLContext ctx = SSLContext.getInstance("TLS");
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            KeyStore ks = KeyStore.getInstance("JKS");
             char[] passphrase = "passphrase".toCharArray();
             String testRoot = System.getProperty("test.src", ".");
-            ks.load(new FileInputStream(testRoot
-                        + "/../../../../javax/net/ssl/etc/keystore"),
-                    passphrase);
+            KeyStore ks = KeyStore.getInstance(new File(testRoot
+                    + "/../../../../javax/net/ssl/etc/keystore"), passphrase);
             kmf.init(ks, passphrase);
             ctx.init(kmf.getKeyManagers(), null, null);
             ServerSocketFactory ssf = ctx.getServerSocketFactory();

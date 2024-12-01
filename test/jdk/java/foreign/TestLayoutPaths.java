@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,17 @@ import org.testng.annotations.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
+import java.lang.invoke.VarHandle.AccessMode;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntFunction;
+import java.util.stream.Stream;
 
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static java.lang.foreign.ValueLayout.JAVA_LONG;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
@@ -136,10 +139,10 @@ public class TestLayoutPaths {
     }
 
     @Test
-    public void testBadAlignmentOfRoot() throws Throwable {
+    public void testBadAlignmentOfRoot() {
         MemoryLayout struct = MemoryLayout.structLayout(
-            JAVA_INT,
-            JAVA_SHORT.withName("x"));
+            JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+            JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("x"));
         assertEquals(struct.byteAlignment(), 4);
 
         try (Arena arena = Arena.ofConfined()) {
@@ -147,20 +150,56 @@ public class TestLayoutPaths {
             assertEquals(seg.address() % JAVA_SHORT.byteAlignment(), 0); // should be aligned
             assertNotEquals(seg.address() % struct.byteAlignment(), 0); // should not be aligned
 
-            String expectedMessage = "Target offset incompatible with alignment constraints: " + struct.byteAlignment();
+            String expectedMessage = "Target offset 0 is incompatible with alignment constraint " + struct.byteAlignment() + " (of [i4s2(x)]) for segment MemorySegment";
 
             VarHandle vhX = struct.varHandle(groupElement("x"));
             IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () -> {
                 vhX.set(seg, 0L, (short) 42);
             });
-            assertEquals(iae.getMessage(), expectedMessage);
+            assertTrue(iae.getMessage().startsWith(expectedMessage));
 
             MethodHandle sliceX = struct.sliceHandle(groupElement("x"));
             iae = expectThrows(IllegalArgumentException.class, () -> {
                 MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg, 0L);
             });
-            assertEquals(iae.getMessage(), expectedMessage);
+            assertTrue(iae.getMessage().startsWith(expectedMessage));
         }
+    }
+
+    @Test
+    public void testWrongTypeRoot() {
+        MemoryLayout struct = MemoryLayout.structLayout(
+                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
+                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN)
+        );
+
+        var expectedMessage = "Bad layout path: attempting to select a sequence element from a non-sequence layout: [i4i4]";
+
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () ->
+                struct.select(PathElement.sequenceElement()));
+        assertEquals(iae.getMessage(), expectedMessage);
+    }
+
+    @Test
+    public void testWrongTypeEnclosing() {
+        MemoryLayout struct = MemoryLayout.structLayout(
+                MemoryLayout.sequenceLayout(2, MemoryLayout.structLayout(
+                                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("3a"),
+                                JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("3b")
+                        ).withName("2")
+                ).withName("1")
+        ).withName("0");
+
+        var expectedMessage = "Bad layout path: attempting to select a sequence element from a non-sequence layout: " +
+                "[i4(3a)i4(3b)](2), selected from: " +
+                "[2:[i4(3a)i4(3b)](2)](1), selected from: " +
+                "[[2:[i4(3a)i4(3b)](2)](1)](0)";
+
+        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () ->
+                struct.select(PathElement.groupElement("1"),
+                        PathElement.sequenceElement(),
+                        PathElement.sequenceElement()));
+        assertEquals(iae.getMessage(), expectedMessage);
     }
 
     @Test
@@ -273,6 +312,126 @@ public class TestLayoutPaths {
         byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
         long actualByteOffset = (long) byteOffsetHandle.invokeExact(0L, indexes);
         assertEquals(actualByteOffset, expectedByteOffset);
+    }
+
+    @Test(dataProvider = "testLayouts")
+    public void testOffsetHandleOOBIndex(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                 long expectedByteOffset) throws Throwable {
+        int[] badIndices = { -1, 10 };
+        MemoryLayout seqLayout = MemoryLayout.sequenceLayout(badIndices[1], layout);
+        for (int badIndex : badIndices) {
+            PathElement[] seqPathElements = new PathElement[pathElements.length + 1];
+            long[] seqIndexes = new long[indexes.length + 1];
+            System.arraycopy(pathElements, 0, seqPathElements, 1, pathElements.length);
+            System.arraycopy(indexes, 0, seqIndexes, 1, indexes.length);
+            seqPathElements[0] = PathElement.sequenceElement();
+            seqIndexes[0] = badIndex;
+            MethodHandle seqByteOffsetHandle = seqLayout.byteOffsetHandle(seqPathElements)
+                    .asSpreader(long[].class, seqIndexes.length);
+            assertThrows(IndexOutOfBoundsException.class, () -> seqByteOffsetHandle.invoke(0L, seqIndexes));
+        }
+    }
+
+    @Test(dataProvider = "testLayouts", expectedExceptions = ArithmeticException.class)
+    public void testOffsetHandleOverflow(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                         long expectedByteOffset) throws Throwable {
+        MethodHandle byteOffsetHandle = layout.byteOffsetHandle(pathElements);
+        byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
+        byteOffsetHandle.invoke(Long.MAX_VALUE, indexes);
+    }
+
+    @Test(dataProvider = "testLayouts")
+    public void testVarHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                         long expectedByteOffset) throws Throwable {
+        MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
+        PathElement[] seqPathElements = new PathElement[pathElements.length + 1];
+        long[] seqIndexes = new long[indexes.length + 1];
+        System.arraycopy(pathElements, 0, seqPathElements, 1, pathElements.length);
+        System.arraycopy(indexes, 0, seqIndexes, 1, indexes.length);
+        seqPathElements[0] = PathElement.sequenceElement();
+        seqIndexes[0] = 0;
+        MethodHandle getter_handle = seqLayout.varHandle(seqPathElements)
+                .toMethodHandle(AccessMode.GET)
+                .asSpreader(long[].class, seqIndexes.length);
+        MemorySegment segment = Arena.ofAuto().allocate(layout);
+        assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
+    }
+
+    @Test(dataProvider = "testLayouts")
+    public void testSliceHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                        long expectedByteOffset) throws Throwable {
+        MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
+        PathElement[] seqPathElements = new PathElement[pathElements.length + 1];
+        long[] seqIndexes = new long[indexes.length + 1];
+        System.arraycopy(pathElements, 0, seqPathElements, 1, pathElements.length);
+        System.arraycopy(indexes, 0, seqIndexes, 1, indexes.length);
+        seqPathElements[0] = PathElement.sequenceElement();
+        seqIndexes[0] = 0;
+        MethodHandle getter_handle = seqLayout.sliceHandle(seqPathElements)
+                .asSpreader(long[].class, seqIndexes.length);
+        MemorySegment segment = Arena.ofAuto().allocate(layout);
+        assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
+    }
+
+    @Test(dataProvider = "testLayouts")
+    public void testArrayElementVarHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                          long expectedByteOffset) throws Throwable {
+        MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
+        PathElement[] seqPathElements = new PathElement[pathElements.length + 1];
+        long[] seqIndexes = new long[indexes.length + 2];
+        System.arraycopy(pathElements, 0, seqPathElements, 1, pathElements.length);
+        System.arraycopy(indexes, 0, seqIndexes, 2, indexes.length);
+        seqPathElements[0] = PathElement.sequenceElement();
+        seqIndexes[0] = 0;
+        seqIndexes[1] = 0;
+        MethodHandle getter_handle = seqLayout.arrayElementVarHandle(seqPathElements)
+                .toMethodHandle(AccessMode.GET)
+                .asSpreader(long[].class, seqIndexes.length);
+        MemorySegment segment = Arena.ofAuto().allocate(layout);
+        assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
+    }
+
+    @Test
+    public void testHashCodeCollision() {
+        PathElement sequenceElement = PathElement.sequenceElement();
+        PathElement dereferenceElement = PathElement.dereferenceElement();
+        assertNotEquals(sequenceElement.hashCode(), dereferenceElement.hashCode());
+    }
+
+    @Test
+    public void testGroupElementIndexToString() {
+        PathElement e = PathElement.groupElement(2);
+        assertEquals(e.toString(), "groupElement(2)");
+    }
+
+    @Test
+    public void testGroupElementNameToString() {
+        PathElement e = PathElement.groupElement("x");
+        assertEquals(e.toString(), "groupElement(\"x\")");
+    }
+
+    @Test
+    public void testSequenceElementToString() {
+        PathElement e = PathElement.sequenceElement();
+        assertEquals(e.toString(), "sequenceElement()");
+    }
+
+    @Test
+    public void testSequenceElementIndexToString() {
+        PathElement e = PathElement.sequenceElement(2);
+        assertEquals(e.toString(), "sequenceElement(2)");
+    }
+
+    @Test
+    public void testSequenceElementRangeToString() {
+        PathElement e = PathElement.sequenceElement(2, 4);
+        assertEquals(e.toString(), "sequenceElement(2, 4)");
+    }
+
+    @Test
+    public void testDerefereceElementToString() {
+        PathElement e = PathElement.dereferenceElement();
+        assertEquals(e.toString(), "dereferenceElement()");
     }
 
     @DataProvider

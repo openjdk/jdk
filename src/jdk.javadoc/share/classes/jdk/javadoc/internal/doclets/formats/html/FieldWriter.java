@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,15 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Writes field documentation in HTML format.
@@ -79,21 +81,25 @@ public class FieldWriter extends AbstractMemberWriter {
         if (!fields.isEmpty()) {
             Content fieldDetailsHeader = getFieldDetailsHeader(target);
             Content memberList = getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.FIELD_DETAIL, contents.fieldDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element element : fields) {
                 currentElement = (VariableElement)element;
                 Content fieldContent = getFieldHeaderContent(currentElement);
-
-                buildSignature(fieldContent);
-                buildDeprecationInfo(fieldContent);
-                buildPreviewInfo(fieldContent);
-                buildFieldComments(fieldContent);
-                buildTagInfo(fieldContent);
-
+                Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
+                buildSignature(div);
+                buildDeprecationInfo(div);
+                buildPreviewInfo(div);
+                buildFieldComments(div);
+                buildTagInfo(div);
+                fieldContent.add(div);
                 memberList.add(getMemberListItem(fieldContent));
+                writer.tableOfContents.addLink(htmlIds.forMember(currentElement), Text.of(name(element)));
             }
             Content fieldDetails = getFieldDetails(fieldDetailsHeader, memberList);
             target.add(fieldDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 
@@ -143,7 +149,7 @@ public class FieldWriter extends AbstractMemberWriter {
 
     @Override
     public void buildSummary(Content summariesList, Content content) {
-        writer.addSummary(HtmlStyle.fieldSummary,
+        writer.addSummary(HtmlStyles.fieldSummary,
                 HtmlIds.FIELD_SUMMARY, summariesList, content);
     }
 
@@ -161,7 +167,7 @@ public class FieldWriter extends AbstractMemberWriter {
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(field)));
         content.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, content)
+        return HtmlTree.SECTION(HtmlStyles.detail, content)
                 .setId(htmlIds.forMember(field));
     }
 
@@ -192,7 +198,7 @@ public class FieldWriter extends AbstractMemberWriter {
 
     protected Content getFieldDetails(Content memberDetailsHeaderContent, Content memberContent) {
         return writer.getDetailsListItem(
-                HtmlTree.SECTION(HtmlStyle.fieldDetails)
+                HtmlTree.SECTION(HtmlStyles.fieldDetails)
                         .setId(HtmlIds.FIELD_DETAIL)
                         .add(memberDetailsHeaderContent)
                         .add(memberContent));
@@ -213,10 +219,10 @@ public class FieldWriter extends AbstractMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
-                HtmlStyle.colLast);
+        List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyles.colFirst, HtmlStyles.colSecond,
+                HtmlStyles.colLast);
 
-        return new Table<Element>(HtmlStyle.summaryTable)
+        return new Table<Element>(HtmlStyles.summaryTable)
                 .setCaption(contents.fields)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(bodyRowStyles);
@@ -248,7 +254,7 @@ public class FieldWriter extends AbstractMemberWriter {
     protected void addSummaryLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element member,
                                   Content content) {
         Content memberLink = writer.getDocLink(context, typeElement , member, name(member),
-                HtmlStyle.memberNameLink);
+                HtmlStyles.memberNameLink);
         var code = HtmlTree.CODE(memberLink);
         content.add(code);
     }

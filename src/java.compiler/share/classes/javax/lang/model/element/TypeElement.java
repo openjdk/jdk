@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package javax.lang.model.element;
-
-import jdk.internal.javac.PreviewFeature;
 
 import java.util.List;
 import javax.lang.model.type.*;
@@ -60,14 +58,14 @@ import javax.lang.model.util.*;
  * javax.lang.model.util.Elements#getFileObjectOf(Element) reference
  * representation} (either source code or executable output). Multiple
  * classes and interfaces can share the same reference representation
- * backing construct. For example, multiple classes and interface can
- * be declared in the same source file, including, but are not limited
+ * backing construct. For example, multiple classes and interfaces can
+ * be declared in the same source file, including, but not limited
  * to:
  * <ul>
  * <li> a {@linkplain NestingKind#TOP_LEVEL top-level} class or
  * interface and auxiliary classes and interfaces
  * <li>a top-level class or interface and {@linkplain
- * NestingKind#isNested() nested class and interfaces} within it
+ * NestingKind#isNested() nested classes and interfaces} within it
  * </ul>
  * <p>In the context of annotation processing, a type element can
  * be:
@@ -155,7 +153,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the fully qualified name of this class or interface
      * element.  More precisely, it returns the <i>canonical</i> name.
-     * For local, anonymous, and {@linkplain #isUnnamed() unnamed} classes, which do not have canonical
+     * For local, and anonymous classes, which do not have canonical
      * names, an {@linkplain Name##empty_name empty name} is
      * returned.
      *
@@ -171,7 +169,6 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      *
      * @see Elements#getBinaryName
      * @jls 6.7 Fully Qualified Names and Canonical Names
-     * @jls 7.3 Compilation Units
      */
     Name getQualifiedName();
 
@@ -181,32 +178,12 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * For an anonymous class, an {@linkplain Name##empty_name empty
      * name} is returned.
      *
-     * For an {@linkplain #isUnnamed() unnamed} class, a name matching
-     * the base name of the hosting file, minus any extension, is
-     * returned.
-     *
      * @return the simple name of this class or interface,
      * an empty name for an anonymous class
      *
      */
     @Override
     Name getSimpleName();
-
-    /**
-     * {@return {@code true} if this is an unnamed class and {@code
-     * false} otherwise}
-     *
-     * @implSpec
-     * The default implementation of this method returns {@code false}.
-     *
-     * @jls 7.3 Compilation Units
-     * @since 21
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED_CLASSES,
-                    reflective=true)
-    default boolean isUnnamed() {
-        return false;
-    }
 
     /**
      * Returns the direct superclass of this class or interface element.

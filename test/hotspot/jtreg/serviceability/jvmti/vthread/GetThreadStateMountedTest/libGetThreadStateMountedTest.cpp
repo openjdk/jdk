@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <jni.h>
 #include <jvmti.h>
-#include <jvmti_common.h>
+#include <jvmti_common.hpp>
 #include <atomic>
 
 static jvmtiEnv *jvmti = nullptr;
@@ -190,6 +190,16 @@ Java_GetThreadStateMountedTest_getErrorCount(JNIEnv* jni, jclass clazz) {
 
 
 static std::atomic<bool> time_to_exit(false);
+
+extern "C" JNIEXPORT void JNICALL
+Java_GetThreadStateMountedTest_runFromNative(JNIEnv* jni, jclass clazz, jobject runnable) {
+  jmethodID mid = jni->GetStaticMethodID(clazz, "runUpcall", "(Ljava/lang/Runnable;)V");
+  if (mid == nullptr) {
+    jni->FatalError("failed to get runUpcall method");
+    return;
+  }
+  jni->CallStaticVoidMethod(clazz, mid, runnable);
+}
 
 extern "C" JNIEXPORT void JNICALL
 Java_GetThreadStateMountedTest_waitInNative(JNIEnv* jni, jclass clazz) {

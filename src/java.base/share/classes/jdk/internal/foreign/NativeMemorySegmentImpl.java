@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,10 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -39,12 +37,6 @@ import jdk.internal.vm.annotation.ForceInline;
  * a native long address.
  */
 public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl permits MappedMemorySegmentImpl {
-
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
-    // The maximum alignment supported by malloc - typically 16 bytes on
-    // 64-bit platforms and 8 bytes on 32-bit platforms.
-    private static final long MAX_MALLOC_ALIGN = Unsafe.ADDRESS_SIZE == 4 ? 8 : 16;
 
     final long min;
 
@@ -58,17 +50,6 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
                 : min;
     }
 
-    /**
-     * This constructor should only be used when initializing {@link MemorySegment#NULL}. Note: because of the memory
-     * segment class hierarchy, it is possible to end up in a situation where this constructor is called
-     * when the static fields in this class are not yet initialized.
-     */
-    @ForceInline
-    public NativeMemorySegmentImpl() {
-        super(0L, false, new GlobalSession(null));
-        this.min = 0L;
-    }
-
     @Override
     public long address() {
         return min;
@@ -79,6 +60,12 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
         return Optional.empty();
     }
 
+    public final long maxByteAlignment() {
+        return address() == 0
+                ? 1L << 62
+                : Long.lowestOneBit(address());
+    }
+
     @ForceInline
     @Override
     NativeMemorySegmentImpl dup(long offset, long size, boolean readOnly, MemorySessionImpl scope) {
@@ -87,8 +74,7 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null,
-                scope == MemorySessionImpl.GLOBAL ? null : this);
+        return NIO_ACCESS.newDirectByteBuffer(min, (int) this.length, null, this);
     }
 
     @Override
@@ -109,73 +95,5 @@ public sealed class NativeMemorySegmentImpl extends AbstractMemorySegmentImpl pe
     @Override
     public long maxAlignMask() {
         return 0;
-    }
-
-    // factories
-
-    public static MemorySegment makeNativeSegmentNoZeroing(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
-                                                  boolean shouldReserve) {
-        sessionImpl.checkValidState();
-        if (VM.isDirectMemoryPageAligned()) {
-            byteAlignment = Math.max(byteAlignment, NIO_ACCESS.pageSize());
-        }
-        long alignedSize = Math.max(1L, byteAlignment > MAX_MALLOC_ALIGN ?
-                byteSize + (byteAlignment - 1) :
-                byteSize);
-
-        if (shouldReserve) {
-            NIO_ACCESS.reserveMemory(alignedSize, byteSize);
-        }
-
-        long buf = allocateMemoryWrapper(alignedSize);
-        long alignedBuf = Utils.alignUp(buf, byteAlignment);
-        AbstractMemorySegmentImpl segment = new NativeMemorySegmentImpl(buf, alignedSize,
-                false, sessionImpl);
-        sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
-            @Override
-            public void cleanup() {
-                UNSAFE.freeMemory(buf);
-                if (shouldReserve) {
-                    NIO_ACCESS.unreserveMemory(alignedSize, byteSize);
-                }
-            }
-        });
-        if (alignedSize != byteSize) {
-            long delta = alignedBuf - buf;
-            segment = segment.asSlice(delta, byteSize);
-        }
-        return segment;
-    }
-
-    private static long allocateMemoryWrapper(long size) {
-        try {
-            return UNSAFE.allocateMemory(size);
-        } catch (IllegalArgumentException ex) {
-            throw new OutOfMemoryError();
-        }
-    }
-
-    // Unsafe native segment factories. These are used by the implementation code, to skip the sanity checks
-    // associated with MemorySegment::ofAddress.
-
-    @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl, Runnable action) {
-        if (action == null) {
-            sessionImpl.checkValidState();
-        } else {
-            sessionImpl.addCloseAction(action);
-        }
-        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
-    }
-
-    @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize, MemorySessionImpl sessionImpl) {
-        sessionImpl.checkValidState();
-        return new NativeMemorySegmentImpl(min, byteSize, false, sessionImpl);
-    }
-
-    @ForceInline
-    public static MemorySegment makeNativeSegmentUnchecked(long min, long byteSize) {
-        return new NativeMemorySegmentImpl(min, byteSize, false, new GlobalSession(null));
     }
 }

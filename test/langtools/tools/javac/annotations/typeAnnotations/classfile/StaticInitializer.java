@@ -24,18 +24,14 @@
 import java.lang.annotation.*;
 import java.util.ArrayList;
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 
 /*
  * @test
  * @bug 8136419 8200301
  * @summary test that type annotations on entities in static initializers are emitted to classfile
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  * @compile -XDdeduplicateLambdas=false StaticInitializer.java
  * @run main StaticInitializer
  */

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -34,15 +34,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="contributed">Vin</day>
 							<day type="sat" draft="contributed">Sâm</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="contributed">D</day>
-							<day type="mon" draft="contributed">L</day>
-							<day type="tue" draft="contributed">Ma</day>
-							<day type="wed" draft="contributed">Mi</day>
-							<day type="thu" draft="contributed">J</day>
-							<day type="fri" draft="contributed">V</day>
-							<day type="sat" draft="contributed">S</day>
-						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun" draft="contributed">Du</day>
 							<day type="mon" draft="contributed">Lu</day>
@@ -54,15 +45,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="contributed">Dum</day>
-							<day type="mon" draft="contributed">Lun</day>
-							<day type="tue" draft="contributed">Mar</day>
-							<day type="wed" draft="contributed">Mie</day>
-							<day type="thu" draft="contributed">Joi</day>
-							<day type="fri" draft="contributed">Vin</day>
-							<day type="sat" draft="contributed">Sâm</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="contributed">D</day>
 							<day type="mon" draft="contributed">L</day>
@@ -71,15 +53,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="contributed">J</day>
 							<day type="fri" draft="contributed">V</day>
 							<day type="sat" draft="contributed">S</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="contributed">Du</day>
-							<day type="mon" draft="contributed">Lu</day>
-							<day type="tue" draft="contributed">Ma</day>
-							<day type="wed" draft="contributed">Mi</day>
-							<day type="thu" draft="contributed">Jo</day>
-							<day type="fri" draft="contributed">Vi</day>
-							<day type="sat" draft="contributed">Sâ</day>
 						</dayWidth>
 					</dayContext>
 				</days>

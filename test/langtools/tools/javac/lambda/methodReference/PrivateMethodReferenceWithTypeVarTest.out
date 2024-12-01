@@ -1,0 +1,4 @@
+PrivateMethodReferenceWithTypeVarTest.java:24:16: compiler.err.report.access: asString(), private, PrivateMethodReferenceWithTypeVarTest
+PrivateMethodReferenceWithTypeVarTest.java:28:16: compiler.err.report.access: asString2(java.lang.Object), private, PrivateMethodReferenceWithTypeVarTest
+PrivateMethodReferenceWithTypeVarTest.java:32:16: compiler.err.report.access: asString2(java.lang.Object), private, PrivateMethodReferenceWithTypeVarTest
+3 errors

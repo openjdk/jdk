@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,8 @@ public class TestDirectedInheritance extends JavadocTester {
                 <div class="block">I2: main description</div>
                 """, """
                 <dt>Type Parameters:</dt>
-                <dd><code>E</code> - I2: first type parameter</dd>
-                <dd><code>F</code> - I2: second type parameter</dd>
+                <dd><span id="m(E)-type-param-E"><code>E</code> - I2: first type parameter</span></dd>
+                <dd><span id="m(E)-type-param-F"><code>F</code> - I2: second type parameter</span></dd>
                 <dt>Parameters:</dt>
                 <dd><code>eObj</code> - I2: parameter</dd>
                 <dt>Returns:</dt>
@@ -277,6 +277,7 @@ public class TestDirectedInheritance extends JavadocTester {
         var m = """
                 <section class="detail" id="m()">
                 <h3>m</h3>
+                <div class="horizontal-scroll">
                 <div class="member-signature"><span class="modifiers">\
                 public</span>&nbsp;<span class="return-type">void</span>\
                 &nbsp;<span class="element-name">m</span>()</div>
@@ -336,6 +337,7 @@ public class TestDirectedInheritance extends JavadocTester {
         var m = """
                 <section class="detail" id="m()">
                 <h3>m</h3>
+                <div class="horizontal-scroll">
                 <div class="member-signature"><span class="modifiers">\
                 public</span>&nbsp;<span class="return-type">void</span>\
                 &nbsp;<span class="element-name">m</span>()</div>

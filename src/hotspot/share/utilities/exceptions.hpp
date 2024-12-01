@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,8 @@ class ThreadShadow: public CHeapObj<mtThread> {
 // used directly if the macros below are insufficient.
 
 class Exceptions {
-  static bool special_exception(JavaThread* thread, const char* file, int line, Handle exception);
-  static bool special_exception(JavaThread* thread, const char* file, int line, Symbol* name, const char* message);
+  // Either `exception` or `symbol` must be non-null but not both.
+  static bool special_exception(JavaThread* thread, const char* file, int line, Handle exception, Symbol* name = nullptr, const char* message = nullptr);
 
   // Count out of memory errors that are interesting in error diagnosis
   static volatile int _out_of_memory_error_java_heap_errors;
@@ -128,15 +128,15 @@ class Exceptions {
 
   static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message);
   static void _throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message,
-                         Handle loader, Handle protection_domain);
+                         Handle loader);
 
   static void _throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause);
   static void _throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause,
-                               Handle h_loader, Handle h_protection_domain);
+                               Handle h_loader);
 
   static void _throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause);
   static void _throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
-                           Handle h_loader, Handle h_protection_domain);
+                           Handle h_loader);
 
   static void _throw_args(JavaThread* thread, const char* file, int line,
                           Symbol* name, Symbol* signature,
@@ -150,21 +150,21 @@ class Exceptions {
   // Create and initialize a new exception
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               Symbol* signature, JavaCallArguments* args,
-                              Handle loader, Handle protection_domain);
+                              Handle loader);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               Symbol* signature, JavaCallArguments* args,
                               Handle cause,
-                              Handle loader, Handle protection_domain);
+                              Handle loader);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               Handle cause,
-                              Handle loader, Handle protection_domain,
+                              Handle loader,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
                               const char* message, Handle cause,
-                              Handle loader, Handle protection_domain,
+                              Handle loader,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
   static Handle new_exception(JavaThread* thread, Symbol* name,
@@ -268,8 +268,8 @@ class Exceptions {
 #define THROW_CAUSE(name, cause)   \
   { Exceptions::_throw_cause(THREAD_AND_LOCATION, name, cause); return; }
 
-#define THROW_MSG_LOADER(name, message, loader, protection_domain) \
-  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader, protection_domain); return;  }
+#define THROW_MSG_LOADER(name, message, loader) \
+  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader); return;  }
 
 #define THROW_ARG(name, signature, args) \
   { Exceptions::_throw_args(THREAD_AND_LOCATION, name, signature, args);   return; }
@@ -286,8 +286,8 @@ class Exceptions {
 #define THROW_MSG_(name, message, result)           \
   { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message); return result; }
 
-#define THROW_MSG_LOADER_(name, message, loader, protection_domain, result) \
-  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader, protection_domain); return result; }
+#define THROW_MSG_LOADER_(name, message, loader, result) \
+  { Exceptions::_throw_msg(THREAD_AND_LOCATION, name, message, loader); return result; }
 
 #define THROW_ARG_(name, signature, args, result) \
   { Exceptions::_throw_args(THREAD_AND_LOCATION, name, signature, args); return result; }
@@ -310,6 +310,9 @@ class Exceptions {
 
 #define THROW_NULL(name)                    THROW_(name, nullptr)
 #define THROW_MSG_NULL(name, message)       THROW_MSG_(name, message, nullptr)
+
+#define THROW_HANDLE_NULL(e)                THROW_HANDLE_(e, nullptr)
+#define THROW_ARG_NULL(name, signature, arg) THROW_ARG_(name, signature, arg, nullptr)
 
 // The CATCH macro checks that no exception has been thrown by a function; it is used at
 // call sites about which is statically known that the callee cannot throw an exception

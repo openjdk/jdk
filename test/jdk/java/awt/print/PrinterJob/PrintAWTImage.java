@@ -23,6 +23,7 @@
 /**
  * @test
  * @bug 4257262 6708509
+ * @key printer
  * @summary Image should be sent to printer.
 * @run main/manual PrintAWTImage
  */

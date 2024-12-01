@@ -22,7 +22,12 @@
  */
 package com.sun.org.apache.xml.internal.security.algorithms;
 
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
 import java.security.spec.AlgorithmParameterSpec;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;

@@ -26,6 +26,8 @@
 package sun.security.ec;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -41,7 +43,7 @@ import sun.security.pkcs.PKCS8Key;
 
 /**
  * Key implementation for EC private keys.
- *
+ * <p>
  * ASN.1 syntax for EC private keys from SEC 1 v1.5 (draft):
  *
  * <pre>
@@ -64,6 +66,7 @@ import sun.security.pkcs.PKCS8Key;
  */
 public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = 88695385615075129L;
 
     private BigInteger s;       // private value
@@ -217,5 +220,21 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             throw new ProviderException(
                     "Unexpected error calculating public key", e);
         }
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "ECPrivateKeyImpl keys are not directly deserializable");
     }
 }

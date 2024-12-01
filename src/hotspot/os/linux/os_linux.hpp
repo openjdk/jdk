@@ -30,9 +30,7 @@
 // os::Linux defines the interface to Linux operating systems
 
 class os::Linux {
-  friend class CgroupSubsystem;
   friend class os;
-  friend class OSContainer;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
   static int (*_pthread_setname_np)(pthread_t, const char*);
@@ -58,7 +56,6 @@ class os::Linux {
   static julong available_memory();
   static julong free_memory();
 
-  static int active_processor_count();
 
   static void initialize_system_info();
 
@@ -92,6 +89,9 @@ class os::Linux {
     uint64_t steal;
     bool     has_steal_ticks;
   };
+
+  static int active_processor_count();
+  static void kernel_version(long* major, long* minor);
 
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
   static bool get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu);
@@ -174,6 +174,17 @@ class os::Linux {
   // May fail (returns false) or succeed (returns true) but not all output fields are available; unavailable
   // fields will contain -1.
   static bool query_process_memory_info(meminfo_t* info);
+
+  // Tells if the user asked for transparent huge pages.
+  static bool _thp_requested;
+
+  static void large_page_init();
+
+  static bool thp_requested();
+  static bool should_madvise_anonymous_thps();
+  static bool should_madvise_shmem_thps();
+
+  static void madvise_transparent_huge_pages(void* addr, size_t bytes);
 
   // Stack repair handling
 

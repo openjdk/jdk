@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +45,14 @@ public class TestModeUnlock {
     }
 
     public static void main(String[] args) throws Exception {
-        testWith("-XX:ShenandoahGCMode=satb",    Mode.PRODUCT);
-        testWith("-XX:ShenandoahGCMode=iu",      Mode.EXPERIMENTAL);
-        testWith("-XX:ShenandoahGCMode=passive", Mode.DIAGNOSTIC);
+        testWith("-XX:ShenandoahGCMode=satb",         Mode.PRODUCT);
+        testWith("-XX:ShenandoahGCMode=passive",      Mode.DIAGNOSTIC);
+        testWith("-XX:ShenandoahGCMode=generational", Mode.EXPERIMENTAL);
     }
 
     private static void testWith(String h, Mode mode) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -59,7 +60,6 @@ public class TestModeUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                     output.shouldHaveExitValue(0);
@@ -72,7 +72,7 @@ public class TestModeUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:-UnlockExperimentalVMOptions",
@@ -80,7 +80,6 @@ public class TestModeUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                 case DIAGNOSTIC:
@@ -93,7 +92,7 @@ public class TestModeUnlock {
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:-UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -101,7 +100,6 @@ public class TestModeUnlock {
                     h,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             switch (mode) {
                 case PRODUCT:
                 case EXPERIMENTAL:

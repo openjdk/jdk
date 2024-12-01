@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
@@ -81,7 +82,7 @@ class ConstantPool : public Metadata {
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
-  friend class ClassPrelinker;       // CDS
+  friend class AOTConstantPoolResolver;
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
@@ -108,7 +109,8 @@ class ConstantPool : public Metadata {
     _has_preresolution    = 1,       // Flags
     _on_stack             = 2,
     _is_shared            = 4,
-    _has_dynamic_constant = 8
+    _has_dynamic_constant = 8,
+    _is_for_method_handle_intrinsic = 16
   };
 
   u2              _flags;  // old fashioned bit twiddling
@@ -162,7 +164,7 @@ class ConstantPool : public Metadata {
   }
 
   ConstantPool(Array<u1>* tags);
-  ConstantPool() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
+  ConstantPool();
  public:
   static ConstantPool* allocate(ClassLoaderData* loader_data, int length, TRAPS);
 
@@ -215,6 +217,9 @@ class ConstantPool : public Metadata {
   bool has_dynamic_constant() const       { return (_flags & _has_dynamic_constant) != 0; }
   void set_has_dynamic_constant()         { _flags |= _has_dynamic_constant; }
 
+  bool is_for_method_handle_intrinsic() const  { return (_flags & _is_for_method_handle_intrinsic) != 0; }
+  void set_is_for_method_handle_intrinsic()    { _flags |= _is_for_method_handle_intrinsic; }
+
   // Klass holding pool
   InstanceKlass* pool_holder() const      { return _pool_holder; }
   void set_pool_holder(InstanceKlass* k)  { _pool_holder = k; }
@@ -247,14 +252,6 @@ class ConstantPool : public Metadata {
   Array<Klass*>* resolved_klasses() const       { return _resolved_klasses; }
   void allocate_resolved_klasses(ClassLoaderData* loader_data, int num_klasses, TRAPS);
   void initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS);
-
-  // Invokedynamic indexes.
-  // They must look completely different from normal indexes.
-  // The main reason is that byte swapping is sometimes done on normal indexes.
-  // Finally, it is helpful for debugging to tell the two apart.
-  static bool is_invokedynamic_index(int i) { return (i < 0); }
-  static int  decode_invokedynamic_index(int i) { assert(is_invokedynamic_index(i),  ""); return ~i; }
-  static int  encode_invokedynamic_index(int i) { assert(!is_invokedynamic_index(i), ""); return ~i; }
 
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
@@ -413,7 +410,7 @@ class ConstantPool : public Metadata {
     unresolved_klass_at_put(cp_index, name_index, CPKlassSlot::_temp_resolved_klass_index);
   }
 
-  jint int_at(int cp_index) {
+  jint int_at(int cp_index) const {
     assert(tag_at(cp_index).is_int(), "Corrupted constant pool");
     return *int_at_addr(cp_index);
   }
@@ -539,7 +536,7 @@ class ConstantPool : public Metadata {
     int offset = build_int_from_shorts(operands->at(n+0),
                                        operands->at(n+1));
     // The offset itself must point into the second part of the array.
-    assert(offset == 0 || offset >= second_part && offset <= operands->length(), "oob (3)");
+    assert(offset == 0 || (offset >= second_part && offset <= operands->length()), "oob (3)");
     return offset;
   }
   static void operand_offset_at_put(Array<u2>* operands, int bsms_attribute_index, int offset) {
@@ -643,16 +640,12 @@ class ConstantPool : public Metadata {
   // name_and_type_ref_index_at) all expect to be passed indices obtained
   // directly from the bytecode.
   // If the indices are meant to refer to fields or methods, they are
-  // actually rewritten constant pool cache indices.
-  // The routine remap_instruction_operand_from_cache manages the adjustment
+  // actually rewritten indices that point to entries in their respective structures
+  // i.e. ResolvedMethodEntries or ResolvedFieldEntries.
+  // The routine to_cp_index manages the adjustment
   // of these values back to constant pool indices.
 
   // There are also "uncached" versions which do not adjust the operand index; see below.
-
-  // FIXME: Consider renaming these with a prefix "cached_" to make the distinction clear.
-  // In a few cases (the verifier) there are uses before a cpcache has been built,
-  // which are handled by a dynamic check in remap_instruction_operand_from_cache.
-  // FIXME: Remove the dynamic check, and adjust all callers to specify the correct mode.
 
   // Lookup for entries consisting of (klass_index, name_and_type index)
   Klass* klass_ref_at(int which, Bytecodes::Code code, TRAPS);
@@ -669,11 +662,11 @@ class ConstantPool : public Metadata {
   u2 klass_ref_index_at(int which, Bytecodes::Code code);
   u2 name_and_type_ref_index_at(int which, Bytecodes::Code code);
 
-  int remap_instruction_operand_from_cache(int operand);  // operand must be biased by CPCACHE_INDEX_TAG
-
   constantTag tag_ref_at(int cp_cache_index, Bytecodes::Code code);
 
   int to_cp_index(int which, Bytecodes::Code code);
+
+  bool is_resolved(int which, Bytecodes::Code code);
 
   // Lookup for entries consisting of (name_index, signature_index)
   u2 name_ref_index_at(int cp_index);            // ==  low-order jshort of name_and_type_at(cp_index)
@@ -690,10 +683,14 @@ class ConstantPool : public Metadata {
 #if INCLUDE_CDS
   // CDS support
   objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  void find_required_hidden_classes() NOT_CDS_JAVA_HEAP_RETURN;
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
-  bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+private:
+  void remove_unshareable_entries();
+  void remove_resolved_klass_if_non_deterministic(int cp_index);
+  template <typename Function> void iterate_archivable_resolved_references(Function function);
 #endif
 
  private:
@@ -767,9 +764,9 @@ class ConstantPool : public Metadata {
 
   // Used by compiler to prevent classloading.
   static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
-  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which);
+  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
+  static bool has_local_signature_at_if_loaded     (const constantPoolHandle& this_cp, int which, Bytecodes::Code code);
   static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
@@ -791,20 +788,7 @@ class ConstantPool : public Metadata {
   int pre_resolve_shared_klasses(TRAPS);
 
   // Debugging
-  const char* printable_name_at(int cp_index) PRODUCT_RETURN0;
-
-#ifdef ASSERT
-  enum { CPCACHE_INDEX_TAG = 0x10000 };  // helps keep CP cache indices distinct from CP indices
-#else
-  enum { CPCACHE_INDEX_TAG = 0 };        // in product mode, this zero value is a no-op
-#endif //ASSERT
-
-  static int decode_cpcache_index(int raw_index, bool invokedynamic_ok = false) {
-    if (invokedynamic_ok && is_invokedynamic_index(raw_index))
-      return decode_invokedynamic_index(raw_index);
-    else
-      return raw_index - CPCACHE_INDEX_TAG;
-  }
+  const char* printable_name_at(int cp_index) PRODUCT_RETURN_NULL;
 
  private:
 
@@ -923,10 +907,16 @@ class ConstantPool : public Metadata {
   inline ResolvedFieldEntry* resolved_field_entry_at(int field_index);
   inline int resolved_field_entries_length() const;
 
+  // ResolvedMethodEntry getters
+  inline ResolvedMethodEntry* resolved_method_entry_at(int method_index);
+  inline int resolved_method_entries_length() const;
+  inline oop appendix_if_resolved(int method_index) const;
+
   // ResolvedIndyEntry getters
   inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
   inline int resolved_indy_entries_length() const;
   inline oop resolved_reference_from_indy(int index) const;
+  inline oop resolved_reference_from_method(int index) const;
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

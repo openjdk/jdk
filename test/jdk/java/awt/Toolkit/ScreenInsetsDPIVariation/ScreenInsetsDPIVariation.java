@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public final class ScreenInsetsDPIVariation {
 
     private static void runProcess(String dpi, int screen, Insets insets)
             throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-Dsun.java2d.uiScale=" + dpi,
                 ScreenInsetsDPIVariation.class.getSimpleName(),
                 String.valueOf(screen), String.valueOf(insets.left),

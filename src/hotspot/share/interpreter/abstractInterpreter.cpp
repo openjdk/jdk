@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,9 @@ void AbstractInterpreter::print() {
     tty->print_cr("avg codelet size = %6d bytes", _code->used_space() / _code->number_of_stubs());
     tty->cr();
   }
+  _should_print_instructions = PrintInterpreter;
   _code->print();
+  _should_print_instructions = false;
   tty->print_cr("----------------------------------------------------------------------");
   tty->cr();
 }
@@ -90,6 +92,8 @@ address    AbstractInterpreter::_rethrow_exception_entry                    = nu
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
+
+bool       AbstractInterpreter::_should_print_instructions = false;
 
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter
@@ -138,6 +142,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsin:              return java_lang_math_sin;
       case vmIntrinsics::_dcos:              return java_lang_math_cos;
       case vmIntrinsics::_dtan:              return java_lang_math_tan;
+      case vmIntrinsics::_dtanh:             return java_lang_math_tanh;
       case vmIntrinsics::_dabs:              return java_lang_math_abs;
       case vmIntrinsics::_dlog:              return java_lang_math_log;
       case vmIntrinsics::_dlog10:            return java_lang_math_log10;
@@ -149,7 +154,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsqrt_strict:      return java_lang_math_sqrt_strict;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
       case vmIntrinsics::_Object_init:
-        if (RegisterFinalizersAtInit && m->code_size() == 1) {
+        if (m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
           // finalizer registration so create a normal frame.
           return zerolocals;
@@ -198,6 +203,7 @@ vmIntrinsics::ID AbstractInterpreter::method_intrinsic(MethodKind kind) {
   case java_lang_math_sin         : return vmIntrinsics::_dsin;
   case java_lang_math_cos         : return vmIntrinsics::_dcos;
   case java_lang_math_tan         : return vmIntrinsics::_dtan;
+  case java_lang_math_tanh        : return vmIntrinsics::_dtanh;
   case java_lang_math_abs         : return vmIntrinsics::_dabs;
   case java_lang_math_log         : return vmIntrinsics::_dlog;
   case java_lang_math_log10       : return vmIntrinsics::_dlog10;
@@ -261,7 +267,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
     switch (code) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
-        int method_index = cpool->decode_invokedynamic_index(invoke_bc.get_index_u4(code));
+        int method_index = invoke_bc.get_index_u4(code);
         return cpool->resolved_indy_entry_at(method_index)->is_resolved();
       }
       case Bytecodes::_invokevirtual:   // fall-through
@@ -272,7 +278,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
           return false; // might have been reached
         }
         assert(!invoke_bc.has_index_u4(code), "sanity");
-        int method_index = invoke_bc.get_index_u2_cpcache(code);
+        int method_index = invoke_bc.get_index_u2(code);
         constantPoolHandle cp(Thread::current(), cpool);
         Method* resolved_method = ConstantPool::method_at_if_loaded(cp, method_index);
         return (resolved_method == nullptr);
@@ -309,6 +315,7 @@ void AbstractInterpreter::print_method_kind(MethodKind kind) {
     case java_lang_math_sin     : tty->print("java_lang_math_sin"     ); break;
     case java_lang_math_cos     : tty->print("java_lang_math_cos"     ); break;
     case java_lang_math_tan     : tty->print("java_lang_math_tan"     ); break;
+    case java_lang_math_tanh    : tty->print("java_lang_math_tanh"    ); break;
     case java_lang_math_abs     : tty->print("java_lang_math_abs"     ); break;
     case java_lang_math_log     : tty->print("java_lang_math_log"     ); break;
     case java_lang_math_log10   : tty->print("java_lang_math_log10"   ); break;
@@ -380,7 +387,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u2(bcp+1);
-        method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
+        method->constants()->cache()->resolved_method_entry_at(index)->set_num_parameters(callee_parameters);
       }
       break;
     }
@@ -394,8 +401,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
-        int indy_index = method->constants()->decode_invokedynamic_index(index);
-        method->constants()->resolved_indy_entry_at(indy_index)->set_num_parameters(callee_parameters);
+        method->constants()->resolved_indy_entry_at(index)->set_num_parameters(callee_parameters);
       }
       break;
     }

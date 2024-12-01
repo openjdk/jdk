@@ -28,12 +28,17 @@
 
 ZNMethodData::ZNMethodData()
   : _lock(),
+    _ic_lock(),
     _barriers(),
     _immediate_oops(),
     _has_non_immediate_oops(false) {}
 
 ZReentrantLock* ZNMethodData::lock() {
   return &_lock;
+}
+
+ZReentrantLock* ZNMethodData::ic_lock() {
+  return &_ic_lock;
 }
 
 const ZArray<ZNMethodDataBarrier>* ZNMethodData::barriers() const {

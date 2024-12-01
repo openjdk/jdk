@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,10 @@
 // "resolution" refers to populating the getcode and putcode fields and other relevant information.
 // The field's type (TOS), offset, holder klass, and index within that class can all be acquired
 // together and are used to populate this structure. These entries are contained
-// within the ConstantPoolCache and are accessed with indices added to the invokedynamic bytecode after
+// within the ConstantPoolCache and are accessed with indices added to the bytecode after
 // rewriting.
 
-// Field bytecodes start with a constant pool index as their operate, which is then rewritten to
+// Field bytecodes start with a constant pool index as their operand, which is then rewritten to
 // a "field index", which is an index into the array of ResolvedFieldEntry.
 
 //class InstanceKlass;
@@ -55,6 +55,17 @@ class ResolvedFieldEntry {
   u1 _flags;                    // Flags: [0000|00|is_final|is_volatile]
   u1 _get_code, _put_code;      // Get and Put bytecodes of the field
 
+  void copy_from(const ResolvedFieldEntry& other) {
+    _field_holder = other._field_holder;
+    _field_offset = other._field_offset;
+    _field_index = other._field_index;
+    _cpool_index = other._cpool_index;
+    _tos_state = other._tos_state;
+    _flags = other._flags;
+    _get_code = other._get_code;
+    _put_code = other._put_code;
+  }
+
 public:
   ResolvedFieldEntry(u2 cpi) :
     _field_holder(nullptr),
@@ -65,8 +76,18 @@ public:
     _flags(0),
     _get_code(0),
     _put_code(0) {}
+
   ResolvedFieldEntry() :
     ResolvedFieldEntry(0) {}
+
+  ResolvedFieldEntry(const ResolvedFieldEntry& other) {
+    copy_from(other);
+  }
+
+  ResolvedFieldEntry& operator=(const ResolvedFieldEntry& other) {
+    copy_from(other);
+    return *this;
+  }
 
   // Bit shift to get flags
   // Note: Only two flags exists at the moment but more could be added
@@ -131,7 +152,10 @@ public:
   }
 
   // CDS
+#if INCLUDE_CDS
   void remove_unshareable_info();
+  void mark_and_relocate();
+#endif
 
   // Offsets
   static ByteSize field_holder_offset() { return byte_offset_of(ResolvedFieldEntry, _field_holder); }

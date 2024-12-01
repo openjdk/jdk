@@ -22,10 +22,10 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "gc/z/zPhysicalMemoryBacking_bsd.hpp"
@@ -82,7 +82,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
   _base = (uintptr_t)os::reserve_memory(max_capacity);
   if (_base == 0) {
     // Failed
-    log_error_pd(gc)("Failed to reserve address space for backing memory");
+    ZInitialize::error("Failed to reserve address space for backing memory");
     return;
   }
 
@@ -103,7 +103,7 @@ bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset) + length / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const uintptr_t addr = _base + untype(offset);
   const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
@@ -150,7 +150,7 @@ size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset) + length / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const uintptr_t start = _base + untype(offset);
   const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);

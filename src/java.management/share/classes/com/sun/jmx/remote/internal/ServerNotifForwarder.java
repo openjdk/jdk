@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,14 +162,26 @@ public class ServerNotifForwarder {
                 connectionId, name, getSubject());
         }
 
+        // 6238731: set the default domain if no domain is set.
+        ObjectName nn = name;
+        if (name.getDomain() == null || name.getDomain().isEmpty()) {
+            try {
+                nn = ObjectName.getInstance(mbeanServer.getDefaultDomain(),
+                                            name.getKeyPropertyList());
+            } catch (MalformedObjectNameException mfoe) {
+                // impossible, but...
+                throw new IOException(mfoe.getMessage(), mfoe);
+            }
+        }
+
         Exception re = null;
         for (int i = 0 ; i < listenerIDs.length ; i++) {
             try {
-                removeNotificationListener(name, listenerIDs[i]);
+                removeNotificationListener(nn, listenerIDs[i]);
             } catch (Exception e) {
                 // Give back the first exception
                 //
-                if (re != null) {
+                if (re == null) {
                     re = e;
                 }
             }
@@ -343,10 +355,8 @@ public class ServerNotifForwarder {
     //----------------
     // PRIVATE METHODS
     //----------------
-
-    @SuppressWarnings("removal")
     private Subject getSubject() {
-        return Subject.getSubject(AccessController.getContext());
+        return Subject.current();
     }
 
     private void checkState() throws IOException {

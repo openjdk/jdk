@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -42,21 +42,18 @@ JAVAC = $(JDK_HOME)/bin/javac
 JAR = $(JDK_HOME)/bin/jar
 
 SRC_FILES = $(shell find $(SRC_DIR) -name '*.java')
-LIB_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
+# Exclude files that need '--enable-preview' to compile.
+LIB_FILES = $(filter-out %ModuleInfoWriter.java, $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/ \
     $(TESTLIBRARY_DIR)/jdk/test/lib/process \
     $(TESTLIBRARY_DIR)/jdk/test/lib/util \
     $(TESTLIBRARY_DIR)/jtreg \
-    -maxdepth 1 -name '*.java')
+    -maxdepth 1 -name '*.java'))
 WB_SRC_FILES = $(shell find $(TESTLIBRARY_DIR)/jdk/test/lib/compiler $(TESTLIBRARY_DIR)/jdk/test/whitebox -name '*.java')
 WB_CLASS_FILES := $(subst $(TESTLIBRARY_DIR)/,,$(WB_SRC_FILES))
 WB_CLASS_FILES := $(patsubst %.java,%.class,$(WB_CLASS_FILES))
 EXPORTS=--add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.module=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
-	--add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
 	--add-exports java.base/jdk.internal.access=ALL-UNNAMED
 
 CTW_MAIN_CLASS = sun.hotspot.tools.ctw.CompileTheWorld
@@ -77,7 +74,7 @@ $(DST_DIR):
 	@mkdir -p $@
 
 $(DST_DIR)/ctw.sh: $(DST_DIR)
-	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} $(EXPORTS) -XX:-UseCounterDecay -Xbatch "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*" -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:wb.jar -jar ctw.jar $$@' > $@
+	echo '$${JAVA_HOME}/bin/java $${JAVA_OPTIONS} $(EXPORTS) -Xbatch "-XX:CompileCommand=exclude,java/lang/invoke/MethodHandle.*" -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:wb.jar -jar ctw.jar $$@' > $@
 	chmod a+x $@
 
 $(DST_DIR)/ctwrunner.sh: $(DST_DIR)

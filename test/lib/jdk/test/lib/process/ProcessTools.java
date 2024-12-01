@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -376,16 +377,6 @@ public final class ProcessTools {
         return ProcessHandle.current().pid();
     }
 
-    /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
-     *
-     * @param command Arguments to pass to the java command.
-     * @return The ProcessBuilder instance representing the java command.
-     */
-    public static ProcessBuilder createJavaProcessBuilder(List<String> command) {
-        return createJavaProcessBuilder(command.toArray(String[]::new));
-    }
-
     /*
       Convert arguments for tests running with virtual threads test thread factory.
       When test is executed with test thread factory the line is changed from
@@ -457,7 +448,7 @@ public final class ProcessTools {
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createJavaProcessBuilder(String... command) {
+    private static ProcessBuilder createJavaProcessBuilder(String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
@@ -502,77 +493,185 @@ public final class ProcessTools {
     }
 
     /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
-     * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
-     * <p>
-     * The command line will be like:
-     * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested. The default jvm options from jtreg, test.vm.opts and
+     * test.java.opts, are added.
+     *
+     * <p>Unless the "test.noclasspath" property is "true" the
+     * classpath property "java.class.path" is appended to the command
+     * line and the environment of the ProcessBuilder is modified to
+     * remove "CLASSPATH". If the property "test.thread.factory" is
+     * provided the command args are updated and appended to invoke
+     * ProcessTools main() and provide the name of the thread factory.
+     *
+     * <p>The "-Dtest.thread.factory" is appended to the arguments
+     * with the thread factory value. The remaining command args are
+     * scanned for unsupported options and are appended to the
+     * ProcessBuilder.
      *
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createTestJvm(List<String> command) {
-        return createTestJvm(command.toArray(String[]::new));
+    public static ProcessBuilder createTestJavaProcessBuilder(List<String> command) {
+        return createTestJavaProcessBuilder(command.toArray(String[]::new));
     }
 
     /**
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
-     * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
-     * <p>
-     * The command line will be like:
-     * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
-     * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested. The default jvm options from jtreg, test.vm.opts and
+     * test.java.opts, are added.
+     *
+     * <p>Unless the "test.noclasspath" property is "true" the
+     * classpath property "java.class.path" is appended to the command
+     * line and the environment of the ProcessBuilder is modified to
+     * remove "CLASSPATH". If the property "test.thread.factory" is
+     * provided the command args are updated and appended to invoke
+     * ProcessTools main() and provide the name of the thread factory.
+     *
+     * <p>The "-Dtest.thread.factory" is appended to the arguments
+     * with the thread factory value. The remaining command args are
+     * scanned for unsupported options and are appended to the
+     * ProcessBuilder.
      *
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
-    public static ProcessBuilder createTestJvm(String... command) {
+    public static ProcessBuilder createTestJavaProcessBuilder(String... command) {
         return createJavaProcessBuilder(Utils.prependTestJavaOpts(command));
     }
 
     /**
-     * Executes a test jvm process, waits for it to finish and returns the process output.
-     * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
-     * The java from the test.jdk is used to execute the command.
-     * <p>
-     * The command line will be like:
-     * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
-     * <p>
-     * The jvm process will have exited before this method returns.
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
      *
-     * @param cmds User specified arguments.
-     * @return The output from the process.
+     * <p><b>Please observe that you likely should use
+     * createTestJavaProcessBuilder() instead of this method because
+     * createTestJavaProcessBuilder() will add JVM options from
+     * "test.vm.opts" and "test.java.opts"</b> and this method will
+     * not do that.
+     *
+     * <p>If you still chose to use
+     * createLimitedTestJavaProcessBuilder() you should probably use
+     * it in combination with <b>@requires vm.flagless</b> JTREG
+     * anotation as to not waste energy and test resources.
+     *
+     * <p>Unless the "test.noclasspath" property is "true" the
+     * classpath property "java.class.path" is appended to the command
+     * line and the environment of the ProcessBuilder is modified to
+     * remove "CLASSPATH". If the property "test.thread.factory" is
+     * provided the command args are updated and appended to invoke
+     * ProcessTools main() and provide the name of the thread factory.
+     *
+     * <p>The "-Dtest.thread.factory" is appended to the arguments
+     * with the thread factory value. The remaining command args are
+     * scanned for unsupported options and are appended to the
+     * ProcessBuilder.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
      */
-    public static OutputAnalyzer executeTestJvm(List<String> cmds) throws Exception {
-        return executeTestJvm(cmds.toArray(String[]::new));
+    public static ProcessBuilder createLimitedTestJavaProcessBuilder(List<String> command) {
+        return createLimitedTestJavaProcessBuilder(command.toArray(String[]::new));
+    }
+
+   /**
+     * Create ProcessBuilder using the java launcher from the jdk to
+     * be tested.
+     *
+     * <p><b>Please observe that you likely should use
+     * createTestJavaProcessBuilder() instead of this method because
+     * createTestJavaProcessBuilder() will add JVM options from
+     * "test.vm.opts" and "test.java.opts"</b> and this method will
+     * not do that.
+     *
+     * <p>If you still chose to use
+     * createLimitedTestJavaProcessBuilder() you should probably use
+     * it in combination with <b>@requires vm.flagless</b> JTREG
+     * anotation as to not waste energy and test resources.
+     *
+     * <p>Unless the "test.noclasspath" property is "true" the
+     * classpath property "java.class.path" is appended to the command
+     * line and the environment of the ProcessBuilder is modified to
+     * remove "CLASSPATH". If the property "test.thread.factory" is
+     * provided the command args are updated and appended to invoke
+     * ProcessTools main() and provide the name of the thread factory.
+     *
+     * <p>The "-Dtest.thread.factory" is appended to the arguments
+     * with the thread factory value. The remaining command args are
+     * scanned for unsupported options and are appended to the
+     * ProcessBuilder.
+     *
+     * @param command Arguments to pass to the java command.
+     * @return The ProcessBuilder instance representing the java command.
+     */
+    public static ProcessBuilder createLimitedTestJavaProcessBuilder(String... command) {
+        return createJavaProcessBuilder(command);
     }
 
     /**
-     * Executes a test jvm process, waits for it to finish and returns the process output.
-     * The default jvm options from jtreg, test.vm.opts and test.java.opts, are added.
-     * The java from the test.jdk is used to execute the command.
-     * <p>
-     * The command line will be like:
-     * {test.jdk}/bin/java {test.vm.opts} {test.java.opts} cmds
-     * <p>
-     * The jvm process will have exited before this method returns.
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
+     * the process output.
      *
-     * @param cmds User specified arguments.
+     * <p>The process is created using runtime flags set up by:
+     * {@link #createTestJavaProcessBuilder(String...)}. The
+     * jvm process will have exited before this method returns.
+     *
+     * @param command User specified arguments.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeTestJvm(String... cmds) throws Exception {
-        ProcessBuilder pb = createTestJvm(cmds);
+    public static OutputAnalyzer executeTestJava(List<String> command) throws Exception {
+        return executeTestJava(command.toArray(String[]::new));
+    }
+
+    /**
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
+     * the process output.
+     *
+     * <p>The process is created using runtime flags set up by:
+     * {@link #createTestJavaProcessBuilder(String...)}. The
+     * jvm process will have exited before this method returns.
+     *
+     * @param command User specified arguments.
+     * @return The output from the process.
+     */
+    public static OutputAnalyzer executeTestJava(String... command) throws Exception {
+        ProcessBuilder pb = createTestJavaProcessBuilder(command);
         return executeProcess(pb);
     }
 
     /**
-     * @param cmds User specified arguments.
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
+     * the process output.
+     *
+     * <p>The process is created using runtime flags set up by:
+     * {@link #createLimitedTestJavaProcessBuilder(String...)}. The
+     * jvm process will have exited before this method returns.
+     *
+     * @param command User specified arguments.
      * @return The output from the process.
-     * @see #executeTestJvm(String...)
      */
-    public static OutputAnalyzer executeTestJava(String... cmds) throws Exception {
-        return executeTestJvm(cmds);
+    public static OutputAnalyzer executeLimitedTestJava(List<String> command) throws Exception {
+        return executeLimitedTestJava(command.toArray(String[]::new));
+    }
+
+    /**
+     * Executes a process using the java launcher from the jdk to
+     * be tested, waits for it to finish and returns
+     * the process output.
+     *
+     * <p>The process is created using runtime flags set up by:
+     * {@link #createLimitedTestJavaProcessBuilder(String...)}. The
+     * jvm process will have exited before this method returns.
+     *
+     * @param command User specified arguments.
+     * @return The output from the process.
+     */
+    public static OutputAnalyzer executeLimitedTestJava(String... command) throws Exception {
+        ProcessBuilder pb = createLimitedTestJavaProcessBuilder(command);
+        return executeProcess(pb);
     }
 
     /**
@@ -625,7 +724,10 @@ public final class ProcessTools {
             }
 
             output = new OutputAnalyzer(p, cs);
-            p.waitFor();
+
+            // Wait for the process to finish. Call through the output
+            // analyzer to get correct logging and timestamps.
+            output.waitFor();
 
             {   // Dumping the process output to a separate file
                 var fileName = String.format("pid-%d-output.log", p.pid());
@@ -663,7 +765,7 @@ public final class ProcessTools {
      * @param cmds The command line to execute.
      * @return The output from the process.
      */
-    public static OutputAnalyzer executeProcess(String... cmds) throws Throwable {
+    public static OutputAnalyzer executeProcess(String... cmds) throws Exception {
         return executeProcess(new ProcessBuilder(cmds));
     }
 
@@ -708,8 +810,7 @@ public final class ProcessTools {
      * @param cmds The command line to execute.
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
-    public static OutputAnalyzer executeCommand(String... cmds)
-            throws Throwable {
+    public static OutputAnalyzer executeCommand(String... cmds) throws Exception {
         String cmdLine = String.join(" ", cmds);
         System.out.println("Command line: [" + cmdLine + "]");
         OutputAnalyzer analyzer = ProcessTools.executeProcess(cmds);
@@ -726,8 +827,7 @@ public final class ProcessTools {
      * @param pb The ProcessBuilder to execute.
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
-    public static OutputAnalyzer executeCommand(ProcessBuilder pb)
-            throws Throwable {
+    public static OutputAnalyzer executeCommand(ProcessBuilder pb) throws Exception {
         String cmdLine = pb.command().stream()
                 .map(x -> (x.contains(" ") || x.contains("$"))
                         ? ("'" + x + "'") : x)
@@ -866,6 +966,15 @@ public final class ProcessTools {
             return rslt;
         }
 
+        @Override
+        public boolean waitFor(Duration duration) throws InterruptedException {
+            boolean rslt = p.waitFor(duration);
+            if (rslt) {
+                waitForStreams();
+            }
+            return rslt;
+        }
+
         private void waitForStreams() throws InterruptedException {
             try {
                 stdoutTask.get();
@@ -887,7 +996,7 @@ public final class ProcessTools {
         String className = args[1];
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
-        Class c = Class.forName(className);
+        Class<?> c = Class.forName(className);
         Method mainMethod = c.getMethod("main", new Class[] { String[].class });
         mainMethod.setAccessible(true);
 

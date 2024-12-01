@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -49,16 +49,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VE" draft="unconfirmed">Venezuéla</territory>
 		</territories>
 	</localeDisplayNames>
-	<layout>
-		<orientation>
-			<characterOrder>left-to-right</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
-		</orientation>
-	</layout>
 	<characters>
-		<exemplarCharacters>[a ã {ch} e ẽ g {g\u0303} h i ĩ j k l m {mb} n ñ {nd} {ng} {nt} o õ p r {rr} s t u ũ v y ỹ ʼ]</exemplarCharacters>
+		<exemplarCharacters>[aã {ch} eẽ g{g̃} h iĩ j k l m {mb} nñ {nd} {ng} {nt} oõ p r {rr} s t uũ v yỹ ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d f q w x z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Ã {CH} E Ẽ G {G\u0303} H I Ĩ J K L M {MB} N Ñ {ND} {NG} {NT} O Õ P R {RR} S T U Ũ V Y Ỹ ʼ]</exemplarCharacters>
+		<exemplarCharacters type="index">[AÃ {CH} EẼ G{G̃} H IĨ J K L M {MB} NÑ {ND} {NG} {NT} OÕ P R {RR} S T UŨ V YỸ ʼ]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -107,11 +101,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">ára</displayName>
 			</field>
 			<field type="day-short">
-				<relative type="-1" draft="unconfirmed">kuehe</relative>
-				<relative type="0" draft="unconfirmed">ko ára</relative>
-				<relative type="1" draft="unconfirmed">koʼẽrõ</relative>
-			</field>
-			<field type="day-narrow">
 				<relative type="-1" draft="unconfirmed">kuehe</relative>
 				<relative type="0" draft="unconfirmed">ko ára</relative>
 				<relative type="1" draft="unconfirmed">koʼẽrõ</relative>

@@ -153,6 +153,14 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
   return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, dest, compare_value, exchange_value);
 }
 
+// No direct support for 8-byte xchg; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformXchg<8> : Atomic::XchgUsingCmpxchg<8> {};
+
+// No direct support for 8-byte add; emulate using cmpxchg.
+template<>
+struct Atomic::PlatformAdd<8> : Atomic::AddUsingCmpxchg<8> {};
+
 template<>
 template<typename T>
 inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {

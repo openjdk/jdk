@@ -27,15 +27,20 @@ package sun.print;
 
 import java.io.Serial;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Objects;
 
 import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.Size2DSyntax;
 
 class CustomMediaSizeName extends MediaSizeName {
     private static ArrayList<String> customStringTable = new ArrayList<>();
     private static ArrayList<MediaSizeName> customEnumTable = new ArrayList<>();
+    private static Map<SizeNameChoiceItem, CustomMediaSizeName> customMap = new HashMap<>();
     private String choiceName;
     private MediaSizeName mediaName;
 
@@ -191,4 +196,55 @@ class CustomMediaSizeName extends MediaSizeName {
       return customEnumTable.toArray(enumTable);
     }
 
+    public static CustomMediaSizeName create(String name, String choice,
+                                             float width, float length) {
+        SizeNameChoiceItem key = new SizeNameChoiceItem(name, choice, width, length);
+        CustomMediaSizeName value = customMap.get(key);
+        if (value == null) {
+            value = new CustomMediaSizeName(name, choice, width, length);
+            customMap.put(key, value);
+
+            // add this new custom media size name to MediaSize array
+            if ((width > 0.0) && (length > 0.0)) {
+                try {
+                    new MediaSize(width, length, Size2DSyntax.INCH, value);
+                } catch (IllegalArgumentException e) {
+                        /* PDF printer in Linux for Ledger paper causes
+                        "IllegalArgumentException: X dimension > Y dimension".
+                        We rotate based on IPP spec. */
+                    new MediaSize(length, width, Size2DSyntax.INCH, value);
+                }
+            }
+        }
+        return value;
+    }
+
+    private static class SizeNameChoiceItem {
+
+        private final String name;
+        private final String choice;
+        private final float width;
+        private final float length;
+
+        public SizeNameChoiceItem(String name, String choice, float width, float length) {
+            this.name = name;
+            this.choice = choice;
+            this.width = width;
+            this.length = length;
+        }
+
+        public boolean equals(Object object) {
+            if (this == object) return true;
+            if (object == null || getClass() != object.getClass()) return false;
+            SizeNameChoiceItem that = (SizeNameChoiceItem) object;
+            return Objects.equals(this.name, that.name)
+                    && Objects.equals(this.choice, that.choice) &&
+                    Float.compare(this.width, that.width) == 0 &&
+                    Float.compare(this.length, that.length) == 0;
+        }
+
+        public int hashCode() {
+            return Objects.hash(name, choice, width, length);
+        }
+    }
 }

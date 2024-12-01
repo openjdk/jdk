@@ -44,7 +44,7 @@
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #endif
 #if INCLUDE_ZGC
-#include "gc/z/shared/zSharedArguments.hpp"
+#include "gc/z/zArguments.hpp"
 #endif
 
 struct IncludedGC {
@@ -62,7 +62,7 @@ struct IncludedGC {
   PARALLELGC_ONLY(static ParallelArguments   parallelArguments;)
     SERIALGC_ONLY(static SerialArguments     serialArguments;)
 SHENANDOAHGC_ONLY(static ShenandoahArguments shenandoahArguments;)
-         ZGC_ONLY(static ZSharedArguments    zArguments;)
+         ZGC_ONLY(static ZArguments          zArguments;)
 
 // Table of included GCs, for translating between command
 // line flag, CollectedHeap::Name and GCArguments instance.

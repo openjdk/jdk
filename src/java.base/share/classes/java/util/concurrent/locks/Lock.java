@@ -80,11 +80,11 @@ import java.util.concurrent.TimeUnit;
  *
  * <pre> {@code
  * Lock l = ...;
- * l.lock();
+ * l.lock(); // lock() as the last statement before the try block
  * try {
  *   // access the resource protected by this lock
  * } finally {
- *   l.unlock();
+ *   l.unlock(); // unlock() as the first statement in the finally block
  * }}</pre>
  *
  * When locking and unlocking occur in different scopes, care must be

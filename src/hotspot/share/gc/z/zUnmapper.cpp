@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ bool ZUnmapper::try_enqueue(ZPage* page) {
 }
 
 size_t ZUnmapper::queue_capacity() const {
-  return align_up<size_t>(_page_allocator->max_capacity() * ZAsyncUnmappingLimit / 100.0, ZGranuleSize);
+  return align_up((size_t)(_page_allocator->max_capacity() * ZAsyncUnmappingLimit / 100.0), ZGranuleSize);
 }
 
 bool ZUnmapper::is_saturated() const {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class Byte512Vector extends ByteVector {
                                    VectorMask<Byte> m) {
         return (Byte512Vector)
             super.selectFromTemplate((Byte512Vector) v,
-                                     (Byte512Mask) m);  // specialize
+                                     Byte512Mask.class, (Byte512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte512Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte512Vector)
+            super.selectFromTemplate((Byte512Vector) v1, (Byte512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -956,6 +963,13 @@ final class Byte512Vector extends ByteVector {
             return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
+        @Override
+        @ForceInline
+        public Byte512Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Byte512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Byte512Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
+        }
+
         @ForceInline
         @Override
         public Byte512Shuffle rearrange(VectorShuffle<Byte> shuffle) {
@@ -989,6 +1003,12 @@ final class Byte512Vector extends ByteVector {
         return super.fromArray0Template(Byte512Mask.class, a, offset, (Byte512Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ByteVector fromArray0(byte[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Byte> m) {
+        return super.fromArray0Template(Byte512Mask.class, a, offset, indexMap, mapOffset, (Byte512Mask) m);
+    }
 
 
     @ForceInline

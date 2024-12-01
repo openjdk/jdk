@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,9 @@
  * @summary Proper lexing of various token kinds.
  */
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Objects;
 
-import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 
 import com.sun.tools.javac.parser.JavaTokenizer;
@@ -83,7 +81,6 @@ public class JavaLexerTest {
 
     static final TestTuple[] FAILING_TESTS = {
             new TestTuple(LONGLITERAL,   "0bL"),
-            new TestTuple(LONGLITERAL,   "0b20L"),
             new TestTuple(LONGLITERAL,   "0xL"),
             new TestTuple(INTLITERAL,    "0xG000L", "0x"),
 
@@ -126,12 +123,8 @@ public class JavaLexerTest {
         Context ctx = new Context();
         Log log = Log.instance(ctx);
 
-        log.useSource(new SimpleJavaFileObject(new URI("mem://Test.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                return test.input;
-            }
-        });
+        log.useSource(SimpleJavaFileObject.forSource(URI.create("mem://Test.java"),
+                                                     test.input));
 
         char[] inputArr = test.input.toCharArray();
         JavaTokenizer tokenizer = new JavaTokenizer(ScannerFactory.instance(ctx), inputArr, inputArr.length) {};

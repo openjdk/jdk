@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -32,7 +33,9 @@
 #include "gc/shared/gc_globals.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -43,9 +46,6 @@
 #endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
-#endif
-#if INCLUDE_JFR
-#include "jfr/support/jfrIntrinsics.hpp"
 #endif
 
 // For a more detailed description of the stub routine structure
@@ -950,6 +950,92 @@ address StubGenerator::generate_fp_mask(const char *stub_name, int64_t mask) {
   return start;
 }
 
+address StubGenerator::generate_compress_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    // Loop to generate 256 x 8 int compression permute index table. A row is
+    // accessed using 8 bit index computed using vector mask. An entry in
+    // a row holds either a valid permute index corresponding to set bit position
+    // or a -1 (default) value.
+    for (int mask = 0; mask < 256; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(j, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 8; ctr++) {
+        __ emit_data(-1, relocInfo::none);
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    // Loop to generate 16 x 4 long compression permute index table. A row is
+    // accessed using 4 bit index computed using vector mask. An entry in
+    // a row holds either a valid permute index pair for a quadword corresponding
+    // to set bit position or a -1 (default) value.
+    for (int mask = 0; mask < 16; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(2 * j, relocInfo::none);
+          __ emit_data(2 * j + 1, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 4; ctr++) {
+        __ emit_data64(-1L, relocInfo::none);
+      }
+    }
+  }
+  return start;
+}
+
+address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    // Loop to generate 256 x 8 int expand permute index table. A row is accessed
+    // using 8 bit index computed using vector mask. An entry in a row holds either
+    // a valid permute index (starting from least significant lane) placed at poisition
+    // corresponding to set bit position or a -1 (default) value.
+    for (int mask = 0; mask < 256; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(ctr++, relocInfo::none);
+        } else {
+          __ emit_data(-1, relocInfo::none);
+        }
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    // Loop to generate 16 x 4 long expand permute index table. A row is accessed
+    // using 4 bit index computed using vector mask. An entry in a row holds either
+    // a valid doubleword permute index pair representing a quadword index (starting
+    // from least significant lane) placed at poisition corresponding to set bit
+    // position or a -1 (default) value.
+    for (int mask = 0; mask < 16; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(2 * ctr, relocInfo::none);
+          __ emit_data(2 * ctr + 1, relocInfo::none);
+          ctr++;
+        } else {
+          __ emit_data64(-1L, relocInfo::none);
+        }
+      }
+    }
+  }
+  return start;
+}
+
 address StubGenerator::generate_vector_mask(const char *stub_name, int64_t mask) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -1473,7 +1559,7 @@ address StubGenerator::generate_sha256_implCompress(bool multi_block, const char
 
 address StubGenerator::generate_sha512_implCompress(bool multi_block, const char *name) {
   assert(VM_Version::supports_avx2(), "");
-  assert(VM_Version::supports_bmi2(), "");
+  assert(VM_Version::supports_bmi2() || VM_Version::supports_sha512(), "");
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", name);
   address start = __ pc();
@@ -1483,22 +1569,24 @@ address StubGenerator::generate_sha512_implCompress(bool multi_block, const char
   Register ofs = c_rarg2;
   Register limit = c_rarg3;
 
-  const XMMRegister msg = xmm0;
-  const XMMRegister state0 = xmm1;
-  const XMMRegister state1 = xmm2;
-  const XMMRegister msgtmp0 = xmm3;
-  const XMMRegister msgtmp1 = xmm4;
-  const XMMRegister msgtmp2 = xmm5;
-  const XMMRegister msgtmp3 = xmm6;
-  const XMMRegister msgtmp4 = xmm7;
-
-  const XMMRegister shuf_mask = xmm8;
-
   __ enter();
 
-  __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
-  buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+  if (VM_Version::supports_sha512()) {
+      __ sha512_update_ni_x1(state, buf, ofs, limit, multi_block);
+  } else {
+    const XMMRegister msg = xmm0;
+    const XMMRegister state0 = xmm1;
+    const XMMRegister state1 = xmm2;
+    const XMMRegister msgtmp0 = xmm3;
+    const XMMRegister msgtmp1 = xmm4;
+    const XMMRegister msgtmp2 = xmm5;
+    const XMMRegister msgtmp3 = xmm6;
+    const XMMRegister msgtmp4 = xmm7;
 
+    const XMMRegister shuf_mask = xmm8;
+    __ sha512_AVX2(msg, state0, state1, msgtmp0, msgtmp1, msgtmp2, msgtmp3, msgtmp4,
+      buf, state, ofs, limit, rsp, multi_block, shuf_mask);
+  }
   __ vzeroupper();
   __ leave();
   __ ret(0);
@@ -2317,7 +2405,7 @@ address StubGenerator::generate_base64_decodeBlock() {
   const Register isURL = c_rarg5;// Base64 or URL character set
   __ movl(isMIME, Address(rbp, 2 * wordSize));
 #else
-  const Address  dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
+  const Address dp_mem(rbp, 6 * wordSize);  // length is on stack on Win64
   const Address isURL_mem(rbp, 7 * wordSize);
   const Register isURL = r10;      // pick the volatile windows register
   const Register dp = r12;
@@ -2539,10 +2627,12 @@ address StubGenerator::generate_base64_decodeBlock() {
     // output_size in r13
 
     // Strip pad characters, if any, and adjust length and mask
+    __ addq(length, start_offset);
     __ cmpb(Address(source, length, Address::times_1, -1), '=');
     __ jcc(Assembler::equal, L_padding);
 
     __ BIND(L_donePadding);
+    __ subq(length, start_offset);
 
     // Output size is (64 - output_size), output mask is (all 1s >> output_size).
     __ kmovql(input_mask, rax);
@@ -2955,10 +3045,8 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
  *    c_rarg3   - y length
  * not Win64
  *    c_rarg4   - z address
- *    c_rarg5   - z length
  * Win64
  *    rsp+40    - z address
- *    rsp+48    - z length
  */
 address StubGenerator::generate_multiplyToLen() {
   __ align(CodeEntryAlignment);
@@ -2972,9 +3060,9 @@ address StubGenerator::generate_multiplyToLen() {
   const Register y     = rsi;
   const Register ylen  = rcx;
   const Register z     = r8;
-  const Register zlen  = r11;
 
   // Next registers will be saved on stack in multiply_to_len().
+  const Register tmp0  = r11;
   const Register tmp1  = r12;
   const Register tmp2  = r13;
   const Register tmp3  = r14;
@@ -2984,21 +3072,17 @@ address StubGenerator::generate_multiplyToLen() {
   BLOCK_COMMENT("Entry:");
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-#ifndef _WIN64
-  __ movptr(zlen, r9); // Save r9 in r11 - zlen
-#endif
   setup_arg_regs(4); // x => rdi, xlen => rsi, y => rdx
-                     // ylen => rcx, z => r8, zlen => r11
+                     // ylen => rcx, z => r8
                      // r9 and r10 may be used to save non-volatile registers
 #ifdef _WIN64
-  // last 2 arguments (#4, #5) are on stack on Win64
+  // last argument (#4) is on stack on Win64
   __ movptr(z, Address(rsp, 6 * wordSize));
-  __ movptr(zlen, Address(rsp, 7 * wordSize));
 #endif
 
   __ movptr(xlen, rsi);
   __ movptr(y,    rdx);
-  __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5);
+  __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5);
 
   restore_arg_regs();
 
@@ -3493,6 +3577,9 @@ void StubGenerator::generate_libm_stubs() {
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
       StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtanh)) {
+      StubRoutines::_dtanh = generate_libmTanh(); // from stubGenerator_x86_64_tanh.cpp
+    }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
       StubRoutines::_dexp = generate_libmExp(); // from stubGenerator_x86_64_exp.cpp
     }
@@ -3619,7 +3706,7 @@ address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_
   Label L_thaw_success;
   __ testptr(rbx, rbx);
   __ jccb(Assembler::notZero, L_thaw_success);
-  __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+  __ jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
   __ bind(L_thaw_success);
 
   // Make room for the thawed frames and align the stack.
@@ -3695,203 +3782,129 @@ address StubGenerator::generate_cont_returnBarrier_exception() {
   return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
 }
 
-#if INCLUDE_JFR
-
-// For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-// It returns a jobject handle to the event writer.
-// The handle is dereferenced and the return value is the event writer oop.
-RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
-  enum layout {
-    rbp_off,
-    rbpH_off,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  CodeBuffer code("jfr_write_checkpoint", 1024, 64);
-  MacroAssembler* _masm = new MacroAssembler(&code);
+address StubGenerator::generate_cont_preempt_stub() {
+  if (!Continuations::enabled()) return nullptr;
+  StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
   address start = __ pc();
 
-  __ enter();
-  address the_pc = __ pc();
-
-  int frame_complete = the_pc - start;
-
-  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
-  __ movptr(c_rarg0, r15_thread);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
   __ reset_last_Java_frame(true);
 
-  // rax is jobject handle result, unpack and process it through a barrier.
-  __ resolve_global_jobject(rax, r15_thread, c_rarg0);
+  // Set rsp to enterSpecial frame, i.e. remove all frames copied into the heap.
+  __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
 
-  __ leave();
+  Label preemption_cancelled;
+  __ movbool(rscratch1, Address(r15_thread, JavaThread::preemption_cancelled_offset()));
+  __ testbool(rscratch1);
+  __ jcc(Assembler::notZero, preemption_cancelled);
+
+  // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+  SharedRuntime::continuation_enter_cleanup(_masm);
+  __ pop(rbp);
   __ ret(0);
 
-  OopMapSet* oop_maps = new OopMapSet();
-  OopMap* map = new OopMap(framesize, 1);
-  oop_maps->add_gc_map(frame_complete, map);
+  // We acquired the monitor after freezing the frames so call thaw to continue execution.
+  __ bind(preemption_cancelled);
+  __ movbool(Address(r15_thread, JavaThread::preemption_cancelled_offset()), false);
+  __ lea(rbp, Address(rsp, checked_cast<int32_t>(ContinuationEntry::size())));
+  __ movptr(rscratch1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
+  __ jmp(rscratch1);
 
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub(code.name(),
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps,
-                                  false);
-  return stub;
+  return start;
 }
 
-// For c2: call to return a leased buffer.
-RuntimeStub* StubGenerator::generate_jfr_return_lease() {
-  enum layout {
-    rbp_off,
-    rbpH_off,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  CodeBuffer code("jfr_return_lease", 1024, 64);
-  MacroAssembler* _masm = new MacroAssembler(&code);
+// exception handler for upcall stubs
+address StubGenerator::generate_upcall_stub_exception_handler() {
+  StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
   address start = __ pc();
 
-  __ enter();
-  address the_pc = __ pc();
-
-  int frame_complete = the_pc - start;
-
-  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch2);
-  __ movptr(c_rarg0, r15_thread);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
-  __ reset_last_Java_frame(true);
-
-  __ leave();
-  __ ret(0);
-
-  OopMapSet* oop_maps = new OopMapSet();
-  OopMap* map = new OopMap(framesize, 1);
-  oop_maps->add_gc_map(frame_complete, map);
-
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub(code.name(),
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps,
-                                  false);
-  return stub;
-}
-
-#endif // INCLUDE_JFR
-
-// Continuation point for throwing of implicit exceptions that are
-// not handled in the current activation. Fabricates an exception
-// oop and initiates normal exception dispatching in this
-// frame. Since we need to preserve callee-saved values (currently
-// only for C2, but done for C1 as well) we need a callee-saved oop
-// map and therefore have to make these stubs into RuntimeStubs
-// rather than BufferBlobs.  If the compiler needs all registers to
-// be preserved between the fault point and the exception handler
-// then it must assume responsibility for that in
-// AbstractCompiler::continuation_for_implicit_null_exception or
-// continuation_for_implicit_division_by_zero_exception. All other
-// implicit exceptions (e.g., NullPointerException or
-// AbstractMethodError on entry) are either at call sites or
-// otherwise assume that stack unwinding will be initiated, so
-// caller saved registers were assumed volatile in the compiler.
-address StubGenerator::generate_throw_exception(const char* name,
-                                                address runtime_entry,
-                                                Register arg1,
-                                                Register arg2) {
-  // Information about frame layout at time of blocking runtime call.
-  // Note that we only have to preserve callee-saved registers since
-  // the compilers are responsible for supplying a continuation point
-  // if they expect all registers to be preserved.
-  enum layout {
-    rbp_off = frame::arg_reg_save_area_bytes/BytesPerInt,
-    rbp_off2,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  int insts_size = 512;
-  int locs_size  = 64;
-
-  CodeBuffer code(name, insts_size, locs_size);
-  OopMapSet* oop_maps  = new OopMapSet();
-  MacroAssembler* _masm = new MacroAssembler(&code);
-
-  address start = __ pc();
-
-  // This is an inlined and slightly modified version of call_VM
-  // which has the ability to fetch the return PC out of
-  // thread-local storage and also sets up last_Java_sp slightly
-  // differently than the real call_VM
-
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-  assert(is_even(framesize/2), "sp not 16-byte aligned");
-
-  // return address and rbp are already in place
-  __ subptr(rsp, (framesize-4) << LogBytesPerInt); // prolog
-
-  int frame_complete = __ pc() - start;
-
-  // Set up last_Java_sp and last_Java_fp
-  address the_pc = __ pc();
-  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
-  __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
-
-  // Call runtime
-  if (arg1 != noreg) {
-    assert(arg2 != c_rarg1, "clobbered");
-    __ movptr(c_rarg1, arg1);
-  }
-  if (arg2 != noreg) {
-    __ movptr(c_rarg2, arg2);
-  }
-  __ movptr(c_rarg0, r15_thread);
-  BLOCK_COMMENT("call runtime_entry");
-  __ call(RuntimeAddress(runtime_entry));
-
-  // Generate oop map
-  OopMap* map = new OopMap(framesize, 0);
-
-  oop_maps->add_gc_map(the_pc - start, map);
-
-  __ reset_last_Java_frame(true);
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-
-  // check for pending exceptions
-#ifdef ASSERT
-  Label L;
-  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
-  __ jcc(Assembler::notEqual, L);
+  // native caller has no idea how to handle exceptions
+  // we just crash here. Up to callee to catch exceptions.
+  __ verify_oop(rax);
+  __ vzeroupper();
+  __ mov(c_rarg0, rax);
+  __ andptr(rsp, -StackAlignmentInBytes); // align stack as required by ABI
+  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+  __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
   __ should_not_reach_here();
-  __ bind(L);
-#endif // ASSERT
-  __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
+  return start;
+}
 
-  // codeBlob framesize is in words (not VMRegImpl::slot_size)
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub(name,
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps, false);
-  return stub->entry_point();
+// load Method* target of MethodHandle
+// j_rarg0 = jobject receiver
+// rbx = result
+address StubGenerator::generate_upcall_stub_load_target() {
+  StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+  address start = __ pc();
+
+  __ resolve_global_jobject(j_rarg0, r15_thread, rscratch1);
+    // Load target method from receiver
+  __ load_heap_oop(rbx, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_MemberName::method_offset()), rscratch1);
+  __ access_load_at(T_ADDRESS, IN_HEAP, rbx,
+                    Address(rbx, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                    noreg, noreg);
+  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
+
+  __ ret(0);
+
+  return start;
+}
+
+address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+  StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+  address start = __ pc();
+
+  const Register
+      r_super_klass = rax,
+      r_sub_klass   = rsi,
+      result        = rdi;
+
+  __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                         rdx, rcx, rbx, r11, // temps
+                                         result,
+                                         super_klass_index);
+  __ ret(0);
+
+  return start;
+}
+
+// Slow path implementation for UseSecondarySupersTable.
+address StubGenerator::generate_lookup_secondary_supers_table_slow_path_stub() {
+  StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+  address start = __ pc();
+
+  const Register
+      r_super_klass  = rax,
+      r_array_base   = rbx,
+      r_array_index  = rdx,
+      r_sub_klass    = rsi,
+      r_bitmap       = r11,
+      result         = rdi;
+
+  Label L_success;
+  __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap,
+                                             rcx, rdi, // temps
+                                             &L_success);
+  // bind(L_failure);
+  __ movl(result, 1);
+  __ ret(0);
+
+  __ bind(L_success);
+  __ movl(result, 0);
+  __ ret(0);
+
+  return start;
 }
 
 void StubGenerator::create_control_words() {
-  // Round to nearest, 64-bit mode, exceptions masked
-  StubRoutines::x86::_mxcsr_std = 0x1F80;
-  // Round to zero, 64-bit mode, exceptions masked
-  StubRoutines::x86::_mxcsr_rz = 0x7F80;
+  // Round to nearest, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_std = EnableX86ECoreOpts ? 0x1FBF : 0x1F80;
+  // Round to zero, 64-bit mode, exceptions masked, flags specialized
+  StubRoutines::x86::_mxcsr_rz = EnableX86ECoreOpts ? 0x7FBF : 0x7F80;
 }
 
 // Initialization
@@ -3902,8 +3915,8 @@ void StubGenerator::generate_initial_stubs() {
   create_control_words();
 
   // Initialize table for unsafe copy memeory check.
-  if (UnsafeCopyMemory::_table == nullptr) {
-    UnsafeCopyMemory::create_table(16);
+  if (UnsafeMemoryAccess::_table == nullptr) {
+    UnsafeMemoryAccess::create_table(16 + 4); // 16 for copyMemory; 4 for setMemory
   }
 
   // entry points that exist in all platforms Note: This is code
@@ -3938,17 +3951,6 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::x86::_double_sign_mask      = generate_fp_mask("double_sign_mask", 0x7FFFFFFFFFFFFFFF);
   StubRoutines::x86::_double_sign_flip      = generate_fp_mask("double_sign_flip", 0x8000000000000000);
 
-  // Build this early so it's available for the interpreter.
-  StubRoutines::_throw_StackOverflowError_entry =
-    generate_throw_exception("StackOverflowError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_StackOverflowError));
-  StubRoutines::_throw_delayed_StackOverflowError_entry =
-    generate_throw_exception("delayed StackOverflowError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_delayed_StackOverflowError));
   if (UseCRC32Intrinsics) {
     // set table address before stub generation which use it
     StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
@@ -3982,42 +3984,11 @@ void StubGenerator::generate_continuation_stubs() {
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-  JFR_ONLY(generate_jfr_stubs();)
+  StubRoutines::_cont_preempt_stub = generate_cont_preempt_stub();
 }
-
-#if INCLUDE_JFR
-void StubGenerator::generate_jfr_stubs() {
-  StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-  StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-  StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-  StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-}
-#endif
 
 void StubGenerator::generate_final_stubs() {
   // Generates the rest of stubs and initializes the entry points
-
-  // These entry points require SharedInfo::stack0 to be set up in
-  // non-core builds and need to be relocatable, so they each
-  // fabricate a RuntimeStub internally.
-  StubRoutines::_throw_AbstractMethodError_entry =
-    generate_throw_exception("AbstractMethodError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_AbstractMethodError));
-
-  StubRoutines::_throw_IncompatibleClassChangeError_entry =
-    generate_throw_exception("IncompatibleClassChangeError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_IncompatibleClassChangeError));
-
-  StubRoutines::_throw_NullPointerException_at_call_entry =
-    generate_throw_exception("NullPointerException at call throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_NullPointerException_at_call));
 
   // support for verify_oop (must happen after universe_init)
   if (VerifyOops) {
@@ -4033,12 +4004,15 @@ void StubGenerator::generate_final_stubs() {
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != nullptr) {
-    StubRoutines::x86::_method_entry_barrier = generate_method_entry_barrier();
+    StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
   }
 
   if (UseVectorizedMismatchIntrinsic) {
     StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
   }
+
+  StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+  StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 }
 
 void StubGenerator::generate_compiler_stubs() {
@@ -4072,6 +4046,13 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_reverse_byte_perm_mask_int = generate_vector_reverse_byte_perm_mask_int("perm_mask_int");
   StubRoutines::x86::_vector_reverse_byte_perm_mask_short = generate_vector_reverse_byte_perm_mask_short("perm_mask_short");
 
+  if (VM_Version::supports_avx2() && !VM_Version::supports_avx512vl()) {
+    StubRoutines::x86::_compress_perm_table32 = generate_compress_perm_table("compress_perm_table32", 32);
+    StubRoutines::x86::_compress_perm_table64 = generate_compress_perm_table("compress_perm_table64", 64);
+    StubRoutines::x86::_expand_perm_table32 = generate_expand_perm_table("expand_perm_table32", 32);
+    StubRoutines::x86::_expand_perm_table64 = generate_expand_perm_table("expand_perm_table64", 64);
+  }
+
   if (VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
     // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.
     StubRoutines::x86::_vector_popcount_lut = generate_popcount_avx_lut("popcount_lut");
@@ -4083,12 +4064,25 @@ void StubGenerator::generate_compiler_stubs() {
 
   generate_chacha_stubs();
 
+  generate_sha3_stubs();
+
+#ifdef COMPILER2
+  if ((UseAVX == 2) && EnableX86ECoreOpts) {
+    generate_string_indexof(StubRoutines::_string_indexof_array);
+  }
+#endif
+
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
 
   if (UsePoly1305Intrinsics) {
     StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+  }
+
+  if (UseIntPolyIntrinsics) {
+    StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
+    StubRoutines::_intpoly_assign = generate_intpoly_assign();
   }
 
   if (UseMD5Intrinsics) {
@@ -4163,6 +4157,14 @@ void StubGenerator::generate_compiler_stubs() {
     StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
   }
+  if (UseSecondarySupersTable) {
+    StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+    if (! InlineSecondarySupersTest) {
+      for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+        StubRoutines::_lookup_secondary_supers_table_stubs[slot] = generate_lookup_secondary_supers_table_stub(slot);
+      }
+    }
+  }
   if (UseMontgomeryMultiplyIntrinsic) {
     StubRoutines::_montgomeryMultiply
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_multiply);
@@ -4172,22 +4174,23 @@ void StubGenerator::generate_compiler_stubs() {
       = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
   }
 
-  // Load x86_64_sort library on supported hardware to enable avx512 sort and partition intrinsics
-  if (VM_Version::is_intel() && VM_Version::supports_avx512dq()) {
+  // Load x86_64_sort library on supported hardware to enable SIMD sort and partition intrinsics
+
+  if (VM_Version::is_intel() && (VM_Version::supports_avx512dq() || VM_Version::supports_avx2())) {
     void *libsimdsort = nullptr;
     char ebuf_[1024];
     char dll_name_simd_sort[JVM_MAXPATHLEN];
     if (os::dll_locate_lib(dll_name_simd_sort, sizeof(dll_name_simd_sort), Arguments::get_dll_dir(), "simdsort")) {
       libsimdsort = os::dll_load(dll_name_simd_sort, ebuf_, sizeof ebuf_);
     }
-    // Get addresses for avx512 sort and partition routines
+    // Get addresses for SIMD sort and partition routines
     if (libsimdsort != nullptr) {
       log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
 
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_sort");
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_sort" : "avx2_sort");
       StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), "avx512_partition");
+      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512dq() ? "avx512_partition" : "avx2_partition");
       StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
     }
   }
@@ -4217,44 +4220,45 @@ void StubGenerator::generate_compiler_stubs() {
 
     log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "jsvml" JNI_LIB_SUFFIX, p2i(libjsvml));
     if (UseAVX > 2) {
-      for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
-        int vop = VectorSupport::VECTOR_OP_SVML_START + op;
+      for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+        int vop = VectorSupport::VECTOR_OP_MATH_START + op;
         if ((!VM_Version::supports_avx512dq()) &&
             (vop == VectorSupport::VECTOR_OP_LOG || vop == VectorSupport::VECTOR_OP_LOG10 || vop == VectorSupport::VECTOR_OP_POW)) {
           continue;
         }
-        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf16_ha_z0", VectorSupport::svmlname[op]);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf16_ha_z0", VectorSupport::mathname[op]);
         StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s8_ha_z0", VectorSupport::svmlname[op]);
+        snprintf(ebuf, sizeof(ebuf), "__jsvml_%s8_ha_z0", VectorSupport::mathname[op]);
         StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_512][op] = (address)os::dll_lookup(libjsvml, ebuf);
       }
     }
     const char* avx_sse_str = (UseAVX >= 2) ? "l9" : ((UseAVX == 1) ? "e9" : "ex");
-    for (int op = 0; op < VectorSupport::NUM_SVML_OP; op++) {
-      int vop = VectorSupport::VECTOR_OP_SVML_START + op;
+    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
       if (vop == VectorSupport::VECTOR_OP_POW) {
         continue;
       }
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf8_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%sf8_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s1_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s1_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s2_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s2_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libjsvml, ebuf);
 
-      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::svmlname[op], avx_sse_str);
+      snprintf(ebuf, sizeof(ebuf), "__jsvml_%s4_ha_%s", VectorSupport::mathname[op], avx_sse_str);
       StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_256][op] = (address)os::dll_lookup(libjsvml, ebuf);
     }
   }
+
 #endif // COMPILER2
 #endif // COMPILER2_OR_JVMCI
 }

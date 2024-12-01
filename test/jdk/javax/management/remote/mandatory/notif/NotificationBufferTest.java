@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import javax.management.Notification;
 import javax.management.NotificationFilter;
 import javax.management.NotificationFilterSupport;
 import javax.management.ObjectName;
-import javax.management.loading.MLet;
+import javax.management.timer.Timer;
 
 import javax.management.remote.NotificationResult;
 import javax.management.remote.TargetedNotification;
@@ -80,7 +80,6 @@ public class NotificationBufferTest {
         }
     }
 
-    @SuppressWarnings("removal") // use of MLet
     private static boolean test() throws Exception {
         MBeanServer mbs = MBeanServerFactory.createMBeanServer();
 
@@ -121,7 +120,7 @@ public class NotificationBufferTest {
         }
         System.out.println("Got earliest==next in initial fetch, OK");
 
-        mbs.createMBean(MLet.class.getName(), null);
+        mbs.createMBean(Timer.class.getName(), new ObjectName(":type=Timer"));
         mbs.createMBean(NotificationSender.class.getName(), senderName);
 
         NotificationSenderMBean sender = (NotificationSenderMBean)

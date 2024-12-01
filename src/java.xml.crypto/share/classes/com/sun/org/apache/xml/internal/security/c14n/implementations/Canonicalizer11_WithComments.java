@@ -32,6 +32,7 @@ public class Canonicalizer11_WithComments extends Canonicalizer20010315 {
         super(true, true);
     }
 
+    @Override
     public final String engineGetURI() {
         return Canonicalizer.ALGO_ID_C14N11_WITH_COMMENTS;
     }

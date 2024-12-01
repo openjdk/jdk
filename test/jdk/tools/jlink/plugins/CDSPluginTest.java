@@ -26,6 +26,7 @@ import java.io.File;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.*;
+import jdk.test.whitebox.WhiteBox;
 
 import tests.Helper;
 
@@ -37,22 +38,19 @@ import jtreg.SkippedException;
  * @requires vm.cds
  * @library ../../lib
  * @library /test/lib
+ * @enablePreview
  * @modules java.base/jdk.internal.jimage
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
- * @run main CDSPluginTest
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. CDSPluginTest
  */
 
 public class CDSPluginTest {
-
     public static void main(String[] args) throws Throwable {
 
         if (!Platform.isDefaultCDSArchiveSupported())
@@ -79,12 +77,19 @@ public class CDSPluginTest {
         }
         subDir += "server" + sep;
 
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        boolean COMPACT_HEADERS = Platform.is64bit() &&
+                                  wb.getBooleanVMFlag("UseCompactObjectHeaders") &&
+                                  wb.isDefaultVMFlag("UseCompactObjectHeaders");
+
+        String suffix = COMPACT_HEADERS ? "_coh.jsa" : ".jsa";
+
         if (Platform.isAArch64() || Platform.isX64()) {
             helper.checkImage(image, module, null, null,
-                      new String[] { subDir + "classes.jsa", subDir + "classes_nocoops.jsa" });
+                      new String[] { subDir + "classes" + suffix, subDir + "classes_nocoops" + suffix });
         } else {
             helper.checkImage(image, module, null, null,
-                      new String[] { subDir + "classes.jsa" });
+                      new String[] { subDir + "classes" + suffix });
         }
     }
 }

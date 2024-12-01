@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,14 @@
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
+// Helper to avoid interference from the cleanup delay queue by draining it
+// immediately after creation.
+static TempNewSymbol stable_temp_symbol(Symbol* sym) {
+  TempNewSymbol t = sym;
+  TempSymbolCleanupDelayer::drain_queue();
+  return t;
+}
+
 TEST_VM(SymbolTable, temp_new_symbol) {
   // Assert messages assume these symbols are unique, and the refcounts start at
   // one, but code does not rely on this.
@@ -36,7 +44,7 @@ TEST_VM(SymbolTable, temp_new_symbol) {
 
   Symbol* abc = SymbolTable::new_symbol("abc");
   int abccount = abc->refcount();
-  TempNewSymbol ss = abc;
+  TempNewSymbol ss = stable_temp_symbol(abc);
   ASSERT_EQ(ss->refcount(), abccount) << "only one abc";
   ASSERT_EQ(ss->refcount(), abc->refcount()) << "should match TempNewSymbol";
 
@@ -45,8 +53,8 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   int efgcount = efg->refcount();
   int hijcount = hij->refcount();
 
-  TempNewSymbol s1 = efg;
-  TempNewSymbol s2 = hij;
+  TempNewSymbol s1 = stable_temp_symbol(efg);
+  TempNewSymbol s2 = stable_temp_symbol(hij);
   ASSERT_EQ(s1->refcount(), efgcount) << "one efg";
   ASSERT_EQ(s2->refcount(), hijcount) << "one hij";
 
@@ -65,13 +73,13 @@ TEST_VM(SymbolTable, temp_new_symbol) {
   TempNewSymbol s3;
   Symbol* klm = SymbolTable::new_symbol("klm");
   int klmcount = klm->refcount();
-  s3 = klm; // assignment
+  s3 = stable_temp_symbol(klm); // assignment
   ASSERT_EQ(s3->refcount(), klmcount) << "only one klm now";
 
   Symbol* xyz = SymbolTable::new_symbol("xyz");
   int xyzcount = xyz->refcount();
   { // inner scope
-    TempNewSymbol s_inner = xyz;
+    TempNewSymbol s_inner = stable_temp_symbol(xyz);
   }
   ASSERT_EQ(xyz->refcount(), xyzcount - 1)
           << "Should have been decremented by dtor in inner scope";
@@ -138,4 +146,51 @@ TEST_VM(SymbolTable, test_cleanup_leak) {
   Symbol* entry2 = SymbolTable::new_symbol("hash_collision_397476851");
 
   ASSERT_EQ(entry2->refcount(), 1) << "Symbol refcount just created is 1";
+}
+
+TEST_VM(SymbolTable, test_cleanup_delay) {
+  // Check that new temp symbols have an extra refcount increment, which is then
+  // decremented when the queue spills over.
+
+  TempNewSymbol s1 = SymbolTable::new_symbol("temp-s1");
+  ASSERT_EQ(s1->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+
+  // Fill up the queue
+  constexpr int symbol_name_length = 30;
+  char symbol_name[symbol_name_length];
+  for (uint i = 1; i < TempSymbolCleanupDelayer::QueueSize; i++) {
+    os::snprintf(symbol_name, symbol_name_length, "temp-filler-%d", i);
+    TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
+    ASSERT_EQ(s->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+  }
+
+  // Add one more
+  TempNewSymbol spillover = SymbolTable::new_symbol("temp-spillover");
+  ASSERT_EQ(spillover->refcount(), 2) << "TempNewSymbol refcount just created is 2";
+
+  // The first symbol should have been removed from the queue and decremented
+  ASSERT_EQ(s1->refcount(), 1) << "TempNewSymbol off queue refcount is 1";
+}
+
+TEST_VM(SymbolTable, test_cleanup_delay_drain) {
+  // Fill up the queue
+  constexpr int symbol_name_length = 30;
+  char symbol_name[symbol_name_length];
+  TempNewSymbol symbols[TempSymbolCleanupDelayer::QueueSize] = {};
+  for (uint i = 0; i < TempSymbolCleanupDelayer::QueueSize; i++) {
+    os::snprintf(symbol_name, symbol_name_length, "temp-%d", i);
+    TempNewSymbol s = SymbolTable::new_symbol(symbol_name);
+    symbols[i] = s;
+  }
+
+  // While in the queue refcounts are incremented
+  for (uint i = 0; i < TempSymbolCleanupDelayer::QueueSize; i++) {
+    ASSERT_EQ(symbols[i]->refcount(), 2) << "TempNewSymbol refcount in queue is 2";
+  }
+
+  // Draining the queue should decrement the refcounts
+  TempSymbolCleanupDelayer::drain_queue();
+  for (uint i = 0; i < TempSymbolCleanupDelayer::QueueSize; i++) {
+    ASSERT_EQ(symbols[i]->refcount(), 1) << "TempNewSymbol refcount after drain is 1";
+  }
 }

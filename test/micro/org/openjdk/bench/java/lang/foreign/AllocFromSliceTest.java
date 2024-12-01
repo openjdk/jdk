@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED" })
 public class AllocFromSliceTest extends CLayouts {
 
     @Param({"5", "20", "100", "500", "1000"})
@@ -63,18 +63,17 @@ public class AllocFromSliceTest extends CLayouts {
 
     @Benchmark
     public MemorySegment alloc_confined() {
-        Arena arena = Arena.ofConfined();
-        MemorySegment segment = arena.allocate(size);
-        MemorySegment.copy(arr, start, segment, C_CHAR, 0, size);
-        arena.close();
-        return segment;
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(size);
+            MemorySegment.copy(arr, start, segment, C_CHAR, 0, size);
+            return segment;
+        }
     }
 
     @Benchmark
     public MemorySegment alloc_confined_slice() {
-        Arena arena = Arena.ofConfined();
-        MemorySegment segment = arena.allocateFrom(C_CHAR, MemorySegment.ofArray(arr), C_CHAR, start, size);
-        arena.close();
-        return segment;
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocateFrom(C_CHAR, MemorySegment.ofArray(arr), C_CHAR, start, size);
+        }
     }
 }

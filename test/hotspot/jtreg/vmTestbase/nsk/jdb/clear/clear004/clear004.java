@@ -40,7 +40,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.clear.clear004.clear004a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.clear.clear004.clear004
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -63,14 +63,10 @@ import java.util.*;
 public class clear004 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
-        return new clear004().runTest(argv, out);
+        new clear004().runTest(argv);
     }
 
     static final String PACKAGE_NAME     = "nsk.jdb.clear.clear004";

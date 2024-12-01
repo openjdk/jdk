@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 
 /*
-  test
+  @test
+  @key headful
   @bug 4531693 4636269 4681908 4688142 4691646 4721470
   @summary Showing modal dialog during dispatching SequencedEvent
-  @key headful
-  @run main AutomaticAppletTest
+  @run main ModalDialogInFocusEventTest
 */
 
 import java.awt.AWTEvent;
@@ -67,6 +67,8 @@ public class ModalDialogInFocusEventTest
     };
     static final int MAX_STAGE_NUM = stages.length;
     static final Object stageMonitor = new Object();
+
+    static boolean isOnWayland;
 
     Robot robot = null;
     Frame frame;
@@ -209,18 +211,21 @@ public class ModalDialogInFocusEventTest
 
     void clickOnFrameTitle(Frame frame) throws InterruptedException,
             InvocationTargetException {
-        System.out.println("click on title of " + frame.getName());
-        int[] point = new int[2];
-        EventQueue.invokeAndWait(() -> {
-            Point location = frame.getLocationOnScreen();
-            Insets insets = frame.getInsets();
-            int width = frame.getWidth();
-            point[0] = location.x + width / 2;
-            point[1] = location.y + insets.top / 2;
-        });
-        robot.mouseMove(point[0], point[1]);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        EventQueue.invokeAndWait(frame::toFront);
+        if (!isOnWayland) {
+            System.out.println("click on title of " + frame.getName());
+            int[] point = new int[2];
+            EventQueue.invokeAndWait(() -> {
+                Point location = frame.getLocationOnScreen();
+                Insets insets = frame.getInsets();
+                int width = frame.getWidth();
+                point[0] = location.x + width / 2;
+                point[1] = location.y + insets.top / 2;
+            });
+            robot.mouseMove(point[0], point[1]);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        }
         EventQueue.invokeAndWait(frame::requestFocusInWindow);
     }
 
@@ -344,6 +349,7 @@ public class ModalDialogInFocusEventTest
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
+        isOnWayland = System.getenv("WAYLAND_DISPLAY") != null;
         ModalDialogInFocusEventTest test = new ModalDialogInFocusEventTest();
         test.start();
     }

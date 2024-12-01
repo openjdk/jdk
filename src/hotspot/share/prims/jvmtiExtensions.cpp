@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,11 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   thread_ptr = va_arg(ap, jthread*);
   va_end(ap);
 
+  if (thread_ptr == nullptr) {
+    return JVMTI_ERROR_NULL_POINTER;
+  }
+
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
   ThreadInVMfromNative tiv(current_thread);
   JvmtiVTMSTransitionDisabler disabler;
 
@@ -155,12 +160,11 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
   if (!java_lang_VirtualThread::is_instance(vthread_oop)) {
     return JVMTI_ERROR_INVALID_THREAD;
   }
-  if (thread_ptr == nullptr) {
-    return JVMTI_ERROR_NULL_POINTER;
-  }
-  VirtualThreadGetThreadClosure op(Handle(current_thread, vthread_oop), thread_ptr);
-  Handshake::execute(&op, &tlh, current_thread);
-  return op.result();
+
+  oop carrier_thread = java_lang_VirtualThread::carrier_thread(vthread_oop);
+  *thread_ptr = (jthread)JNIHandles::make_local(current_thread, carrier_thread);
+
+  return JVMTI_ERROR_NONE;
 }
 
 // register extension functions and events. In this implementation we

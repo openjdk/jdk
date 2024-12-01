@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.test.lib.JDKToolFinder;
 import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
@@ -144,26 +142,14 @@ public class GetResource {
     private void runTest(Path dir, List<String> options, String expected)
         throws Throwable
     {
-        String javapath = JDKToolFinder.getJDKTool("java");
-
         List<String> cmdLine = new ArrayList<>();
-        cmdLine.add(javapath);
         options.forEach(cmdLine::add);
 
         cmdLine.add("GetResource");
         cmdLine.add(expected);
-
-        System.out.println("Command line: " + cmdLine);
-        ProcessBuilder pb =
-            new ProcessBuilder(cmdLine.stream().toArray(String[]::new));
-
-        // change working directory
-        pb.directory(dir.toFile());
-
-        // remove CLASSPATH environment variable
-        Map<String,String> env = pb.environment();
-        String value = env.remove("CLASSPATH");
-
+        ProcessBuilder pb = createTestJavaProcessBuilder(cmdLine);
+        pb.directory(dir.toFile()); // change working directory
+        pb.environment().remove("CLASSPATH"); // remove CLASSPATH environment variable
         executeCommand(pb).shouldHaveExitValue(0);
     }
 

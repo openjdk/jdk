@@ -45,7 +45,7 @@ public class T8032814 {
                 + clazz.getDeclaredMethods().length;
         test(clazz, 0);
         test(clazz, count, "-v");
-        test(clazz, count, "-l");
+        test(clazz, count, "-c", "-l");
         test(clazz, count, "-v", "-l");
 
         if (errors > 0)

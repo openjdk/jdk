@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,15 @@ TEST_VM(ObjectBitSet, empty) {
   ASSERT_FALSE(obs.is_marked(&obj1));
 }
 
-// NOTE: This is a little weird. NULL is not treated any special: ObjectBitSet will happily
-// allocate a fragement for the memory range starting at 0 and mark the first bit when passing NULL.
+// NOTE: This is a little weird. nullptr is not treated any special: ObjectBitSet will happily
+// allocate a fragement for the memory range starting at 0 and mark the first bit when passing nullptr.
 // In the absense of any error handling, I am not sure what would possibly be a reasonable better
 // way to do it, though.
 TEST_VM(ObjectBitSet, null) {
   ObjectBitSet<mtTracing> obs;
-  ASSERT_FALSE(obs.is_marked((oop)NULL));
-  obs.mark_obj((oop) NULL);
-  ASSERT_TRUE(obs.is_marked((oop)NULL));
+  ASSERT_FALSE(obs.is_marked((oop)nullptr));
+  obs.mark_obj((oop) nullptr);
+  ASSERT_TRUE(obs.is_marked((oop)nullptr));
 }
 
 TEST_VM(ObjectBitSet, mark_single) {

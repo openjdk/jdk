@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,20 @@
 
 package sun.security.provider;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.math.BigInteger;
 import java.security.KeyRep;
 import java.security.InvalidKeyException;
 
 /**
  * An X.509 public key for the Digital Signature Algorithm.
- *
+ * <p>
  * The difference between DSAPublicKeyImpl and DSAPublicKey is that
  * DSAPublicKeyImpl calls writeReplace with KeyRep, and DSAPublicKey
  * calls writeObject.
- *
+ * <p>
  * See the comments in DSAKeyFactory, 4532506, and 6232513.
  *
  */
@@ -72,10 +75,26 @@ public final class DSAPublicKeyImpl extends DSAPublicKey {
     }
 
     @java.io.Serial
-    protected Object writeReplace() throws java.io.ObjectStreamException {
+    private Object writeReplace() throws java.io.ObjectStreamException {
         return new KeyRep(KeyRep.Type.PUBLIC,
                         getAlgorithm(),
                         getFormat(),
                         getEncoded());
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "DSAPublicKeyImpl keys are not directly deserializable");
     }
 }

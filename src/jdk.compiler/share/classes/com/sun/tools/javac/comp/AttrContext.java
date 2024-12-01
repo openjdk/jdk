@@ -49,13 +49,9 @@ public class AttrContext {
      */
     int staticLevel = 0;
 
-    /** Is this an environment for a this(...) or super(...) call?
+    /** Are we in the 'prologue' part of a constructor, prior to an explicit this()/super()?
      */
-    boolean isSelfCall = false;
-
-    /** are we analyzing the arguments for a constructor invocation?
-     */
-    boolean constructorArgs = false;
+    boolean ctorPrologue = false;
 
     /** Are we evaluating the selector of a `super' or type name?
      */
@@ -95,6 +91,10 @@ public class AttrContext {
     /** Indicate protected access should be unconditionally allowed.
      */
     boolean allowProtectedAccess = false;
+
+    /** Are we attributing a permits clause?
+     */
+    boolean isPermitsClause = false;
 
     /** Are arguments to current function applications boxed into an array for varargs?
      */
@@ -136,8 +136,7 @@ public class AttrContext {
         AttrContext info = new AttrContext();
         info.scope = scope;
         info.staticLevel = staticLevel;
-        info.isSelfCall = isSelfCall;
-        info.constructorArgs = constructorArgs;
+        info.ctorPrologue = ctorPrologue;
         info.selectSuper = selectSuper;
         info.pendingResolutionPhase = pendingResolutionPhase;
         info.lint = lint;
@@ -154,6 +153,7 @@ public class AttrContext {
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;
         info.visitingServiceImplementation = visitingServiceImplementation;
         info.allowProtectedAccess = allowProtectedAccess;
+        info.isPermitsClause = isPermitsClause;
         return info;
     }
 

@@ -105,7 +105,7 @@ public class SocketWriteEvent extends Event {
      * timestamp and the given start time.  If the duration is meets
      * or exceeds the configured value (determined by calling the generated method
      * {@link #shouldCommit(long)}), an event will be emitted by calling
-     * {@link #commit(long, long, String, String, int, long)}.
+     * {@link #emit(long, long, long, SocketAddress)}.
      *
      * @param start  the start time
      * @param bytesWritten  how many bytes were sent
@@ -114,13 +114,27 @@ public class SocketWriteEvent extends Event {
     public static void offer(long start, long bytesWritten, SocketAddress remote) {
         long duration = timestamp() - start;
         if (shouldCommit(duration)) {
-            long bytes = bytesWritten < 0 ? 0 : bytesWritten;
-            if (remote instanceof InetSocketAddress isa) {
-                commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), bytes);
-            } else if (remote instanceof UnixDomainSocketAddress udsa) {
-                String path = "[" + udsa.getPath().toString() + "]";
-                commit(start, duration, "Unix domain socket", path, 0, bytes);
-            }
+            emit(start, duration, bytesWritten, remote);
+        }
+    }
+
+    /**
+     * Helper method to perform a common task of getting event data ready and
+     * then emitting the event by calling
+     * {@link #commit(long, long, String, String, int, long)}.
+     *
+     * @param start  the start time
+     * @param duration the duration
+     * @param bytesWritten  how many bytes were sent
+     * @param remote  the address of the remote socket being written to
+     */
+    public static void emit(long start, long duration, long bytesWritten, SocketAddress remote) {
+        long bytes = bytesWritten < 0 ? 0 : bytesWritten;
+        if (remote instanceof InetSocketAddress isa) {
+            commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), bytes);
+        } else if (remote instanceof UnixDomainSocketAddress udsa) {
+            String path = "[" + udsa.getPath().toString() + "]";
+            commit(start, duration, "Unix domain socket", path, 0, bytes);
         }
     }
 }

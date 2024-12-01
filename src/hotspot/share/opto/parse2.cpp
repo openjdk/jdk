@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1354,21 +1354,6 @@ bool Parse::seems_never_taken(float prob) const {
   return prob < PROB_MIN;
 }
 
-// True if the comparison seems to be the kind that will not change its
-// statistics from true to false.  See comments in adjust_map_after_if.
-// This question is only asked along paths which are already
-// classified as untaken (by seems_never_taken), so really,
-// if a path is never taken, its controlling comparison is
-// already acting in a stable fashion.  If the comparison
-// seems stable, we will put an expensive uncommon trap
-// on the untaken path.
-bool Parse::seems_stable_comparison() const {
-  if (C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if)) {
-    return false;
-  }
-  return true;
-}
-
 //-------------------------------repush_if_args--------------------------------
 // Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline int Parse::repush_if_args() {
@@ -1386,9 +1371,26 @@ inline int Parse::repush_if_args() {
   return bc_depth;
 }
 
+// Used by StressUnstableIfTraps
+static volatile int _trap_stress_counter = 0;
+
+void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
+  Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
+  counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, MemNode::unordered);
+  counter = _gvn.transform(new AddINode(counter, intcon(1)));
+  incr_store = store_to_memory(control(), counter_addr, counter, T_INT, MemNode::unordered);
+}
+
 //----------------------------------do_ifnull----------------------------------
 void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   int target_bci = iter().get_dest();
+
+  Node* counter = nullptr;
+  Node* incr_store = nullptr;
+  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  if (do_stress_trap) {
+    increment_trap_stress_counter(counter, incr_store);
+  }
 
   Block* branch_block = successor_for_bci(target_bci);
   Block* next_block   = successor_for_bci(iter().next_bci());
@@ -1454,6 +1456,10 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   } else  {                     // Path is live.
     adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
+
+  if (do_stress_trap) {
+    stress_trap(iff, counter, incr_store);
+  }
 }
 
 //------------------------------------do_if------------------------------------
@@ -1481,6 +1487,13 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       next_block->next_path_num();
     }
     return;
+  }
+
+  Node* counter = nullptr;
+  Node* incr_store = nullptr;
+  bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
+  if (do_stress_trap) {
+    increment_trap_stress_counter(counter, incr_store);
   }
 
   // Sanity check the probability value
@@ -1565,14 +1578,64 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   } else {
     adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
+
+  if (do_stress_trap) {
+    stress_trap(iff, counter, incr_store);
+  }
+}
+
+// Force unstable if traps to be taken randomly to trigger intermittent bugs such as incorrect debug information.
+// Add another if before the unstable if that checks a "random" condition at runtime (a simple shared counter) and
+// then either takes the trap or executes the original, unstable if.
+void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
+  // Search for an unstable if trap
+  CallStaticJavaNode* trap = nullptr;
+  assert(orig_iff->Opcode() == Op_If && orig_iff->outcnt() == 2, "malformed if");
+  ProjNode* trap_proj = orig_iff->uncommon_trap_proj(trap, Deoptimization::Reason_unstable_if);
+  if (trap == nullptr || !trap->jvms()->should_reexecute()) {
+    // No suitable trap found. Remove unused counter load and increment.
+    C->gvn_replace_by(incr_store, incr_store->in(MemNode::Memory));
+    return;
+  }
+
+  // Remove trap from optimization list since we add another path to the trap.
+  bool success = C->remove_unstable_if_trap(trap, true);
+  assert(success, "Trap already modified");
+
+  // Add a check before the original if that will trap with a certain frequency and execute the original if otherwise
+  int freq_log = (C->random() % 31) + 1; // Random logarithmic frequency in [1, 31]
+  Node* mask = intcon(right_n_bits(freq_log));
+  counter = _gvn.transform(new AndINode(counter, mask));
+  Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::mask::eq));
+  IfNode* iff = _gvn.transform(new IfNode(orig_iff->in(0), bol, orig_iff->_prob, orig_iff->_fcnt))->as_If();
+  Node* if_true = _gvn.transform(new IfTrueNode(iff));
+  Node* if_false = _gvn.transform(new IfFalseNode(iff));
+  assert(!if_true->is_top() && !if_false->is_top(), "trap always / never taken");
+
+  // Trap
+  assert(trap_proj->outcnt() == 1, "some other nodes are dependent on the trap projection");
+
+  Node* trap_region = new RegionNode(3);
+  trap_region->set_req(1, trap_proj);
+  trap_region->set_req(2, if_true);
+  trap->set_req(0, _gvn.transform(trap_region));
+
+  // Don't trap, execute original if
+  orig_iff->set_req(0, if_false);
 }
 
 bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
+  // Randomly skip emitting an uncommon trap
+  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+    return false;
+  }
   // Don't want to speculate on uncommon traps when running with -Xcomp
   if (!UseInterpreter) {
     return false;
   }
-  return (seems_never_taken(prob) && seems_stable_comparison());
+  return seems_never_taken(prob) &&
+         !C->too_many_traps(method(), bci(), Deoptimization::Reason_unstable_if);
 }
 
 void Parse::maybe_add_predicate_after_if(Block* path) {
@@ -1730,10 +1793,10 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
       const Type* tboth = tcon->join_speculative(tval);
       if (tboth == tval)  break;        // Nothing to gain.
       if (tcon->isa_int()) {
-        ccast = new CastIINode(val, tboth);
+        ccast = new CastIINode(control(), val, tboth);
       } else if (tcon == TypePtr::NULL_PTR) {
         // Cast to null, but keep the pointer identity temporarily live.
-        ccast = new CastPPNode(val, tboth);
+        ccast = new CastPPNode(control(), val, tboth);
       } else {
         const TypeF* tf = tcon->isa_float_constant();
         const TypeD* td = tcon->isa_double_constant();
@@ -1764,7 +1827,6 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     assert(tcc != tval && tcc->higher_equal(tval), "must improve");
     // Delay transform() call to allow recovery of pre-cast value
     // at the control merge.
-    ccast->set_req(0, control());
     _gvn.set_type_bottom(ccast);
     record_for_igvn(ccast);
     cast = ccast;
@@ -1896,26 +1958,13 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ldc:
   case Bytecodes::_ldc_w:
   case Bytecodes::_ldc2_w: {
+    // ciTypeFlow should trap if the ldc is in error state or if the constant is not loaded
+    assert(!iter().is_in_error(), "ldc is in error state");
     ciConstant constant = iter().get_constant();
-    if (constant.is_loaded()) {
-      const Type* con_type = Type::make_from_constant(constant);
-      if (con_type != nullptr) {
-        push_node(con_type->basic_type(), makecon(con_type));
-      }
-    } else {
-      // If the constant is unresolved or in error state, run this BC in the interpreter.
-      if (iter().is_in_error()) {
-        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
-                                                        Deoptimization::Action_none),
-                      nullptr, "constant in error state", true /* must_throw */);
-
-      } else {
-        int index = iter().get_constant_pool_index();
-        uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
-                                                        Deoptimization::Action_reinterpret,
-                                                        index),
-                      nullptr, "unresolved constant", false /* must_throw */);
-      }
+    assert(constant.is_loaded(), "constant is not loaded");
+    const Type* con_type = Type::make_from_constant(constant);
+    if (con_type != nullptr) {
+      push_node(con_type->basic_type(), makecon(con_type));
     }
     break;
   }
@@ -2248,7 +2297,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_fdiv:
     b = pop();
     a = pop();
-    c = _gvn.transform( new DivFNode(0,a,b) );
+    c = _gvn.transform( new DivFNode(nullptr,a,b) );
     d = precision_rounding(c);
     push( d );
     break;
@@ -2258,7 +2307,7 @@ void Parse::do_one_bytecode() {
       // Generate a ModF node.
       b = pop();
       a = pop();
-      c = _gvn.transform( new ModFNode(0,a,b) );
+      c = _gvn.transform( new ModFNode(nullptr,a,b) );
       d = precision_rounding(c);
       push( d );
     }
@@ -2309,7 +2358,7 @@ void Parse::do_one_bytecode() {
     a = pop_pair();
     b = _gvn.transform( new ConvD2FNode(a));
     // This breaks _227_mtrt (speed & correctness) and _222_mpegaudio (speed)
-    //b = _gvn.transform(new RoundFloatNode(0, b) );
+    //b = _gvn.transform(new RoundFloatNode(nullptr, b) );
     push( b );
     break;
 
@@ -2375,7 +2424,7 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_ddiv:
     b = pop_pair();
     a = pop_pair();
-    c = _gvn.transform( new DivDNode(0,a,b) );
+    c = _gvn.transform( new DivDNode(nullptr,a,b) );
     d = dprecision_rounding(c);
     push_pair( d );
     break;
@@ -2393,7 +2442,7 @@ void Parse::do_one_bytecode() {
       a = pop_pair();
       // a % b
 
-      c = _gvn.transform( new ModDNode(0,a,b) );
+      c = _gvn.transform( new ModDNode(nullptr,a,b) );
       d = dprecision_rounding(c);
       push_pair( d );
     }
@@ -2779,14 +2828,15 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  constexpr int perBytecode = 5;
+  if (failing()) { return; }
+  constexpr int perBytecode = 6;
   if (C->should_print_igv(perBytecode)) {
     IdealGraphPrinter* printer = C->igv_printer();
     char buffer[256];
     jio_snprintf(buffer, sizeof(buffer), "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(buffer, perBytecode);
+    printer->print_graph(buffer);
     printer->set_traverse_outs(old);
   }
 #endif

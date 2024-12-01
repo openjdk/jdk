@@ -38,14 +38,14 @@ public class NMTWithCDS {
 
   public static void main(String[] args) throws Exception {
     ProcessBuilder pb;
-    pb = ProcessTools.createTestJvm(
+    pb = ProcessTools.createTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./NMTWithCDS.jsa", "-Xshare:dump", "-Xlog:cds");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     try {
       output.shouldContain("Loading classes to share");
       output.shouldHaveExitValue(0);
 
-      pb = ProcessTools.createTestJvm(
+      pb = ProcessTools.createTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions", "-XX:NativeMemoryTracking=detail", "-XX:SharedArchiveFile=./NMTWithCDS.jsa", "-Xshare:on", "-version");
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("sharing");

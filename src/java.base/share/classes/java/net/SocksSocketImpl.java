@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.BufferedOutputStream;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.util.Iterator;
 
 import jdk.internal.util.StaticProperty;
 import sun.net.SocksProxy;
 import sun.net.spi.DefaultProxySelector;
 import sun.net.www.ParseUtil;
+
+import static sun.net.util.IPAddressUtil.isIPv6LiteralAddress;
 
 /**
  * SOCKS (V4 & V5) TCP socket implementation (RFC 1928).
@@ -73,30 +74,10 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
         return DefaultProxySelector.socksProxyVersion() == 4;
     }
 
-    @SuppressWarnings("removal")
-    private synchronized void privilegedConnect(final String host,
-                                              final int port,
-                                              final int timeout)
-        throws IOException
-    {
-        try {
-            AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<>() {
-                    public Void run() throws IOException {
-                              superConnectServer(host, port, timeout);
-                              cmdIn = getInputStream();
-                              cmdOut = getOutputStream();
-                              return null;
-                          }
-                      });
-        } catch (java.security.PrivilegedActionException pae) {
-            throw (IOException) pae.getException();
-        }
-    }
-
-    private void superConnectServer(String host, int port,
-                                    int timeout) throws IOException {
+    private synchronized void doConnect(final String host, final int port, final int timeout) throws IOException {
         delegate.connect(new InetSocketAddress(host, port), timeout);
+        cmdIn = getInputStream();
+        cmdOut = getOutputStream();
     }
 
     private static int remainingMillis(long deadlineMillis) throws IOException {
@@ -149,15 +130,8 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             String userName;
             String password = null;
             final InetAddress addr = InetAddress.getByName(server);
-            @SuppressWarnings("removal")
-            PasswordAuthentication pw =
-                java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<>() {
-                        public PasswordAuthentication run() {
-                                return Authenticator.requestPasswordAuthentication(
-                                       server, addr, serverPort, "SOCKS5", "SOCKS authentication", null);
-                            }
-                        });
+            PasswordAuthentication pw = Authenticator.requestPasswordAuthentication(
+                    server, addr, serverPort, "SOCKS5", "SOCKS authentication", null);
             if (pw != null) {
                 userName = pw.getUserName();
                 password = new String(pw.getPassword());
@@ -248,8 +222,6 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
      * @param   endpoint        the {@code SocketAddress} to connect to.
      * @param   timeout         the timeout value in milliseconds
      * @throws  IOException     if the connection can't be established.
-     * @throws  SecurityException if there is a security manager and it
-     *                          doesn't allow the connection
      * @throws  IllegalArgumentException if endpoint is null or a
      *          SocketAddress subclass not supported by this socket
      */
@@ -264,29 +236,14 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             deadlineMillis = finish < 0 ? Long.MAX_VALUE : finish;
         }
 
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
         if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
-        if (security != null) {
-            if (epoint.isUnresolved())
-                security.checkConnect(epoint.getHostName(),
-                                      epoint.getPort());
-            else
-                security.checkConnect(epoint.getAddress().getHostAddress(),
-                                      epoint.getPort());
-        }
+
         if (server == null) {
             // This is the general case
             // server is not null only when the socket was created with a
             // specified proxy in which case it does bypass the ProxySelector
-            @SuppressWarnings("removal")
-            ProxySelector sel = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public ProxySelector run() {
-                            return ProxySelector.getDefault();
-                        }
-                    });
+            ProxySelector sel = ProxySelector.getDefault();
             if (sel == null) {
                 /*
                  * No default proxySelector --> direct connection
@@ -297,17 +254,15 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             URI uri;
             // Use getHostString() to avoid reverse lookups
             String host = epoint.getHostString();
-            // IPv6 literal?
-            if (epoint.getAddress() instanceof Inet6Address &&
-                (!host.startsWith("[")) && (host.indexOf(':') >= 0)) {
+            if (isIPv6LiteralAddress(host)) {
                 host = "[" + host + "]";
+            } else {
+                host = ParseUtil.encodePath(host);
             }
             try {
-                uri = new URI("socket://" + ParseUtil.encodePath(host) + ":"+ epoint.getPort());
+                uri = new URI("socket://" + host + ":"+ epoint.getPort());
             } catch (URISyntaxException e) {
-                // This shouldn't happen
-                assert false : e;
-                uri = null;
+                throw new IOException("Failed to select a proxy", e);
             }
             Proxy p = null;
             IOException savedExc = null;
@@ -337,7 +292,7 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
 
                 // Connects to the SOCKS server
                 try {
-                    privilegedConnect(server, serverPort, remainingMillis(deadlineMillis));
+                    doConnect(server, serverPort, remainingMillis(deadlineMillis));
                     // Worked, let's get outta here
                     break;
                 } catch (IOException e) {
@@ -361,13 +316,13 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
         } else {
             // Connects to the SOCKS server
             try {
-                privilegedConnect(server, serverPort, remainingMillis(deadlineMillis));
+                doConnect(server, serverPort, remainingMillis(deadlineMillis));
             } catch (IOException e) {
                 throw new SocketException(e.getMessage(), e);
             }
         }
 
-        // cmdIn & cmdOut were initialized during the privilegedConnect() call
+        // `cmdIn` & `cmdOut` were initialized during the `doConnect()` call
         BufferedOutputStream out = new BufferedOutputStream(cmdOut, 512);
         InputStream in = cmdIn;
 

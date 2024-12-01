@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,16 @@
 // Tests ClassLoader::package_from_class_name()
 TEST_VM(ClassLoader, null_class_name) {
   bool bad_class_name = false;
-  TempNewSymbol retval = ClassLoader::package_from_class_name(NULL, &bad_class_name);
-  ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with NULL class name";
-  ASSERT_TRUE(retval == NULL) << "Wrong package for NULL class name pointer";
+  TempNewSymbol retval = ClassLoader::package_from_class_name(nullptr, &bad_class_name);
+  ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with null class name";
+  ASSERT_TRUE(retval == nullptr) << "Wrong package for null class name pointer";
 }
 
 TEST_VM(ClassLoader, empty_class_name) {
   bool bad_class_name = false;
   TempNewSymbol name = SymbolTable::new_symbol("");
   TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
-  ASSERT_TRUE(retval == NULL) << "Wrong package for empty string";
+  ASSERT_TRUE(retval == nullptr) << "Wrong package for empty string";
 }
 
 TEST_VM(ClassLoader, no_slash) {
@@ -47,7 +47,7 @@ TEST_VM(ClassLoader, no_slash) {
   TempNewSymbol name = SymbolTable::new_symbol("L");
   TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
   ASSERT_FALSE(bad_class_name) << "Function set bad_class_name with empty package";
-  ASSERT_TRUE(retval == NULL) << "Wrong package for class with no slashes";
+  ASSERT_TRUE(retval == nullptr) << "Wrong package for class with no slashes";
 }
 
 TEST_VM(ClassLoader, just_slash) {
@@ -55,7 +55,7 @@ TEST_VM(ClassLoader, just_slash) {
   TempNewSymbol name = SymbolTable::new_symbol("/");
   TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
   ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with package of length 0";
-  ASSERT_TRUE(retval == NULL) << "Wrong package for class with just slash";
+  ASSERT_TRUE(retval == nullptr) << "Wrong package for class with just slash";
 }
 
 TEST_VM(ClassLoader, multiple_slashes) {
@@ -103,5 +103,5 @@ TEST_VM(ClassLoader, class_object_array) {
   TempNewSymbol name = SymbolTable::new_symbol("[Lpackage/class");
   TempNewSymbol retval = ClassLoader::package_from_class_name(name, &bad_class_name);
   ASSERT_TRUE(bad_class_name) << "Function did not set bad_class_name with array of class objects";
-  ASSERT_TRUE(retval == NULL) << "Wrong package for class with leading '[L'";
+  ASSERT_TRUE(retval == nullptr) << "Wrong package for class with leading '[L'";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -503,9 +503,16 @@ final class Short256Vector extends ShortVector {
                                    VectorMask<Short> m) {
         return (Short256Vector)
             super.selectFromTemplate((Short256Vector) v,
-                                     (Short256Mask) m);  // specialize
+                                     Short256Mask.class, (Short256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Short256Vector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (Short256Vector)
+            super.selectFromTemplate((Short256Vector) v1, (Short256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
@@ -860,6 +867,13 @@ final class Short256Vector extends ShortVector {
             return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
+        @Override
+        @ForceInline
+        public Short256Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short256Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short256Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
+        }
+
         @ForceInline
         @Override
         public Short256Shuffle rearrange(VectorShuffle<Short> shuffle) {
@@ -893,6 +907,12 @@ final class Short256Vector extends ShortVector {
         return super.fromArray0Template(Short256Mask.class, a, offset, (Short256Mask) m, offsetInRange);  // specialize
     }
 
+    @ForceInline
+    @Override
+    final
+    ShortVector fromArray0(short[] a, int offset, int[] indexMap, int mapOffset, VectorMask<Short> m) {
+        return super.fromArray0Template(Short256Mask.class, a, offset, indexMap, mapOffset, (Short256Mask) m);
+    }
 
     @ForceInline
     @Override

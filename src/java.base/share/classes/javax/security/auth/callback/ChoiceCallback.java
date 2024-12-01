@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 
 package javax.security.auth.callback;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+
 /**
  * <p> Underlying security services instantiate and pass a
  * {@code ChoiceCallback} to the {@code handle}
@@ -48,7 +52,7 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      * @serial the list of choices
      * @since 1.4
      */
-    private final String[] choices;
+    private String[] choices;
     /**
      * @serial the choice to be used as the default choice
      * @since 1.4
@@ -71,7 +75,6 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      * Construct a {@code ChoiceCallback} with a prompt,
      * a list of choices, a default choice, and a boolean specifying
      * whether multiple selections from the list of choices are allowed.
-     *
      *
      * @param prompt the prompt used to describe the list of choices.
      *
@@ -99,20 +102,18 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
     public ChoiceCallback(String prompt, String[] choices,
                 int defaultChoice, boolean multipleSelectionsAllowed) {
 
-        if (prompt == null || prompt.isEmpty() ||
-            choices == null || choices.length == 0 ||
-            defaultChoice < 0 || defaultChoice >= choices.length)
-            throw new IllegalArgumentException();
-
-        for (int i = 0; i < choices.length; i++) {
-            if (choices[i] == null || choices[i].isEmpty())
-                throw new IllegalArgumentException();
+        choices = (choices == null || choices.length == 0 ? choices :
+                choices.clone());
+        String errMsg = doSanityCheck(prompt, choices, defaultChoice,
+                multipleSelectionsAllowed);
+        if (errMsg != null) {
+            throw new IllegalArgumentException(errMsg);
         }
-
         this.prompt = prompt;
-        this.choices = choices.clone();
         this.defaultChoice = defaultChoice;
         this.multipleSelectionsAllowed = multipleSelectionsAllowed;
+
+        this.choices = choices;
     }
 
     /**
@@ -180,9 +181,11 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      * @see #getSelectedIndexes
      */
     public void setSelectedIndexes(int[] selections) {
-        if (!multipleSelectionsAllowed)
+        if (!multipleSelectionsAllowed) {
             throw new UnsupportedOperationException();
-        this.selections = selections == null ? null : selections.clone();
+        }
+        this.selections = ((selections == null || selections.length == 0) ?
+                selections : selections.clone());
     }
 
     /**
@@ -195,5 +198,48 @@ public class ChoiceCallback implements Callback, java.io.Serializable {
      */
     public int[] getSelectedIndexes() {
         return selections == null ? null : selections.clone();
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        choices = (choices == null || choices.length == 0 ?
+                choices :  choices.clone());
+        String errMsg = doSanityCheck(prompt, choices, defaultChoice,
+                multipleSelectionsAllowed);
+        if (errMsg != null) {
+            throw new InvalidObjectException(errMsg);
+        }
+
+        selections = (selections == null || selections.length == 0 ?
+                selections :  selections.clone());
+        if (selections != null && selections.length > 1 &&
+                !multipleSelectionsAllowed) {
+            throw new InvalidObjectException("Multiple selections not allowed");
+        }
+    }
+
+    private static String doSanityCheck(String prompt, String[] choices,
+            int defaultChoice, boolean allowMultiple) {
+        if ((prompt == null) || prompt.isEmpty() ||
+                (choices == null) || (choices.length == 0) ||
+                (defaultChoice < 0) || (defaultChoice >= choices.length)) {
+            return "Missing/invalid prompt/choices";
+        }
+
+        for (int i = 0; i < choices.length; i++) {
+            if ((choices[i] == null) || choices[i].isEmpty()) {
+                return "Null/empty choices value";
+            }
+        }
+        return null;
     }
 }

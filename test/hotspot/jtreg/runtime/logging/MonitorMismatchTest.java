@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,19 +40,19 @@ public class MonitorMismatchTest {
 
     public static void main(String... args) throws Exception {
         // monitormismatch should turn on.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
-                                                                  "-XX:+TieredCompilation",
-                                                                  "-Xlog:monitormismatch=info",
-                                                                  "MonitorMismatchHelper");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xcomp",
+                                                                             "-XX:+TieredCompilation",
+                                                                             "-Xlog:monitormismatch=info",
+                                                                             "MonitorMismatchHelper");
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
         o.shouldContain("[monitormismatch] Monitor mismatch in method");
 
         // monitormismatch should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xcomp",
-                                                   "-XX:+TieredCompilation",
-                                                   "-Xlog:monitormismatch=off",
-                                                   "MonitorMismatchHelper");
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xcomp",
+                                                              "-XX:+TieredCompilation",
+                                                              "-Xlog:monitormismatch=off",
+                                                              "MonitorMismatchHelper");
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
         o.shouldNotContain("[monitormismatch]");

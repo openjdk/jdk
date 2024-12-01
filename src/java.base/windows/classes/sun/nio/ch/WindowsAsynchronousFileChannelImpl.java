@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.FileDescriptor;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.event.FileForceEvent;
 
 /**
  * Windows implementation of AsynchronousFileChannel using overlapped I/O.
@@ -63,6 +64,9 @@ public class WindowsAsynchronousFileChannelImpl
     // Used for force/truncate/size methods
     private static final FileDispatcher nd = new FileDispatcherImpl();
 
+    // file path
+    private final String path;
+
     // The handle is extracted for use in native methods invoked from this class.
     private final long handle;
 
@@ -79,6 +83,7 @@ public class WindowsAsynchronousFileChannelImpl
 
 
     private WindowsAsynchronousFileChannelImpl(FileDescriptor fdObj,
+                                               String path,
                                                boolean reading,
                                                boolean writing,
                                                Iocp iocp,
@@ -86,6 +91,7 @@ public class WindowsAsynchronousFileChannelImpl
         throws IOException
     {
         super(fdObj, reading, writing, iocp.executor());
+        this.path = path;
         this.handle = fdAccess.getHandle(fdObj);
         this.iocp = iocp;
         this.isDefaultIocp = isDefaultIocp;
@@ -94,6 +100,7 @@ public class WindowsAsynchronousFileChannelImpl
     }
 
     public static AsynchronousFileChannel open(FileDescriptor fdo,
+                                               String path,
                                                boolean reading,
                                                boolean writing,
                                                ThreadPool pool)
@@ -109,8 +116,7 @@ public class WindowsAsynchronousFileChannelImpl
             isDefaultIocp = false;
         }
         try {
-            return new
-                WindowsAsynchronousFileChannelImpl(fdo, reading, writing, iocp, isDefaultIocp);
+            return new WindowsAsynchronousFileChannelImpl(fdo, path, reading, writing, iocp, isDefaultIocp);
         } catch (IOException x) {
             // error binding to port so need to close it (if created for this channel)
             if (!isDefaultIocp)
@@ -196,14 +202,24 @@ public class WindowsAsynchronousFileChannelImpl
         return this;
     }
 
-    @Override
-    public void force(boolean metaData) throws IOException {
+    private void implForce(boolean metaData) throws IOException {
         try {
             begin();
             nd.force(fdObj, metaData);
         } finally {
             end();
         }
+    }
+
+    @Override
+    public void force(boolean metaData) throws IOException {
+        if (!FileForceEvent.enabled()) {
+            implForce(metaData);
+            return;
+        }
+        long start = FileForceEvent.timestamp();
+        implForce(metaData);
+        FileForceEvent.offer(start, path, metaData);
     }
 
     // -- file locking --

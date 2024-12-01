@@ -200,16 +200,6 @@
       <setting name="threshold">10 ms</setting>
     </event>
 
-    <event name="jdk.SafepointCleanup">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
-    <event name="jdk.SafepointCleanupTask">
-      <setting name="enabled">false</setting>
-      <setting name="threshold">10 ms</setting>
-    </event>
-
     <event name="jdk.SafepointEnd">
       <setting name="enabled">false</setting>
       <setting name="threshold">10 ms</setting>
@@ -526,6 +516,10 @@
       <setting name="enabled" control="gc-enabled-high">false</setting>
     </event>
 
+    <event name="jdk.ShenandoahEvacuationInformation">
+      <setting name="enabled" control="gc-enabled-high">false</setting>
+    </event>
+
     <event name="jdk.OldObjectSample">
       <setting name="enabled" control="old-objects-enabled">true</setting>
       <setting name="stackTrace" control="old-objects-stack-trace">false</setting>
@@ -663,12 +657,22 @@
       <setting name="period">5 s</setting>
     </event>
 
+    <event name="jdk.CompilerQueueUtilization">
+      <setting name="enabled">true</setting>
+      <setting name="period">10 s</setting>
+    </event>
+
     <event name="jdk.InitialEnvironmentVariable">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
     </event>
 
     <event name="jdk.PhysicalMemory">
+      <setting name="enabled">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.SwapSpace">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
     </event>
@@ -751,6 +755,10 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.SerializationMisdeclaration">
+        <setting name="enabled">false</setting>
+    </event>
+
     <event name="jdk.InitialSecurityProperty">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
@@ -819,6 +827,7 @@
 
     <event name="jdk.ZAllocationStall">
       <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
@@ -908,6 +917,12 @@
     <event name="jdk.NativeAgent">
       <setting name="enabled">true</setting>
       <setting name="period">endChunk</setting>
+    </event>
+
+    <event name="jdk.DeprecatedInvocation">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="level">forRemoval</setting>
     </event>
 
 

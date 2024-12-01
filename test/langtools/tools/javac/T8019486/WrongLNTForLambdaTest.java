@@ -26,14 +26,10 @@
  * @bug 8019486 8026861 8027142
  * @summary javac, generates erroneous LVT for a test case with lambda code
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main WrongLNTForLambdaTest
@@ -44,8 +40,8 @@ import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
@@ -140,15 +136,15 @@ public class WrongLNTForLambdaTest {
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "lambda$bar$0", simpleLambdaExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$1", lambdaWithVarsExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$0", lambdaWithVarsExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo$1FooBar.class").toUri()), "run", insideLambdaWithVarsExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$2", lambdaVoid2VoidExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$1", lambdaVoid2VoidExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "$deserializeLambda$", deserializeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$3", lambdaBridgeExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$2", lambdaBridgeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "assignLambda", assignmentExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
@@ -162,13 +158,13 @@ public class WrongLNTForLambdaTest {
     }
 
     void checkClassFile(final File cfile, String methodToFind, int[][] expectedLNT) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         boolean methodFound = false;
         for (MethodModel method : classFile.methods()) {
             if (method.methodName().equalsString(methodToFind)) {
                 methodFound = true;
-                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
-                LineNumberTableAttribute lnt = code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElseThrow();
+                CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.lineNumberTable()).orElseThrow();
                 Assert.check(lnt.lineNumbers().size() == expectedLNT.length,
                         "The LineNumberTable found has a length different to the expected one");
                 int i = 0;

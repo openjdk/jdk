@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,7 @@ public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     @Override
     ByteBuffer makeByteBuffer() {
-        return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null,
-                scope == MemorySessionImpl.GLOBAL ? null : this);
+        return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null, this);
     }
 
     @Override
@@ -73,23 +72,28 @@ public final class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     public void load() {
         if (unmapper != null) {
-            SCOPED_MEMORY_ACCESS.load(sessionImpl(), min, unmapper.isSync(), length);
+            SCOPED_MEMORY_ACCESS.load(sessionImpl(), NIO_ACCESS.mappedMemoryUtils(),
+                    min, unmapper.isSync(), length);
         }
     }
 
     public void unload() {
         if (unmapper != null) {
-            SCOPED_MEMORY_ACCESS.unload(sessionImpl(), min, unmapper.isSync(), length);
+            SCOPED_MEMORY_ACCESS.unload(sessionImpl(), NIO_ACCESS.mappedMemoryUtils(),
+                    min, unmapper.isSync(), length);
         }
     }
 
     public boolean isLoaded() {
-        return unmapper == null || SCOPED_MEMORY_ACCESS.isLoaded(sessionImpl(), min, unmapper.isSync(), length);
+        return unmapper == null ||
+                SCOPED_MEMORY_ACCESS.isLoaded(sessionImpl(),
+                        NIO_ACCESS.mappedMemoryUtils(), min, unmapper.isSync(), length);
     }
 
     public void force() {
         if (unmapper != null) {
-            SCOPED_MEMORY_ACCESS.force(sessionImpl(), unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
+            SCOPED_MEMORY_ACCESS.force(sessionImpl(), NIO_ACCESS.mappedMemoryUtils(),
+                    unmapper.fileDescriptor(), min, unmapper.isSync(), 0, length);
         }
     }
 

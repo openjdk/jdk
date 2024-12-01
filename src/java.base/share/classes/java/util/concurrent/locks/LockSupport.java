@@ -35,7 +35,9 @@
 
 package java.util.concurrent.locks;
 
-import jdk.internal.misc.VirtualThreads;
+import java.util.concurrent.TimeUnit;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -176,7 +178,7 @@ public class LockSupport {
     public static void unpark(Thread thread) {
         if (thread != null) {
             if (thread.isVirtual()) {
-                VirtualThreads.unpark(thread);
+                JLA.unparkVirtualThread(thread);
             } else {
                 U.unpark(thread);
             }
@@ -216,7 +218,7 @@ public class LockSupport {
         setBlocker(t, blocker);
         try {
             if (t.isVirtual()) {
-                VirtualThreads.park();
+                JLA.parkVirtualThread();
             } else {
                 U.park(false, 0L);
             }
@@ -264,7 +266,7 @@ public class LockSupport {
             setBlocker(t, blocker);
             try {
                 if (t.isVirtual()) {
-                    VirtualThreads.park(nanos);
+                    JLA.parkVirtualThread(nanos);
                 } else {
                     U.park(false, nanos);
                 }
@@ -311,11 +313,7 @@ public class LockSupport {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
         try {
-            if (t.isVirtual()) {
-                VirtualThreads.parkUntil(deadline);
-            } else {
-                U.park(true, deadline);
-            }
+            parkUntil(deadline);
         } finally {
             setBlocker(t, null);
         }
@@ -366,7 +364,7 @@ public class LockSupport {
      */
     public static void park() {
         if (Thread.currentThread().isVirtual()) {
-            VirtualThreads.park();
+            JLA.parkVirtualThread();
         } else {
             U.park(false, 0L);
         }
@@ -405,7 +403,7 @@ public class LockSupport {
     public static void parkNanos(long nanos) {
         if (nanos > 0) {
             if (Thread.currentThread().isVirtual()) {
-                VirtualThreads.park(nanos);
+                JLA.parkVirtualThread(nanos);
             } else {
                 U.park(false, nanos);
             }
@@ -444,7 +442,8 @@ public class LockSupport {
      */
     public static void parkUntil(long deadline) {
         if (Thread.currentThread().isVirtual()) {
-            VirtualThreads.parkUntil(deadline);
+            long millis = deadline - System.currentTimeMillis();
+            JLA.parkVirtualThread(TimeUnit.MILLISECONDS.toNanos(millis));
         } else {
             U.park(true, deadline);
         }
@@ -462,4 +461,5 @@ public class LockSupport {
     private static final long PARKBLOCKER
         = U.objectFieldOffset(Thread.class, "parkBlocker");
 
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,28 +338,46 @@ inline void Assembler::insrwi(  Register a, Register s, int n,   int b)         
 
 // PPC 1, section 3.3.2 Fixed-Point Load Instructions
 inline void Assembler::lwzx( Register d, Register s1, Register s2) { emit_int32(LWZX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::lwz(  Register d, Address &a) {
+  lwz(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base());
+}
 inline void Assembler::lwz(  Register d, int si16,    Register s1) { emit_int32(LWZ_OPCODE  | rt(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::lwzu( Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LWZU_OPCODE | rt(d) | d1(si16) | rta0mem(s1));}
 
 inline void Assembler::lwax( Register d, Register s1, Register s2) { emit_int32(LWAX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::lwa(  Register d, Address &a) {
+  lwa(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base());
+}
 inline void Assembler::lwa(  Register d, int si16,    Register s1) { emit_int32(LWA_OPCODE  | rt(d) | ds(si16)   | ra0mem(s1));}
 
 inline void Assembler::lwbrx( Register d, Register s1, Register s2) { emit_int32(LWBRX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 
 inline void Assembler::lhzx( Register d, Register s1, Register s2) { emit_int32(LHZX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::lhz(  Register d, Address &a) {
+  lhz(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base());
+}
 inline void Assembler::lhz(  Register d, int si16,    Register s1) { emit_int32(LHZ_OPCODE  | rt(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::lhzu( Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LHZU_OPCODE | rt(d) | d1(si16) | rta0mem(s1));}
 
 inline void Assembler::lhbrx( Register d, Register s1, Register s2) { emit_int32(LHBRX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 
 inline void Assembler::lhax( Register d, Register s1, Register s2) { emit_int32(LHAX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::lha(  Register d, Address &a) {
+  lha(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base());
+}
 inline void Assembler::lha(  Register d, int si16,    Register s1) { emit_int32(LHA_OPCODE  | rt(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::lhau( Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LHAU_OPCODE | rt(d) | d1(si16) | rta0mem(s1));}
 
 inline void Assembler::lbzx( Register d, Register s1, Register s2) { emit_int32(LBZX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::lbz(  Register d, Address &a) {
+  lbz(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base());
+}
 inline void Assembler::lbz(  Register d, int si16,    Register s1) { emit_int32(LBZ_OPCODE  | rt(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::lbzu( Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LBZU_OPCODE | rt(d) | d1(si16) | rta0mem(s1));}
 
+inline void Assembler::ld(   Register d, Address &a) {
+  ld(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base());
+}
 inline void Assembler::ld(   Register d, int si16,    Register s1) { emit_int32(LD_OPCODE  | rt(d) | ds(si16)   | ra0mem(s1));}
 inline void Assembler::ld(   Register d, ByteSize si16, Register s1) { assert(in_bytes(si16) < 0x7fff, "overflow"); ld(d, in_bytes(si16), s1); }
 inline void Assembler::ldx(  Register d, Register s1, Register s2) { emit_int32(LDX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
@@ -371,19 +389,31 @@ inline void Assembler::ld_ptr(Register d, ByteSize b, Register s1) { ld(d, in_by
 
 //  PPC 1, section 3.3.3 Fixed-Point Store Instructions
 inline void Assembler::stwx( Register d, Register s1, Register s2) { emit_int32(STWX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::stw(  Register d, Address &a, Register tmp) {
+  stw(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp);
+}
 inline void Assembler::stw(  Register d, int si16,    Register s1) { emit_int32(STW_OPCODE  | rs(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::stwu( Register d, int si16,    Register s1) { emit_int32(STWU_OPCODE | rs(d) | d1(si16)   | rta0mem(s1));}
 inline void Assembler::stwbrx( Register d, Register s1, Register s2) { emit_int32(STWBRX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
 
 inline void Assembler::sthx( Register d, Register s1, Register s2) { emit_int32(STHX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::sth(  Register d, Address &a, Register tmp) {
+  sth(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp);
+}
 inline void Assembler::sth(  Register d, int si16,    Register s1) { emit_int32(STH_OPCODE  | rs(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::sthu( Register d, int si16,    Register s1) { emit_int32(STHU_OPCODE | rs(d) | d1(si16)   | rta0mem(s1));}
 inline void Assembler::sthbrx( Register d, Register s1, Register s2) { emit_int32(STHBRX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
 
 inline void Assembler::stbx( Register d, Register s1, Register s2) { emit_int32(STBX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
+inline void Assembler::stb(  Register d, Address &a, Register tmp) {
+  stb(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp);
+}
 inline void Assembler::stb(  Register d, int si16,    Register s1) { emit_int32(STB_OPCODE  | rs(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::stbu( Register d, int si16,    Register s1) { emit_int32(STBU_OPCODE | rs(d) | d1(si16)   | rta0mem(s1));}
 
+inline void Assembler::std(  Register d, Address &a, Register tmp) {
+  std(d, a.index() != noreg ? RegisterOrConstant(a.index()) : RegisterOrConstant(a.disp()), a.base(), tmp);
+}
 inline void Assembler::std(  Register d, int si16,    Register s1) { emit_int32(STD_OPCODE  | rs(d) | ds(si16)   | ra0mem(s1));}
 inline void Assembler::stdx( Register d, Register s1, Register s2) { emit_int32(STDX_OPCODE | rs(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::stdu( Register d, int si16,    Register s1) { emit_int32(STDU_OPCODE | rs(d) | ds(si16)   | rta0mem(s1));}
@@ -419,6 +449,11 @@ inline void Assembler::setnbc(Register d, int biint)
 inline void Assembler::setnbc(Register d, ConditionRegister cr, Condition cc) {
   setnbc(d, bi0(cr, cc));
 }
+inline void Assembler::setbcr(Register d, int biint)
+                                                  { emit_int32(SETBCR_OPCODE | rt(d) | bi(biint)); }
+inline void Assembler::setbcr(Register d, ConditionRegister cr, Condition cc) {
+  setbcr(d, bi0(cr, cc));
+}
 
 // Special purpose registers
 // Exception Register
@@ -449,9 +484,15 @@ inline void Assembler::bclrl( int boint, int biint, int bhint, relocInfo::relocT
 inline void Assembler::bcctr( int boint, int biint, int bhint, relocInfo::relocType rt) { emit_data(BCCTR_OPCODE| bo(boint) | bi(biint) | bh(bhint) | aa(0) | lk(0), rt); }
 inline void Assembler::bcctrl(int boint, int biint, int bhint, relocInfo::relocType rt) { emit_data(BCCTR_OPCODE| bo(boint) | bi(biint) | bh(bhint) | aa(0) | lk(1), rt); }
 
+inline bool Assembler::is_branch(address a) {
+  int32_t instr = *(int32_t*) a;
+  int op = inv_op_ppc(instr);
+  return op == b_op || op == bc_op;
+}
+
 // helper function for b
 inline bool Assembler::is_within_range_of_b(address a, address pc) {
-  // Guard against illegal branch targets, e.g. -1 (see CompiledStaticCall and ad-file).
+  // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
   const int range = 1 << (29-6); // li field is from bit 6 to bit 29.
@@ -465,7 +506,7 @@ inline bool Assembler::is_within_range_of_b(address a, address pc) {
 
 // helper functions for bcxx.
 inline bool Assembler::is_within_range_of_bcxx(address a, address pc) {
-  // Guard against illegal branch targets, e.g. -1 (see CompiledStaticCall and ad-file).
+  // Guard against illegal branch targets, e.g. -1 (see CompiledDirectCall and ad-file).
   if ((((uint64_t)a) & 0x3) != 0) return false;
 
   const int range = 1 << (29-16); // bd field is from bit 16 to bit 29.

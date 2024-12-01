@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import jdk.internal.foreign.HeapMemorySegmentImpl;
-import jdk.internal.foreign.MappedMemorySegmentImpl;
-import jdk.internal.foreign.NativeMemorySegmentImpl;
 import org.testng.SkipException;
 import org.testng.annotations.*;
 import sun.nio.ch.DirectBuffer;
@@ -174,7 +171,7 @@ public class TestByteBuffer {
     @Test
     public void testOffheap() {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(tuples);;
+            MemorySegment segment = arena.allocate(tuples);
             initTuples(segment, tuples.elementCount());
 
             ByteBuffer bb = segment.asByteBuffer();
@@ -388,7 +385,7 @@ public class TestByteBuffer {
     public void testScopedBuffer(Function<ByteBuffer, Buffer> bufferFactory, @NoInjection Method method, Object[] args) {
         Buffer bb;
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(bytes);;
+            MemorySegment segment = arena.allocate(bytes);
             bb = bufferFactory.apply(segment.asByteBuffer());
         }
         //outside of session!!
@@ -414,7 +411,7 @@ public class TestByteBuffer {
     public void testScopedBufferAndVarHandle(VarHandle bufferHandle) {
         ByteBuffer bb;
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(bytes);;
+            MemorySegment segment = arena.allocate(bytes, Long.BYTES);
             bb = segment.asByteBuffer();
             for (Map.Entry<MethodHandle, Object[]> e : varHandleMembers(bb, bufferHandle).entrySet()) {
                 MethodHandle handle = e.getKey().bindTo(bufferHandle)
@@ -448,7 +445,7 @@ public class TestByteBuffer {
     @Test(dataProvider = "bufferOps")
     public void testDirectBuffer(Function<ByteBuffer, Buffer> bufferFactory, @NoInjection Method method, Object[] args) {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(bytes);;
+            MemorySegment segment = arena.allocate(bytes);
             Buffer bb = bufferFactory.apply(segment.asByteBuffer());
             assertTrue(bb.isDirect());
             DirectBuffer directBuffer = ((DirectBuffer)bb);
@@ -461,7 +458,7 @@ public class TestByteBuffer {
     @Test(dataProvider="resizeOps")
     public void testResizeOffheap(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(seq);;
+            MemorySegment segment = arena.allocate(seq);
             initializer.accept(segment);
             checker.accept(segment);
         }
@@ -499,7 +496,7 @@ public class TestByteBuffer {
     @Test(dataProvider="resizeOps")
     public void testResizeRoundtripNative(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(seq);;
+            MemorySegment segment = arena.allocate(seq);
             initializer.accept(segment);
             MemorySegment second = MemorySegment.ofBuffer(segment.asByteBuffer());
             checker.accept(second);
@@ -510,7 +507,7 @@ public class TestByteBuffer {
     public void testBufferOnClosedSession() {
         MemorySegment leaked;
         try (Arena arena = Arena.ofConfined()) {
-            leaked = arena.allocate(bytes);;
+            leaked = arena.allocate(bytes);
         }
         ByteBuffer byteBuffer = leaked.asByteBuffer(); // ok
         byteBuffer.get(); // should throw
@@ -618,7 +615,7 @@ public class TestByteBuffer {
         checkByteArrayAlignment(seq.elementLayout());
         int bytes = (int)seq.byteSize();
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment nativeArray = arena.allocate(bytes, 1);;
+            MemorySegment nativeArray = arena.allocate(bytes, 1);
             MemorySegment heapArray = MemorySegment.ofArray(new byte[bytes]);
             initializer.accept(heapArray);
             nativeArray.copyFrom(heapArray);
@@ -631,7 +628,7 @@ public class TestByteBuffer {
         checkByteArrayAlignment(seq.elementLayout());
         int bytes = (int)seq.byteSize();
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment nativeArray = arena.allocate(seq);;
+            MemorySegment nativeArray = arena.allocate(seq);
             MemorySegment heapArray = MemorySegment.ofArray(new byte[bytes]);
             initializer.accept(nativeArray);
             heapArray.copyFrom(nativeArray);
@@ -703,7 +700,7 @@ public class TestByteBuffer {
     @Test
     public void testRoundTripAccess() {
         try (Arena arena = Arena.ofConfined()) {
-            MemorySegment ms = arena.allocate(4, 1);;
+            MemorySegment ms = arena.allocate(4, 1);
             MemorySegment msNoAccess = ms.asReadOnly();
             MemorySegment msRoundTrip = MemorySegment.ofBuffer(msNoAccess.asByteBuffer());
             assertEquals(msRoundTrip.scope(), ms.scope());
@@ -744,7 +741,7 @@ public class TestByteBuffer {
         tmp.deleteOnExit();
         try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE) ;
             Arena arena = arenaSupplier.get()) {
-            MemorySegment segment = arena.allocate(10, 1);;
+            MemorySegment segment = arena.allocate(10, 1);
             for (int i = 0; i < 10; i++) {
                 segment.set(JAVA_BYTE, i, (byte) i);
             }
@@ -783,7 +780,7 @@ public class TestByteBuffer {
     @Test
     public void buffersAndArraysFromSlices() {
         try (Arena arena = Arena.ofShared()) {
-            MemorySegment segment = arena.allocate(16, 1);;
+            MemorySegment segment = arena.allocate(16, 1);
             int newSize = 8;
             var slice = segment.asSlice(4, newSize);
 
@@ -801,7 +798,7 @@ public class TestByteBuffer {
     @Test
     public void viewsFromSharedSegment() {
         try (Arena arena = Arena.ofShared()) {
-            MemorySegment segment = arena.allocate(16, 1);;
+            MemorySegment segment = arena.allocate(16, 1);
             var byteBuffer = segment.asByteBuffer();
             byteBuffer.asReadOnlyBuffer();
             byteBuffer.slice(0, 8);
@@ -987,9 +984,9 @@ public class TestByteBuffer {
 
     @DataProvider(name = "bufferSources")
     public static Object[][] bufferSources() {
-        Predicate<MemorySegment> heapTest = segment -> segment instanceof HeapMemorySegmentImpl;
-        Predicate<MemorySegment> nativeTest = segment -> segment instanceof NativeMemorySegmentImpl;
-        Predicate<MemorySegment> mappedTest = segment -> segment instanceof MappedMemorySegmentImpl;
+        Predicate<MemorySegment> heapTest = segment -> !segment.isNative() && !segment.isMapped();
+        Predicate<MemorySegment> nativeTest = segment -> segment.isNative() && !segment.isMapped();
+        Predicate<MemorySegment> mappedTest = segment -> segment.isNative() && segment.isMapped();
         try (FileChannel channel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             return new Object[][]{
                     { ByteBuffer.wrap(new byte[256]), heapTest },
@@ -1001,7 +998,7 @@ public class TestByteBuffer {
                     { ByteBuffer.allocate(256).asReadOnlyBuffer(), heapTest },
                     { ByteBuffer.allocateDirect(256).asReadOnlyBuffer(), nativeTest },
                     { channel.map(FileChannel.MapMode.READ_WRITE, 0L, 256).asReadOnlyBuffer(),
-                            nativeTest /* this seems to be an existing bug in the BB implementation */ }
+                            mappedTest }
             };
         } catch (IOException ex) {
             throw new ExceptionInInitializerError(ex);

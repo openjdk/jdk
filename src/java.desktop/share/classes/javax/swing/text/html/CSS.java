@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -848,6 +848,22 @@ public class CSS implements Serializable {
         CssValue conv = (CssValue) valueConvertor.get(key);
         Object r = conv.parseCssValue(value);
         return r != null ? r : conv.parseCssValue(key.getDefaultValue());
+    }
+
+    static Object mergeTextDecoration(String value) {
+        if (value.startsWith("none")) {
+            return null;
+        }
+
+        boolean underline = value.contains("underline");
+        boolean strikeThrough = value.contains("line-through");
+        if (!underline && !strikeThrough) {
+            return null;
+        }
+        String newValue = underline && strikeThrough
+                          ? "underline,line-through"
+                          : (underline ? "underline" : "line-through");
+        return new StringValue().parseCssValue(newValue);
     }
 
     /**
@@ -2998,7 +3014,7 @@ public class CSS implements Serializable {
                 case 1:
                     // %
                     lv = new LengthValue();
-                    lv.span = Math.max(0, Math.min(1, lu.value));
+                    lv.span = Math.max(0, lu.value);
                     lv.percentage = true;
                     break;
                 default:
@@ -3304,8 +3320,8 @@ public class CSS implements Serializable {
      */
     @SuppressWarnings("serial") // Same-version serialization only
     static class BackgroundImage extends CssValue {
-        private boolean    loadedImage;
-        private ImageIcon  image;
+        private volatile boolean loadedImage;
+        private ImageIcon image;
 
         Object parseCssValue(String value) {
             BackgroundImage retValue = new BackgroundImage();
@@ -3323,7 +3339,6 @@ public class CSS implements Serializable {
                 synchronized(this) {
                     if (!loadedImage) {
                         URL url = CSS.getURL(base, svalue);
-                        loadedImage = true;
                         if (url != null) {
                             image = new ImageIcon();
                             Image tmpImg = Toolkit.getDefaultToolkit().createImage(url);
@@ -3331,10 +3346,22 @@ public class CSS implements Serializable {
                                 image.setImage(tmpImg);
                             }
                         }
+                        loadedImage = true;
                     }
                 }
             }
             return image;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(svalue);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BackgroundImage img
+                   && Objects.equals(svalue, img.svalue);
         }
     }
 

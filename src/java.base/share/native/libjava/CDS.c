@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,19 +44,9 @@ Java_jdk_internal_misc_CDS_getRandomSeedForDumping(JNIEnv *env, jclass ignore) {
     return JVM_GetRandomSeedForDumping();
 }
 
-JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isDumpingArchive0(JNIEnv *env, jclass jcls) {
-    return JVM_IsCDSDumpingEnabled(env);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isSharingEnabled0(JNIEnv *env, jclass jcls) {
-    return JVM_IsSharingEnabled(env);
-}
-
-JNIEXPORT jboolean JNICALL
-Java_jdk_internal_misc_CDS_isDumpingClassList0(JNIEnv *env, jclass jcls) {
-    return JVM_IsDumpingClassList(env);
+JNIEXPORT jint JNICALL
+Java_jdk_internal_misc_CDS_getCDSConfigStatus(JNIEnv *env, jclass jcls) {
+    return JVM_GetCDSConfigStatus();
 }
 
 JNIEXPORT void JNICALL

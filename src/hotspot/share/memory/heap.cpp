@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "memory/heap.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/os.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "services/memTracker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -232,7 +232,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
     return false;
   }
 
-  MemTracker::record_virtual_memory_type((address)_segmap.low_boundary(), mtCode);
+  MemTracker::record_virtual_memory_tag((address)_segmap.low_boundary(), mtCode);
 
   assert(_segmap.committed_size() >= (size_t) _number_of_committed_segments, "could not commit  enough space for segment map");
   assert(_segmap.reserved_size()  >= (size_t) _number_of_reserved_segments , "could not reserve enough space for segment map");
@@ -486,18 +486,6 @@ void* CodeHeap::find_start(void* p) const {
 CodeBlob* CodeHeap::find_blob(void* start) const {
   CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
   return (result != nullptr && result->blob_contains((address)start)) ? result : nullptr;
-}
-
-size_t CodeHeap::alignment_unit() const {
-  // this will be a power of two
-  return _segment_size;
-}
-
-
-size_t CodeHeap::alignment_offset() const {
-  // The lowest address in any allocated block will be
-  // equal to alignment_offset (mod alignment_unit).
-  return sizeof(HeapBlock) & (_segment_size - 1);
 }
 
 // Returns the current block if available and used.

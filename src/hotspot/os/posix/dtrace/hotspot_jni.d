@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *  
+ *
  */
 
 provider hotspot_jni {
@@ -129,7 +129,7 @@ provider hotspot_jni {
   probe CallNonvirtualVoidMethodA__return();
   probe CallNonvirtualVoidMethod__entry(void*, void*, void*, uintptr_t);
   probe CallNonvirtualVoidMethod__return();
-  probe CallNonvirtualVoidMethodV__entry(void*, void*, void*, uintptr_t);  
+  probe CallNonvirtualVoidMethodV__entry(void*, void*, void*, uintptr_t);
   probe CallNonvirtualVoidMethodV__return();
   probe CallObjectMethodA__entry(void*, void*, uintptr_t);
   probe CallObjectMethodA__return(void*);
@@ -200,14 +200,14 @@ provider hotspot_jni {
   probe CallStaticVoidMethodA__entry(void*, void*, uintptr_t);
   probe CallStaticVoidMethodA__return();
   probe CallStaticVoidMethod__entry(void*, void*, uintptr_t);
-  probe CallStaticVoidMethod__return(); 
-  probe CallStaticVoidMethodV__entry(void*, void*, uintptr_t);  
+  probe CallStaticVoidMethod__return();
+  probe CallStaticVoidMethodV__entry(void*, void*, uintptr_t);
   probe CallStaticVoidMethodV__return();
-  probe CallVoidMethodA__entry(void*, void*, uintptr_t);  
+  probe CallVoidMethodA__entry(void*, void*, uintptr_t);
   probe CallVoidMethodA__return();
-  probe CallVoidMethod__entry(void*, void*, uintptr_t);  
-  probe CallVoidMethod__return(); 
-  probe CallVoidMethodV__entry(void*, void*, uintptr_t);  
+  probe CallVoidMethod__entry(void*, void*, uintptr_t);
+  probe CallVoidMethod__return();
+  probe CallVoidMethodV__entry(void*, void*, uintptr_t);
   probe CallVoidMethodV__return();
   probe CreateJavaVM__entry(void**, void**, void*);
   probe CreateJavaVM__return(uint32_t);
@@ -229,7 +229,7 @@ provider hotspot_jni {
   probe ExceptionCheck__return(uintptr_t);
   probe ExceptionClear__entry(void*);
   probe ExceptionClear__return();
-  probe ExceptionDescribe__entry(void*);  
+  probe ExceptionDescribe__entry(void*);
   probe ExceptionDescribe__return();
   probe ExceptionOccurred__entry(void*);
   probe ExceptionOccurred__return(void*);
@@ -352,6 +352,8 @@ provider hotspot_jni {
   probe GetStringUTFChars__return(const char*);
   probe GetStringUTFLength__entry(void*, void*);
   probe GetStringUTFLength__return(uintptr_t);
+  probe GetStringUTFLengthAsLong__entry(void*, void*);
+  probe GetStringUTFLengthAsLong__return(uintptr_t);
   probe GetStringUTFRegion__entry(void*, void*, uintptr_t, uintptr_t, char*);
   probe GetStringUTFRegion__return();
   probe GetSuperclass__entry(void*, void*);
@@ -388,13 +390,13 @@ provider hotspot_jni {
   probe NewLocalRef__return(void*);
   probe NewLongArray__entry(void*, uintptr_t);
   probe NewLongArray__return(void*);
-  probe NewObjectA__entry(void*, void*, uintptr_t);  
+  probe NewObjectA__entry(void*, void*, uintptr_t);
   probe NewObjectA__return(void*);
   probe NewObjectArray__entry(void*, uintptr_t, void*, void*);
   probe NewObjectArray__return(void*);
-  probe NewObject__entry(void*, void*, uintptr_t); 
+  probe NewObject__entry(void*, void*, uintptr_t);
   probe NewObject__return(void*);
-  probe NewObjectV__entry(void*, void*, uintptr_t);  
+  probe NewObjectV__entry(void*, void*, uintptr_t);
   probe NewObjectV__return(void*);
   probe NewShortArray__entry(void*, uintptr_t);
   probe NewShortArray__return(void*);
@@ -408,7 +410,7 @@ provider hotspot_jni {
   probe PopLocalFrame__return(void*);
   probe PushLocalFrame__entry(void*, uint32_t);
   probe PushLocalFrame__return(uint32_t);
-  probe RegisterNatives__entry(void*, void*, const void*, uint32_t);  
+  probe RegisterNatives__entry(void*, void*, const void*, uint32_t);
   probe RegisterNatives__return(uint32_t);
   probe ReleaseBooleanArrayElements__entry(void*, void*, uintptr_t*, uint32_t);
   probe ReleaseBooleanArrayElements__return();
@@ -490,13 +492,13 @@ provider hotspot_jni {
   probe SetStaticShortField__return();
   probe Throw__entry(void*, void*);
   probe Throw__return(intptr_t);
-  probe ThrowNew__entry(void*, void*, const char*);  
-  probe ThrowNew__return(intptr_t);  
+  probe ThrowNew__entry(void*, void*, const char*);
+  probe ThrowNew__return(intptr_t);
   probe ToReflectedField__entry(void*, void*, uintptr_t, uintptr_t);
   probe ToReflectedField__return(void*);
   probe ToReflectedMethod__entry(void*, void*, uintptr_t, uintptr_t);
   probe ToReflectedMethod__return(void*);
-  probe UnregisterNatives__entry(void*, void*);  
+  probe UnregisterNatives__entry(void*, void*);
   probe UnregisterNatives__return(uint32_t);
 };
 
@@ -505,4 +507,3 @@ provider hotspot_jni {
 #pragma D attributes Private/Private/Unknown provider hotspot_jni function
 #pragma D attributes Standard/Standard/Common provider hotspot_jni name
 #pragma D attributes Evolving/Evolving/Common provider hotspot_jni args
-

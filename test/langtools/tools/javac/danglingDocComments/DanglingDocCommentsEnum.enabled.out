@@ -1,0 +1,8 @@
+DanglingDocCommentsEnum.java:10:1: compiler.warn.dangling.doc.comment
+DanglingDocCommentsEnum.java:13:1: compiler.warn.dangling.doc.comment
+DanglingDocCommentsEnum.java:14:8: compiler.warn.dangling.doc.comment
+DanglingDocCommentsEnum.java:14:67: compiler.warn.dangling.doc.comment
+DanglingDocCommentsEnum.java:16:5: compiler.warn.dangling.doc.comment
+DanglingDocCommentsEnum.java:22:5: compiler.warn.dangling.doc.comment
+DanglingDocCommentsEnum.java:28:5: compiler.warn.dangling.doc.comment
+7 warnings

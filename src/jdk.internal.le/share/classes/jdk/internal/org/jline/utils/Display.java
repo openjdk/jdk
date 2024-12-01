@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2020, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -37,8 +37,8 @@ public class Display {
     protected final boolean fullScreen;
     protected List<AttributedString> oldLines = Collections.emptyList();
     protected int cursorPos;
-    private int columns;
-    private int columns1; // columns+1
+    protected int columns;
+    protected int columns1; // columns+1
     protected int rows;
     protected boolean reset;
     protected boolean delayLineWrap;
@@ -49,15 +49,15 @@ public class Display {
     protected final boolean delayedWrapAtEol;
     protected final boolean cursorDownIsNewLine;
 
+    @SuppressWarnings("this-escape")
     public Display(Terminal terminal, boolean fullscreen) {
         this.terminal = terminal;
         this.fullScreen = fullscreen;
 
         this.canScroll = can(Capability.insert_line, Capability.parm_insert_line)
-                            && can(Capability.delete_line, Capability.parm_delete_line);
+                && can(Capability.delete_line, Capability.parm_delete_line);
         this.wrapAtEol = terminal.getBooleanCapability(Capability.auto_right_margin);
-        this.delayedWrapAtEol = this.wrapAtEol
-            && terminal.getBooleanCapability(Capability.eat_newline_glitch);
+        this.delayedWrapAtEol = this.wrapAtEol && terminal.getBooleanCapability(Capability.eat_newline_glitch);
         this.cursorDownIsNewLine = "\n".equals(Curses.tputs(terminal.getStringCapability(Capability.cursor_down)));
     }
 
@@ -69,10 +69,15 @@ public class Display {
     public boolean delayLineWrap() {
         return delayLineWrap;
     }
-    public void setDelayLineWrap(boolean v) { delayLineWrap = v; }
+
+    public void setDelayLineWrap(boolean v) {
+        delayLineWrap = v;
+    }
 
     public void resize(int rows, int columns) {
         if (rows == 0 || columns == 0) {
+            // OpenJDK patch. Original code assigned 1 to columns, which ended up
+            // appending " \b" to the prompt in certain cases.
             columns = Integer.MAX_VALUE - 1;
             rows = 1;
         }
@@ -80,7 +85,8 @@ public class Display {
             this.rows = rows;
             this.columns = columns;
             this.columns1 = columns + 1;
-            oldLines = AttributedString.join(AttributedString.EMPTY, oldLines).columnSplitLength(columns, true, delayLineWrap());
+            oldLines = AttributedString.join(AttributedString.EMPTY, oldLines)
+                    .columnSplitLength(columns, true, delayLineWrap());
         }
     }
 
@@ -128,7 +134,8 @@ public class Display {
         // If dumb display, get rid of ansi sequences now
         Integer cols = terminal.getNumericCapability(Capability.max_colors);
         if (cols == null || cols < 8) {
-            newLines = newLines.stream().map(s -> new AttributedString(s.toString()))
+            newLines = newLines.stream()
+                    .map(s -> new AttributedString(s.toString()))
                     .collect(Collectors.toList());
         }
 
@@ -138,12 +145,13 @@ public class Display {
             int nbFooters = 0;
             // Find common headers and footers
             int l = newLines.size();
-            while (nbHeaders < l
-                   && Objects.equals(newLines.get(nbHeaders), oldLines.get(nbHeaders))) {
+            while (nbHeaders < l && Objects.equals(newLines.get(nbHeaders), oldLines.get(nbHeaders))) {
                 nbHeaders++;
             }
             while (nbFooters < l - nbHeaders - 1
-                    && Objects.equals(newLines.get(newLines.size() - nbFooters - 1), oldLines.get(oldLines.size() - nbFooters - 1))) {
+                    && Objects.equals(
+                            newLines.get(newLines.size() - nbFooters - 1),
+                            oldLines.get(oldLines.size() - nbFooters - 1))) {
                 nbFooters++;
             }
             List<AttributedString> o1 = newLines.subList(nbHeaders, newLines.size() - nbFooters);
@@ -190,18 +198,14 @@ public class Display {
         int numLines = Math.min(rows, Math.max(oldLines.size(), newLines.size()));
         boolean wrapNeeded = false;
         while (lineIndex < numLines) {
-            AttributedString oldLine =
-                lineIndex < oldLines.size() ? oldLines.get(lineIndex)
-                : AttributedString.NEWLINE;
-            AttributedString newLine =
-                 lineIndex < newLines.size() ? newLines.get(lineIndex)
-                : AttributedString.NEWLINE;
+            AttributedString oldLine = lineIndex < oldLines.size() ? oldLines.get(lineIndex) : AttributedString.NEWLINE;
+            AttributedString newLine = lineIndex < newLines.size() ? newLines.get(lineIndex) : AttributedString.NEWLINE;
             currentPos = lineIndex * columns1;
             int curCol = currentPos;
             int oldLength = oldLine.length();
             int newLength = newLine.length();
-            boolean oldNL = oldLength > 0 && oldLine.charAt(oldLength-1)=='\n';
-            boolean newNL = newLength > 0 && newLine.charAt(newLength-1)=='\n';
+            boolean oldNL = oldLength > 0 && oldLine.charAt(oldLength - 1) == '\n';
+            boolean newNL = newLength > 0 && newLine.charAt(newLength - 1) == '\n';
             if (oldNL) {
                 oldLength--;
                 oldLine = oldLine.substring(0, oldLength);
@@ -210,9 +214,7 @@ public class Display {
                 newLength--;
                 newLine = newLine.substring(0, newLength);
             }
-            if (wrapNeeded
-                && lineIndex == (cursorPos + 1) / columns1
-                && lineIndex < newLines.size()) {
+            if (wrapNeeded && lineIndex == (cursorPos + 1) / columns1 && lineIndex < newLines.size()) {
                 // move from right margin to next line's left margin
                 cursorPos++;
                 if (newLength == 0 || newLine.isHidden(0)) {
@@ -250,8 +252,7 @@ public class Display {
                         }
                         break;
                     case INSERT:
-                        if (i <= diffs.size() - 2
-                                && diffs.get(i + 1).operation == DiffHelper.Operation.EQUAL) {
+                        if (i <= diffs.size() - 2 && diffs.get(i + 1).operation == DiffHelper.Operation.EQUAL) {
                             cursorPos = moveVisualCursorTo(currentPos);
                             if (insertChars(width)) {
                                 rawPrint(diff.text);
@@ -282,8 +283,7 @@ public class Display {
                         if (currentPos - curCol >= columns) {
                             continue;
                         }
-                        if (i <= diffs.size() - 2
-                                && diffs.get(i + 1).operation == DiffHelper.Operation.EQUAL) {
+                        if (i <= diffs.size() - 2 && diffs.get(i + 1).operation == DiffHelper.Operation.EQUAL) {
                             if (currentPos + diffs.get(i + 1).text.columnLength() < columns) {
                                 moveVisualCursorTo(currentPos);
                                 if (deleteChars(width)) {
@@ -305,25 +305,23 @@ public class Display {
                 }
             }
             lineIndex++;
-            boolean newWrap = ! newNL && lineIndex < newLines.size();
-            if (targetCursorPos + 1 == lineIndex * columns1
-                && (newWrap || ! delayLineWrap))
-                targetCursorPos++;
+            boolean newWrap = !newNL && lineIndex < newLines.size();
+            if (targetCursorPos + 1 == lineIndex * columns1 && (newWrap || !delayLineWrap)) targetCursorPos++;
             boolean atRight = (cursorPos - curCol) % columns1 == columns;
             wrapNeeded = false;
             if (this.delayedWrapAtEol) {
-                boolean oldWrap = ! oldNL && lineIndex < oldLines.size();
-                if (newWrap != oldWrap && ! (oldWrap && cleared)) {
-                    moveVisualCursorTo(lineIndex*columns1-1, newLines);
-                    if (newWrap)
-                        wrapNeeded = true;
-                    else
-                        terminal.puts(Capability.clr_eol);
+                boolean oldWrap = !oldNL && lineIndex < oldLines.size();
+                if (newWrap != oldWrap && !(oldWrap && cleared)) {
+                    moveVisualCursorTo(lineIndex * columns1 - 1, newLines);
+                    if (newWrap) wrapNeeded = true;
+                    else terminal.puts(Capability.clr_eol);
                 }
             } else if (atRight) {
                 if (this.wrapAtEol) {
-                    terminal.writer().write(" \b");
-                    cursorPos++;
+                    if (!fullScreen || (fullScreen && lineIndex < numLines)) {
+                        terminal.writer().write(" \b");
+                        cursorPos++;
+                    }
                 } else {
                     terminal.puts(Capability.carriage_return); // CR / not newline.
                     cursorPos = curCol;
@@ -358,8 +356,7 @@ public class Display {
     }
 
     protected boolean can(Capability single, Capability multi) {
-        return terminal.getStringCapability(single) != null
-                || terminal.getStringCapability(multi) != null;
+        return terminal.getStringCapability(single) != null || terminal.getStringCapability(multi) != null;
     }
 
     protected boolean perform(Capability single, Capability multi, int nb) {
@@ -405,7 +402,7 @@ public class Display {
                 }
             }
         }
-        return max != 0 ? new int[] { start1, start2, max } : null;
+        return max != 0 ? new int[] {start1, start2, max} : null;
     }
 
     /*
@@ -413,8 +410,7 @@ public class Display {
      * We're at the right margin if {@code (cursorPos % columns1) == columns}.
      * This method knows how to move both *from* and *to* the right margin.
      */
-    protected void moveVisualCursorTo(int targetPos,
-                                      List<AttributedString> newLines) {
+    protected void moveVisualCursorTo(int targetPos, List<AttributedString> newLines) {
         if (cursorPos != targetPos) {
             boolean atRight = (targetPos % columns1) == columns;
             moveVisualCursorTo(targetPos - (atRight ? 1 : 0));
@@ -422,12 +418,11 @@ public class Display {
                 // There is no portable way to move to the right margin
                 // except by writing a character in the right-most column.
                 int row = targetPos / columns1;
-                AttributedString lastChar = row >= newLines.size() ? AttributedString.EMPTY
-                    : newLines.get(row).columnSubSequence(columns-1, columns);
-                if (lastChar.length() == 0)
-                    rawPrint((int) ' ');
-                else
-                    rawPrint(lastChar);
+                AttributedString lastChar = row >= newLines.size()
+                        ? AttributedString.EMPTY
+                        : newLines.get(row).columnSubSequence(columns - 1, columns);
+                if (lastChar.length() == 0) rawPrint((int) ' ');
+                else rawPrint(lastChar);
                 cursorPos++;
             }
         }
@@ -499,5 +494,4 @@ public class Display {
     public int wcwidth(String str) {
         return str != null ? AttributedString.fromAnsi(str).columnLength() : 0;
     }
-
 }

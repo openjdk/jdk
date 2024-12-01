@@ -33,7 +33,7 @@ import org.openide.util.HelpCtx;
 import org.openide.util.actions.CallableSystemAction;
 
 
-abstract public class ExpandAdjacentAction extends CallableSystemAction {
+public abstract class ExpandAdjacentAction extends CallableSystemAction {
 
     protected void expandFigures(Function<Figure, List<Figure>> getAdjacentFigures) {
         EditorTopComponent editor = EditorTopComponent.getActive();
@@ -47,9 +47,9 @@ abstract public class ExpandAdjacentAction extends CallableSystemAction {
         }
     }
 
-    abstract public void performAction();
+    public abstract void performAction();
 
-    abstract public String getName();
+    public abstract String getName();
 
     @Override
     public HelpCtx getHelpCtx() {

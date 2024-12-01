@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author or authors.
+ * Copyright (c) 2002-2021, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -27,7 +27,7 @@ import jdk.internal.org.jline.terminal.Attributes.InputFlag;
 import jdk.internal.org.jline.terminal.Attributes.LocalFlag;
 import jdk.internal.org.jline.terminal.Cursor;
 import jdk.internal.org.jline.terminal.MouseEvent;
-import jdk.internal.org.jline.terminal.Terminal;
+import jdk.internal.org.jline.terminal.spi.TerminalExt;
 import jdk.internal.org.jline.utils.ColorPalette;
 import jdk.internal.org.jline.utils.Curses;
 import jdk.internal.org.jline.utils.InfoCmp;
@@ -35,7 +35,7 @@ import jdk.internal.org.jline.utils.InfoCmp.Capability;
 import jdk.internal.org.jline.utils.Log;
 import jdk.internal.org.jline.utils.Status;
 
-public abstract class AbstractTerminal implements Terminal {
+public abstract class AbstractTerminal implements TerminalExt {
 
     protected final String name;
     protected final String type;
@@ -44,7 +44,7 @@ public abstract class AbstractTerminal implements Terminal {
     protected final Set<Capability> bools = new HashSet<>();
     protected final Map<Capability, Integer> ints = new HashMap<>();
     protected final Map<Capability, String> strings = new HashMap<>();
-    protected final ColorPalette palette = new ColorPalette(this);
+    protected final ColorPalette palette;
     protected Status status;
     protected Runnable onClose;
 
@@ -52,10 +52,13 @@ public abstract class AbstractTerminal implements Terminal {
         this(name, type, null, SignalHandler.SIG_DFL);
     }
 
-    public AbstractTerminal(String name, String type, Charset encoding, SignalHandler signalHandler) throws IOException {
+    @SuppressWarnings("this-escape")
+    public AbstractTerminal(String name, String type, Charset encoding, SignalHandler signalHandler)
+            throws IOException {
         this.name = name;
         this.type = type != null ? type : "ansi";
         this.encoding = encoding != null ? encoding : System.out.charset();
+        this.palette = new ColorPalette(this);
         for (Signal signal : Signal.values()) {
             handlers.put(signal, signalHandler);
         }
@@ -85,11 +88,12 @@ public abstract class AbstractTerminal implements Terminal {
     public void raise(Signal signal) {
         Objects.requireNonNull(signal);
         SignalHandler handler = handlers.get(signal);
-        if (handler != SignalHandler.SIG_DFL && handler != SignalHandler.SIG_IGN) {
+        if (handler == SignalHandler.SIG_DFL) {
+            if (status != null && signal == Signal.WINCH) {
+                status.resize();
+            }
+        } else if (handler != SignalHandler.SIG_IGN) {
             handler.handle(signal);
-        }
-        if (status != null && signal == Signal.WINCH) {
-            status.resize();
         }
     }
 
@@ -105,8 +109,7 @@ public abstract class AbstractTerminal implements Terminal {
 
     protected void doClose() throws IOException {
         if (status != null) {
-            status.update(null);
-            flush();
+            status.close();
         }
     }
 
@@ -126,7 +129,7 @@ public abstract class AbstractTerminal implements Terminal {
         if (cc != null) {
             int vcc = getAttributes().getControlChar(cc);
             if (vcc > 0 && vcc < 32) {
-                writer().write(new char[]{'^', (char) (vcc + '@')}, 0, 2);
+                writer().write(new char[] {'^', (char) (vcc + '@')}, 0, 2);
             }
         }
     }
@@ -217,8 +220,7 @@ public abstract class AbstractTerminal implements Terminal {
     }
 
     private MouseEvent lastMouseEvent = new MouseEvent(
-                MouseEvent.Type.Moved, MouseEvent.Button.NoButton,
-                EnumSet.noneOf(MouseEvent.Modifier.class), 0, 0);
+            MouseEvent.Type.Moved, MouseEvent.Button.NoButton, EnumSet.noneOf(MouseEvent.Modifier.class), 0, 0);
 
     @Override
     public boolean hasMouseSupport() {
@@ -268,16 +270,13 @@ public abstract class AbstractTerminal implements Terminal {
     }
 
     @Override
-    public void pause() {
-    }
+    public void pause() {}
 
     @Override
-    public void pause(boolean wait) throws InterruptedException {
-    }
+    public void pause(boolean wait) throws InterruptedException {}
 
     @Override
-    public void resume() {
-    }
+    public void resume() {}
 
     @Override
     public boolean paused() {

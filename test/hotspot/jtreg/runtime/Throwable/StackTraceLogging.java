@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,11 @@ public class StackTraceLogging {
 
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:stacktrace=info",
-                                                                  "-XX:MaxJavaStackTraceDepth=1024",
-                                                                  "--add-opens",
-                                                                  "java.base/java.lang=ALL-UNNAMED",
-                                                                  "TestThrowable");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:stacktrace=info",
+                                                                             "-XX:MaxJavaStackTraceDepth=1024",
+                                                                             "--add-opens",
+                                                                             "java.base/java.lang=ALL-UNNAMED",
+                                                                             "TestThrowable");
         analyzeOutputOn(pb);
     }
 }

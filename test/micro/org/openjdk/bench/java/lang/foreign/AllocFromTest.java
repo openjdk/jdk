@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class AllocFromTest extends CLayouts {
 
     Arena arena = Arena.ofConfined();
@@ -68,34 +68,30 @@ public class AllocFromTest extends CLayouts {
 
     @Benchmark
     public MemorySegment alloc_confined() {
-        Arena arena = Arena.ofConfined();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (Arena arena = Arena.ofConfined()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     @Benchmark
     public MemorySegment alloc_malloc_arena() {
-        MallocArena arena = new MallocArena();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (MallocArena arena = new MallocArena()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     @Benchmark
     public MemorySegment alloc_unsafe_arena() {
-        UnsafeArena arena = new UnsafeArena();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (UnsafeArena arena = new UnsafeArena()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     @Benchmark
     public MemorySegment alloc_pool_arena() {
-        Arena arena = pool.acquire();
-        MemorySegment segment = arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
-        arena.close();
-        return segment;
+        try (Arena arena = pool.acquire()) {
+            return arena.allocateFrom(ValueLayout.JAVA_BYTE, arr);
+        }
     }
 
     static class SlicingPool {

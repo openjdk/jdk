@@ -111,7 +111,7 @@ public class WrongTopClasspath extends DynamicArchiveTestBase {
                 "assertNotShared:GenericTestApp") // but top archive is not useable
           .assertNormalExit(output -> {
               output.shouldContain(topArchiveMsg);
-              output.shouldMatch("A jar file is not the one used while building the shared archive file:.*GenericTestApp.jar");
+              output.shouldMatch("This file is not the one used while building the shared archive file:.*GenericTestApp.jar");
               output.shouldMatch(".warning..cds.*GenericTestApp.jar timestamp has changed.");});
     }
 }

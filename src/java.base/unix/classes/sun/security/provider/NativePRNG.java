@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,10 +203,12 @@ public final class NativePRNG extends SecureRandomSpi {
     }
 
     // constructor, called by the JCA framework
-    public NativePRNG() {
-        super();
+    public NativePRNG(SecureRandomParameters params) {
         if (INSTANCE == null) {
             throw new AssertionError("NativePRNG not available");
+        }
+        if (params != null) {
+            throw new IllegalArgumentException("Unsupported params: " + params.getClass());
         }
     }
 
@@ -251,10 +253,12 @@ public final class NativePRNG extends SecureRandomSpi {
         }
 
         // constructor, called by the JCA framework
-        public Blocking() {
-            super();
+        public Blocking(SecureRandomParameters params) {
             if (INSTANCE == null) {
                 throw new AssertionError("NativePRNG$Blocking not available");
+            }
+            if (params != null) {
+                throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
         }
 
@@ -300,11 +304,13 @@ public final class NativePRNG extends SecureRandomSpi {
         }
 
         // constructor, called by the JCA framework
-        public NonBlocking() {
-            super();
+        public NonBlocking(SecureRandomParameters params) {
             if (INSTANCE == null) {
                 throw new AssertionError(
                     "NativePRNG$NonBlocking not available");
+            }
+            if (params != null) {
+                throw new IllegalArgumentException("Unsupported params: " + params.getClass());
             }
         }
 

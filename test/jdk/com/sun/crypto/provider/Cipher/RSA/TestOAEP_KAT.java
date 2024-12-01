@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,10 @@ public class TestOAEP_KAT {
 
     public static void main(String[] args) throws Exception {
         long start = System.currentTimeMillis();
-        Provider provider = Security.getProvider("SunJCE");
-        Provider kfProvider = Security.getProvider("SunRsaSign");
+        Provider provider = Security.getProvider(
+                            System.getProperty("test.provider.name", "SunJCE"));
+        Provider kfProvider = Security.getProvider(
+                        System.getProperty("test.provider.name", "SunRsaSign"));
         System.out.println("Testing provider " + provider.getName() + "...");
         Cipher c = Cipher.getInstance("RSA/ECB/OAEPwithSHA1andMGF1Padding", provider);
         KeyFactory kf = KeyFactory.getInstance("RSA", kfProvider);

@@ -26,11 +26,11 @@
 #include "gc/g1/g1PageBasedVirtualSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 

@@ -45,7 +45,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 public class SocketEventOverhead {
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED" })
     @Benchmark
@@ -53,7 +53,7 @@ public class SocketEventOverhead {
         return fixture.write();
     }
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED",
         "-XX:StartFlightRecording:jdk.SocketWrite#enabled=false"})
@@ -62,7 +62,7 @@ public class SocketEventOverhead {
         return fixture.write();
     }
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED",
         "-XX:StartFlightRecording:jdk.SocketWrite#enabled=true,jdk.SocketWrite#threshold=1s"})
@@ -71,7 +71,7 @@ public class SocketEventOverhead {
         return fixture.write();
     }
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports","java.base/jdk.internal.event=ALL-UNNAMED",
         "-XX:StartFlightRecording:jdk.SocketWrite#enabled=true,jdk.SocketWrite#threshold=0ms,disk=false,jdk.SocketWrite#stackTrace=false"})
     @Benchmark
@@ -79,7 +79,7 @@ public class SocketEventOverhead {
         return fixture.write();
     }
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED" })
     @Benchmark
@@ -87,7 +87,7 @@ public class SocketEventOverhead {
         return fixture.read();
     }
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED",
         "-XX:StartFlightRecording:jdk.SocketRead#enabled=false"})
@@ -96,7 +96,7 @@ public class SocketEventOverhead {
         return fixture.read();
     }
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports",
         "java.base/jdk.internal.event=ALL-UNNAMED",
         "-XX:StartFlightRecording:jdk.SocketRead#enabled=true,jdk.SocketRead#threshold=1s"})
@@ -105,7 +105,7 @@ public class SocketEventOverhead {
         return fixture.read();
     }
 
-    @Fork(value = 1, jvmArgsAppend = {
+    @Fork(value = 1, jvmArgs = {
         "--add-exports","java.base/jdk.internal.event=ALL-UNNAMED",
         "-XX:StartFlightRecording:jdk.SocketRead#enabled=true,jdk.SocketRead#threshold=0ms,disk=false,jdk.SocketRead#stackTrace=false"})
     @Benchmark
@@ -137,7 +137,10 @@ public class SocketEventOverhead {
             try {
                 nbytes = write0();
             } finally {
-                SocketWriteEvent.offer(start, nbytes, getRemoteAddress());
+                long duration = start - SocketWriteEvent.timestamp();
+                if (SocketWriteEvent.shouldCommit(duration)) {
+                    SocketWriteEvent.emit(start, duration, nbytes, getRemoteAddress());
+                }
             }
             return nbytes;
         }
@@ -155,7 +158,10 @@ public class SocketEventOverhead {
             try {
                 nbytes = read0();
             } finally {
-                SocketReadEvent.offer(start, nbytes, getRemoteAddress(), 0);
+                long duration = start - SocketReadEvent.timestamp();
+                if (SocketReadEvent.shouldCommit(duration)) {
+                    SocketReadEvent.emit(start, duration, nbytes, getRemoteAddress(), 0);
+                }
             }
             return nbytes;
         }

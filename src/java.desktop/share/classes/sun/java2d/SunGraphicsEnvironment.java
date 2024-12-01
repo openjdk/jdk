@@ -40,7 +40,6 @@ import java.awt.Toolkit;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.awt.peer.ComponentPeer;
-import java.security.AccessController;
 import java.util.Locale;
 import java.util.TreeMap;
 
@@ -50,7 +49,6 @@ import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontManagerForSGE;
 import sun.java2d.pipe.Region;
-import sun.security.action.GetPropertyAction;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the
@@ -65,10 +63,8 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
     /** Establish the default font to be used by SG2D. */
     private final Font defaultFont = new Font(Font.DIALOG, Font.PLAIN, 12);
 
-    @SuppressWarnings("removal")
     private static final boolean uiScaleEnabled
-            = "true".equals(AccessController.doPrivileged(
-            new GetPropertyAction("sun.java2d.uiScale.enabled", "true")));
+            = "true".equals(System.getProperty("sun.java2d.uiScale.enabled", "true"));
 
     private static final double debugScale =
             uiScaleEnabled ? getScaleFactor("sun.java2d.uiScale") : -1;
@@ -293,9 +289,7 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
 
     public static double getScaleFactor(String propertyName) {
 
-        @SuppressWarnings("removal")
-        String scaleFactor = AccessController.doPrivileged(
-                new GetPropertyAction(propertyName, "-1"));
+        String scaleFactor = System.getProperty(propertyName, "-1");
 
         if (scaleFactor == null || scaleFactor.equals("-1")) {
             return -1;

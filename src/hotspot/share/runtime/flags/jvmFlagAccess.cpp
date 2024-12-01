@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +310,17 @@ JVMFlag::Error JVMFlagAccess::set_impl(JVMFlag* flag, void* value, JVMFlagOrigin
 JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrigin origin) {
   if (flag == nullptr) return JVMFlag::INVALID_FLAG;
   if (!flag->is_ccstr()) return JVMFlag::WRONG_FORMAT;
+  const JVMTypedFlagLimit<ccstr>* constraint = (const JVMTypedFlagLimit<ccstr>*)JVMFlagLimit::get_constraint(flag);
+  if (constraint != nullptr && constraint->phase() <= JVMFlagLimit::validating_phase()) {
+    bool verbose = JVMFlagLimit::verbose_checks_needed() | (origin == JVMFlagOrigin::ERGONOMIC);
+    JVMFlag::Error err = ((JVMFlagConstraintFunc_ccstr)constraint->constraint_func())(*value, verbose);
+    if (err != JVMFlag::SUCCESS) {
+      if (origin == JVMFlagOrigin::ERGONOMIC) {
+        fatal("FLAG_SET_ERGO cannot be used to set an invalid value for %s", flag->name());
+      }
+      return err;
+    }
+  }
   ccstr old_value = flag->get_ccstr();
   trace_flag_changed<ccstr, EventStringFlagChanged>(flag, old_value, *value, origin);
   char* new_value = nullptr;
@@ -321,7 +332,7 @@ JVMFlag::Error JVMFlagAccess::set_ccstr(JVMFlag* flag, ccstr* value, JVMFlagOrig
     // Old value is heap allocated so free it.
     FREE_C_HEAP_ARRAY(char, old_value);
   }
-  // Unlike the other APIs, the old vale is NOT returned, so the caller won't need to free it.
+  // Unlike the other APIs, the old value is NOT returned, so the caller won't need to free it.
   // The callers typically don't care what the old value is.
   // If the caller really wants to know the old value, read it (and make a copy if necessary)
   // before calling this API.

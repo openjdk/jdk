@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@ package jdk.jfr.event.io;
 import static jdk.test.lib.Asserts.assertEquals;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -41,6 +43,7 @@ import jdk.test.lib.thread.XRun;
 
 /**
  * @test
+ * @summary test socket read/write events on SocketChannel
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -62,20 +65,20 @@ public class TestSocketChannelEvents {
 
     public void test() throws Throwable {
         try (Recording recording = new Recording()) {
-            try (ServerSocketChannel ss = ServerSocketChannel.open()) {
+            try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 recording.enable(IOEvent.EVENT_SOCKET_READ).withThreshold(Duration.ofMillis(0));
                 recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
-                ss.socket().setReuseAddress(true);
-                ss.socket().bind(null);
+                InetAddress lb = InetAddress.getLoopbackAddress();
+                ssc.bind(new InetSocketAddress(lb, 0));
 
                 TestThread readerThread = new TestThread(new XRun() {
                     @Override
                     public void xrun() throws IOException {
                         ByteBuffer bufA = ByteBuffer.allocate(bufSizeA);
                         ByteBuffer bufB = ByteBuffer.allocate(bufSizeB);
-                        try (SocketChannel sc = ss.accept()) {
+                        try (SocketChannel sc = ssc.accept()) {
                             int readSize = sc.read(bufA);
                             assertEquals(readSize, bufSizeA, "Wrong readSize bufA");
                             addExpectedEvent(IOEvent.createSocketReadEvent(bufSizeA, sc.socket()));
@@ -98,7 +101,7 @@ public class TestSocketChannelEvents {
                 });
                 readerThread.start();
 
-                try (SocketChannel sc = SocketChannel.open(ss.socket().getLocalSocketAddress())) {
+                try (SocketChannel sc = SocketChannel.open(ssc.getLocalAddress())) {
                     ByteBuffer bufA = ByteBuffer.allocateDirect(bufSizeA);
                     ByteBuffer bufB = ByteBuffer.allocateDirect(bufSizeB);
                     for (int i = 0; i < bufSizeA; ++i) {

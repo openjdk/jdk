@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
  * are {@link Thread#isDaemon daemon} threads.
  *
  * <table class="striped">
- * <caption style="display:none:">System properties</caption>
+ * <caption style="display:none">System properties</caption>
  *   <thead>
  *   <tr>
  *     <th scope="col">System property</th>

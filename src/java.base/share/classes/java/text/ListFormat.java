@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -323,6 +323,26 @@ public final class ListFormat extends Format {
     }
 
     /**
+     * {@return the {@code Locale} of this ListFormat}
+     *
+     * The {@code locale} is defined by {@link #getInstance(Locale, Type, Style)} or
+     * {@link #getInstance(String[])}.
+     */
+    public Locale getLocale() {
+        return locale;
+    }
+
+    /**
+     * {@return the patterns used in this ListFormat}
+     *
+     * The {@code patterns} are defined by {@link #getInstance(Locale, Type, Style)} or
+     * {@link #getInstance(String[])}.
+     */
+    public String[] getPatterns() {
+        return Arrays.copyOf(patterns, patterns.length);
+    }
+
+    /**
      * {@return the string that consists of the input strings, concatenated with the
      * patterns of this {@code ListFormat}}
      * @apiNote Formatting the string from an excessively long list may exceed memory
@@ -336,7 +356,7 @@ public final class ListFormat extends Format {
     public String format(List<String> input) {
         Objects.requireNonNull(input);
 
-        return format(input, new StringBuffer(),
+        return format(input, StringBufFactory.of(),
                 DontCareFieldPosition.INSTANCE).toString();
     }
 
@@ -361,6 +381,18 @@ public final class ListFormat extends Format {
         Objects.requireNonNull(obj);
         Objects.requireNonNull(toAppendTo);
 
+        return format(obj, StringBufFactory.of(toAppendTo)).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(Object obj, StringBuf toAppendTo, FieldPosition pos) {
+        Objects.requireNonNull(obj);
+        Objects.requireNonNull(toAppendTo);
+
+        return format(obj, toAppendTo);
+    }
+
+    private StringBuf format(Object obj, StringBuf toAppendTo) {
         if (obj instanceof Object[] objs) {
             return generateMessageFormat(objs).format(objs, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else if (obj instanceof List<?> objs) {
@@ -480,11 +512,12 @@ public final class ListFormat extends Format {
     }
 
     /**
-     * Checks if this {@code ListFormat} is equal to another {@code ListFormat}.
-     * The comparison is based on the {@code Locale} and formatting patterns, given or
-     * generated with {@code Locale}, {@code Type}, and {@code Style}.
-     * @param obj the object to check, {@code null} returns {@code false}
-     * @return {@code true} if this is equals to the other {@code ListFormat}
+     * Compares the specified object with this {@code ListFormat} for equality.
+     * Returns {@code true} if the specified object is also a {@code ListFormat}, and
+     * {@code locale} and {@code patterns}, returned from {@link #getLocale()}
+     * and {@link #getPatterns()} respectively, are equal.
+     * @param obj the object to be compared for equality.
+     * @return {@code true} if the specified object is equal to this {@code ListFormat}
      */
     @Override
     public boolean equals(Object obj) {
@@ -509,7 +542,7 @@ public final class ListFormat extends Format {
     }
 
     /**
-     * {@inheritDoc}
+     * {@return a string identifying this {@code ListFormat}, for debugging}
      */
     @Override
     public String toString() {

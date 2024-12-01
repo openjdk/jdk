@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -680,6 +680,7 @@ public class TestOneToMany extends JavadocTester {
                 <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - grandparent 1</dd>
                 <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - grandparent 2</dd>
                 </dl>
+                </div>
                 </section>
                 """);
     }
@@ -735,6 +736,7 @@ public class TestOneToMany extends JavadocTester {
                 <dt>Throws:</dt>
                 <dd><code><a href="MyRuntimeException.html" title="class in x">MyRuntimeException</a></code> - "'grandparent'"</dd>
                 </dl>
+                </div>
                 </section>
                 """);
     }

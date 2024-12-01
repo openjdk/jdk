@@ -678,6 +678,14 @@
 			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- pituna ramẽ -->
 			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- pitunaeté ramẽ -->
 		</dayPeriodRules>
+		<dayPeriodRules locales="blo">
+			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- gajanɩ -->
+			<dayPeriodRule type="morning1" from="04:00" before="07:00"/>	<!-- asʊbaa -->
+			<dayPeriodRule type="morning2" from="07:00" before="12:00"/>	<!-- gajaka -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- gɩshilikɔnɔ -->
+			<dayPeriodRule type="afternoon2" from="16:00" before="20:00"/>	<!-- gɩteŋshile -->
+			<dayPeriodRule type="evening1" from="20:00" before="24:00"/>	<!-- gɩjibɔŋɔ -->
+		</dayPeriodRules>
 	</dayPeriodRuleSet>
 	<dayPeriodRuleSet type="selection">
 		<dayPeriodRules locales="root">
@@ -1219,6 +1227,14 @@
 			<dayPeriodRule type="afternoon1" from="12:00" before="19:00"/>	<!-- karuka ramẽ -->
 			<dayPeriodRule type="evening1" from="19:00" before="24:00"/>	<!-- pituna ramẽ -->
 			<dayPeriodRule type="night1" from="00:00" before="06:00"/>	<!-- pitunaeté ramẽ -->
+		</dayPeriodRules>
+		<dayPeriodRules locales="blo">
+			<dayPeriodRule type="night1" from="00:00" before="04:00"/>	<!-- gajanɩ -->
+			<dayPeriodRule type="morning1" from="04:00" before="07:00"/>	<!-- asʊbaa -->
+			<dayPeriodRule type="morning2" from="07:00" before="12:00"/>	<!-- gajaka -->
+			<dayPeriodRule type="afternoon1" from="12:00" before="16:00"/>	<!-- gɩshilikɔnɔ -->
+			<dayPeriodRule type="afternoon2" from="16:00" before="20:00"/>	<!-- gɩteŋshile -->
+			<dayPeriodRule type="evening1" from="20:00" before="24:00"/>	<!-- gɩjibɔŋɔ -->
 		</dayPeriodRules>
 	</dayPeriodRuleSet>
 </supplementalData>

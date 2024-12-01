@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -956,8 +956,8 @@ class StubGenerator: public StubCodeGenerator {
     Label L_skip_pld;
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       // predecrease to exit when there is less than count_per_loop
       __ sub_32(count, count, count_per_loop);
 
@@ -1105,8 +1105,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(RegisterSet(R4,R10));
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       __ sub_32(count, count, count_per_loop);
 
       const bool prefetch_before = pld_offset < 0;
@@ -1761,8 +1761,8 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(from, to, count, tmp);
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       __ align(OptoLoopAlignment);
       Label L_small_loop;
       __ BIND(L_small_loop);
@@ -1900,8 +1900,8 @@ class StubGenerator: public StubCodeGenerator {
     __ push(RegisterSet(R4,R10));
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
-      UnsafeCopyMemoryMark ucmm(this, unsafe_copy, true);
+      // UnsafeMemoryAccess page error: continue after unsafe access
+      UnsafeMemoryAccessMark umam(this, unsafe_copy, true);
       load_one(Rval, from, wordSize, forward);
 
       switch (bytes_per_count) {
@@ -2058,8 +2058,8 @@ class StubGenerator: public StubCodeGenerator {
 
     int count_required_to_align = 0;
     {
-      // UnsafeCopyMemoryMark page error: continue at UnsafeCopyMemory common_error_exit
-      UnsafeCopyMemoryMark ucmm(this, !aligned, false);
+      // UnsafeMemoryAccessMark page error: continue at UnsafeMemoryAccess common_error_exit
+      UnsafeMemoryAccessMark umam(this, !aligned, false);
       count_required_to_align = from_is_aligned ? 0 : align_src(from, to, count, tmp1, bytes_per_count, forward);
       assert (small_copy_limit >= count_required_to_align, "alignment could exhaust count");
     }
@@ -2092,9 +2092,9 @@ class StubGenerator: public StubCodeGenerator {
 
     int min_copy;
     if (forward) {
-      min_copy = generate_forward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeCopyMemory entry*/);
+      min_copy = generate_forward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeMemoryAccess entry*/);
     } else {
-      min_copy = generate_backward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeCopyMemory entry*/);
+      min_copy = generate_backward_aligned_copy_loop(from, to, count, bytes_per_count, !aligned /*add UnsafeMemoryAccess entry*/);
     }
     assert(small_copy_limit >= count_required_to_align + min_copy, "first loop might exhaust count");
 
@@ -2105,7 +2105,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ret();
 
     {
-      copy_small_array(from, to, count, tmp1, tmp2, bytes_per_count, forward, L_small_array /* entry */, !aligned /*add UnsafeCopyMemory entry*/);
+      copy_small_array(from, to, count, tmp1, tmp2, bytes_per_count, forward, L_small_array /* entry */, !aligned /*add UnsafeMemoryAccess entry*/);
 
       if (status) {
         __ mov(R0, 0); // OK
@@ -2116,7 +2116,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (! to_is_aligned) {
       __ BIND(L_unaligned_dst);
-      int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward, !aligned /*add UnsafeCopyMemory entry*/);
+      int min_copy_shifted = align_dst_and_generate_shifted_copy_loop(from, to, count, bytes_per_count, forward, !aligned /*add UnsafeMemoryAccess entry*/);
       assert (small_copy_limit >= count_required_to_align + min_copy_shifted, "first loop might exhaust count");
 
       if (status) {
@@ -2862,7 +2862,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeCopyMemory::set_common_exit_stub_pc(ucm_common_error_exit);
+    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
 
     // these need always status in case they are called from generic_arraycopy
     StubRoutines::_jbyte_disjoint_arraycopy  = generate_primitive_copy(false, "jbyte_disjoint_arraycopy",  true, 1, true);
@@ -2961,52 +2961,6 @@ class StubGenerator: public StubCodeGenerator {
 #undef  __
 #define __ masm->
 
-  //------------------------------------------------------------------------------------------------------------------------
-  // Continuation point for throwing of implicit exceptions that are not handled in
-  // the current activation. Fabricates an exception oop and initiates normal
-  // exception dispatching in this frame.
-  address generate_throw_exception(const char* name, address runtime_entry) {
-    int insts_size = 128;
-    int locs_size  = 32;
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps;
-    int frame_size;
-    int frame_complete;
-
-    oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-
-    address start = __ pc();
-
-    frame_size = 2;
-    __ mov(Rexception_pc, LR);
-    __ raw_push(FP, LR);
-
-    frame_complete = __ pc() - start;
-
-    // Any extra arguments are already supposed to be R1 and R2
-    __ mov(R0, Rthread);
-
-    int pc_offset = __ set_last_Java_frame(SP, FP, false, Rtemp);
-    assert(((__ pc()) - start) == __ offset(), "warning: start differs from code_begin");
-    __ call(runtime_entry);
-    if (pc_offset == -1) {
-      pc_offset = __ offset();
-    }
-
-    // Generate oop map
-    OopMap* map =  new OopMap(frame_size*VMRegImpl::slots_per_word, 0);
-    oop_maps->add_gc_map(pc_offset, map);
-    __ reset_last_Java_frame(Rtemp); // Rtemp free since scratched by far call
-
-    __ raw_pop(FP, LR);
-    __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
-
-    RuntimeStub* stub = RuntimeStub::new_runtime_stub(name, &code, frame_complete,
-                                                      frame_size, oop_maps, false);
-    return stub->entry_point();
-  }
-
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
     if (!Continuations::enabled()) return nullptr;
     Unimplemented();
@@ -3024,95 +2978,6 @@ class StubGenerator: public StubCodeGenerator {
   address generate_cont_returnBarrier_exception() {
     return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
   }
-
-#if INCLUDE_JFR
-
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  static RuntimeStub* generate_jfr_write_checkpoint() {
-    enum layout {
-      r1_off,
-      r2_off,
-      return_off,
-      framesize // inclusive of return address
-    };
-
-    CodeBuffer code("jfr_write_checkpoint", 512, 64);
-    MacroAssembler* masm = new MacroAssembler(&code);
-
-    address start = __ pc();
-    __ raw_push(R1, R2, LR);
-    address the_pc = __ pc();
-
-    int frame_complete = the_pc - start;
-
-    __ set_last_Java_frame(SP, FP, true, Rtemp);
-    __ mov(c_rarg0, Rthread);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), c_rarg0);
-    __ reset_last_Java_frame(Rtemp);
-
-    // R0 is jobject handle result, unpack and process it through a barrier.
-    __ resolve_global_jobject(R0, Rtemp, R1);
-
-    __ raw_pop(R1, R2, LR);
-    __ ret();
-
-    OopMapSet* oop_maps = new OopMapSet();
-    OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(frame_complete, map);
-
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(code.name(),
-                                    &code,
-                                    frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps,
-                                    false);
-    return stub;
-  }
-
-  // For c2: call to return a leased buffer.
-  static RuntimeStub* generate_jfr_return_lease() {
-    enum layout {
-      r1_off,
-      r2_off,
-      return_off,
-      framesize // inclusive of return address
-    };
-
-    CodeBuffer code("jfr_return_lease", 512, 64);
-    MacroAssembler* masm = new MacroAssembler(&code);
-
-    address start = __ pc();
-    __ raw_push(R1, R2, LR);
-    address the_pc = __ pc();
-
-    int frame_complete = the_pc - start;
-
-    __ set_last_Java_frame(SP, FP, true, Rtemp);
-    __ mov(c_rarg0, Rthread);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), c_rarg0);
-    __ reset_last_Java_frame(Rtemp);
-
-    __ raw_pop(R1, R2, LR);
-    __ ret();
-
-    OopMapSet* oop_maps = new OopMapSet();
-    OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(frame_complete, map);
-
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(code.name(),
-                                    &code,
-                                    frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps,
-                                    false);
-    return stub;
-  }
-
-#endif // INCLUDE_JFR
 
   //---------------------------------------------------------------------------
   // Initialization
@@ -3132,10 +2997,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_catch_exception_entry        = generate_catch_exception();
 
     // stub for throwing stack overflow error used both by interpreter and compiler
-    StubRoutines::_throw_StackOverflowError_entry  = generate_throw_exception("StackOverflowError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
-
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(32);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(32 + 4); // 32 for copyMemory; 4 for setMemory
     }
 
     // integer division used both by interpreter and compiler
@@ -3155,27 +3018,10 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-    JFR_ONLY(generate_jfr_stubs();)
   }
-
-#if INCLUDE_JFR
-  void generate_jfr_stubs() {
-    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-  }
-#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
-
-    // These entry points require SharedInfo::stack0 to be set up in non-core builds
-    // and need to be relocatable, so they each fabricate a RuntimeStub internally.
-    StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
-    StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
-    StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
 
     //------------------------------------------------------------------------------------------------------------------------
     // entry points that are platform specific
@@ -3188,7 +3034,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
   }

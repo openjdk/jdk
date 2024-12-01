@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,18 +56,22 @@ public class VMDeprecatedOptions {
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
-            {"MaxGCMinorPauseMillis",     "1032"},
-            {"MaxRAMFraction",            "8"},
-            {"MinRAMFraction",            "2"},
-            {"InitialRAMFraction",        "64"},
-            {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
+            {"LockingMode", "1"},
 
             // deprecated alias flags (see also aliased_jvm_flags):
-            {"DefaultMaxRAMFraction", "4"},
             {"CreateMinidumpOnCrash", "false"}
           }
         ));
+        if (Platform.isX86() || Platform.isX64()) {
+          deprecated.addAll(
+            Arrays.asList(new String[][] {
+            })
+          );
+        }
+        if (Platform.isLinux()) {
+            deprecated.add(new String[] { "UseLinuxPosixThreadCPUClocks", "true" });
+        }
         if (wb.isJFRIncluded()) {
             deprecated.add(new String[] {"FlightRecorder", "false"});
         }
@@ -101,7 +105,7 @@ public class VMDeprecatedOptions {
     // command line by -XX:+UnlockDiagnosticVMOptions.
     static void testDeprecatedDiagnostic(String option, String value)  throws Throwable {
         String XXoption = CommandLineOptionTest.prepareFlag(option, value);
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
             CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS, XXoption, "-version");
         OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
         // check for option deprecation message:
@@ -114,7 +118,7 @@ public class VMDeprecatedOptions {
     // command line by -XX:+UnlockExperimentalVMOption.
     static void testDeprecatedExperimental(String option, String value)  throws Throwable {
         String XXoption = CommandLineOptionTest.prepareFlag(option, value);
-        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
             CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS, XXoption, "-version");
         OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
         // check for option deprecation message:

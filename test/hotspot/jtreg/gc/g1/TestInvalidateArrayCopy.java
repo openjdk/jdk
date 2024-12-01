@@ -29,7 +29,7 @@ package gc.g1;
  * @summary Check that benign (0-sized) out of heap bounds card table invalidations do not assert.
  * @requires vm.gc.G1
  * @requires vm.debug
- * @run main/othervm -XX:NewSize=1M -Xlog:gc -XX:MaxNewSize=1m -XX:-UseTLAB -XX:OldSize=63M -XX:MaxHeapSize=64M gc.g1.TestInvalidateArrayCopy
+ * @run main/othervm -XX:NewSize=1M -Xlog:gc -XX:MaxNewSize=1m -XX:-UseTLAB -XX:MaxHeapSize=64M gc.g1.TestInvalidateArrayCopy
  */
 
 // The test allocates zero-sized arrays of j.l.O and tries to arraycopy random data into it so

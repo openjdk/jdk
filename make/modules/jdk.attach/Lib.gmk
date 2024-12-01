@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libattach
+################################################################################
 
 ifeq ($(call isTargetOs, windows), true)
   # In (at least) VS2013 and later, -DPSAPI_VERSION=1 is needed to generate
@@ -37,16 +39,10 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBATTACH, \
     NAME := attach, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBATTACH_CFLAGS), \
-    CFLAGS_windows := /Gy, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(JDKLIB_LIBS), \
-    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib psapi.lib, \
+    CFLAGS := $(LIBATTACH_CFLAGS), \
+    CFLAGS_windows := -Gy, \
+    JDK_LIBS := java.base:libjava, \
+    LIBS_windows := advapi32.lib psapi.lib, \
 ))
 
-$(BUILD_LIBATTACH): $(call FindLib, java.base, java)
-
 TARGETS += $(BUILD_LIBATTACH)
-
-################################################################################

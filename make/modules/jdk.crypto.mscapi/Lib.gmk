@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,18 @@
 
 include LibCommon.gmk
 
-################################################################################
-
 ifeq ($(call isTargetOs, windows), true)
+  ##############################################################################
+  ## Build libsunmscapi
+  ##############################################################################
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSUNMSCAPI, \
       NAME := sunmscapi, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := crypt32.lib advapi32.lib ncrypt.lib, \
+      EXTRA_HEADER_DIRS := java.base:libjava, \
+      LDFLAGS := $(LDFLAGS_CXX_JDK), \
+      LIBS_windows := advapi32.lib crypt32.lib ncrypt.lib, \
   ))
 
   TARGETS += $(BUILD_LIBSUNMSCAPI)
 endif
-
-################################################################################

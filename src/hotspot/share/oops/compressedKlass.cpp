@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,110 +23,270 @@
  */
 
 #include "precompiled.hpp"
-#include "oops/compressedKlass.hpp"
+#include "logging/log.hpp"
+#include "memory/metaspace.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-address CompressedKlassPointers::_base = nullptr;
-int CompressedKlassPointers::_shift = 0;
-size_t CompressedKlassPointers::_range = 0;
+int CompressedKlassPointers::_narrow_klass_pointer_bits = -1;
+int CompressedKlassPointers::_max_shift = -1;
+
+address CompressedKlassPointers::_base = (address)-1;
+int CompressedKlassPointers::_shift = -1;
+address CompressedKlassPointers::_klass_range_start = nullptr;
+address CompressedKlassPointers::_klass_range_end = nullptr;
+narrowKlass CompressedKlassPointers::_lowest_valid_narrow_klass_id = (narrowKlass)-1;
+narrowKlass CompressedKlassPointers::_highest_valid_narrow_klass_id = (narrowKlass)-1;
 
 #ifdef _LP64
+
+size_t CompressedKlassPointers::max_klass_range_size() {
+  // We disallow klass range sizes larger than 4GB even if the encoding
+  // range would allow for a larger Klass range (e.g. Base=zero, shift=3 -> 32GB).
+  // That is because many CPU-specific compiler decodings do not want the
+  // shifted narrow Klass to spill over into the third quadrant of the 64-bit target
+  // address, e.g. to use a 16-bit move for a simplified base addition.
+  return MIN2(4 * G, max_encoding_range_size());
+}
+
+void CompressedKlassPointers::pre_initialize() {
+  if (UseCompactObjectHeaders) {
+    _narrow_klass_pointer_bits = narrow_klass_pointer_bits_coh;
+    _max_shift = max_shift_coh;
+  } else {
+    _narrow_klass_pointer_bits = narrow_klass_pointer_bits_noncoh;
+    _max_shift = max_shift_noncoh;
+  }
+}
+
+#ifdef ASSERT
+void CompressedKlassPointers::sanity_check_after_initialization() {
+  // In expectation of an assert, prepare condensed info to be printed with the assert.
+  char tmp[256];
+  os::snprintf(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
+      " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
+      RANGE2FMTARGS(_klass_range_start, _klass_range_end),
+      p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
+#define ASSERT_HERE(cond) assert(cond, " (%s)", tmp);
+#define ASSERT_HERE_2(cond, msg) assert(cond, msg " (%s)", tmp);
+
+  // All values must be inited
+  ASSERT_HERE(_max_shift != -1);
+  ASSERT_HERE(_klass_range_start != (address)-1);
+  ASSERT_HERE(_klass_range_end != (address)-1);
+  ASSERT_HERE(_lowest_valid_narrow_klass_id != (narrowKlass)-1);
+  ASSERT_HERE(_base != (address)-1);
+  ASSERT_HERE(_shift != -1);
+
+  const size_t klass_align = klass_alignment_in_bytes();
+
+  // must be aligned enough hold 64-bit data
+  ASSERT_HERE(is_aligned(klass_align, sizeof(uint64_t)));
+
+  // should be smaller than the minimum metaspace chunk size (soft requirement)
+  ASSERT_HERE(klass_align <= K);
+
+  ASSERT_HERE(_klass_range_end > _klass_range_start);
+
+  // Check that Klass range is fully engulfed in the encoding range
+  const address encoding_start = _base;
+  const address encoding_end = _base + nth_bit(narrow_klass_pointer_bits() + _shift);
+  ASSERT_HERE_2(_klass_range_start >= _base && _klass_range_end <= encoding_end,
+                "Resulting encoding range does not fully cover the class range");
+
+  // Check that Klass range is aligned to Klass alignment. Note that this should never be
+  // an issue since the Klass range is handed in by either CDS- or Metaspace-initialization, and
+  // it should be the result of an mmap operation that operates on page sizes. So as long as
+  // the Klass alignment is <= page size, we are fine.
+  ASSERT_HERE_2(is_aligned(_klass_range_start, klass_align) &&
+                is_aligned(_klass_range_end, klass_align),
+                "Klass range must start and end at a properly aligned address");
+
+  // Check _lowest_valid_narrow_klass_id and _highest_valid_narrow_klass_id
+  ASSERT_HERE_2(_lowest_valid_narrow_klass_id > 0, "Null is not a valid narrowKlass");
+  ASSERT_HERE(_highest_valid_narrow_klass_id > _lowest_valid_narrow_klass_id);
+
+  Klass* const k1 = decode_not_null_without_asserts(_lowest_valid_narrow_klass_id, _base, _shift);
+  if (encoding_start == _klass_range_start) {
+    ASSERT_HERE_2((address)k1 == _klass_range_start + klass_align, "Not lowest");
+  } else {
+    ASSERT_HERE_2((address)k1 == _klass_range_start, "Not lowest");
+  }
+  narrowKlass nk1 = encode_not_null_without_asserts(k1, _base, _shift);
+  ASSERT_HERE_2(nk1 == _lowest_valid_narrow_klass_id, "not reversible");
+
+  Klass* const k2 = decode_not_null_without_asserts(_highest_valid_narrow_klass_id, _base, _shift);
+  ASSERT_HERE((address)k2 == _klass_range_end - klass_align);
+  narrowKlass nk2 = encode_not_null_without_asserts(k2, _base, _shift);
+  ASSERT_HERE_2(nk2 == _highest_valid_narrow_klass_id, "not reversible");
+
+#ifdef AARCH64
+  // On aarch64, we never expect a shift value > 0 in standard (non-coh) mode
+  ASSERT_HERE_2(UseCompactObjectHeaders || _shift == 0, "Shift > 0 in non-coh mode?");
+#endif
+#undef ASSERT_HERE
+#undef ASSERT_HERE_2
+}
+#endif // ASSERT
+
+// Helper function: given current Klass Range, Base and Shift, calculate the lowest and highest values
+// of narrowKlass we can expect.
+void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
+  address lowest_possible_klass_location = _klass_range_start;
+
+  // A Klass will never be placed at the Encoding range start, since that would translate to a narrowKlass=0, which
+  // is disallowed. Note that both Metaspace and CDS prvent allocation at the first address for this reason.
+  if (lowest_possible_klass_location == _base) {
+    lowest_possible_klass_location += klass_alignment_in_bytes();
+  }
+  _lowest_valid_narrow_klass_id = (narrowKlass) ((uintptr_t)(lowest_possible_klass_location - _base) >> _shift);
+
+  address highest_possible_klass_location = _klass_range_end - klass_alignment_in_bytes();
+  _highest_valid_narrow_klass_id = (narrowKlass) ((uintptr_t)(highest_possible_klass_location - _base) >> _shift);
+}
 
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
 // archived heap objects.
 void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift) {
-  assert(is_valid_base(requested_base), "Address must be a valid encoding base");
-  address const end = addr + len;
+  if (len > max_klass_range_size()) {
+    stringStream ss;
+    ss.print("Class space size and CDS archive size combined (%zu) "
+             "exceed the maximum possible size (%zu)",
+             len, max_klass_range_size());
+    vm_exit_during_initialization(ss.base());
+  }
 
-  const int narrow_klasspointer_bits = sizeof(narrowKlass) * 8;
-  const size_t encoding_range_size = nth_bit(narrow_klasspointer_bits + requested_shift);
-  address encoding_range_end = requested_base + encoding_range_size;
-
-  // Note: it would be technically valid for the encoding base to precede the start of the Klass range. But we only call
-  // this function from CDS, and therefore know this to be true.
+  // Note: While it would be technically valid for the encoding base to precede the start of the Klass range,
+  // we never do this here. This is used at CDS runtime to re-instate the scheme used to precompute the
+  // narrow Klass IDs in the archive, and the requested base should point to the start of the Klass range.
   assert(requested_base == addr, "Invalid requested base");
-  assert(encoding_range_end >= end, "Encoding does not cover the full Klass range");
 
-  set_base(requested_base);
-  set_shift(requested_shift);
-  set_range(encoding_range_size);
+  // Remember Klass range:
+  _klass_range_start = addr;
+  _klass_range_end = addr + len;
+
+  _base = requested_base;
+  _shift = requested_shift;
+
+  calc_lowest_highest_narrow_klass_id();
+
+  DEBUG_ONLY(sanity_check_after_initialization();)
 }
 
-// Given an address range [addr, addr+len) which the encoding is supposed to
-//  cover, choose base, shift and range.
-//  The address range is the expected range of uncompressed Klass pointers we
-//  will encounter (and the implicit promise that there will be no Klass
-//  structures outside this range).
+char* CompressedKlassPointers::reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr) {
+  alignment = MAX2(Metaspace::reserve_alignment(), alignment);
+  return os::attempt_reserve_memory_between((char*)from, (char*)to, size, alignment, aslr);
+}
+
+char* CompressedKlassPointers::reserve_address_space_for_unscaled_encoding(size_t size, bool aslr) {
+  const size_t unscaled_max = nth_bit(narrow_klass_pointer_bits());
+  return reserve_address_space_X(0, unscaled_max, size, Metaspace::reserve_alignment(), aslr);
+}
+
+char* CompressedKlassPointers::reserve_address_space_for_zerobased_encoding(size_t size, bool aslr) {
+  const size_t unscaled_max = nth_bit(narrow_klass_pointer_bits());
+  const size_t zerobased_max = nth_bit(narrow_klass_pointer_bits() + max_shift());
+  return reserve_address_space_X(unscaled_max, zerobased_max, size, Metaspace::reserve_alignment(), aslr);
+}
+
+char* CompressedKlassPointers::reserve_address_space_for_16bit_move(size_t size, bool aslr) {
+  return reserve_address_space_X(nth_bit(32), nth_bit(48), size, nth_bit(32), aslr);
+}
+
 void CompressedKlassPointers::initialize(address addr, size_t len) {
-  address const end = addr + len;
 
-  address base;
-  int shift;
-  size_t range;
-
-  // Attempt to run with encoding base == zero
-  if (end <= (address)KlassEncodingMetaspaceMax) {
-    base = 0;
-  } else {
-    base = addr;
+  if (len > max_klass_range_size()) {
+    stringStream ss;
+    ss.print("Class space size (%zu) exceeds the maximum possible size (%zu)",
+              len, max_klass_range_size());
+    vm_exit_during_initialization(ss.base());
   }
 
-  // Highest offset a Klass* can ever have in relation to base.
-  range = end - base;
+  // Remember the Klass range:
+  _klass_range_start = addr;
+  _klass_range_end = addr + len;
 
-  // We may not even need a shift if the range fits into 32bit:
-  const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
-  if (range < UnscaledClassSpaceMax) {
-    shift = 0;
+  // Calculate Base and Shift:
+
+  if (UseCompactObjectHeaders) {
+
+    // In compact object header mode, with 22-bit narrowKlass, we don't attempt for
+    // zero-based mode. Instead, we set the base to the start of the klass range and
+    // then try for the smallest shift possible that still covers the whole range.
+    // The reason is that we want to avoid, if possible, shifts larger than
+    // a cacheline size.
+    _base = addr;
+
+    const int log_cacheline = exact_log2(DEFAULT_CACHE_LINE_SIZE);
+    int s = max_shift();
+    while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
+      s--;
+    }
+    _shift = s;
+
   } else {
-    shift = LogKlassAlignmentInBytes;
-  }
 
-  set_base(base);
-  set_shift(shift);
-  set_range(range);
+    // Traditional (non-compact) header mode
+    const uintptr_t unscaled_max = nth_bit(narrow_klass_pointer_bits());
+    const uintptr_t zerobased_max = nth_bit(narrow_klass_pointer_bits() + max_shift());
 
-  assert(is_valid_base(_base), "Address must be a valid encoding base");
-}
-
-// Given an address p, return true if p can be used as an encoding base.
-//  (Some platforms have restrictions of what constitutes a valid base address).
-bool CompressedKlassPointers::is_valid_base(address p) {
 #ifdef AARCH64
-  // Below 32G, base must be aligned to 4G.
-  // Above that point, base must be aligned to 32G
-  if (p < (address)(32 * G)) {
-    return is_aligned(p, 4 * G);
-  }
-  return is_aligned(p, (4 << LogKlassAlignmentInBytes) * G);
+    // Aarch64 avoids zero-base shifted mode (_base=0 _shift>0), instead prefers
+    // non-zero-based mode with a zero shift.
+    _shift = 0;
+    address const end = addr + len;
+    _base = (end <= (address)unscaled_max) ? nullptr : addr;
 #else
-  return true;
+    // We try, in order of preference:
+    // -unscaled    (base=0 shift=0)
+    // -zero-based  (base=0 shift>0)
+    // -nonzero-base (base>0 shift=0)
+    // Note that base>0 shift>0 should never be needed, since the klass range will
+    // never exceed 4GB.
+    address const end = addr + len;
+    if (end <= (address)unscaled_max) {
+      _base = nullptr;
+      _shift = 0;
+    } else {
+      if (end <= (address)zerobased_max) {
+        _base = nullptr;
+        _shift = max_shift();
+      } else {
+        _base = addr;
+        _shift = 0;
+      }
+    }
+#endif // AARCH64
+  }
+
+  calc_lowest_highest_narrow_klass_id();
+
+#ifdef ASSERT
+  sanity_check_after_initialization();
 #endif
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
-               "Narrow klass range: " SIZE_FORMAT_X, p2i(base()), shift(),
-               range());
-}
-
-void CompressedKlassPointers::set_base(address base) {
-  assert(UseCompressedClassPointers, "no compressed klass ptrs?");
-  _base   = base;
-}
-
-void CompressedKlassPointers::set_shift(int shift)       {
-  assert(shift == 0 || shift == LogKlassAlignmentInBytes, "invalid shift for klass ptrs");
-  _shift   = shift;
-}
-
-void CompressedKlassPointers::set_range(size_t range) {
-  assert(UseCompressedClassPointers, "no compressed klass ptrs?");
-  _range = range;
+  st->print_cr("UseCompressedClassPointers %d, UseCompactObjectHeaders %d",
+               UseCompressedClassPointers, UseCompactObjectHeaders);
+  if (UseCompressedClassPointers) {
+    st->print_cr("Narrow klass pointer bits %d, Max shift %d",
+                 _narrow_klass_pointer_bits, _max_shift);
+    st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+                  p2i(base()), shift());
+    st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
+    st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
+    st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
+                 _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
+  } else {
+    st->print_cr("UseCompressedClassPointers off");
+  }
 }
 
 #endif // _LP64

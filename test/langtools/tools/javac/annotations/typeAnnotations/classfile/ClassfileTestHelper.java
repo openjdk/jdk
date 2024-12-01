@@ -25,8 +25,8 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import java.util.ArrayList;
 
 public class ClassfileTestHelper {
@@ -63,13 +63,13 @@ public class ClassfileTestHelper {
         URL url = getClass().getResource(name);
         assert url != null;
         try (InputStream in = url.openStream()) {
-            return Classfile.of().parse(in.readAllBytes());
+            return ClassFile.of().parse(in.readAllBytes());
         }
     }
 
     ClassModel getClassFile(URL url) throws IOException {
         try (InputStream in = url.openStream()) {
-            return Classfile.of().parse(in.readAllBytes());
+            return ClassFile.of().parse(in.readAllBytes());
         }
     }
 
@@ -88,10 +88,10 @@ public class ClassfileTestHelper {
 
     // 'local' determines whether to look for annotations in code attribute or not.
     void test(AttributedElement m, Boolean local) {
-        test(m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS, local);
-        test(m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, local);
-        test(m, Attributes.RUNTIME_VISIBLE_ANNOTATIONS, local);
-        test(m, Attributes.RUNTIME_INVISIBLE_ANNOTATIONS, local);
+        test(m, Attributes.runtimeVisibleTypeAnnotations(), local);
+        test(m, Attributes.runtimeInvisibleTypeAnnotations(), local);
+        test(m, Attributes.runtimeVisibleAnnotations(), local);
+        test(m, Attributes.runtimeInvisibleAnnotations(), local);
     }
 
     // Test the result of MethodModel.findAttribute according to expectations
@@ -164,7 +164,7 @@ public class ClassfileTestHelper {
         CodeAttribute cAttr;
         Attribute<T> attr = null;
         if (local) {
-            cAttr = m.findAttribute(Attributes.CODE).orElse(null);
+            cAttr = m.findAttribute(Attributes.code()).orElse(null);
             if (cAttr != null) {
                 attr = cAttr.findAttribute(annName).orElse(null);
             }

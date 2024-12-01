@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4770745 6218846 6218848 6237956 8313765
+ * @bug 4770745 6218846 6218848 6237956 8313765 8316141
  * @summary test for correct detection and reporting of corrupted zip files
  * @author Martin Buchholz
  * @run junit CorruptedZipFiles
@@ -262,7 +262,7 @@ public class CorruptedZipFiles {
     public void excessiveExtraFieldLength() throws IOException {
         buffer.put(cenpos+CENEXT, (byte) 0xff);
         buffer.put(cenpos+CENEXT+1, (byte) 0xff);
-        assertZipException(".*extra data field size too long.*");
+        assertZipException(".*bad header size.*");
     }
 
     /*
@@ -273,7 +273,7 @@ public class CorruptedZipFiles {
     @Test
     public void excessiveExtraFieldLength2() throws IOException {
         buffer.putShort(cenpos+CENEXT, (short) 0xfdfd);
-        assertZipException(".*extra data field size too long.*");
+        assertZipException(".*bad header size.*");
     }
 
     /*

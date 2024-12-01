@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class TestMultiANewArray {
         int cfv = Integer.parseInt(args[0]);
         writeClassFile(cfv);
         System.err.println("Running with cfv: " + cfv);
-        ProcessBuilder pb = ProcessTools.createTestJvm("-cp", ".",  "ClassFile");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-cp", ".",  "ClassFile");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("VerifyError");
         output.shouldHaveExitValue(1);

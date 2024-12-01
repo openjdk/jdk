@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,7 +41,7 @@ public class FoldMultilinesTest {
     private static String XLOG_BASE = "-Xlog:exceptions=info:";
     private static String EXCEPTION_MESSAGE = "line 1\nline 2\\nstring";
     private static String FOLDED_EXCEPTION_MESSAGE = "line 1\\nline 2\\\\nstring";
-    private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\Rline 2\\\\nstring", Pattern.MULTILINE);
+    private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\R\\[\\s+\\] line 2\\\\nstring", Pattern.MULTILINE);
 
     private static String getLog(String out, OutputAnalyzer output) throws Exception {
         return switch (out) {
@@ -79,15 +79,15 @@ public class FoldMultilinesTest {
         ProcessBuilder pb;
 
         Xlog = XLOG_BASE + out +  "::foldmultilines=true";
-        pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(Xlog, InternalClass.class.getName());
         analyzeFoldMultilinesOn(pb, out);
 
         Xlog = XLOG_BASE + out + "::foldmultilines=false";
-        pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(Xlog, InternalClass.class.getName());
         analyzeFoldMultilinesOff(pb, out);
 
         Xlog = XLOG_BASE + out + "::foldmultilines=invalid";
-        pb = ProcessTools.createJavaProcessBuilder(Xlog, InternalClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(Xlog, InternalClass.class.getName());
         analyzeFoldMultilinesInvalid(pb);
     }
 

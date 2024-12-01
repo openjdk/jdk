@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.Objects;
 import java.util.regex.Pattern;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
@@ -67,12 +68,30 @@ public class TestBase {
             ORACLE_JAXP_PROPERTY_PREFIX + "getEntityCountInfo";
     public static final String CATALOG_FILE = CatalogFeatures.Feature.FILES.getPropertyName();
     public static final boolean IS_WINDOWS = System.getProperty("os.name").contains("Windows");
-    public static String SRC_DIR = System.getProperty("test.src", ".");
-    public static String TEST_SOURCE_DIR;
+    public static String SRC_DIR;
+    public static String TEST_SOURCE_DIR, CONFIG_FILE_PATH, CATALOG_PATH;
 
+    static {
+        String srcDir = System.getProperty("test.src", ".");
+        if (IS_WINDOWS) {
+            srcDir = srcDir.replace('\\', '/');
+        }
+        SRC_DIR = srcDir;
+        if (IS_WINDOWS) {
+            CATALOG_PATH = "file:///" + SRC_DIR + "/../catalog/testcatalog/TestCatalog.xml";
+        } else {
+            CATALOG_PATH = "file://" + SRC_DIR + "/../catalog/testcatalog/TestCatalog.xml";
+        }
+        TEST_SOURCE_DIR = srcDir + "/../xmlfiles/";
+        CONFIG_FILE_PATH = SRC_DIR + "/../config/files/";
+    }
 
     // configuration file system property
     private static final String CONFIG_FILE = "java.xml.config.file";
+
+    // CATALOG Abbreviation: C
+    static final String C_FILE = CatalogFeatures.Feature.FILES.getPropertyName();
+    static final String C_RESOLVE = CatalogFeatures.Feature.RESOLVE.getPropertyName();
 
     // Xerces Property
     public static final String DISALLOW_DTD = "http://apache.org/xml/features/disallow-doctype-decl";
@@ -84,6 +103,7 @@ public class TestBase {
 
     // Impl Specific Properties
     public static final String SP_DTD = "jdk.xml.dtd.support";
+    public static final String SP_CATALOG = "jdk.xml.jdkcatalog.resolve";
     public static final String OVERRIDE_PARSER = "jdk.xml.overrideDefaultParser";
 
     // DTD/CATALOG constants
@@ -97,8 +117,17 @@ public class TestBase {
 
     // JAXP Configuration File(JCF) location
     // DTD = deny
-    public static final String JCF_DTD2 = "../config/files/dtd2.properties";
+    public static final String JCF_DTD2 = "dtd2.properties";
 
+    // CATALOG=strict
+    public static final String CONFIG_CATALOG_STRICT = "catalog2.properties";
+
+    // JAXP Configuration Files to be added to $JAVA_HOME/conf/
+    public static final String CONFIG_DEFAULT = "jaxp.properties";
+    public static final String CONFIG_STRICT = "jaxp-strict.properties";
+    public static final String CONFIG_TEMPLATE_STRICT = "jaxp-strict.properties.template";
+
+    public static final String UNKNOWN_HOST = "invalid.site.com";
 
     String xmlExternalEntity, xmlExternalEntityId;
     String xmlGE_Expansion, xmlGE_ExpansionId;
@@ -107,7 +136,10 @@ public class TestBase {
     static enum SourceType { STREAM, SAX, STAX, DOM };
 
     public static enum Properties {
-        CONFIG_FILE_DTD2(null, CONFIG_FILE, Type.FEATURE, getPath(JCF_DTD2)),
+        // config file: CATALOG = strict
+        CONFIG_FILE_CATALOG_STRICT(null, CONFIG_FILE, Type.FEATURE, getPath(CONFIG_FILE_PATH, CONFIG_CATALOG_STRICT)),
+        CONFIG_FILE_DTD2(null, CONFIG_FILE, Type.FEATURE, getPath(CONFIG_FILE_PATH, JCF_DTD2)),
+
         FSP(XMLConstants.FEATURE_SECURE_PROCESSING, null, Type.FEATURE, "true"),
         FSP_FALSE(XMLConstants.FEATURE_SECURE_PROCESSING, null, Type.FEATURE, "false"),
 
@@ -115,6 +147,9 @@ public class TestBase {
         DTD0(SP_DTD, "ditto", Type.PROPERTY, DTD_ALLOW),
         DTD1(SP_DTD, "ditto", Type.PROPERTY, DTD_IGNORE),
         DTD2(SP_DTD, "ditto", Type.PROPERTY, DTD_DENY),
+        CATALOG0(SP_CATALOG, "ditto", Type.PROPERTY, RESOLVE_CONTINUE),
+        CATALOG1(SP_CATALOG, "ditto", Type.PROPERTY, RESOLVE_IGNORE),
+        CATALOG2(SP_CATALOG, "ditto", Type.PROPERTY, RESOLVE_STRICT),
 
         // StAX properties
         SUPPORT_DTD(XMLInputFactory.SUPPORT_DTD, null, Type.FEATURE, "true"),
@@ -181,11 +216,34 @@ public class TestBase {
         CONFIG_FILE_SYSTEM_API,
     }
 
+    public static enum CustomCatalog {
+        // continue processing if no match found
+        CONTINUE(CATALOG_PATH, "continue"),
+        // skip if no match found
+        IGNORE(CATALOG_PATH, "ignore"),
+        // throws CatalogException if no match found
+        STRICT(CATALOG_PATH, "strict");
+
+        String file, resolve;
+        CustomCatalog(String file, String resolve) {
+            this.file = file;
+            this.resolve = resolve;
+        }
+
+        public String file() {
+            return file;
+        }
+
+        public String resolve() {
+            return resolve;
+        }
+    }
+
     protected void process(String filename, DocumentBuilderFactory dbf, boolean expectError,
             String error) throws Exception {
         //dbf.setAttribute(CatalogFeatures.Feature.RESOLVE.getPropertyName(), "continue");
         DocumentBuilder builder = dbf.newDocumentBuilder();
-        File file = new File(getPath(filename));
+        File file = new File(getPath(TEST_SOURCE_DIR, filename));
         try {
             Document document = builder.parse(file);
             Assert.assertTrue(!expectError);
@@ -198,7 +256,7 @@ public class TestBase {
     protected void process(String filename, SAXParser parser, boolean expectError,
             String error) throws Exception {
 
-        File file = new File(getPath(filename));
+        File file = new File(getPath(TEST_SOURCE_DIR, filename));
         try {
             parser.parse(file, new DefaultHandler());
             Assert.assertTrue(!expectError);
@@ -211,7 +269,7 @@ public class TestBase {
     protected void process(String filename, XMLInputFactory xif, boolean expectError,
             String expected) throws Exception {
 
-        String xml = getPath(filename);
+        String xml = getPath(TEST_SOURCE_DIR, filename);
         try {
             InputStream entityxml = new FileInputStream(xml);
             XMLStreamReader streamReader = xif.createXMLStreamReader(xml, entityxml);
@@ -228,7 +286,7 @@ public class TestBase {
     protected void process(String filename, SchemaFactory sf, boolean expectError,
             String expected) throws Exception {
 
-        String xsd = getPath(filename);
+        String xsd = getPath(TEST_SOURCE_DIR, filename);
         try {
             Schema schema = sf.newSchema(new StreamSource(new File(xsd)));
             Assert.assertTrue(!expectError);
@@ -240,7 +298,7 @@ public class TestBase {
 
     protected void process(String filename, TransformerFactory tf, boolean expectError,
             String expected) throws Exception {
-        String xsl = getPath(filename);
+        String xsl = getPath(TEST_SOURCE_DIR, filename);
         try {
             SAXSource xslSource = new SAXSource(new InputSource(xsl));
             xslSource.setSystemId(xsl);
@@ -254,7 +312,7 @@ public class TestBase {
 
     protected void transform(String xmlFile, String xsl, TransformerFactory tf,
             boolean expectError, String expected) throws Exception {
-        String xmlSysId = getPath(xmlFile);
+        String xmlSysId = getPath(TEST_SOURCE_DIR, xmlFile);
         try {
             SAXSource xslSource = new SAXSource(new InputSource(new StringReader(xsl)));
             //SAXSource xslSource = new SAXSource(new InputSource(xslSysId));
@@ -264,14 +322,13 @@ public class TestBase {
             transformer.transform(getSource(SourceType.STREAM, xmlSysId), new StreamResult(sw));
             Assert.assertTrue(!expectError);
         } catch (Exception e) {
-            e.printStackTrace();
             processError(expectError, expected, e);
         }
     }
 
     protected void validate(String filename, SchemaFactory sf, boolean expectError,
             String expected) throws Exception {
-        String xml = getPath(filename);
+        String xml = getPath(TEST_SOURCE_DIR, filename);
         try {
             Schema schema = sf.newSchema();
             Validator validator = schema.newValidator();
@@ -285,15 +342,17 @@ public class TestBase {
 
     protected void processError(boolean expectError, String error, Exception e)
             throws Exception {
-        //e.printStackTrace();
         String str = e.getMessage();
-//        System.out.println("Exp Msg: " + str);
-        //e.printStackTrace();
         if (!expectError) {
-            Assert.assertTrue(false, "Expected pass, but Exception is thrown " +
-                    str);
+            Assert.assertTrue(false, "Expected pass, but Exception is thrown " + str);
         } else {
-            Assert.assertTrue((str != null) && str.contains(error));
+            // This check is necessary since errors other than UnknownHostException
+            // can contain the host name in the System ID
+            if (UNKNOWN_HOST.equals(error)) {
+                Assert.assertTrue((str != null) && str.equals(error));
+            } else {
+                Assert.assertTrue((str != null) && str.contains(error));
+            }
         }
     }
 
@@ -309,6 +368,11 @@ public class TestBase {
      */
     protected DocumentBuilderFactory getDBF(Properties fsp, PropertyState state,
             Properties config, Properties[] sysProp, Properties[] apiProp) {
+        return getDBF(fsp, state, config, sysProp, apiProp, null);
+    }
+
+    protected DocumentBuilderFactory getDBF(Properties fsp, PropertyState state,
+            Properties config, Properties[] sysProp, Properties[] apiProp, CustomCatalog cc) {
         setSystemProperty(config, state, sysProp);
 
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newDefaultNSInstance();
@@ -335,6 +399,10 @@ public class TestBase {
                 }
             }
         }
+        if (cc != null) {
+            dbf.setAttribute(C_FILE, cc.file());
+            dbf.setAttribute(C_RESOLVE, cc.resolve());
+        }
 
         clearSystemProperty(state, sysProp);
 
@@ -355,6 +423,11 @@ public class TestBase {
      */
     public SAXParser getSAXParser(Properties fsp, PropertyState state, Properties config,
             Properties[] sysProp, Properties[] apiProp) throws Exception {
+        return getSAXParser(fsp, state, config, sysProp, apiProp, null);
+    }
+
+    public SAXParser getSAXParser(Properties fsp, PropertyState state, Properties config,
+            Properties[] sysProp, Properties[] apiProp, CustomCatalog cc) throws Exception {
         setSystemProperty(config, state, sysProp);
 
         SAXParserFactory spf = SAXParserFactory.newDefaultNSInstance();
@@ -387,12 +460,22 @@ public class TestBase {
             }
         }
 
+        if (cc != null) {
+            parser.setProperty(C_FILE, cc.file());
+            parser.setProperty(C_RESOLVE, cc.resolve());
+        }
+
         clearSystemProperty(state, sysProp);
         return parser;
     }
 
     protected XMLInputFactory getXMLInputFactory(PropertyState state,
             Properties config, Properties[] sysProp, Properties[] apiProp) {
+        return getXMLInputFactory(state, config, sysProp, apiProp, null);
+    }
+
+    protected XMLInputFactory getXMLInputFactory(PropertyState state,
+            Properties config, Properties[] sysProp, Properties[] apiProp, CustomCatalog cc) {
         setSystemProperty(config, state, sysProp);
         XMLInputFactory factory = XMLInputFactory.newInstance();
 
@@ -402,6 +485,11 @@ public class TestBase {
             }
         }
 
+        if (cc != null) {
+            factory.setProperty(C_FILE, cc.file());
+            factory.setProperty(C_RESOLVE, cc.resolve());
+        }
+
         clearSystemProperty(state, sysProp);
 
         return factory;
@@ -409,6 +497,12 @@ public class TestBase {
 
     protected SchemaFactory getSchemaFactory(Properties fsp, PropertyState state,
             Properties config, Properties[] sysProp, Properties[] apiProp)
+            throws Exception {
+        return getSchemaFactory(fsp, state, config, sysProp, apiProp, null);
+    }
+
+    protected SchemaFactory getSchemaFactory(Properties fsp, PropertyState state,
+            Properties config, Properties[] sysProp, Properties[] apiProp, CustomCatalog cc)
             throws Exception {
         setSystemProperty(config, state, sysProp);
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
@@ -427,6 +521,11 @@ public class TestBase {
             }
         }
 
+        if (cc != null) {
+            factory.setProperty(C_FILE, cc.file());
+            factory.setProperty(C_RESOLVE, cc.resolve());
+        }
+
         clearSystemProperty(state, sysProp);
 
         return factory;
@@ -434,6 +533,12 @@ public class TestBase {
 
     protected TransformerFactory getTransformerFactory(Properties fsp, PropertyState state,
             Properties config, Properties[] sysProp, Properties[] apiProp)
+            throws Exception {
+        return getTransformerFactory(fsp, state, config, sysProp, apiProp, null);
+    }
+
+    protected TransformerFactory getTransformerFactory(Properties fsp, PropertyState state,
+            Properties config, Properties[] sysProp, Properties[] apiProp, CustomCatalog cc)
             throws Exception {
         setSystemProperty(config, state, sysProp);
         TransformerFactory tf = TransformerFactory.newInstance();
@@ -449,6 +554,10 @@ public class TestBase {
                     tf.setAttribute(property.apiName, property.value);
                 }
             }
+        }
+        if (cc != null) {
+            tf.setAttribute(C_FILE, cc.file());
+            tf.setAttribute(C_RESOLVE, cc.resolve());
         }
 
         clearSystemProperty(state, sysProp);
@@ -605,15 +714,15 @@ public class TestBase {
         }
     }
 
-    static String getPath(String file) {
-        String temp = TEST_SOURCE_DIR + file;
+    static String getPath(String base, String file) {
+        String temp = base + file;
         if (IS_WINDOWS) {
             temp = "/" + temp;
         }
         return temp;
     }
 
-    static class Assert {
+    public static class Assert {
         public static void assertTrue(boolean condition) {
             assertTrue(condition, null);
         }
@@ -630,6 +739,12 @@ public class TestBase {
 
         public static void fail(String message) {
             throw new RuntimeException("Test failed. " + message);
+        }
+
+        public static void assertEquals(Object actual, Object expected) {
+            if (!Objects.equals(actual, expected)) {
+                throw new RuntimeException("Expected: " + expected + " but actual result was " + actual);
+            }
         }
     }
 }

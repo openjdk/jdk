@@ -121,10 +121,6 @@ public enum TypeTag {
      */
     ERROR,
 
-    /** The tag of an unknown type
-     */
-    UNKNOWN,
-
     /** The tag of all instantiatable type variables.
      */
     UNDETVAR,
@@ -184,6 +180,10 @@ public enum TypeTag {
 
     public boolean isSubRangeOf(TypeTag tag) {
         return (this.superClasses & tag.numericClass) != 0;
+    }
+
+    public boolean isInSuperClassesOf(TypeTag tag) {
+        return (this.numericClass & tag.superClasses) != 0;
     }
 
     /** Returns the number of type tags.

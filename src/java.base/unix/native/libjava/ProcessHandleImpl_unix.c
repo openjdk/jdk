@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 
 #include "ProcessHandleImpl_unix.h"
 
-
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -49,11 +48,6 @@
 
 #if defined(_AIX)
   #include <sys/procfs.h>
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
 #endif
 
 /**
@@ -135,19 +129,6 @@
  * process death by signal.
  */
 #define WTERMSIG_RETURN(status) (WTERMSIG(status) + 0x80)
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-#define RESTARTABLE_RETURN_PTR(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == NULL) && (errno == EINTR)); \
-} while(0)
-
 
 /* Field id for jString 'command' in java.lang.ProcessHandleImpl.Info */
 jfieldID ProcessHandleImpl_Info_commandID;
@@ -485,18 +466,28 @@ void unix_getUserInfo(JNIEnv* env, jobject jinfo, uid_t uid) {
 }
 
 /*
- * The following functions are common on Solaris, Linux and AIX.
+ * The following functions are for Linux
  */
 
-#if defined (__linux__) || defined(_AIX)
+#if defined (__linux__)
 
 /*
- * Returns the children of the requested pid and optionally each parent and
- * start time.
- * Reads /proc and accumulates any process who parent pid matches.
- * The resulting pids are stored into the array of longs.
+ * Return pids of active processes, and optionally parent pids and
+ * start times for each process.
+ * For a specific non-zero pid, only the direct children are returned.
+ * If the pid is zero, all active processes are returned.
+ * Reads /proc and accumulates any process following the rules above.
+ * The resulting pids are stored into an array of longs named jarray.
  * The number of pids is returned if they all fit.
- * If the array is too short, the negative of the desired length is returned.
+ * If the parentArray is non-null, store also the parent pid.
+ * In this case the parentArray must have the same length as the result pid array.
+ * Of course in the case of a given non-zero pid all entries in the parentArray
+ * will contain this pid, so this array does only make sense in the case of a given
+ * zero pid.
+ * If the jstimesArray is non-null, store also the start time of the pid.
+ * In this case the jstimesArray must have the same length as the result pid array.
+ * If the array(s) (is|are) too short, excess pids are not stored and
+ * the desired length is returned.
  */
 jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
                       jlongArray jparentArray, jlongArray jstimesArray) {
@@ -537,7 +528,7 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
      * position integer as a filename.
      */
     if ((dir = opendir("/proc")) == NULL) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowByNameWithMessageAndLastError(env,
             "java/lang/RuntimeException", "Unable to open /proc");
         return -1;
     }
@@ -607,7 +598,7 @@ jint unix_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
     return count;
 }
 
-#endif // defined (__linux__) || defined(_AIX)
+#endif // defined (__linux__)
 
 /*
  * The following functions are for AIX.
@@ -670,11 +661,8 @@ pid_t unix_getParentPidAndTimings(JNIEnv *env, pid_t pid,
 
 void unix_getCmdlineAndUserInfo(JNIEnv *env, jobject jinfo, pid_t pid) {
     psinfo_t psinfo;
-    char fn[32];
-    char exePath[PATH_MAX];
     char prargs[PRARGSZ + 1];
     jstring cmdexe = NULL;
-    int ret;
 
     /*
      * Now try to open /proc/%d/psinfo

@@ -44,6 +44,7 @@ private:
   bool                    _has_non_immed_oops;
   bool                    _unregistered;
   ShenandoahReentrantLock _lock;
+  ShenandoahReentrantLock _ic_lock;
 
 public:
   ShenandoahNMethod(nmethod *nm, GrowableArray<oop*>& oops, bool has_non_immed_oops);
@@ -51,20 +52,16 @@ public:
 
   inline nmethod* nm() const;
   inline ShenandoahReentrantLock* lock();
+  inline ShenandoahReentrantLock* ic_lock();
   inline void oops_do(OopClosure* oops, bool fix_relocations = false);
   // Update oops when the nmethod is re-registered
   void update();
 
-  bool has_cset_oops(ShenandoahHeap* heap);
-
-  inline int oop_count() const;
-  inline bool has_oops() const;
-
-  inline void mark_unregistered();
   inline bool is_unregistered() const;
 
   static ShenandoahNMethod* for_nmethod(nmethod* nm);
   static inline ShenandoahReentrantLock* lock_for_nmethod(nmethod* nm);
+  static inline ShenandoahReentrantLock* ic_lock_for_nmethod(nmethod* nm);
 
   static void heal_nmethod(nmethod* nm);
   static inline void heal_nmethod_metadata(ShenandoahNMethod* nmethod_data);
@@ -77,7 +74,6 @@ public:
   void assert_same_oops(bool allow_dead = false) NOT_DEBUG_RETURN;
 
 private:
-  bool has_non_immed_oops() const { return _has_non_immed_oops; }
   static void detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops, bool& _has_non_immed_oops);
 };
 
@@ -126,7 +122,7 @@ public:
   ShenandoahNMethodTableSnapshot(ShenandoahNMethodTable* table);
   ~ShenandoahNMethodTableSnapshot();
 
-  void parallel_blobs_do(CodeBlobClosure *f);
+  void parallel_nmethods_do(NMethodClosure *f);
   void concurrent_nmethods_do(NMethodClosure* cl);
 };
 
@@ -185,13 +181,13 @@ class ShenandoahConcurrentNMethodIterator {
 private:
   ShenandoahNMethodTable*         const _table;
   ShenandoahNMethodTableSnapshot*       _table_snapshot;
+  uint                                  _started_workers;
+  uint                                  _finished_workers;
 
 public:
   ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table);
 
-  void nmethods_do_begin();
   void nmethods_do(NMethodClosure* cl);
-  void nmethods_do_end();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHNMETHOD_HPP

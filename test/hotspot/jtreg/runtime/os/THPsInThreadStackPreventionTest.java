@@ -45,10 +45,13 @@
  * @requires os.family == "linux"
  * @requires vm.debug
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/manual THPsInThreadStackPreventionTest  PATCH-DISABLED
  */
+
+import jdk.test.lib.os.linux.HugePageConfiguration;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
@@ -179,7 +182,7 @@ public class THPsInThreadStackPreventionTest {
         switch (args[0]) {
             case "PATCH-ENABLED": {
                 finalargs.add(TestMain.class.getName());
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
 
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
                 output.shouldHaveExitValue(0);
@@ -216,7 +219,7 @@ public class THPsInThreadStackPreventionTest {
                 finalargs.add("-XX:-THPStackMitigation");
 
                 finalargs.add(TestMain.class.getName());
-                ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
+                ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(finalargs);
                 OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
                 output.shouldHaveExitValue(0);

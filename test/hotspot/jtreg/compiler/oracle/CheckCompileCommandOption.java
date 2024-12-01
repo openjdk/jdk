@@ -251,7 +251,7 @@ public class CheckCompileCommandOption {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         for (String expected_output : expected_outputs) {
@@ -266,7 +266,7 @@ public class CheckCompileCommandOption {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         out.shouldContain("CompileCommand: An error occurred during parsing");
@@ -277,7 +277,7 @@ public class CheckCompileCommandOption {
         ProcessBuilder pb;
         OutputAnalyzer out;
 
-        pb = ProcessTools.createJavaProcessBuilder(arguments);
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
         for (String expected_output : expected_outputs) {

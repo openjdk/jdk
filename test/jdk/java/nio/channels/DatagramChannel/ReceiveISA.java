@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,19 @@
  * @summary Check that DatagramChannel.receive returns a new SocketAddress
  *          when it receives a packet from the same source address but
  *          different endpoint.
+ * @library /test/lib
+ * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
+ *        ReceiveISA
+ * @run main/othervm ReceiveISA
+ *
  */
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
+
+import jdk.test.lib.Platform;
+
 import static java.lang.System.out;
 
 public class ReceiveISA {
@@ -44,10 +53,13 @@ public class ReceiveISA {
              DatagramChannel dc3 = DatagramChannel.open();
              DatagramChannel dc4 = DatagramChannel.open()) {      // client
 
-            dc3.socket().bind((SocketAddress) null); // bind server to any port
+            InetAddress lh = InetAddress.getLocalHost();
+            InetSocketAddress dest = Platform.isOSX()
+                    ? new InetSocketAddress(lh, 0)
+                    : null;
+            dc3.socket().bind(dest); // bind server to any port
 
             // get server address
-            InetAddress lh = InetAddress.getLocalHost();
             InetSocketAddress isa = new InetSocketAddress(lh, dc3.socket().getLocalPort());
 
             ByteBuffer bb = ByteBuffer.allocateDirect(100);

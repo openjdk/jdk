@@ -69,7 +69,7 @@ public class ProcessAttachTest {
     }
 
     private static void runTest(String jdwpArg) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 jdwpArg,
                 "ProcessAttachTestTarg");
         Process p = null;

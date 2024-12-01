@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,7 +52,7 @@ public class bug8234913 {
         Collections.addAll(argsList, "-Xmn8m");
         Collections.addAll(argsList, "-Dtest.class.path=" + System.getProperty("test.class.path", "."));
         Collections.addAll(argsList, FontSizePercentTest.class.getName());
-        return ProcessTools.createJavaProcessBuilder(argsList.toArray(new String[argsList.size()]));
+        return ProcessTools.createLimitedTestJavaProcessBuilder(argsList.toArray(new String[argsList.size()]));
     }
 
     static void checkFor(String... outputStrings) throws Exception {

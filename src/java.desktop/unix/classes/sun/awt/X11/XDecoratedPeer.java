@@ -112,9 +112,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
         content = XContentWindow.createContent(this);
 
-        if (warningWindow != null) {
-            warningWindow.toFront();
-        }
         focusProxy = createFocusProxy();
     }
 
@@ -341,7 +338,8 @@ abstract class XDecoratedPeer extends XWindowPeer {
             || ev.get_atom() == XWM.XA_NET_FRAME_EXTENTS.getAtom())
         {
             if (XWM.getWMID() != XWM.UNITY_COMPIZ_WM) {
-                if (getMWMDecorTitleProperty().isPresent()) {
+                if ((XWM.getWMID() == XWM.MUTTER_WM && !isTargetUndecorated() && isVisible())
+                    || getMWMDecorTitleProperty().isPresent()) {
                     // Insets might have changed "in-flight" if that property
                     // is present, so we need to get the actual values of
                     // insets from the WM and propagate them through all the
@@ -842,7 +840,6 @@ abstract class XDecoratedPeer extends XWindowPeer {
         reconfigureContentWindow(newDimensions);
         updateChildrenSizes();
 
-        repositionSecurityWarning();
     }
 
     private void checkShellRectSize(Rectangle shellRect) {

@@ -57,6 +57,10 @@ public interface Appendable {
      * {@code csq}, the entire sequence may not be appended.  For
      * instance, if {@code csq} is a {@link java.nio.CharBuffer} then
      * the subsequence to append is defined by the buffer's position and limit.
+     * <p>
+     * The contents of this {@code Appendable} are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
+     * when accessing the {@code CharSequence}.
      *
      * @param  csq
      *         The character sequence to append.  If {@code csq} is
@@ -81,6 +85,10 @@ public interface Appendable {
      * <pre>
      *     out.append(csq.subSequence(start, end)) </pre>
      *
+     * <p>
+     * The contents of this {@code Appendable} are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
+     * when accessing the {@code CharSequence}.
      * @param  csq
      *         The character sequence from which a subsequence will be
      *         appended.  If {@code csq} is {@code null}, then characters

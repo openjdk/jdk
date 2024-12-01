@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8040635
+ * @key printer
  * @summary  Verifies if TexturePaint is printed in osx
  * @run main/manual TexturePaintPrintingTest
  */

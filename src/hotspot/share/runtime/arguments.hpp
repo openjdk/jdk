@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,8 @@ class Arguments : AllStatic {
   static int    _num_jvm_args;
   // string containing all java command (class/jarfile name and app args)
   static char* _java_command;
+  // number of unique modules specified in the --add-modules option
+  static unsigned int _addmods_count;
 
   // Property list
   static SystemProperty* _system_properties;
@@ -248,7 +250,6 @@ class Arguments : AllStatic {
 
   // Operation modi
   static Mode _mode;
-  static void set_mode_flags(Mode mode);
 
   // preview features
   static bool _enable_preview;
@@ -262,9 +263,8 @@ class Arguments : AllStatic {
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
-  static void set_use_compressed_klass_ptrs();
   static jint set_ergonomics_flags();
-  static void set_shared_spaces_flags_and_archive_paths();
+  static void set_compact_headers_flags();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.
@@ -363,17 +363,9 @@ class Arguments : AllStatic {
   // Return the "real" name for option arg if arg is an alias, and print a warning if arg is deprecated.
   // Return nullptr if the arg has expired.
   static const char* handle_aliases_and_deprecation(const char* arg);
-
-  static char*  _default_shared_archive_path;
-  static char*  SharedArchivePath;
-  static char*  SharedDynamicArchivePath;
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
-  static void extract_shared_archive_paths(const char* archive_path,
-                                         char** base_archive_path,
-                                         char** top_archive_path) NOT_CDS_RETURN;
 
  public:
-  static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
   // Parse a string for a unsigned integer.  Returns true if value
@@ -441,8 +433,7 @@ class Arguments : AllStatic {
   static exit_hook_t     exit_hook()        { return _exit_hook; }
   static vfprintf_hook_t vfprintf_hook()    { return _vfprintf_hook; }
 
-  static const char* GetSharedArchivePath() { return SharedArchivePath; }
-  static const char* GetSharedDynamicArchivePath() { return SharedDynamicArchivePath; }
+  static void no_shared_spaces(const char* message);
   static size_t default_SharedBaseAddress() { return _default_SharedBaseAddress; }
   // Java launcher properties
   static void process_sun_java_launcher_properties(JavaVMInitArgs* args);
@@ -472,6 +463,9 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
+  static bool is_add_modules_property(const char* key);
+  static unsigned int addmods_count() { return  _addmods_count; }
+  static bool is_module_path_property(const char* key);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }
@@ -501,11 +495,9 @@ class Arguments : AllStatic {
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
-  static char* get_default_shared_archive_path() NOT_CDS_RETURN_(nullptr);
-  static void  init_shared_archive_paths() NOT_CDS_RETURN;
-
   // Operation modi
   static Mode mode()                { return _mode;           }
+  static void set_mode_flags(Mode mode);
   static bool is_interpreter_only() { return mode() == _int;  }
   static bool is_compiler_only()    { return mode() == _comp; }
 
@@ -517,19 +509,9 @@ class Arguments : AllStatic {
   // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
 
-  static void check_unsupported_dumping_properties() NOT_CDS_RETURN;
-
-  static bool check_unsupported_cds_runtime_properties() NOT_CDS_RETURN0;
-
   static bool atojulong(const char *s, julong* result);
 
   static bool has_jfr_option() NOT_JFR_RETURN_(false);
-
-  static bool is_dumping_archive() { return DumpSharedSpaces || DynamicDumpSharedSpaces; }
-
-  static void assert_is_dumping_archive() {
-    assert(Arguments::is_dumping_archive(), "dump time only");
-  }
 
   DEBUG_ONLY(static bool verify_special_jvm_flags(bool check_globals);)
 };

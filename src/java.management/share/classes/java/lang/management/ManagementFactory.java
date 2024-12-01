@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,6 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * <p>
  * An application can access a platform MXBean in the following ways:
  * <h3>1. Direct access to an MXBean interface</h3>
- * <blockquote>
  * <ul>
  *     <li>Get an MXBean instance by calling the
  *         {@link #getPlatformMXBean(Class) getPlatformMXBean} or
@@ -130,7 +129,6 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  *         for details.
  *        </li>
  * </ul>
- * </blockquote>
  *
  * <p>
  * The {@link #getPlatformManagementInterfaces getPlatformManagementInterfaces}
@@ -247,8 +245,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * @author  Mandy Chung
  * @since   1.5
  */
-@SuppressWarnings({"removal",
-                   "doclint:reference"}) // cross-module links
+@SuppressWarnings("doclint:reference") // cross-module links
 public class ManagementFactory {
     // A class with only static fields and methods.
     private ManagementFactory() {};
@@ -467,10 +464,6 @@ public class ManagementFactory {
      * @return the platform {@code MBeanServer}; the platform
      *         MXBeans are registered into the platform {@code MBeanServer}
      *         at the first time this method is called.
-     *
-     * @throws SecurityException if there is a security manager
-     * and the caller does not have the permission required by
-     * {@link javax.management.MBeanServerFactory#createMBeanServer}.
      *
      * @see javax.management.MBeanServerFactory
      * @see javax.management.MBeanServerFactory#createMBeanServer
@@ -1020,7 +1013,7 @@ public class ManagementFactory {
         loadNativeLib();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadNativeLib() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             System.loadLibrary("management");

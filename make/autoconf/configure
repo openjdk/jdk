@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,12 @@ if test "x$BASH" = x; then
   echo "Error: This script must be run using bash." 1>&2
   exit 1
 fi
+
+if [[ "$TOPDIR" =~ .*[[:space:]]+.* ]]; then
+  echo "Error: Build path containing space character is not supported" 1>&2
+  exit 1
+fi
+
 # Force autoconf to use bash. This also means we must disable autoconf re-exec.
 export CONFIG_SHELL=$BASH
 export _as_can_reexec=no

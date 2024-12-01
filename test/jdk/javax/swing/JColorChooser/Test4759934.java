@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,60 +21,87 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4759934
- * @summary Tests windows activation problem
- * @author Andrey Pikalev
- * @run applet/manual=yesno Test4759934.html
- */
-
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
-public class Test4759934 extends JApplet implements ActionListener {
+/*
+ * @test
+ * @bug 4759934
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Tests windows activation problem
+ * @run main/manual Test4759934
+ */
+public class Test4759934 {
     private static final String CMD_DIALOG = "Show Dialog"; // NON-NLS: first button
     private static final String CMD_CHOOSER = "Show ColorChooser"; // NON-NLS: second button
 
-    private final JFrame frame = new JFrame("Test"); // NON-NLS: frame title
+    private static JFrame frame;
 
-    public void init() {
-        show(this.frame, CMD_DIALOG);
+    private static ActionListener al = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent event) {
+            String command = event.getActionCommand();
+            if (CMD_DIALOG.equals(command)) {
+                JDialog dialog = new JDialog(frame, "Dialog"); // NON-NLS: dialog title
+                dialog.setLocation(200, 0);
+                show(dialog, CMD_CHOOSER, true);
+            }
+            else if (CMD_CHOOSER.equals(command)) {
+                Object source = event.getSource();
+                Component component = (source instanceof Component)
+                        ? (Component) source
+                        : null;
+
+                JColorChooser.showDialog(component, "ColorChooser", Color.BLUE); // NON-NLS: title
+            }
+        }
+    };
+
+    public static void main(String[] args) throws Exception {
+        String instructions = "1. Press button \"Show Dialog\" at the frame \"Test\" and\n" +
+                "   the dialog with button \"Show ColorChooser\" should appears.\n" +
+                "2. Press button \"Show ColorChooser\" at the dialog \"Dialog\" and\n" +
+                "   the colorchooser should appears.\n" +
+                "3. Press the button \"Cancel\" of colorchooser.\n" +
+                "   If the focus will come to the frame \"Test\" then test fails.\n" +
+                "   If the focus will come to the dialog \"Dialog\" then test passes.";
+
+        PassFailJFrame.builder()
+                .title("Test4759934")
+                .instructions(instructions)
+                .rows(5)
+                .columns(40)
+                .testTimeOut(10)
+                .testUI(Test4759934::test)
+                .build()
+                .awaitAndCheck();
     }
 
-    public void actionPerformed(ActionEvent event) {
-        String command = event.getActionCommand();
-        if (CMD_DIALOG.equals(command)) {
-            JDialog dialog = new JDialog(this.frame, "Dialog"); // NON-NLS: dialog title
-            dialog.setLocation(200, 0);
-            show(dialog, CMD_CHOOSER);
-        }
-        else if (CMD_CHOOSER.equals(command)) {
-            Object source = event.getSource();
-            Component component = (source instanceof Component)
-                    ? (Component) source
-                    : null;
-
-            JColorChooser.showDialog(component, "ColorChooser", Color.BLUE); // NON-NLS: title
-        }
+    public static JFrame test() {
+        frame = new JFrame("ColorChooser dialog on button press test");
+        show(frame, CMD_DIALOG, false);
+        return frame;
     }
 
-    private void show(Window window, String command) {
+    private static void show(Window window, String command, boolean setVisible) {
         JButton button = new JButton(command);
         button.setActionCommand(command);
-        button.addActionListener(this);
+        button.addActionListener(al);
+
         button.setFont(button.getFont().deriveFont(64.0f));
 
         window.add(button);
         window.pack();
-        window.setVisible(true);
+        if (setVisible) {
+            window.setVisible(true);
+        }
     }
 }

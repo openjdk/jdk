@@ -24,6 +24,7 @@
 /*
   @test
   @bug 6342748
+  @key printer
   @summary  Pass if dialogs display correctly
   @run main/manual PrintDialog
 */

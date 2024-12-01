@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/javaThreadStatus.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/periodic/sampling/jfrCallTrace.hpp"
@@ -200,7 +201,7 @@ void OSThreadSampler::protected_task(const SuspendedThreadTaskContext& context) 
       ev->set_starttime(_suspend_time);
       ev->set_endtime(_suspend_time); // fake to not take an end time
       ev->set_sampledThread(JfrThreadLocal::thread_id(jt));
-      ev->set_state(static_cast<u8>(java_lang_Thread::get_thread_status(_thread_oop)));
+      ev->set_state(static_cast<u8>(JavaThreadStatus::RUNNABLE));
     }
   }
 }
@@ -230,7 +231,7 @@ static void write_native_event(JfrThreadSampleClosure& closure, JavaThread* jt, 
   EventNativeMethodSample *ev = closure.next_event_native();
   ev->set_starttime(JfrTicks::now());
   ev->set_sampledThread(JfrThreadLocal::thread_id(jt));
-  ev->set_state(static_cast<u8>(java_lang_Thread::get_thread_status(thread_oop)));
+  ev->set_state(static_cast<u8>(JavaThreadStatus::RUNNABLE));
 }
 
 void JfrNativeSamplerCallback::call() {
@@ -667,7 +668,7 @@ JfrThreadSampling::~JfrThreadSampling() {
 }
 
 #ifdef ASSERT
-void assert_periods(const JfrThreadSampler* sampler, int64_t java_period_millis, int64_t native_period_millis) {
+static void assert_periods(const JfrThreadSampler* sampler, int64_t java_period_millis, int64_t native_period_millis) {
   assert(sampler != nullptr, "invariant");
   assert(sampler->get_java_period() == java_period_millis, "invariant");
   assert(sampler->get_native_period() == native_period_millis, "invariant");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.process.ProcessTools;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.Test;
 
 public class FindSpecialTest {
-    static final String JAVA_LAUNCHER = JDKToolFinder.getJDKTool("java");
     static final String TEST_CLASSES = System.getProperty("test.classes", ".");
     static final String TEST_CLASS_PATH = System.getProperty("test.class.path");
     static final String TEST_MAIN_CLASS = "test.FindSpecial";
@@ -59,8 +57,9 @@ public class FindSpecialTest {
             throw new Error(m1 + " not exist");
         }
         String classpath = m1.toString() + File.pathSeparator + TEST_CLASS_PATH;
-        ProcessTools.executeCommand(JAVA_LAUNCHER, "-cp", classpath, TEST_MAIN_CLASS)
-                    .shouldHaveExitValue(0);
+        executeCommand(createTestJavaProcessBuilder("-cp", classpath,
+                                                    TEST_MAIN_CLASS))
+                .shouldHaveExitValue(0);
     }
 
     /*
@@ -72,10 +71,9 @@ public class FindSpecialTest {
         if (Files.notExists(modules)) {
             throw new Error(modules + " not exist");
         }
-        ProcessTools.executeCommand(JAVA_LAUNCHER,
-                                    "-cp", TEST_CLASS_PATH,
-                                    "-p", modules.toString(),
-                                    "-m", TEST_MODULE + "/" + TEST_MAIN_CLASS)
-                    .shouldHaveExitValue(0);
+        executeCommand(createTestJavaProcessBuilder("-cp", TEST_CLASS_PATH,
+                                                    "-p", modules.toString(),
+                                                    "-m", TEST_MODULE + "/" + TEST_MAIN_CLASS))
+                .shouldHaveExitValue(0);
     }
 }

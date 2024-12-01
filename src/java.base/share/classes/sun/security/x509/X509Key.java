@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,24 +65,6 @@ public class X509Key implements PublicKey, DerEncoder {
     /* The algorithm information (name, parameters, etc). */
     protected AlgorithmId algid;
 
-    /**
-     * The key bytes, without the algorithm information.
-     * @deprecated Use the BitArray form which does not require keys to
-     * be byte aligned.
-     * @see sun.security.x509.X509Key#setKey(BitArray)
-     * @see sun.security.x509.X509Key#getKey()
-     */
-    @Deprecated
-    protected byte[] key = null;
-
-    /*
-     * The number of bits unused in the last byte of the key.
-     * Added to keep the byte[] key form consistent with the BitArray
-     * form. Can de deleted when byte[] key is deleted.
-     */
-    @Deprecated
-    private int unusedBits = 0;
-
     /* BitArray form of key */
     private transient BitArray bitStringKey = null;
 
@@ -112,15 +94,6 @@ public class X509Key implements PublicKey, DerEncoder {
      */
     protected void setKey(BitArray key) {
         this.bitStringKey = (BitArray)key.clone();
-
-        /*
-         * Do this to keep the byte array form consistent with
-         * this. Can delete when byte[] key is deleted.
-         */
-        this.key = key.toByteArray();
-        int remaining = key.length() % 8;
-        this.unusedBits =
-            ((remaining == 0) ? 0 : 8 - remaining);
     }
 
     /**
@@ -128,18 +101,6 @@ public class X509Key implements PublicKey, DerEncoder {
      * @return a BitArray containing the key.
      */
     protected BitArray getKey() {
-        /*
-         * Do this for consistency in case a subclass
-         * modifies byte[] key directly. Remove when
-         * byte[] key is deleted.
-         * Note: the consistency checks fail when the subclass
-         * modifies a non byte-aligned key (into a byte-aligned key)
-         * using the deprecated byte[] key field.
-         */
-        this.bitStringKey = new BitArray(
-                          this.key.length * 8 - this.unusedBits,
-                          this.key);
-
         return (BitArray)bitStringKey.clone();
     }
 
@@ -331,7 +292,7 @@ public class X509Key implements PublicKey, DerEncoder {
         HexDumpEncoder  encoder = new HexDumpEncoder();
 
         return "algorithm = " + algid.toString()
-            + ", unparsed keybits = \n" + encoder.encodeBuffer(key);
+            + ", unparsed keybits = \n" + encoder.encodeBuffer(bitStringKey.toByteArray());
     }
 
     /**

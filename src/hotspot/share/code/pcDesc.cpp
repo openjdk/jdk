@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +36,11 @@ PcDesc::PcDesc(int pc_offset, int scope_decode_offset, int obj_decode_offset) {
   _flags               = 0;
 }
 
-address PcDesc::real_pc(const CompiledMethod* code) const {
+address PcDesc::real_pc(const nmethod* code) const {
   return code->code_begin() + pc_offset();
 }
 
-void PcDesc::print_on(outputStream* st, CompiledMethod* code) {
+void PcDesc::print_on(outputStream* st, nmethod* code) {
 #ifndef PRODUCT
   ResourceMark rm;
   st->print_cr("PcDesc(pc=" PTR_FORMAT " offset=%x bits=%x):", p2i(real_pc(code)), pc_offset(), _flags);
@@ -57,7 +57,7 @@ void PcDesc::print_on(outputStream* st, CompiledMethod* code) {
 #endif
 }
 
-bool PcDesc::verify(CompiledMethod* code) {
+bool PcDesc::verify(nmethod* code) {
   //Unimplemented();
   return true;
 }

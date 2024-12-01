@@ -83,7 +83,7 @@ static void report_handle_allocation_failure(AllocFailType alloc_failmode,
 }
 
 jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jobject res = nullptr;
   if (!obj.is_null()) {
@@ -105,7 +105,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
 }
 
 jweak JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
-  assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
+  assert(!Universe::heap()->is_stw_gc_active(), "can't extend the root set during GC pause");
   assert(!current_thread_in_native(), "must not be in native");
   jweak res = nullptr;
   if (!obj.is_null()) {
@@ -199,13 +199,9 @@ jobjectRefType JNIHandles::handle_type(JavaThread* thread, jobject handle) {
     default:
       ShouldNotReachHere();
     }
-  } else {
+  } else if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
     // Not in global storage.  Might be a local handle.
-    if (is_local_handle(thread, handle) || is_frame_handle(thread, handle)) {
-      result = JNILocalRefType;
-    } else {
-      ShouldNotReachHere();
-    }
+    result = JNILocalRefType;
   }
   return result;
 }

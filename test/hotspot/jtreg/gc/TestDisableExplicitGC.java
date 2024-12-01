@@ -26,6 +26,7 @@ package gc;
 /*
  * @test TestDisableExplicitGC
  * @requires vm.opt.DisableExplicitGC == null
+ * @requires vm.compMode != "Xcomp"
  * @summary Verify GC behavior with DisableExplicitGC flag.
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

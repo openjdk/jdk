@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,11 @@
  */
 #include <jni.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <string.h>
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
-#include "jni_tools.h"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jni_tools.hpp"
 
 extern "C" {
 
@@ -74,7 +74,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS104_hs104t002_hs104t002_redefineClasses(
     jclass cla;
     char fileName[512];
 
-    if (!NSK_JNI_VERIFY(jni, (cla = jni->FindClass(SEARCH_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (cla = jni->FindClass(SEARCH_NAME)) != nullptr)) {
         nsk_printf(" Agent :: Failed to get class.\n");
         nsk_jvmti_agentFailed();
         return;

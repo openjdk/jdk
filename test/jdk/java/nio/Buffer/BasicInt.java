@@ -540,18 +540,6 @@ public class BasicInt
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     private static void fail(String problem,
                              IntBuffer xb, IntBuffer yb,
                              int x, int y) {

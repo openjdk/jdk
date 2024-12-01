@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -69,7 +69,7 @@ static bool checkTimerInfo(jvmtiEnv* jvmti, jvmtiTimerInfo* info,
     NSK_DISPLAY1("    may_skip_forward:  %d\n", (int)info->may_skip_forward);
     NSK_DISPLAY1("    may_skip_backward: %d\n", (int)info->may_skip_backward);
 
-    if (initInfo != NULL) {
+    if (initInfo != nullptr) {
         NSK_DISPLAY0("Compare with initial timer info\n");
         if (info->max_value != initInfo->max_value) {
             NSK_COMPLAIN4("In %s GetTimerInfo() returned different info:\n"
@@ -158,7 +158,7 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
     }
 
     NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
-    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, NULL)) {
+    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, events, nullptr)) {
         success = false;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
@@ -185,7 +185,7 @@ JNIEXPORT jint JNI_OnLoad_timerinfo001(JavaVM *jvm, char *options, void *reserve
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -193,7 +193,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     {
@@ -209,18 +209,18 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Testcase #1: Check initial timer info in Agent_OnLoad()\n");
     {
-        if (!checkTimerInfo(jvmti, &initInfo, NULL, "Agent_OnLoad()")) {
+        if (!checkTimerInfo(jvmti, &initInfo, nullptr, "Agent_OnLoad()")) {
             nsk_jvmti_setFailStatus();
         }
     }
 
     NSK_DISPLAY1("Enable events: %d events\n", EVENTS_COUNT);
-    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, NULL)) {
+    if (nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, events, nullptr)) {
         NSK_DISPLAY0("  ... enabled\n");
     }
 

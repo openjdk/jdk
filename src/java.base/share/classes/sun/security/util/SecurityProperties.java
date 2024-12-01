@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -51,7 +51,7 @@ public class SecurityProperties {
         }
     }
 
-    private static String getOverridableProperty(String propName) {
+    public static String getOverridableProperty(String propName) {
         String val = System.getProperty(propName);
         if (val == null) {
             return Security.getProperty(propName);

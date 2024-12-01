@@ -6,7 +6,7 @@ UnderscoreAsIdent.java:12:7: compiler.err.underscore.as.identifier
 UnderscoreAsIdent.java:13:12: compiler.err.underscore.as.identifier
 UnderscoreAsIdent.java:14:10: compiler.err.underscore.as.identifier
 UnderscoreAsIdent.java:14:19: compiler.err.underscore.as.identifier
-UnderscoreAsIdent.java:16:16: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.unnamed.variables)
+UnderscoreAsIdent.java:16:16: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.unnamed.variables), 9, 22
 UnderscoreAsIdent.java:19:25: compiler.err.underscore.as.identifier
 UnderscoreAsIdent.java:19:33: compiler.err.underscore.as.identifier
 UnderscoreAsIdent.java:25:9: compiler.err.underscore.as.identifier

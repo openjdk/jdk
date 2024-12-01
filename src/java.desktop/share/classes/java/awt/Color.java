@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,26 +259,6 @@ public class Color implements Paint, java.io.Serializable {
      */
      @Serial
      private static final long serialVersionUID = 118526816881161077L;
-
-    /**
-     * Initialize JNI field and method IDs
-     */
-    private static native void initIDs();
-
-    static {
-        /** 4112352 - Calling getDefaultToolkit()
-         ** here can cause this class to be accessed before it is fully
-         ** initialized. DON'T DO IT!!!
-         **
-         ** Toolkit.getDefaultToolkit();
-         **/
-
-        /* ensure that the necessary native libraries are loaded */
-        Toolkit.loadLibraries();
-        if (!GraphicsEnvironment.isHeadless()) {
-            initIDs();
-        }
-    }
 
     /**
      * Checks the color integer components supplied for validity.

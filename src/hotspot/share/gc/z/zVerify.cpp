@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "memory/allocation.hpp"
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -37,27 +36,89 @@
 #include "gc/z/zStoreBarrierBuffer.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zVerify.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermark.inline.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/resourceHash.hpp"
+
+#ifdef ASSERT
+
+// Used to verify that safepoints operations can't be scheduled concurrently
+// with callers to this function. Typically used to verify that object oops
+// and headers are safe to access.
+void z_verify_safepoints_are_blocked() {
+  Thread* current = Thread::current();
+
+  if (current->is_ConcurrentGC_thread()) {
+    assert(current->is_suspendible_thread(), // Thread prevents safepoints
+        "Safepoints are not blocked by current thread");
+
+  } else if (current->is_Worker_thread()) {
+    assert(// Check if ...
+        // the thread prevents safepoints
+        current->is_suspendible_thread() ||
+        // the coordinator thread is the safepointing VMThread
+        current->is_indirectly_safepoint_thread() ||
+        // the coordinator thread prevents safepoints
+        current->is_indirectly_suspendible_thread() ||
+        // the RelocateQueue prevents safepoints
+        //
+        // RelocateQueue acts as a pseudo STS leaver/joiner and blocks
+        // safepoints. There's currently no infrastructure  to check if the
+        // current thread is active or not, so check the global states instead.
+        ZGeneration::young()->is_relocate_queue_active() ||
+        ZGeneration::old()->is_relocate_queue_active(),
+        "Safepoints are not blocked by current thread");
+
+  } else if (current->is_Java_thread()) {
+    JavaThreadState state = JavaThread::cast(current)->thread_state();
+    assert(state == _thread_in_Java || state == _thread_in_vm || state == _thread_new,
+        "Safepoints are not blocked by current thread from state: %d", state);
+
+  } else if (current->is_JfrSampler_thread()) {
+    // The JFR sampler thread blocks out safepoints with this lock.
+    assert_lock_strong(Threads_lock);
+
+  } else if (current->is_VM_thread()) {
+    // The VM Thread doesn't schedule new safepoints while executing
+    // other safepoint or handshake operations.
+
+  } else {
+    fatal("Unexpected thread type");
+  }
+}
+
+#endif
 
 #define BAD_OOP_ARG(o, p)   "Bad oop " PTR_FORMAT " found at " PTR_FORMAT, untype(o), p2i(p)
 
 static bool z_is_null_relaxed(zpointer o) {
   const uintptr_t color_mask = ZPointerAllMetadataMask | ZPointerReservedMask;
   return (untype(o) & ~color_mask) == 0;
+}
+
+static void z_verify_oop_object(zaddress addr, zpointer o, void* p) {
+  const oop obj = cast_to_oop(addr);
+  guarantee(oopDesc::is_oop(obj), BAD_OOP_ARG(o, p));
+}
+
+static void z_verify_root_oop_object(zaddress addr, void* p) {
+  const oop obj = cast_to_oop(addr);
+  guarantee(oopDesc::is_oop(obj), BAD_OOP_ARG(addr, p));
 }
 
 static void z_verify_old_oop(zpointer* p) {
@@ -70,7 +131,7 @@ static void z_verify_old_oop(zpointer* p) {
       // safepoint after reference processing, where we hold the driver lock and
       // know there is no concurrent remembered set processing in the young generation.
       const zaddress addr = ZPointer::uncolor(o);
-      guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
+      z_verify_oop_object(addr, o, p);
     } else {
       const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
       // Old to young pointers might not be mark good if the young
@@ -92,13 +153,9 @@ static void z_verify_young_oop(zpointer* p) {
     guarantee(ZPointer::is_marked_young(o),  BAD_OOP_ARG(o, p));
 
     if (ZPointer::is_load_good(o)) {
-      guarantee(oopDesc::is_oop(to_oop(ZPointer::uncolor(o))), BAD_OOP_ARG(o, p));
+      z_verify_oop_object(ZPointer::uncolor(o), o, p);
     }
   }
-}
-
-static void z_verify_root_oop_object(zaddress o, void* p) {
-  guarantee(oopDesc::is_oop(to_oop(o)), BAD_OOP_ARG(o, p));
 }
 
 static void z_verify_uncolored_root_oop(zaddress* p) {
@@ -117,7 +174,7 @@ static void z_verify_possibly_weak_oop(zpointer* p) {
     const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
     guarantee(ZHeap::heap()->is_old(addr) || ZPointer::is_marked_young(o), BAD_OOP_ARG(o, p));
     guarantee(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), BAD_OOP_ARG(o, p));
-    guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
+    z_verify_oop_object(addr, o, p);
 
     // Verify no missing remset entries. We are holding the driver lock here and that
     // allows us to more precisely verify the remembered set, as there is no concurrent
@@ -160,14 +217,14 @@ public:
       // Minor collections could have relocated the object;
       // use load barrier to find correct object.
       const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
-      z_verify_root_oop_object(addr, p);
+      z_verify_oop_object(addr, o, p);
     } else {
       // Don't know the state of the oop
       if (is_valid(o)) {
         // it looks like a valid colored oop;
         // use load barrier to find correct object.
         const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
-        z_verify_root_oop_object(addr, p);
+        z_verify_oop_object(addr, o, p);
       }
     }
   }
@@ -186,16 +243,6 @@ public:
 
   virtual void do_oop(narrowOop*) {
     ShouldNotReachHere();
-  }
-};
-
-class ZVerifyCodeBlobClosure : public CodeBlobToOopClosure {
-public:
-  ZVerifyCodeBlobClosure(OopClosure* cl)
-    : CodeBlobToOopClosure(cl, false /* fix_relocations */) {}
-
-  virtual void do_code_blob(CodeBlob* cb) {
-    CodeBlobToOopClosure::do_code_blob(cb);
   }
 };
 
@@ -442,9 +489,6 @@ void ZVerify::after_mark() {
     roots_strong(true /* verify_after_old_mark */);
   }
   if (ZVerifyObjects) {
-    // Workaround OopMapCacheAlloc_lock reordering with the StackWatermark_lock
-    DisableIsGCActiveMark mark;
-
     objects(false /* verify_weaks */);
     guarantee(zverify_broken_object == zaddress::null, "Verification failed");
   }
@@ -545,7 +589,7 @@ void ZVerify::on_color_flip() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* const jt = jtiwh.next(); ) {
     const ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(jt);
 
-    for (int i = buffer->current(); i < (int)ZStoreBarrierBuffer::_buffer_length; ++i) {
+    for (size_t i = buffer->current(); i < ZStoreBarrierBuffer::BufferLength; ++i) {
       volatile zpointer* const p = buffer->_buffer[i]._p;
       bool created = false;
       z_verify_store_barrier_buffer_table->put_if_absent(p, true, &created);

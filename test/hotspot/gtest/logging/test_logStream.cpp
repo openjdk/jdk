@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ TEST_VM_F(LogStreamTest, TestLineBufferAllocation) {
 // Compare this to NonInterLeavingLogStreamTest_NonInterleavingStream
 TEST_VM_F(LogStreamTest, InterleavingStream) {
   set_log_config(TestLogFileName, "gc=info");
-  const char* message_order[] = {"1", "I am one line", "2", "but", "3", "I am not", NULL};
+  const char* message_order[] = {"1", "I am one line", "2", "but", "3", "I am not", nullptr};
   {
     LogStream foo(Log(gc)::info());
     if (foo.is_enabled()) {
@@ -116,7 +116,7 @@ TEST_VM_F(LogStreamTest, InterleavingStream) {
 // Compare this to LogStreamTest_InterleavingStream
 TEST_VM_F(LogStreamTest, NonInterleavingStream) {
   set_log_config(TestLogFileName, "gc=info");
-  const char* message_order[] = {"1", "2" , "3", "I am one line", "but", "I am not", NULL};
+  const char* message_order[] = {"1", "2" , "3", "I am one line", "but", "I am not", nullptr};
   {
     LogMessage(gc) lm ;
     NonInterleavingLogStream foo{LogLevelType::Info, lm};

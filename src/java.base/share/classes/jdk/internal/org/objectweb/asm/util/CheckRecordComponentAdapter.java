@@ -151,4 +151,3 @@ public class CheckRecordComponentAdapter extends RecordComponentVisitor {
         }
     }
 }
-

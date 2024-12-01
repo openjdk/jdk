@@ -1,8 +1,7 @@
-/**
+/*
  * @test /nodynamiccopyright/
  * @bug 8304246 8309093
  * @summary Compiler Implementation for Unnamed patterns and variables
- * @enablePreview
  * @compile/fail/ref=UnnamedErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW UnnamedErrors.java
  */
 public class UnnamedErrors {
@@ -109,6 +108,12 @@ public class UnnamedErrors {
     void testUnderscoreWithBrackets() {
         int _[] = new int[]{1};
         for (int _[] : new int[][]{new int[]{1}, new int[]{2}}) { }
+    }
+
+    void testUnderscoreInExpression() {
+        for(String s : _) {
+            int i = 1;
+        }
     }
 
     class Lock implements AutoCloseable {

@@ -95,8 +95,7 @@ void VtableStub::print() const { print_on(tty); }
 // hash value). Each list is anchored in a little hash _table, indexed
 // by that hash value.
 
-VtableStub* VtableStubs::_table[VtableStubs::N];
-int VtableStubs::_number_of_vtable_stubs = 0;
+VtableStub* volatile VtableStubs::_table[VtableStubs::N];
 int VtableStubs::_vtab_stub_size = 0;
 int VtableStubs::_itab_stub_size = 0;
 
@@ -126,13 +125,13 @@ int VtableStubs::_itab_stub_size = 0;
 
 
 void VtableStubs::initialize() {
+  assert(VtableStub::_receiver_location == VMRegImpl::Bad(), "initialized multiple times?");
+
   VtableStub::_receiver_location = SharedRuntime::name_for_receiver();
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
-    assert(_number_of_vtable_stubs == 0, "potential performance bug: VtableStubs initialized more than once");
-    assert(is_power_of_2(int(N)), "N must be a power of 2");
     for (int i = 0; i < N; i++) {
-      _table[i] = nullptr;
+      Atomic::store(&_table[i], (VtableStub*)nullptr);
     }
   }
 }
@@ -256,10 +255,24 @@ inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index){
 }
 
 
+inline uint VtableStubs::unsafe_hash(address entry_point) {
+  // The entrypoint may or may not be a VtableStub. Generate a hash as if it was.
+  address vtable_stub_addr = entry_point - VtableStub::entry_offset();
+  assert(CodeCache::contains(vtable_stub_addr), "assumed to always be the case");
+  address vtable_type_addr = vtable_stub_addr + offset_of(VtableStub, _type);
+  address vtable_index_addr = vtable_stub_addr + offset_of(VtableStub, _index);
+  bool is_vtable_stub = *vtable_type_addr == static_cast<uint8_t>(VtableStub::Type::vtable_stub);
+  short vtable_index;
+  static_assert(sizeof(VtableStub::_index) == sizeof(vtable_index), "precondition");
+  memcpy(&vtable_index, vtable_index_addr, sizeof(vtable_index));
+  return hash(is_vtable_stub, vtable_index);
+}
+
+
 VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
   assert_lock_strong(VtableStubs_lock);
   unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index);
-  VtableStub* s = _table[hash];
+  VtableStub* s = Atomic::load(&_table[hash]);
   while( s && !s->matches(is_vtable_stub, vtable_index)) s = s->next();
   return s;
 }
@@ -269,26 +282,22 @@ void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
   assert_lock_strong(VtableStubs_lock);
   assert(s->matches(is_vtable_stub, vtable_index), "bad vtable stub");
   unsigned int h = VtableStubs::hash(is_vtable_stub, vtable_index);
-  // enter s at the beginning of the corresponding list
-  s->set_next(_table[h]);
-  _table[h] = s;
-  _number_of_vtable_stubs++;
+  // Insert s at the beginning of the corresponding list.
+  s->set_next(Atomic::load(&_table[h]));
+  // Make sure that concurrent readers not taking the mutex observe the writing of "next".
+  Atomic::release_store(&_table[h], s);
 }
 
 VtableStub* VtableStubs::entry_point(address pc) {
+  // The pc may or may not be the entry point for a VtableStub. Use unsafe_hash
+  // to generate the hash that would have been used if it was. The lookup in the
+  // _table will only succeed if there is a VtableStub with an entry point at
+  // the pc.
   MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
-  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
-  uint hash = VtableStubs::hash(stub->is_vtable_stub(), stub->index());
+  uint hash = VtableStubs::unsafe_hash(pc);
   VtableStub* s;
-  for (s = _table[hash]; s != nullptr && s != stub; s = s->next()) {}
-  return (s == stub) ? s : nullptr;
-}
-
-bool VtableStubs::is_icholder_entry(address pc) {
-  assert(contains(pc), "must contain all vtable blobs");
-  VtableStub* stub = (VtableStub*)(pc - VtableStub::entry_offset());
-  // itable stubs use CompiledICHolder.
-  return stub->is_itable_stub();
+  for (s = Atomic::load(&_table[hash]); s != nullptr && s->entry_point() != pc; s = s->next()) {}
+  return (s != nullptr && s->entry_point() == pc) ? s : nullptr;
 }
 
 bool VtableStubs::contains(address pc) {
@@ -299,11 +308,8 @@ bool VtableStubs::contains(address pc) {
 
 
 VtableStub* VtableStubs::stub_containing(address pc) {
-  // Note: No locking needed since any change to the data structure
-  //       happens with an atomic store into it (we don't care about
-  //       consistency with the _number_of_vtable_stubs counter).
   for (int i = 0; i < N; i++) {
-    for (VtableStub* s = _table[i]; s != nullptr; s = s->next()) {
+    for (VtableStub* s = Atomic::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
       if (s->contains(pc)) return s;
     }
   }
@@ -315,11 +321,11 @@ void vtableStubs_init() {
 }
 
 void VtableStubs::vtable_stub_do(void f(VtableStub*)) {
-    for (int i = 0; i < N; i++) {
-        for (VtableStub* s = _table[i]; s != nullptr; s = s->next()) {
-            f(s);
-        }
+  for (int i = 0; i < N; i++) {
+    for (VtableStub* s = Atomic::load_acquire(&_table[i]); s != nullptr; s = s->next()) {
+      f(s);
     }
+  }
 }
 
 

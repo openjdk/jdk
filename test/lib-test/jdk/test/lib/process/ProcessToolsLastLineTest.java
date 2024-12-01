@@ -37,7 +37,7 @@ public class ProcessToolsLastLineTest {
     static void test(String output) throws Exception {
         final StringBuffer sb = new StringBuffer();
         Process p = ProcessTools.startProcess("process",
-                ProcessTools.createJavaProcessBuilder(ProcessToolsLastLineTest.class.getName(), output),
+                ProcessTools.createLimitedTestJavaProcessBuilder(ProcessToolsLastLineTest.class.getName(), output),
                 line -> { sb.append(line);});
         p.waitFor();
         String expectedOutput = output.replace("\n", "");

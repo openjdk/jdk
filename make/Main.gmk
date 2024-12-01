@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 # Declare default target
 default:
 
-ifeq ($(wildcard $(SPEC)),)
+ifeq ($(wildcard $(SPEC)), )
   $(error Main.gmk needs SPEC set to a proper spec.gmk)
 endif
 
@@ -94,14 +94,6 @@ $(eval $(call SetupTarget, buildtools-modules, \
 
 $(eval $(call SetupTarget, buildtools-hotspot, \
     MAKEFILE := CompileToolsHotspot, \
-))
-
-################################################################################
-# Special targets for certain modules
-
-$(eval $(call SetupTarget, generate-exported-symbols, \
-    MAKEFILE := BuildStatic, \
-    DEPS := java.base-libs jdk.jdwp.agent-libs, \
 ))
 
 ################################################################################
@@ -268,42 +260,34 @@ $(eval $(call SetupTarget, hotspot-ide-project, \
 
 $(eval $(call SetupTarget, eclipse-java-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=java SHARED=false, \
+    ARGS := --always-make WORKSPACE=java, \
 ))
 
 $(eval $(call SetupTarget, eclipse-hotspot-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=hotspot SHARED=false, \
+    ARGS := --always-make WORKSPACE=hotspot, \
 ))
 
 $(eval $(call SetupTarget, eclipse-native-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=native SHARED=false, \
+    ARGS := --always-make WORKSPACE=native, \
 ))
 
 $(eval $(call SetupTarget, eclipse-mixed-env, \
     MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make SHARED=false, \
+    ARGS := --always-make, \
 ))
 
-$(eval $(call SetupTarget, eclipse-shared-java-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=java SHARED=true, \
+$(eval $(call SetupTarget, hotspot-xcode-project, \
+    MAKEFILE := ide/xcode/hotspot/CreateXcodeProject, \
+    TARGET := build, \
+    DEPS := hotspot compile-commands-hotspot jdk-image, \
 ))
 
-$(eval $(call SetupTarget, eclipse-shared-hotspot-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=hotspot SHARED=true, \
-))
-
-$(eval $(call SetupTarget, eclipse-shared-native-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make WORKSPACE=native SHARED=true, \
-))
-
-$(eval $(call SetupTarget, eclipse-shared-mixed-env, \
-    MAKEFILE := ide/eclipse/CreateWorkspace, \
-    ARGS := --always-make SHARED=true, \
+$(eval $(call SetupTarget, open-hotspot-xcode-project, \
+    MAKEFILE := ide/xcode/hotspot/CreateXcodeProject, \
+    TARGET := open, \
+    DEPS := hotspot-xcode-project, \
 ))
 
 ALL_TARGETS += $(HOTSPOT_VARIANT_TARGETS) $(HOTSPOT_VARIANT_GENSRC_TARGETS) \
@@ -405,8 +389,9 @@ JMOD_TARGETS := $(addsuffix -jmod, $(JMOD_MODULES))
 
 define DeclareJmodRecipe
   $1-jmod:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJmods.gmk \
-	    MODULE=$1)
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	    $(patsubst %,-I%/modules/$1,$(PHASE_MAKEDIRS)) \
+	    -f CreateJmods.gmk MODULE=$1)
 endef
 
 $(foreach m, $(JMOD_MODULES), $(eval $(call DeclareJmodRecipe,$m)))
@@ -583,6 +568,10 @@ $(eval $(call SetupTarget, update-build-docs, \
     MAKEFILE := UpdateBuildDocs, \
 ))
 
+$(eval $(call SetupTarget, update-sleef-source, \
+    MAKEFILE := UpdateSleefSource, \
+))
+
 $(eval $(call SetupTarget, update-x11wrappers, \
     MAKEFILE := UpdateX11Wrappers, \
     DEPS := java.base-copy buildtools-jdk, \
@@ -607,11 +596,11 @@ endif
 ifeq ($(CREATING_BUILDJDK), true)
   # This target is only called by the recursive call below.
   create-buildjdk-interim-image-helper: interim-image jdk.jlink-launchers \
-      java.base-copy jdk.jdeps-launchers
+      java.base-copy jdk.jdeps-launchers jdk.compiler-launchers
 endif
 
-BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink $(INTERIM_IMAGE_MODULES), \
-    $(call FindTransitiveDepsForModule, $m) $m))
+BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink jdk.compiler \
+    $(INTERIM_IMAGE_MODULES), $(call FindTransitiveDepsForModule, $m) $m))
 
 $(eval $(call SetupTarget, create-buildjdk-interim-image, \
     MAKEFILE := Main, \
@@ -743,7 +732,14 @@ endif
 
 $(eval $(call SetupTarget, build-test-lib, \
     MAKEFILE := test/BuildTestLib, \
+    TARGET := build-test-lib, \
     DEPS := exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-lib, \
+    MAKEFILE := test/BuildTestLib, \
+    TARGET := test-image-lib, \
+    DEPS := build-test-lib, \
 ))
 
 ifeq ($(BUILD_FAILURE_HANDLER), true)
@@ -780,7 +776,7 @@ endif
 
 $(eval $(call SetupTarget, build-microbenchmark, \
     MAKEFILE := test/BuildMicrobenchmark, \
-    DEPS := interim-langtools exploded-image, \
+    DEPS := interim-langtools exploded-image build-test-lib, \
 ))
 
 ################################################################################
@@ -789,13 +785,13 @@ $(eval $(call SetupTarget, build-microbenchmark, \
 $(eval $(call SetupTarget, test, \
     MAKEFILE := RunTests, \
     ARGS := TEST="$(TEST)", \
-    DEPS := jdk-image test-image, \
+    DEPS := jdk-image test-image $(TEST_DEPS), \
 ))
 
 $(eval $(call SetupTarget, exploded-test, \
     MAKEFILE := RunTests, \
     ARGS := TEST="$(TEST)" JDK_IMAGE_DIR=$(JDK_OUTPUTDIR), \
-    DEPS := exploded-image test-image, \
+    DEPS := exploded-image test-image $(TEST_DEPS), \
 ))
 
 ifeq ($(JCOV_ENABLED), true)
@@ -866,14 +862,6 @@ ifeq ($(JCOV_ENABLED), true)
 endif
 
 ################################################################################
-# Install targets
-
-$(eval $(call SetupTarget, install, \
-    MAKEFILE := Install, \
-    DEPS := product-images, \
-))
-
-################################################################################
 #
 # Dependency declarations between targets.
 #
@@ -925,10 +913,6 @@ else
 
   $(LAUNCHER_TARGETS): java.base-libs
 
-  ifeq ($(STATIC_BUILD), true)
-    $(LAUNCHER_TARGETS): generate-exported-symbols
-  endif
-
   # Declare dependency from <module>-java to <module>-gensrc
   $(foreach m, $(GENSRC_MODULES), $(eval $m-java: $m-gensrc))
 
@@ -951,6 +935,11 @@ else
     java.base-copy: build-hsdis
   endif
 
+  # On Windows, we need to copy tzmappings generated by gensrc
+  ifeq ($(call isTargetOs, windows), true)
+    java.base-copy: java.base-gensrc
+  endif
+
   # jdk.accessibility depends on java.desktop
   jdk.accessibility-libs: java.desktop-libs
 
@@ -969,8 +958,29 @@ else
 
   jdk.jdeps-gendata: java
 
-  # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+  # jdk.compiler gendata generates ct.sym, which requires all generated
+  # java source and compiled classes present.
+  jdk.compiler-gendata: $(JAVA_TARGETS)
+
+  # jdk.javadoc gendata generates element-list, which requires all java sources
+  # but not compiled classes.
+  jdk.javadoc-gendata: $(GENSRC_TARGETS)
+
+  # ct.sym and element-list generation also needs the BUILD_JDK. If the
+  # BUILD_JDK was supplied externally, no extra prerequisites are needed.
+  ifeq ($(CREATE_BUILDJDK), true)
+    ifneq ($(CREATING_BUILDJDK), true)
+      # When cross compiling and an external BUILD_JDK wasn't supplied, it's
+      # produced by the create-buildjdk target.
+      jdk.compiler-gendata: create-buildjdk
+      jdk.javadoc-gendata: create-buildjdk
+    endif
+  else ifeq ($(EXTERNAL_BUILDJDK), false)
+    # When not cross compiling, the BUILD_JDK is the interim jdk image, and
+    # the javac launcher is needed.
+    jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.javadoc-gendata: jdk.compiler-launchers
+  endif
 
   # Declare dependencies between jmod targets.
   # java.base jmod needs jrt-fs.jar and access to the jmods for all non
@@ -1053,6 +1063,9 @@ else
   # All modules include the main license files from java.base.
   $(JMOD_TARGETS): java.base-copy
 
+  # jdk.javadoc uses an internal copy of the main license files from java.base.
+  jdk.javadoc-copy: java.base-copy
+
   zip-security: $(filter jdk.crypto%, $(JAVA_TARGETS))
 
   ifeq ($(ENABLE_GENERATE_CLASSLIST), true)
@@ -1097,8 +1110,8 @@ else
   test-make-compile-commands: compile-commands
 
   # Declare dependency for all generated test targets
-  $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image))
-  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image))
+  $(foreach t, $(filter-out test-make%, $(ALL_TEST_TARGETS)), $(eval $t: jdk-image test-image $(TEST_DEPS)))
+  $(foreach t, $(ALL_EXPLODED_TEST_TARGETS), $(eval $t: exploded-image test-image $(TEST_DEPS)))
 
   interim-image: $(INTERIM_JMOD_TARGETS)
 
@@ -1255,7 +1268,7 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib-native
+    test-image-lib test-image-lib-native
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the
@@ -1331,9 +1344,13 @@ test-hotspot-jtreg-native: test-hotspot_native_sanity
 test-hotspot-gtest: exploded-test-gtest
 test-jdk-jtreg-native: test-jdk_native_sanity
 
+# Set dependencies for doc tests
+$(eval $(call AddTestDependency, docs_all, docs-jdk))
+test-docs: test-docs_all
+
 ALL_TARGETS += $(RUN_TEST_TARGETS) run-test exploded-run-test check \
     test-hotspot-jtreg test-hotspot-jtreg-native test-hotspot-gtest \
-    test-jdk-jtreg-native
+    test-jdk-jtreg-native test-docs
 
 ################################################################################
 ################################################################################
@@ -1405,7 +1422,7 @@ dist-clean: clean
 	($(CD) $(OUTPUTDIR) && \
 	    $(RM) -r *spec.gmk $(CONFIGURESUPPORT_OUTPUTDIR) Makefile compare.sh ide \
 	    configure.log* build.log*)
-	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUTDIR))), \
+	$(if $(filter $(CONF_NAME), $(notdir $(OUTPUTDIR))), \
 	  if test "x`$(LS) $(OUTPUTDIR)`" != x; then \
 	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
 	  else \

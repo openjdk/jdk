@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 #include <stdio.h>
-#include "nsk_strace.h"
+#include "nsk_strace.hpp"
 
 extern "C" {
 
@@ -44,7 +44,7 @@ JNI_OnLoad(JavaVM *vm, void *reserved)
 
     FIND_CLASS(stackOverflowErrorClass, "java/lang/StackOverflowError");
     stackOverflowErrorClass = (jclass) env->NewGlobalRef(stackOverflowErrorClass);
-    if (stackOverflowErrorClass == NULL) {
+    if (stackOverflowErrorClass == nullptr) {
         printf("Can't create global ref for stack overflow class\n");
         return 0;
     }
@@ -58,7 +58,7 @@ JNI_OnUnload(JavaVM *vm, void *reserved)
     JNIEnv *env;
 
     if (vm->GetEnv((void **) &env, JNI_VERSION) != JNI_OK) {
-        if (stackOverflowErrorClass != NULL) {
+        if (stackOverflowErrorClass != nullptr) {
             env->DeleteGlobalRef(stackOverflowErrorClass);
         }
     } else {

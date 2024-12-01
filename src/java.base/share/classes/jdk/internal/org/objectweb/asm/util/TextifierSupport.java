@@ -77,4 +77,3 @@ public interface TextifierSupport {
       */
     void textify(StringBuilder outputBuilder, Map<Label, String> labelNames);
 }
-

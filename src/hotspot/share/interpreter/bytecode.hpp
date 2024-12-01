@@ -84,14 +84,6 @@ class Bytecode: public StackObj {
       return Bytes::get_Java_u2(p);
     }
   }
-  int get_index_u1_cpcache(Bytecodes::Code bc) const {
-    assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(u1*)addr_at(1) + ConstantPool::CPCACHE_INDEX_TAG;
-  }
-  int get_index_u2_cpcache(Bytecodes::Code bc) const {
-    assert_same_format_as(bc); assert_index_size(2, bc); assert_native_index(bc);
-    return Bytes::get_native_u2(addr_at(1)) + ConstantPool::CPCACHE_INDEX_TAG;
-  }
   int get_index_u4(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(4, bc);
     assert(can_use_native_byte_order(bc), "");
@@ -188,8 +180,8 @@ class Bytecode_member_ref: public Bytecode {
   const Method* method() const                 { return _method; }
   ConstantPool* constants() const              { return _method->constants(); }
   ConstantPoolCache* cpcache() const           { return _method->constants()->cache(); }
-  ConstantPoolCacheEntry* cpcache_entry() const;
   ResolvedIndyEntry* resolved_indy_entry() const;
+  ResolvedMethodEntry* resolved_method_entry() const;
 
  public:
   int          index() const;                    // cache index (loaded from instruction)

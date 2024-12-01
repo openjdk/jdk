@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,68 +21,117 @@
  * questions.
  */
 
-import jdk.test.lib.net.URIBuilder;
-
-import javax.naming.Context;
-import javax.naming.ldap.InitialLdapContext;
-import javax.naming.ldap.LdapContext;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLServerSocketFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Hashtable;
+
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.ldap.InitialLdapContext;
+import javax.naming.ldap.LdapContext;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLServerSocketFactory;
+
+import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
- * @bug 8314063
+ * @bug 8314063 8325579
  * @library /test/lib
- * @summary For LDAPs connection, if the value of com.sun.jndi.ldap.connect.timeout is
- * set too small or not an optimal value for the system, after the socket is created and
- * connected to the server, but the handshake between the client and server fails due to
- * socket time out, the opened socket is not closed properly. In this test case, the server
- * is forced to sleep ten seconds and connection time out for client is one second. This
- * will allow the socket opened and connected, and give the chance for the handshake to be
- * timed out. Before this fix, the socket is kept opened. Right now the exception will be
- * caught and the socket will be closed.
+ * @summary Several scenarios for LDAP connection handshaking are tested here.
+ * We test different combinations of com.sun.jndi.ldap.connect.timeout values
+ * and server behavior, e.g. a server that replies immediately vs a server that
+ * delays the initial answer. We also try to check whether the underlying Socket
+ * object will be closed correctly.
+ * We expect exceptions when using a custom SocketFactory that does not supply
+ * SSL Sockets. In that case we instrument the supplied Socket object and check
+ * if it was properly closed after the handshake failure.
+ * When the value of com.sun.jndi.ldap.connect.timeout is set lower than the
+ * server delay, we also expect an exception.
+ * In all other cases a valid Context object shall be returned and we check
+ * whether the socket is closed after closing the Context.
  *
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory true 6000
- * @run main/othervm LdapSSLHandshakeFailureTest -1000 true 6000
- * @run main/othervm LdapSSLHandshakeFailureTest -1000 false 6000
- * @run main/othervm LdapSSLHandshakeFailureTest 2000 false 6000
- * @run main/othervm LdapSSLHandshakeFailureTest 0 true 6000
- * @run main/othervm LdapSSLHandshakeFailureTest 0 false 6000
+ * @modules java.naming/javax.naming:+open java.naming/com.sun.jndi.ldap:+open
+ * @run main/othervm LdapSSLHandshakeFailureTest
  * @run main/othervm LdapSSLHandshakeFailureTest true
- * @run main/othervm LdapSSLHandshakeFailureTest false
+ * @run main/othervm LdapSSLHandshakeFailureTest 0
+ * @run main/othervm LdapSSLHandshakeFailureTest 0 true
+ * @run main/othervm LdapSSLHandshakeFailureTest 2000
+ * @run main/othervm LdapSSLHandshakeFailureTest 2000 true
+ * @run main/othervm LdapSSLHandshakeFailureTest -1000
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected 1000
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected true
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected 1000 true
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory 1000
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory true
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory 1000 true
  */
 
 public class LdapSSLHandshakeFailureTest {
-    private static String SOCKET_CLOSED_MSG = "The socket has been closed.";
+    private static int SERVER_SLEEPING_TIME = 4000;
+    private static String progArgs[];
+    private static int curArg;
+    private static String customSocketFactory;
+    private static Integer connectTimeout;
+    private static boolean serverSlowDown;
 
-    private static int serverSleepingTime = 5000;
+    private static String popArg() {
+        if (curArg >= progArgs.length) {
+            return null;
+        }
+        return progArgs[curArg++];
+    }
 
-    public static void main(String args[]) throws Exception {
+    private static void parseArgs(String args[]) {
+        progArgs = args;
+        curArg = 0;
+
+        String arg = popArg();
+        if (arg == null)
+            return;
+
+        if (arg.startsWith("LdapSSLHandshakeFailureTest$CustomSocketFactory")) {
+            customSocketFactory = arg;
+            arg = popArg();
+            if (arg == null)
+                return;
+        }
+
+        try {
+            connectTimeout = Integer.valueOf(arg);
+            arg = popArg();
+            if (arg == null)
+                return;
+        } catch (NumberFormatException e) {
+            // then it must be the boolean arg for serverSlowDown
+        }
+
+        serverSlowDown = Boolean.valueOf(arg);
+    }
+
+    public static void main(String args[]) {
+        parseArgs(args);
+
+        System.out.println("Testing " +
+            (customSocketFactory == null ? "without custom SocketFactory" : "with custom SocketFactory \"" + customSocketFactory + "\"") +
+            ", " + (connectTimeout == null ? "no connectTimeout" : "connectTimeout=" + connectTimeout + "") +
+            ", serverSlowDown=" + serverSlowDown);
 
         // Set the keystores
         setKeyStore();
-        boolean serverSlowDown = Boolean.valueOf(args[0]);
-        if (args.length == 2) {
-            serverSlowDown = Boolean.valueOf(args[1]);
-        }
 
-        if (args.length == 3) {
-            serverSleepingTime = Integer.valueOf(args[2]);
-        }
-
-        boolean hasCustomSocketFactory = args[0]
-                .equals("LdapSSLHandshakeFailureTest$CustomSocketFactory");
         // start the test server first.
-        try (TestServer server = new TestServer(serverSlowDown, serverSleepingTime)) {
+        try (TestServer server = new TestServer(serverSlowDown)) {
             server.start();
             Hashtable<String, Object> env = new Hashtable<>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -93,15 +142,13 @@ public class LdapSSLHandshakeFailureTest {
                     .port(server.getPortNumber())
                     .buildUnchecked().toString());
 
-            if (hasCustomSocketFactory) {
-                env.put("java.naming.ldap.factory.socket", args[0]);
-                env.put("com.sun.jndi.ldap.connect.timeout", "1000");
+            if (customSocketFactory != null) {
+                env.put("java.naming.ldap.factory.socket", customSocketFactory);
             }
 
-            if (args.length == 2 && !hasCustomSocketFactory) {
-                env.put("com.sun.jndi.ldap.connect.timeout", args[0]);
+            if (connectTimeout != null) {
+                env.put("com.sun.jndi.ldap.connect.timeout", connectTimeout.toString());
             }
-
             env.put(Context.SECURITY_PROTOCOL, "ssl");
             env.put(Context.SECURITY_AUTHENTICATION, "Simple");
             env.put(Context.SECURITY_PRINCIPAL, "cn=principal");
@@ -109,62 +156,55 @@ public class LdapSSLHandshakeFailureTest {
             LdapContext ctx = null;
             try {
                 ctx = new InitialLdapContext(env, null);
-            } catch (Exception e) {
-                if (CustomSocketFactory.customSocket.closeMethodCalledCount() > 0
-                        && hasCustomSocketFactory
-                        && Boolean.valueOf(args[1])) {
-                    System.out.println(SOCKET_CLOSED_MSG);
+            } catch (NamingException e) {
+                if (customSocketFactory != null) {
+                    System.out.println("Caught expected Exception with custom SocketFactory (no SSL Socket).");
+                    if (CustomSocketFactory.customSocket.closeMethodCalledCount() <= 0) {
+                        throw new RuntimeException("Custom Socket was not closed.");
+                    }
+                } else if (connectTimeout > 0) {
+                    System.out.println("Caught expected Exception with connectTimeout > 0.");
                 } else {
                     throw e;
                 }
             } finally {
-                if (ctx != null)
+                if (ctx != null) {
+                    System.out.println("Context was created, closing it.");
+                    Socket sock = getSocket(ctx);
                     ctx.close();
+                    if (!sock.isClosed()) {
+                        throw new RuntimeException("Socket isn't closed");
+                    }
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
-    public static class CustomSocketFactory extends SocketFactory {
-        private static CustomSocket customSocket;
-
-        public static CustomSocketFactory getDefault() {
-            return new CustomSocketFactory();
-        }
-
-        @Override
-        public Socket createSocket() throws SocketException {
-            customSocket = new CustomSocket();
-            return customSocket;
-        }
-
-        @Override
-        public Socket createSocket(String s, int timeout) {
-            return customSocket;
-        }
-
-        @Override
-        public Socket createSocket(String host, int port, InetAddress localHost,
-                                   int localPort) {
-            return customSocket;
-        }
-
-        @Override
-        public Socket createSocket(InetAddress host, int port) {
-            return customSocket;
-        }
-
-        @Override
-        public Socket createSocket(InetAddress address, int port,
-                                   InetAddress localAddress, int localPort) {
-            return customSocket;
-        }
+    private static Socket getSocket(LdapContext ctx) throws Exception {
+        Field defaultInitCtxField = ctx.getClass().getSuperclass().getSuperclass().getDeclaredField("defaultInitCtx");
+        defaultInitCtxField.setAccessible(true);
+        Object defaultInitCtx = defaultInitCtxField.get(ctx);
+        Field clntField = defaultInitCtx.getClass().getDeclaredField("clnt");
+        clntField.setAccessible(true);
+        Object clnt = clntField.get(defaultInitCtx);
+        Field connField = clnt.getClass().getDeclaredField("conn");
+        connField.setAccessible(true);
+        Object conn = connField.get(clnt);
+        return (Socket)conn.getClass().getDeclaredField("sock").get(conn);
     }
 
     private static class CustomSocket extends Socket {
-        private int closeMethodCalled = 0;
+        private int closeMethodCalled;
 
         public CustomSocket() {
-            closeMethodCalled = 0;
+            super();
+        }
+
+        public CustomSocket(String s, int port) throws IOException {
+            super(s, port);
         }
 
         public int closeMethodCalledCount() {
@@ -178,25 +218,65 @@ public class LdapSSLHandshakeFailureTest {
         }
     }
 
+    public static class CustomSocketFactoryNoUnconnected extends SocketFactory {
+        static CustomSocket customSocket;
+
+        public static SocketFactory getDefault() {
+            return new CustomSocketFactoryNoUnconnected();
+        }
+
+        @Override
+        public Socket createSocket(String s, int port) throws IOException {
+            customSocket = new CustomSocket(s, port);
+            return customSocket;
+        }
+
+        @Override
+        public Socket createSocket(String host, int port, InetAddress localHost, int localPort)
+                throws IOException, UnknownHostException {
+            return null;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress host, int port) throws IOException {
+            return null;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort)
+                throws IOException {
+            return null;
+        }
+    }
+
+    public static class CustomSocketFactory extends CustomSocketFactoryNoUnconnected {
+        public static SocketFactory getDefault() {
+            return new CustomSocketFactory();
+        }
+
+        @Override
+        public Socket createSocket() throws SocketException {
+            customSocket = new CustomSocket();
+            return customSocket;
+        }
+    }
+
     private static void setKeyStore() {
+        String keystore = System.getProperty("test.src", ".") + File.separator + "ksWithSAN";
 
-        String fileName = "ksWithSAN", dir = System.getProperty("test.src", ".") + File.separator;
-
-        System.setProperty("javax.net.ssl.keyStore", dir + fileName);
+        System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", "welcome1");
-        System.setProperty("javax.net.ssl.trustStore", dir + fileName);
+        System.setProperty("javax.net.ssl.trustStore", keystore);
         System.setProperty("javax.net.ssl.trustStorePassword", "welcome1");
     }
 
     static class TestServer extends Thread implements AutoCloseable {
         private boolean isForceToSleep;
-        private int sleepingTime;
         private final ServerSocket serverSocket;
         private final int PORT;
 
-        private TestServer(boolean isForceToSleep, int sleepingTime) {
+        private TestServer(boolean isForceToSleep) {
             this.isForceToSleep = isForceToSleep;
-            this.sleepingTime = sleepingTime;
             try {
                 SSLServerSocketFactory socketFactory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
                 serverSocket = socketFactory.createServerSocket(0, 0, InetAddress.getLoopbackAddress());
@@ -217,7 +297,7 @@ public class LdapSSLHandshakeFailureTest {
                  InputStream in = socket.getInputStream();
                  OutputStream out = socket.getOutputStream()) {
                 if (isForceToSleep) {
-                    Thread.sleep(sleepingTime);
+                    Thread.sleep(SERVER_SLEEPING_TIME);
                 }
                 byte[] bindResponse = {0x30, 0x0C, 0x02, 0x01, 0x01, 0x61, 0x07, 0x0A,
                         0x01, 0x00, 0x04, 0x00, 0x04, 0x00};
@@ -233,7 +313,7 @@ public class LdapSSLHandshakeFailureTest {
                     in.skip(in.available());
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                // e.printStackTrace();
             }
         }
 
@@ -245,5 +325,3 @@ public class LdapSSLHandshakeFailureTest {
         }
     }
 }
-
-

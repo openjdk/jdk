@@ -61,7 +61,7 @@ public class JStatInterval {
         }
     }
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJvm(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
             "-XX:+UsePerfData",
             Application.class.getName()
         );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -92,10 +92,10 @@ address NativeCall::destination() const {
 // Used in the runtime linkage of calls; see class CompiledIC.
 //
 // Add parameter assert_lock to switch off assertion
-// during code generation, where no patching lock is needed.
+// during code generation, where no lock is needed.
 void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
   assert(!assert_lock ||
-         (Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+         (CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
@@ -205,12 +205,14 @@ intptr_t NativeMovConstReg::data() const {
     // Therefore we use raw decoding.
     if (CompressedOops::is_null(no)) return 0;
     return cast_from_oop<intptr_t>(CompressedOops::decode_raw(no));
-  } else {
-    assert(MacroAssembler::is_load_const_from_method_toc_at(addr), "must be load_const_from_pool");
-
+  } else if (MacroAssembler::is_load_const_from_method_toc_at(addr)) {
     address ctable = cb->content_begin();
     int offset = MacroAssembler::get_offset_of_load_const_from_method_toc_at(addr);
     return *(intptr_t *)(ctable + offset);
+  } else {
+    assert(MacroAssembler::is_calculate_address_from_global_toc_at(addr, addr - BytesPerInstWord),
+           "must be calculate_address_from_global_toc");
+    return (intptr_t) MacroAssembler::get_address_of_calculate_address_from_global_toc_at(addr, addr - BytesPerInstWord);
   }
 }
 
@@ -429,8 +431,29 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
-void NativePostCallNop::patch(jint diff) {
-  // unsupported for now
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  int32_t i2, i1;
+  assert(is_aligned(cb_offset, 4), "cb offset alignment does not match instruction alignment");
+  assert(!decode(i1, i2), "already patched");
+
+  cb_offset = cb_offset >> 2;
+  if (((oopmap_slot & ppc_oopmap_slot_mask) != oopmap_slot) || ((cb_offset & ppc_cb_offset_mask) != cb_offset)) {
+    return false;  // cannot encode
+  }
+  const uint32_t data = oopmap_slot << ppc_cb_offset_bits | cb_offset;
+  const uint32_t lo_data = data & ppc_data_lo_mask;
+  const uint32_t hi_data = data >> ppc_data_lo_bits;
+  const uint32_t nineth_bit = 1 << (31 - 9);
+  uint32_t instr = Assembler::CMPLI_OPCODE | hi_data << ppc_data_hi_shift | nineth_bit | lo_data;
+  *(uint32_t*)addr_at(0) = instr;
+
+  int32_t oopmap_slot_dec, cb_offset_dec;
+  assert(is_post_call_nop(), "pcn not recognized");
+  assert(decode(oopmap_slot_dec, cb_offset_dec), "encoding failed");
+  assert(oopmap_slot == oopmap_slot_dec, "oopmap slot encoding is wrong");
+  assert((cb_offset << 2) == cb_offset_dec, "cb offset encoding is wrong");
+
+  return true;  // encoding succeeded
 }
 
 void NativeDeoptInstruction::verify() {
@@ -439,7 +462,7 @@ void NativeDeoptInstruction::verify() {
 bool NativeDeoptInstruction::is_deopt_at(address code_pos) {
   if (!Assembler::is_illtrap(code_pos)) return false;
   CodeBlob* cb = CodeCache::find_blob(code_pos);
-  if (cb == nullptr || !cb->is_compiled()) return false;
+  if (cb == nullptr || !cb->is_nmethod()) return false;
   nmethod *nm = (nmethod *)cb;
   // see NativeInstruction::is_sigill_not_entrant_at()
   return nm->verified_entry_point() != code_pos;

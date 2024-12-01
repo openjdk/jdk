@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,41 +25,21 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.BootstrapMethodsAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolException;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPoolException;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
-
-import static jdk.internal.classfile.Classfile.TAG_CLASS;
-import static jdk.internal.classfile.Classfile.TAG_CONSTANTDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_DOUBLE;
-import static jdk.internal.classfile.Classfile.TAG_FIELDREF;
-import static jdk.internal.classfile.Classfile.TAG_FLOAT;
-import static jdk.internal.classfile.Classfile.TAG_INTEGER;
-import static jdk.internal.classfile.Classfile.TAG_INTERFACEMETHODREF;
-import static jdk.internal.classfile.Classfile.TAG_INVOKEDYNAMIC;
-import static jdk.internal.classfile.Classfile.TAG_LONG;
-import static jdk.internal.classfile.Classfile.TAG_METHODHANDLE;
-import static jdk.internal.classfile.Classfile.TAG_METHODREF;
-import static jdk.internal.classfile.Classfile.TAG_METHODTYPE;
-import static jdk.internal.classfile.Classfile.TAG_MODULE;
-import static jdk.internal.classfile.Classfile.TAG_NAMEANDTYPE;
-import static jdk.internal.classfile.Classfile.TAG_PACKAGE;
-import static jdk.internal.classfile.Classfile.TAG_STRING;
-import static jdk.internal.classfile.Classfile.TAG_UTF8;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 
 public final class ClassReaderImpl
         implements ClassReader {
@@ -76,7 +56,7 @@ public final class ClassReaderImpl
     private final int constantPoolCount;
     private final int[] cpOffset;
 
-    final ClassfileImpl context;
+    final ClassFileImpl context;
     final int interfacesPos;
     final PoolEntry[] cp;
 
@@ -85,13 +65,16 @@ public final class ClassReaderImpl
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
     ClassReaderImpl(byte[] classfileBytes,
-                    ClassfileImpl context) {
+                    ClassFileImpl context) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
         this.context = context;
-        this.attributeMapper = this.context.attributeMapperOption().attributeMapper();
+        this.attributeMapper = this.context.attributeMapper();
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalArgumentException("Bad magic number");
+        }
+        if (readU2(6) > ClassFile.latestMajorVersion()) {
+            throw new IllegalArgumentException("Unsupported class file version: " + readU2(6));
         }
         int constantPoolCount = readU2(8);
         int[] cpOffset = new int[constantPoolCount];
@@ -102,15 +85,15 @@ public final class ClassReaderImpl
             ++p;
             switch (tag) {
                 // 2
-                case TAG_CLASS, TAG_METHODTYPE, TAG_MODULE, TAG_STRING, TAG_PACKAGE -> p += 2;
+                case TAG_CLASS, TAG_METHOD_TYPE, TAG_MODULE, TAG_STRING, TAG_PACKAGE -> p += 2;
 
                 // 3
-                case TAG_METHODHANDLE -> p += 3;
+                case TAG_METHOD_HANDLE -> p += 3;
 
                 // 4
-                case TAG_CONSTANTDYNAMIC, TAG_FIELDREF, TAG_FLOAT, TAG_INTEGER,
-                     TAG_INTERFACEMETHODREF, TAG_INVOKEDYNAMIC, TAG_METHODREF,
-                     TAG_NAMEANDTYPE -> p += 4;
+                case TAG_DYNAMIC, TAG_FIELDREF, TAG_FLOAT, TAG_INTEGER,
+                     TAG_INTERFACE_METHODREF, TAG_INVOKE_DYNAMIC, TAG_METHODREF,
+                     TAG_NAME_AND_TYPE -> p += 4;
 
                 // 8
                 case TAG_DOUBLE, TAG_LONG -> {
@@ -133,7 +116,7 @@ public final class ClassReaderImpl
         this.interfacesPos = p;
     }
 
-    public ClassfileImpl context() {
+    public ClassFileImpl context() {
         return context;
     }
 
@@ -163,13 +146,11 @@ public final class ClassReaderImpl
     @Override
     public Optional<ClassEntry> superclassEntry() {
         if (superclass == null) {
-            int scIndex = readU2(thisClassPos + 2);
-            superclass = Optional.ofNullable(scIndex == 0 ? null : (ClassEntry) entryByIndex(scIndex));
+            superclass = Optional.ofNullable(readEntryOrNull(thisClassPos + 2, ClassEntry.class));
         }
         return superclass;
     }
 
-    @Override
     public int thisClassPos() {
         return thisClassPos;
     }
@@ -194,45 +175,73 @@ public final class ClassReaderImpl
         return bsmEntries().get(index);
     }
 
+    private static IllegalArgumentException outOfBoundsError(IndexOutOfBoundsException cause) {
+        return new IllegalArgumentException("Reading beyond classfile bounds", cause);
+    }
+
     @Override
     public int readU1(int p) {
-        return buffer[p] & 0xFF;
+        try {
+            return buffer[p] & 0xFF;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readU2(int p) {
-        int b1 = buffer[p] & 0xFF;
-        int b2 = buffer[p + 1] & 0xFF;
-        return (b1 << 8) + b2;
+        try {
+            int b1 = buffer[p] & 0xFF;
+            int b2 = buffer[p + 1] & 0xFF;
+            return (b1 << 8) + b2;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readS1(int p) {
-        return buffer[p];
+        try {
+            return buffer[p];
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readS2(int p) {
-        int b1 = buffer[p];
-        int b2 = buffer[p + 1] & 0xFF;
-        return (b1 << 8) + b2;
+        try {
+            int b1 = buffer[p];
+            int b2 = buffer[p + 1] & 0xFF;
+            return (b1 << 8) + b2;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public int readInt(int p) {
-        int ch1 = buffer[p] & 0xFF;
-        int ch2 = buffer[p + 1] & 0xFF;
-        int ch3 = buffer[p + 2] & 0xFF;
-        int ch4 = buffer[p + 3] & 0xFF;
-        return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4;
+        try {
+            int ch1 = buffer[p] & 0xFF;
+            int ch2 = buffer[p + 1] & 0xFF;
+            int ch3 = buffer[p + 2] & 0xFF;
+            int ch4 = buffer[p + 3] & 0xFF;
+            return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4;
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public long readLong(int p) {
-        return ((long) buffer[p + 0] << 56) + ((long) (buffer[p + 1] & 255) << 48) +
-               ((long) (buffer[p + 2] & 255) << 40) + ((long) (buffer[p + 3] & 255) << 32) +
-               ((long) (buffer[p + 4] & 255) << 24) + ((buffer[p + 5] & 255) << 16) + ((buffer[p + 6] & 255) << 8) +
-               (buffer[p + 7] & 255);
+        try {
+            return ((long) buffer[p + 0] << 56) + ((long) (buffer[p + 1] & 255) << 48) +
+                   ((long) (buffer[p + 2] & 255) << 40) + ((long) (buffer[p + 3] & 255) << 32) +
+                   ((long) (buffer[p + 4] & 255) << 24) + ((buffer[p + 5] & 255) << 16) + ((buffer[p + 6] & 255) << 8) +
+                   (buffer[p + 7] & 255);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
@@ -247,19 +256,27 @@ public final class ClassReaderImpl
 
     @Override
     public byte[] readBytes(int p, int len) {
-        return Arrays.copyOfRange(buffer, p, p + len);
+        try {
+            return Arrays.copyOfRange(buffer, p, p + len);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     @Override
     public void copyBytesTo(BufWriter buf, int p, int len) {
-        buf.writeBytes(buffer, p, len);
+        try {
+            buf.writeBytes(buffer, p, len);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 
     BootstrapMethodsAttribute bootstrapMethodsAttribute() {
 
         if (bootstrapMethodsAttribute == null) {
             bootstrapMethodsAttribute
-                    = containedClass.findAttribute(Attributes.BOOTSTRAP_METHODS)
+                    = containedClass.findAttribute(Attributes.bootstrapMethods())
                                     .orElse(new UnboundAttribute.EmptyBootstrapAttribute());
         }
 
@@ -291,12 +308,13 @@ public final class ClassReaderImpl
         return containedClass;
     }
 
-    boolean writeBootstrapMethods(BufWriter buf) {
+    boolean writeBootstrapMethods(BufWriterImpl buf) {
         Optional<BootstrapMethodsAttribute> a
-                = containedClass.findAttribute(Attributes.BOOTSTRAP_METHODS);
+                = containedClass.findAttribute(Attributes.bootstrapMethods());
         if (a.isEmpty())
             return false;
-        a.get().writeTo(buf);
+        // BootstrapMethodAttribute implementations are all internal writable
+        ((Util.Writable) a.get()).writeTo(buf);
         return true;
     }
 
@@ -308,6 +326,46 @@ public final class ClassReaderImpl
     // Constantpool
     @Override
     public PoolEntry entryByIndex(int index) {
+        return entryByIndex(index, PoolEntry.class);
+    }
+
+    private static boolean checkTag(int tag, Class<?> cls) {
+        var type = switch (tag) {
+            // JVMS Table 4.4-B. Constant pool tags
+            case TAG_UTF8 -> AbstractPoolEntry.Utf8EntryImpl.class;
+            case TAG_INTEGER -> AbstractPoolEntry.IntegerEntryImpl.class;
+            case TAG_FLOAT -> AbstractPoolEntry.FloatEntryImpl.class;
+            case TAG_LONG -> AbstractPoolEntry.LongEntryImpl.class;
+            case TAG_DOUBLE -> AbstractPoolEntry.DoubleEntryImpl.class;
+            case TAG_CLASS -> AbstractPoolEntry.ClassEntryImpl.class;
+            case TAG_STRING -> AbstractPoolEntry.StringEntryImpl.class;
+            case TAG_FIELDREF -> AbstractPoolEntry.FieldRefEntryImpl.class;
+            case TAG_METHODREF -> AbstractPoolEntry.MethodRefEntryImpl.class;
+            case TAG_INTERFACE_METHODREF -> AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
+            case TAG_NAME_AND_TYPE -> AbstractPoolEntry.NameAndTypeEntryImpl.class;
+            case TAG_METHOD_HANDLE -> AbstractPoolEntry.MethodHandleEntryImpl.class;
+            case TAG_METHOD_TYPE -> AbstractPoolEntry.MethodTypeEntryImpl.class;
+            case TAG_DYNAMIC -> AbstractPoolEntry.ConstantDynamicEntryImpl.class;
+            case TAG_INVOKE_DYNAMIC -> AbstractPoolEntry.InvokeDynamicEntryImpl.class;
+            case TAG_MODULE -> AbstractPoolEntry.ModuleEntryImpl.class;
+            case TAG_PACKAGE -> AbstractPoolEntry.PackageEntryImpl.class;
+            default -> null;
+        };
+        return type != null && cls.isAssignableFrom(type);
+    }
+
+    static <T extends PoolEntry> T checkType(PoolEntry e, int index, Class<T> cls) {
+        if (cls.isInstance(e)) return cls.cast(e);
+        throw checkTypeError(index, cls);
+    }
+
+    private static ConstantPoolException checkTypeError(int index, Class<?> cls) {
+        return new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + index);
+    }
+
+    @Override
+    public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
+        Objects.requireNonNull(cls);
         if (index <= 0 || index >= constantPoolCount) {
             throw new ConstantPoolException("Bad CP index: " + index);
         }
@@ -318,6 +376,10 @@ public final class ClassReaderImpl
                 throw new ConstantPoolException("Unusable CP index: " + index);
             }
             int tag = readU1(offset);
+            if (!checkTag(tag, cls)) {
+                throw new ConstantPoolException(
+                        "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + "), expected " + cls.getSimpleName());
+            }
             final int q = offset + 1;
             info = switch (tag) {
                 case TAG_UTF8 -> new AbstractPoolEntry.Utf8EntryImpl(this, index, buffer, q + 2, readU2(q));
@@ -325,51 +387,31 @@ public final class ClassReaderImpl
                 case TAG_FLOAT -> new AbstractPoolEntry.FloatEntryImpl(this, index, readFloat(q));
                 case TAG_LONG -> new AbstractPoolEntry.LongEntryImpl(this, index, readLong(q));
                 case TAG_DOUBLE -> new AbstractPoolEntry.DoubleEntryImpl(this, index, readDouble(q));
-                case TAG_CLASS -> new AbstractPoolEntry.ClassEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_STRING -> new AbstractPoolEntry.StringEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_FIELDREF -> new AbstractPoolEntry.FieldRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                             (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                               (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_INTERFACEMETHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, (AbstractPoolEntry.ClassEntryImpl) readClassEntry(q),
-                                                                                                 (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q),
-                                                                                   (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q + 2));
-                case TAG_METHODHANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
-                                                                                     (AbstractPoolEntry.AbstractMemberRefEntry) readEntry(q + 1));
-                case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
-                case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
+                case TAG_CLASS -> new AbstractPoolEntry.ClassEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_STRING -> new AbstractPoolEntry.StringEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_FIELDREF -> new AbstractPoolEntry.FieldRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_INTERFACE_METHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_NAME_AND_TYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class),
+                        readEntry(q + 2, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_METHOD_HANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
+                                                                                     readEntry(q + 1, AbstractPoolEntry.AbstractMemberRefEntry.class));
+                case TAG_METHOD_TYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_DYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_INVOKE_DYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
                 default -> throw new ConstantPoolException(
                         "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + ")");
             };
             cp[index] = info;
         }
-        return info;
+        return checkType(info, index, cls);
     }
 
-    @Override
-    public AbstractPoolEntry.Utf8EntryImpl utf8EntryByIndex(int index) {
-        if (index <= 0 || index >= constantPoolCount) {
-            throw new ConstantPoolException("Bad CP UTF8 index: " + index);
-        }
-        PoolEntry info = cp[index];
-        if (info == null) {
-            int offset = cpOffset[index];
-            int tag = readU1(offset);
-            final int q = offset + 1;
-            if (tag != TAG_UTF8) throw new ConstantPoolException("Not a UTF8 - index: " + index);
-            AbstractPoolEntry.Utf8EntryImpl uinfo
-                    = new AbstractPoolEntry.Utf8EntryImpl(this, index, buffer, q + 2, readU2(q));
-            cp[index] = uinfo;
-            return uinfo;
-        }
-        return (AbstractPoolEntry.Utf8EntryImpl) info;
-    }
-
-    @Override
     public int skipAttributeHolder(int offset) {
         int p = offset;
         int cnt = readU2(p);
@@ -378,7 +420,7 @@ public final class ClassReaderImpl
             int len = readInt(p + 2);
             p += 6;
             if (len < 0 || len > classfileLength - p) {
-                throw new IllegalArgumentException("attribute " + readUtf8Entry(p - 6).stringValue() + " too big to handle");
+                throw new IllegalArgumentException("attribute " + readEntry(p - 6, Utf8Entry.class).stringValue() + " too big to handle");
             }
             p += len;
         }
@@ -392,9 +434,8 @@ public final class ClassReaderImpl
 
     @Override
     public <T extends PoolEntry> T readEntry(int pos, Class<T> cls) {
-        var e = readEntry(pos);
-        if (cls.isInstance(e)) return cls.cast(e);
-        throw new ConstantPoolException("Not a " + cls.getSimpleName() + " at index: " + readU2(pos));
+        Objects.requireNonNull(cls);
+        return entryByIndex(readU2(pos), cls);
     }
 
     @Override
@@ -407,52 +448,25 @@ public final class ClassReaderImpl
     }
 
     @Override
-    public Utf8Entry readUtf8Entry(int pos) {
-        int index = readU2(pos);
-        return utf8EntryByIndex(index);
-    }
-
-    @Override
-    public Utf8Entry readUtf8EntryOrNull(int pos) {
-        int index = readU2(pos);
+    public <T extends PoolEntry> T readEntryOrNull(int offset, Class<T> cls) {
+        Objects.requireNonNull(cls);
+        int index = readU2(offset);
         if (index == 0) {
             return null;
         }
-        return utf8EntryByIndex(index);
+        return entryByIndex(index, cls);
     }
 
-    @Override
-    public ModuleEntry readModuleEntry(int pos) {
-        return readEntry(pos, ModuleEntry.class);
-    }
-
-    @Override
-    public PackageEntry readPackageEntry(int pos) {
-        return readEntry(pos, PackageEntry.class);
-    }
-
-    @Override
-    public ClassEntry readClassEntry(int pos) {
-        return readEntry(pos, ClassEntry.class);
-    }
-
-    @Override
-    public NameAndTypeEntry readNameAndTypeEntry(int pos) {
-        return readEntry(pos, NameAndTypeEntry.class);
-    }
-
-    @Override
-    public MethodHandleEntry readMethodHandleEntry(int pos) {
-        return readEntry(pos, MethodHandleEntry.class);
-    }
-
-    @Override
-    public boolean compare(BufWriter bufWriter,
+    public boolean compare(BufWriterImpl bufWriter,
                            int bufWriterOffset,
                            int classReaderOffset,
                            int length) {
-        return Arrays.equals(((BufWriterImpl) bufWriter).elems,
-                             bufWriterOffset, bufWriterOffset + length,
-                             buffer, classReaderOffset, classReaderOffset + length);
+        try {
+            return Arrays.equals(bufWriter.elems,
+                                 bufWriterOffset, bufWriterOffset + length,
+                                 buffer, classReaderOffset, classReaderOffset + length);
+        } catch (IndexOutOfBoundsException e) {
+            throw outOfBoundsError(e);
+        }
     }
 }

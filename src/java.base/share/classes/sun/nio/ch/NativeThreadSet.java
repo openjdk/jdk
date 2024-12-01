@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,77 +27,89 @@ package sun.nio.ch;
 
 // Special-purpose data structure for sets of native threads
 
-
 class NativeThreadSet {
+    private static final int OTHER_THREAD_INDEX = -99;
 
-    private long[] elts;
-    private int used = 0;
+    private final int initialCapacity;
+    private long[] threads;             // array of thread handles, created lazily
+    private int used;                   // number of thread handles in threads array
+    private int otherThreads;           // count of threads without a native thread handle
     private boolean waitingToEmpty;
 
     NativeThreadSet(int n) {
-        elts = new long[n];
+        initialCapacity = n;
     }
 
     /**
-     * Adds the current native thread to this set, returning its index so that
+     * Adds the current thread handle to this set, returning an index so that
      * it can efficiently be removed later.
      */
     int add() {
-        long th = NativeThread.currentNativeThread();
-        // 0 and -1 are treated as placeholders, not real thread handles
-        if (th == 0)
-            th = -1;
+        long th = NativeThread.current();
         synchronized (this) {
+            if (!NativeThread.isNativeThread(th)) {
+                otherThreads++;
+                return OTHER_THREAD_INDEX;
+            }
+
+            // add native thread handle to array, creating or growing array if needed
             int start = 0;
-            if (used >= elts.length) {
-                int on = elts.length;
+            if (threads == null) {
+                threads = new long[initialCapacity];
+            } else if (used >= threads.length) {
+                int on = threads.length;
                 int nn = on * 2;
-                long[] nelts = new long[nn];
-                System.arraycopy(elts, 0, nelts, 0, on);
-                elts = nelts;
+                long[] nthreads = new long[nn];
+                System.arraycopy(threads, 0, nthreads, 0, on);
+                threads = nthreads;
                 start = on;
             }
-            for (int i = start; i < elts.length; i++) {
-                if (elts[i] == 0) {
-                    elts[i] = th;
+            for (int i = start; i < threads.length; i++) {
+                if (threads[i] == 0) {
+                    threads[i] = th;
                     used++;
                     return i;
                 }
             }
-            assert false;
-            return -1;
+            throw new InternalError();
         }
-
     }
 
     /**
-     * Removes the thread at the give index.
+     * Removes the thread at the given index. A no-op if index is -1.
      */
     void remove(int i) {
         synchronized (this) {
-            assert (elts[i] == NativeThread.currentNativeThread()) || (elts[i] == -1);
-            elts[i] = 0;
-            used--;
-            if (used == 0 && waitingToEmpty)
+            if (i >= 0) {
+                assert threads[i] == NativeThread.current();
+                threads[i] = 0;
+                used--;
+            } else if (i == OTHER_THREAD_INDEX) {
+                otherThreads--;
+            } else {
+                assert i == -1;
+                return;
+            }
+            if (used == 0 && otherThreads == 0 && waitingToEmpty) {
                 notifyAll();
+            }
         }
     }
 
-    // Signals all threads in this set.
-    //
+    /**
+     * Signals all native threads in the thread set and wait for the thread set to empty.
+     */
     synchronized void signalAndWait() {
         boolean interrupted = false;
-        while (used > 0) {
-            int u = used;
-            int n = elts.length;
-            for (int i = 0; i < n; i++) {
-                long th = elts[i];
-                if (th == 0)
-                    continue;
-                if (th != -1)
+        while (used > 0 || otherThreads > 0) {
+            int u = used, i = 0;
+            while (u > 0 && i < threads.length) {
+                long th = threads[i];
+                if (th != 0) {
                     NativeThread.signal(th);
-                if (--u == 0)
-                    break;
+                    u--;
+                }
+                i++;
             }
             waitingToEmpty = true;
             try {

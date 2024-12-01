@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 class G1MapperWorkers : AllStatic {
   static WorkerThreads* _workers;
   static WorkerThreads* workers() {
-    if (_workers == NULL) {
+    if (_workers == nullptr) {
       _workers = new WorkerThreads("G1 Small Workers", MaxWorkers);
       _workers->initialize_workers();
       _workers->set_active_workers(MaxWorkers);
@@ -48,7 +48,7 @@ public:
     workers()->run_task(task);
   }
 };
-WorkerThreads* G1MapperWorkers::_workers = NULL;
+WorkerThreads* G1MapperWorkers::_workers = nullptr;
 
 class G1TestCommitUncommit : public WorkerTask {
   G1RegionToSpaceMapper* _mapper;

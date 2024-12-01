@@ -403,4 +403,3 @@ public class ByteVector {
         data = newData;
     }
 }
-

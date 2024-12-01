@@ -35,6 +35,7 @@ public abstract class AbstractGenerator {
     protected final boolean dumpClasses;
     protected final boolean executeTests;
     private static int testNum = 0;
+    private static int classesBeforeGC = 0;
 
     protected AbstractGenerator(String[] args) {
         List<String> params = new ArrayList<String>(Arrays.asList(args));
@@ -95,6 +96,14 @@ public abstract class AbstractGenerator {
         boolean isPassed = true;
 
         testNum++;
+
+        // Every N-th classes, force a GC to kick out the loaded classes from previous tests.
+        // Different tests come in with different number of classes, so testNum is not reliable.
+        classesBeforeGC -= classes.size();
+        if (classesBeforeGC <= 0) {
+            System.gc();
+            classesBeforeGC = 3000;
+        }
 
         String caseDescription = String.format("%4d| %s", testNum, description);
 

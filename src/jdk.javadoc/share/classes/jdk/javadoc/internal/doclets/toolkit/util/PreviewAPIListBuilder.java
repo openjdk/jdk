@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,22 @@ package jdk.javadoc.internal.doclets.toolkit.util;
 
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * Build list of all the preview packages, classes, constructors, fields and methods.
  */
 public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
 
-    final private Map<Element, JEP> elementJeps = new HashMap<>();
-    final private Map<String, JEP> jeps = new HashMap<>();
+    private final Map<Element, JEP> elementJeps = new HashMap<>();
+    private final Map<String, JEP> jeps = new HashMap<>();
+    private static final JEP NULL_SENTINEL = new JEP(0, "", "");
 
     /**
      * The JEP for a preview feature in this release.
@@ -60,40 +60,51 @@ public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
      * @param configuration the current configuration of the doclet
      */
     public PreviewAPIListBuilder(BaseConfiguration configuration) {
-        super(configuration, configuration.utils::isPreviewAPI);
+        super(configuration);
         buildSummaryAPIInfo();
     }
 
     @Override
-    protected void handleElement(Element e) {
-        String feature = Objects.requireNonNull(utils.getPreviewFeature(e),
+    protected boolean belongsToSummary(Element element) {
+        if (!utils.isPreviewAPI(element)) {
+            return false;
+        }
+        String feature = Objects.requireNonNull(utils.getPreviewFeature(element),
                 "Preview feature not specified").toString();
-        JEP jep = jeps.computeIfAbsent(feature, (featureName) -> {
-            Map<? extends ExecutableElement, ? extends AnnotationValue> anno = configuration.workArounds.getJepInfo(featureName);
-            int number = 0;
-            String title = "";
-            String status = "Preview"; // Default value is not returned by the method we use above.
-            for (var entry : anno.entrySet()) {
-                if ("number".equals(entry.getKey().getSimpleName().toString())) {
-                    number = (int) entry.getValue().getValue();
-                } else if ("title".equals(entry.getKey().getSimpleName().toString())) {
-                    title = (String) entry.getValue().getValue();
-                } else if ("status".equals(entry.getKey().getSimpleName().toString())) {
-                    status = (String) entry.getValue().getValue();
-                } else {
-                    throw new IllegalArgumentException(entry.getKey().getSimpleName().toString());
+        JEP jep = jeps.computeIfAbsent(feature, featureName -> {
+            Map<String, Object> jepInfo = configuration.workArounds.getJepInfo(featureName);
+            if (!jepInfo.isEmpty()) {
+                int number = 0;
+                String title = "";
+                String status = "Preview"; // Default value is not returned by the method we used above.
+                for (var entry : jepInfo.entrySet()) {
+                    switch (entry.getKey()) {
+                        case "number" -> number = (int) entry.getValue();
+                        case "title" -> title = (String) entry.getValue();
+                        case "status" -> status = (String) entry.getValue();
+                        default -> throw new IllegalArgumentException(entry.getKey());
+                    }
                 }
+                return new JEP(number, title, status);
             }
-            return new JEP(number, title, status);
+            return NULL_SENTINEL;
         });
-        elementJeps.put(e, jep);
+        if (jep != NULL_SENTINEL) {
+            elementJeps.put(element, jep);
+            return true;
+        }
+        // Preview features without JEP are not included.
+        return false;
     }
 
     /**
      * {@return a sorted set of preview feature JEPs in this release}
      */
     public Set<JEP> getJEPs() {
-        return new TreeSet<>(jeps.values());
+        return jeps.values()
+                .stream()
+                .filter(jep -> jep != NULL_SENTINEL)
+                .collect(Collectors.toCollection(TreeSet::new));
     }
 
     /**
