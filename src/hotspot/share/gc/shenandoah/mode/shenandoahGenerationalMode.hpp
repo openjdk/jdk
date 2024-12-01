@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,19 @@
  * questions.
  *
  */
-package com.sun.hotspot.igv.layout;
 
-import java.util.Set;
+#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
+#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
 
-/**
- *
- * @author Thomas Wuerthinger
- */
-public interface LayoutManager {
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-    void setCutEdges(boolean enable);
+class ShenandoahGenerationalMode : public ShenandoahMode {
+public:
+  virtual void initialize_flags() const;
+  virtual const char* name()     { return "Generational"; }
+  virtual bool is_diagnostic()   { return false; }
+  virtual bool is_experimental() { return true; }
+  virtual bool is_generational() { return true; }
+};
 
-    void doLayout(LayoutGraph graph);
-
-    void doLayout(LayoutGraph graph, Set<? extends Link> importantLinks);
-}
+#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
