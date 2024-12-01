@@ -23,7 +23,7 @@
 
 /**
 * @test
-* @bug 8342677
+* @bug 8338021 8342677
 * @summary Add IR validation tests for newly added saturated vector add / sub operations
 * @modules jdk.incubator.vector
 * @library /test/lib /
@@ -34,6 +34,7 @@ package compiler.vectorapi;
 
 import jdk.incubator.vector.*;
 import compiler.lib.ir_framework.*;
+import java.util.Random;
 import java.util.stream.IntStream;
 
 public class VectorSaturatedOperationsTest {
@@ -65,7 +66,68 @@ public class VectorSaturatedOperationsTest {
                      .start();
     }
 
+    public void setup_delimiting_byte_inputs() {
+        // Saturating add
+        byte_in1[COUNT - 1] = Byte.MAX_VALUE;
+        byte_in2[COUNT - 1] = 100;
+        // Saturating sub
+        byte_in1[COUNT - 2] = Byte.MIN_VALUE;
+        byte_in2[COUNT - 2] = 100;
+        // Saturating unsigned add
+        byte_in1[COUNT - 3] = -1;
+        byte_in2[COUNT - 3] = 100;
+        // Saturating unsigned sub
+        byte_in1[COUNT - 4] = 0;
+        byte_in2[COUNT - 4] = 100;
+    }
+
+    public void setup_delimiting_short_inputs() {
+        // Saturating add
+        short_in1[COUNT - 1] = Short.MAX_VALUE;
+        short_in2[COUNT - 1] = 100;
+        // Saturating sub
+        short_in1[COUNT - 2] = Short.MIN_VALUE;
+        short_in2[COUNT - 2] = 100;
+        // Saturating unsigned add
+        short_in1[COUNT - 3] = -1;
+        short_in2[COUNT - 3] = 100;
+        // Saturating unsigned sub
+        short_in1[COUNT - 4] = 0;
+        short_in2[COUNT - 4] = 100;
+    }
+
+    public void setup_delimiting_int_inputs() {
+        // Saturating add
+        int_in1[COUNT - 1] = Integer.MAX_VALUE;
+        int_in2[COUNT - 1] = 100;
+        // Saturating sub
+        int_in1[COUNT - 2] = Integer.MIN_VALUE;
+        int_in2[COUNT - 2] = 100;
+        // Saturating unsigned add
+        int_in1[COUNT - 3] = -1;
+        int_in2[COUNT - 3] = 100;
+        // Saturating unsigned sub
+        int_in1[COUNT - 4] = 0;
+        int_in2[COUNT - 4] = 100;
+    }
+
+    public void setup_delimiting_long_inputs() {
+        // Saturating add
+        long_in1[COUNT - 1] = Long.MAX_VALUE;
+        long_in2[COUNT - 1] = 100;
+        // Saturating sub
+        long_in1[COUNT - 2] = Long.MIN_VALUE;
+        long_in2[COUNT - 2] = 100;
+        // Saturating unsigned add
+        long_in1[COUNT - 3] =  -1L;
+        long_in2[COUNT - 3] = 100;
+        // Saturating unsigned sub
+        long_in1[COUNT - 4] = 0;
+        long_in2[COUNT - 4] = 100;
+    }
+
     public VectorSaturatedOperationsTest() {
+        Random r = jdk.test.lib.Utils.getRandomInstance();
         byte_in1  = new byte[COUNT];
         short_in1 = new short[COUNT];
         int_in1   = new int[COUNT];
@@ -75,29 +137,24 @@ public class VectorSaturatedOperationsTest {
         short_in2 = new short[COUNT];
         int_in2   = new int[COUNT];
         long_in2  = new long[COUNT];
-        IntStream.range(0, COUNT).forEach(
+        IntStream.range(0, COUNT-4).forEach(
             i -> {
-                if ((i & 1) == 0) {
-                    long_in1[i] = Long.MAX_VALUE;
-                    long_in2[i] = i;
-                    int_in1[i]  = Integer.MAX_VALUE;
-                    int_in2[i]  = i;
-                    short_in1[i] = Short.MAX_VALUE;
-                    short_in2[i] = (short)i;
-                    byte_in1[i]  = Byte.MAX_VALUE;
-                    byte_in2[i]  = (byte)i;
-                } else {
-                    long_in1[i] = Long.MIN_VALUE;
-                    long_in2[i] = -i;
-                    int_in1[i]  = Integer.MIN_VALUE;
-                    int_in2[i]  = -i;
-                    short_in1[i] = Short.MIN_VALUE;
-                    short_in2[i] = (short)-i;
-                    byte_in1[i]  = Byte.MIN_VALUE;
-                    byte_in2[i]  = (byte)-i;
-                }
+                long_in1[i] = r.nextLong(Long.MIN_VALUE, Long.MAX_VALUE);
+                long_in2[i] = r.nextLong(Long.MIN_VALUE, Long.MAX_VALUE);
+                int_in1[i] = r.nextInt(Integer.MIN_VALUE, Integer.MAX_VALUE);
+                int_in2[i] = r.nextInt(Integer.MIN_VALUE, Integer.MAX_VALUE);
+                short_in1[i] = (short)r.nextInt(Short.MIN_VALUE, Short.MAX_VALUE);
+                short_in2[i] = (short)r.nextInt(Short.MIN_VALUE, Short.MAX_VALUE);
+                byte_in1[i] = (byte)r.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE);
+                byte_in2[i] = (byte)r.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE);
             }
         );
+
+        setup_delimiting_byte_inputs();
+        setup_delimiting_short_inputs();
+        setup_delimiting_int_inputs();
+        setup_delimiting_long_inputs();
+
         long_out  = new long[COUNT];
         int_out   = new int[COUNT];
         short_out = new short[COUNT];
@@ -105,7 +162,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VB, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VB, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void sadd_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -128,7 +185,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VS, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VS, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void sadd_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -151,7 +208,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void sadd_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -174,7 +231,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void sadd_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
@@ -197,7 +254,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VB, " >0 " , "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VB, " >0 " , "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void suadd_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -220,7 +279,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VS, " >0 ", "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VS, " >0 ", "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void suadd_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -243,7 +304,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VI, " >0 ", "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VI, " >0 ", "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void suadd_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -266,7 +329,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SADD_VL, " >0 ", "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VL, " >0 ", "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void suadd_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
@@ -289,7 +354,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VB, " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VB, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void ssub_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -312,7 +377,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VS, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VS, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void ssub_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -335,7 +400,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VI, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void ssub_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -358,7 +423,7 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VL, " >0 "}, applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void ssub_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
@@ -381,7 +446,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VB, " >0 " , "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VB, " >0 " , "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void susub_byte() {
         for (int i = 0; i < COUNT; i += bspec.length()) {
@@ -404,7 +471,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VS, " >0 ", "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VS, " >0 ", "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void susub_short() {
         for (int i = 0; i < COUNT; i += sspec.length()) {
@@ -427,7 +496,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VI, " >0 ", "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VI, " >0 ", "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void susub_int() {
         for (int i = 0; i < COUNT; i += ispec.length()) {
@@ -450,7 +521,9 @@ public class VectorSaturatedOperationsTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SSUB_VL, " >0 ", "unsigned_vector_node", " >0 "}, phase = {CompilePhase.BEFORE_MATCHING}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.SATURATING_SUB_VL, " >0 ", "unsigned_vector_node", " >0 "},
+        phase = {CompilePhase.BEFORE_MATCHING},
+        applyIfCPUFeature = {"avx", "true"})
     @Warmup(value = 10000)
     public void susub_long() {
         for (int i = 0; i < COUNT; i += lspec.length()) {
