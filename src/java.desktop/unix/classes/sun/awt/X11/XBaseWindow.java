@@ -943,13 +943,6 @@ public class XBaseWindow {
     void ungrabInputImpl() {
     }
 
-    static void checkSecurity() {
-        if (XToolkit.isSecurityWarningEnabled() && XToolkit.isToolkitThread()) {
-            StackTraceElement[] stack = (new Throwable()).getStackTrace();
-            log.warning(stack[1] + ": Security violation: calling user code on toolkit thread");
-        }
-    }
-
     public Set<Long> getChildren() {
         synchronized (getStateLock()) {
             return new HashSet<Long>(children);

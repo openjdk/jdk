@@ -597,7 +597,6 @@ public class Timer implements Serializable
         return lock;
     }
 
-    @SuppressWarnings("removal")
     @Serial
     private void readObject(ObjectInputStream in)
         throws ClassNotFoundException, IOException
