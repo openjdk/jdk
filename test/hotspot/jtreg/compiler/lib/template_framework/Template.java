@@ -26,5 +26,14 @@ package compiler.lib.template_framework;
 /**
  * TODO
  */
-public final class TemplateFramework {
+public final class Template {
+    private String templateString;
+
+    public Template(String templateString) {
+        this.templateString = templateString;
+    }
+
+    public String instantiate() {
+        return templateString;
+    }
 }
