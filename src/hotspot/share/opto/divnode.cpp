@@ -447,40 +447,14 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
   return q;
 }
 
-template <typename TypeClass>
-Node* make_and(Node* a, Node* b);
-
-template <>
-Node* make_and<TypeLong>(Node* a, Node* b) {
-  return new AndLNode(a, b);
-}
-
-template <>
-Node* make_and<TypeInt>(Node* a, Node* b) {
-  return new AndINode(a, b);
-}
-
-template <typename TypeClass>
-Node* make_urshift(Node* a, Node* b);
-
-template <>
-Node* make_urshift<TypeLong>(Node* a, Node* b) {
-  return new URShiftLNode(a, b);
-}
-
-template <>
-Node* make_urshift<TypeInt>(Node* a, Node* b) {
-  return new URShiftINode(a, b);
-}
-
 template <typename TypeClass, typename Unsigned>
 Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   // Check for dead control input
-  if (div->in(0) && div->remove_dead_region(phase, can_reshape)) {
+  if (div->in(0) != nullptr && div->remove_dead_region(phase, can_reshape)) {
     return div;
   }
   // Don't bother trying to transform a dead node
-  if (div->in(0) && div->in(0)->is_top()) {
+  if (div->in(0) != nullptr && div->in(0)->is_top()) {
     return nullptr;
   }
 
@@ -492,7 +466,7 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
 
   // Check for useless control input
   // Check for excluding div-zero case
-  if (div->in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
+  if (div->in(0) != nullptr && (tl->_hi < 0 || tl->_lo > 0)) {
     div->set_req(0, nullptr); // Yank control input
     return div;
   }
@@ -1149,11 +1123,11 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 template <typename TypeClass, typename Unsigned>
 static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   // Check for dead control input
-  if (mod->in(0) && mod->remove_dead_region(phase, can_reshape)) {
+  if (mod->in(0) != nullptr && mod->remove_dead_region(phase, can_reshape)) {
     return mod;
   }
   // Don't bother trying to transform a dead node
-  if (mod->in(0) && mod->in(0)->is_top()) {
+  if (mod->in(0) != nullptr && mod->in(0)->is_top()) {
     return nullptr;
   }
 
@@ -1166,7 +1140,7 @@ static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
 
   // Check for useless control input
   // Check for excluding mod-zero case
-  if (mod->in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
+  if (mod->in(0) != nullptr && (ti->_hi < 0 || ti->_lo > 0)) {
     mod->set_req(0, nullptr); // Yank control input
     return mod;
   }

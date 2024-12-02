@@ -68,8 +68,8 @@ public class ModLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expect an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a % 8589934592L, powerOf2(a));
-        Asserts.assertEQ(a % 8589934591L, powerOf2Minus1(a));
+        Asserts.assertEQ(a % (1L << 33), powerOf2(a));
+        Asserts.assertEQ(a % ((1L << 33) - 1), powerOf2Minus1(a));
         Asserts.assertEQ(a % 1, constantAgain(a));
     }
 
@@ -93,7 +93,7 @@ public class ModLNodeIdealizationTests {
     @IR(counts = {IRNode.AND_L, "1"})
     // If the dividend is positive, and divisor is of the form 2^k, we can use a simple bit mask.
     public long powerOf2(long x) {
-        return x % 8589934592L;
+        return x % (1L << 33);
     }
 
     @Test
@@ -109,6 +109,6 @@ public class ModLNodeIdealizationTests {
     @IR(counts = {IRNode.AND_L, ">=1", IRNode.RSHIFT, ">=1", IRNode.CMP_L, "2"})
     // Special optimization for the case 2^k-1 for bigger k
     public long powerOf2Minus1(long x) {
-        return x % 8589934591L;
+        return x % ((1L << 33) - 1);
     }
 }
