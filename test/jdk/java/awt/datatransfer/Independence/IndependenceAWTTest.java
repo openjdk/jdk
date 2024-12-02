@@ -27,8 +27,6 @@
  * @key headful
  * @requires (os.family == "linux")
  * @summary To make sure that System & Primary clipboards should behave independently
- * @author Jitender(jitender.singh@eng.sun.com) area=AWT
- * @author dmitriy.ermashov@oracle.com
  * @library /lib/client
  * @build ExtendedRobot
  * @run main IndependenceAWTTest
@@ -65,7 +63,6 @@ public class IndependenceAWTTest {
     public static void main (String[] args) throws Exception {
         try {
             robot = new ExtendedRobot();
-
             EventQueue.invokeAndWait(IndependenceAWTTest::createAndShowUI);
             robot.waitForIdle();
             robot.delay(1000);
@@ -185,7 +182,7 @@ public class IndependenceAWTTest {
             //Change the text selection to update the contents of primary clipboard
             robot.mouseMove(ttf1Center);
             robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
-            robot.delay(200);
+            robot.delay(20);
             robot.mouseMove(ttf1Center.x + 15, ttf1Center.y);
             robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle(500);

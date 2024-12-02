@@ -183,7 +183,7 @@ public class IndependenceSwingTest {
             //Change the text selection to update the contents of primary clipboard
             robot.mouseMove(ttf1Center);
             robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
-            robot.delay(200);
+            robot.delay(20);
             robot.mouseMove(ttf1Center.x + 15, ttf1Center.y);
             robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle(500);
