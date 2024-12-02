@@ -519,7 +519,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
 
     bool fits_in_remaining_time = predicted_time_ms <= time_remaining_ms;
 
-    G1CollectionSetCandidateInfo* ci = group->at(0); // we only have one region in the group
+    G1CollectionSetCandidateInfo* ci = group->at(0); // We only have one region in the group.
     G1HeapRegion* r = ci->_r;
 
     // If we can't reclaim that region ignore it for now.
