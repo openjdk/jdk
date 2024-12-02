@@ -26,8 +26,6 @@
 
 package sun.security.util;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Security;
 
 public class SecurityProperties {
@@ -42,15 +40,6 @@ public class SecurityProperties {
      * @param  propName the name of the system or security property
      * @return the value of the system or security property
      */
-    @SuppressWarnings("removal")
-    public static String privilegedGetOverridable(String propName) {
-        if (System.getSecurityManager() == null) {
-            return getOverridableProperty(propName);
-        } else {
-            return AccessController.doPrivileged((PrivilegedAction<String>) () -> getOverridableProperty(propName));
-        }
-    }
-
     public static String getOverridableProperty(String propName) {
         String val = System.getProperty(propName);
         if (val == null) {
