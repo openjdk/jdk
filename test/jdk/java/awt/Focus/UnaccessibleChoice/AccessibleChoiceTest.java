@@ -50,30 +50,31 @@ import javax.imageio.ImageIO;
 
 public class AccessibleChoiceTest {
     //Declare things used in the test, like buttons and labels here
-    static Frame frame = new Frame("Accessible Choice Test Frame");
-    static Choice choice = new Choice();
-    static Button button = new Button("default owner");
-    static CountDownLatch go = new CountDownLatch(1);
+    static Frame frame;
+    static Choice choice;
+    static Button button;
+    static CountDownLatch go;
     static volatile Point loc;
+    static volatile int bWidth;
+    static volatile int bHeight;
 
     public static void main(final String[] args) throws Exception {
         try {
-            System.out.println("ONE");
             createAndShowUI();
-            System.out.println("TWO");
             test();
-            System.out.println("THREE");
         } finally {
             if (frame != null) {
-                System.out.println("FOUR");
-                frame.dispose();
+                EventQueue.invokeAndWait(() -> frame.dispose());
             }
         }
     }
 
     public static void createAndShowUI() throws Exception {
+        go = new CountDownLatch(1);
         EventQueue.invokeAndWait(() -> {
-            System.out.println("FIVE");
+            frame = new Frame("Accessible Choice Test Frame");
+            choice = new Choice();
+            button = new Button("default owner");
             frame.setLayout(new FlowLayout());
             frame.add(button);
             button.addFocusListener(new FocusAdapter() {
@@ -101,19 +102,17 @@ public class AccessibleChoiceTest {
         robot.delay(1000);
         robot.setAutoWaitForIdle(true);
 
-        System.out.println("SIX");
-
         // Focus default button and wait till it gets focus
         EventQueue.invokeAndWait(() -> {
             loc = button.getLocationOnScreen();
+            bWidth = button.getWidth();
+            bHeight = button.getHeight();
         });
-        robot.mouseMove(loc.x + button.getWidth() / 2, loc.y
-                + button.getHeight() / 2);
+        robot.mouseMove(loc.x + bWidth / 2, loc.y
+                + bHeight / 2);
         robot.delay(500);
-        System.out.println("SEVEN");
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        System.out.println("EIGHT");
 
         try {
             go.await(1, TimeUnit.SECONDS);
