@@ -116,7 +116,7 @@ public class UDivINodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV})
     // Checks x / (c / c) => x
     public int identityAgainButBig(int x) {
-        // (1L << 20) + 1 is an arbitrary integer that cannot be optimized by the power of 2 optimizations
+        // (1 << 20) + 1 is an arbitrary integer that cannot be optimized by the power of 2 optimizations
         return Integer.divideUnsigned(x, Integer.divideUnsigned((1 << 20) + 1, (1 << 20) + 1));
     }
 
