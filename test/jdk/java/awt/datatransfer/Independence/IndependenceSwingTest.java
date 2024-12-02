@@ -85,17 +85,6 @@ public class IndependenceSwingTest {
         tf1.requestFocus();
     }
 
-    public void checkSecurity() {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null)  {
-            System.out.println("security manager is not there");
-            getPrimaryClipboard();
-        } else {
-            sm.checkPermission(new AWTPermission("accessClipboard"));
-            getPrimaryClipboard();
-        }
-    }
-
     // Get System Selection i.e. Primary Clipboard
     private void getPrimaryClipboard() {
         Properties ps = System.getProperties();
@@ -155,7 +144,7 @@ public class IndependenceSwingTest {
     }
 
     public void doTest() throws Exception {
-        checkSecurity();
+        getPrimaryClipboard();
         ExtendedRobot robot = new ExtendedRobot();
         robot.waitForIdle(1000);
         frame.setLocation(100, 100);

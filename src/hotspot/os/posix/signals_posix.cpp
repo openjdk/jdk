@@ -578,9 +578,8 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Handle assertion poison page accesses.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (!signal_was_handled &&
-      ((sig == SIGSEGV || sig == SIGBUS) && info != nullptr && info->si_addr == g_assert_poison)) {
-    signal_was_handled = handle_assert_poison_fault(ucVoid, info->si_addr);
+  if (VMError::was_assert_poison_crash(info)) {
+    signal_was_handled = handle_assert_poison_fault(ucVoid);
   }
 #endif
 
@@ -1136,8 +1135,16 @@ static const char* get_signal_name(int sig, char* out, size_t outlen) {
 }
 
 void os::print_siginfo(outputStream* os, const void* si0) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  // If we are here because of an assert/guarantee, we suppress
+  // printing the siginfo, because it is only an implementation
+  // detail capturing the context for said assert/guarantee.
+  if (VMError::was_assert_poison_crash(si0)) {
+    return;
+  }
+#endif
 
-  const siginfo_t* const si = (const siginfo_t*) si0;
+  const siginfo_t* const si = (const siginfo_t*)si0;
 
   char buf[20];
   os->print("siginfo:");

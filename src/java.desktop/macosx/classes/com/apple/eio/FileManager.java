@@ -254,11 +254,6 @@ public class FileManager {
          * @since 1.4
          */
     public static String findFolder(short domain, int folderType, boolean createIfNeeded) throws FileNotFoundException {
-        @SuppressWarnings("removal")
-        final SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(new RuntimePermission("canExamineFileSystem"));
-        }
 
         final String foundFolder = _findFolder(domain, folderType, createIfNeeded);
         if (foundFolder == null) throw new FileNotFoundException("Can't find folder: " + Integer.toHexString(folderType));
@@ -282,11 +277,6 @@ public class FileManager {
          */
     @Deprecated
     public static void openURL(String url) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(new RuntimePermission("canOpenURLs"));
-        }
         _openURL(url);
     }
     private static native void _openURL(String url) throws IOException;
@@ -334,10 +324,6 @@ public class FileManager {
 
         private static native String getNativeResourceFromBundle(String resourceName, String subDirName, String type) throws FileNotFoundException;
         private static String getResourceFromBundle(String resourceName, String subDirName, String type) throws FileNotFoundException {
-                @SuppressWarnings("removal")
-                final SecurityManager security = System.getSecurityManager();
-                if (security != null) security.checkPermission(new RuntimePermission("canReadBundle"));
-
                 final String resourceFromBundle = getNativeResourceFromBundle(resourceName, subDirName, type);
                 if (resourceFromBundle == null) throw new FileNotFoundException(resourceName);
                 return resourceFromBundle;
@@ -353,9 +339,6 @@ public class FileManager {
          * @since Java for Mac OS X 10.5 Update 2 - 1.5
          */
         public static String getPathToApplicationBundle() {
-                @SuppressWarnings("removal")
-                SecurityManager security = System.getSecurityManager();
-                if (security != null) security.checkPermission(new RuntimePermission("canReadBundle"));
                 return getNativePathToApplicationBundle();
         }
 

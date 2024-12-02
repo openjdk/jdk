@@ -3313,13 +3313,10 @@ void MacroAssembler::store_conditional(Register dst,
 }
 
 
-void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expected,
-                                                 Register new_val,
+void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                                  enum operand_size size,
-                                                 Register tmp1, Register tmp2, Register tmp3) {
+                                                 Register shift, Register mask, Register aligned_addr) {
   assert(size == int8 || size == int16, "unsupported operand size");
-
-  Register aligned_addr = t1, shift = tmp1, mask = tmp2, not_mask = tmp3;
 
   andi(shift, addr, 3);
   slli(shift, shift, 3);
@@ -3334,8 +3331,6 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
     zero_extend(mask, mask, 16);
   }
   sll(mask, mask, shift);
-
-  notr(not_mask, mask);
 
   sll(expected, expected, shift);
   andr(expected, expected, mask);
@@ -3353,35 +3348,46 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Assembler::Aqrl acquire, Assembler::Aqrl release,
                                           Register result, bool result_as_bool,
                                           Register tmp1, Register tmp2, Register tmp3) {
-  Register aligned_addr = t1, shift = tmp1, mask = tmp2, not_mask = tmp3, old = result, tmp = t0;
-  assert_different_registers(addr, old, mask, not_mask, new_val, expected, shift, tmp);
-  cmpxchg_narrow_value_helper(addr, expected, new_val, size, tmp1, tmp2, tmp3);
+  assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
+
+  Register scratch0 = t0, aligned_addr = t1;
+  Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
+
+  cmpxchg_narrow_value_helper(addr, expected, new_val, size, shift, mask, aligned_addr);
 
   Label retry, fail, done;
 
-  bind(retry);
-
   if (UseZacas) {
-    lw(old, aligned_addr);
+    lw(result, aligned_addr);
 
-    // if old & mask != expected
-    andr(tmp, old, mask);
-    bne(tmp, expected, fail);
+    bind(retry); // amocas loads the current value into result
+    notr(scratch1, mask);
 
-    andr(tmp, old, not_mask);
-    orr(tmp, tmp, new_val);
+    andr(scratch0, result, scratch1);  // scratch0 = word - cas bits
+    orr(scratch1, expected, scratch0); // scratch1 = non-cas bits + cas bits
+    bne(result, scratch1, fail);       // cas bits differ, cas failed
 
-    atomic_cas(old, tmp, aligned_addr, operand_size::int32, acquire, release);
-    bne(tmp, old, retry);
+    // result is the same as expected, use as expected value.
+
+    // scratch0 is still = word - cas bits
+    // Or in the new value to create complete new value.
+    orr(scratch0, scratch0, new_val);
+
+    mv(scratch1, result); // save our expected value
+    atomic_cas(result, scratch0, aligned_addr, operand_size::int32, acquire, release);
+    bne(scratch1, result, retry);
   } else {
-    lr_w(old, aligned_addr, acquire);
-    andr(tmp, old, mask);
-    bne(tmp, expected, fail);
+    notr(scratch1, mask);
+    bind(retry);
 
-    andr(tmp, old, not_mask);
-    orr(tmp, tmp, new_val);
-    sc_w(tmp, tmp, aligned_addr, release);
-    bnez(tmp, retry);
+    lr_w(result, aligned_addr, acquire);
+    andr(scratch0, result, mask);
+    bne(scratch0, expected, fail);
+
+    andr(scratch0, result, scratch1); // scratch1 is ~mask
+    orr(scratch0, scratch0, new_val);
+    sc_w(scratch0, scratch0, aligned_addr, release);
+    bnez(scratch0, retry);
   }
 
   if (result_as_bool) {
@@ -3393,10 +3399,10 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
 
     bind(done);
   } else {
-    andr(tmp, old, mask);
-
     bind(fail);
-    srl(result, tmp, shift);
+
+    andr(scratch0, result, mask);
+    srl(result, scratch0, shift);
 
     if (size == int8) {
       sign_extend(result, result, 8);
@@ -3416,33 +3422,44 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
                                                Assembler::Aqrl acquire, Assembler::Aqrl release,
                                                Register result,
                                                Register tmp1, Register tmp2, Register tmp3) {
-  Register aligned_addr = t1, shift = tmp1, mask = tmp2, not_mask = tmp3, old = result, tmp = t0;
-  assert_different_registers(addr, old, mask, not_mask, new_val, expected, shift, tmp);
-  cmpxchg_narrow_value_helper(addr, expected, new_val, size, tmp1, tmp2, tmp3);
+  assert_different_registers(addr, expected, new_val, result, tmp1, tmp2, tmp3, t0, t1);
+
+  Register scratch0 = t0, aligned_addr = t1;
+  Register shift = tmp1, mask = tmp2, scratch1 = tmp3;
+
+  cmpxchg_narrow_value_helper(addr, expected, new_val, size, shift, mask, aligned_addr);
 
   Label fail, done;
 
   if (UseZacas) {
-    lw(old, aligned_addr);
+    lw(result, aligned_addr);
 
-    // if old & mask != expected
-    andr(tmp, old, mask);
-    bne(tmp, expected, fail);
+    notr(scratch1, mask);
 
-    andr(tmp, old, not_mask);
-    orr(tmp, tmp, new_val);
+    andr(scratch0, result, scratch1);  // scratch0 = word - cas bits
+    orr(scratch1, expected, scratch0); // scratch1 = non-cas bits + cas bits
+    bne(result, scratch1, fail);       // cas bits differ, cas failed
 
-    atomic_cas(tmp, new_val, addr, operand_size::int32, acquire, release);
-    bne(tmp, old, fail);
+    // result is the same as expected, use as expected value.
+
+    // scratch0 is still = word - cas bits
+    // Or in the new value to create complete new value.
+    orr(scratch0, scratch0, new_val);
+
+    mv(scratch1, result); // save our expected value
+    atomic_cas(result, scratch0, aligned_addr, operand_size::int32, acquire, release);
+    bne(scratch1, result, fail); // This weak, so just bail-out.
   } else {
-    lr_w(old, aligned_addr, acquire);
-    andr(tmp, old, mask);
-    bne(tmp, expected, fail);
+    notr(scratch1, mask);
 
-    andr(tmp, old, not_mask);
-    orr(tmp, tmp, new_val);
-    sc_w(tmp, tmp, aligned_addr, release);
-    bnez(tmp, fail);
+    lr_w(result, aligned_addr, acquire);
+    andr(scratch0, result, mask);
+    bne(scratch0, expected, fail);
+
+    andr(scratch0, result, scratch1); // scratch1 is ~mask
+    orr(scratch0, scratch0, new_val);
+    sc_w(scratch0, scratch0, aligned_addr, release);
+    bnez(scratch0, fail);
   }
 
   // Success
@@ -3466,6 +3483,17 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
 
+  // NOTE:
+  // Register _result_ may be the same register as _new_val_ or _expected_.
+  // Hence do NOT use _result_ until after 'cas'.
+  //
+  // Register _expected_ may be the same register as _new_val_ and is assumed to be preserved.
+  // Hence do NOT change _expected_ or _new_val_.
+  //
+  // Having _expected_ and _new_val_ being the same register is a very puzzling cas.
+  //
+  // TODO: Address these issues.
+
   if (UseZacas) {
     if (result_as_bool) {
       mv(t0, expected);
@@ -3473,8 +3501,9 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
       xorr(t0, t0, expected);
       seqz(result, t0);
     } else {
-      mv(result, expected);
-      atomic_cas(result, new_val, addr, size, acquire, release);
+      mv(t0, expected);
+      atomic_cas(t0, new_val, addr, size, acquire, release);
+      mv(result, t0);
     }
     return;
   }
@@ -3510,14 +3539,15 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
-  if (UseZacas) {
-    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
-    return;
-  }
 
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
+
+  if (UseZacas) {
+    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
+    return;
+  }
 
   Label fail, done;
   load_reserved(t0, addr, size, acquire);
@@ -3581,83 +3611,18 @@ ATOMIC_XCHGU(xchgalwu, xchgalw)
 
 #undef ATOMIC_XCHGU
 
-#define ATOMIC_CAS(OP, AOP, ACQUIRE, RELEASE)                                        \
-void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) {      \
-  assert(UseZacas, "invariant");                                                     \
-  prev = prev->is_valid() ? prev : zr;                                               \
-  AOP(prev, addr, newv, (Assembler::Aqrl)(ACQUIRE | RELEASE));                       \
-  return;                                                                            \
-}
-
-ATOMIC_CAS(cas, amocas_d, Assembler::relaxed, Assembler::relaxed)
-ATOMIC_CAS(casw, amocas_w, Assembler::relaxed, Assembler::relaxed)
-ATOMIC_CAS(casl, amocas_d, Assembler::relaxed, Assembler::rl)
-ATOMIC_CAS(caslw, amocas_w, Assembler::relaxed, Assembler::rl)
-ATOMIC_CAS(casal, amocas_d, Assembler::aq, Assembler::rl)
-ATOMIC_CAS(casalw, amocas_w, Assembler::aq, Assembler::rl)
-
-#undef ATOMIC_CAS
-
-#define ATOMIC_CASU(OP1, OP2)                                                        \
-void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
-  atomic_##OP2(prev, newv, addr);                                                    \
-  zero_extend(prev, prev, 32);                                                       \
-  return;                                                                            \
-}
-
-ATOMIC_CASU(caswu, casw)
-ATOMIC_CASU(caslwu, caslw)
-ATOMIC_CASU(casalwu, casalw)
-
-#undef ATOMIC_CASU
-
-void MacroAssembler::atomic_cas(
-    Register prev, Register newv, Register addr, enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+void MacroAssembler::atomic_cas(Register prev, Register newv, Register addr,
+                                enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
   switch (size) {
     case int64:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_cas(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_casl(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casal(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_d(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     case int32:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_casw(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_caslw(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casalw(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
       break;
     case uint32:
-      switch ((Assembler::Aqrl)(acquire | release)) {
-        case Assembler::relaxed:
-          atomic_caswu(prev, newv, addr);
-          break;
-        case Assembler::rl:
-          atomic_caslwu(prev, newv, addr);
-          break;
-        case Assembler::aqrl:
-          atomic_casalwu(prev, newv, addr);
-          break;
-        default:
-          ShouldNotReachHere();
-      }
+      amocas_w(prev, addr, newv, (Assembler::Aqrl)(acquire | release));
+      zero_extend(prev, prev, 32);
       break;
     default:
       ShouldNotReachHere();

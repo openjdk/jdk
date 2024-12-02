@@ -1146,10 +1146,9 @@ public:
                     enum operand_size size,
                     Assembler::Aqrl acquire, Assembler::Aqrl release,
                     Register result);
-  void cmpxchg_narrow_value_helper(Register addr, Register expected,
-                                   Register new_val,
+  void cmpxchg_narrow_value_helper(Register addr, Register expected, Register new_val,
                                    enum operand_size size,
-                                   Register tmp1, Register tmp2, Register tmp3);
+                                   Register shift, Register mask, Register aligned_addr);
   void cmpxchg_narrow_value(Register addr, Register expected,
                             Register new_val,
                             enum operand_size size,
@@ -1174,16 +1173,6 @@ public:
   void atomic_xchgalw(Register prev, Register newv, Register addr);
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
-
-  void atomic_cas(Register prev, Register newv, Register addr);
-  void atomic_casw(Register prev, Register newv, Register addr);
-  void atomic_casl(Register prev, Register newv, Register addr);
-  void atomic_caslw(Register prev, Register newv, Register addr);
-  void atomic_casal(Register prev, Register newv, Register addr);
-  void atomic_casalw(Register prev, Register newv, Register addr);
-  void atomic_caswu(Register prev, Register newv, Register addr);
-  void atomic_caslwu(Register prev, Register newv, Register addr);
-  void atomic_casalwu(Register prev, Register newv, Register addr);
 
   void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
               Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);

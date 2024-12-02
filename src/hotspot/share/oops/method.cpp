@@ -335,7 +335,8 @@ int Method::bci_from(address bcp) const {
 
 
 int Method::validate_bci(int bci) const {
-  return (bci == 0 || bci < code_size()) ? bci : -1;
+  // Called from the verifier, and should return -1 if not valid.
+  return ((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size())) ? bci : -1;
 }
 
 // Return bci if it appears to be a valid bcp

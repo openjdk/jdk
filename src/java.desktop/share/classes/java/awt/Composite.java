@@ -53,14 +53,6 @@ import java.awt.image.ColorModel;
  * {@code Graphics2D}, resulting from the modification of
  * the {@code Composite} object after it has been set in the
  * {@code Graphics2D} context.
- * <p>
- * Since this interface must expose the contents of pixels on the
- * target device or image to potentially arbitrary code, the use of
- * custom objects which implement this interface when rendering directly
- * to a screen device is governed by the {@code readDisplayPixels}
- * {@link AWTPermission}.  The permission check will occur when such
- * a custom object is passed to the {@code setComposite} method
- * of a {@code Graphics2D} retrieved from a {@link Component}.
  * @see AlphaComposite
  * @see CompositeContext
  * @see Graphics2D#setComposite
