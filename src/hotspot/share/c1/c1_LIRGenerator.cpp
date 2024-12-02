@@ -1232,13 +1232,6 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
 void LIRGenerator::do_isInstance(Intrinsic* x) {
   assert(x->number_of_arguments() == 2, "wrong type");
 
-  // TODO could try to substitute this node with an equivalent InstanceOf
-  // if clazz is known to be a constant Class. This will pick up newly found
-  // constants after HIR construction. I'll leave this to a future change.
-
-  // as a first cut, make a simple leaf call to runtime to stay platform independent.
-  // could follow the aastore example in a future change.
-
   LIRItem clazz(x->argument_at(0), this);
   LIRItem object(x->argument_at(1), this);
   clazz.load_item();
