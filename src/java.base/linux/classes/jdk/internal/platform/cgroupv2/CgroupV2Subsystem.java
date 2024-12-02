@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +29,7 @@ package jdk.internal.platform.cgroupv2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -329,7 +330,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     }
 
     private long sumTokensIOStat(Function<String, Long> mapFunc) {
-        try (Stream<String> lines = Files.lines(Paths.get(unified.path(), "io.stat"))) {
+        try (Stream<String> lines = Files.lines(Path.of(unified.path(), "io.stat"))) {
             return lines.map(mapFunc)
                     .collect(Collectors.summingLong(e -> e));
         } catch (UncheckedIOException | IOException e) {
