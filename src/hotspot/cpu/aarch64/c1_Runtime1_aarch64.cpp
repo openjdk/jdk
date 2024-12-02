@@ -906,17 +906,16 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         // Mirror: c_rarg0
         // Object: c_rarg1
         // Temps: r3, r4, r5, r6
-        // Result: r7
+        // Result: r0
 
-        // Get the Klass* into c_rarg0
-        Register klass = c_rarg0, obj = c_rarg1, result = r7;
+        // Get the Klass* into c_rarg6
+        Register klass = c_rarg6, obj = c_rarg1, result = r0;
         __ ldr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
 
-        Label done, is_secondary;
+        Label fail, is_secondary, success;
 
-        __ mov(result, 0);
-        __ cbz(klass, done); // Klass is null
-        __ cbz(obj, done); // obj is null
+        __ cbz(klass, fail); // Klass is null
+        __ cbz(obj, fail); // obj is null
 
         __ ldrw(r3, Address(klass, in_bytes(Klass::super_check_offset_offset())));
         __ cmpw(r3, in_bytes(Klass::secondary_super_cache_offset()));
@@ -926,7 +925,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ load_klass(r5, obj);
         __ ldr(rscratch1, Address(r5, r3));
         __ cmp(klass, rscratch1);
-        __ cset(r0, Assembler::EQ);
+        __ cset(result, Assembler::EQ);
         __ ret(lr);
 
         __ bind(is_secondary);
@@ -935,12 +934,13 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ lookup_secondary_supers_table_var(obj, klass,
                                              /*temps*/r3, r4, r5, v0,
                                              result,
-                                             nullptr);
-        __ tst(result, result);
-        __ cset(result, Assembler::EQ);
+                                             &success);
+        __ bind(fail);
+        __ mov(result, 0);
+        __ ret(lr);
 
-        __ bind(done);
-        __ mov(r0, result);
+        __ bind(success);
+        __ mov(result, 1);
         __ ret(lr);
       }
       break;
