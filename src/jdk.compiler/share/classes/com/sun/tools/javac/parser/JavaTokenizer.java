@@ -220,11 +220,10 @@ public class JavaTokenizer extends UnicodeReader {
     /**
      * Report an error at the given position using the provided arguments.
      *
-     * @param lc     lint category.
      * @param pos    position in input buffer.
      * @param key    error key to report.
      */
-    protected void lexWarning(LintCategory lc, int pos, JCDiagnostic.Warning key) {
+    protected void lexWarning(int pos, JCDiagnostic.Warning key) {
         DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
         log.warning(dp, key);
     }
@@ -1073,11 +1072,11 @@ public class JavaTokenizer extends UnicodeReader {
                         Set<TextBlockSupport.WhitespaceChecks> checks =
                                 TextBlockSupport.checkWhitespace(string);
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
+                            lexWarning(pos,
                                     Warnings.InconsistentWhiteSpaceIndentation);
                         }
                         if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                            lexWarning(LintCategory.TEXT_BLOCKS, pos,
+                            lexWarning(pos,
                                     Warnings.TrailingWhiteSpaceWillBeRemoved);
                         }
                     }

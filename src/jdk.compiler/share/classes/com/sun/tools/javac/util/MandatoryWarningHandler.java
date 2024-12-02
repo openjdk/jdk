@@ -110,17 +110,14 @@ public class MandatoryWarningHandler {
      *                True if mandatory warnings and notes are being enforced.
      * @param prefix  A common prefix for the set of message keys for
      *                the messages that may be generated.
-     * @param lc      An associated lint category for the warnings, or null if none.
      */
     public MandatoryWarningHandler(Log log, Source source, boolean verbose,
-                                   boolean enforceMandatory, String prefix,
-                                   LintCategory lc) {
+                                   boolean enforceMandatory, String prefix) {
         this.log = log;
         this.source = source;
         this.verbose = verbose;
         this.prefix = prefix;
         this.enforceMandatory = enforceMandatory;
-        this.lintCategory = lc;
     }
 
     /**
@@ -245,12 +242,6 @@ public class MandatoryWarningHandler {
      * True if mandatory warnings and notes are being enforced.
      */
     private final boolean enforceMandatory;
-
-    /**
-     * A LintCategory to be included in point-of-use diagnostics to indicate
-     * how messages might be suppressed (i.e. with @SuppressWarnings).
-     */
-    private final LintCategory lintCategory;
 
     /**
      * Reports a mandatory warning to the log.  If mandatory warnings
