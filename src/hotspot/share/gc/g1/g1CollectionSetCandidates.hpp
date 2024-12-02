@@ -54,15 +54,15 @@ struct G1CollectionSetCandidateInfo {
 using G1CSetCandidateGroupIterator = GrowableArrayIterator<G1CollectionSetCandidateInfo>;
 
 // G1CSetCandidateGroup groups candidate regions that will be selected for evacuation at the same time.
-// Regions that are added to groups are either candidates from marking or regions retained during
-// evacuation failure.
+// Grouping occurs both for candidates from marking or regions retained during evacuation failure, but a group
+// can not contain regions from both types of regions.
 //
 // Humongous objects are excluded from the candidate groups because regions associated with these
 // objects are never selected for evacuation.
 //
 // All regions in the group share a G1CardSet instance, which tracks remembered set entries for the
 // regions in the group. We do not have track to cross-region references for regions that are in the
-// same group.
+// same group saving memory.
 class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
   GrowableArray<G1CollectionSetCandidateInfo> _candidates;
 
