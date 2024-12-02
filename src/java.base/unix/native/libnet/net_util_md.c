@@ -187,10 +187,12 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
         // we thus additionally get the string representation for that system errno.
         sys_errno_string = strerror(sys_errno);
         format = "%s: %s: %s";
-        size = strlen(format) + strlen(hostname) + strlen(error_string) + strlen(sys_errno_string) + 2;
+        // 5 for the ":", " " (two pairs) followed by the null terminator
+        size = strlen(format) + strlen(hostname) + strlen(error_string) + strlen(sys_errno_string) + 5;
     } else {
         format = "%s: %s";
-        size = strlen(format) + strlen(hostname) + strlen(error_string) + 2;
+        // 3 for the ":", " " and the null terminator
+        size = strlen(format) + strlen(hostname) + strlen(error_string) + 3;
     }
     buf = (char *) malloc(size);
     if (buf) {
