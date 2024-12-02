@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.components;
+package jdk.internal.classfile.components;
 
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.Label;
@@ -49,8 +49,6 @@ import jdk.internal.classfile.impl.CodeStackTrackerImpl;
  *         int maxStack = stackTracker.maxStackSize().get();
  *     });
  * }
- *
- * @since 24
  */
 public sealed interface CodeStackTracker extends CodeTransform permits CodeStackTrackerImpl {
 

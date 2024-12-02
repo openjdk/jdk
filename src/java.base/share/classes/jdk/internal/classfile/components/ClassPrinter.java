@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.components;
+package jdk.internal.classfile.components;
 
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CodeModel;
@@ -58,8 +58,6 @@ import jdk.internal.classfile.impl.ClassPrinterImpl;
  * <p>
  * Another use case for {@link ClassPrinter} is to simplify writing of automated tests:
  * {@snippet lang="java" class="PackageSnippets" region="printNodesInTest"}
- *
- * @since 24
  */
 public final class ClassPrinter {
 
@@ -68,8 +66,6 @@ public final class ClassPrinter {
 
     /**
      * Level of detail to print or export.
-     *
-     * @since 24
      */
     public enum Verbosity {
 
@@ -102,8 +98,6 @@ public final class ClassPrinter {
 
     /**
      * Named, traversable, and printable node parent.
-     *
-     * @since 24
      */
     public sealed interface Node {
 
@@ -146,8 +140,6 @@ public final class ClassPrinter {
 
     /**
      * A leaf node holding single printable value.
-     *
-     * @since 24
      */
     public sealed interface LeafNode extends Node
             permits ClassPrinterImpl.LeafNodeImpl {
@@ -161,8 +153,6 @@ public final class ClassPrinter {
 
     /**
      * A tree node holding {@link List} of nested nodes.
-     *
-     * @since 24
      */
     public sealed interface ListNode extends Node, List<Node>
             permits ClassPrinterImpl.ListNodeImpl {
@@ -172,8 +162,6 @@ public final class ClassPrinter {
      * A tree node holding {@link Map} of nested nodes.
      * <p>
      * Each {@link Map.Entry#getKey()} == {@link Map.Entry#getValue()}.{@link #name()}.
-     *
-     * @since 24
      */
     public sealed interface MapNode extends Node, Map<ConstantDesc, Node>
             permits ClassPrinterImpl.MapNodeImpl {
