@@ -449,7 +449,7 @@ void VM_Version::initialize() {
       warning("Unable to get SVE vector length on this system. "
               "Disabling SVE. Specify -XX:UseSVE=0 to shun this warning.");
       FLAG_SET_DEFAULT(UseSVE, 0);
-    } else if (vl < FloatRegister::sve_vl_min || ((vl % FloatRegister::sve_vl_min) != 0) || !is_power_of_2(vl)) {
+    } else if (!is_power_of_2(vl) || (vl % FloatRegister::sve_vl_min) != 0) {
       warning("Detected SVE vector length (%d) should be a power of two and a multiple of %d. "
               "Disabling SVE. Specify -XX:UseSVE=0 to shun this warning.",
               vl, FloatRegister::sve_vl_min);
