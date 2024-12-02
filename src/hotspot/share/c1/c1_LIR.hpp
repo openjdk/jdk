@@ -2112,7 +2112,7 @@ class LIR_List: public CompilationResourceObj {
     if (op->source() == nullptr)
       op->set_source(_compilation->current_instruction());
 #ifndef PRODUCT
-    if (PrintIRWithLIR || Compilation::current()->directive()->PrintIRWithLIROption) {
+    if (PrintIRWithLIR) {
       _compilation->maybe_print_current_instruction();
       op->print(); tty->cr();
     }

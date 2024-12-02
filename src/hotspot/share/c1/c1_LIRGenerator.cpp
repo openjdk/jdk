@@ -309,7 +309,7 @@ jlong LIRItem::get_jlong_constant() const {
 
 void LIRGenerator::block_do_prolog(BlockBegin* block) {
 #ifndef PRODUCT
-  if (PrintIRWithLIR || Compilation::current()->directive()->PrintIRWithLIROption      ) {
+  if (PrintIRWithLIR) {
     block->print();
   }
 #endif
@@ -332,8 +332,7 @@ void LIRGenerator::block_do_prolog(BlockBegin* block) {
 
 void LIRGenerator::block_do_epilog(BlockBegin* block) {
 #ifndef PRODUCT
-  if (PrintIRWithLIR || Compilation::current()->directive()->PrintIRWithLIROption
-      ) {
+  if (PrintIRWithLIR) {
     tty->cr();
   }
 #endif
@@ -1252,15 +1251,12 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
     __ null_check(clazz.result(), info);
   }
 
-  address instanceof_fn = Runtime1::entry_for(C1StubId::is_instance_of_id);
-  if (getenv("APH_FOO_BAZ")) {
-    instanceof_fn = nullptr;
-  }
+  address cpu_instanceof_fn = Runtime1::entry_for(C1StubId::is_instance_of_id);
   if (instanceof_fn == nullptr) {
-    instanceof_fn = CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
+    cpu_instanceof_fn = CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
   }
   LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
-                                     instanceof_fn,
+                                     cpu_instanceof_fn,
                                      x->type(),
                                      nullptr); // null CodeEmitInfo results in a leaf call
   __ move(call_result, result);
