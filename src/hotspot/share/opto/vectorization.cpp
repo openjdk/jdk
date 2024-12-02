@@ -401,16 +401,27 @@ void VPointer::print_on(outputStream* st, bool end_with_cr) const {
     return;
   }
 
-  st->print("size: %2d, base: ", size());
-  _mem_pointer.base().print_on(st);
-  st->print(", form: ");
-  _mem_pointer.print_form_on(st);
-  st->print(", invar_summands: ");
+  st->print("size: %2d, %s, ", size(),
+            _mem_pointer.base().is_object() ? "object" : "native");
+
+  Node* base = _mem_pointer.base().object_or_native();
+  tty->print("base(%d %s) + con(%3d) + iv_scale(%3d) * iv + invar(",
+             base->_idx, base->Name(),
+             _mem_pointer.con().value(),
+             _iv_scale);
+
+  int count = 0;
   for_each_invar_summand([&] (const MemPointerSummand& s) {
+    if (count > 0) {
+      st->print(" + ");
+    }
     s.print_on(tty);
-    st->print(",");
+    count++;
   });
-  st->print("]");
+  if (count == 0) {
+    st->print("0");
+  }
+  st->print(")]");
   if (end_with_cr) { st->cr(); }
 }
 #endif
