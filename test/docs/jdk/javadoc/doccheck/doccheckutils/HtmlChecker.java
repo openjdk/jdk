@@ -29,7 +29,7 @@ import java.util.Map;
  * Base class for HTML checkers.
  * <p>
  * For details on HTML syntax and the terms used in this API, see
- * W3C <a href="https://www.w3.org/TR/html5/syntax.html#syntax">The HTML syntax</a>.
+ * W3C <a href="https://html.spec.whatwg.org/multipage/syntax.html#syntax">The HTML syntax</a>.
  */
 public interface HtmlChecker extends Checker {
     /**

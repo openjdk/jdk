@@ -95,7 +95,6 @@ public class TidyChecker implements FileChecker, AutoCloseable {
             Pattern.compile(".*Warning: replacing invalid UTF-8 bytes \\(char. code U\\+.*\\)")
     };
     private final Log errors;
-    private Path path;
     private int files = 0;
     private int ok;
     private int warns;
@@ -243,7 +242,7 @@ public class TidyChecker implements FileChecker, AutoCloseable {
                 }
             }
             if (!found)
-                errors.log(path + "unrecognized line: " + line);
+                errors.log("unrecognized line: " + line);
         } else if (cssPattern.matcher(line).matches()) {
             css++;
         }

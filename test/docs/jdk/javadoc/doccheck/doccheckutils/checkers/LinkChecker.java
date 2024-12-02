@@ -32,7 +32,6 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Checks the links defined by and referenced in HTML files.
@@ -42,7 +41,8 @@ public class LinkChecker implements HtmlChecker {
     private final Log log;
     private final Map<Path, IDTable> allFiles;
     private final Map<URI, IDTable> allURIs;
-    private boolean checkInwardReferencesOnly;
+    // left for debugging
+    private final boolean checkInwardReferencesOnly = false;
     private int files;
     private int links;
     private int duplicateIds;
@@ -52,19 +52,14 @@ public class LinkChecker implements HtmlChecker {
     private Path currFile;
     private IDTable currTable;
     private boolean html5;
-    private boolean xml;
     public LinkChecker() {
         this.log = new Log();
         allFiles = new HashMap<>();
         allURIs = new HashMap<>();
     }
 
-    public void setBaseDirWereChecking(Path dir) {
+    public void setBaseDir(Path dir) {
         log.setBaseDirectory(dir);
-    }
-
-    public void setCheckInwardReferencesOnly(boolean checkInwardReferencesOnly) {
-        this.checkInwardReferencesOnly = checkInwardReferencesOnly;
     }
 
     @Override
@@ -98,7 +93,6 @@ public class LinkChecker implements HtmlChecker {
 
     @Override
     public void xml(int line, Map<String, String> attrs) {
-        xml = true;
     }
 
     @Override
