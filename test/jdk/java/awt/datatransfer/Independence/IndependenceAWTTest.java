@@ -161,34 +161,32 @@ public class IndependenceAWTTest {
         getPrimaryClipboard();
         robot.waitForIdle(500);
 
-        if (primaryClip != null) {
-            EventQueue.invokeAndWait(() -> {
-                Point center = tf1.getLocationOnScreen();
-                center.translate(tf1.getWidth() / 2, tf1.getHeight() / 2);
-                ttf1Center = center;
-            });
+        EventQueue.invokeAndWait(() -> {
+            Point center = tf1.getLocationOnScreen();
+            center.translate(tf1.getWidth() / 2, tf1.getHeight() / 2);
+            ttf1Center = center;
+        });
 
-            robot.glide(new Point(0, 0), ttf1Center);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle(20);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle(500);
+        robot.glide(new Point(0, 0), ttf1Center);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle(20);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle(500);
 
-            getClipboardsContent();
-            compareText(true);
+        getClipboardsContent();
+        compareText(true);
 
-            //Change the text selection to update the contents of primary clipboard
-            robot.mouseMove(ttf1Center);
-            robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
-            robot.delay(20);
-            robot.mouseMove(ttf1Center.x + 15, ttf1Center.y);
-            robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle(500);
+        //Change the text selection to update the contents of primary clipboard
+        robot.mouseMove(ttf1Center);
+        robot.mousePress(MouseEvent.BUTTON1_DOWN_MASK);
+        robot.delay(20);
+        robot.mouseMove(ttf1Center.x + 15, ttf1Center.y);
+        robot.mouseRelease(MouseEvent.BUTTON1_DOWN_MASK);
+        robot.waitForIdle(500);
 
-            getClipboardsContent();
-            compareText(false);
-        }
+        getClipboardsContent();
+        compareText(false);
     }
 }
