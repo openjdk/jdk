@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
-import sun.security.action.GetPropertyAction;
 
 import static java.lang.StackStreamFactory.WalkerState.*;
 
@@ -88,7 +87,7 @@ final class StackStreamFactory {
      * VM built-in backtrace filled in Throwable with the StackWalker.
      */
     static final boolean isDebug =
-            "true".equals(GetPropertyAction.privilegedGetProperty("stackwalk.debug"));
+            "true".equals(System.getProperty("stackwalk.debug"));
 
     static <T> StackFrameTraverser<T>
         makeStackTraverser(StackWalker walker, Function<? super Stream<StackFrame>, ? extends T> function)
