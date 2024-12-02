@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 
 public class CDS {
     // Must be in sync with cdsConfig.hpp
@@ -275,7 +276,7 @@ public class CDS {
                 listFile.delete();
             }
             dumpClassList(listFileName);
-            String jdkHome = System.getProperty("java.home");
+            String jdkHome = StaticProperty.javaHome();
             String classPath = System.getProperty("java.class.path");
             List<String> cmds = new ArrayList<String>();
             cmds.add(jdkHome + File.separator + "bin" + File.separator + "java"); // java
