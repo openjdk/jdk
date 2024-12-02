@@ -208,7 +208,7 @@ public final class StringSupport {
         long offset = fromOffset;
         for (; offset < longLimit; offset += Long.BYTES) {
             long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
-            if (mightContainZeroShort(val)) {
+            if (mightContainZeroInt(val)) {
                 for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
                     if (SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
                         return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
@@ -251,6 +251,13 @@ public final class StringSupport {
 
     static boolean mightContainZeroShort(long l) {
         return ((l - LOMAGIC_FOR_SHORTS) & (~l) & HIMAGIC_FOR_SHORTS) != 0;
+    }
+
+    private static final long HIMAGIC_FOR_INTS = 0x8000_0000_8000_0000L;
+    private static final long LOMAGIC_FOR_INTS = 0x0000_0001_0000_0001L;
+
+    static boolean mightContainZeroInt(long l) {
+        return ((l - LOMAGIC_FOR_INTS) & (~l) & HIMAGIC_FOR_INTS) != 0;
     }
 
 
