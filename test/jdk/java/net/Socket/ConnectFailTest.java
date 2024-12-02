@@ -44,8 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /*
  * @test
  * @bug 8343791
- * @summary verifies that `connect()` failures throw expected exception and leave both `Socket` and the underlying
- *          `SocketImpl` at the same expected state
+ * @summary verifies that `connect()` failures throw the expected exception and leave socket in the expected state
  * @library /test/lib
  * @run junit ConnectFailTest
  */
