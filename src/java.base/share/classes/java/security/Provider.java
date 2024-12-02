@@ -345,12 +345,6 @@ public abstract class Provider extends Properties {
         return name + " version " + versionStr;
     }
 
-    /*
-     * override the following methods to ensure that provider
-     * information can only be changed if the caller has the appropriate
-     * permissions.
-     */
-
     /**
      * Clears this {@code Provider} so that it no longer contains the properties
      * used to look up facilities implemented by the {@code Provider}.
@@ -776,8 +770,6 @@ public abstract class Provider extends Properties {
 
     /**
      * Copies all the mappings from the specified Map to this provider.
-     * Internal method to be called AFTER the security check has been
-     * performed.
      */
     private void implPutAll(Map<?,?> t) {
         for (Map.Entry<?,?> e : t.entrySet()) {
@@ -1290,7 +1282,7 @@ public abstract class Provider extends Properties {
     private void putPropertyStrings(Service s) {
         String type = s.getType();
         String algorithm = s.getAlgorithm();
-        // use super() to avoid permission check and other processing
+        // use super() to avoid other processing
         super.put(type + "." + algorithm, s.getClassName());
         for (String alias : s.getAliases()) {
             super.put(ALIAS_PREFIX + type + "." + alias, algorithm);
@@ -1308,7 +1300,7 @@ public abstract class Provider extends Properties {
     private void removePropertyStrings(Service s) {
         String type = s.getType();
         String algorithm = s.getAlgorithm();
-        // use super() to avoid permission check and other processing
+        // use super() to avoid other processing
         super.remove(type + "." + algorithm);
         for (String alias : s.getAliases()) {
             super.remove(ALIAS_PREFIX + type + "." + alias);
