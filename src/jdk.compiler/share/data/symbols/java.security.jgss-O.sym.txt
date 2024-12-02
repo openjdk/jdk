@@ -33,3 +33,6 @@ class name javax/security/auth/kerberos/KerberosCredMessage
 header extends java/lang/Object implements javax/security/auth/Destroyable flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
+class name javax/security/auth/kerberos/KerberosPrincipal
+header extends java/lang/Object implements java/security/Principal,java/io/Serializable flags 31 classAnnotations @Ljdk/Profile+Annotation;(value=I3)
+

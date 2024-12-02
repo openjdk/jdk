@@ -95,6 +95,27 @@ method name close descriptor ()V thrownTypes java/io/IOException flags 21
 class name java/io/Reader
 method name of descriptor (Ljava/lang/CharSequence;)Ljava/io/Reader; flags 9
 
+class name java/lang/Character$UnicodeBlock
+field name TODHRI descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name GARAY descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name TULU_TIGALARI descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name MYANMAR_EXTENDED_C descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name SUNUWAR descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name EGYPTIAN_HIEROGLYPHS_EXTENDED_A descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name GURUNG_KHEMA descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name KIRAT_RAI descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name SYMBOLS_FOR_LEGACY_COMPUTING_SUPPLEMENT descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name OL_ONAL descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+
+class name java/lang/Character$UnicodeScript
+field name TODHRI descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+field name GARAY descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+field name TULU_TIGALARI descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+field name SUNUWAR descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+field name GURUNG_KHEMA descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+field name KIRAT_RAI descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+field name OL_ONAL descriptor Ljava/lang/Character$UnicodeScript; flags 4019
+
 class name java/lang/Class
 -method name getSigners descriptor ()[Ljava/lang/Object;
 -method name forName descriptor (Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;
@@ -184,12 +205,22 @@ method name getClassContext descriptor ()[Ljava/lang/Class; flags 4 signature ()
 method name checkMulticast descriptor (Ljava/net/InetAddress;B)V flags 1
 
 class name java/lang/System
+header extends java/lang/Object nestMembers java/lang/System$LoggerFinder,java/lang/System$Logger,java/lang/System$Logger$Level flags 31
+innerclass innerClass java/lang/System$Logger outerClass java/lang/System innerClassName Logger flags 609
+innerclass innerClass java/lang/System$LoggerFinder outerClass java/lang/System innerClassName LoggerFinder flags 409
+innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
+innerclass innerClass java/lang/System$Logger$Level outerClass java/lang/System$Logger innerClassName Level flags 4019
 -method name load descriptor (Ljava/lang/String;)V
 -method name loadLibrary descriptor (Ljava/lang/String;)V
 -method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V
 method name load descriptor (Ljava/lang/String;)V flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;@Ljdk/internal/javac/Restricted;
 method name loadLibrary descriptor (Ljava/lang/String;)V flags 9 runtimeAnnotations @Ljdk/internal/reflect/CallerSensitive;@Ljdk/internal/javac/Restricted;
 method name setSecurityManager descriptor (Ljava/lang/SecurityManager;)V flags 9 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="17")
+
+class name java/lang/System$LoggerFinder
+header extends java/lang/Object nestHost java/lang/System flags 421
+innerclass innerClass java/lang/System$LoggerFinder outerClass java/lang/System innerClassName LoggerFinder flags 409
+innerclass innerClass java/lang/System$Logger outerClass java/lang/System innerClassName Logger flags 609
 
 class name java/lang/Thread
 -method name getContextClassLoader descriptor ()Ljava/lang/ClassLoader;
@@ -1985,6 +2016,13 @@ method name displayName descriptor ()Ljava/lang/String; flags 401
 
 class name java/lang/foreign/MemorySegment
 header extends java/lang/Object nestMembers java/lang/foreign/MemorySegment$Scope sealed true permittedSubclasses jdk/internal/foreign/AbstractMemorySegmentImpl flags 601
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfChar outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfChar flags 19
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfShort outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfShort flags 19
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfInt outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfInt flags 19
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfFloat outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfFloat flags 19
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfLong outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfLong flags 19
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfDouble outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfDouble flags 19
 innerclass innerClass java/lang/foreign/MemorySegment$Scope outerClass java/lang/foreign/MemorySegment innerClassName Scope flags 609
 innerclass innerClass java/lang/foreign/ValueLayout$OfByte outerClass java/lang/foreign/ValueLayout innerClassName OfByte flags 609
 innerclass innerClass java/lang/foreign/ValueLayout$OfShort outerClass java/lang/foreign/ValueLayout innerClassName OfShort flags 609
@@ -2026,6 +2064,108 @@ class name java/net/URL
 header extends java/lang/Object implements java/io/Serializable flags 31
 innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 
+class name java/nio/ByteBufferAsCharBufferB
+header extends java/nio/CharBuffer sealed true permittedSubclasses java/nio/ByteBufferAsCharBufferRB flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsCharBufferL
+header extends java/nio/CharBuffer sealed true permittedSubclasses java/nio/ByteBufferAsCharBufferRL flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsCharBufferRB
+header extends java/nio/ByteBufferAsCharBufferB flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsCharBufferRL
+header extends java/nio/ByteBufferAsCharBufferL flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsDoubleBufferB
+header extends java/nio/DoubleBuffer sealed true permittedSubclasses java/nio/ByteBufferAsDoubleBufferRB flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsDoubleBufferL
+header extends java/nio/DoubleBuffer sealed true permittedSubclasses java/nio/ByteBufferAsDoubleBufferRL flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsDoubleBufferRB
+header extends java/nio/ByteBufferAsDoubleBufferB flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsDoubleBufferRL
+header extends java/nio/ByteBufferAsDoubleBufferL flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsFloatBufferB
+header extends java/nio/FloatBuffer sealed true permittedSubclasses java/nio/ByteBufferAsFloatBufferRB flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsFloatBufferL
+header extends java/nio/FloatBuffer sealed true permittedSubclasses java/nio/ByteBufferAsFloatBufferRL flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsFloatBufferRB
+header extends java/nio/ByteBufferAsFloatBufferB flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsFloatBufferRL
+header extends java/nio/ByteBufferAsFloatBufferL flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsIntBufferB
+header extends java/nio/IntBuffer sealed true permittedSubclasses java/nio/ByteBufferAsIntBufferRB flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsIntBufferL
+header extends java/nio/IntBuffer sealed true permittedSubclasses java/nio/ByteBufferAsIntBufferRL flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsIntBufferRB
+header extends java/nio/ByteBufferAsIntBufferB flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsIntBufferRL
+header extends java/nio/ByteBufferAsIntBufferL flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsLongBufferB
+header extends java/nio/LongBuffer sealed true permittedSubclasses java/nio/ByteBufferAsLongBufferRB flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsLongBufferL
+header extends java/nio/LongBuffer sealed true permittedSubclasses java/nio/ByteBufferAsLongBufferRL flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsLongBufferRB
+header extends java/nio/ByteBufferAsLongBufferB flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsLongBufferRL
+header extends java/nio/ByteBufferAsLongBufferL flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsShortBufferB
+header extends java/nio/ShortBuffer sealed true permittedSubclasses java/nio/ByteBufferAsShortBufferRB flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsShortBufferL
+header extends java/nio/ShortBuffer sealed true permittedSubclasses java/nio/ByteBufferAsShortBufferRL flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsShortBufferRB
+header extends java/nio/ByteBufferAsShortBufferB flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/ByteBufferAsShortBufferRL
+header extends java/nio/ByteBufferAsShortBufferL flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/CharBuffer
+header extends java/nio/Buffer implements java/lang/Comparable,java/lang/Appendable,java/lang/CharSequence,java/lang/Readable sealed true permittedSubclasses java/nio/StringCharBuffer,java/nio/HeapCharBuffer,java/nio/DirectCharBufferS,java/nio/DirectCharBufferU,java/nio/ByteBufferAsCharBufferB,java/nio/ByteBufferAsCharBufferL flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/CharBuffer;>;Ljava/lang/Appendable;Ljava/lang/CharSequence;Ljava/lang/Readable;
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfChar outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfChar flags 19
+innerclass innerClass java/util/Spliterator$OfInt outerClass java/util/Spliterator innerClassName OfInt flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
 class name java/nio/DirectByteBuffer
 -field name UNALIGNED descriptor Z
 
@@ -2065,6 +2205,34 @@ class name java/nio/DirectShortBufferS
 class name java/nio/DirectShortBufferU
 -field name UNALIGNED descriptor Z
 
+class name java/nio/DoubleBuffer
+header extends java/nio/Buffer implements java/lang/Comparable sealed true permittedSubclasses java/nio/HeapDoubleBuffer,java/nio/DirectDoubleBufferS,java/nio/DirectDoubleBufferU,java/nio/ByteBufferAsDoubleBufferB,java/nio/ByteBufferAsDoubleBufferL flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/DoubleBuffer;>;
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfDouble outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfDouble flags 19
+
+class name java/nio/FloatBuffer
+header extends java/nio/Buffer implements java/lang/Comparable sealed true permittedSubclasses java/nio/HeapFloatBuffer,java/nio/DirectFloatBufferS,java/nio/DirectFloatBufferU,java/nio/ByteBufferAsFloatBufferB,java/nio/ByteBufferAsFloatBufferL flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/FloatBuffer;>;
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfFloat outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfFloat flags 19
+
+class name java/nio/HeapByteBuffer
+header extends java/nio/ByteBuffer sealed true permittedSubclasses java/nio/HeapByteBufferR flags 20
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/HeapByteBufferR
+header extends java/nio/HeapByteBuffer flags 30
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfByte outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfByte flags 19
+
+class name java/nio/IntBuffer
+header extends java/nio/Buffer implements java/lang/Comparable sealed true permittedSubclasses java/nio/HeapIntBuffer,java/nio/DirectIntBufferS,java/nio/DirectIntBufferU,java/nio/ByteBufferAsIntBufferB,java/nio/ByteBufferAsIntBufferL flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/IntBuffer;>;
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfInt outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfInt flags 19
+
+class name java/nio/LongBuffer
+header extends java/nio/Buffer implements java/lang/Comparable sealed true permittedSubclasses java/nio/HeapLongBuffer,java/nio/DirectLongBufferS,java/nio/DirectLongBufferU,java/nio/ByteBufferAsLongBufferB,java/nio/ByteBufferAsLongBufferL flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/LongBuffer;>;
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfLong outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfLong flags 19
+
+class name java/nio/ShortBuffer
+header extends java/nio/Buffer implements java/lang/Comparable sealed true permittedSubclasses java/nio/HeapShortBuffer,java/nio/DirectShortBufferS,java/nio/DirectShortBufferU,java/nio/ByteBufferAsShortBufferB,java/nio/ByteBufferAsShortBufferL flags 421 signature Ljava/nio/Buffer;Ljava/lang/Comparable<Ljava/nio/ShortBuffer;>;
+innerclass innerClass jdk/internal/foreign/HeapMemorySegmentImpl$OfShort outerClass jdk/internal/foreign/HeapMemorySegmentImpl innerClassName OfShort flags 19
+
 class name java/security/AccessController
 -method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedAction;)Ljava/lang/Object;
 -method name doPrivileged descriptor (Ljava/security/PrivilegedAction;Ljava/security/AccessControlContext;[Ljava/security/Permission;)Ljava/lang/Object;
@@ -2089,6 +2257,23 @@ method name doPrivilegedWithCombiner descriptor (Ljava/security/PrivilegedExcept
 
 class name java/security/ProtectionDomain
 header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
+class name java/security/cert/CertPathBuilder
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
+class name java/security/cert/CertPathValidator
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
+class name java/security/cert/CertStore
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
+class name java/security/spec/NamedParameterSpec
+field name ML_DSA_44 descriptor Ljava/security/spec/NamedParameterSpec; flags 19
+field name ML_DSA_65 descriptor Ljava/security/spec/NamedParameterSpec; flags 19
+field name ML_DSA_87 descriptor Ljava/security/spec/NamedParameterSpec; flags 19
+field name ML_KEM_512 descriptor Ljava/security/spec/NamedParameterSpec; flags 19
+field name ML_KEM_768 descriptor Ljava/security/spec/NamedParameterSpec; flags 19
+field name ML_KEM_1024 descriptor Ljava/security/spec/NamedParameterSpec; flags 19
 
 class name java/text/DecimalFormat
 header extends java/text/NumberFormat flags 21
@@ -2234,6 +2419,15 @@ method name ikms descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/Li
 method name salts descriptor ()Ljava/util/List; flags 1 signature ()Ljava/util/List<Ljavax/crypto/SecretKey;>;
 method name info descriptor ()[B flags 1
 method name length descriptor ()I flags 1
+
+class name javax/net/ssl/KeyManagerFactory
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
+class name javax/net/ssl/SSLSocketFactory
+header extends javax/net/SocketFactory flags 421 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
+
+class name javax/net/ssl/TrustManagerFactory
+header extends java/lang/Object flags 21 classAnnotations @Ljdk/Profile+Annotation;(value=I1)
 
 class name javax/security/auth/Subject
 header extends java/lang/Object implements java/io/Serializable flags 31
