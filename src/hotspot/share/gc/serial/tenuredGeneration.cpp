@@ -378,11 +378,14 @@ void TenuredGeneration::update_counters() {
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = _the_space->free() + _virtual_space.uncommitted_size();
-  size_t av_promo  = (size_t)_avg_promoted->padded_average();
-  bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
+
+  size_t avg_promoted  = (size_t)_avg_promoted->padded_average();
+  size_t promotion_estimate = MIN2(avg_promoted, max_promotion_in_bytes);
+
+  bool res = (promotion_estimate <= available);
 
   log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
-    res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
+    res? "":" not", available, res? ">=":"<", avg_promoted, max_promotion_in_bytes);
 
   return res;
 }

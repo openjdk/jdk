@@ -2213,10 +2213,10 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       st->print("Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      st->print("Profiled_Loop ");
+      st->print("Profiled Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      st->print("Loop_Limit_Check ");
+      st->print("Loop Limit Check ");
       break;
     default:
       fatal("unknown kind");
