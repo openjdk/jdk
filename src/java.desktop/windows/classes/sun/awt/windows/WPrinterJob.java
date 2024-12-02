@@ -1913,16 +1913,7 @@ public final class WPrinterJob extends RasterPrinterJob
             Destination destPrn = (Destination)attributes.get(
                                                  Destination.class);
             if (destPrn == null) {
-                try {
-                    attributes.add(new Destination(
-                                               new File("./out.prn").toURI()));
-                } catch (SecurityException se) {
-                    try {
-                        attributes.add(new Destination(
-                                                new URI("file:out.prn")));
-                    } catch (URISyntaxException e) {
-                    }
-                }
+                attributes.add(new Destination(new File("./out.prn").toURI()));
             }
         } else {
             attributes.remove(Destination.class);
