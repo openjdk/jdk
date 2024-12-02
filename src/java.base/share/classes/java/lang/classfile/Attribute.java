@@ -24,46 +24,11 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.attribute.AnnotationDefaultAttribute;
-import java.lang.classfile.attribute.BootstrapMethodsAttribute;
-import java.lang.classfile.attribute.CharacterRangeTableAttribute;
-import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.attribute.CompilationIDAttribute;
-import java.lang.classfile.attribute.ConstantValueAttribute;
-import java.lang.classfile.attribute.DeprecatedAttribute;
-import java.lang.classfile.attribute.EnclosingMethodAttribute;
-import java.lang.classfile.attribute.ExceptionsAttribute;
-import java.lang.classfile.attribute.InnerClassesAttribute;
-import java.lang.classfile.attribute.LineNumberTableAttribute;
-import java.lang.classfile.attribute.LocalVariableTableAttribute;
-import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
-import java.lang.classfile.attribute.MethodParametersAttribute;
-import java.lang.classfile.attribute.ModuleAttribute;
-import java.lang.classfile.attribute.ModuleHashesAttribute;
-import java.lang.classfile.attribute.ModuleMainClassAttribute;
-import java.lang.classfile.attribute.ModulePackagesAttribute;
-import java.lang.classfile.attribute.ModuleResolutionAttribute;
-import java.lang.classfile.attribute.ModuleTargetAttribute;
-import java.lang.classfile.attribute.NestHostAttribute;
-import java.lang.classfile.attribute.NestMembersAttribute;
-import java.lang.classfile.attribute.PermittedSubclassesAttribute;
-import java.lang.classfile.attribute.RecordAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import java.lang.classfile.attribute.SignatureAttribute;
-import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
-import java.lang.classfile.attribute.SourceFileAttribute;
-import java.lang.classfile.attribute.SourceIDAttribute;
-import java.lang.classfile.attribute.StackMapTableAttribute;
-import java.lang.classfile.attribute.SyntheticAttribute;
-import java.lang.classfile.attribute.UnknownAttribute;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.Utf8Entry;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a classfile attribute (JVMS {@jvms 4.7}).  Many, though not all, subtypes of
@@ -76,9 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  * @param <A> the attribute type
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Attribute<A extends Attribute<A>>
         extends ClassFileElement
         permits AnnotationDefaultAttribute, BootstrapMethodsAttribute,
@@ -100,7 +64,7 @@ public sealed interface Attribute<A extends Attribute<A>>
     /**
      * {@return the name of the attribute}
      */
-    String attributeName();
+    Utf8Entry attributeName();
 
     /**
      * {@return the {@link AttributeMapper} associated with this attribute}

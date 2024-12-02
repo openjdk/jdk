@@ -39,8 +39,8 @@
  */
 
 /*
- * @test id=ZSinglegen
- * @requires vm.gc.ZSinglegen
+ * @test id=Z
+ * @requires vm.gc.Z
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -52,25 +52,7 @@
  *   -XX:+WhiteBoxAPI
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
- *   -XX:+UseZGC -XX:-ZGenerational
- *   TestStackWalk
- */
-
-/*
- * @test id=ZGenerational
- * @requires vm.gc.ZGenerational
- * @library /test/lib
- * @library ../
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm
- *   -Xbootclasspath/a:.
- *   -XX:+UnlockDiagnosticVMOptions
- *   -XX:+WhiteBoxAPI
- *   --enable-native-access=ALL-UNNAMED
- *   -Xbatch
- *   -XX:+UseZGC -XX:+ZGenerational
+ *   -XX:+UseZGC
  *   TestStackWalk
  */
 

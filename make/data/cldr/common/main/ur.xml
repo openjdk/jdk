@@ -61,6 +61,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bi">بسلاما</language>
 			<language type="bin">بینی</language>
 			<language type="bla">سکسیکا</language>
+			<language type="blo">عانی</language>
 			<language type="bm">بمبارا</language>
 			<language type="bn">بنگلہ</language>
 			<language type="bo">تبتی</language>
@@ -184,6 +185,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="iba">ایبان</language>
 			<language type="ibb">ابی بیو</language>
 			<language type="id">انڈونیثیائی</language>
+			<language type="ie">غربی</language>
 			<language type="ig">اِگبو</language>
 			<language type="ii">سچوان ای</language>
 			<language type="ikt">مغربی کینیڈین اینُکٹیٹٹ</language>
@@ -238,6 +240,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">کومی</language>
 			<language type="kw">کورنش</language>
 			<language type="kwk">کیواکوالا</language>
+			<language type="kxv">کووی</language>
 			<language type="ky">کرغیزی</language>
 			<language type="la">لاطینی</language>
 			<language type="lad">لیڈینو</language>
@@ -246,9 +249,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">لیزگیان</language>
 			<language type="lg">گینڈا</language>
 			<language type="li">لیمبرگش</language>
+			<language type="lij">لیگوریائی</language>
 			<language type="lil">للوئیٹ</language>
 			<language type="lkt">لاکوٹا</language>
-			<language type="lmo" draft="contributed">لومبارڈ</language>
+			<language type="lmo">لومبارڈ</language>
 			<language type="ln">لِنگَلا</language>
 			<language type="lo">لاؤ</language>
 			<language type="lou">لوزیانا کریول</language>
@@ -286,7 +290,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="moe">انو ایمن</language>
 			<language type="moh">موہاک</language>
 			<language type="mos">موسی</language>
-			<language type="mr">مراٹهی</language>
+			<language type="mr">مراٹھی</language>
 			<language type="ms">مالے</language>
 			<language type="mt">مالٹی</language>
 			<language type="mua">منڈانگ</language>
@@ -405,6 +409,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sw_CD">کانگو سواحلی</language>
 			<language type="swb">کوموریائی</language>
 			<language type="syr">سریانی</language>
+			<language type="szl">سیلیزیائی</language>
 			<language type="ta">تمل</language>
 			<language type="tce">جنوبی ٹچون</language>
 			<language type="te">تیلگو</language>
@@ -446,7 +451,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">ازبیک</language>
 			<language type="vai">وائی</language>
 			<language type="ve">وینڈا</language>
+			<language type="vec">وینسی</language>
 			<language type="vi">ویتنامی</language>
+			<language type="vmw">ماکوائی</language>
 			<language type="vo">وولاپوک</language>
 			<language type="vun">ونجو</language>
 			<language type="wa">والون</language>
@@ -458,6 +465,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">وو چائینیز</language>
 			<language type="xal">کالمیک</language>
 			<language type="xh">ژوسا</language>
+			<language type="xnr">کانگری</language>
 			<language type="xog">سوگا</language>
 			<language type="yav">یانگبین</language>
 			<language type="ybb">یمبا</language>
@@ -466,6 +474,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="yrl">نینگاٹو</language>
 			<language type="yue">کینٹونیز</language>
 			<language type="yue" alt="menu">چینی، کینٹونیز</language>
+			<language type="za">ژوانگی</language>
 			<language type="zgh">اسٹینڈرڈ مراقشی تمازیقی</language>
 			<language type="zh">چینی</language>
 			<language type="zh" alt="menu">چینی، مندارن</language>
@@ -692,8 +701,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">اسرائیل</territory>
 			<territory type="IM">آئل آف مین</territory>
 			<territory type="IN">بھارت</territory>
-			<territory type="IO" draft="contributed">برطانوی بحر ہند کا علاقہ</territory>
-			<territory type="IO" alt="chagos" draft="contributed">جزائر چاگوس</territory>
+			<territory type="IO">برطانوی بحر ہند کا علاقہ</territory>
+			<territory type="IO" alt="chagos">جزائر چاگوس</territory>
 			<territory type="IQ">عراق</territory>
 			<territory type="IR">ایران</territory>
 			<territory type="IS">آئس لینڈ</territory>
@@ -886,10 +895,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">گریگورین کیلنڈر</type>
 			<type key="calendar" type="hebrew">عبرانی کیلنڈر</type>
 			<type key="calendar" type="indian">ہندوستانی قومی کیلنڈر</type>
-			<type key="calendar" type="islamic" draft="contributed">اسلامی کیلنڈر</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">اسلامی شہری کیلنڈر (ٹیبیولر، مدنی دور)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">اسلامی کیلنڈر (ٹیبولر، فلکیاتی دور)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">اسلامی کیلنڈر (ام القراہ)</type>
+			<type key="calendar" type="islamic">اسلامی کیلنڈر</type>
+			<type key="calendar" type="islamic-civil">اسلامی شہری کیلنڈر (ٹیبیولر، مدنی دور)</type>
+			<type key="calendar" type="islamic-tbla">اسلامی کیلنڈر (ٹیبولر، فلکیاتی دور)</type>
+			<type key="calendar" type="islamic-umalqura">اسلامی کیلنڈر (ام القراہ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 کیلنڈر</type>
 			<type key="calendar" type="japanese">جاپانی کیلنڈر</type>
 			<type key="calendar" type="persian">فارسی کیلنڈر</type>
@@ -2047,6 +2056,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} وقت</regionFormat>
 			<regionFormat type="daylight">{0} ڈے لائٹ ٹائم</regionFormat>
 			<regionFormat type="standard">{0} معیاری وقت</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ہونولولو</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>کوآرڈینیٹڈ یونیورسل ٹائم</standard>
@@ -2784,9 +2796,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>اولان باتار</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>چوئبالسان</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>مکاؤ</exemplarCity>
 			</zone>
@@ -3186,9 +3195,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>نوم</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ہونولولو</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>اینکریج</exemplarCity>
 			</zone>
@@ -3540,13 +3546,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>چینی ڈے لائٹ ٹائم</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>کوئبلسان ٹائم</generic>
-					<standard>کوئبلسان سٹینڈرڈ ٹائم</standard>
-					<daylight>کوائبلسان سمر ٹائم</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>کرسمس آئلینڈ ٹائم</standard>
@@ -3790,6 +3789,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>پیٹروپاؤلووسک-کیمچسکی ٹائم</generic>
 					<standard>پیٹروپاؤلووسک-کیمچسکی اسٹینڈرڈ ٹائم</standard>
 					<daylight>پیٹروپاؤلووسک-کیمچسکی سمر ٹائم</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>قازقستان کا وقت</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4219,6 +4223,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<otherNumberingSystems>
 			<native>arabext</native>
 		</otherNumberingSystems>
+		<symbols numberSystem="arab">
+			<decimal>،</decimal>
+			<group>,</group>
+			<plusSign>+</plusSign>
+			<exponential>E</exponential>
+		</symbols>
 		<symbols numberSystem="arabext">
 			<list>;</list>
 			<percentSign>%</percentSign>
@@ -4334,8 +4344,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">¤ 000 ٹریلین</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
@@ -5086,6 +5094,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} قیراط</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>masculine</gender>
 				<displayName>ملی گرام فی ڈیسی لیٹر</displayName>
 				<unitPattern count="one">{0} ملی گرام فی ڈیسی لیٹر</unitPattern>
 				<unitPattern count="other">{0} ملی گرام فی ڈیسی لیٹر</unitPattern>
@@ -5290,6 +5299,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} وولٹ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>feminine</gender>
 				<displayName>کلو کیلوریز</displayName>
 				<unitPattern count="one">{0} کلو کیلوری</unitPattern>
 				<unitPattern count="other">{0} کلو کیلوریز</unitPattern>
@@ -5496,6 +5506,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} اسکینڈی نیویائی میل</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>masculine</gender>
 				<unitPattern count="one">{0} پوائنٹ</unitPattern>
 				<unitPattern count="other">{0} پوائنٹس</unitPattern>
 			</unit>
@@ -5628,6 +5639,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ہارس پاور</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>masculine</gender>
 				<displayName>ملی میٹر مرکری</displayName>
 				<unitPattern count="one">{0} ملی میٹر مرکری</unitPattern>
 				<unitPattern count="other">{0} ملی میٹر مرکری</unitPattern>
@@ -5887,6 +5899,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>امپیریئل کوارٹ</displayName>
 				<unitPattern count="one">{0} امپیریئل کوارٹ</unitPattern>
 				<unitPattern count="other">{0} امپیریئل کوارٹ</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<gender>feminine</gender>
+				<displayName>روشنی</displayName>
+				<unitPattern count="one">{0} روشنی</unitPattern>
+				<unitPattern count="other">{0} روشنی</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>masculine</gender>
+				<displayName>اجزا فی بلین</displayName>
+				<unitPattern count="one">{0} جزو فی بلین</unitPattern>
+				<unitPattern count="other">{0} اجزا فی بلین</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>راتیں</displayName>
+				<unitPattern count="one">{0} رات</unitPattern>
+				<unitPattern count="other">{0} راتیں</unitPattern>
+				<perUnitPattern>{0} فی رات</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>کارڈینل ڈائریکشن</displayName>
@@ -6387,6 +6418,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} چٹکی</unitPattern>
 				<unitPattern count="other">{0} چٹکی</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>روشنی</displayName>
+				<unitPattern count="one">{0} روشنی</unitPattern>
+				<unitPattern count="other">{0} روشنی</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>اجزا/بلین</displayName>
+			</unit>
+			<unit type="duration-night">
+				<displayName>راتیں</displayName>
+				<unitPattern count="one">{0} رات</unitPattern>
+				<unitPattern count="other">{0} راتیں</unitPattern>
+				<perUnitPattern>{0}/رات</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ڈائریکشن</displayName>
 			</coordinateUnit>
@@ -6698,6 +6743,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>fl.dr.</displayName>
 				<unitPattern count="one">{0}fl.dr.</unitPattern>
 				<unitPattern count="other">{0}fl.dr.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>روشنی</displayName>
+				<unitPattern count="one">{0} روشنی</unitPattern>
+				<unitPattern count="other">{0} روشنی</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>راتیں</displayName>
+				<unitPattern count="one">{0} رات</unitPattern>
+				<unitPattern count="other">{0} راتیں</unitPattern>
+				<perUnitPattern>{0}/رات</perUnitPattern>
 			</unit>
 		</unitLength>
 	</units>

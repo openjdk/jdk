@@ -78,7 +78,7 @@ address NativeCall::destination() const {
 //
 // Used in the runtime linkage of calls; see class CompiledIC.
 void NativeCall::set_destination_mt_safe(address dest) {
-  assert((Patching_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
+  assert((CodeCache_lock->is_locked() || SafepointSynchronize::is_at_safepoint()) ||
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 

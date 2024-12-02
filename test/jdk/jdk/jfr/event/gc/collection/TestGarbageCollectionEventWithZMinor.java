@@ -40,12 +40,12 @@ import jdk.test.whitebox.WhiteBox;
 /**
  * @test
  * @key jfr
- * @requires vm.hasJFR & vm.gc.ZGenerational
+ * @requires vm.hasJFR & vm.gc.Z
  * @key jfr
  * @library /test/lib /test/jdk
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UseZGC  -XX:+ZGenerational -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestGarbageCollectionEventWithZMinor
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UseZGC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc* jdk.jfr.event.gc.collection.TestGarbageCollectionEventWithZMinor
  */
 public class TestGarbageCollectionEventWithZMinor {
 

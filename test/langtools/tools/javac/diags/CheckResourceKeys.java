@@ -524,7 +524,7 @@ public class CheckResourceKeys {
     List<ResourceBundle> getMessageFormatBundles() {
         Module jdk_compiler = ModuleLayer.boot().findModule("jdk.compiler").get();
         List<ResourceBundle> results = new ArrayList<>();
-        for (String name : new String[]{"compiler", "launcher"}) {
+        for (String name : new String[]{"javac", "compiler", "launcher"}) {
             ResourceBundle b =
                     ResourceBundle.getBundle("com.sun.tools.javac.resources." + name, jdk_compiler);
             results.add(b);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package jdk.internal.logger;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.function.BiFunction;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
@@ -43,9 +41,6 @@ import sun.util.logging.PlatformLogger;
  * Lazy Loggers.
  */
 public final class LazyLoggers {
-
-    static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
 
     private LazyLoggers() {
         throw new InternalError();
@@ -341,7 +336,6 @@ public final class LazyLoggers {
 
     // Do not expose this outside of this package.
     private static volatile LoggerFinder provider;
-    @SuppressWarnings("removal")
     private static LoggerFinder accessLoggerFinder() {
         LoggerFinder prov = provider;
         if (prov == null) {
@@ -350,10 +344,7 @@ public final class LazyLoggers {
             // the result.
             // This is just an optimization to avoid the cost of calling
             // doPrivileged every time.
-            final SecurityManager sm = System.getSecurityManager();
-            prov = sm == null ? LoggerFinder.getLoggerFinder() :
-                AccessController.doPrivileged(
-                        (PrivilegedAction<LoggerFinder>)LoggerFinder::getLoggerFinder);
+            prov = LoggerFinder.getLoggerFinder();
             if (prov instanceof TemporaryLoggerFinder) return prov;
             provider = prov;
         }
@@ -403,17 +394,9 @@ public final class LazyLoggers {
      * @param module  module on behalf of which the logger is created
      * @return  The logger returned by the LoggerFinder.
      */
-    @SuppressWarnings("removal")
     static Logger getLoggerFromFinder(String name, Module module) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return accessLoggerFinder().getLogger(name, module);
-        } else {
-            return AccessController.doPrivileged((PrivilegedAction<Logger>)
-                    () -> {return accessLoggerFinder().getLogger(name, module);},
-                    null, LOGGERFINDER_PERMISSION);
-        }
-    }
+        return accessLoggerFinder().getLogger(name, module);
+     }
 
     /**
      * Returns a (possibly lazy) Logger for the caller.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,6 @@ public class FileImageOutputStream extends ImageOutputStreamImpl {
      *
      * @throws IllegalArgumentException if {@code f} is
      * {@code null}.
-     * @throws SecurityException if a security manager exists
-     * and does not allow write access to the file.
      * @throws FileNotFoundException if {@code f} does not denote
      * a regular file or it cannot be opened for reading and writing for any
      * other reason.

@@ -506,6 +506,13 @@ final class IntMaxVector extends IntVector {
                                      IntMaxMask.class, (IntMaxMask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public IntMaxVector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (IntMaxVector)
+            super.selectFromTemplate((IntMaxVector) v1, (IntMaxVector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

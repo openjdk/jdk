@@ -500,7 +500,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             if (prefix) {
                 sb.append(" ");
             }
-            sb.append(getAnnotationMirrors());
+            sb.append(getAnnotationMirrors().toString(" "));
             sb.append(" ");
         }
     }
@@ -2405,30 +2405,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitError(this, p);
-        }
-    }
-
-    public static class UnknownType extends Type {
-
-        public UnknownType() {
-            // Unknown is a synthesized internal type, so it cannot be
-            // annotated.
-            super(null, List.nil());
-        }
-
-        @Override
-        public TypeTag getTag() {
-            return UNKNOWN;
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return v.visitUnknown(this, p);
-        }
-
-        @Override
-        public boolean isPartial() {
-            return true;
         }
     }
 

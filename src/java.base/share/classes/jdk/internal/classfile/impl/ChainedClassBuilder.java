@@ -24,12 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.MethodTypeDesc;
-import java.util.function.Consumer;
-
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.function.Consumer;
 
 import static java.util.Objects.requireNonNull;
 

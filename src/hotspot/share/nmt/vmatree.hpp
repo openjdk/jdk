@@ -26,10 +26,11 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
+#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
-#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.
@@ -42,6 +43,7 @@ class VMATree {
   // A position in memory.
 public:
   using position = size_t;
+  using size = size_t;
 
   class PositionComparator {
   public:
@@ -140,6 +142,14 @@ public:
 private:
   VMATreap _tree;
 
+  static IntervalState& in_state(TreapNode* node) {
+    return node->val().in;
+  }
+
+  static IntervalState& out_state(TreapNode* node) {
+    return node->val().out;
+  }
+
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
     position address;
@@ -162,6 +172,7 @@ public:
     delta reserve;
     delta commit;
   };
+
   struct SummaryDiff {
     SingleDiff tag[mt_number_of_tags];
     SummaryDiff() {
@@ -169,26 +180,47 @@ public:
         tag[i] = SingleDiff{0, 0};
       }
     }
+
+    void add(SummaryDiff& other) {
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        tag[i].reserve += other.tag[i].reserve;
+        tag[i].commit += other.tag[i].commit;
+      }
+    }
+
+#ifdef ASSERT
+    void print_on(outputStream* out);
+#endif
   };
 
  private:
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_tag_inplace = false);
 
  public:
-  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata, false);
+  SummaryDiff reserve_mapping(position from, size size, const RegionData& metadata) {
+    return register_mapping(from, from + size, StateType::Reserved, metadata, false);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool use_tag_inplace = false) {
-    return register_mapping(from, from + sz, StateType::Committed, metadata, use_tag_inplace);
+  SummaryDiff commit_mapping(position from, size size, const RegionData& metadata, bool use_tag_inplace = false) {
+    return register_mapping(from, from + size, StateType::Committed, metadata, use_tag_inplace);
   }
 
-  SummaryDiff uncommit_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata, true);
+  // Given an interval and a tag, find all reserved and committed ranges at least
+  // partially contained within that interval and set their tag to the one provided.
+  // This may cause merging and splitting of ranges.
+  // Released regions are ignored.
+  SummaryDiff set_tag(position from, size size, MemTag tag);
+
+  SummaryDiff uncommit_mapping(position from, size size, const RegionData& metadata) {
+    return register_mapping(from, from + size, StateType::Reserved, metadata, true);
   }
 
-  SummaryDiff release_mapping(position from, position sz) {
-    return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
+  SummaryDiff release_mapping(position from, size size) {
+    return register_mapping(from, from + size, StateType::Released, VMATree::empty_regiondata);
+  }
+
+  VMATreap& tree() {
+    return _tree;
   }
 
 public:
@@ -196,6 +228,11 @@ public:
   void visit_in_order(F f) const {
     _tree.visit_in_order(f);
   }
+
+#ifdef ASSERT
+  void print_on(outputStream* out);
+#endif
+
 };
 
 #endif

@@ -24,9 +24,9 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
-import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
-
 import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
+
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 
 /**

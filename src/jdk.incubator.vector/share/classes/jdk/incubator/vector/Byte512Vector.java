@@ -506,6 +506,13 @@ final class Byte512Vector extends ByteVector {
                                      Byte512Mask.class, (Byte512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Byte512Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2) {
+        return (Byte512Vector)
+            super.selectFromTemplate((Byte512Vector) v1, (Byte512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

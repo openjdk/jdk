@@ -506,6 +506,13 @@ final class Int256Vector extends IntVector {
                                      Int256Mask.class, (Int256Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Int256Vector selectFrom(Vector<Integer> v1,
+                                   Vector<Integer> v2) {
+        return (Int256Vector)
+            super.selectFromTemplate((Int256Vector) v1, (Int256Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

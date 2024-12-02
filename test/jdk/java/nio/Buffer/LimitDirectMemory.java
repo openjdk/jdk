@@ -25,7 +25,7 @@
  * @test
  * @bug 4627316 6743526
  * @summary Test option to limit direct memory allocation
- * @requires (os.arch == "x86_64") | (os.arch == "amd64")
+ * @requires (os.arch == "x86_64") | (os.arch == "amd64") | (os.arch == "aarch64")
  * @library /test/lib
  *
  * @summary Test: memory is properly limited using multiple buffers

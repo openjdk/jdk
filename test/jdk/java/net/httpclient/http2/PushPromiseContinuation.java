@@ -40,6 +40,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -195,7 +196,8 @@ public class PushPromiseContinuation {
                 client.sendAsync(hreq, HttpResponse.BodyHandlers.ofString(UTF_8), pph);
 
         CompletionException t = expectThrows(CompletionException.class, () -> cf.join());
-        assertEquals(t.getCause().getClass(), IOException.class, "Expected an IOException but got " + t.getCause());
+        assertEquals(t.getCause().getClass(), ProtocolException.class,
+                "Expected a ProtocolException but got " + t.getCause());
         System.err.println("Client received the following expected exception: " + t.getCause());
         faultyServer.stop();
     }
@@ -222,7 +224,10 @@ public class PushPromiseContinuation {
 
     static class Http2PushPromiseHeadersExchangeImpl extends Http2TestExchangeImpl {
 
-        Http2PushPromiseHeadersExchangeImpl(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
+        Http2PushPromiseHeadersExchangeImpl(int streamid, String method, HttpHeaders reqheaders,
+                                            HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is,
+                                            SSLSession sslSession, BodyOutputStream os,
+                                            Http2TestServerConnection conn, boolean pushAllowed) {
             super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
         }
 

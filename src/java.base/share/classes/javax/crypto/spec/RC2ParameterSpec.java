@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.util.Arrays;
  * <p> This class can be used to initialize a {@code Cipher} object that
  * implements the <i>RC2</i> algorithm.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2268
+ *      RFC 2268: A Description of the RC2(r) Encryption Algorithm
  * @author Jan Luehe
  *
  * @since 1.4

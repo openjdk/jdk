@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -979,8 +979,6 @@ public class ErrorMessages_zh_TW extends ListResourceBundle {
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
          "\u5167\u90E8 XSLTC \u932F\u8AA4:  translet \u4E2D\u7684\u65B9\u6CD5\u8D85\u904E Java \u865B\u64EC\u6A5F\u5668\u5C0D\u65BC\u65B9\u6CD5\u9577\u5EA6 64 KB \u7684\u9650\u5236\u3002\u9019\u901A\u5E38\u662F\u56E0\u70BA\u6A23\u5F0F\u8868\u4E2D\u6709\u975E\u5E38\u5927\u7684\u6A23\u677F\u3002\u8ACB\u5617\u8A66\u91CD\u65B0\u7D44\u7E54\u60A8\u7684\u6A23\u5F0F\u8868\u4EE5\u4F7F\u7528\u8F03\u5C0F\u7684\u6A23\u677F\u3002"
         },
-
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "\u555F\u7528 Java \u5B89\u5168\u6642\uFF0C\u6703\u505C\u7528\u9084\u539F\u5E8F\u5217\u5316 TemplatesImpl \u7684\u652F\u63F4\u3002\u5C07 jdk.xml.enableTemplatesImplDeserialization \u7CFB\u7D71\u5C6C\u6027\u8A2D\u70BA\u771F\u5373\u53EF\u8986\u5BEB\u6B64\u8A2D\u5B9A\u3002"}
 
     };
 

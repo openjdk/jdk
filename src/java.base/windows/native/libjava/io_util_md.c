@@ -541,7 +541,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
 {
     FD fd = (*env)->GetLongField(env, this, IO_handle_fdID);
     HANDLE h = (HANDLE)fd;
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 
@@ -556,7 +556,7 @@ fileDescriptorClose(JNIEnv *env, jobject this)
      * taking extra precaution over here.
      */
     (*env)->SetLongField(env, this, IO_handle_fdID, -1);
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         return;
     }
 
@@ -598,4 +598,10 @@ handleGetLength(FD fd) {
     } else {
         return -1;
     }
+}
+
+jboolean
+handleIsRegularFile(JNIEnv* env, FD fd)
+{
+    return JNI_TRUE;
 }

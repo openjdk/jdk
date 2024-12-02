@@ -601,7 +601,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
 
 // Collect GC mask info - where are all the OOPs?
 void PhaseOutput::BuildOopMaps() {
-  Compile::TracePhase tp("bldOopMaps", &timers[_t_buildOopMaps]);
+  Compile::TracePhase tp(_t_buildOopMaps);
   // Can't resource-mark because I need to leave all those OopMaps around,
   // or else I need to resource-mark some arena other than the default.
   // ResourceMark rm;              // Reclaim all OopFlows when done

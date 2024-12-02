@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,7 +259,6 @@ public class TestGCLogMessages {
 
     LogMessageWithLevel exhFailureMessages[] = new LogMessageWithLevel[] {
         new LogMessageWithLevel("Recalculate Used Memory \\(ms\\):", Level.DEBUG),
-        new LogMessageWithLevel("Restore Preserved Marks \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Restore Evacuation Failed Regions \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Process Evacuation Failed Regions \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Evacuation Failed Regions:", Level.DEBUG),

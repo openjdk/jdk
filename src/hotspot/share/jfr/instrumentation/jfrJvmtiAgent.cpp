@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ static void log_and_throw(jvmtiError error, TRAPS) {
 
 static void check_exception_and_log(JNIEnv* env, TRAPS) {
   assert(env != nullptr, "invariant");
-  if (env->ExceptionOccurred()) {
+  if (env->ExceptionCheck()) {
     // array index out of bound
     DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
     ThreadInVMfromNative tvmfn(THREAD);
