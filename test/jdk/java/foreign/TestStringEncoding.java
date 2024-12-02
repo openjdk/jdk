@@ -54,6 +54,20 @@ import static org.testng.Assert.*;
 
 public class TestStringEncoding {
 
+    @Test
+    public void emptySegment() {
+        for (Charset charset : standardCharsets()) {
+            for (Arena arena : arenas()) {
+                try (arena) {
+                    var segment = arena.allocate(0);
+                    var e = expectThrows(IndexOutOfBoundsException.class, () ->
+                            segment.getString(0, charset));
+                    assertTrue(e.getMessage().contains("No null terminator found"));
+                }
+            }
+        }
+    }
+
     @Test(dataProvider = "strings")
     public void testStrings(String testString) {
         for (Charset charset : Charset.availableCharsets().values()) {
@@ -300,6 +314,12 @@ public class TestStringEncoding {
                     for (int j = 0; j < len; j++) {
                         int actual = StringSupport.strlenByte((AbstractMemorySegmentImpl) segment, j, segment.byteSize());
                         assertEquals(actual, len - j);
+                    }
+                    // Test end offset
+                    for (int j = 0; j < len - 1; j++) {
+                        final long toOffset = j;
+                        expectThrows(IndexOutOfBoundsException.class, () ->
+                                StringSupport.strlenByte((AbstractMemorySegmentImpl) segment, 0, toOffset));
                     }
                 }
             }

@@ -133,7 +133,7 @@ public final class StringSupport {
         if (length == 0) {
             // The state has to be checked explicitly for zero-length segments
             segment.scope.checkValidState();
-            throw stringTooLarge(segment, fromOffset, toOffset);
+            throw nullNotFound(segment, fromOffset, toOffset);
         }
         final long longBytes = length & LONG_MASK;
         final long longLimit = fromOffset + longBytes;
@@ -166,7 +166,7 @@ public final class StringSupport {
         segment.checkBounds(fromOffset, length);
         if (length == 0) {
             segment.scope.checkValidState();
-            throw stringTooLarge(segment, fromOffset, toOffset);
+            throw nullNotFound(segment, fromOffset, toOffset);
         }
         final long longBytes = length & LONG_MASK;
         final long longLimit = fromOffset + longBytes;
@@ -201,7 +201,7 @@ public final class StringSupport {
         segment.checkBounds(fromOffset, length);
         if (length == 0) {
             segment.scope.checkValidState();
-            throw stringTooLarge(segment, fromOffset, toOffset);
+            throw nullNotFound(segment, fromOffset, toOffset);
         }
         final long longBytes = length & LONG_MASK;
         final long longLimit = fromOffset + longBytes;
