@@ -59,7 +59,7 @@ public class bug8314731 {
     public bug8314731() throws Exception {
         JEditorPane jEditorPane = new JEditorPane();
         jEditorPane.setEditable(false);
-        JFrame jf = new JFrame("CSS named colors Test");
+        JFrame jf = new JFrame("alt attribute test in HTML image type input");
 
         JScrollPane scrollPane = new JScrollPane(jEditorPane);
         HTMLEditorKit kit = new HTMLEditorKit();
