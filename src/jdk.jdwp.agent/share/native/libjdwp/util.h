@@ -90,6 +90,7 @@ typedef struct {
     jboolean doerrorexit;
     jboolean modifiedUtf8;
     jboolean quiet;
+    jboolean jvmti_data_dump; /* If true, then support JVMTI DATA_DUMP_REQUEST events. */
 
     /* Debug flags (bit mask) */
     int      debugflags;
@@ -385,13 +386,20 @@ jvmtiError allNestedClasses(jclass clazz, jclass **ppnested, jint *pcount);
 
 void setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue);
 
+#ifdef DEBUG
+// APIs that can be called when debugging the debug agent
+char* translateThreadState(jint flags);
+char* getThreadName(jthread thread);
+char* getMethodName(jmethodID method);
+void printStackTrace(jthread thread);
+void printThreadInfo(jthread thread);
+#endif
+
 void *jvmtiAllocate(jint numBytes);
 void jvmtiDeallocate(void *buffer);
 
 void             eventIndexInit(void);
-#ifdef DEBUG
 char*            eventIndex2EventName(EventIndex ei);
-#endif
 jdwpEvent        eventIndex2jdwp(EventIndex i);
 jvmtiEvent       eventIndex2jvmti(EventIndex i);
 EventIndex       jdwp2EventIndex(jdwpEvent eventType);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,8 @@ import java.util.*;
 public class TestCICOWithGCM {
     public static void main(String[] args) throws Exception {
         //init Secret Key
-        KeyGenerator kg = KeyGenerator.getInstance("AES", "SunJCE");
+        KeyGenerator kg = KeyGenerator.getInstance("AES",
+                System.getProperty("test.provider.name", "SunJCE"));
         kg.init(128);
         SecretKey key = kg.generateKey();
 
@@ -53,9 +54,11 @@ public class TestCICOWithGCM {
         rdm.nextBytes(plainText);
 
         //init ciphers
-        Cipher encCipher = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+        Cipher encCipher = Cipher.getInstance("AES/GCM/NoPadding",
+                System.getProperty("test.provider.name", "SunJCE"));
         encCipher.init(Cipher.ENCRYPT_MODE, key);
-        Cipher decCipher = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+        Cipher decCipher = Cipher.getInstance("AES/GCM/NoPadding",
+                System.getProperty("test.provider.name", "SunJCE"));
         decCipher.init(Cipher.DECRYPT_MODE, key, encCipher.getParameters());
 
         //init cipher streams

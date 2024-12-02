@@ -35,7 +35,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @summary Auto-vectorization enhancement for unsigned shift right on signed subword types
  * @requires ((os.arch=="amd64" | os.arch=="x86_64") & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3)) | os.arch=="aarch64" |
- *           (os.arch == "riscv64" & vm.cpu.features ~= ".*v,.*")
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorizeURShiftSubword
  */

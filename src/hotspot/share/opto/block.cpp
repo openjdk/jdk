@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,10 @@
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow( uint i ) {
-  assert(i >= Max(), "must be an overflow");
+  _nesting.check(_arena); // Check if a potential reallocation in the arena is safe
+  if (i < Max()) {
+    return; // No need to grow
+  }
   debug_only(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
@@ -178,10 +181,11 @@ int Block::is_Empty() const {
     return success_result;
   }
 
-  // Ideal nodes are allowable in empty blocks: skip them  Only MachNodes
-  // turn directly into code, because only MachNodes have non-trivial
-  // emit() functions.
-  while ((end_idx > 0) && !get_node(end_idx)->is_Mach()) {
+  // Ideal nodes (except BoxLock) are allowable in empty blocks: skip them. Only
+  // Mach and BoxLock nodes turn directly into code via emit().
+  while ((end_idx > 0) &&
+         !get_node(end_idx)->is_Mach() &&
+         !get_node(end_idx)->is_BoxLock()) {
     end_idx--;
   }
 
@@ -374,6 +378,7 @@ void Block::dump(const PhaseCFG* cfg) const {
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
 , _root(root)
+, _blocks(arena)
 , _block_arena(arena)
 , _regalloc(nullptr)
 , _scheduling_for_pressure(false)
@@ -394,7 +399,10 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   Node *x = new GotoNode(nullptr);
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
-  assert(_goto != nullptr, "");
+  assert(_goto != nullptr || C->failure_is_artificial(), "");
+  if (C->failing()) {
+    return;
+  }
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order
@@ -1417,7 +1425,7 @@ UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_A
 }
 
 void UnionFind::extend( uint from_idx, uint to_idx ) {
-  _nesting.check();
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;

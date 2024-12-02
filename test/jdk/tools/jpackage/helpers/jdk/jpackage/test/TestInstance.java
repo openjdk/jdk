@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
-import jdk.jpackage.test.Functional.ThrowingFunction;
-import jdk.jpackage.test.Functional.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingFunction;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 final class TestInstance implements ThrowingRunnable {
 
@@ -50,7 +53,7 @@ final class TestInstance implements ThrowingRunnable {
 
         String testFullName() {
             StringBuilder sb = new StringBuilder();
-            sb.append(clazz.getSimpleName());
+            sb.append(clazz.getName());
             if (instanceArgs != null) {
                 sb.append('(').append(instanceArgs).append(')');
             }
@@ -78,12 +81,12 @@ final class TestInstance implements ThrowingRunnable {
             }
 
             Builder ctorArgs(Object... v) {
-                ctorArgs = ofNullable(v);
+                ctorArgs = Arrays.asList(v);
                 return this;
             }
 
             Builder methodArgs(Object... v) {
-                methodArgs = ofNullable(v);
+                methodArgs = Arrays.asList(v);
                 return this;
             }
 
@@ -107,20 +110,16 @@ final class TestInstance implements ThrowingRunnable {
                 }
                 return values.stream().map(v -> {
                     if (v != null && v.getClass().isArray()) {
-                        return String.format("%s(length=%d)",
-                                Arrays.deepToString((Object[]) v),
-                                Array.getLength(v));
+                        String asString;
+                        if (v.getClass().getComponentType().isPrimitive()) {
+                            asString = PRIMITIVE_ARRAY_FORMATTERS.get(v.getClass()).apply(v);
+                        } else {
+                            asString = Arrays.deepToString((Object[]) v);
+                        }
+                        return String.format("%s(length=%d)", asString, Array.getLength(v));
                     }
                     return String.format("%s", v);
                 }).collect(Collectors.joining(", "));
-            }
-
-            private static List<Object> ofNullable(Object... values) {
-                List<Object> result = new ArrayList();
-                for (var v: values) {
-                    result.add(v);
-                }
-                return result;
             }
 
             private List<Object> ctorArgs;
@@ -260,7 +259,7 @@ final class TestInstance implements ThrowingRunnable {
         StackTraceElement st[] = Thread.currentThread().getStackTrace();
         for (StackTraceElement ste : st) {
             if ("main".equals(ste.getMethodName())) {
-                return Functional.ThrowingSupplier.toSupplier(() -> Class.forName(
+                return ThrowingSupplier.toSupplier(() -> Class.forName(
                         ste.getClassName())).get();
             }
         }
@@ -331,7 +330,7 @@ final class TestInstance implements ThrowingRunnable {
     private final boolean dryRun;
     private final Path workDir;
 
-    private final static Set<Status> KEEP_WORK_DIR = Functional.identity(
+    private static final Set<Status> KEEP_WORK_DIR = Functional.identity(
             () -> {
                 final String propertyName = "keep-work-dir";
                 Set<String> keepWorkDir = TKit.tokenizeConfigProperty(
@@ -354,5 +353,16 @@ final class TestInstance implements ThrowingRunnable {
 
                 return Collections.unmodifiableSet(result);
             }).get();
+
+    private static final Map<Class<?>, Function<Object, String>> PRIMITIVE_ARRAY_FORMATTERS = Map.of(
+            boolean[].class, v -> Arrays.toString((boolean[])v),
+            byte[].class, v -> Arrays.toString((byte[])v),
+            char[].class, v -> Arrays.toString((char[])v),
+            short[].class, v -> Arrays.toString((short[])v),
+            int[].class, v -> Arrays.toString((int[])v),
+            long[].class, v -> Arrays.toString((long[])v),
+            float[].class, v -> Arrays.toString((float[])v),
+            double[].class, v -> Arrays.toString((double[])v)
+    );
 
 }

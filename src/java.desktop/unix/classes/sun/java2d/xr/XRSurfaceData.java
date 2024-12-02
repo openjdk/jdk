@@ -291,8 +291,7 @@ public abstract class XRSurfaceData extends XSurfaceData {
         this.solidloops = graphicsConfig.getSolidLoops(sType);
         this.depth = depth;
         initOps(peer, graphicsConfig, depth);
-
-        setBlitProxyKey(gc.getProxyKey());
+        setBlitProxyCache(gc.getSurfaceDataProxyCache());
     }
 
     protected XRSurfaceData(XRBackend renderQueue) {

@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
@@ -85,7 +86,7 @@ void ShenandoahControlThread::run_service() {
 
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
-      log_info(gc)("Trigger: Handle Allocation Failure");
+      heuristics->log_trigger("Handle Allocation Failure");
 
       cause = GCCause::_allocation_failure;
 
@@ -104,7 +105,7 @@ void ShenandoahControlThread::run_service() {
       }
     } else if (is_gc_requested) {
       cause = requested_gc_cause;
-      log_info(gc)("Trigger: GC request (%s)", GCCause::to_string(cause));
+      heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
 
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
@@ -147,10 +148,7 @@ void ShenandoahControlThread::run_service() {
       heap->set_forced_counters_update(true);
 
       // If GC was requested, we better dump freeset data for performance debugging
-      {
-        ShenandoahHeapLocker locker(heap->lock());
-        heap->free_set()->log_status();
-      }
+      heap->free_set()->log_status_under_lock();
 
       switch (mode) {
         case concurrent_normal:
@@ -178,18 +176,18 @@ void ShenandoahControlThread::run_service() {
 
       // Report current free set state at the end of cycle, whether
       // it is a normal completion, or the abort.
-      {
-        ShenandoahHeapLocker locker(heap->lock());
-        heap->free_set()->log_status();
+      heap->free_set()->log_status_under_lock();
 
+      {
         // Notify Universe about new heap usage. This has implications for
         // global soft refs policy, and we better report it every time heap
         // usage goes down.
+        ShenandoahHeapLocker locker(heap->lock());
         heap->update_capacity_and_used_at_gc();
-
-        // Signal that we have completed a visit to all live objects.
-        heap->record_whole_heap_examined_timestamp();
       }
+
+      // Signal that we have completed a visit to all live objects.
+      heap->record_whole_heap_examined_timestamp();
 
       // Disable forced counters update, and update counters one more time
       // to capture the state at the end of GC session.
@@ -318,18 +316,21 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, heap->global_generation());
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
-  ShenandoahConcurrentGC gc;
+  ShenandoahConcurrentGC gc(heap->global_generation(), false);
   if (gc.collect(cause)) {
-    // Cycle is complete
-    heap->heuristics()->record_success_concurrent();
-    heap->shenandoah_policy()->record_success_concurrent(gc.abbreviated());
+    // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
+    heap->notify_gc_progress();
+    heap->global_generation()->heuristics()->record_success_concurrent();
+    heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
+    heap->log_heap_status("At end of GC");
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
+    heap->log_heap_status("At end of cancelled GC");
   }
 }
 
@@ -352,8 +353,9 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahFullGC gc;
   gc.collect(cause);
@@ -361,11 +363,11 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
-
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, heap->global_generation());
 
-  ShenandoahDegenGC gc(point);
+  ShenandoahDegenGC gc(point, heap->global_generation());
   gc.collect(cause);
 }
 
@@ -376,6 +378,16 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
+  // For normal requested GCs (System.gc) we want to block the caller. However,
+  // for whitebox requested GC, we want to initiate the GC and return immediately.
+  // The whitebox caller thread will arrange for itself to wait until the GC notifies
+  // it that has reached the requested breakpoint (phase in the GC).
+  if (cause == GCCause::_wb_breakpoint) {
+    _requested_gc_cause = cause;
+    _gc_requested.set();
+    return;
+  }
+
   // Make sure we have at least one complete GC cycle before unblocking
   // from the explicit GC request.
   //
@@ -395,9 +407,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
     _requested_gc_cause = cause;
     _gc_requested.set();
 
-    if (cause != GCCause::_wb_breakpoint) {
-      ml.wait();
-    }
+    ml.wait();
     current_gc_id = get_gc_id();
   }
 }

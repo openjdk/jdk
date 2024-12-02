@@ -46,6 +46,7 @@ protected:
   static int _dcache_line_size;
   static int _icache_line_size;
   static int _initial_sve_vector_length;
+  static int _max_supported_sve_vector_length;
   static bool _rop_protection;
   static uintptr_t _pac_mask;
 
@@ -164,7 +165,8 @@ enum Ampere_CPU_Model {
 
   static int icache_line_size() { return _icache_line_size; }
   static int dcache_line_size() { return _dcache_line_size; }
-  static int get_initial_sve_vector_length()  { return _initial_sve_vector_length; };
+  static int get_initial_sve_vector_length()        { return _initial_sve_vector_length; };
+  static int get_max_supported_sve_vector_length()  { return _max_supported_sve_vector_length; };
 
   // Aarch64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }

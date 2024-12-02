@@ -118,6 +118,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Calculating new sizes
   void resize(size_t desired_free_space);
 
+  // Invoked by mutators and GC-workers.
   HeapWord* allocate(size_t word_size) {
     HeapWord* res;
     do {
@@ -126,6 +127,9 @@ class PSOldGen : public CHeapObj<mtGC> {
     } while ((res == nullptr) && expand_for_allocate(word_size));
     return res;
   }
+
+  // Invoked by VM thread inside a safepoint.
+  HeapWord* expand_and_allocate(size_t word_size);
 
   // Iteration.
   void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }

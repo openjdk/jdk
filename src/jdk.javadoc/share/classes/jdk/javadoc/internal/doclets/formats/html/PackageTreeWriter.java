@@ -25,21 +25,17 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-
-import java.util.ArrayList;
-import java.util.List;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
 
 
 /**
@@ -100,8 +96,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
                 : contents.getContent("doclet.Hierarchy_For_Package",
                 getLocalizedPackageName(packageElement));
         var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headContent);
-        var div = HtmlTree.DIV(HtmlStyle.header, heading);
+                HtmlStyles.title, headContent);
+        var div = HtmlTree.DIV(HtmlStyles.header, heading);
         mainContent.add(div);
         if (configuration.packages.size() > 1) {
             addLinkToAllPackages(mainContent);
@@ -136,10 +132,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      * @param target the content to which the link will be added
      */
     protected void addLinkToAllPackages(Content target) {
-        var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
+        var span = HtmlTree.SPAN(HtmlStyles.packageHierarchyLabel,
                 contents.packageHierarchies);
         target.add(span);
-        var ul = HtmlTree.UL(HtmlStyle.horizontal).addStyle(HtmlStyle.contentsList);
+        var ul = HtmlTree.UL(HtmlStyles.horizontal).addStyle(HtmlStyles.contentsList);
         // TODO the link should be more specific:
         //  it should point to the "all packages" section of the overview tree
         ul.add(getNavLinkToOverviewTree(resources.getText("doclet.All_Packages")));

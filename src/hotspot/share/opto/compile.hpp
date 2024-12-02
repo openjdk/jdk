@@ -239,11 +239,12 @@ class Compile : public Phase {
    private:
     Compile*    _compile;
     CompileLog* _log;
-    const char* _phase_name;
     bool _dolog;
    public:
-    TracePhase(const char* name, elapsedTimer* accumulator);
+    TracePhase(PhaseTraceId phaseTraceId);
+    TracePhase(const char* name, PhaseTraceId phaseTraceId);
     ~TracePhase();
+    const char* phase_name() const { return title(); }
   };
 
   // Information per category of alias (memory slice)
@@ -354,6 +355,7 @@ class Compile : public Phase {
   // JSR 292
   bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
+  bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
@@ -369,7 +371,8 @@ class Compile : public Phase {
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
   GrowableArray<ParsePredicateNode*> _parse_predicates; // List of Parse Predicates.
-  GrowableArray<Node*>  _template_assertion_predicate_opaqs; // List of Opaque4 nodes for Template Assertion Predicates.
+  // List of OpaqueTemplateAssertionPredicateNode nodes for Template Assertion Predicates.
+  GrowableArray<Node*>  _template_assertion_predicate_opaqs;
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -389,6 +392,8 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   DEBUG_ONLY(Unique_Node_List* _modified_nodes;)   // List of nodes which inputs were modified
   DEBUG_ONLY(bool       _phase_optimize_finished;) // Used for live node verification while creating new nodes
+
+  DEBUG_ONLY(bool       _phase_verify_ideal_loop;) // Are we in PhaseIdealLoop verification?
 
   // Arenas for new-space and old-space nodes.
   // Swapped between using _node_arena.
@@ -672,6 +677,8 @@ private:
   void          set_clinit_barrier_on_entry(bool z) { _clinit_barrier_on_entry = z; }
   bool              has_monitors() const         { return _has_monitors; }
   void          set_has_monitors(bool v)         { _has_monitors = v; }
+  bool              has_scoped_access() const    { return _has_scoped_access; }
+  void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
 
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(CompileCommandEnum option) {
@@ -704,14 +711,16 @@ private:
   void print_method(CompilerPhaseType cpt, int level, Node* n = nullptr);
 
 #ifndef PRODUCT
+  void init_igv();
   void dump_igv(const char* graph_name, int level = 3) {
     if (should_print_igv(level)) {
-      _igv_printer->print_method(graph_name, level);
+      _igv_printer->print_graph(graph_name);
     }
   }
 
   void igv_print_method_to_file(const char* phase_name = "Debug", bool append = false);
   void igv_print_method_to_network(const char* phase_name = "Debug");
+  void igv_print_graph_to_network(const char* name, Node* node, GrowableArray<const Node*>& visible_nodes);
   static IdealGraphPrinter* debug_file_printer() { return _debug_file_printer; }
   static IdealGraphPrinter* debug_network_printer() { return _debug_network_printer; }
 #endif
@@ -765,7 +774,7 @@ private:
 
   void add_template_assertion_predicate_opaq(Node* n) {
     assert(!_template_assertion_predicate_opaqs.contains(n),
-           "duplicate entry in template assertion predicate opaque4 list");
+           "Duplicate entry in Template Assertion Predicate OpaqueTemplateAssertionPredicate list");
     _template_assertion_predicate_opaqs.append(n);
   }
 
@@ -782,6 +791,12 @@ private:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
+
+#ifdef ASSERT
+  bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }
+  void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
+  void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
+#endif
 
   bool       allow_macro_nodes() { return _allow_macro_nodes;  }
   void reset_allow_macro_nodes() { _allow_macro_nodes = false;  }
@@ -812,7 +827,7 @@ private:
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
 
-  bool        failing() const        {
+  bool        failing_internal() const {
     return _env->failing() ||
            _failure_reason.get() != nullptr;
   }
@@ -824,6 +839,27 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
+  bool failing() {
+    if (failing_internal()) {
+      return true;
+    }
+#ifdef ASSERT
+    // Disable stress code for PhaseIdealLoop verification (would have cascading effects).
+    if (phase_verify_ideal_loop()) {
+      return false;
+    }
+    if (StressBailout) {
+      return fail_randomly();
+    }
+#endif
+    return false;
+  }
+
+#ifdef ASSERT
+  bool fail_randomly();
+  bool failure_is_artificial();
+#endif
+
   bool failure_reason_is(const char* r) const {
     return (r == _failure_reason.get()) ||
            (r != nullptr &&
@@ -831,11 +867,11 @@ private:
             strcmp(r, _failure_reason.get()) == 0);
   }
 
-  void record_failure(const char* reason);
-  void record_method_not_compilable(const char* reason) {
+  void record_failure(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false));
+  void record_method_not_compilable(const char* reason DEBUG_ONLY(COMMA bool allow_multiple_failures = false)) {
     env()->record_method_not_compilable(reason);
     // Record failure reason.
-    record_failure(reason);
+    record_failure(reason DEBUG_ONLY(COMMA allow_multiple_failures));
   }
   bool check_node_count(uint margin, const char* reason) {
     if (oom()) {
@@ -861,7 +897,7 @@ private:
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
-  void         init_start(StartNode* s);
+  void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
 
   Node*        recent_alloc_ctl() const    { return _recent_alloc_ctl; }
@@ -1212,7 +1248,7 @@ private:
   void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
   void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
-  void eliminate_redundant_card_marks(Node* n);
+  void handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned);
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);

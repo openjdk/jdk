@@ -76,29 +76,16 @@ package gc.stringdedup;
  */
 
 /*
- * @test id=ZSinglegen
+ * @test id=Z
  * @summary Test string deduplication table resize
  * @bug 8029075
- * @requires vm.gc.ZSinglegen
+ * @requires vm.gc.Z
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc:open
  * @modules java.base/java.lang:open
  *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationTableResize Z -XX:-ZGenerational
- */
-
-/*
- * @test id=ZGenerational
- * @summary Test string deduplication table resize
- * @bug 8029075
- * @requires vm.gc.ZGenerational
- * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc:open
- * @modules java.base/java.lang:open
- *          java.management
- * @run driver gc.stringdedup.TestStringDeduplicationTableResize Z -XX:+ZGenerational
+ * @run driver gc.stringdedup.TestStringDeduplicationTableResize Z
  */
 
 public class TestStringDeduplicationTableResize {

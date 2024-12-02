@@ -404,8 +404,6 @@ alias sun.gc.lastCause                            // 1.5.0 b39
         hotspot.gc.last_cause                     // 1.4.2_02
 
 // sun.gc.policy
-alias sun.gc.policy.avgBaseFootprint              // 1.5.0 b39
-	hotspot.gc.policy.avg_base_footprint      // 1.5.0 b21
 alias sun.gc.policy.avgMajorIntervalTime          // 1.5.0 b39
 	hotspot.gc.policy.avg_major_interval      // 1.5.0 b21
 alias sun.gc.policy.avgMajorPauseTime             // 1.5.0 b39
@@ -459,8 +457,6 @@ alias sun.gc.policy.edenSize                      // 1.5.0 b39
 	hotspot.gc.policy.eden_size               // 1.5.0 b21
 alias sun.gc.policy.freeSpace                     // 1.5.0 b39
 	hotspot.gc.policy.free_space              // 1.5.0 b21
-alias sun.gc.policy.fullFollowsScavenge           // 1.5.0 b39
-	hotspot.gc.policy.full_follows_scavenge   // 1.5.0 b21
 alias sun.gc.policy.gcTimeLimitExceeded           // 1.5.0 b39
 	hotspot.gc.policy.gc_time_limit_exceeded  // 1.5.0 b21
 alias sun.gc.policy.generations                   // 1.5.0 b39
@@ -508,8 +504,6 @@ alias sun.gc.policy.promoSize                     // 1.5.0 b39
 	hotspot.gc.policy.promo_size              // 1.5.0 b21
 alias sun.gc.policy.promoted                      // 1.5.0 b39
 	hotspot.gc.policy.promoted                // 1.5.0 b21
-alias sun.gc.policy.scavengeSkipped               // 1.5.0 b39
-	hotspot.gc.policy.scavenge_skipped        // 1.5.0 b21
 alias sun.gc.policy.survived                      // 1.5.0 b39
 	hotspot.gc.policy.survived                // 1.5.0 b21
 alias sun.gc.policy.survivorOverflowed            // 1.5.0 b39

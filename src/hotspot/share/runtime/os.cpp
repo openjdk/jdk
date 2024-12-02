@@ -32,6 +32,7 @@
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -77,6 +78,10 @@
 #include "utilities/fastrand.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
+
+#ifdef LINUX
+#include "osContainer_linux.hpp"
+#endif
 
 #ifndef _WINDOWS
 # include <poll.h>
@@ -209,9 +214,9 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
     abs_local_to_UTC = -(abs_local_to_UTC);
   }
   // Convert time zone offset seconds to hours and minutes.
-  const time_t zone_hours = (abs_local_to_UTC / seconds_per_hour);
-  const time_t zone_min =
-    ((abs_local_to_UTC % seconds_per_hour) / seconds_per_minute);
+  const int zone_hours = static_cast<int>(abs_local_to_UTC / seconds_per_hour);
+  const int zone_min =
+    static_cast<int>((abs_local_to_UTC % seconds_per_hour) / seconds_per_minute);
 
   // Print an ISO 8601 date and time stamp into the buffer
   const int year = 1900 + time_struct.tm_year;
@@ -272,13 +277,6 @@ bool os::dll_build_name(char* buffer, size_t size, const char* fname) {
   return (n != -1);
 }
 
-#if !defined(LINUX) && !defined(_WINDOWS)
-bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
-  committed_start = start;
-  committed_size = size;
-  return true;
-}
-#endif
 
 // Helper for dll_locate_lib.
 // Pass buffer and printbuffer as we already printed the path to buffer
@@ -515,6 +513,11 @@ static void* _native_java_library = nullptr;
 
 void* os::native_java_library() {
   if (_native_java_library == nullptr) {
+    if (is_vm_statically_linked()) {
+      _native_java_library = get_default_process_handle();
+      return _native_java_library;
+    }
+
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
 
@@ -548,49 +551,35 @@ void* os::native_java_library() {
  * executable if agent_lib->is_static_lib() == true or in the shared library
  * referenced by 'handle'.
  */
-void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib,
-                              const char *syms[], size_t syms_len) {
+void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib, const char *sym) {
   assert(agent_lib != nullptr, "sanity check");
-  const char *lib_name;
   void *handle = agent_lib->os_lib();
   void *entryName = nullptr;
-  char *agent_function_name;
-  size_t i;
 
   // If checking then use the agent name otherwise test is_static_lib() to
   // see how to process this lookup
-  lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
-  for (i = 0; i < syms_len; i++) {
-    agent_function_name = build_agent_function_name(syms[i], lib_name, agent_lib->is_absolute_path());
-    if (agent_function_name == nullptr) {
-      break;
-    }
+  const char *lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
+
+  char* agent_function_name = build_agent_function_name(sym, lib_name, agent_lib->is_absolute_path());
+  if (agent_function_name != nullptr) {
     entryName = dll_lookup(handle, agent_function_name);
     FREE_C_HEAP_ARRAY(char, agent_function_name);
-    if (entryName != nullptr) {
-      break;
-    }
   }
   return entryName;
 }
 
 // See if the passed in agent is statically linked into the VM image.
-bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
-                            size_t syms_len) {
-  void *ret;
-  void *proc_handle;
-  void *save_handle;
-
+bool os::find_builtin_agent(JvmtiAgent* agent, const char* sym) {
   assert(agent != nullptr, "sanity check");
   if (agent->name() == nullptr) {
     return false;
   }
-  proc_handle = get_default_process_handle();
+  void* proc_handle = get_default_process_handle();
   // Check for Agent_OnLoad/Attach_lib_name function
-  save_handle = agent->os_lib();
+  void* save_handle = agent->os_lib();
   // We want to look in this process' symbol table.
   agent->set_os_lib(proc_handle);
-  ret = find_agent_function(agent, true, syms, syms_len);
+  void* ret = find_agent_function(agent, true, sym);
   if (ret != nullptr) {
     // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
     agent->set_static_lib();
@@ -603,16 +592,16 @@ bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
 
 // --------------------- heap allocation utilities ---------------------
 
-char *os::strdup(const char *str, MEMFLAGS flags) {
+char *os::strdup(const char *str, MemTag mem_tag) {
   size_t size = strlen(str);
-  char *dup_str = (char *)malloc(size + 1, flags);
+  char *dup_str = (char *)malloc(size + 1, mem_tag);
   if (dup_str == nullptr) return nullptr;
   strcpy(dup_str, str);
   return dup_str;
 }
 
-char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
-  char* p = os::strdup(str, flags);
+char* os::strdup_check_oom(const char* str, MemTag mem_tag) {
+  char* p = os::strdup(str, mem_tag);
   if (p == nullptr) {
     vm_exit_out_of_memory(strlen(str) + 1, OOM_MALLOC_ERROR, "os::strdup_check_oom");
   }
@@ -632,11 +621,11 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-void* os::malloc(size_t size, MEMFLAGS flags) {
-  return os::malloc(size, flags, CALLER_PC);
+void* os::malloc(size_t size, MemTag mem_tag) {
+  return os::malloc(size, mem_tag, CALLER_PC);
 }
 
-void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -654,7 +643,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   size = MAX2((size_t)1, size);
 
   // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, memflags)) {
+  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
     return nullptr;
   }
 
@@ -670,7 +659,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
+  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
 
   if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
@@ -682,20 +671,20 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   return inner_ptr;
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
-  return os::realloc(memblock, size, flags, CALLER_PC);
+void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
+  return os::realloc(memblock, size, mem_tag, CALLER_PC);
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
-  if (NMTPreInit::handle_realloc(&rc, memblock, size, memflags)) {
+  if (NMTPreInit::handle_realloc(&rc, memblock, size, mem_tag)) {
     return rc;
   }
 
   if (memblock == nullptr) {
-    return os::malloc(size, memflags, stack);
+    return os::malloc(size, mem_tag, stack);
   }
 
   DEBUG_ONLY(check_crash_protection());
@@ -718,15 +707,15 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
     // Observe MallocLimit
-    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, memflags)) {
+    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
       return nullptr;
     }
 
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
     // may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
-    assert(memflags == header->flags(), "weird NMT flags mismatch (new:\"%s\" != old:\"%s\")\n",
-           NMTUtil::flag_to_name(memflags), NMTUtil::flag_to_name(header->flags()));
+    assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
+           NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
     const MallocHeader::FreeInfo free_info = header->free_info();
 
     header->mark_block_as_dead();
@@ -745,7 +734,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
     // After a successful realloc(3), we account the resized block with its new size
     // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
 
 #ifdef ASSERT
     assert(old_size == free_info.size, "Sanity");
@@ -941,56 +930,73 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
-ATTRIBUTE_NO_ASAN static bool read_safely_from(intptr_t* p, intptr_t* result) {
-  const intptr_t errval = 0x1717;
-  intptr_t i = SafeFetchN(p, errval);
+ATTRIBUTE_NO_ASAN static bool read_safely_from(const uintptr_t* p, uintptr_t* result) {
+  DEBUG_ONLY(*result = 0xAAAA;)
+  const uintptr_t errval = 0x1717;
+  uintptr_t i = (uintptr_t)SafeFetchN((intptr_t*)p, errval);
   if (i == errval) {
-    i = SafeFetchN(p, ~errval);
+    i = (uintptr_t)SafeFetchN((intptr_t*)p, ~errval);
     if (i == ~errval) {
       return false;
     }
   }
-  (*result) = i;
+  (*result) = (uintptr_t)i;
   return true;
 }
 
-static void print_hex_location(outputStream* st, address p, int unitsize) {
+// Helper for os::print_hex_dump
+static void print_ascii_form(stringStream& ascii_form, uint64_t value, int unitsize) {
+  union {
+    uint64_t v;
+    uint8_t c[sizeof(v)];
+  } u = { value };
+  for (int i = 0; i < unitsize; i++) {
+    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - unitsize + i);
+    const uint8_t c = u.c[idx];
+    ascii_form.put(isprint(c) && isascii(c) ? c : '.');
+  }
+}
+
+// Helper for os::print_hex_dump
+static void print_hex_location(outputStream* st, const_address p, int unitsize, stringStream& ascii_form) {
   assert(is_aligned(p, unitsize), "Unaligned");
-  address pa = align_down(p, sizeof(intptr_t));
+  const uintptr_t* pa = (const uintptr_t*) align_down(p, sizeof(intptr_t));
 #ifndef _LP64
   // Special handling for printing qwords on 32-bit platforms
   if (unitsize == 8) {
-    intptr_t i1, i2;
-    if (read_safely_from((intptr_t*)pa, &i1) &&
-        read_safely_from((intptr_t*)pa + 1, &i2)) {
+    uintptr_t i1 = 0, i2 = 0;
+    if (read_safely_from(pa, &i1) &&
+        read_safely_from(pa + 1, &i2)) {
       const uint64_t value =
         LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
         BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
       st->print("%016" FORMAT64_MODIFIER "x", value);
+      print_ascii_form(ascii_form, value, unitsize);
     } else {
       st->print_raw("????????????????");
     }
     return;
   }
 #endif // 32-bit, qwords
-  intptr_t i = 0;
-  if (read_safely_from((intptr_t*)pa, &i)) {
+  uintptr_t i = 0;
+  if (read_safely_from(pa, &i)) {
     // bytes:   CA FE BA BE DE AD C0 DE
     // bytoff:   0  1  2  3  4  5  6  7
     // LE bits:  0  8 16 24 32 40 48 56
     // BE bits: 56 48 40 32 24 16  8  0
-    const int offset = (int)(p - (address)pa);
+    const int offset = (int)(p - (const_address)pa);
     const int bitoffset =
       LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
       BIG_ENDIAN_ONLY((int)((sizeof(intptr_t) - unitsize - offset) * BitsPerByte));
     const int bitfieldsize = unitsize * BitsPerByte;
-    intptr_t value = bitfield(i, bitoffset, bitfieldsize);
+    uintptr_t value = bitfield(i, bitoffset, bitfieldsize);
     switch (unitsize) {
       case 1: st->print("%02x", (u1)value); break;
       case 2: st->print("%04x", (u2)value); break;
       case 4: st->print("%08x", (u4)value); break;
       case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
     }
+    print_ascii_form(ascii_form, value, unitsize);
   } else {
     switch (unitsize) {
       case 1: st->print_raw("??"); break;
@@ -1001,36 +1007,63 @@ static void print_hex_location(outputStream* st, address p, int unitsize) {
   }
 }
 
-void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
-                        int bytes_per_line, address logical_start) {
+void os::print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize,
+                        bool print_ascii, int bytes_per_line, const_address logical_start, const_address highlight_address) {
+  constexpr int max_bytes_per_line = 64;
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
+  assert(bytes_per_line > 0 && bytes_per_line <= max_bytes_per_line &&
+         is_power_of_2(bytes_per_line), "invalid bytes_per_line");
+  assert(highlight_address == nullptr || (highlight_address >= start && highlight_address < end),
+         "address %p to highlight not in range %p - %p", highlight_address, start, end);
+
 
   start = align_down(start, unitsize);
   logical_start = align_down(logical_start, unitsize);
   bytes_per_line = align_up(bytes_per_line, 8);
 
   int cols = 0;
-  int cols_per_line = bytes_per_line / unitsize;
+  const int cols_per_line = bytes_per_line / unitsize;
 
-  address p = start;
-  address logical_p = logical_start;
+  const_address p = start;
+  const_address logical_p = logical_start;
+
+  stringStream ascii_form;
 
   // Print out the addresses as if we were starting from logical_start.
-  st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
-    print_hex_location(st, p, unitsize);
+    if (cols == 0) {
+      // highlight start of line if address of interest is located in the line
+      const bool should_highlight = (highlight_address >= p && highlight_address < p + bytes_per_line);
+      const char* const prefix =
+        (highlight_address != nullptr) ? (should_highlight ? "=>" : "  ") : "";
+      st->print("%s" PTR_FORMAT ":   ", prefix, p2i(logical_p));
+    }
+    print_hex_location(st, p, unitsize, ascii_form);
     p += unitsize;
     logical_p += unitsize;
     cols++;
-    if (cols >= cols_per_line && p < end) {
-       cols = 0;
+    if (cols >= cols_per_line) {
+       if (print_ascii && !ascii_form.is_empty()) {
+         st->print("   %s", ascii_form.base());
+       }
+       ascii_form.reset();
        st->cr();
-       st->print(PTR_FORMAT ":   ", p2i(logical_p));
+       cols = 0;
     } else {
        st->print(" ");
     }
   }
-  st->cr();
+
+  if (cols > 0) { // did not print a full line
+    if (print_ascii) {
+      // indent last ascii part to match that of full lines
+      const int size_of_printed_unit = unitsize * 2;
+      const int space_left = (cols_per_line - cols) * (size_of_printed_unit + 1);
+      st->sp(space_left);
+      st->print("  %s", ascii_form.base());
+    }
+    st->cr();
+  }
 }
 
 void os::print_dhm(outputStream* st, const char* startStr, long sec) {
@@ -1041,6 +1074,26 @@ void os::print_dhm(outputStream* st, const char* startStr, long sec) {
   st->print_cr("%s %ld days %ld:%02ld hours", startStr, days, hours, minutes);
 }
 
+void os::print_tos_pc(outputStream* st, const void* context) {
+  if (context == nullptr) return;
+
+  // First of all, carefully determine sp without inspecting memory near pc.
+  // See comment below.
+  intptr_t* sp = nullptr;
+  fetch_frame_from_context(context, &sp, nullptr);
+  print_tos(st, (address)sp);
+  st->cr();
+
+  // Note: it may be unsafe to inspect memory near pc. For example, pc may
+  // point to garbage if entry point in an nmethod is corrupted. Leave
+  // this at the end, and hope for the best.
+  // This version of fetch_frame_from_context finds the caller pc if the actual
+  // one is bad.
+  address pc = fetch_frame_from_context(context).pc();
+  print_instructions(st, pc);
+  st->cr();
+}
+
 void os::print_tos(outputStream* st, address sp) {
   st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
   print_hex_dump(st, sp, sp + 512, sizeof(intptr_t));
@@ -1048,7 +1101,7 @@ void os::print_tos(outputStream* st, address sp) {
 
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
-  print_hex_dump(st, pc - 256, pc + 256, unitsize);
+  print_hex_dump(st, pc - 256, pc + 256, unitsize, /* print_ascii=*/false, pc);
 }
 
 void os::print_environment_variables(outputStream* st, const char** env_list) {
@@ -1248,7 +1301,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   }
 
   // Check if in metaspace and print types that have vptrs
-  if (Metaspace::contains(addr)) {
+  if (Metaspace::initialized() && Metaspace::contains(addr)) {
     if (Klass::is_valid((Klass*)addr)) {
       st->print_cr(INTPTR_FORMAT " is a pointer to class: ", p2i(addr));
       ((Klass*)addr)->print_on(st);
@@ -1275,6 +1328,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
   }
 #endif
+
+  // Ask if any OopStorage knows about this address.
+  if (OopStorageSet::print_containing(addr, st)) {
+    return;
+  }
 
   // Still nothing? If NMT is enabled, we can ask what it thinks...
   if (MemTracker::print_containing_region(addr, st)) {
@@ -1830,10 +1888,10 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
+char* os::reserve_memory(size_t bytes, bool executable, MemTag mem_tag) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
+    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
     log_info(os, map)("Reserve failed (%zu bytes)", bytes);
@@ -1841,10 +1899,10 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MemTag mem_tag) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
     log_info(os, map)("Attempt to reserve " RANGEFMT " failed",
@@ -1924,8 +1982,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   // This is not reflected by os_allocation_granularity().
   // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
   const size_t system_allocation_granularity =
-    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
-    NOT_AIX(os::vm_allocation_granularity());
+    AIX_ONLY((!os::Aix::supports_64K_mmap_pages() && os::vm_page_size() == 64*K) ? 256*M : ) os::vm_allocation_granularity();
 
   const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
 
@@ -2064,6 +2121,19 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
+julong os::used_memory() {
+#ifdef LINUX
+  if (OSContainer::is_containerized()) {
+    jlong mem_usage = OSContainer::memory_usage_in_bytes();
+    if (mem_usage > 0) {
+      return mem_usage;
+    }
+  }
+#endif
+  return os::physical_memory() - os::available_memory();
+}
+
+
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res = pd_commit_memory(addr, bytes, executable);
@@ -2182,31 +2252,31 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
   }
 }
 
-char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
+char* os::map_memory_to_file(size_t bytes, int file_desc, MemTag mem_tag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, mem_tag);
   }
   return result;
 }
 
-char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MemTag mem_tag) {
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
   }
   return result;
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
-                           bool allow_exec, MEMFLAGS flags) {
+                           bool allow_exec, MemTag mem_tag) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
   }
   return result;
 }
@@ -2225,8 +2295,8 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   return result;
 }
 
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  pd_free_memory(addr, bytes, alignment_hint);
+void os::disclaim_memory(char *addr, size_t bytes) {
+  pd_disclaim_memory(addr, bytes);
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {

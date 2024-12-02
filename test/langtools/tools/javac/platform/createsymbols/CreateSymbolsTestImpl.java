@@ -1070,7 +1070,7 @@ public class CreateSymbolsTestImpl {
                            try {
                                Path moduleInfo = classesDir.resolve("module-info.class");
                                byte[] newClassData =
-                                       cf.transform(cf.parse(moduleInfo),
+                                       cf.transformClass(cf.parse(moduleInfo),
                                                     (builder, element) -> {
                                                         builder.with(element);
                                                         if (element instanceof ModuleAttribute) {
@@ -1179,7 +1179,7 @@ public class CreateSymbolsTestImpl {
             }
             ClassFile cf = ClassFile.of();
             ClassModel cm = cf.parse(moduleInfo);
-            byte[] newData = cf.transform(cm, (builder, element) -> {
+            byte[] newData = cf.transformClass(cm, (builder, element) -> {
                 builder.with(element);
                 if (element instanceof ModuleAttribute) {
                     builder.with(ModulePackagesAttribute.ofNames(packages.stream()

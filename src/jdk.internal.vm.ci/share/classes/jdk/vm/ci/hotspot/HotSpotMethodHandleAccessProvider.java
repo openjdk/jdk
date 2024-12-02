@@ -146,6 +146,8 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
             return IntrinsicMethod.LINK_TO_STATIC;
         } else if (intrinsicId == config.vmIntrinsicLinkToVirtual) {
             return IntrinsicMethod.LINK_TO_VIRTUAL;
+        } else if (intrinsicId == config.vmIntrinsicLinkToNative) {
+            return IntrinsicMethod.LINK_TO_NATIVE;
         }
         return null;
     }

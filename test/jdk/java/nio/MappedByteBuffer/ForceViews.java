@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class ForceViews {
 
     @BeforeTest(alwaysRun=true)
     public void openChannel() throws IOException {
-        Path file = Path.of(System.getProperty("test.src", "."), "junk");
+        Path file = Path.of(".", "junk");
         fc = FileChannel.open(file, CREATE_NEW, READ, WRITE, DELETE_ON_CLOSE);
         ByteBuffer buf = ByteBuffer.wrap(new byte[1024]);
         fc.write(buf);

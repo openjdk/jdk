@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #include "gc/g1/g1HeapRegionTracer.hpp"
 #include "jfr/jfrEvents.hpp"
 
-void HeapRegionTracer::send_region_type_change(uint index,
+void G1HeapRegionTracer::send_region_type_change(uint index,
                                                G1HeapRegionTraceType::Type from,
                                                G1HeapRegionTraceType::Type to,
                                                uintptr_t start,

@@ -32,6 +32,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/genArguments.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
@@ -376,17 +377,20 @@ void TenuredGeneration::update_counters() {
 }
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
-  size_t available = contiguous_available();
-  size_t av_promo  = (size_t)_avg_promoted->padded_average();
-  bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
+  size_t available = _the_space->free() + _virtual_space.uncommitted_size();
+
+  size_t avg_promoted  = (size_t)_avg_promoted->padded_average();
+  size_t promotion_estimate = MIN2(avg_promoted, max_promotion_in_bytes);
+
+  bool res = (promotion_estimate <= available);
 
   log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
-    res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
+    res? "":" not", available, res? ">=":"<", avg_promoted, max_promotion_in_bytes);
 
   return res;
 }
 
-oop TenuredGeneration::promote(oop obj, size_t obj_size) {
+oop TenuredGeneration::allocate_for_promotion(oop obj, size_t obj_size) {
   assert(obj_size == obj->size(), "bad obj_size passed in");
 
 #ifndef PRODUCT
@@ -396,30 +400,19 @@ oop TenuredGeneration::promote(oop obj, size_t obj_size) {
 #endif  // #ifndef PRODUCT
 
   // Allocate new object.
-  HeapWord* result = allocate(obj_size, false);
+  HeapWord* result = allocate(obj_size);
   if (result == nullptr) {
     // Promotion of obj into gen failed.  Try to expand and allocate.
-    result = expand_and_allocate(obj_size, false);
-    if (result == nullptr) {
-      return nullptr;
-    }
+    result = expand_and_allocate(obj_size);
   }
 
-  // Copy to new location.
-  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
-  oop new_obj = cast_to_oop<HeapWord*>(result);
-  return new_obj;
+  return cast_to_oop<HeapWord*>(result);
 }
 
 HeapWord*
-TenuredGeneration::expand_and_allocate(size_t word_size, bool is_tlab) {
-  assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
+TenuredGeneration::expand_and_allocate(size_t word_size) {
   expand(word_size*HeapWordSize, _min_heap_delta_bytes);
-  return allocate(word_size, is_tlab);
-}
-
-size_t TenuredGeneration::contiguous_available() const {
-  return _the_space->free() + _virtual_space.uncommitted_size();
+  return allocate(word_size);
 }
 
 void TenuredGeneration::assert_correct_size_change_locking() {
@@ -450,7 +443,15 @@ void TenuredGeneration::verify() {
 }
 
 void TenuredGeneration::print_on(outputStream* st)  const {
-  Generation::print_on(st);
+  st->print(" %-10s", name());
+
+  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+            capacity()/K, used()/K);
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               p2i(_virtual_space.low_boundary()),
+               p2i(_virtual_space.high()),
+               p2i(_virtual_space.high_boundary()));
+
   st->print("   the");
   _the_space->print_on(st);
 }

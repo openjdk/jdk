@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,11 @@ public class ActionSet implements ProcessInfoGatherer, EnvironmentInfoGatherer, 
 
     private String[] getTools(PrintWriter writer, Properties p, String key) {
         String value = p.getProperty(key);
-        if (value == null || value.isEmpty()) {
-            writer.printf("ERROR: '%s' property is empty%n", key);
+        if (value == null) {
+            writer.printf("ERROR: '%s' property is not set%n", key);
+            return new String[]{};
+        }
+        if (value.isEmpty()) {
             return new String[]{};
         }
         return value.split(" ");

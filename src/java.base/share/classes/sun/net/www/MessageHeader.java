@@ -30,6 +30,8 @@
 package sun.net.www;
 
 import java.io.*;
+import java.lang.reflect.Array;
+import java.net.ProtocolException;
 import java.util.Collections;
 import java.util.*;
 
@@ -45,11 +47,32 @@ public final class MessageHeader {
     private String[] values;
     private int nkeys;
 
+    // max number of bytes for headers, <=0 means unlimited;
+    // this corresponds to the length of the names, plus the length
+    // of the values, plus an overhead of 32 bytes per name: value
+    // pair.
+    // Note: we use the same definition as HTTP/2 SETTINGS_MAX_HEADER_LIST_SIZE
+    // see RFC 9113, section 6.5.2.
+    // https://www.rfc-editor.org/rfc/rfc9113.html#SETTINGS_MAX_HEADER_LIST_SIZE
+    private final int maxHeaderSize;
+
+    // Aggregate size of the field lines (name + value + 32) x N
+    // that have been parsed and accepted so far.
+    // This is defined as a long to force promotion to long
+    // and avoid overflows; see checkNewSize;
+    private long size;
+
     public MessageHeader () {
+       this(0);
+    }
+
+    public MessageHeader (int maxHeaderSize) {
+        this.maxHeaderSize = maxHeaderSize;
         grow();
     }
 
     public MessageHeader (InputStream is) throws java.io.IOException {
+        maxHeaderSize = 0;
         parseHeader(is);
     }
 
@@ -476,8 +499,26 @@ public final class MessageHeader {
     public void parseHeader(InputStream is) throws java.io.IOException {
         synchronized (this) {
             nkeys = 0;
+            size = 0;
         }
         mergeHeader(is);
+    }
+
+    private void checkMaxHeaderSize(int sz) throws ProtocolException {
+        if (maxHeaderSize > 0) checkNewSize(size, sz, 0);
+    }
+
+    private long checkNewSize(long size, int name, int value) throws ProtocolException {
+        // See SETTINGS_MAX_HEADER_LIST_SIZE, RFC 9113, section 6.5.2.
+        long newSize = size + name + value + 32;
+        if (maxHeaderSize > 0 && newSize > maxHeaderSize) {
+            Arrays.fill(keys, 0, nkeys, null);
+            Arrays.fill(values,0, nkeys, null);
+            nkeys = 0;
+            throw new ProtocolException(String.format("Header size too big: %s > %s",
+                    newSize, maxHeaderSize));
+        }
+        return newSize;
     }
 
     /** Parse and merge a MIME header from an input stream. */
@@ -493,7 +534,15 @@ public final class MessageHeader {
             int c;
             boolean inKey = firstc > ' ';
             s[len++] = (char) firstc;
+            checkMaxHeaderSize(len);
     parseloop:{
+                // We start parsing for a new name value pair here.
+                // The max header size includes an overhead of 32 bytes per
+                // name value pair.
+                // See SETTINGS_MAX_HEADER_LIST_SIZE, RFC 9113, section 6.5.2.
+                long maxRemaining = maxHeaderSize > 0
+                        ? maxHeaderSize - size - 32
+                        : Long.MAX_VALUE;
                 while ((c = is.read()) >= 0) {
                     switch (c) {
                       case ':':
@@ -527,6 +576,9 @@ public final class MessageHeader {
                         s = ns;
                     }
                     s[len++] = (char) c;
+                    if (maxHeaderSize > 0 && len > maxRemaining) {
+                        checkMaxHeaderSize(len);
+                    }
                 }
                 firstc = -1;
             }
@@ -548,6 +600,9 @@ public final class MessageHeader {
                 v = new String();
             else
                 v = String.copyValueOf(s, keyend, len - keyend);
+            int klen = k == null ? 0 : k.length();
+
+            size = checkNewSize(size, klen, v.length());
             add(k, v);
         }
     }

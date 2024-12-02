@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,20 @@
  */
 package java.lang.classfile.components;
 
-import java.util.Collection;
-import java.util.Optional;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
+import java.util.Collection;
+import java.util.Optional;
+
 import jdk.internal.classfile.impl.CodeStackTrackerImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@link CodeStackTracker} is a {@link CodeTransform} tracking stack content
  * and calculating max stack size.
  * <p>
  * Sample use:
- * <p>
+ *
  * {@snippet lang=java :
  *     var stackTracker = CodeStackTracker.of();
  *     codeBuilder.transforming(stackTracker, trackedBuilder -> {
@@ -50,9 +50,8 @@ import jdk.internal.javac.PreviewFeature;
  *     });
  * }
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeStackTracker extends CodeTransform permits CodeStackTrackerImpl {
 
     /**

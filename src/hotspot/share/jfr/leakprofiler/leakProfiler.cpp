@@ -34,6 +34,15 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/vmThread.hpp"
 
+bool LeakProfiler::is_supported() {
+  if (UseShenandoahGC) {
+    // Leak Profiler uses mark words in the ways that might interfere
+    // with concurrent GC uses of them. This affects Shenandoah.
+    return false;
+  }
+  return true;
+}
+
 bool LeakProfiler::is_running() {
   return ObjectSampler::is_created();
 }
@@ -45,6 +54,12 @@ bool LeakProfiler::start(int sample_count) {
 
   // Allows user to disable leak profiler on command line by setting queue size to zero.
   if (sample_count == 0) {
+    return false;
+  }
+
+  // Exit cleanly if not supported
+  if (!is_supported()) {
+    log_trace(jfr, system)("Object sampling is not supported");
     return false;
   }
 

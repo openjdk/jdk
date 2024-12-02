@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,44 +72,48 @@ int NativeCallStack::frames() const {
 }
 
 // Decode and print this call path
-void NativeCallStack::print_on(outputStream* out) const {
-  DEBUG_ONLY(assert_not_fake();)
-  address pc;
+
+void NativeCallStack::print_frame(outputStream* out, address pc) const {
   char    buf[1024];
   int     offset;
-  if (is_empty()) {
-    out->print("[BOOTSTRAP]");
-  } else {
-    for (int frame = 0; frame < NMT_TrackingStackDepth; frame ++) {
-      pc = get_frame(frame);
-      if (pc == nullptr) break;
-      out->print("[" PTR_FORMAT "]", p2i(pc));
-      // Print function and library; shorten library name to just its last component
-      // for brevity, and omit it completely for libjvm.so
-      bool function_printed = false;
-      if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-        out->print("%s+0x%x", buf, offset);
-        function_printed = true;
+  int     line;
+  const bool pc_in_VM = os::address_is_in_vm(pc);
+  out->print("[" PTR_FORMAT "]", p2i(pc));
+  // Print function and library; shorten library name to just its last component
+  // for brevity, and omit it completely for libjvm.so
+  bool function_printed = false;
+  if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
+    out->print("%s+0x%x", buf, offset);
+    function_printed = true;
+    if (Decoder::get_source_info(pc, buf, sizeof(buf), &line, false)) {
+      // For intra-vm functions, we omit the full path
+      const char* s = buf;
+      if (pc_in_VM) {
+        s = strrchr(s, os::file_separator()[0]);
+        s = (s != nullptr) ? s + 1 : buf;
       }
-      if ((!function_printed || !os::address_is_in_vm(pc)) &&
-          os::dll_address_to_library_name(pc, buf, sizeof(buf), &offset)) {
-        const char* libname = strrchr(buf, os::file_separator()[0]);
-        if (libname != nullptr) {
-          libname++;
-        } else {
-          libname = buf;
-        }
-        out->print(" in %s", libname);
-        if (!function_printed) {
-          out->print("+0x%x", offset);
-        }
-      }
-
-      // Note: we deliberately omit printing source information here. NativeCallStack::print_on()
-      // can be called thousands of times as part of NMT detail reporting, and source printing
-      // can slow down reporting by a factor of 5 or more depending on platform (see JDK-8296931).
-
-      out->cr();
+      out->print("   (%s:%d)", s, line);
     }
   }
+  if ((!function_printed || !pc_in_VM) &&
+      os::dll_address_to_library_name(pc, buf, sizeof(buf), &offset)) {
+    const char* libname = strrchr(buf, os::file_separator()[0]);
+    if (libname != nullptr) {
+      libname++;
+    } else {
+      libname = buf;
+    }
+    out->print(" in %s", libname);
+    if (!function_printed) {
+      out->print("+0x%x", offset);
+    }
+  }
+}
+
+void NativeCallStack::print_on(outputStream* out) const {
+  DEBUG_ONLY(assert_not_fake();)
+  for (int i = 0; i < NMT_TrackingStackDepth && _stack[i] != nullptr; i++) {
+    print_frame(out, _stack[i]);
+  }
+  out->cr();
 }

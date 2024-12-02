@@ -42,6 +42,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/upcallLinker.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
@@ -53,7 +54,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/intpow.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -1374,7 +1377,9 @@ class StubGenerator: public StubCodeGenerator {
       // r15 is the byte adjustment needed to align s.
       __ cbz(r15, aligned);
       int shift = exact_log2(granularity);
-      if (shift)  __ lsr(r15, r15, shift);
+      if (shift > 0) {
+        __ lsr(r15, r15, shift);
+      }
       __ sub(count, count, r15);
 
 #if 0
@@ -1402,9 +1407,15 @@ class StubGenerator: public StubCodeGenerator {
 
     // s is now 2-word-aligned.
 
-    // We have a count of units and some trailing bytes.  Adjust the
-    // count and do a bulk copy of words.
-    __ lsr(r15, count, exact_log2(wordSize/granularity));
+    // We have a count of units and some trailing bytes. Adjust the
+    // count and do a bulk copy of words. If the shift is zero
+    // perform a move instead to benefit from zero latency moves.
+    int shift = exact_log2(wordSize/granularity);
+    if (shift > 0) {
+      __ lsr(r15, count, shift);
+    } else {
+      __ mov(r15, count);
+    }
     if (direction == copy_forwards) {
       if (type != T_OBJECT) {
         __ bl(copy_f);
@@ -1831,6 +1842,9 @@ class StubGenerator: public StubCodeGenerator {
   void generate_type_check(Register sub_klass,
                            Register super_check_offset,
                            Register super_klass,
+                           Register temp1,
+                           Register temp2,
+                           Register result,
                            Label& L_success) {
     assert_different_registers(sub_klass, super_check_offset, super_klass);
 
@@ -1840,7 +1854,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ check_klass_subtype_fast_path(sub_klass, super_klass, noreg,        &L_success, &L_miss, nullptr,
                                      super_check_offset);
-    __ check_klass_subtype_slow_path(sub_klass, super_klass, noreg, noreg, &L_success, nullptr);
+    __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1, temp2, &L_success, nullptr);
 
     // Fall through on failure!
     __ BIND(L_miss);
@@ -1976,7 +1990,17 @@ class StubGenerator: public StubCodeGenerator {
     __ cbz(copied_oop, L_store_element);
 
     __ load_klass(r19_klass, copied_oop);// query the object klass
-    generate_type_check(r19_klass, ckoff, ckval, L_store_element);
+
+    BLOCK_COMMENT("type_check:");
+    generate_type_check(/*sub_klass*/r19_klass,
+                        /*super_check_offset*/ckoff,
+                        /*super_klass*/ckval,
+                        /*r_array_base*/gct1,
+                        /*temp2*/gct2,
+                        /*result*/r10, L_store_element);
+
+    // Fall through on failure!
+
     // ======== end loop ========
 
     // It was a real error; we must depend on the caller to finish the job.
@@ -1985,7 +2009,7 @@ class StubGenerator: public StubCodeGenerator {
     // their number to the caller.
 
     __ subs(count, count_save, count);     // K = partially copied oop count
-    __ eon(count, count, zr);                   // report (-1^K) to caller
+    __ eon(count, count, zr);              // report (-1^K) to caller
     __ br(Assembler::EQ, L_done_pop);
 
     __ BIND(L_do_card_marks);
@@ -2352,7 +2376,8 @@ class StubGenerator: public StubCodeGenerator {
       __ ldrw(sco_temp, Address(dst_klass, sco_offset));
 
       // Smashes rscratch1, rscratch2
-      generate_type_check(scratch_src_klass, sco_temp, dst_klass, L_plain_copy);
+      generate_type_check(scratch_src_klass, sco_temp, dst_klass, /*temps*/ noreg, noreg, noreg,
+                          L_plain_copy);
 
       // Fetch destination element klass from the ObjArrayKlass header.
       int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
@@ -3417,15 +3442,15 @@ class StubGenerator: public StubCodeGenerator {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
-    __ andw(rscratch3, r2, r4);
-    __ bicw(rscratch4, r3, r4);
     reg_cache.extract_u32(rscratch1, k);
     __ movw(rscratch2, t);
-    __ orrw(rscratch3, rscratch3, rscratch4);
     __ addw(rscratch4, r1, rscratch2);
     __ addw(rscratch4, rscratch4, rscratch1);
-    __ addw(rscratch3, rscratch3, rscratch4);
-    __ rorw(rscratch2, rscratch3, 32 - s);
+    __ bicw(rscratch2, r3, r4);
+    __ andw(rscratch3, r2, r4);
+    __ addw(rscratch2, rscratch2, rscratch4);
+    __ addw(rscratch2, rscratch2, rscratch3);
+    __ rorw(rscratch2, rscratch2, 32 - s);
     __ addw(r1, rscratch2, r2);
   }
 
@@ -5311,6 +5336,307 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  // result = r0 - return value. Contains initial hashcode value on entry.
+  // ary = r1 - array address
+  // cnt = r2 - elements count
+  // Clobbers: v0-v13, rscratch1, rscratch2
+  address generate_large_arrays_hashcode(BasicType eltype) {
+    const Register result = r0, ary = r1, cnt = r2;
+    const FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
+    const FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
+    const FloatRegister vpow = v12;  // powers of 31: <31^3, ..., 31^0>
+    const FloatRegister vpowm = v13;
+
+    ARRAYS_HASHCODE_REGISTERS;
+
+    Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
+
+    unsigned int vf; // vectorization factor
+    bool multiply_by_halves;
+    Assembler::SIMD_Arrangement load_arrangement;
+    switch (eltype) {
+    case T_BOOLEAN:
+    case T_BYTE:
+      load_arrangement = Assembler::T8B;
+      multiply_by_halves = true;
+      vf = 8;
+      break;
+    case T_CHAR:
+    case T_SHORT:
+      load_arrangement = Assembler::T8H;
+      multiply_by_halves = true;
+      vf = 8;
+      break;
+    case T_INT:
+      load_arrangement = Assembler::T4S;
+      multiply_by_halves = false;
+      vf = 4;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
+
+    // Unroll factor
+    const unsigned uf = 4;
+
+    // Effective vectorization factor
+    const unsigned evf = vf * uf;
+
+    __ align(CodeEntryAlignment);
+
+    const char *mark_name = "";
+    switch (eltype) {
+    case T_BOOLEAN:
+      mark_name = "_large_arrays_hashcode_boolean";
+      break;
+    case T_BYTE:
+      mark_name = "_large_arrays_hashcode_byte";
+      break;
+    case T_CHAR:
+      mark_name = "_large_arrays_hashcode_char";
+      break;
+    case T_SHORT:
+      mark_name = "_large_arrays_hashcode_short";
+      break;
+    case T_INT:
+      mark_name = "_large_arrays_hashcode_int";
+      break;
+    default:
+      mark_name = "_large_arrays_hashcode_incorrect_type";
+      __ should_not_reach_here();
+    };
+
+    StubCodeMark mark(this, "StubRoutines", mark_name);
+
+    address entry = __ pc();
+    __ enter();
+
+    // Put 0-3'th powers of 31 into a single SIMD register together. The register will be used in
+    // the SMALL and LARGE LOOPS' epilogues. The initialization is hoisted here and the register's
+    // value shouldn't change throughout both loops.
+    __ movw(rscratch1, intpow(31U, 3));
+    __ mov(vpow, Assembler::S, 0, rscratch1);
+    __ movw(rscratch1, intpow(31U, 2));
+    __ mov(vpow, Assembler::S, 1, rscratch1);
+    __ movw(rscratch1, intpow(31U, 1));
+    __ mov(vpow, Assembler::S, 2, rscratch1);
+    __ movw(rscratch1, intpow(31U, 0));
+    __ mov(vpow, Assembler::S, 3, rscratch1);
+
+    __ mov(vmul0, Assembler::T16B, 0);
+    __ mov(vmul0, Assembler::S, 3, result);
+
+    __ andr(rscratch2, cnt, (uf - 1) * vf);
+    __ cbz(rscratch2, LARGE_LOOP_PREHEADER);
+
+    __ movw(rscratch1, intpow(31U, multiply_by_halves ? vf / 2 : vf));
+    __ mov(vpowm, Assembler::S, 0, rscratch1);
+
+    // SMALL LOOP
+    __ bind(SMALL_LOOP);
+
+    __ ld1(vdata0, load_arrangement, Address(__ post(ary, vf * type2aelembytes(eltype))));
+    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
+    __ subsw(rscratch2, rscratch2, vf);
+
+    if (load_arrangement == Assembler::T8B) {
+      // Extend 8B to 8H to be able to use vector multiply
+      // instructions
+      assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
+      if (is_signed_subword_type(eltype)) {
+        __ sxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
+      } else {
+        __ uxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
+      }
+    }
+
+    switch (load_arrangement) {
+    case Assembler::T4S:
+      __ addv(vmul0, load_arrangement, vmul0, vdata0);
+      break;
+    case Assembler::T8B:
+    case Assembler::T8H:
+      assert(is_subword_type(eltype), "subword type expected");
+      if (is_signed_subword_type(eltype)) {
+        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+      } else {
+        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+      }
+      break;
+    default:
+      __ should_not_reach_here();
+    }
+
+    // Process the upper half of a vector
+    if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
+      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
+      if (is_signed_subword_type(eltype)) {
+        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+      } else {
+        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+      }
+    }
+
+    __ br(Assembler::HI, SMALL_LOOP);
+
+    // SMALL LOOP'S EPILOQUE
+    __ lsr(rscratch2, cnt, exact_log2(evf));
+    __ cbnz(rscratch2, LARGE_LOOP_PREHEADER);
+
+    __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
+    __ addv(vmul0, Assembler::T4S, vmul0);
+    __ umov(result, vmul0, Assembler::S, 0);
+
+    // TAIL
+    __ bind(TAIL);
+
+    // The andr performs cnt % vf. The subtract shifted by 3 offsets past vf - 1 - (cnt % vf) pairs
+    // of load + madd insns i.e. it only executes cnt % vf load + madd pairs.
+    assert(is_power_of_2(vf), "can't use this value to calculate the jump target PC");
+    __ andr(rscratch2, cnt, vf - 1);
+    __ bind(TAIL_SHORTCUT);
+    __ adr(rscratch1, BR_BASE);
+    __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, 3);
+    __ movw(rscratch2, 0x1f);
+    __ br(rscratch1);
+
+    for (size_t i = 0; i < vf - 1; ++i) {
+      __ load(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
+                                   eltype);
+      __ maddw(result, result, rscratch2, rscratch1);
+    }
+    __ bind(BR_BASE);
+
+    __ leave();
+    __ ret(lr);
+
+    // LARGE LOOP
+    __ bind(LARGE_LOOP_PREHEADER);
+
+    __ lsr(rscratch2, cnt, exact_log2(evf));
+
+    if (multiply_by_halves) {
+      // 31^4 - multiplier between lower and upper parts of a register
+      __ movw(rscratch1, intpow(31U, vf / 2));
+      __ mov(vpowm, Assembler::S, 1, rscratch1);
+      // 31^28 - remainder of the iteraion multiplier, 28 = 32 - 4
+      __ movw(rscratch1, intpow(31U, evf - vf / 2));
+      __ mov(vpowm, Assembler::S, 0, rscratch1);
+    } else {
+      // 31^16
+      __ movw(rscratch1, intpow(31U, evf));
+      __ mov(vpowm, Assembler::S, 0, rscratch1);
+    }
+
+    __ mov(vmul3, Assembler::T16B, 0);
+    __ mov(vmul2, Assembler::T16B, 0);
+    __ mov(vmul1, Assembler::T16B, 0);
+
+    __ bind(LARGE_LOOP);
+
+    __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 0);
+    __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 0);
+    __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 0);
+    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
+
+    __ ld1(vdata3, vdata2, vdata1, vdata0, load_arrangement,
+           Address(__ post(ary, evf * type2aelembytes(eltype))));
+
+    if (load_arrangement == Assembler::T8B) {
+      // Extend 8B to 8H to be able to use vector multiply
+      // instructions
+      assert(load_arrangement == Assembler::T8B, "expected to extend 8B to 8H");
+      if (is_signed_subword_type(eltype)) {
+        __ sxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
+        __ sxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
+        __ sxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
+        __ sxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
+      } else {
+        __ uxtl(vdata3, Assembler::T8H, vdata3, load_arrangement);
+        __ uxtl(vdata2, Assembler::T8H, vdata2, load_arrangement);
+        __ uxtl(vdata1, Assembler::T8H, vdata1, load_arrangement);
+        __ uxtl(vdata0, Assembler::T8H, vdata0, load_arrangement);
+      }
+    }
+
+    switch (load_arrangement) {
+    case Assembler::T4S:
+      __ addv(vmul3, load_arrangement, vmul3, vdata3);
+      __ addv(vmul2, load_arrangement, vmul2, vdata2);
+      __ addv(vmul1, load_arrangement, vmul1, vdata1);
+      __ addv(vmul0, load_arrangement, vmul0, vdata0);
+      break;
+    case Assembler::T8B:
+    case Assembler::T8H:
+      assert(is_subword_type(eltype), "subword type expected");
+      if (is_signed_subword_type(eltype)) {
+        __ saddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
+        __ saddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
+        __ saddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
+        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+      } else {
+        __ uaddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
+        __ uaddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
+        __ uaddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
+        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+      }
+      break;
+    default:
+      __ should_not_reach_here();
+    }
+
+    // Process the upper half of a vector
+    if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
+      __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 1);
+      __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 1);
+      __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 1);
+      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 1);
+      if (is_signed_subword_type(eltype)) {
+        __ saddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
+        __ saddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
+        __ saddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
+        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+      } else {
+        __ uaddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
+        __ uaddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
+        __ uaddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
+        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+      }
+    }
+
+    __ subsw(rscratch2, rscratch2, 1);
+    __ br(Assembler::HI, LARGE_LOOP);
+
+    __ mulv(vmul3, Assembler::T4S, vmul3, vpow);
+    __ addv(vmul3, Assembler::T4S, vmul3);
+    __ umov(result, vmul3, Assembler::S, 0);
+
+    __ mov(rscratch2, intpow(31U, vf));
+
+    __ mulv(vmul2, Assembler::T4S, vmul2, vpow);
+    __ addv(vmul2, Assembler::T4S, vmul2);
+    __ umov(rscratch1, vmul2, Assembler::S, 0);
+    __ maddw(result, result, rscratch2, rscratch1);
+
+    __ mulv(vmul1, Assembler::T4S, vmul1, vpow);
+    __ addv(vmul1, Assembler::T4S, vmul1);
+    __ umov(rscratch1, vmul1, Assembler::S, 0);
+    __ maddw(result, result, rscratch2, rscratch1);
+
+    __ mulv(vmul0, Assembler::T4S, vmul0, vpow);
+    __ addv(vmul0, Assembler::T4S, vmul0);
+    __ umov(rscratch1, vmul0, Assembler::S, 0);
+    __ maddw(result, result, rscratch2, rscratch1);
+
+    __ andr(rscratch2, cnt, vf - 1);
+    __ cbnz(rscratch2, TAIL_SHORTCUT);
+
+    __ leave();
+    __ ret(lr);
+
+    return entry;
+  }
+
   address generate_dsin_dcos(bool isCos) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", isCos ? "libmDcos" : "libmDsin");
@@ -6785,10 +7111,10 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_success;
     __ enter();
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     vtemp, result, super_klass_index,
-                                     /*stub_is_near*/true);
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           r_array_base, r_array_length, r_array_index,
+                                           vtemp, result, super_klass_index,
+                                           /*stub_is_near*/true);
     __ leave();
     __ ret(lr);
 
@@ -7045,7 +7371,7 @@ class StubGenerator: public StubCodeGenerator {
     Label thaw_success;
     // rscratch2 contains the size of the frames to thaw, 0 if overflow or no more frames
     __ cbnz(rscratch2, thaw_success);
-    __ lea(rscratch1, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ lea(rscratch1, RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
     __ br(rscratch1);
     __ bind(thaw_success);
 
@@ -7136,6 +7462,37 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
+  }
+
+  address generate_cont_preempt_stub() {
+    if (!Continuations::enabled()) return nullptr;
+    StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+    address start = __ pc();
+
+    __ reset_last_Java_frame(true);
+
+    // Set sp to enterSpecial frame, i.e. remove all frames copied into the heap.
+    __ ldr(rscratch2, Address(rthread, JavaThread::cont_entry_offset()));
+    __ mov(sp, rscratch2);
+
+    Label preemption_cancelled;
+    __ ldrb(rscratch1, Address(rthread, JavaThread::preemption_cancelled_offset()));
+    __ cbnz(rscratch1, preemption_cancelled);
+
+    // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+    SharedRuntime::continuation_enter_cleanup(_masm);
+    __ leave();
+    __ ret(lr);
+
+    // We acquired the monitor after freezing the frames so call thaw to continue execution.
+    __ bind(preemption_cancelled);
+    __ strb(zr, Address(rthread, JavaThread::preemption_cancelled_offset()));
+    __ lea(rfp, Address(sp, checked_cast<int32_t>(ContinuationEntry::size())));
+    __ lea(rscratch1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
+    __ ldr(rscratch1, Address(rscratch1));
+    __ br(rscratch1);
 
     return start;
   }
@@ -7305,98 +7662,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-#if INCLUDE_JFR
-
-  static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
-    __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
-    __ mov(c_rarg0, thread);
-  }
-
-  // The handle is dereferenced through a load barrier.
-  static void jfr_epilogue(MacroAssembler* _masm) {
-    __ reset_last_Java_frame(true);
-  }
-
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  static RuntimeStub* generate_jfr_write_checkpoint() {
-    enum layout {
-      rbp_off,
-      rbpH_off,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    int insts_size = 1024;
-    int locs_size = 64;
-    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-    __ enter();
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-    jfr_prologue(the_pc, _masm, rthread);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    jfr_epilogue(_masm);
-    __ resolve_global_jobject(r0, rscratch1, rscratch2);
-    __ leave();
-    __ ret(lr);
-
-    OopMap* map = new OopMap(framesize, 1); // rfp
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub;
-  }
-
-  // For c2: call to return a leased buffer.
-  static RuntimeStub* generate_jfr_return_lease() {
-    enum layout {
-      rbp_off,
-      rbpH_off,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    int insts_size = 1024;
-    int locs_size = 64;
-    CodeBuffer code("jfr_return_lease", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-    __ enter();
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-    jfr_prologue(the_pc, _masm, rthread);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
-    jfr_epilogue(_masm);
-
-    __ leave();
-    __ ret(lr);
-
-    OopMap* map = new OopMap(framesize, 1); // rfp
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub;
-  }
-
-#endif // INCLUDE_JFR
-
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
@@ -7412,114 +7677,30 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Continuation point for throwing of implicit exceptions that are
-  // not handled in the current activation. Fabricates an exception
-  // oop and initiates normal exception dispatching in this
-  // frame. Since we need to preserve callee-saved values (currently
-  // only for C2, but done for C1 as well) we need a callee-saved oop
-  // map and therefore have to make these stubs into RuntimeStubs
-  // rather than BufferBlobs.  If the compiler needs all registers to
-  // be preserved between the fault point and the exception handler
-  // then it must assume responsibility for that in
-  // AbstractCompiler::continuation_for_implicit_null_exception or
-  // continuation_for_implicit_division_by_zero_exception. All other
-  // implicit exceptions (e.g., NullPointerException or
-  // AbstractMethodError on entry) are either at call sites or
-  // otherwise assume that stack unwinding will be initiated, so
-  // caller saved registers were assumed volatile in the compiler.
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // rmethod = result
+  address generate_upcall_stub_load_target() {
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, rscratch1, rscratch2);
+      // Load target method from receiver
+    __ load_heap_oop(rmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1, rscratch2);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1, rscratch2);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()), rscratch1, rscratch2);
+    __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
+                      Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ ret(lr);
+
+    return start;
+  }
 
 #undef __
 #define __ masm->
-
-  address generate_throw_exception(const char* name,
-                                   address runtime_entry,
-                                   Register arg1 = noreg,
-                                   Register arg2 = noreg) {
-    // Information about frame layout at time of blocking runtime call.
-    // Note that we only have to preserve callee-saved registers since
-    // the compilers are responsible for supplying a continuation point
-    // if they expect all registers to be preserved.
-    // n.b. aarch64 asserts that frame::arg_reg_save_area_bytes == 0
-    enum layout {
-      rfp_off = 0,
-      rfp_off2,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    int insts_size = 512;
-    int locs_size  = 64;
-
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps  = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-
-    address start = __ pc();
-
-    // This is an inlined and slightly modified version of call_VM
-    // which has the ability to fetch the return PC out of
-    // thread-local storage and also sets up last_Java_sp slightly
-    // differently than the real call_VM
-
-    __ enter(); // Save FP and LR before call
-
-    assert(is_even(framesize/2), "sp not 16-byte aligned");
-
-    // lr and fp are already in place
-    __ sub(sp, rfp, ((uint64_t)framesize-4) << LogBytesPerInt); // prolog
-
-    int frame_complete = __ pc() - start;
-
-    // Set up last_Java_sp and last_Java_fp
-    address the_pc = __ pc();
-    __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
-
-    // Call runtime
-    if (arg1 != noreg) {
-      assert(arg2 != c_rarg1, "clobbered");
-      __ mov(c_rarg1, arg1);
-    }
-    if (arg2 != noreg) {
-      __ mov(c_rarg2, arg2);
-    }
-    __ mov(c_rarg0, rthread);
-    BLOCK_COMMENT("call runtime_entry");
-    __ mov(rscratch1, runtime_entry);
-    __ blr(rscratch1);
-
-    // Generate oop map
-    OopMap* map = new OopMap(framesize, 0);
-
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    __ reset_last_Java_frame(true);
-
-    // Reinitialize the ptrue predicate register, in case the external runtime
-    // call clobbers ptrue reg, as we may return to SVE compiled code.
-    __ reinitialize_ptrue();
-
-    __ leave();
-
-    // check for pending exceptions
-#ifdef ASSERT
-    Label L;
-    __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
-    __ cbnz(rscratch1, L);
-    __ should_not_reach_here();
-    __ bind(L);
-#endif // ASSERT
-    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
-    // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(name,
-                                    &code,
-                                    frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub->entry_point();
-  }
 
   class MontgomeryMultiplyGenerator : public MacroAssembler {
 
@@ -8344,6 +8525,78 @@ class StubGenerator: public StubCodeGenerator {
     // }
   };
 
+  void generate_vector_math_stubs() {
+    // Get native vector math stub routine addresses
+    void* libsleef = nullptr;
+    char ebuf[1024];
+    char dll_name[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "sleef")) {
+      libsleef = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    }
+    if (libsleef == nullptr) {
+      log_info(library)("Failed to load native vector math library, %s!", ebuf);
+      return;
+    }
+    // Method naming convention
+    //   All the methods are named as <OP><T><N>_<U><suffix>
+    //   Where:
+    //     <OP>     is the operation name, e.g. sin
+    //     <T>      is optional to indicate float/double
+    //              "f/d" for vector float/double operation
+    //     <N>      is the number of elements in the vector
+    //              "2/4" for neon, and "x" for sve
+    //     <U>      is the precision level
+    //              "u10/u05" represents 1.0/0.5 ULP error bounds
+    //               We use "u10" for all operations by default
+    //               But for those functions do not have u10 support, we use "u05" instead
+    //     <suffix> indicates neon/sve
+    //              "sve/advsimd" for sve/neon implementations
+    //     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
+    //          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
+    //
+    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
+
+    // Math vector stubs implemented with SVE for scalable vector size.
+    if (UseSVE > 0) {
+      for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+        int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+        // Skip "tanh" because there is performance regression
+        if (vop == VectorSupport::VECTOR_OP_TANH) {
+          continue;
+        }
+
+        // The native library does not support u10 level of "hypot".
+        const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
+
+        snprintf(ebuf, sizeof(ebuf), "%sfx_%ssve", VectorSupport::mathname[op], ulf);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+
+        snprintf(ebuf, sizeof(ebuf), "%sdx_%ssve", VectorSupport::mathname[op], ulf);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+      }
+    }
+
+    // Math vector stubs implemented with NEON for 64/128 bits vector size.
+    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+      // Skip "tanh" because there is performance regression
+      if (vop == VectorSupport::VECTOR_OP_TANH) {
+        continue;
+      }
+
+      // The native library does not support u10 level of "hypot".
+      const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
+
+      snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libsleef, ebuf);
+
+      snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsleef, ebuf);
+
+      snprintf(ebuf, sizeof(ebuf), "%sd2_%sadvsimd", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libsleef, ebuf);
+    }
+  }
 
   // Initialization
   void generate_initial_stubs() {
@@ -8362,16 +8615,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // is referenced by megamorphic call
     StubRoutines::_catch_exception_entry = generate_catch_exception();
-
-    // Build this early so it's available for the interpreter.
-    StubRoutines::_throw_StackOverflowError_entry =
-      generate_throw_exception("StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::throw_StackOverflowError));
-    StubRoutines::_throw_delayed_StackOverflowError_entry =
-      generate_throw_exception("delayed StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::throw_delayed_StackOverflowError));
 
     // Initialize table for copy memory (arraycopy) check.
     if (UnsafeMemoryAccess::_table == nullptr) {
@@ -8408,41 +8651,14 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-    JFR_ONLY(generate_jfr_stubs();)
+    StubRoutines::_cont_preempt_stub = generate_cont_preempt_stub();
   }
-
-#if INCLUDE_JFR
-  void generate_jfr_stubs() {
-    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-  }
-#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // support for verify_oop (must happen after universe_init)
     if (VerifyOops) {
       StubRoutines::_verify_oop_subroutine_entry   = generate_verify_oop();
     }
-    StubRoutines::_throw_AbstractMethodError_entry =
-      generate_throw_exception("AbstractMethodError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_AbstractMethodError));
-
-    StubRoutines::_throw_IncompatibleClassChangeError_entry =
-      generate_throw_exception("IncompatibleClassChangeError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_IncompatibleClassChangeError));
-
-    StubRoutines::_throw_NullPointerException_at_call_entry =
-      generate_throw_exception("NullPointerException at call throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_NullPointerException_at_call));
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
@@ -8477,6 +8693,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
@@ -8492,6 +8709,13 @@ class StubGenerator: public StubCodeGenerator {
     if (!UseSimpleArrayEquals) {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
     }
+
+    // arrays_hascode stub for large arrays.
+    StubRoutines::aarch64::_large_arrays_hashcode_boolean = generate_large_arrays_hashcode(T_BOOLEAN);
+    StubRoutines::aarch64::_large_arrays_hashcode_byte = generate_large_arrays_hashcode(T_BYTE);
+    StubRoutines::aarch64::_large_arrays_hashcode_char = generate_large_arrays_hashcode(T_CHAR);
+    StubRoutines::aarch64::_large_arrays_hashcode_int = generate_large_arrays_hashcode(T_INT);
+    StubRoutines::aarch64::_large_arrays_hashcode_short = generate_large_arrays_hashcode(T_SHORT);
 
     // byte_array_inflate stub for large arrays.
     StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
@@ -8534,6 +8758,9 @@ class StubGenerator: public StubCodeGenerator {
       // because it's faster for the sizes of modulus we care about.
       StubRoutines::_montgomerySquare = g.generate_multiply();
     }
+
+    generate_vector_math_stubs();
+
 #endif // COMPILER2
 
     if (UseChaCha20Intrinsics) {
@@ -8589,6 +8816,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+
 #endif // COMPILER2_OR_JVMCI
   }
 

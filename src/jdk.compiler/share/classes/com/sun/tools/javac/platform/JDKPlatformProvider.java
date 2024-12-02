@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,14 @@ public class JDKPlatformProvider implements PlatformProvider {
     }
 
     @Override
-    public PlatformDescription getPlatform(String platformName, String options) {
+    public PlatformDescription getPlatform(String platformName, String options) throws PlatformNotSupported {
+        if (!SUPPORTED_JAVA_PLATFORM_VERSIONS.contains(platformName)) {
+            throw new PlatformNotSupported();
+        }
+        return getPlatformTrusted(platformName);
+    }
+
+    public PlatformDescription getPlatformTrusted(String platformName) {
         return new PlatformDescriptionImpl(platformName);
     }
 

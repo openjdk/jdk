@@ -24,24 +24,24 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
 using Tree = VMATree;
-using Node = Tree::TreapNode;
+using TNode = Tree::TreapNode;
 using NCS = NativeCallStackStorage;
 
-class VMATreeTest : public testing::Test {
+class NMTVMATreeTest : public testing::Test {
 public:
   NCS ncs;
   constexpr static const int si_len = 2;
   NCS::StackIndex si[si_len];
   NativeCallStack stacks[si_len];
 
-  VMATreeTest() : ncs(true) {
+  NMTVMATreeTest() : ncs(true) {
     stacks[0] = make_stack(0xA);
     stacks[1] = make_stack(0xB);
     si[0] = ncs.push(stacks[0]);
@@ -77,7 +77,7 @@ public:
 
   int count_nodes(Tree& tree) {
     int count = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       ++count;
     });
     return count;
@@ -130,7 +130,7 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       VMATree::StateType in = in_type_of(x);
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
@@ -155,7 +155,7 @@ public:
     };
 
     int i = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       if (i < 16) {
         found[i] = x->key();
       }
@@ -171,8 +171,7 @@ public:
 };
 
 
-
-TEST_VM_F(VMATreeTest, OverlappingReservationsResultInTwoNodes) {
+TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
   for (int i = 99; i >= 0; i--) {
@@ -181,8 +180,25 @@ TEST_VM_F(VMATreeTest, OverlappingReservationsResultInTwoNodes) {
   EXPECT_EQ(2, count_nodes(tree));
 }
 
+TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
+  Tree tree;
+  VMATree::RegionData rd1(si[0], mtTest);
+  VMATree::RegionData rd2(si[1], mtNone);
+  tree.reserve_mapping(0, 100, rd1);
+  tree.commit_mapping(20, 50, rd2, true);
+  tree.uncommit_mapping(30, 10, rd2);
+  tree.visit_in_order([&](TNode* node) {
+    if (node->key() != 100) {
+      EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
+      if (node->key() != 20 && node->key() != 40) {
+        EXPECT_EQ(VMATree::StateType::Reserved, node->val().out.type());
+      }
+    }
+  });
+}
+
 // Low-level tests inspecting the state of the tree.
-TEST_VM_F(VMATreeTest, LowLevel) {
+TEST_VM_F(NMTVMATreeTest, LowLevel) {
   adjacent_2_nodes(VMATree::empty_regiondata);
   remove_all_leaves_empty_tree(VMATree::empty_regiondata);
   commit_middle(VMATree::empty_regiondata);
@@ -211,10 +227,10 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
-        EXPECT_EQ(x->val().out.regiondata().flag, mtTest);
+        EXPECT_EQ(x->val().out.regiondata().mem_tag, mtTest);
       }
     });
 
@@ -240,6 +256,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
     EXPECT_EQ(nullptr, treap_root(tree));
   }
+
   { // A committed region inside of/replacing a reserved region
     // should replace the reserved region's metadata.
     Tree::RegionData rd{si[0], mtNMT};
@@ -247,12 +264,12 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(0, 100, rd2);
-    treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
+    treap(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
-        EXPECT_EQ(mtTest, x->val().out.regiondata().flag);
+        EXPECT_EQ(mtTest, x->val().out.regiondata().mem_tag);
       }
       if (x->key() == 100) {
-        EXPECT_EQ(mtTest, x->val().in.regiondata().flag);
+        EXPECT_EQ(mtTest, x->val().in.regiondata().mem_tag);
       }
     });
   }
@@ -267,18 +284,200 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   }
 }
 
+TEST_VM_F(NMTVMATreeTest, SetTag) {
+  using State = VMATree::StateType;
+  struct testrange {
+    VMATree::position from;
+    VMATree::position to;
+    MemTag tag;
+    NCS::StackIndex stack;
+    State state;
+  };
+
+  // Take a sorted list of testranges and check that those and only those are found in the tree.
+  auto expect_equivalent_form = [&](auto& expected, VMATree& tree) {
+    // With auto& our arrays do not deteriorate to pointers but are kept as testrange[N]
+    // so this actually works!
+    int len = sizeof(expected) / sizeof(testrange);
+    VMATree::position previous_to = 0;
+    for (int i = 0; i < len; i++) {
+      testrange expect = expected[i];
+      assert(previous_to == 0 || previous_to <= expect.from, "the expected list must be sorted");
+      previous_to = expect.to;
+
+      VMATree::VMATreap::Range found = tree.tree().find_enclosing_range(expect.from);
+      ASSERT_NE(nullptr, found.start);
+      ASSERT_NE(nullptr, found.end);
+      // Same region
+      EXPECT_EQ(expect.from, found.start->key());
+      EXPECT_EQ(expect.to, found.end->key());
+      // Same tag
+      EXPECT_EQ(expect.tag, found.start->val().out.mem_tag());
+      EXPECT_EQ(expect.tag, found.end->val().in.mem_tag());
+      // Same stack
+      EXPECT_EQ(expect.stack, found.start->val().out.stack());
+      EXPECT_EQ(expect.stack, found.end->val().in.stack());
+      // Same state
+      EXPECT_EQ(expect.state, found.start->val().out.type());
+      EXPECT_EQ(expect.state, found.end->val().in.type());
+    }
+    // expected must cover all nodes
+    EXPECT_EQ(len+1, tree.tree().size());
+  };
+  NCS::StackIndex si = NCS::StackIndex();
+  Tree::RegionData rd(si, mtNone);
+
+  { // The gc/cds case with only reserved data
+    testrange expected[2]{
+        {  0, 500,          mtGC, si, State::Reserved},
+        {500, 600, mtClassShared, si, State::Reserved}
+    };
+    VMATree tree;
+
+    tree.reserve_mapping(0, 600, rd);
+
+    tree.set_tag(0, 500, mtGC);
+    tree.set_tag(500, 100, mtClassShared);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Now let's add in some committed data
+    testrange expected[]{
+        {  0, 100,          mtGC, si, State::Reserved},
+        {100, 225,          mtGC, si, State::Committed},
+        {225, 500,          mtGC, si, State::Reserved},
+        {500, 550, mtClassShared, si, State::Reserved},
+        {550, 560, mtClassShared, si, State::Committed},
+        {560, 565, mtClassShared, si, State::Reserved},
+        {565, 575, mtClassShared, si, State::Committed},
+        {575, 600, mtClassShared, si, State::Reserved}
+    };
+    VMATree tree;
+
+    tree.reserve_mapping(0, 600, rd);
+    // The committed areas
+    tree.commit_mapping(100, 125, rd);
+    tree.commit_mapping(550, 10, rd);
+    tree.commit_mapping(565, 10, rd);
+    // OK, set tag
+    tree.set_tag(0, 500, mtGC);
+    tree.set_tag(500, 100, mtClassShared);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag for adjacent regions with same stacks should merge the regions
+    testrange expected[]{
+        {0, 200, mtGC, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData gc(si, mtGC);
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(0, 200, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag for adjacent regions with different stacks should NOT merge the regions
+    NCS::StackIndex si1 = 1;
+    NCS::StackIndex si2 = 2;
+    testrange expected[]{
+        {  0, 100, mtGC, si1, State::Reserved},
+        {100, 200, mtGC, si2, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData gc(si1, mtGC);
+    Tree::RegionData compiler(si2, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(0, 200, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag in the middle of a range causes a split
+    testrange expected[]{
+        {  0, 100, mtCompiler, si, State::Reserved},
+        {100, 150,       mtGC, si, State::Reserved},
+        {150, 200, mtCompiler, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 200, compiler);
+    tree.set_tag(100, 50, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag in between two ranges causes a split
+    testrange expected[]{
+        {  0,  75,       mtGC, si, State::Reserved},
+        { 75, 125,    mtClass, si, State::Reserved},
+        {125, 200, mtCompiler, si, State::Reserved},
+    };
+    VMATree tree;
+    Tree::RegionData gc(si, mtGC);
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(75, 50, mtClass);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Holes in the address range are acceptable and untouched
+    testrange expected[]{
+        { 0,  50,          mtGC, si, State::Reserved},
+        {50,  75,        mtNone, si, State::Released},
+        {75,  80,          mtGC, si, State::Reserved},
+        {80, 100, mtClassShared, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(0, 50, class_shared);
+    tree.reserve_mapping(75, 25, class_shared);
+    tree.set_tag(0, 80, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Check that setting tag with 'hole' not consisting of any regions work
+    testrange expected[]{
+        {10, 20, mtCompiler, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(10, 10, class_shared);
+    tree.set_tag(0, 100, mtCompiler);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Check that multiple holes still work
+    testrange expected[]{
+        { 0,   1,   mtGC, si, State::Reserved},
+        { 1,  50, mtNone, si, State::Released},
+        {50,  75,   mtGC, si, State::Reserved},
+        {75,  99, mtNone, si, State::Released},
+        {99, 100,   mtGC, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(0, 100, class_shared);
+    tree.release_mapping(1, 49);
+    tree.release_mapping(75, 24);
+    tree.set_tag(0, 100, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+}
+
 // Tests for summary accounting
-TEST_VM_F(VMATreeTest, SummaryAccounting) {
+TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // Fully enclosed re-reserving works correctly.
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.reserve_mapping(50, 25, rd2);
-    diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
-    VMATree::SingleDiff diff2 = all_diff.flag[NMTUtil::flag_to_index(mtNMT)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff2 = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
     EXPECT_EQ(-25, diff.reserve);
     EXPECT_EQ(25, diff2.reserve);
   }
@@ -286,44 +485,44 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.release_mapping(0, 100);
-    diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(-100, diff.reserve);
   }
   { // Convert some of a released mapping to a committed one
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.commit_mapping(0, 100, rd);
-    diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     EXPECT_EQ(100, diff.commit);
   }
-  { // Adjacent reserved mappings with same flag
+  { // Adjacent reserved mappings with same type
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.reserve_mapping(100, 100, rd);
-    diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
   }
-  { // Adjacent reserved mappings with different flags
+  { // Adjacent reserved mappings with different tags
   Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.reserve_mapping(100, 100, rd2);
-    diff = all_diff.flag[NMTUtil::flag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
-    diff = all_diff.flag[NMTUtil::flag_to_index(mtNMT)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
     EXPECT_EQ(100, diff.reserve);
   }
 
@@ -334,31 +533,31 @@ TEST_VM_F(VMATreeTest, SummaryAccounting) {
     tree.commit_mapping(128, 128, rd);
     tree.commit_mapping(512, 128, rd);
     VMATree::SummaryDiff diff = tree.commit_mapping(0, 1024, rd);
-    EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].commit);
-    EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
+    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   }
 }
 
 // Exceedingly simple tracker for page-granular allocations
 // Use it for testing consistency with VMATree.
-struct SimpleVMATracker : public CHeapObj<mtTest> {
+  struct SimpleVMATracker : public CHeapObj<mtTest> {
   const size_t page_size = 4096;
-  enum Type { Reserved, Committed, Free };
+  enum Kind { Reserved, Committed, Free };
   struct Info {
-    Type type;
-    MEMFLAGS flag;
+    Kind kind;
+    MemTag mem_tag;
     NativeCallStack stack;
-    Info() : type(Free), flag(mtNone), stack() {}
+    Info() : kind(Free), mem_tag(mtNone), stack() {}
 
-    Info(Type type, NativeCallStack stack, MEMFLAGS flag)
-    : type(type), flag(flag), stack(stack) {}
+    Info(Kind kind, NativeCallStack stack, MemTag mem_tag)
+    : kind(kind), mem_tag(mem_tag), stack(stack) {}
 
     bool eq(Info other) {
-      return flag == other.flag && stack.equals(other.stack);
+      return kind == other.kind && stack.equals(other.stack);
     }
   };
   // Page (4KiB) granular array
-  static constexpr const size_t num_pages = 1024 * 512;
+  static constexpr const size_t num_pages = 1024 * 4;
   Info pages[num_pages];
 
   SimpleVMATracker()
@@ -368,7 +567,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     }
   }
 
-  VMATree::SummaryDiff do_it(Type type, size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+  VMATree::SummaryDiff do_it(Kind kind, size_t start, size_t size, NativeCallStack stack, MemTag mem_tag) {
     assert(is_aligned(size, page_size) && is_aligned(start, page_size), "page alignment");
 
     VMATree::SummaryDiff diff;
@@ -377,23 +576,23 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     const size_t end_idx = start_idx + page_count;
     assert(end_idx < SimpleVMATracker::num_pages, "");
 
-    Info new_info(type, stack, flag);
+    Info new_info(kind, stack, mem_tag);
     for (size_t i = start_idx; i < end_idx; i++) {
       Info& old_info = pages[i];
 
       // Register diff
-      if (old_info.type == Reserved) {
-        diff.flag[(int)old_info.flag].reserve -= page_size;
-      } else if (old_info.type == Committed) {
-        diff.flag[(int)old_info.flag].reserve -= page_size;
-        diff.flag[(int)old_info.flag].commit -= page_size;
+      if (old_info.kind == Reserved) {
+        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
+      } else if (old_info.kind == Committed) {
+        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
+        diff.tag[(int)old_info.mem_tag].commit -= page_size;
       }
 
-      if (type == Reserved) {
-        diff.flag[(int)new_info.flag].reserve += page_size;
-      } else if(type == Committed) {
-        diff.flag[(int)new_info.flag].reserve += page_size;
-        diff.flag[(int)new_info.flag].commit += page_size;
+      if (kind == Reserved) {
+        diff.tag[(int)new_info.mem_tag].reserve += page_size;
+      } else if (kind == Committed) {
+        diff.tag[(int)new_info.mem_tag].reserve += page_size;
+        diff.tag[(int)new_info.mem_tag].commit += page_size;
       }
       // Overwrite old one with new
       pages[i] = new_info;
@@ -401,12 +600,12 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     return diff;
   }
 
-  VMATree::SummaryDiff reserve(size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
-    return do_it(Reserved, start, size, stack, flag);
+  VMATree::SummaryDiff reserve(size_t start, size_t size, NativeCallStack stack, MemTag mem_tag) {
+    return do_it(Reserved, start, size, stack, mem_tag);
   }
 
-  VMATree::SummaryDiff commit(size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
-    return do_it(Committed, start, size, stack, flag);
+  VMATree::SummaryDiff commit(size_t start, size_t size, NativeCallStack stack, MemTag mem_tag) {
+    return do_it(Committed, start, size, stack, mem_tag);
   }
 
   VMATree::SummaryDiff release(size_t start, size_t size) {
@@ -416,14 +615,14 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
 
 constexpr const size_t SimpleVMATracker::num_pages;
 
-TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
+TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
   // In this test we use ASSERT macros from gtest instead of EXPECT
   // as any error will propagate and become larger as the test progresses.
   SimpleVMATracker* tr = new SimpleVMATracker();
   const size_t page_size = tr->page_size;
   VMATree tree;
   NCS ncss(true);
-  constexpr const int candidates_len_flags = 4;
+  constexpr const int candidates_len_tags = 4;
   constexpr const int candidates_len_stacks = 2;
 
   NativeCallStack candidate_stacks[candidates_len_stacks] = {
@@ -431,11 +630,9 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     make_stack(0xB),
   };
 
-  const MEMFLAGS candidate_flags[candidates_len_flags] = {
+  const MemTag candidate_tags[candidates_len_tags] = {
     mtNMT,
     mtTest,
-    mtGC,
-    mtCompiler
   };
 
   const int operation_count = 100000; // One hundred thousand
@@ -457,30 +654,30 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
     const size_t start = page_start * page_size;
     const size_t size = num_pages * page_size;
 
-    const MEMFLAGS flag = candidate_flags[os::random() % candidates_len_flags];
+    const MemTag mem_tag = candidate_tags[os::random() % candidates_len_tags];
     const NativeCallStack stack = candidate_stacks[os::random() % candidates_len_stacks];
 
     const NCS::StackIndex si = ncss.push(stack);
-    VMATree::RegionData data(si, flag);
+    VMATree::RegionData data(si, mem_tag);
 
-    const SimpleVMATracker::Type type = (SimpleVMATracker::Type)(os::random() % 3);
+    const SimpleVMATracker::Kind kind = (SimpleVMATracker::Kind)(os::random() % 3);
 
     VMATree::SummaryDiff tree_diff;
     VMATree::SummaryDiff simple_diff;
-    if (type == SimpleVMATracker::Reserved) {
-      simple_diff = tr->reserve(start, size, stack, flag);
+    if (kind == SimpleVMATracker::Reserved) {
+      simple_diff = tr->reserve(start, size, stack, mem_tag);
       tree_diff = tree.reserve_mapping(start, size, data);
-    } else if (type == SimpleVMATracker::Committed) {
-      simple_diff = tr->commit(start, size, stack, flag);
+    } else if (kind == SimpleVMATracker::Committed) {
+      simple_diff = tr->commit(start, size, stack, mem_tag);
       tree_diff = tree.commit_mapping(start, size, data);
     } else {
       simple_diff = tr->release(start, size);
       tree_diff = tree.release_mapping(start, size);
     }
 
-    for (int j = 0; j < mt_number_of_types; j++) {
-      VMATree::SingleDiff td = tree_diff.flag[j];
-      VMATree::SingleDiff sd = simple_diff.flag[j];
+    for (int j = 0; j < mt_number_of_tags; j++) {
+      VMATree::SingleDiff td = tree_diff.tag[j];
+      VMATree::SingleDiff sd = simple_diff.tag[j];
       ASSERT_EQ(td.reserve, sd.reserve);
       ASSERT_EQ(td.commit, sd.commit);
     }
@@ -491,7 +688,7 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
       size_t j = 0;
       while (j < SimpleVMATracker::num_pages) {
         while (j < SimpleVMATracker::num_pages &&
-               tr->pages[j].type == SimpleVMATracker::Free) {
+               tr->pages[j].kind == SimpleVMATracker::Free) {
           j++;
         }
 
@@ -522,8 +719,8 @@ TEST_VM_F(VMATreeTest, TestConsistencyWithSimpleTracker) {
         ASSERT_TRUE(starti.stack.equals(start_stack));
         ASSERT_TRUE(endi.stack.equals(end_stack));
 
-        ASSERT_EQ(starti.flag, startn->val().out.flag());
-        ASSERT_EQ(endi.flag, endn->val().in.flag());
+        ASSERT_EQ(starti.mem_tag, startn->val().out.mem_tag());
+        ASSERT_EQ(endi.mem_tag, endn->val().in.mem_tag());
       }
     }
   }

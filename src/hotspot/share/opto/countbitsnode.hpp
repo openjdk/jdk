@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ class PhaseTransform;
 //---------- CountBitsNode -----------------------------------------------------
 class CountBitsNode : public Node {
   public:
-  CountBitsNode(Node* in1) : Node(0, in1) {}
+  CountBitsNode(Node* in1) : Node(nullptr, in1) {}
   const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };

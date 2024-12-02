@@ -30,6 +30,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
 size_t HeapAlignment = 0;
@@ -165,6 +166,13 @@ void GCArguments::initialize_heap_flags_and_sizes() {
   }
 
   FLAG_SET_ERGO(MinHeapDeltaBytes, align_up(MinHeapDeltaBytes, SpaceAlignment));
+
+  if (checked_cast<uint>(ObjectAlignmentInBytes) > GCCardSizeInBytes) {
+    err_msg message("ObjectAlignmentInBytes %u is larger than GCCardSizeInBytes %u",
+                    ObjectAlignmentInBytes, GCCardSizeInBytes);
+    vm_exit_during_initialization("Invalid combination of GCCardSizeInBytes and ObjectAlignmentInBytes",
+                                  message);
+  }
 
   DEBUG_ONLY(assert_flags();)
 }

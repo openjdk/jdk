@@ -23,7 +23,7 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
+ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including FileUtils.gmk)
 endif
 
@@ -136,6 +136,7 @@ ifeq ($(call isTargetOs, macosx), true)
 	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
 	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
+          $(CHMOD) -h u+w '$(call DecodeSpace, $@)'; \
 	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
 	fi
   endef
@@ -187,6 +188,11 @@ else
 	$(LN) -s '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
   endef
 endif
+
+define copy-and-chmod-executable
+	$(install-file)
+	$(CHMOD) a+rx $@
+endef
 
 ################################################################################
 
@@ -281,7 +287,7 @@ CacheFindFiles = \
 #
 # $1 - Directories to start search in
 FillFindCache = \
-    $(eval CacheFindFiles_NEW_DIRS := $$(filter-out $$(addsuffix /%,\
+    $(eval CacheFindFiles_NEW_DIRS := $$(filter-out $$(addsuffix /%, \
         $$(CacheFindFiles_CACHED_DIRS)) $$(CacheFindFiles_CACHED_DIRS), $1)) \
     $(if $(CacheFindFiles_NEW_DIRS), \
       $(eval CacheFindFiles_CACHED_DIRS += $$(patsubst %/,%,$$(CacheFindFiles_NEW_DIRS))) \
@@ -300,4 +306,27 @@ ifeq ($(DISABLE_CACHE_FIND), true)
   FindFiles = $(DirectFindFiles)
 else
   FindFiles = $(CacheFindFiles)
+endif
+
+# Find native debuginfo files in a directory
+#
+# Param 1 - dir to find debuginfo files in
+FindDebuginfoFiles = \
+    $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
+        $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
+        $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
+
+# Pick the correct debug info files to copy, either zipped or not.
+ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+  DEBUGINFO_SUFFIXES += .diz
+else
+  DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
+  # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
+  # dirs.
+  ifeq ($(call isTargetOs, macosx), true)
+    $(call FillFindCache, \
+        $(SUPPORT_OUTPUTDIR)/modules_libs $(SUPPORT_OUTPUTDIR)/modules_cmds)
+    FindDebuginfoFiles = \
+        $(if $(wildcard $1), $(call containing, .dSYM/, $(call FindFiles, $1)))
+  endif
 endif

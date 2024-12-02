@@ -100,6 +100,12 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
   };
 
+  if (!is_armed(nm)) {
+    // Some other thread got here first and healed the oops
+    // and disarmed the nmethod. No need to continue.
+    return true;
+  }
+
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
   // Also, with concurrent GC, it is possible that frames in continuation stack
@@ -172,13 +178,9 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   nmethod* nm = cb->as_nmethod();
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
-  if (!bs_nm->is_armed(nm)) {
-    return 0;
-  }
-
-  assert(!nm->is_osr_method(), "Should not reach here");
   // Called upon first entry after being armed
   bool may_enter = bs_nm->nmethod_entry_barrier(nm);
+  assert(!nm->is_osr_method() || may_enter, "OSR nmethods should always be entrant after migration");
 
   // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
   // are made visible, by using a cross modify fence. Note that this is synchronous cross modifying
@@ -188,11 +190,11 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   // it can be made conditional on the nmethod_patching_type.
   OrderAccess::cross_modify_fence();
 
-  // Diagnostic option to force deoptimization 1 in 3 times. It is otherwise
+  // Diagnostic option to force deoptimization 1 in 10 times. It is otherwise
   // a very rare event.
-  if (DeoptimizeNMethodBarriersALot) {
+  if (DeoptimizeNMethodBarriersALot && !nm->is_osr_method()) {
     static volatile uint32_t counter=0;
-    if (Atomic::add(&counter, 1u) % 3 == 0) {
+    if (Atomic::add(&counter, 1u) % 10 == 0) {
       may_enter = false;
     }
   }
@@ -205,15 +207,6 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
 }
 
 bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
-  // This check depends on the invariant that all nmethods that are deoptimized / made not entrant
-  // are NOT disarmed.
-  // This invariant is important because a method can be deoptimized after the method have been
-  // resolved / looked up by OSR by another thread. By not deoptimizing them we guarantee that
-  // a deoptimized method will always hit the barrier and come to the same conclusion - deoptimize
-  if (!is_armed(nm)) {
-    return true;
-  }
-
   assert(nm->is_osr_method(), "Should not reach here");
   log_trace(nmethod, barrier)("Running osr nmethod entry barrier: " PTR_FORMAT, p2i(nm));
   bool result = nmethod_entry_barrier(nm);

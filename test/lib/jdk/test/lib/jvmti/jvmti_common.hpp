@@ -239,7 +239,7 @@ print_method(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method, jint depth) {
   check_jvmti_status(jni, err, "print_method: error in JVMTI GetMethodName");
 
   LOG("%2d: %s: %s%s\n", depth, cname, mname, msign);
-  fflush(0);
+  fflush(nullptr);
   deallocate(jvmti, jni, (void*)cname);
   deallocate(jvmti, jni, (void*)mname);
   deallocate(jvmti, jni, (void*)msign);

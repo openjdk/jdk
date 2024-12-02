@@ -372,9 +372,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
   switch (type) {
   case T_BOOLEAN:
     // convert !=0 to 1
-    __ neg(R0, R3_RET);
-    __ orr(R0, R3_RET, R0);
-    __ srwi(R3_RET, R0, 31);
+    __ normalize_bool(R3_RET);
     break;
   case T_BYTE:
      // sign extend 8 bits
@@ -698,6 +696,17 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R12_scratch2);
+  __ restore_interpreter_state(R11_scratch1, false, true /*restore_top_frame_sp*/);
+  __ blr();
+
+  return start;
+}
+
 // Helpers for commoning out cases in the various type of method entries.
 
 // Increment invocation count & check for overflow.
@@ -785,8 +794,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   __ bgt(CCR0/*is_stack_overflow*/, done);
 
   // The stack overflows. Load target address of the runtime stub and call it.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
-  __ load_const_optimized(Rscratch1, (StubRoutines::throw_StackOverflowError_entry()), R0);
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
+  __ load_const_optimized(Rscratch1, (SharedRuntime::throw_StackOverflowError_entry()), R0);
   __ mtctr(Rscratch1);
   // Restore caller_sp (c2i adapter may exist, but no shrinking of interpreted caller frame).
 #ifdef ASSERT
@@ -1080,6 +1089,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);  break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
@@ -1198,7 +1208,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register signature_handler_fd = R11_scratch1;
   const Register pending_exception    = R0;
   const Register result_handler_addr  = R31;
-  const Register native_method_fd     = R11_scratch1;
+  const Register native_method_fd     = R12_scratch2; // preferred in MacroAssembler::branch_to
   const Register access_flags         = R22_tmp2;
   const Register active_handles       = R11_scratch1; // R26_monitor saved to state.
   const Register sync_state           = R12_scratch2;
@@ -1211,10 +1221,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   Label exception_return;
   Label exception_return_sync_check;
   Label stack_overflow_return;
-
-  // Generate new interpreter state and jump to stack_overflow_return in case of
-  // a stack overflow.
-  //generate_compute_interpreter_state(stack_overflow_return);
 
   Register size_of_parameters = R22_tmp2;
 
@@ -1254,8 +1260,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // access_flags = method->access_flags();
   // Load access flags.
-  assert(access_flags->is_nonvolatile(),
-         "access_flags must be in a non-volatile register");
+  assert(__ nonvolatile_accross_vthread_preemtion(access_flags),
+         "access_flags not preserved");
   // Type check.
   assert(4 == sizeof(AccessFlags), "unexpected field size");
   __ lwz(access_flags, method_(access_flags));
@@ -1316,8 +1322,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // convenient and the slow signature handler can use this same frame
   // anchor.
 
+  bool support_vthread_preemption = Continuations::enabled() && LockingMode != LM_LEGACY;
+
   // We have a TOP_IJAVA_FRAME here, which belongs to us.
-  __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R12_scratch2/*tmp*/);
+  Label last_java_pc;
+  Label *resume_pc = support_vthread_preemption ? &last_java_pc : nullptr;
+  __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R3_ARG1/*tmp*/, resume_pc);
 
   // Now the interpreter frame (and its call chain) have been
   // invalidated and flushed. We are now protected against eager
@@ -1336,16 +1346,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   __ call_stub(signature_handler_fd);
 
-  // Remove the register parameter varargs slots we allocated in
-  // compute_interpreter_state. SP+16 ends up pointing to the ABI
-  // outgoing argument area.
-  //
-  // Not needed on PPC64.
-  //__ add(SP, SP, Argument::n_int_register_parameters_c*BytesPerWord);
-
-  assert(result_handler_addr->is_nonvolatile(), "result_handler_addr must be in a non-volatile register");
+  assert(__ nonvolatile_accross_vthread_preemtion(result_handler_addr),
+         "result_handler_addr not preserved");
   // Save across call to native method.
   __ mr(result_handler_addr, R3_RET);
+  __ ld(R11_scratch1, _abi0(callers_sp), R1_SP); // load FP
 
   __ isync(); // Acquire signature handler before trying to fetch the native entry point and klass mirror.
 
@@ -1359,12 +1364,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ testbitdi(CCR0, R0, access_flags, JVM_ACC_STATIC_BIT);
     __ bfalse(CCR0, method_is_not_static);
 
-    __ ld(R11_scratch1, _abi0(callers_sp), R1_SP);
-    // Load mirror from interpreter frame.
-    __ ld(R12_scratch2, _ijava_state_neg(mirror), R11_scratch1);
+    // Load mirror from interpreter frame (FP in R11_scratch1)
+    __ ld(R21_tmp1, _ijava_state_neg(mirror), R11_scratch1);
     // R4_ARG2 = &state->_oop_temp;
     __ addi(R4_ARG2, R11_scratch1, _ijava_state_neg(oop_tmp));
-    __ std(R12_scratch2/*mirror*/, _ijava_state_neg(oop_tmp), R11_scratch1);
+    __ std(R21_tmp1/*mirror*/, _ijava_state_neg(oop_tmp), R11_scratch1);
     BIND(method_is_not_static);
   }
 
@@ -1398,7 +1402,18 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Call the native method. Argument registers must not have been
   // overwritten since "__ call_stub(signature_handler);" (except for
   // ARG1 and ARG2 for static methods).
+
+  if (support_vthread_preemption) {
+    // result_handler_addr is a nonvolatile register. Its value will be preserved across
+    // the native call but only if the call isn't preempted. To preserve its value even
+    // in the case of preemption we save it in the lresult slot. It is restored at
+    // resume_pc if, and only if the call was preempted. This works because only
+    // j.l.Object::wait calls are preempted which don't return a result.
+    __ std(result_handler_addr, _ijava_state_neg(lresult), R11_scratch1);
+  }
+  __ push_cont_fastpath();
   __ call_c(native_method_fd);
+  __ pop_cont_fastpath();
 
   __ li(R0, 0);
   __ ld(R11_scratch1, 0, R1_SP);
@@ -1466,13 +1481,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // native result across the call. No oop is present.
 
   __ mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
-  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans),
-            relocInfo::none);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, JavaThread::check_special_condition_for_native_trans),
-            relocInfo::none);
-#endif
+  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
 
   __ bind(sync_check_done);
 
@@ -1501,6 +1510,35 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ li(R0/*thread_state*/, _thread_in_Java);
   __ lwsync(); // Acquire safepoint and suspend state, release thread state.
   __ stw(R0/*thread_state*/, thread_(thread_state));
+
+  if (support_vthread_preemption) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ld(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
+    __ cmpdi(CCR0, R0, 0);
+    __ beq(CCR0, not_preempted);
+    __ mtlr(R0);
+    __ li(R0, 0);
+    __ std(R0, in_bytes(JavaThread::preempt_alternate_return_offset()), R16_thread);
+    __ blr();
+
+    // Execution will be resumed here when the vthread becomes runnable again.
+    __ bind(*resume_pc);
+    __ restore_after_resume(R11_scratch1 /* fp */);
+    // We saved the result handler before the call
+    __ ld(result_handler_addr, _ijava_state_neg(lresult), R11_scratch1);
+#ifdef ASSERT
+    // Clobber result slots. Only native methods returning void can be preemted currently.
+    __ load_const(R3_RET, UCONST64(0xbad01001));
+    __ std(R3_RET, _ijava_state_neg(lresult), R11_scratch1);
+    __ std(R3_RET, _ijava_state_neg(fresult), R11_scratch1);
+    // reset_last_Java_frame() below asserts that a last java sp is set
+    __ asm_assert_mem8_is_zero(in_bytes(JavaThread::last_Java_sp_offset()),
+        R16_thread, FILE_AND_LINE ": Last java sp should not be set when resuming");
+    __ std(R3_RET, in_bytes(JavaThread::last_Java_sp_offset()), R16_thread);
+#endif
+    __ bind(not_preempted);
+  }
 
   if (CheckJNICalls) {
     // clear_pending_jni_exception_check

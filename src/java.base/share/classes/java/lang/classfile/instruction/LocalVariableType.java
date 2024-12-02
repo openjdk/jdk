@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -33,10 +32,10 @@ import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.Signature;
 import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
+
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariableType;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A pseudo-instruction which models a single entry in the {@link
@@ -44,9 +43,8 @@ import jdk.internal.javac.PreviewFeature;
  * traversal of the elements of a {@link CodeModel}, according to the setting of
  * the {@link ClassFile.DebugElementsOption} option.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LocalVariableType extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {
     /**
@@ -82,14 +80,6 @@ public sealed interface LocalVariableType extends PseudoInstruction
     Label endScope();
 
     /**
-     * Writes the local variable to the specified writer
-     *
-     * @param buf the writer
-     * @return true if the variable has been written
-     */
-    boolean writeTo(BufWriter buf);
-
-    /**
      * {@return a local variable type pseudo-instruction}
      *
      * @param slot the local variable slot
@@ -97,6 +87,7 @@ public sealed interface LocalVariableType extends PseudoInstruction
      * @param signatureEntry the local variable signature
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariableType of(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
         return new AbstractPseudoInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
@@ -111,6 +102,7 @@ public sealed interface LocalVariableType extends PseudoInstruction
      * @param signature the local variable signature
      * @param startScope the start range of the local variable scope
      * @param endScope the end range of the local variable scope
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     static LocalVariableType of(int slot, String name, Signature signature, Label startScope, Label endScope) {
         return of(slot,

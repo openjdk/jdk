@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,6 +26,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -49,7 +50,7 @@
 #include "runtime/synchronizer.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 // Address computation: local variables
 
@@ -178,7 +179,6 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
         __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
       }
       // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-      __ membar(MacroAssembler::AnyAny);
       __ lbu(temp_reg, Address(temp_reg, 0));
       __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
       __ mv(bc_reg, bc);
@@ -292,15 +292,10 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  if (AvoidUnalignedAccesses) {
-    __ load_signed_byte(x10, at_bcp(1));
-    __ load_unsigned_byte(t1, at_bcp(2));
-    __ slli(x10, x10, 8);
-    __ add(x10, x10, t1);
-  } else {
-    __ load_unsigned_short(x10, at_bcp(1));
-    __ revb_h_h(x10, x10); // reverse bytes in half-word and sign-extend
-  }
+  __ load_signed_byte(x10, at_bcp(1));
+  __ load_unsigned_byte(t1, at_bcp(2));
+  __ slli(x10, x10, 8);
+  __ add(x10, x10, t1);
 }
 
 void TemplateTable::ldc(LdcType type) {
@@ -320,7 +315,6 @@ void TemplateTable::ldc(LdcType type) {
   // get type
   __ addi(x13, x11, tags_offset);
   __ add(x13, x10, x13);
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(x13, Address(x13, 0));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -664,8 +658,12 @@ void TemplateTable::aload() {
 }
 
 void TemplateTable::locals_index_wide(Register reg) {
-  __ lhu(reg, at_bcp(2));
-  __ revb_h_h_u(reg, reg); // reverse bytes in half-word and zero-extend
+  assert_different_registers(reg, t1);
+  // Convert the 16-bit value into native byte-ordering and zero-extend
+  __ lbu(reg, at_bcp(2));
+  __ lbu(t1, at_bcp(3));
+  __ slli(reg, reg, 8);
+  __ orr(reg, reg, t1);
   __ neg(reg, reg);
 }
 
@@ -677,8 +675,12 @@ void TemplateTable::wide_iload() {
 
 void TemplateTable::wide_lload() {
   transition(vtos, ltos);
-  __ lhu(x11, at_bcp(2));
-  __ revb_h_h_u(x11, x11); // reverse bytes in half-word and zero-extend
+  // Convert the 16-bit value into native byte-ordering and zero-extend
+  __ lbu(x11, at_bcp(2));
+  __ lbu(t1, at_bcp(3));
+  __ slli(x11, x11, 8);
+  __ orr(x11, x11, t1);
+
   __ slli(x11, x11, LogBytesPerWord);
   __ sub(x11, xlocals, x11);
   __ ld(x10, Address(x11, Interpreter::local_offset_in_bytes(1)));
@@ -692,8 +694,12 @@ void TemplateTable::wide_fload() {
 
 void TemplateTable::wide_dload() {
   transition(vtos, dtos);
-  __ lhu(x11, at_bcp(2));
-  __ revb_h_h_u(x11, x11); // reverse bytes in half-word and zero-extend
+  // Convert the 16-bit value into native byte-ordering and zero-extend
+  __ lbu(x11, at_bcp(2));
+  __ lbu(t1, at_bcp(3));
+  __ slli(x11, x11, 8);
+  __ orr(x11, x11, t1);
+
   __ slli(x11, x11, LogBytesPerWord);
   __ sub(x11, xlocals, x11);
   __ fld(f10, Address(x11, Interpreter::local_offset_in_bytes(1)));
@@ -706,7 +712,7 @@ void TemplateTable::wide_aload() {
 }
 
 void TemplateTable::index_check(Register array, Register index) {
-  // destroys x11, t0
+  // destroys x11, t0, t1
   // sign extend index for use by indexed load
   // check index
   const Register length = t0;
@@ -719,8 +725,8 @@ void TemplateTable::index_check(Register array, Register index) {
   __ sign_extend(index, index, 32);
   __ bltu(index, length, ok);
   __ mv(x13, array);
-  __ mv(t0, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
+  __ jr(t1);
   __ bind(ok);
 }
 
@@ -1086,7 +1092,7 @@ void TemplateTable::aastore() {
 
   // Come here on failure
   // object is at TOS
-  __ j(Interpreter::_throw_ArrayStoreException_entry);
+  __ j(RuntimeAddress(Interpreter::_throw_ArrayStoreException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -1314,8 +1320,8 @@ void TemplateTable::idiv() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 idiv x10
@@ -1327,8 +1333,8 @@ void TemplateTable::irem() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 irem x10
@@ -1346,8 +1352,8 @@ void TemplateTable::ldiv() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 ldiv x10
@@ -1359,8 +1365,8 @@ void TemplateTable::lrem() {
   // explicitly check for div0
   Label no_div0;
   __ bnez(x10, no_div0);
-  __ mv(t0, Interpreter::_throw_ArithmeticException_entry);
-  __ jr(t0);
+  __ mv(t1, Interpreter::_throw_ArithmeticException_entry);
+  __ jr(t1);
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 lrem x10
@@ -1477,12 +1483,14 @@ void TemplateTable::iinc() {
 
 void TemplateTable::wide_iinc() {
   transition(vtos, vtos);
-  __ lwu(x11, at_bcp(2)); // get constant and index
-  __ revb_h_w_u(x11, x11); // reverse bytes in half-word (32bit) and zero-extend
-  __ zero_extend(x12, x11, 16);
-  __ neg(x12, x12);
-  __ slli(x11, x11, 32);
-  __ srai(x11, x11, 48);
+  // get constant
+  // Convert the 16-bit value into native byte-ordering and sign-extend
+  __ lb(x11, at_bcp(4));
+  __ lbu(t1, at_bcp(5));
+  __ slli(x11, x11, 8);
+  __ orr(x11, x11, t1);
+
+  locals_index_wide(x12);
   __ ld(x10, iaddress(x12, t0, _masm));
   __ addw(x10, x10, x11);
   __ sd(x10, iaddress(x12, t0, _masm));
@@ -1627,18 +1635,14 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    if (AvoidUnalignedAccesses) {
-      __ lb(x12, at_bcp(1));
-      __ lbu(t1, at_bcp(2));
-      __ slli(x12, x12, 8);
-      __ add(x12, x12, t1);
-    } else {
-      __ lhu(x12, at_bcp(1));
-      __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
-    }
+    // Convert the 16-bit value into native byte-ordering and sign-extend
+    __ lb(x12, at_bcp(1));
+    __ lbu(t1, at_bcp(2));
+    __ slli(x12, x12, 8);
+    __ orr(x12, x12, t1);
   } else {
     __ lwu(x12, at_bcp(1));
-    __ revb_w_w(x12, x12); // reverse bytes in word and sign-extend
+    __ revbw(x12, x12);
   }
 
   // Handle all the JSR stuff here, then exit.
@@ -1769,8 +1773,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ andi(sp, esp, -16);
 
     // and begin the OSR nmethod
-    __ ld(t0, Address(x9, nmethod::osr_entry_point_offset()));
-    __ jr(t0);
+    __ ld(t1, Address(x9, nmethod::osr_entry_point_offset()));
+    __ jr(t1);
   }
 }
 
@@ -1903,8 +1907,8 @@ void TemplateTable::tableswitch() {
   // load lo & hi
   __ lwu(x12, Address(x11, BytesPerInt));
   __ lwu(x13, Address(x11, 2 * BytesPerInt));
-  __ revb_w_w(x12, x12); // reverse bytes in word (32bit) and sign-extend
-  __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
+  __ revbw(x12, x12);
+  __ revbw(x13, x13);
   // check against lo & hi
   __ blt(x10, x12, default_case);
   __ bgt(x10, x13, default_case);
@@ -1915,7 +1919,7 @@ void TemplateTable::tableswitch() {
   __ profile_switch_case(x10, x11, x12);
   // continue execution
   __ bind(continue_execution);
-  __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
+  __ revbw(x13, x13);
   __ add(xbcp, xbcp, x13);
   __ load_unsigned_byte(t0, Address(xbcp));
   __ dispatch_only(vtos, /*generate_poll*/true);
@@ -1935,7 +1939,7 @@ void TemplateTable::fast_linearswitch() {
   transition(itos, vtos);
   Label loop_entry, loop, found, continue_execution;
   // bswap x10 so we can avoid bswapping the table entries
-  __ revb_w_w(x10, x10); // reverse bytes in word (32bit) and sign-extend
+  __ revbw(x10, x10);
   // align xbcp
   __ la(x9, at_bcp(BytesPerInt)); // btw: should be able to get rid of
                                     // this instruction (change offsets
@@ -1943,7 +1947,10 @@ void TemplateTable::fast_linearswitch() {
   __ andi(x9, x9, -BytesPerInt);
   // set counter
   __ lwu(x11, Address(x9, BytesPerInt));
-  __ revb_w(x11, x11);
+  // Convert the 32-bit npairs (number of pairs) into native byte-ordering
+  // We can use sign-extension here because npairs must be greater than or
+  // equal to 0 per JVM spec on 'lookupswitch' bytecode.
+  __ revbw(x11, x11);
   __ j(loop_entry);
   // table search
   __ bind(loop);
@@ -1964,7 +1971,7 @@ void TemplateTable::fast_linearswitch() {
   __ profile_switch_case(x11, x10, x9);
   // continue execution
   __ bind(continue_execution);
-  __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
+  __ revbw(x13, x13);
   __ add(xbcp, xbcp, x13);
   __ lbu(t0, Address(xbcp, 0));
   __ dispatch_only(vtos, /*generate_poll*/true);
@@ -2016,8 +2023,10 @@ void TemplateTable::fast_binaryswitch() {
   __ mv(i, zr);                            // i = 0
   __ lwu(j, Address(array, -BytesPerInt)); // j = length(array)
 
-  // Convert j into native byteordering
-  __ revb_w(j, j);
+  // Convert the 32-bit npairs (number of pairs) into native byte-ordering
+  // We can use sign-extension here because npairs must be greater than or
+  // equal to 0 per JVM spec on 'lookupswitch' bytecode.
+  __ revbw(j, j);
 
   // And start
   Label entry;
@@ -2035,7 +2044,7 @@ void TemplateTable::fast_binaryswitch() {
     // Convert array[h].match to native byte-ordering before compare
     __ shadd(temp, h, array, temp, 3);
     __ lwu(temp, Address(temp, 0));
-    __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
+    __ revbw(temp, temp);
 
     Label L_done, L_greater;
     __ bge(key, temp, L_greater);
@@ -2058,14 +2067,14 @@ void TemplateTable::fast_binaryswitch() {
   // Convert array[i].match to native byte-ordering before compare
   __ shadd(temp, i, array, temp, 3);
   __ lwu(temp, Address(temp, 0));
-  __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
+  __ revbw(temp, temp);
   __ bne(key, temp, default_case);
 
   // entry found -> j = offset
   __ shadd(temp, i, array, temp, 3);
   __ lwu(j, Address(temp, BytesPerInt));
   __ profile_switch_case(i, key, array);
-  __ revb_w_w(j, j); // reverse bytes in word (32bit) and sign-extend
+  __ revbw(j, j);
 
   __ add(temp, xbcp, j);
   __ load_unsigned_byte(t0, Address(temp, 0));
@@ -2078,7 +2087,7 @@ void TemplateTable::fast_binaryswitch() {
   __ bind(default_case);
   __ profile_switch_default(i);
   __ lwu(j, Address(array, -2 * BytesPerInt));
-  __ revb_w_w(j, j); // reverse bytes in word (32bit) and sign-extend
+  __ revbw(j, j);
 
   __ add(temp, xbcp, j);
   __ load_unsigned_byte(t0, Address(temp, 0));
@@ -2098,9 +2107,9 @@ void TemplateTable::_return(TosState state) {
 
     __ ld(c_rarg1, aaddress(0));
     __ load_klass(x13, c_rarg1);
-    __ lwu(x13, Address(x13, Klass::access_flags_offset()));
+    __ lbu(x13, Address(x13, Klass::misc_flags_offset()));
     Label skip_register_finalizer;
-    __ test_bit(t0, x13, exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ test_bit(t0, x13, exact_log2(KlassFlags::_misc_has_finalizer));
     __ beqz(t0, skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), c_rarg1);
@@ -2172,7 +2181,7 @@ void TemplateTable::_return(TosState state) {
 void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
                                                        Register Rcache,
                                                        Register index) {
-  const Register temp = x9;
+  const Register temp = x9; // s1
   assert_different_registers(Rcache, index, temp);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
@@ -2189,7 +2198,6 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
       break;
   }
   // Load-acquire the bytecode to match store-release in InterpreterRuntime
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(temp, Address(temp, 0));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -2241,7 +2249,6 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
     __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
   }
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(temp, Address(temp, 0));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ mv(t0, (int) code);  // have we resolved this bytecode?
@@ -2403,7 +2410,6 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label resolved;
 
   __ load_resolved_indy_entry(cache, index);
-  __ membar(MacroAssembler::AnyAny);
   __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -2418,7 +2424,6 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ call_VM(noreg, entry, method);
   // Update registers with resolved info
   __ load_resolved_indy_entry(cache, index);
-  __ membar(MacroAssembler::AnyAny);
   __ ld(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
@@ -2470,13 +2475,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     // take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x10, Address(t0, offset));
-    });
-
+    __ lwu(x10, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ beqz(x10, L1);
 
     __ load_field_entry(c_rarg2, index);
@@ -2681,12 +2680,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     // we take the time to call into the VM.
     Label L1;
     assert_different_registers(cache, index, x10);
-    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x10, Address(t0, offset));
-    });
+    __ lwu(x10, ExternalAddress(JvmtiExport::get_field_modification_count_addr()));
     __ beqz(x10, L1);
 
     __ mv(c_rarg2, cache);
@@ -2974,13 +2968,9 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     // Check to see if a field modification watch has been set before
     // we take the time to call into the VM.
     Label L2;
-    ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(c_rarg3, Address(t0, offset));
-    });
+    __ lwu(c_rarg3, ExternalAddress(JvmtiExport::get_field_modification_count_addr()));
     __ beqz(c_rarg3, L2);
+
     __ pop_ptr(x9);                  // copy the object pointer from tos
     __ verify_oop(x9);
     __ push_ptr(x9);                 // put the object pointer back on tos
@@ -3106,13 +3096,9 @@ void TemplateTable::fast_accessfield(TosState state) {
     // Check to see if a field access watch has been set before we
     // take the time to call into the VM.
     Label L1;
-    ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lwu(x12, Address(t0, offset));
-    });
+    __ lwu(x12, ExternalAddress(JvmtiExport::get_field_access_count_addr()));
     __ beqz(x12, L1);
+
     // access constant pool cache entry
     __ load_field_entry(c_rarg2, t1);
     __ verify_oop(x10);
@@ -3533,7 +3519,6 @@ void TemplateTable::_new() {
   const int tags_offset = Array<u1>::base_offset_in_bytes();
   __ add(t0, x10, x13);
   __ la(t0, Address(t0, tags_offset));
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(t0, t0);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ sub(t1, t0, (u1)JVM_CONSTANT_Class);
@@ -3571,12 +3556,22 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header. If the object size is
     // zero, go directly to the header initialization.
-    __ sub(x13, x13, sizeof(oopDesc));
+    if (UseCompactObjectHeaders) {
+      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+      __ sub(x13, x13, oopDesc::base_offset_in_bytes());
+    } else {
+      __ sub(x13, x13, sizeof(oopDesc));
+    }
     __ beqz(x13, initialize_header);
 
     // Initialize object fields
     {
-      __ add(x12, x10, sizeof(oopDesc));
+      if (UseCompactObjectHeaders) {
+        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+        __ add(x12, x10, oopDesc::base_offset_in_bytes());
+      } else {
+        __ add(x12, x10, sizeof(oopDesc));
+      }
       Label loop;
       __ bind(loop);
       __ sd(zr, Address(x12));
@@ -3587,13 +3582,17 @@ void TemplateTable::_new() {
 
     // initialize object hader only.
     __ bind(initialize_header);
-    __ mv(t0, (intptr_t)markWord::prototype().value());
-    __ sd(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
-    __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
-    __ store_klass(x10, x14);      // store klass last
+    if (UseCompactObjectHeaders) {
+      __ ld(t0, Address(x14, Klass::prototype_header_offset()));
+      __ sd(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
+    } else {
+      __ mv(t0, (intptr_t)markWord::prototype().value());
+      __ sd(t0, Address(x10, oopDesc::mark_offset_in_bytes()));
+      __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
+      __ store_klass(x10, x14);      // store klass last
+    }
 
-    {
-      SkipIfEqual skip(_masm, &DTraceAllocProbes, false);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
       __ push(atos); // save the return value
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), x10);
@@ -3652,7 +3651,6 @@ void TemplateTable::checkcast() {
   // See if bytecode has already been quicked
   __ add(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(x11, x11);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ sub(t0, x11, (u1)JVM_CONSTANT_Class);
@@ -3680,7 +3678,7 @@ void TemplateTable::checkcast() {
   // Come here on failure
   __ push_reg(x13);
   // object is at TOS
-  __ j(Interpreter::_throw_ClassCastException_entry);
+  __ j(RuntimeAddress(Interpreter::_throw_ClassCastException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -3708,7 +3706,6 @@ void TemplateTable::instanceof() {
   // See if bytecode has already been quicked
   __ add(t0, x13, Array<u1>::base_offset_in_bytes());
   __ add(x11, t0, x9);
-  __ membar(MacroAssembler::AnyAny);
   __ lbu(x11, x11);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ sub(t0, x11, (u1)JVM_CONSTANT_Class);
@@ -3788,7 +3785,7 @@ void TemplateTable::_breakpoint() {
 void TemplateTable::athrow() {
   transition(atos, vtos);
   __ null_check(x10);
-  __ j(Interpreter::throw_exception_entry());
+  __ j(RuntimeAddress(Interpreter::throw_exception_entry()));
 }
 
 //-----------------------------------------------------------------------------
@@ -3971,8 +3968,8 @@ void TemplateTable::wide() {
   __ load_unsigned_byte(x9, at_bcp(1));
   __ mv(t0, (address)Interpreter::_wentry_point);
   __ shadd(t0, x9, t0, t1, 3);
-  __ ld(t0, Address(t0));
-  __ jr(t0);
+  __ ld(t1, Address(t0));
+  __ jr(t1);
 }
 
 // Multi arrays

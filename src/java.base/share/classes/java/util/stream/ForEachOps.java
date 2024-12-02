@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package java.util.stream;
+
+import jdk.internal.invoke.MhUtil;
 
 import java.util.Objects;
 import java.util.Spliterator;
@@ -370,15 +372,8 @@ final class ForEachOps {
         private Node<T> node;
 
         private ForEachOrderedTask<S, T> next;
-        private static final VarHandle NEXT;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                NEXT = l.findVarHandle(ForEachOrderedTask.class, "next", ForEachOrderedTask.class);
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
-        }
+        private static final VarHandle NEXT = MhUtil.findVarHandle(
+                MethodHandles.lookup(), "next", ForEachOrderedTask.class);
 
         protected ForEachOrderedTask(PipelineHelper<T> helper,
                                      Spliterator<S> spliterator,
@@ -510,6 +505,7 @@ final class ForEachOps {
             // "happens-before" completion of the associated left-most leaf task
             // of right subtree (if any, which can be this task's right sibling)
             //
+            @SuppressWarnings("unchecked")
             var leftDescendant = (ForEachOrderedTask<S, T>)NEXT.getAndSet(this, null);
             if (leftDescendant != null)
                 leftDescendant.tryComplete();

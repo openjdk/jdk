@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,21 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.constant.MethodTypeDesc;
-
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
-import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a method invocation instruction in the {@code code} array of a {@code
@@ -47,9 +46,8 @@ import jdk.internal.javac.PreviewFeature;
  * will have a {@code kind} of {@link Opcode.Kind#INVOKE}.  Delivered as a
  * {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InvokeInstruction extends Instruction
         permits AbstractInstruction.BoundInvokeInterfaceInstruction, AbstractInstruction.BoundInvokeInstruction, AbstractInstruction.UnboundInvokeInstruction {
     /**
@@ -64,7 +62,7 @@ public sealed interface InvokeInstruction extends Instruction
     boolean isInterface();
 
     /**
-     * {@return the {@code count} value of an {@code invokeinterface} instruction, as defined in {@jvms 6.5}
+     * {@return the {@code count} value of an {@code invokeinterface} instruction, as defined in JVMS {@jvms 6.5}
      * or {@code 0} for {@code invokespecial}, {@code invokestatic} and {@code invokevirtual} instructions}
      */
     int count();
@@ -94,7 +92,7 @@ public sealed interface InvokeInstruction extends Instruction
      * {@return a symbolic descriptor for the method type}
      */
     default MethodTypeDesc typeSymbol() {
-        return Util.methodTypeSymbol(method().nameAndType());
+        return Util.methodTypeSymbol(method().type());
     }
 
 

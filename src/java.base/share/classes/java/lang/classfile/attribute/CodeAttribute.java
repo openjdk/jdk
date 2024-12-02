@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@ package java.lang.classfile.attribute;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
+
 import jdk.internal.classfile.impl.BoundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Code} attribute {@jvms 4.7.3}, appears on non-native,
+ * Models the {@code Code} attribute (JVMS {@jvms 4.7.3}), appears on non-native,
  * non-abstract methods and contains the bytecode of the method body.  Delivered
  * as a {@link java.lang.classfile.MethodElement} when traversing the elements of a
  * {@link java.lang.classfile.MethodModel}.
@@ -41,11 +41,20 @@ import jdk.internal.javac.PreviewFeature;
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeModel
         permits BoundAttribute.BoundCodeAttribute {
+
+    /**
+     * {@return the maximum size of the local variable table}
+     */
+    int maxLocals();
+
+    /**
+     * {@return the maximum size of the operand stack}
+     */
+    int maxStack();
 
     /**
      * {@return The length of the code array in bytes}
@@ -58,9 +67,9 @@ public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeMode
     byte[] codeArray();
 
     /**
-     * {@return the position of the {@code Label} in the {@code codeArray}
-     * or -1 if the {@code Label} does not point to the {@code codeArray}}
+     * {@return the position of the {@code label} in the {@link #codeArray codeArray}}
      * @param label a marker for a position within this {@code CodeAttribute}
+     * @throws IllegalArgumentException if the {@code label} is not from this attribute
      */
     int labelToBci(Label label);
 }

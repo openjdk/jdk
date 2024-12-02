@@ -30,7 +30,7 @@ include MakeBase.gmk
 
 include CopyFiles.gmk
 
-##########################################################################################
+################################################################################
 
 ### TZDB tool needs files from java.time.zone package
 
@@ -41,12 +41,13 @@ define tzdb_copyfiles
         < $(<) > $@
 endef
 
-$(eval $(call SetupCopyFiles,COPY_INTERIM_TZDB, \
+$(eval $(call SetupCopyFiles, COPY_INTERIM_TZDB, \
     SRC := $(TOPDIR)/src/java.base/share/classes/java/time/zone, \
     DEST := $(BUILDTOOLS_OUTPUTDIR)/interim_tzdb_classes/build/tools/tzdb, \
     FILES := ZoneRules.java ZoneOffsetTransition.java ZoneOffsetTransitionRule.java Ser.java, \
-    MACRO := tzdb_copyfiles))
+    MACRO := tzdb_copyfiles, \
+))
 
-##########################################################################################
+################################################################################
 
 all: $(COPY_INTERIM_TZDB)

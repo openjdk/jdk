@@ -119,6 +119,10 @@ class name javax/swing/JScrollBar
 method name setMinimumSize descriptor (Ljava/awt/Dimension;)V flags 1
 method name setMaximumSize descriptor (Ljava/awt/Dimension;)V flags 1
 
+class name javax/swing/plaf/basic/BasicSliderUI
+-method name <init> descriptor ()V
+method name <init> descriptor ()V flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="23")
+
 class name javax/swing/plaf/synth/SynthTreeUI
 method name getCollapsedIcon descriptor ()Ljavax/swing/Icon; flags 1
 

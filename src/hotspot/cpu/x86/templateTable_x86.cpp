@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,7 +774,7 @@ void TemplateTable::index_check_without_pop(Register array, Register index) {
   __ jccb(Assembler::below, skip);
   // Pass array to create more detailed exceptions.
   __ mov(NOT_LP64(rax) LP64_ONLY(c_rarg1), array);
-  __ jump(ExternalAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
+  __ jump(RuntimeAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
   __ bind(skip);
 }
 
@@ -1152,7 +1152,7 @@ void TemplateTable::aastore() {
 
   // Come here on failure
   // object is at TOS
-  __ jump(ExternalAddress(Interpreter::_throw_ArrayStoreException_entry));
+  __ jump(RuntimeAddress(Interpreter::_throw_ArrayStoreException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -1432,7 +1432,7 @@ void TemplateTable::ldiv() {
   // generate explicit div0 check
   __ testq(rcx, rcx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   // Note: could xor rax and rcx and compare with (-1 ^ min_int). If
   //       they are not equal, one could do a normal division (no correction
   //       needed), which may speed up this implementation for the common case.
@@ -1445,7 +1445,7 @@ void TemplateTable::ldiv() {
   // check if y = 0
   __ orl(rax, rdx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::ldiv));
   __ addptr(rsp, 4 * wordSize);  // take off temporaries
 #endif
@@ -1458,7 +1458,7 @@ void TemplateTable::lrem() {
   __ pop_l(rax);
   __ testq(rcx, rcx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   // Note: could xor rax and rcx and compare with (-1 ^ min_int). If
   //       they are not equal, one could do a normal division (no correction
   //       needed), which may speed up this implementation for the common case.
@@ -1472,7 +1472,7 @@ void TemplateTable::lrem() {
   // check if y = 0
   __ orl(rax, rdx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::lrem));
   __ addptr(rsp, 4 * wordSize);
 #endif
@@ -2579,8 +2579,7 @@ void TemplateTable::_return(TosState state) {
     Register robj = LP64_ONLY(c_rarg1) NOT_LP64(rax);
     __ movptr(robj, aaddress(0));
     __ load_klass(rdi, robj, rscratch1);
-    __ movl(rdi, Address(rdi, Klass::access_flags_offset()));
-    __ testl(rdi, JVM_ACC_HAS_FINALIZER);
+    __ testb(Address(rdi, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
     Label skip_register_finalizer;
     __ jcc(Assembler::zero, skip_register_finalizer);
 
@@ -4049,6 +4048,7 @@ void TemplateTable::_new() {
   __ push(rcx);  // save the contexts of klass for initializing the header
 
   // make sure klass is initialized
+  // init_state needs acquire, but x86 is TSO, and so we are already good.
 #ifdef _LP64
   assert(VM_Version::supports_fast_class_init_checks(), "must support fast class initialization checks");
   __ clinit_barrier(rcx, r15_thread, nullptr /*L_fast_path*/, &slow_case);
@@ -4084,7 +4084,12 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    __ decrement(rdx, sizeof(oopDesc));
+    if (UseCompactObjectHeaders) {
+      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
+      __ decrement(rdx, oopDesc::base_offset_in_bytes());
+    } else {
+      __ decrement(rdx, sizeof(oopDesc));
+    }
     __ jcc(Assembler::zero, initialize_header);
 
     // Initialize topmost object field, divide rdx by 8, check if odd and
@@ -4106,25 +4111,32 @@ void TemplateTable::_new() {
     // initialize remaining object fields: rdx was a multiple of 8
     { Label loop;
     __ bind(loop);
-    __ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 1*oopSize), rcx);
-    NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 2*oopSize), rcx));
+    int header_size_bytes = oopDesc::header_size() * HeapWordSize;
+    assert(is_aligned(header_size_bytes, BytesPerLong), "oop header size must be 8-byte-aligned");
+    __ movptr(Address(rax, rdx, Address::times_8, header_size_bytes - 1*oopSize), rcx);
+    NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, header_size_bytes - 2*oopSize), rcx));
     __ decrement(rdx);
     __ jcc(Assembler::notZero, loop);
     }
 
     // initialize object header only.
     __ bind(initialize_header);
-    __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
-              (intptr_t)markWord::prototype().value()); // header
-    __ pop(rcx);   // get saved klass back in the register.
+    if (UseCompactObjectHeaders) {
+      __ pop(rcx);   // get saved klass back in the register.
+      __ movptr(rbx, Address(rcx, Klass::prototype_header_offset()));
+      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()), rbx);
+    } else {
+      __ movptr(Address(rax, oopDesc::mark_offset_in_bytes()),
+                (intptr_t)markWord::prototype().value()); // header
+      __ pop(rcx);   // get saved klass back in the register.
 #ifdef _LP64
-    __ xorl(rsi, rsi); // use zero reg to clear memory (shorter code)
-    __ store_klass_gap(rax, rsi);  // zero klass gap for compressed oops
+      __ xorl(rsi, rsi); // use zero reg to clear memory (shorter code)
+      __ store_klass_gap(rax, rsi);  // zero klass gap for compressed oops
 #endif
-    __ store_klass(rax, rcx, rscratch1);  // klass
+      __ store_klass(rax, rcx, rscratch1);  // klass
+    }
 
-    {
-      SkipIfEqual skip_if(_masm, &DTraceAllocProbes, 0, rscratch1);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
       __ push(atos);
       __ call_VM_leaf(
@@ -4223,7 +4235,7 @@ void TemplateTable::checkcast() {
   // Come here on failure
   __ push_ptr(rdx);
   // object is at TOS
-  __ jump(ExternalAddress(Interpreter::_throw_ClassCastException_entry));
+  __ jump(RuntimeAddress(Interpreter::_throw_ClassCastException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -4341,7 +4353,7 @@ void TemplateTable::_breakpoint() {
 void TemplateTable::athrow() {
   transition(atos, vtos);
   __ null_check(rax);
-  __ jump(ExternalAddress(Interpreter::throw_exception_entry()));
+  __ jump(RuntimeAddress(Interpreter::throw_exception_entry()));
 }
 
 //-----------------------------------------------------------------------------

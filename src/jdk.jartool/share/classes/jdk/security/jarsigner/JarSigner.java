@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.pkcs.PKCS9Attributes;
 import sun.security.timestamp.HttpTimestamper;
-import sun.security.tools.PathList;
 import sun.security.util.Event;
 import sun.security.util.ManifestDigester;
 import sun.security.util.SignatureFileVerifier;
@@ -39,11 +38,8 @@ import sun.security.util.SignatureUtil;
 import sun.security.x509.AlgorithmId;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.*;
 import java.security.cert.CertPath;
 import java.security.cert.Certificate;
@@ -492,7 +488,7 @@ public final class JarSigner {
     private final String tSADigestAlg;
     private final boolean sectionsonly; // do not "sign" the whole manifest
     private final boolean internalsf; // include the .SF inside the PKCS7 block
-    private boolean extraAttrsDetected;
+    private boolean externalFileAttributesDetected;
 
     private JarSigner(JarSigner.Builder builder) {
 
@@ -936,12 +932,12 @@ public final class JarSigner {
         ze2.setTime(ze.getTime());
         ze2.setComment(ze.getComment());
         ze2.setExtra(ze.getExtra());
-        int extraAttrs = JUZFA.getExtraAttributes(ze);
-        if (!extraAttrsDetected && extraAttrs != -1) {
-            extraAttrsDetected = true;
+        int externalFileAttributes = JUZFA.getExternalFileAttributes(ze);
+        if (!externalFileAttributesDetected && externalFileAttributes != -1) {
+            externalFileAttributesDetected = true;
             Event.report(Event.ReporterCategory.ZIPFILEATTRS, "detected");
         }
-        JUZFA.setExtraAttributes(ze2, extraAttrs);
+        JUZFA.setExternalFileAttributes(ze2, externalFileAttributes);
         if (ze.getMethod() == ZipEntry.STORED) {
             ze2.setSize(ze.getSize());
             ze2.setCrc(ze.getCrc());

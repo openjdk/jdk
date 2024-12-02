@@ -191,6 +191,10 @@ void JfrUpcalls::new_bytes_eager_instrumentation(jlong trace_id,
 
 bool JfrUpcalls::unhide_internal_types(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+  if (!initialize(THREAD)) {
+    log_error(jfr, system)("JfrUpcall could not be initialized.");
+    return false;
+  }
   JavaValue result(T_VOID);
   const Klass* klass = SystemDictionary::resolve_or_fail(jvm_upcalls_class_sym, true, CHECK_false);
   assert(klass != nullptr, "invariant");

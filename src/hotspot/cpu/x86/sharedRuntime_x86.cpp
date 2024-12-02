@@ -62,9 +62,11 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    // check if monitor
-    __ testptr(result, markWord::monitor_value);
-    __ jcc(Assembler::notZero, slowCase);
+    if (!UseObjectMonitorTable) {
+      // check if monitor
+      __ testptr(result, markWord::monitor_value);
+      __ jcc(Assembler::notZero, slowCase);
+    }
   } else {
     // check if locked
     __ testptr(result, markWord::unlocked_value);

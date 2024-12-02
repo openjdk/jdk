@@ -44,7 +44,7 @@ private:
     Eliminated         // All lock/unlock in region were eliminated
   } _kind;
 
-#ifdef ASSERT
+#ifndef PRODUCT
   const char* _kind_name[6] = {
    "Regular",
    "Local",
@@ -122,7 +122,9 @@ public:
 
 #ifndef PRODUCT
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
-  virtual void dump_spec(outputStream *st) const { st->print("  Lock %d",_slot); }
+  virtual void dump_spec(outputStream *st) const {
+    st->print("  Lock slot: %d, Kind: %s", _slot, _kind_name[(int)_kind]);
+  }
 #endif
 };
 

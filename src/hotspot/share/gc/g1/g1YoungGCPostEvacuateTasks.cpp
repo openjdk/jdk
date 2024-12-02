@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -251,8 +250,8 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
 
       {
         // Process marked object.
-        assert(obj->is_forwarded() && obj->forwardee() == obj, "must be self-forwarded");
-        obj->init_mark();
+        assert(obj->is_self_forwarded(), "must be self-forwarded");
+        obj->unset_self_forwarded();
         hr->update_bot_for_block(obj_addr, obj_end_addr);
 
         // Statistics
@@ -333,7 +332,7 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   }
 }
 
-class G1FreeHumongousRegionClosure : public HeapRegionIndexClosure {
+class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
   uint _humongous_objects_reclaimed;
   uint _humongous_regions_reclaimed;
   size_t _freed_bytes;
@@ -477,27 +476,6 @@ public:
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
-  PreservedMarksSet* _preserved_marks;
-  WorkerTask* _task;
-
-public:
-  RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
-    G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks),
-    _preserved_marks(preserved_marks),
-    _task(preserved_marks->create_task()) { }
-
-  virtual ~RestorePreservedMarksTask() {
-    delete _task;
-  }
-
-  double worker_cost() const override {
-    return _preserved_marks->num();
-  }
-
-  void do_work(uint worker_id) override { _task->work(worker_id); }
-};
-
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
   size_t _num_dirtied;
   G1CollectedHeap* _g1h;
@@ -522,7 +500,7 @@ public:
     _g1_ct(g1h->card_table()),
     _evac_failure_regions(evac_failure_regions) { }
 
-  void do_card_ptr(CardValue* card_ptr, uint worker_id) {
+  void do_card_ptr(CardValue* card_ptr) override {
     G1HeapRegion* hr = region_for_card(card_ptr);
 
     // Should only dirty cards in regions that won't be freed.
@@ -537,9 +515,9 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTask : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
 
-  class ProcessEvacuationFailedRegionsClosure : public HeapRegionClosure {
+  class ProcessEvacuationFailedRegionsClosure : public G1HeapRegionClosure {
   public:
 
     bool do_heap_region(G1HeapRegion* r) override {
@@ -673,6 +651,10 @@ public:
 
     G1Policy *policy = g1h->policy();
     policy->old_gen_alloc_tracker()->add_allocated_bytes_since_last_gc(_bytes_allocated_in_old_since_last_gc);
+
+    // Add the cards from the group cardsets.
+    _card_rs_length += g1h->young_regions_cardset()->occupied();
+
     policy->record_card_rs_length(_card_rs_length);
     policy->cset_regions_freed();
   }
@@ -706,7 +688,7 @@ public:
 };
 
 // Closure applied to all regions in the collection set.
-class FreeCSetClosure : public HeapRegionClosure {
+class FreeCSetClosure : public G1HeapRegionClosure {
   // Helper to send JFR events for regions.
   class JFREventForRegion {
     EventGCPhaseParallel _event;
@@ -807,7 +789,7 @@ public:
                   uint worker_id,
                   FreeCSetStats* stats,
                   G1EvacFailureRegions* evac_failure_regions) :
-      HeapRegionClosure(),
+      G1HeapRegionClosure(),
       _g1h(G1CollectedHeap::heap()),
       _surviving_young_words(surviving_young_words),
       _worker_id(worker_id),
@@ -822,9 +804,10 @@ public:
     JFREventForRegion event(r, _worker_id);
     TimerForRegion timer(timer_for_region(r));
 
-    stats()->account_card_rs_length(r);
 
     if (r->is_young()) {
+      // We only use card_rs_length statistics to estimate young regions length.
+      stats()->account_card_rs_length(r);
       assert_tracks_surviving_words(r);
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
     }
@@ -853,14 +836,14 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
-  G1CollectedHeap*  _g1h;
-  G1EvacInfo*       _evacuation_info;
-  FreeCSetStats*    _worker_stats;
-  HeapRegionClaimer _claimer;
-  const size_t*     _surviving_young_words;
-  uint              _active_workers;
+  G1CollectedHeap*    _g1h;
+  G1EvacInfo*         _evacuation_info;
+  FreeCSetStats*      _worker_stats;
+  G1HeapRegionClaimer _claimer;
+  const size_t*       _surviving_young_words;
+  uint                _active_workers;
   G1EvacFailureRegions* _evac_failure_regions;
-  volatile uint     _num_retained_regions;
+  volatile uint       _num_retained_regions;
 
   FreeCSetStats* worker_stats(uint worker) {
     return &_worker_stats[worker];
@@ -911,6 +894,8 @@ public:
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
 
     _g1h->clear_collection_set();
+
+    _g1h->young_regions_cardset()->clear();
   }
 
   double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->region_length(); }
@@ -972,7 +957,6 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   }
 
   if (evac_failure_regions->has_regions_evac_failed()) {
-    add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(evac_failure_regions,

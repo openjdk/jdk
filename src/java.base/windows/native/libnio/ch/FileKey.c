@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,32 +30,20 @@
 #include "nio_util.h"
 #include "sun_nio_ch_FileKey.h"
 
-static jfieldID key_volumeSN;    /* id for FileKey.dwVolumeSerialNumber */
-static jfieldID key_indexHigh;   /* id for FileKey.nFileIndexHigh */
-static jfieldID key_indexLow;    /* id for FileKey.nFileIndexLow */
-
-
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_initIDs(JNIEnv *env, jclass clazz)
+Java_sun_nio_ch_FileKey_init(JNIEnv *env, jclass clazz, jobject fdo, jintArray finfo)
 {
-    CHECK_NULL(key_volumeSN = (*env)->GetFieldID(env, clazz, "dwVolumeSerialNumber", "I"));
-    CHECK_NULL(key_indexHigh = (*env)->GetFieldID(env, clazz, "nFileIndexHigh", "I"));
-    CHECK_NULL(key_indexLow = (*env)->GetFieldID(env, clazz, "nFileIndexLow", "I"));
-}
-
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_init(JNIEnv *env, jobject this, jobject fdo)
-{
-    HANDLE fileHandle = (HANDLE)(handleval(env, fdo));
+    HANDLE fileHandle = (HANDLE)handleval(env, fdo);
     BOOL result;
     BY_HANDLE_FILE_INFORMATION fileInfo;
+    jint info[3];
 
     result = GetFileInformationByHandle(fileHandle, &fileInfo);
     if (result) {
-        (*env)->SetIntField(env, this, key_volumeSN, fileInfo.dwVolumeSerialNumber);
-        (*env)->SetIntField(env, this, key_indexHigh, fileInfo.nFileIndexHigh);
-        (*env)->SetIntField(env, this, key_indexLow, fileInfo.nFileIndexLow);
+        info[0] = (jint)fileInfo.dwVolumeSerialNumber;
+        info[1] = (jint)fileInfo.nFileIndexHigh;
+        info[2] = (jint)fileInfo.nFileIndexLow;
+        (*env)->SetIntArrayRegion(env, finfo, 0, 3, info);
     } else {
         JNU_ThrowIOExceptionWithLastError(env, "GetFileInformationByHandle failed");
     }

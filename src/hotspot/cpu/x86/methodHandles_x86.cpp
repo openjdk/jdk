@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ jmp(Address(method, entry_offset));
 
   __ bind(L_no_such_method);
-  __ jump(RuntimeAddress(StubRoutines::throw_AbstractMethodError_entry()));
+  __ jump(RuntimeAddress(SharedRuntime::throw_AbstractMethodError_entry()));
 }
 
 void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
@@ -510,7 +510,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ bind(L_incompatible_class_change_error);
-      __ jump(RuntimeAddress(StubRoutines::throw_IncompatibleClassChangeError_entry()));
+      __ jump(RuntimeAddress(SharedRuntime::throw_IncompatibleClassChangeError_entry()));
     }
   }
 }
@@ -536,10 +536,11 @@ void trace_method_handle_stub(const char* adaptername,
       Register r = as_Register(i);
       // The registers are stored in reverse order on the stack (by pusha).
 #ifdef AMD64
-      assert(Register::number_of_registers == 16, "sanity");
+      int num_regs = UseAPX ? 32 : 16;
+      assert(Register::available_gp_registers() == num_regs, "sanity");
       if (r == rsp) {
         // rsp is actually not stored by pusha(), compute the old rsp from saved_regs (rsp after pusha): saved_regs + 16 = old rsp
-        ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[16]));
+        ls.print("%3s=" PTR_FORMAT, r->name(), (intptr_t)(&saved_regs[num_regs]));
       } else {
         ls.print("%3s=" PTR_FORMAT, r->name(), saved_regs[((saved_regs_count - 1) - i)]);
       }
@@ -571,7 +572,7 @@ void trace_method_handle_stub(const char* adaptername,
 
       frame cur_frame = os::current_frame();
 
-      if (cur_frame.fp() != 0) {  // not walkable
+      if (cur_frame.fp() != nullptr) { // not walkable
 
         // Robust search of trace_calling_frame (independent of inlining).
         // Assumes saved_regs comes from a pusha in the trace_calling_frame.

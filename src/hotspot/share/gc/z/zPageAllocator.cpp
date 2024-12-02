@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGenerationId.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAge.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -232,29 +234,38 @@ bool ZPageAllocator::is_initialized() const {
 
 class ZPreTouchTask : public ZTask {
 private:
-  const ZPhysicalMemoryManager* const _physical;
-  volatile zoffset                    _start;
-  const zoffset_end                   _end;
+  volatile uintptr_t _current;
+  const uintptr_t    _end;
+
+  static void pretouch(zaddress zaddr, size_t size) {
+    const uintptr_t addr = untype(zaddr);
+    const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
+    os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
+  }
 
 public:
-  ZPreTouchTask(const ZPhysicalMemoryManager* physical, zoffset start, zoffset_end end)
+  ZPreTouchTask(zoffset start, zoffset_end end)
     : ZTask("ZPreTouchTask"),
-      _physical(physical),
-      _start(start),
-      _end(end) {}
+      _current(untype(start)),
+      _end(untype(end)) {}
 
   virtual void work() {
+    const size_t size = ZGranuleSize;
+
     for (;;) {
-      // Get granule offset
-      const size_t size = ZGranuleSize;
-      const zoffset offset = to_zoffset(Atomic::fetch_then_add((uintptr_t*)&_start, size));
-      if (offset >= _end) {
+      // Claim an offset for this thread
+      const uintptr_t claimed = Atomic::fetch_then_add(&_current, size);
+      if (claimed >= _end) {
         // Done
         break;
       }
 
-      // Pre-touch granule
-      _physical->pretouch(offset, size);
+      // At this point we know that we have a valid zoffset / zaddress.
+      const zoffset offset = to_zoffset(claimed);
+      const zaddress addr = ZOffset::address(offset);
+
+      // Pre-touch the granule
+      pretouch(addr, size);
     }
   }
 };
@@ -271,11 +282,11 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
 
   if (AlwaysPreTouch) {
     // Pre-touch page
-    ZPreTouchTask task(&_physical, page->start(), page->end());
+    ZPreTouchTask task(page->start(), page->end());
     workers->run_all(&task);
   }
 
-  free_page(page);
+  free_page(page, false /* allow_defragment */);
 
   return true;
 }
@@ -462,6 +473,38 @@ void ZPageAllocator::destroy_page(ZPage* page) {
   safe_destroy_page(page);
 }
 
+bool ZPageAllocator::should_defragment(const ZPage* page) const {
+  // A small page can end up at a high address (second half of the address space)
+  // if we've split a larger page or we have a constrained address space. To help
+  // fight address space fragmentation we remap such pages to a lower address, if
+  // a lower address is available.
+  return page->type() == ZPageType::small &&
+         page->start() >= to_zoffset(_virtual.reserved() / 2) &&
+         page->start() > _virtual.lowest_available_address();
+}
+
+ZPage* ZPageAllocator::defragment_page(ZPage* page) {
+  // Harvest the physical memory (which is committed)
+  ZPhysicalMemory pmem;
+  ZPhysicalMemory& old_pmem = page->physical_memory();
+  pmem.add_segments(old_pmem);
+  old_pmem.remove_segments();
+
+  _unmapper->unmap_and_destroy_page(page);
+
+  // Allocate new virtual memory at a low address
+  const ZVirtualMemory vmem = _virtual.alloc(pmem.size(), true /* force_low_address */);
+
+  // Create the new page and map it
+  ZPage* new_page = new ZPage(ZPageType::small, vmem, pmem);
+  map_page(new_page);
+
+  // Update statistics
+  ZStatInc(ZCounterDefragment);
+
+  return new_page;
+}
+
 bool ZPageAllocator::is_alloc_allowed(size_t size) const {
   const size_t available = _current_max_capacity - _used - _claimed;
   return available >= size;
@@ -623,16 +666,6 @@ ZPage* ZPageAllocator::alloc_page_create(ZPageAllocation* allocation) {
   return new ZPage(allocation->type(), vmem, pmem);
 }
 
-bool ZPageAllocator::should_defragment(const ZPage* page) const {
-  // A small page can end up at a high address (second half of the address space)
-  // if we've split a larger page or we have a constrained address space. To help
-  // fight address space fragmentation we remap such pages to a lower address, if
-  // a lower address is available.
-  return page->type() == ZPageType::small &&
-         page->start() >= to_zoffset(_virtual.reserved() / 2) &&
-         page->start() > _virtual.lowest_available_address();
-}
-
 bool ZPageAllocator::is_alloc_satisfied(ZPageAllocation* allocation) const {
   // The allocation is immediately satisfied if the list of pages contains
   // exactly one page, with the type and size that was requested. However,
@@ -649,12 +682,6 @@ bool ZPageAllocator::is_alloc_satisfied(ZPageAllocation* allocation) const {
   if (page->type() != allocation->type() ||
       page->size() != allocation->size()) {
     // Wrong type or size
-    return false;
-  }
-
-  if (should_defragment(page)) {
-    // Defragment address space
-    ZStatInc(ZCounterDefragment);
     return false;
   }
 
@@ -729,7 +756,12 @@ retry:
   // Reset page. This updates the page's sequence number and must
   // be done after we potentially blocked in a safepoint (stalled)
   // where the global sequence number was updated.
-  page->reset(age, ZPageResetType::Allocation);
+  page->reset(age);
+  page->reset_top_for_allocation();
+  page->reset_livemap();
+  if (age == ZPageAge::old) {
+    page->remset_alloc();
+  }
 
   // Update allocation statistics. Exclude gc relocations to avoid
   // artificial inflation of the allocation rate during relocation.
@@ -768,6 +800,23 @@ void ZPageAllocator::satisfy_stalled() {
   }
 }
 
+ZPage* ZPageAllocator::prepare_to_recycle(ZPage* page, bool allow_defragment) {
+  // Make sure we have a page that is safe to recycle
+  ZPage* const to_recycle = _safe_recycle.register_and_clone_if_activated(page);
+
+  // Defragment the page before recycle if allowed and needed
+  if (allow_defragment && should_defragment(to_recycle)) {
+    return defragment_page(to_recycle);
+  }
+
+  // Remove the remset before recycling
+  if (to_recycle->is_old() && to_recycle == page) {
+    to_recycle->remset_delete();
+  }
+
+  return to_recycle;
+}
+
 void ZPageAllocator::recycle_page(ZPage* page) {
   // Set time when last used
   page->set_last_used();
@@ -776,9 +825,11 @@ void ZPageAllocator::recycle_page(ZPage* page) {
   _cache.free_page(page);
 }
 
-void ZPageAllocator::free_page(ZPage* page) {
+void ZPageAllocator::free_page(ZPage* page, bool allow_defragment) {
   const ZGenerationId generation_id = page->generation_id();
-  ZPage* const to_recycle = _safe_recycle.register_and_clone_if_activated(page);
+
+  // Prepare page for recycling before taking the lock
+  ZPage* const to_recycle = prepare_to_recycle(page, allow_defragment);
 
   ZLocker<ZLock> locker(&_lock);
 
@@ -795,11 +846,12 @@ void ZPageAllocator::free_page(ZPage* page) {
 }
 
 void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
-  ZArray<ZPage*> to_recycle;
+  ZArray<ZPage*> to_recycle_pages;
 
   size_t young_size = 0;
   size_t old_size = 0;
 
+  // Prepare pages for recycling before taking the lock
   ZArrayIterator<ZPage*> pages_iter(pages);
   for (ZPage* page; pages_iter.next(&page);) {
     if (page->is_young()) {
@@ -807,7 +859,12 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
     } else {
       old_size += page->size();
     }
-    to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
+
+    // Prepare to recycle
+    ZPage* const to_recycle = prepare_to_recycle(page, true /* allow_defragment */);
+
+    // Register for recycling
+    to_recycle_pages.push(to_recycle);
   }
 
   ZLocker<ZLock> locker(&_lock);
@@ -818,7 +875,7 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
   decrease_used_generation(ZGenerationId::old, old_size);
 
   // Free pages
-  ZArrayIterator<ZPage*> iter(&to_recycle);
+  ZArrayIterator<ZPage*> iter(&to_recycle_pages);
   for (ZPage* page; iter.next(&page);) {
     recycle_page(page);
   }
@@ -828,13 +885,9 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
 }
 
 void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
-  ZArray<ZPage*> to_recycle;
-
-  ZListRemoveIterator<ZPage> allocation_pages_iter(allocation->pages());
-  for (ZPage* page; allocation_pages_iter.next(&page);) {
-    to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
-  }
-
+  // The page(s) in the allocation are either taken from the cache or a newly
+  // created, mapped and commited ZPage. These page(s) have not been inserted in
+  // the page table, nor allocated a remset, so prepare_to_recycle is not required.
   ZLocker<ZLock> locker(&_lock);
 
   // Only decrease the overall used and not the generation used,
@@ -844,7 +897,7 @@ void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
   size_t freed = 0;
 
   // Free any allocated/flushed pages
-  ZArrayIterator<ZPage*> iter(&to_recycle);
+  ZListRemoveIterator<ZPage> iter(allocation->pages());
   for (ZPage* page; iter.next(&page);) {
     freed += page->size();
     recycle_page(page);
@@ -985,9 +1038,9 @@ void ZPageAllocator::handle_alloc_stalling_for_young() {
   restart_gc();
 }
 
-void ZPageAllocator::handle_alloc_stalling_for_old(bool cleared_soft_refs) {
+void ZPageAllocator::handle_alloc_stalling_for_old(bool cleared_all_soft_refs) {
   ZLocker<ZLock> locker(&_lock);
-  if (cleared_soft_refs) {
+  if (cleared_all_soft_refs) {
     notify_out_of_memory();
   }
   restart_gc();

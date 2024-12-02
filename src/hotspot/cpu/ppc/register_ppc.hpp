@@ -27,6 +27,7 @@
 #define CPU_PPC_REGISTER_PPC_HPP
 
 #include "asm/register.hpp"
+#include "utilities/count_trailing_zeros.hpp"
 
 // forward declaration
 class VMRegImpl;
@@ -554,5 +555,13 @@ constexpr Register R29_TOC = R29;
 // Scratch registers are volatile.
 constexpr Register R11_scratch1 = R11;
 constexpr Register R12_scratch2 = R12;
+
+template <>
+inline Register AbstractRegSet<Register>::first() {
+  if (_bitset == 0) { return noreg; }
+  return as_Register(count_trailing_zeros(_bitset));
+}
+
+typedef AbstractRegSet<Register> RegSet;
 
 #endif // CPU_PPC_REGISTER_PPC_HPP

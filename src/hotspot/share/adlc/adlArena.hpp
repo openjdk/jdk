@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,10 @@ public:
   // Fast allocate in the arena.  Common case is: pointer test + increment.
   void* Amalloc(size_t x) {
 #ifdef _LP64
+    assert(x <= SIZE_MAX - (8-1), "overflow");
     x = (x + (8-1)) & ((unsigned)(-8));
 #else
+    assert(x <= SIZE_MAX - (4-1), "overflow");
     x = (x + (4-1)) & ((unsigned)(-4));
 #endif
     if (_hwm + x > _max) {

@@ -96,7 +96,6 @@ class inputStream : public CHeapObjBase {
 
   Input* _input;   // where the input comes from or else nullptr
   IState _input_state;  // one of {NTR,EOF,ERR}_STATE
-  char   _line_ending;  // one of {0,1,2} for "", "\n", "\r\n"
   char*  _buffer;       // scratch buffer holding at least the current line
   size_t _buffer_size;  // allocated size of buffer
   size_t _content_end;  // offset to end of valid contents of buffer
@@ -225,7 +224,6 @@ class inputStream : public CHeapObjBase {
   inputStream() :
     _input(nullptr),
     _input_state(IState::NTR_STATE),
-    _line_ending(0),
     _buffer(&_small_buffer[0]),
     _buffer_size(sizeof(_small_buffer)),
     _content_end(0),

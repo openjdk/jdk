@@ -57,7 +57,7 @@ import static java.lang.constant.ConstantDescs.INIT_NAME;
  * @key jfr
  * @summary Verifies that corresponding JFR events are emitted in case of inlining.
  * @requires vm.hasJFR
- *
+ * @requires vm.compMode == "Xmixed"
  * @requires vm.opt.Inline == true | vm.opt.Inline == null
  * @library /test/lib
  * @modules jdk.jfr
@@ -390,7 +390,7 @@ class InlineCalls {
                         mm.methodTypeSymbol()
                 );
                 int offset = 0;
-                for (var ce : com.elements()) {
+                for (var ce : com) {
                     if (ce instanceof Instruction ins) {
                         if (ins instanceof InvokeInstruction inv) {
                             calls.add(new Call(caller, new MethodDesc(

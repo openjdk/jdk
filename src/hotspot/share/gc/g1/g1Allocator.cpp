@@ -118,7 +118,7 @@ void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,
     // we allocate to in the region sets. We'll re-add it later, when
     // it's retired again.
     _g1h->old_set_remove(retained_region);
-    old->set(retained_region);
+    old->reuse(retained_region);
     G1HeapRegionPrinter::reuse(retained_region);
     evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }

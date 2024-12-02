@@ -42,10 +42,10 @@
 //        VM_GC_HeapInspection
 //        VM_PopulateDynamicDumpSharedSpace
 //        VM_SerialGCCollect
-//        VM_ParallelGCSystemGC
+//        VM_ParallelGCCollect
 //        VM_CollectForAllocation
 //          VM_SerialCollectForAllocation
-//          VM_ParallelGCFailedAllocation
+//          VM_ParallelCollectForAllocation
 //      VM_Verify
 //      VM_PopulateDumpSharedSpace
 //
@@ -64,13 +64,13 @@
 //
 //  VM_CollectForAllocation
 //  VM_SerialCollectForAllocation
-//  VM_ParallelGCFailedAllocation
+//  VM_ParallelCollectForAllocation
 //   - this operation is invoked when allocation is failed;
 //     operation performs garbage collection and tries to
 //     allocate afterwards;
 //
 //  VM_SerialGCCollect
-//  VM_ParallelGCSystemGC
+//  VM_ParallelGCCollect
 //   - these operations perform full collection of heaps of
 //     different kind
 //

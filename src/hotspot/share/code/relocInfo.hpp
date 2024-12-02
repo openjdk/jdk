@@ -1258,6 +1258,11 @@ class runtime_call_w_cp_Relocation : public CallRelocation {
 // in the code, it can patch it to jump to the trampoline where is
 // sufficient space for a far branch. Needed on PPC.
 class trampoline_stub_Relocation : public Relocation {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+  void pd_fix_owner_after_move();
+  void fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) override;
+#endif
+
  public:
   static RelocationHolder spec(address static_call) {
     return RelocationHolder::construct<trampoline_stub_Relocation>(static_call);

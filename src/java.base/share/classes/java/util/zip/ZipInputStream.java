@@ -603,14 +603,14 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 long sig = get32(tmpbuf, 0);
                 if (sig != EXTSIG) { // no EXTSIG present
                     e.crc = sig;
-                    e.csize = get64(tmpbuf, ZIP64_EXTSIZ - ZIP64_EXTCRC);
-                    e.size = get64(tmpbuf, ZIP64_EXTLEN - ZIP64_EXTCRC);
+                    e.csize = get64S(tmpbuf, ZIP64_EXTSIZ - ZIP64_EXTCRC);
+                    e.size = get64S(tmpbuf, ZIP64_EXTLEN - ZIP64_EXTCRC);
                     ((PushbackInputStream)in).unread(
                         tmpbuf, ZIP64_EXTHDR - ZIP64_EXTCRC, ZIP64_EXTCRC);
                 } else {
                     e.crc = get32(tmpbuf, ZIP64_EXTCRC);
-                    e.csize = get64(tmpbuf, ZIP64_EXTSIZ);
-                    e.size = get64(tmpbuf, ZIP64_EXTLEN);
+                    e.csize = get64S(tmpbuf, ZIP64_EXTSIZ);
+                    e.size = get64S(tmpbuf, ZIP64_EXTLEN);
                 }
             } else {
                 readFully(tmpbuf, 0, EXTHDR);
@@ -679,7 +679,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 if (i + headerSize + dsize > extra.length) {
                     return false; // Invalid size
                 }
-                if (id == ZIP64_EXTID) {
+                if (id == EXTID_ZIP64) {
                     return true;
                 }
                 i += headerSize + dsize;

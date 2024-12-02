@@ -43,6 +43,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -65,7 +66,7 @@ void Klass::set_java_mirror(Handle m) {
 }
 
 bool Klass::is_cloneable() const {
-  return _access_flags.is_cloneable_fast() ||
+  return _misc_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
 }
 
@@ -76,7 +77,7 @@ void Klass::set_is_cloneable() {
   } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
     // Reference cloning should not be intrinsified and always happen in JVM_Clone.
   } else {
-    _access_flags.set_is_cloneable_fast();
+    _misc_flags.set_is_cloneable_fast(true);
   }
 }
 
@@ -128,7 +129,7 @@ void Klass::set_name(Symbol* n) {
     _name->increment_refcount();
   }
 
-  if (UseSecondarySupersTable) {
+  {
     elapsedTimer selftime;
     selftime.start();
 
@@ -163,20 +164,47 @@ void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != nullptr) _name->decrement_refcount();
 }
 
-bool Klass::search_secondary_supers(Klass* k) const {
-  // Put some extra logic here out-of-line, before the search proper.
-  // This cuts down the size of the inline method.
-
-  // This is necessary, since I am never in my own secondary_super list.
-  if (this == k)
-    return true;
+bool Klass::linear_search_secondary_supers(const Klass* k) const {
   // Scan the array-of-objects for a match
+  // FIXME: We could do something smarter here, maybe a vectorized
+  // comparison or a binary search, but is that worth any added
+  // complexity?
   int cnt = secondary_supers()->length();
   for (int i = 0; i < cnt; i++) {
     if (secondary_supers()->at(i) == k) {
-      ((Klass*)this)->set_secondary_super_cache(k);
       return true;
     }
+  }
+  return false;
+}
+
+// Given a secondary superklass k, an initial array index, and an
+// occupancy bitmap rotated such that Bit 1 is the next bit to test,
+// search for k.
+bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
+  // Once the occupancy bitmap is almost full, it's faster to use a
+  // linear search.
+  if (secondary_supers()->length() > SECONDARY_SUPERS_TABLE_SIZE - 2) {
+    return linear_search_secondary_supers(k);
+  }
+
+  // This is conventional linear probing, but instead of terminating
+  // when a null entry is found in the table, we maintain a bitmap
+  // in which a 0 indicates missing entries.
+
+  precond((int)population_count(rotated_bitmap) == secondary_supers()->length());
+
+  // The check for secondary_supers()->length() <= SECONDARY_SUPERS_TABLE_SIZE - 2
+  // at the start of this function guarantees there are 0s in the
+  // bitmap, so this loop eventually terminates.
+  while ((rotated_bitmap & 2) != 0) {
+    if (++index == secondary_supers()->length()) {
+      index = 0;
+    }
+    if (secondary_supers()->at(index) == k) {
+      return true;
+    }
+    rotated_bitmap = rotate_right(rotated_bitmap, 1);
   }
   return false;
 }
@@ -247,8 +275,21 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
-void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
+static markWord make_prototype(const Klass* kls) {
+  markWord prototype = markWord::prototype();
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    // With compact object headers, the narrow Klass ID is part of the mark word.
+    // We therfore seed the mark word with the narrow Klass ID.
+    // Note that only those Klass that can be instantiated have a narrow Klass ID.
+    // For those who don't, we leave the klass bits empty and assert if someone
+    // tries to use those.
+    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
+        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    prototype = prototype.set_narrow_klass(nk);
+  }
+#endif
+  return prototype;
 }
 
 Klass::Klass() : _kind(UnknownKlassKind) {
@@ -260,7 +301,8 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
-                           _shared_class_path_index(-1) {
+                               _prototype_header(make_prototype(this)),
+                               _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
@@ -296,19 +338,15 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
-void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
-  assert(!UseSecondarySupersTable || secondaries == nullptr, "");
-  set_secondary_supers(secondaries, SECONDARY_SUPERS_BITMAP_EMPTY);
-}
-
 void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
 #ifdef ASSERT
-  if (UseSecondarySupersTable && secondaries != nullptr) {
+  if (secondaries != nullptr) {
     uintx real_bitmap = compute_secondary_supers_bitmap(secondaries);
     assert(bitmap == real_bitmap, "must be");
+    assert(secondaries->length() >= (int)population_count(bitmap), "must be");
   }
 #endif
-  _bitmap = bitmap;
+  _secondary_supers_bitmap = bitmap;
   _secondary_supers = secondaries;
 
   if (secondaries != nullptr) {
@@ -344,11 +382,12 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
     return uintx(1) << hash_slot;
   }
 
-  // For performance reasons we don't use a hashed table unless there
-  // are at least two empty slots in it. If there were only one empty
-  // slot it'd take a long time to create the table and the resulting
-  // search would be no faster than linear probing.
-  if (length > SECONDARY_SUPERS_TABLE_SIZE - 2) {
+  // Invariant: _secondary_supers.length >= population_count(_secondary_supers_bitmap)
+
+  // Don't attempt to hash a table that's completely full, because in
+  // the case of an absent interface linear probing would not
+  // terminate.
+  if (length >= SECONDARY_SUPERS_TABLE_SIZE) {
     return SECONDARY_SUPERS_BITMAP_FULL;
   }
 
@@ -384,6 +423,7 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
       }
     }
     assert(i == secondaries->length(), "mismatch");
+    postcond((int)population_count(bitmap) == secondaries->length());
 
     return bitmap;
   }
@@ -444,11 +484,7 @@ Array<Klass*>* Klass::pack_secondary_supers(ClassLoaderData* loader_data,
   }
 #endif
 
-  if (UseSecondarySupersTable) {
-    bitmap = hash_secondary_supers(secondary_supers, /*rewrite=*/true); // rewrites freshly allocated array
-  } else {
-    bitmap = SECONDARY_SUPERS_BITMAP_EMPTY;
-  }
+  bitmap = hash_secondary_supers(secondary_supers, /*rewrite=*/true); // rewrites freshly allocated array
   return secondary_supers;
 }
 
@@ -772,7 +808,7 @@ void Klass::remove_unshareable_info() {
   // FIXME: validation in Klass::hash_secondary_supers() may fail for shared klasses.
   // Even though the bitmaps always match, the canonical order of elements in the table
   // is not guaranteed to stay the same (see tie breaker during Robin Hood hashing in Klass::hash_insert).
-  //assert(compute_secondary_supers_bitmap(secondary_supers()) == _bitmap, "broken table");
+  //assert(compute_secondary_supers_bitmap(secondary_supers()) == _secondary_supers_bitmap, "broken table");
 }
 
 void Klass::remove_java_mirror() {
@@ -788,6 +824,7 @@ void Klass::remove_java_mirror() {
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(is_shared(), "must be set");
+  assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm(THREAD);
@@ -967,11 +1004,16 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
      // print header
      obj->mark().print_on(st);
      st->cr();
+     if (UseCompactObjectHeaders) {
+       st->print(BULLET"prototype_header: " INTPTR_FORMAT, _prototype_header.value());
+       st->cr();
+     }
   }
 
   // print class
   st->print(BULLET"klass: ");
   obj->klass()->print_value_on(st);
+  st->print(BULLET"flags: "); _misc_flags.print_on(st); st->cr();
   st->cr();
 }
 
@@ -988,7 +1030,14 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-  assert(Metaspace::contains((address)this), "Should be");
+#ifdef ASSERT
+  if (UseCompressedClassPointers && needs_narrow_id()) {
+    // Stricter checks for both correct alignment and placement
+    CompressedKlassPointers::check_encodable(this);
+  } else {
+    assert(Metaspace::contains((address)this), "Should be");
+  }
+#endif // ASSERT
 
   guarantee(this->is_klass(),"should be klass");
 
@@ -1016,6 +1065,8 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
+// Note: this function is called with an address that may or may not be a Klass.
+// The point is not to assert it is but to check if it could be.
 bool Klass::is_valid(Klass* k) {
   if (!is_aligned(k, sizeof(MetaWord))) return false;
   if ((size_t)k < os::min_page_size()) return false;
@@ -1253,14 +1304,13 @@ static void print_negative_lookup_stats(uintx bitmap, outputStream* st) {
 
 void Klass::print_secondary_supers_on(outputStream* st) const {
   if (secondary_supers() != nullptr) {
-    if (UseSecondarySupersTable) {
-      st->print("  - "); st->print("%d elements;", _secondary_supers->length());
-      st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _bitmap);
-      if (_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
-          _bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
-        st->print("  - "); print_positive_lookup_stats(secondary_supers(), _bitmap, st); st->cr();
-        st->print("  - "); print_negative_lookup_stats(_bitmap, st); st->cr();
-      }
+    st->print("  - "); st->print("%d elements;", _secondary_supers->length());
+    st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _secondary_supers_bitmap);
+    if (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
+        _secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
+      st->print("  - "); print_positive_lookup_stats(secondary_supers(),
+                                                     _secondary_supers_bitmap, st); st->cr();
+      st->print("  - "); print_negative_lookup_stats(_secondary_supers_bitmap, st); st->cr();
     }
   } else {
     st->print("null");
@@ -1271,7 +1321,6 @@ void Klass::on_secondary_supers_verification_failure(Klass* super, Klass* sub, b
   ResourceMark rm;
   super->print();
   sub->print();
-  fatal("%s: %s implements %s: is_subtype_of: %d; linear_search: %d; table_lookup: %d",
-        msg, sub->external_name(), super->external_name(),
-        sub->is_subtype_of(super), linear_result, table_result);
+  fatal("%s: %s implements %s: linear_search: %d; table_lookup: %d",
+        msg, sub->external_name(), super->external_name(), linear_result, table_result);
 }

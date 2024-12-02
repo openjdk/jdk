@@ -71,6 +71,25 @@ AC_DEFUN_ONCE([LIB_SETUP_ALSA],
       fi
     fi
     if test "x$ALSA_FOUND" = xno; then
+      # If we have sysroot set, and no explicit library location is set,
+      # look at known locations in sysroot.
+      if test "x$SYSROOT" != "x" && test "x${with_alsa_lib}" == x; then
+        if test -f "$SYSROOT/usr/lib64/libasound.so" && test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+          ALSA_LIBS="-L$SYSROOT/usr/lib64 -lasound"
+          ALSA_FOUND=yes
+        elif test -f "$SYSROOT/usr/lib/libasound.so"; then
+          ALSA_LIBS="-L$SYSROOT/usr/lib -lasound"
+          ALSA_FOUND=yes
+        elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libasound.so"; then
+          ALSA_LIBS="-L$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI -lasound"
+          ALSA_FOUND=yes
+        elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libasound.so"; then
+          ALSA_LIBS="-L$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI -lasound"
+          ALSA_FOUND=yes
+        fi
+      fi
+    fi
+    if test "x$ALSA_FOUND" = xno; then
       AC_CHECK_HEADERS([alsa/asoundlib.h],
           [
             ALSA_FOUND=yes

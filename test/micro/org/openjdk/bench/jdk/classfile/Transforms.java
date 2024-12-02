@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,7 +184,7 @@ public class Transforms {
                     shared
                     ? options
                     : Stream.concat(Stream.of(options), Stream.of(ClassFile.ConstantPoolSharingOption.NEW_POOL)).toArray(ClassFile.Option[]::new));
-            this.transform = bytes -> cc.transform(cc.parse(bytes), classTransform);
+            this.transform = bytes -> cc.transformClass(cc.parse(bytes), classTransform);
         }
     }
 
@@ -198,13 +198,13 @@ public class Transforms {
         NOP_SHARED(bytes -> {
             var cc = ClassFile.of();
             ClassModel cm = cc.parse(bytes);
-            return cc.transform(cm, (cb, ce) -> {
+            return cc.transformClass(cm, (cb, ce) -> {
                 if (ce instanceof MethodModel mm) {
                     cb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel xm) {
                             mb.withCode(xb -> {
                                 xb.nop();
-                                xm.forEachElement(new Consumer<>() {
+                                xm.forEach(new Consumer<>() {
                                     @Override
                                     public void accept(CodeElement e) {
                                         xb.with(e);
@@ -239,7 +239,7 @@ public class Transforms {
         HIGH_SHARED_ADD_FIELD(bytes -> {
             var cc = ClassFile.of();
             ClassModel cm = cc.parse(bytes);
-            return cc.transform(cm, new ClassTransform() {
+            return cc.transformClass(cm, new ClassTransform() {
                 @Override
                 public void accept(ClassBuilder builder, ClassElement element) {
                     builder.with(element);
@@ -256,7 +256,7 @@ public class Transforms {
             ClassModel cm = cc.parse(bytes);
             return cc.build(cm.thisClass().asSymbol(),
                                    cb -> {
-                                       cm.forEachElement(cb);
+                                       cm.forEach(cb);
                                        cb.withField("argleBargleWoogaWooga", ConstantDescs.CD_int, b -> { });
                                    });
         }),
@@ -277,7 +277,7 @@ public class Transforms {
         HIGH_SHARED_DEL_METHOD(bytes -> {
             var cc = ClassFile.of();
             ClassModel cm = cc.parse(bytes);
-            return cc.transform(cm, (builder, element) -> {
+            return cc.transformClass(cm, (builder, element) -> {
                 if (!(element instanceof MethodModel mm))
                     builder.with(element);
             });
@@ -287,7 +287,7 @@ public class Transforms {
             ClassModel cm = cc.parse(bytes);
             return cc.build(cm.thisClass().asSymbol(),
                                    cb -> {
-                                       cm.forEachElement(element -> {
+                                       cm.forEach(element -> {
                                            if (element instanceof MethodModel mm
                                                && mm.methodName().stringValue().equals("hashCode")
                                                && mm.methodType().stringValue().equals("()Z")) {

@@ -181,13 +181,13 @@ class ShenandoahConcurrentNMethodIterator {
 private:
   ShenandoahNMethodTable*         const _table;
   ShenandoahNMethodTableSnapshot*       _table_snapshot;
+  uint                                  _started_workers;
+  uint                                  _finished_workers;
 
 public:
   ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table);
 
-  void nmethods_do_begin();
   void nmethods_do(NMethodClosure* cl);
-  void nmethods_do_end();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHNMETHOD_HPP

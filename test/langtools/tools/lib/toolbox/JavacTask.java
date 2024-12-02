@@ -314,6 +314,26 @@ public class JavacTask extends AbstractTask<JavacTask> {
         return "javac";
     }
 
+    @Override
+    public Result run(Expect expect) {
+        int expectedExitCode = expect == Expect.SUCCESS ? 0 : 1;
+
+        return run(expect, (exitCode, testName) -> {
+            if (exitCode == 4) {
+                throw new TaskError("Task " + testName + " failed due to a javac crash "
+                    + "(exit code 4)");
+            }
+        });
+    }
+
+    @Override
+    public Result run(Expect expect, int exitCode) {
+        if (exitCode == 4) {
+            throw new IllegalArgumentException("Disallowed exit code: 4");
+        }
+        return super.run(expect, exitCode);
+    }
+
     /**
      * Calls the compiler with the arguments as currently configured.
      * @return a Result object indicating the outcome of the compilation

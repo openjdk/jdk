@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public:
 };
 
 
-class HRRSStatsIter: public HeapRegionClosure {
+class HRRSStatsIter: public G1HeapRegionClosure {
 private:
   RegionTypeCounter _young;
   RegionTypeCounter _humongous;
@@ -216,17 +216,26 @@ public:
   {}
 
   bool do_heap_region(G1HeapRegion* r) {
-    HeapRegionRemSet* hrrs = r->rem_set();
+    G1HeapRegionRemSet* hrrs = r->rem_set();
 
-    // HeapRegionRemSet::mem_size() includes the
+    size_t occupied_cards = hrrs->occupied();
+    // G1HeapRegionRemSet::mem_size() includes the
     // size of the code roots
     size_t rs_unused_mem_sz = hrrs->unused_mem_size();
     size_t rs_mem_sz = hrrs->mem_size();
+
+    if (r->is_young()) {
+      uint num_young  =  G1CollectedHeap::heap()->young_regions_count();
+      occupied_cards /= num_young;
+      rs_unused_mem_sz /= num_young;
+      rs_mem_sz /= num_young;
+    }
+
     if (rs_mem_sz > _max_rs_mem_sz) {
       _max_rs_mem_sz = rs_mem_sz;
       _max_rs_mem_sz_region = r;
     }
-    size_t occupied_cards = hrrs->occupied();
+
     size_t code_root_mem_sz = hrrs->code_roots_mem_size();
     if (code_root_mem_sz > max_code_root_mem_sz()) {
       _max_code_root_mem_sz = code_root_mem_sz;
@@ -274,19 +283,19 @@ public:
     }
 
     // Largest sized rem set region statistics
-    HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
+    G1HeapRegionRemSet* rem_set = max_rs_mem_sz_region()->rem_set();
     out->print_cr("    Region with largest rem set = " HR_FORMAT ", "
                   "size = " SIZE_FORMAT " occupied = " SIZE_FORMAT,
                   HR_FORMAT_PARAMS(max_rs_mem_sz_region()),
                   rem_set->mem_size(),
                   rem_set->occupied());
 
-    HeapRegionRemSet::print_static_mem_size(out);
+    G1HeapRegionRemSet::print_static_mem_size(out);
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     g1h->card_set_freelist_pool()->print_on(out);
 
     // Code root statistics
-    HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
+    G1HeapRegionRemSet* max_code_root_rem_set = max_code_root_mem_sz_region()->rem_set();
     out->print_cr("  Total heap region code root sets sizes = " SIZE_FORMAT "%s."
                   "  Max = " SIZE_FORMAT "%s.",
                   byte_size_in_proper_unit(total_code_root_mem_sz()),

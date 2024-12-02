@@ -735,7 +735,16 @@ void CodeHeapState::aggregate(outputStream* out, CodeHeap* heap, size_t granular
             } else {
               blob_name = os::strdup(cb->name());
             }
-
+#if INCLUDE_JVMCI
+            const char* jvmci_name = nm->jvmci_name();
+            if (jvmci_name != nullptr) {
+              size_t size = ::strlen(blob_name) + ::strlen(" jvmci_name=") + ::strlen(jvmci_name) + 1;
+              char* new_blob_name = (char*)os::malloc(size, mtInternal);
+              os::snprintf(new_blob_name, size, "%s jvmci_name=%s", blob_name, jvmci_name);
+              os::free((void*)blob_name);
+              blob_name = new_blob_name;
+            }
+#endif
             nm_size    = nm->total_size();
             compile_id = nm->compile_id();
             comp_lvl   = (CompLevel)(nm->comp_level());
@@ -2184,6 +2193,12 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
             ast->print("%s.", classNameS);
             ast->print("%s", methNameS);
             ast->print("%s", methSigS);
+#if INCLUDE_JVMCI
+            const char* jvmci_name = nm->jvmci_name();
+            if (jvmci_name != nullptr) {
+              ast->print(" jvmci_name=%s", jvmci_name);
+            }
+#endif
           } else {
             ast->print("%s", blob_name);
           }

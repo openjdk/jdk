@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ public class BogoLoader extends ClassLoader {
                         System.err.println("Replacing class " + name);
                     }
                     var cf = ClassFile.of();
-                    classData = cf.transform(cf.parse(classData), replaced.get(name));
+                    classData = cf.transformClass(cf.parse(classData), replaced.get(name));
                 }
                 clazz = defineClass(name, classData, 0, classData.length);
             } catch (java.io.EOFException ioe) {

@@ -63,7 +63,7 @@ public class OSUtils {
         String sttyfopt = null;
         String infocmp = null;
         String test = null;
-        String path = System.getenv("PATH");
+        String path = "/usr/bin" + File.pathSeparator + "/bin";//was: System.getenv("PATH");
         if (path != null) {
             String[] paths = path.split(File.pathSeparator);
             for (String p : paths) {

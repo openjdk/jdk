@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ package java.lang;
  * See {@link Class#isRecord()} and {@link Class#getRecordComponents()} for more details.
  *
  * @spec serialization/index.html Java Object Serialization Specification
- * @jls 8.10 Record Types
+ * @jls 8.10 Record Classes
  * @since 16
  */
 public abstract class Record {

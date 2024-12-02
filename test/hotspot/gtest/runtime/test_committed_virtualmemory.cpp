@@ -132,7 +132,7 @@ public:
     }
 
     // Cleanup
-    os::free_memory(base, size, page_sz);
+    os::disclaim_memory(base, size);
     VirtualMemoryTracker::remove_released_region((address)base, size);
 
     rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));
@@ -196,6 +196,42 @@ public:
 
     os::release_memory(base, size);
   }
+
+  static void test_committed_in_range(size_t num_pages, size_t pages_to_touch) {
+    bool result;
+    size_t committed_size;
+    address committed_start;
+    size_t index;
+
+    const size_t page_sz = os::vm_page_size();
+    const size_t size = num_pages * page_sz;
+
+    char* base = os::reserve_memory(size, !ExecMem, mtTest);
+    ASSERT_NE(base, (char*)nullptr);
+
+    result = os::commit_memory(base, size, !ExecMem);
+    ASSERT_TRUE(result);
+
+    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    ASSERT_FALSE(result);
+
+    // Touch pages
+    for (index = 0; index < pages_to_touch; index ++) {
+      base[index * page_sz] = 'a';
+    }
+
+    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    ASSERT_TRUE(result);
+    ASSERT_EQ(pages_to_touch * page_sz, committed_size);
+    ASSERT_EQ(committed_start, (address)base);
+
+    os::uncommit_memory(base, size, false);
+
+    result = os::committed_in_range((address)base, size, committed_start, committed_size);
+    ASSERT_FALSE(result);
+
+    os::release_memory(base, size);
+  }
 };
 
 TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
@@ -214,3 +250,10 @@ TEST_VM(CommittedVirtualMemoryTracker, test_committed_virtualmemory_region) {
   }
 
 }
+
+#if !defined(_WINDOWS) && !defined(_AIX)
+TEST_VM(CommittedVirtualMemory, test_committed_in_range){
+  CommittedVirtualMemoryTest::test_committed_in_range(1024, 1024);
+  CommittedVirtualMemoryTest::test_committed_in_range(2, 1);
+}
+#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -98,10 +98,10 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
     if (frame_size() == no_frame_size) {
       leave();
       far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-    } else if (_stub_id == Runtime1::forward_exception_id) {
+    } else if (_stub_id == (int)C1StubId::forward_exception_id) {
       should_not_reach_here();
     } else {
-      far_jump(RuntimeAddress(Runtime1::entry_for(Runtime1::forward_exception_id)));
+      far_jump(RuntimeAddress(Runtime1::entry_for(C1StubId::forward_exception_id)));
     }
     bind(L);
   }
@@ -165,7 +165,7 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
 }
 
 enum return_state_t {
-  does_not_return, requires_return
+  does_not_return, requires_return, requires_pop_epilogue_return
 };
 
 // Implementation of StubFrame
@@ -173,7 +173,7 @@ enum return_state_t {
 class StubFrame: public StackObj {
  private:
   StubAssembler* _sasm;
-  bool _return_state;
+  return_state_t _return_state;
 
  public:
   StubFrame(StubAssembler* sasm, const char* name, bool must_gc_arguments, return_state_t return_state=requires_return);
@@ -187,8 +187,18 @@ void StubAssembler::prologue(const char* name, bool must_gc_arguments) {
   enter();
 }
 
-void StubAssembler::epilogue() {
-  leave();
+void StubAssembler::epilogue(bool use_pop) {
+  // Avoid using a leave instruction when this frame may
+  // have been frozen, since the current value of fp
+  // restored from the stub would be invalid. We still
+  // must restore the fp value saved on enter though.
+  if (use_pop) {
+    ld(fp, Address(sp));
+    ld(ra, Address(sp, wordSize));
+    addi(sp, sp, 2 * wordSize);
+  } else {
+    leave();
+  }
   ret();
 }
 
@@ -208,10 +218,10 @@ void StubFrame::load_argument(int offset_in_words, Register reg) {
 
 
 StubFrame::~StubFrame() {
-  if (_return_state == requires_return) {
-    __ epilogue();
-  } else {
+  if (_return_state == does_not_return) {
     __ should_not_reach_here();
+  } else {
+    __ epilogue(_return_state == requires_pop_epilogue_return);
   }
   _sasm = nullptr;
 }
@@ -222,8 +232,6 @@ StubFrame::~StubFrame() {
 // Implementation of Runtime1
 
 #define __ sasm->
-
-const int float_regs_as_doubles_size_in_slots = pd_nof_fpu_regs_frame_map * 2;
 
 // Stack layout for saving/restoring  all the registers needed during a runtime
 // call (this includes deoptimization)
@@ -267,6 +275,10 @@ static OopMap* generate_oop_map(StubAssembler* sasm, bool save_fpu_registers) {
     oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
                               r->as_VMReg());
   }
+
+  int sp_offset = cpu_reg_save_offsets[xthread->encoding()];
+  oop_map->set_callee_saved(VMRegImpl::stack2reg(sp_offset),
+                            xthread->as_VMReg());
 
   // fpu_regs
   if (save_fpu_registers) {
@@ -356,6 +368,16 @@ void Runtime1::initialize_pd() {
   }
 }
 
+// return: offset in 64-bit words.
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  CodeBlob* cb = f.cb();
+  assert(cb == Runtime1::blob_for(C1StubId::monitorenter_id) ||
+         cb == Runtime1::blob_for(C1StubId::monitorenter_nofpu_id), "must be");
+  assert(cb != nullptr && cb->is_runtime_stub(), "invalid frame");
+  int offset = cpu_reg_save_offsets[xthread->encoding()];
+  return offset / 2;   // SP offsets are in halfwords
+}
+
 // target: the entry point of the method that creates and posts the exception oop
 // has_argument: true if the exception needs arguments (passed in t0 and t1)
 
@@ -378,7 +400,7 @@ OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address targe
   return oop_maps;
 }
 
-OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
+OopMapSet* Runtime1::generate_handle_exception(C1StubId id, StubAssembler *sasm) {
   __ block_comment("generate_handle_exception");
 
   // incoming parameters
@@ -390,7 +412,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   OopMap* oop_map = nullptr;
 
   switch (id) {
-    case forward_exception_id:
+    case C1StubId::forward_exception_id:
       // We're handling an exception in the context of a compiled frame.
       // The registers have been saved in the standard places.  Perform
       // an exception lookup in the caller and dispatch to the handler
@@ -409,12 +431,12 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
       __ sd(zr, Address(xthread, JavaThread::vm_result_offset()));
       __ sd(zr, Address(xthread, JavaThread::vm_result_2_offset()));
       break;
-    case handle_exception_nofpu_id:
-    case handle_exception_id:
+    case C1StubId::handle_exception_nofpu_id:
+    case C1StubId::handle_exception_id:
       // At this point all registers MAY be live.
-      oop_map = save_live_registers(sasm, id != handle_exception_nofpu_id);
+      oop_map = save_live_registers(sasm, id != C1StubId::handle_exception_nofpu_id);
       break;
-    case handle_exception_from_callee_id: {
+    case C1StubId::handle_exception_from_callee_id: {
       // At this point all registers except exception oop (x10) and
       // exception pc (ra) are dead.
       const int frame_size = 2 /* fp, return address */;
@@ -471,13 +493,13 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   __ sd(x10, Address(fp, frame::return_addr_offset * BytesPerWord));
 
   switch (id) {
-    case forward_exception_id:
-    case handle_exception_nofpu_id:
-    case handle_exception_id:
+    case C1StubId::forward_exception_id:
+    case C1StubId::handle_exception_nofpu_id:
+    case C1StubId::handle_exception_id:
       // Restore the registers that were saved at the beginning.
-      restore_live_registers(sasm, id != handle_exception_nofpu_id);
+      restore_live_registers(sasm, id != C1StubId::handle_exception_nofpu_id);
       break;
-    case handle_exception_from_callee_id:
+    case C1StubId::handle_exception_from_callee_id:
       break;
     default: ShouldNotReachHere();
   }
@@ -623,7 +645,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   return oop_maps;
 }
 
-OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
+OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
   // for better readability
   const bool dont_gc_arguments = false;
 
@@ -634,7 +656,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
   OopMapSet* oop_maps = nullptr;
   switch (id) {
     {
-    case forward_exception_id:
+    case C1StubId::forward_exception_id:
       {
         oop_maps = generate_handle_exception(id, sasm);
         __ leave();
@@ -642,32 +664,32 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case throw_div0_exception_id:
+    case C1StubId::throw_div0_exception_id:
       {
         StubFrame f(sasm, "throw_div0_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_div0_exception), false);
       }
       break;
 
-    case throw_null_pointer_exception_id:
+    case C1StubId::throw_null_pointer_exception_id:
       { StubFrame f(sasm, "throw_null_pointer_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_null_pointer_exception), false);
       }
       break;
 
-    case new_instance_id:
-    case fast_new_instance_id:
-    case fast_new_instance_init_check_id:
+    case C1StubId::new_instance_id:
+    case C1StubId::fast_new_instance_id:
+    case C1StubId::fast_new_instance_init_check_id:
       {
         Register klass = x13; // Incoming
         Register obj   = x10; // Result
 
-        if (id == new_instance_id) {
+        if (id == C1StubId::new_instance_id) {
           __ set_info("new_instance", dont_gc_arguments);
-        } else if (id == fast_new_instance_id) {
+        } else if (id == C1StubId::fast_new_instance_id) {
           __ set_info("fast new_instance", dont_gc_arguments);
         } else {
-          assert(id == fast_new_instance_init_check_id, "bad StubID");
+          assert(id == C1StubId::fast_new_instance_init_check_id, "bad C1StubId");
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
@@ -688,7 +710,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
       break;
 
-    case counter_overflow_id:
+    case C1StubId::counter_overflow_id:
       {
         Register bci = x10;
         Register method = x11;
@@ -712,14 +734,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case new_type_array_id:
-    case new_object_array_id:
+    case C1StubId::new_type_array_id:
+    case C1StubId::new_object_array_id:
       {
         Register length   = x9;  // Incoming
         Register klass    = x13; // Incoming
         Register obj      = x10; // Result
 
-        if (id == new_type_array_id) {
+        if (id == C1StubId::new_type_array_id) {
           __ set_info("new_type_array", dont_gc_arguments);
         } else {
           __ set_info("new_object_array", dont_gc_arguments);
@@ -732,7 +754,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           Register tmp = obj;
           __ lwu(tmp, Address(klass, Klass::layout_helper_offset()));
           __ sraiw(tmp, tmp, Klass::_lh_array_tag_shift);
-          int tag = ((id == new_type_array_id) ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_obj_value);
+          int tag = ((id == C1StubId::new_type_array_id) ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_obj_value);
           __ mv(t0, tag);
           __ beq(t0, tmp, ok);
           __ stop("assert(is an array klass)");
@@ -745,7 +767,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         OopMap* map = save_live_registers(sasm);
         assert_cond(map != nullptr);
         int call_offset = 0;
-        if (id == new_type_array_id) {
+        if (id == C1StubId::new_type_array_id) {
           call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_type_array), klass, length);
         } else {
           call_offset = __ call_RT(obj, noreg, CAST_FROM_FN_PTR(address, new_object_array), klass, length);
@@ -764,7 +786,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case new_multi_array_id:
+    case C1StubId::new_multi_array_id:
       {
         StubFrame f(sasm, "new_multi_array", dont_gc_arguments);
         // x10: klass
@@ -787,7 +809,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case register_finalizer_id:
+    case C1StubId::register_finalizer_id:
       {
         __ set_info("register_finalizer", dont_gc_arguments);
 
@@ -799,8 +821,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = x15;
         __ load_klass(t, x10);
-        __ lwu(t, Address(t, Klass::access_flags_offset()));
-        __ test_bit(t0, t, exact_log2(JVM_ACC_HAS_FINALIZER));
+        __ lbu(t, Address(t, Klass::misc_flags_offset()));
+        __ test_bit(t0, t, exact_log2(KlassFlags::_misc_has_finalizer));
         __ bnez(t0, register_finalizer);
         __ ret();
 
@@ -821,14 +843,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case throw_class_cast_exception_id:
+    case C1StubId::throw_class_cast_exception_id:
       {
         StubFrame f(sasm, "throw_class_cast_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_class_cast_exception), true);
       }
       break;
 
-    case throw_incompatible_class_change_error_id:
+    case C1StubId::throw_incompatible_class_change_error_id:
       {
         StubFrame f(sasm, "throw_incompatible_class_cast_exception", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm,
@@ -836,7 +858,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case slow_subtype_check_id:
+    case C1StubId::slow_subtype_check_id:
       {
         // Typical calling sequence:
         // push klass_RInfo (object klass or other subclass)
@@ -876,12 +898,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case monitorenter_nofpu_id:
+    case C1StubId::monitorenter_nofpu_id:
       save_fpu_registers = false;
       // fall through
-    case monitorenter_id:
+    case C1StubId::monitorenter_id:
       {
-        StubFrame f(sasm, "monitorenter", dont_gc_arguments);
+        StubFrame f(sasm, "monitorenter", dont_gc_arguments, requires_pop_epilogue_return);
         OopMap* map = save_live_registers(sasm, save_fpu_registers);
         assert_cond(map != nullptr);
 
@@ -898,10 +920,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case monitorexit_nofpu_id:
+    case C1StubId::monitorexit_nofpu_id:
       save_fpu_registers = false;
       // fall through
-    case monitorexit_id:
+    case C1StubId::monitorexit_id:
       {
         StubFrame f(sasm, "monitorexit", dont_gc_arguments);
         OopMap* map = save_live_registers(sasm, save_fpu_registers);
@@ -922,7 +944,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case deoptimize_id:
+    case C1StubId::deoptimize_id:
       {
         StubFrame f(sasm, "deoptimize", dont_gc_arguments, does_not_return);
         OopMap* oop_map = save_live_registers(sasm);
@@ -941,14 +963,14 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case throw_range_check_failed_id:
+    case C1StubId::throw_range_check_failed_id:
       {
         StubFrame f(sasm, "range_check_failed", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_range_check_exception), true);
       }
       break;
 
-    case unwind_exception_id:
+    case C1StubId::unwind_exception_id:
       {
         __ set_info("unwind_exception", dont_gc_arguments);
         // note: no stubframe since we are about to leave the current
@@ -957,7 +979,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case access_field_patching_id:
+    case C1StubId::access_field_patching_id:
       {
         StubFrame f(sasm, "access_field_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
@@ -965,7 +987,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case load_klass_patching_id:
+    case C1StubId::load_klass_patching_id:
       {
         StubFrame f(sasm, "load_klass_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
@@ -973,7 +995,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case load_mirror_patching_id:
+    case C1StubId::load_mirror_patching_id:
       {
         StubFrame f(sasm, "load_mirror_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
@@ -981,7 +1003,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case load_appendix_patching_id:
+    case C1StubId::load_appendix_patching_id:
       {
         StubFrame f(sasm, "load_appendix_patching", dont_gc_arguments, does_not_return);
         // we should set up register map
@@ -989,29 +1011,29 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case handle_exception_nofpu_id:
-    case handle_exception_id:
+    case C1StubId::handle_exception_nofpu_id:
+    case C1StubId::handle_exception_id:
       {
         StubFrame f(sasm, "handle_exception", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
-    case handle_exception_from_callee_id:
+    case C1StubId::handle_exception_from_callee_id:
       {
         StubFrame f(sasm, "handle_exception_from_callee", dont_gc_arguments);
         oop_maps = generate_handle_exception(id, sasm);
       }
       break;
 
-    case throw_index_exception_id:
+    case C1StubId::throw_index_exception_id:
       {
         StubFrame f(sasm, "index_range_check_failed", dont_gc_arguments, does_not_return);
         oop_maps = generate_exception_throw(sasm, CAST_FROM_FN_PTR(address, throw_index_exception), true);
       }
       break;
 
-    case throw_array_store_exception_id:
+    case C1StubId::throw_array_store_exception_id:
       {
         StubFrame f(sasm, "throw_array_store_exception", dont_gc_arguments, does_not_return);
         // tos + 0: link
@@ -1020,7 +1042,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case predicate_failed_trap_id:
+    case C1StubId::predicate_failed_trap_id:
       {
         StubFrame f(sasm, "predicate_failed_trap", dont_gc_arguments, does_not_return);
 
@@ -1040,7 +1062,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
       break;
 
-    case dtrace_object_alloc_id:
+    case C1StubId::dtrace_object_alloc_id:
       { // c_rarg0: object
         StubFrame f(sasm, "dtrace_object_alloc", dont_gc_arguments);
         save_live_registers(sasm);
@@ -1066,4 +1088,4 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
 #undef __
 
-const char *Runtime1::pd_name_for_address(address entry) { Unimplemented(); return 0; }
+const char *Runtime1::pd_name_for_address(address entry) { Unimplemented(); }

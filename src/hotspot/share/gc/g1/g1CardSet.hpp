@@ -380,6 +380,8 @@ public:
 
   void reset_table_scanner();
 
+  void reset_table_scanner_for_groups();
+
   // Iterate over the container, calling a method on every card or card range contained
   // in the card container.
   // For every container, first calls

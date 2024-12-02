@@ -42,7 +42,7 @@ static bool is_vector_shuffle(ciKlass* klass) {
 
 
 void PhaseVector::optimize_vector_boxes() {
-  Compile::TracePhase tp("vector_elimination", &timers[_t_vector_elimination]);
+  Compile::TracePhase tp(_t_vector_elimination);
 
   // Signal GraphKit it's post-parse phase.
   assert(C->inlining_incrementally() == false, "sanity");
@@ -66,13 +66,13 @@ void PhaseVector::optimize_vector_boxes() {
 void PhaseVector::do_cleanup() {
   if (C->failing())  return;
   {
-    Compile::TracePhase tp("vector_pru", &timers[_t_vector_pru]);
+    Compile::TracePhase tp(_t_vector_pru);
     ResourceMark rm;
     PhaseRemoveUseless pru(C->initial_gvn(), *C->igvn_worklist());
     if (C->failing())  return;
   }
   {
-    Compile::TracePhase tp("incrementalInline_igvn", &timers[_t_vector_igvn]);
+    Compile::TracePhase tp(_t_vector_igvn);
     _igvn.reset_from_gvn(C->initial_gvn());
     _igvn.optimize();
     if (C->failing())  return;
@@ -184,7 +184,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   // Process merged VBAs
 
   if (EnableVectorAggressiveReboxing) {
-    Unique_Node_List calls(C->comp_arena());
+    Unique_Node_List calls;
     for (DUIterator_Fast imax, i = vec_box->fast_outs(imax); i < imax; i++) {
       Node* use = vec_box->fast_out(i);
       if (use->is_CallJava()) {
@@ -238,9 +238,9 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   }
 
   // Process debug uses at safepoints
-  Unique_Node_List safepoints(C->comp_arena());
+  Unique_Node_List safepoints;
 
-  Unique_Node_List worklist(C->comp_arena());
+  Unique_Node_List worklist;
   worklist.push(vec_box);
   while (worklist.size() > 0) {
     Node* n = worklist.pop();

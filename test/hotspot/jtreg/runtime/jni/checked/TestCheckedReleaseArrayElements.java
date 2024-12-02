@@ -49,6 +49,7 @@ public class TestCheckedReleaseArrayElements {
             // that might generate output on stderr (which should be empty for this test).
             ProcessBuilder pb =
                 ProcessTools.createLimitedTestJavaProcessBuilder("-Xcheck:jni",
+                                                                 "--enable-native-access=ALL-UNNAMED",
                                                                  "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                                                  "TestCheckedReleaseArrayElements");
             OutputAnalyzer output = ProcessTools.executeProcess(pb);

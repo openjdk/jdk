@@ -1174,7 +1174,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
-      JFR_ONLY(k_new_method->copy_trace_flags(*k_old_method->trace_flags_addr());)
+      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -1362,8 +1362,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
                        _class_defs[i].class_byte_count,
-                       "__VM_RedefineClasses__",
-                       ClassFileStream::verify);
+                       "__VM_RedefineClasses__");
 
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file

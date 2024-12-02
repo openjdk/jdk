@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
 
 package java.lang.classfile.attribute;
 
-import java.util.List;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
+import java.util.List;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code InnerClasses} attribute {@jvms 4.7.6}, which can
+ * Models the {@code InnerClasses} attribute (JVMS {@jvms 4.7.6}), which can
  * appear on classes, and records which classes referenced by this classfile
  * are inner classes. Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.
@@ -43,9 +42,8 @@ import jdk.internal.javac.PreviewFeature;
  * Subsequent occurrence of the attribute takes precedence during the attributed
  * element build or transformation.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface InnerClassesAttribute
         extends Attribute<InnerClassesAttribute>, ClassElement
         permits BoundAttribute.BoundInnerClassesAttribute,

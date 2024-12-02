@@ -1467,7 +1467,7 @@ public class Pretty extends JCTree.Visitor {
                     break;
                 case CHAR:
                     print('\'');
-                    print(Convert.quote(String.valueOf((char)((Number)tree.value).intValue())));
+                    print(Convert.quote((char)((Number)tree.value).intValue(), true));
                     print('\'');
                     break;
                 case BOOLEAN:

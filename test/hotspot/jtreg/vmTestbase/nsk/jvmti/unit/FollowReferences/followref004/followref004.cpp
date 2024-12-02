@@ -86,7 +86,7 @@ jint JNICALL primitiveFieldCallback(
                (long) DEREF(tag_ptr),
                (int) value_type);
 
-    fflush(0);
+    fflush(nullptr);
 
     markTagVisited(DEREF(tag_ptr));
 
@@ -111,7 +111,7 @@ jint JNICALL arrayPrimitiveValueCallback(
            (long) DEREF(tag_ptr),
            (int) element_count,
            (int) element_type);
-    fflush(0);
+    fflush(nullptr);
 
     markTagVisited(DEREF(tag_ptr));
 
@@ -132,7 +132,7 @@ jint JNICALL stringPrimitiveValueCallback(
            (long) class_tag,
            (long) DEREF(tag_ptr),
            (int) value_length);
-    fflush(0);
+    fflush(nullptr);
 
     markTagVisited(DEREF(tag_ptr));
 
@@ -168,14 +168,14 @@ static void JNICALL agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg)
     jvmtiError retCode;
 
     printf(">>> Sync with Java code\n");
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(g_timeout))) {
         return;
     }
 
     printf(">>> Create JNI global references\n");
-    fflush(0);
+    fflush(nullptr);
 
     createGlobalRefs(jni);
 
@@ -192,7 +192,7 @@ static void JNICALL agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg)
     checkThatAllTagsVisited();
 
     printf(">>> Let debugee to finish\n");
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_VERIFY(nsk_jvmti_resumeSync())) {
         return;

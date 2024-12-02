@@ -38,42 +38,32 @@ import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import java.lang.invoke.StringConcatFactory;
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.net.URI;
-import java.net.URL;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
-import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
+import jdk.internal.javac.Restricted;
+import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.CarrierThreadLocal;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ServicesCatalog;
@@ -92,11 +82,9 @@ import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
-import sun.nio.fs.DefaultFileSystemProvider;
 import sun.reflect.annotation.AnnotationType;
 import sun.nio.ch.Interruptible;
 import sun.nio.cs.UTF_8;
-import sun.security.util.SecurityConstants;
 
 /**
  * The {@code System} class contains several useful class fields
@@ -145,8 +133,7 @@ public final class System {
      * corresponds to display output or another output destination
      * specified by the host environment or user. The encoding used
      * in the conversion from characters to bytes is equivalent to
-     * {@link Console#charset()} if the {@code Console} exists,
-     * <a href="#stdout.encoding">stdout.encoding</a> otherwise.
+     * {@link ##stdout.encoding stdout.encoding}.
      * <p>
      * For simple stand-alone Java applications, a typical way to write
      * a line of output data is:
@@ -166,8 +153,7 @@ public final class System {
      * @see     java.io.PrintStream#println(long)
      * @see     java.io.PrintStream#println(java.lang.Object)
      * @see     java.io.PrintStream#println(java.lang.String)
-     * @see     Console#charset()
-     * @see     <a href="#stdout.encoding">stdout.encoding</a>
+     * @see     ##stdout.encoding stdout.encoding
      */
     public static final PrintStream out = null;
 
@@ -183,11 +169,9 @@ public final class System {
      * variable {@code out}, has been redirected to a file or other
      * destination that is typically not continuously monitored.
      * The encoding used in the conversion from characters to bytes is
-     * equivalent to {@link Console#charset()} if the {@code Console}
-     * exists, <a href="#stderr.encoding">stderr.encoding</a> otherwise.
+     * equivalent to {@link ##stderr.encoding stderr.encoding}.
      *
-     * @see     Console#charset()
-     * @see     <a href="#stderr.encoding">stderr.encoding</a>
+     * @see     ##stderr.encoding stderr.encoding
      */
     public static final PrintStream err = null;
 
@@ -195,94 +179,41 @@ public final class System {
     private static @Stable InputStream initialIn;
     private static @Stable PrintStream initialErr;
 
-    // indicates if a security manager is possible
-    private static final int NEVER = 1;
-    private static final int MAYBE = 2;
-    private static @Stable int allowSecurityManager;
-
-    // current security manager
-    @SuppressWarnings("removal")
-    private static volatile SecurityManager security;   // read by VM
-
     // `sun.jnu.encoding` if it is not supported. Otherwise null.
     // It is initialized in `initPhase1()` before any charset providers
     // are initialized.
     private static String notSupportedJnuEncoding;
 
-    // return true if a security manager is allowed
-    private static boolean allowSecurityManager() {
-        return (allowSecurityManager != NEVER);
-    }
-
     /**
      * Reassigns the "standard" input stream.
      *
-     * First, if there is a security manager, its {@code checkPermission}
-     * method is called with a {@code RuntimePermission("setIO")} permission
-     *  to see if it's ok to reassign the "standard" input stream.
-     *
      * @param in the new standard input stream.
-     *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        reassigning of the standard input stream.
-     *
-     * @see SecurityManager#checkPermission
-     * @see java.lang.RuntimePermission
      *
      * @since   1.1
      */
     public static void setIn(InputStream in) {
-        checkIO();
         setIn0(in);
     }
 
     /**
      * Reassigns the "standard" output stream.
      *
-     * First, if there is a security manager, its {@code checkPermission}
-     * method is called with a {@code RuntimePermission("setIO")} permission
-     *  to see if it's ok to reassign the "standard" output stream.
-     *
      * @param out the new standard output stream
-     *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        reassigning of the standard output stream.
-     *
-     * @see SecurityManager#checkPermission
-     * @see java.lang.RuntimePermission
      *
      * @since   1.1
      */
     public static void setOut(PrintStream out) {
-        checkIO();
         setOut0(out);
     }
 
     /**
      * Reassigns the "standard" error output stream.
      *
-     * First, if there is a security manager, its {@code checkPermission}
-     * method is called with a {@code RuntimePermission("setIO")} permission
-     *  to see if it's ok to reassign the "standard" error output stream.
-     *
      * @param err the new standard error output stream.
-     *
-     * @throws SecurityException
-     *        if a security manager exists and its
-     *        {@code checkPermission} method doesn't allow
-     *        reassigning of the standard error output stream.
-     *
-     * @see SecurityManager#checkPermission
-     * @see java.lang.RuntimePermission
      *
      * @since   1.1
      */
     public static void setErr(PrintStream err) {
-        checkIO();
         setErr0(err);
     }
 
@@ -327,184 +258,48 @@ public final class System {
      * @throws  IOException
      *          If an I/O error occurs
      *
-     * @throws  SecurityException
-     *          If a security manager is present and it does not
-     *          permit access to the channel.
-     *
      * @since 1.5
      */
     public static Channel inheritedChannel() throws IOException {
         return SelectorProvider.provider().inheritedChannel();
     }
 
-    private static void checkIO() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("setIO"));
-        }
-    }
-
     private static native void setIn0(InputStream in);
     private static native void setOut0(PrintStream out);
     private static native void setErr0(PrintStream err);
 
-    private static class CallersHolder {
-        // Remember callers of setSecurityManager() here so that warning
-        // is only printed once for each different caller
-        static final Map<Class<?>, Boolean> callers
-            = Collections.synchronizedMap(new WeakHashMap<>());
-    }
-
-    private static URL codeSource(Class<?> clazz) {
-        PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
-        @SuppressWarnings("removal")
-        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
-        return (cs != null) ? cs.getLocation() : null;
-    }
-
     /**
-     * Sets the system-wide security manager.
+     * Throws {@code UnsupportedOperationException}. Setting a security manager
+     * is not supported.
      *
-     * If there is a security manager already installed, this method first
-     * calls the security manager's {@code checkPermission} method
-     * with a {@code RuntimePermission("setSecurityManager")}
-     * permission to ensure it's ok to replace the existing
-     * security manager.
-     * This may result in throwing a {@code SecurityException}.
-     *
-     * <p> Otherwise, the argument is established as the current
-     * security manager. If the argument is {@code null} and no
-     * security manager has been established, then no action is taken and
-     * the method simply returns.
-     *
-     * @implNote In the JDK implementation, if the Java virtual machine is
-     * started with the system property {@code java.security.manager} not set or set to
-     * the special token "{@code disallow}" then the {@code setSecurityManager}
-     * method cannot be used to set a security manager. See the following
-     * <a href="SecurityManager.html#set-security-manager">section of the
-     * {@code SecurityManager} class specification</a> for more details.
-     *
-     * @param  sm the security manager or {@code null}
-     * @throws SecurityException
-     *         if the security manager has already been set and its {@code
-     *         checkPermission} method doesn't allow it to be replaced
-     * @throws UnsupportedOperationException
-     *         if {@code sm} is non-null and a security manager is not allowed
-     *         to be set dynamically
+     * @param  sm ignored
+     * @throws UnsupportedOperationException always
      * @see #getSecurityManager
-     * @see SecurityManager#checkPermission
-     * @see java.lang.RuntimePermission
-     * @deprecated This method is only useful in conjunction with
-     *       {@linkplain SecurityManager the Security Manager}, which is
-     *       deprecated and subject to removal in a future release.
-     *       Consequently, this method is also deprecated and subject to
-     *       removal. There is no replacement for the Security Manager or this
-     *       method.
+     * @deprecated This method originally set
+     *       {@linkplain SecurityManager the system-wide Security Manager}.
+     *       Setting a Security Manager is no longer supported. There is no
+     *       replacement for the Security Manager or this method.
      */
     @Deprecated(since="17", forRemoval=true)
-    @CallerSensitive
     public static void setSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
-        if (allowSecurityManager()) {
-            var callerClass = Reflection.getCallerClass();
-            if (CallersHolder.callers.putIfAbsent(callerClass, true) == null) {
-                URL url = codeSource(callerClass);
-                final String source;
-                if (url == null) {
-                    source = callerClass.getName();
-                } else {
-                    source = callerClass.getName() + " (" + url + ")";
-                }
-                initialErr.printf("""
-                        WARNING: A terminally deprecated method in java.lang.System has been called
-                        WARNING: System::setSecurityManager has been called by %s
-                        WARNING: Please consider reporting this to the maintainers of %s
-                        WARNING: System::setSecurityManager will be removed in a future release
-                        """, source, callerClass.getName());
-            }
-            implSetSecurityManager(sm);
-        } else {
-            // security manager not allowed
-            if (sm != null) {
-                throw new UnsupportedOperationException(
-                    "The Security Manager is deprecated and will be removed in a future release");
-            }
-        }
-    }
-
-    private static void implSetSecurityManager(@SuppressWarnings("removal") SecurityManager sm) {
-        if (security == null) {
-            // ensure image reader is initialized
-            Object.class.getResource("java/lang/ANY");
-            // ensure the default file system is initialized
-            DefaultFileSystemProvider.theFileSystem();
-        }
-        if (sm != null) {
-            try {
-                // pre-populates the SecurityManager.packageAccess cache
-                // to avoid recursive permission checking issues with custom
-                // SecurityManager implementations
-                sm.checkPackageAccess("java.lang");
-            } catch (Exception e) {
-                // no-op
-            }
-        }
-        setSecurityManager0(sm);
-    }
-
-    @SuppressWarnings("removal")
-    private static synchronized
-    void setSecurityManager0(final SecurityManager s) {
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            // ask the currently installed security manager if we
-            // can replace it.
-            sm.checkPermission(new RuntimePermission("setSecurityManager"));
-        }
-
-        if ((s != null) && (s.getClass().getClassLoader() != null)) {
-            // New security manager class is not on bootstrap classpath.
-            // Force policy to get initialized before we install the new
-            // security manager, in order to prevent infinite loops when
-            // trying to initialize the policy (which usually involves
-            // accessing some security and/or system properties, which in turn
-            // calls the installed security manager's checkPermission method
-            // which will loop infinitely if there is a non-system class
-            // (in this case: the new security manager class) on the stack).
-            AccessController.doPrivileged(new PrivilegedAction<>() {
-                public Object run() {
-                    s.getClass().getProtectionDomain().implies
-                        (SecurityConstants.ALL_PERMISSION);
-                    return null;
-                }
-            });
-        }
-
-        security = s;
+        throw new UnsupportedOperationException(
+                 "Setting a Security Manager is not supported");
     }
 
     /**
-     * Gets the system-wide security manager.
+     * Returns {@code null}. Setting a security manager is not supported.
      *
-     * @return  if a security manager has already been established for the
-     *          current application, then that security manager is returned;
-     *          otherwise, {@code null} is returned.
+     * @return  {@code null}
      * @see     #setSecurityManager
-     * @deprecated This method is only useful in conjunction with
-     *       {@linkplain SecurityManager the Security Manager}, which is
-     *       deprecated and subject to removal in a future release.
-     *       Consequently, this method is also deprecated and subject to
-     *       removal. There is no replacement for the Security Manager or this
-     *       method.
+     * @deprecated This method originally returned
+     *       {@linkplain SecurityManager the system-wide Security Manager}.
+     *       Setting a Security Manager is no longer supported. There is no
+     *       replacement for the Security Manager or this method.
      */
     @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)
     public static SecurityManager getSecurityManager() {
-        if (allowSecurityManager()) {
-            return security;
-        } else {
-            return null;
-        }
+        return null;
     }
 
     /**
@@ -692,10 +487,6 @@ public final class System {
 
     /**
      * Determines the current system properties.
-     *
-     * First, if there is a security manager, its
-     * {@code checkPropertiesAccess} method is called with no
-     * arguments. This may result in a security exception.
      * <p>
      * The current set of system properties for use by the
      * {@link #getProperty(String)} method is returned as a
@@ -786,7 +577,8 @@ public final class System {
      *     <td>Character encoding name derived from the host environment and/or
      *     the user's settings. Setting this system property has no effect.</td></tr>
      * <tr><th scope="row">{@systemProperty stdout.encoding}</th>
-     *     <td>Character encoding name for {@link System#out System.out}.
+     *     <td>Character encoding name for {@link System#out System.out} and
+     *     {@link System#console() System.console()}.
      *     The Java runtime can be started with the system property set to {@code UTF-8},
      *     starting it with the property set to another value leads to undefined behavior.
      * <tr><th scope="row">{@systemProperty stderr.encoding}</th>
@@ -808,10 +600,6 @@ public final class System {
      * <p>
      * Multiple paths in a system property value are separated by the path
      * separator character of the platform.
-     * <p>
-     * Note that even if the security manager does not permit the
-     * {@code getProperties} operation, it may choose to permit the
-     * {@link #getProperty(String)} operation.
      * <p>
      * Additional locale-related system properties defined by the
      * {@link Locale##default_locale Default Locale} section in the {@code Locale}
@@ -856,21 +644,10 @@ public final class System {
      * </table>
      *
      * @return     the system properties
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkPropertiesAccess} method doesn't allow access
-     *             to the system properties.
      * @see        #setProperties
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkPropertiesAccess()
      * @see        java.util.Properties
      */
     public static Properties getProperties() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
-
         return props;
     }
 
@@ -893,10 +670,6 @@ public final class System {
 
     /**
      * Sets the system properties to the {@code Properties} argument.
-     *
-     * First, if there is a security manager, its
-     * {@code checkPropertiesAccess} method is called with no
-     * arguments. This may result in a security exception.
      * <p>
      * The argument becomes the current set of system properties for use
      * by the {@link #getProperty(String)} method. If the argument is
@@ -909,21 +682,10 @@ public final class System {
      * See {@linkplain #getProperties getProperties} for details.
      *
      * @param      props   the new system properties.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkPropertiesAccess} method doesn't allow access
-     *             to the system properties.
      * @see        #getProperties
      * @see        java.util.Properties
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkPropertiesAccess()
      */
     public static void setProperties(Properties props) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
-
         if (props == null) {
             Map<String, String> tempProps = SystemProps.initProperties();
             VersionProps.init(tempProps);
@@ -934,10 +696,6 @@ public final class System {
 
     /**
      * Gets the system property indicated by the specified key.
-     *
-     * First, if there is a security manager, its
-     * {@code checkPropertyAccess} method is called with the key as
-     * its argument. This may result in a SecurityException.
      * <p>
      * If there is no current set of system properties, a set of system
      * properties is first created and initialized in the same manner as
@@ -952,33 +710,18 @@ public final class System {
      * @return     the string value of the system property,
      *             or {@code null} if there is no property with that key.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkPropertyAccess} method doesn't allow
-     *             access to the specified system property.
      * @throws     NullPointerException if {@code key} is {@code null}.
      * @throws     IllegalArgumentException if {@code key} is empty.
      * @see        #setProperty
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see        java.lang.System#getProperties()
      */
     public static String getProperty(String key) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess(key);
-        }
-
         return props.getProperty(key);
     }
 
     /**
      * Gets the system property indicated by the specified key.
-     *
-     * First, if there is a security manager, its
-     * {@code checkPropertyAccess} method is called with the
-     * {@code key} as its argument.
      * <p>
      * If there is no current set of system properties, a set of system
      * properties is first created and initialized in the same manner as
@@ -989,35 +732,18 @@ public final class System {
      * @return     the string value of the system property,
      *             or the default value if there is no property with that key.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkPropertyAccess} method doesn't allow
-     *             access to the specified system property.
      * @throws     NullPointerException if {@code key} is {@code null}.
      * @throws     IllegalArgumentException if {@code key} is empty.
      * @see        #setProperty
-     * @see        java.lang.SecurityManager#checkPropertyAccess(java.lang.String)
      * @see        java.lang.System#getProperties()
      */
     public static String getProperty(String key, String def) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertyAccess(key);
-        }
-
         return props.getProperty(key, def);
     }
 
     /**
      * Sets the system property indicated by the specified key.
-     *
-     * First, if a security manager exists, its
-     * {@code SecurityManager.checkPermission} method
-     * is called with a {@code PropertyPermission(key, "write")}
-     * permission. This may result in a SecurityException being thrown.
-     * If no exception is thrown, the specified property is set to the given
-     * value.
      *
      * @apiNote
      * <strong>Changing a standard system property may have unpredictable results
@@ -1029,39 +755,21 @@ public final class System {
      * @return     the previous value of the system property,
      *             or {@code null} if it did not have one.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkPermission} method doesn't allow
-     *             setting of the specified property.
      * @throws     NullPointerException if {@code key} or
      *             {@code value} is {@code null}.
      * @throws     IllegalArgumentException if {@code key} is empty.
      * @see        #getProperty
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.lang.System#getProperty(java.lang.String, java.lang.String)
-     * @see        java.util.PropertyPermission
-     * @see        SecurityManager#checkPermission
      * @since      1.2
      */
     public static String setProperty(String key, String value) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new PropertyPermission(key,
-                SecurityConstants.PROPERTY_WRITE_ACTION));
-        }
-
         return (String) props.setProperty(key, value);
     }
 
     /**
      * Removes the system property indicated by the specified key.
-     *
-     * First, if a security manager exists, its
-     * {@code SecurityManager.checkPermission} method
-     * is called with a {@code PropertyPermission(key, "write")}
-     * permission. This may result in a SecurityException being thrown.
-     * If no exception is thrown, the specified property is removed.
      *
      * @apiNote
      * <strong>Changing a standard system property may have unpredictable results
@@ -1072,26 +780,15 @@ public final class System {
      * @return     the previous string value of the system property,
      *             or {@code null} if there was no property with that key.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkPropertyAccess} method doesn't allow
-     *              access to the specified system property.
      * @throws     NullPointerException if {@code key} is {@code null}.
      * @throws     IllegalArgumentException if {@code key} is empty.
      * @see        #getProperty
      * @see        #setProperty
      * @see        java.util.Properties
-     * @see        java.lang.SecurityException
-     * @see        java.lang.SecurityManager#checkPropertiesAccess()
      * @since 1.5
      */
     public static String clearProperty(String key) {
         checkKey(key);
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new PropertyPermission(key, "write"));
-        }
-
         return (String) props.remove(key);
     }
 
@@ -1108,14 +805,6 @@ public final class System {
      * Gets the value of the specified environment variable. An
      * environment variable is a system-dependent external named
      * value.
-     *
-     * <p>If a security manager exists, its
-     * {@link SecurityManager#checkPermission checkPermission}
-     * method is called with a
-     * {@link RuntimePermission RuntimePermission("getenv."+name)}
-     * permission.  This may result in a {@link SecurityException}
-     * being thrown.  If no exception is thrown the value of the
-     * variable {@code name} is returned.
      *
      * <p><a id="EnvironmentVSSystemProperties"><i>System
      * properties</i> and <i>environment variables</i></a> are both
@@ -1142,21 +831,10 @@ public final class System {
      * @return the string value of the variable, or {@code null}
      *         if the variable is not defined in the system environment
      * @throws NullPointerException if {@code name} is {@code null}
-     * @throws SecurityException
-     *         if a security manager exists and its
-     *         {@link SecurityManager#checkPermission checkPermission}
-     *         method doesn't allow access to the environment variable
-     *         {@code name}
      * @see    #getenv()
      * @see    ProcessBuilder#environment()
      */
     public static String getenv(String name) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getenv."+name));
-        }
-
         return ProcessEnvironment.getenv(name);
     }
 
@@ -1181,32 +859,16 @@ public final class System {
      *
      * <p>The returned map is typically case-sensitive on all platforms.
      *
-     * <p>If a security manager exists, its
-     * {@link SecurityManager#checkPermission checkPermission}
-     * method is called with a
-     * {@link RuntimePermission RuntimePermission("getenv.*")} permission.
-     * This may result in a {@link SecurityException} being thrown.
-     *
      * <p>When passing information to a Java subprocess,
      * <a href=#EnvironmentVSSystemProperties>system properties</a>
      * are generally preferred over environment variables.
      *
      * @return the environment as a map of variable names to values
-     * @throws SecurityException
-     *         if a security manager exists and its
-     *         {@link SecurityManager#checkPermission checkPermission}
-     *         method doesn't allow access to the process environment
      * @see    #getenv(String)
      * @see    ProcessBuilder#environment()
      * @since  1.5
      */
     public static java.util.Map<String,String> getenv() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getenv.*"));
-        }
-
         return ProcessEnvironment.getenv();
     }
 
@@ -1615,16 +1277,6 @@ public final class System {
      * would make them dependent from a specific implementation of the
      * {@code LoggerFinder} service.
      * <p>
-     * In addition, when a security manager is present, loggers provided to
-     * system classes should not be directly configurable through the logging
-     * backend without requiring permissions.
-     * <br>
-     * It is the responsibility of the provider of
-     * the concrete {@code LoggerFinder} implementation to ensure that
-     * these loggers are not configured by untrusted code without proper
-     * permission checks, as configuration performed on such loggers usually
-     * affects all applications in the same Java Runtime.
-     * <p>
      * <b>Message Levels and Mapping to backend levels</b>
      * <p>
      * A logger finder is responsible for mapping from a {@code
@@ -1642,13 +1294,6 @@ public final class System {
      */
     @SuppressWarnings("doclint:reference") // cross-module links
     public abstract static class LoggerFinder {
-        /**
-         * The {@code RuntimePermission("loggerFinder")} is
-         * necessary to subclass and instantiate the {@code LoggerFinder} class,
-         * as well as to obtain loggers from an instance of that class.
-         */
-        static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
 
         /**
          * Creates a new instance of {@code LoggerFinder}.
@@ -1657,26 +1302,8 @@ public final class System {
          *   implementation does not perform any heavy initialization in its
          *   constructor, in order to avoid possible risks of deadlock or class
          *   loading cycles during the instantiation of the service provider.
-         *
-         * @throws SecurityException if a security manager is present and its
-         *         {@code checkPermission} method doesn't allow the
-         *         {@code RuntimePermission("loggerFinder")}.
          */
         protected LoggerFinder() {
-            this(checkPermission());
-        }
-
-        private LoggerFinder(Void unused) {
-            // nothing to do.
-        }
-
-        private static Void checkPermission() {
-            @SuppressWarnings("removal")
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
-            return null;
         }
 
         /**
@@ -1690,9 +1317,6 @@ public final class System {
          *         module.
          * @throws NullPointerException if {@code name} is {@code null} or
          *        {@code module} is {@code null}.
-         * @throws SecurityException if a security manager is present and its
-         *         {@code checkPermission} method doesn't allow the
-         *         {@code RuntimePermission("loggerFinder")}.
          */
         public abstract Logger getLogger(String name, Module module);
 
@@ -1733,9 +1357,6 @@ public final class System {
          *
          * @throws NullPointerException if {@code name} is {@code null} or
          *         {@code module} is {@code null}.
-         * @throws SecurityException if a security manager is present and its
-         *         {@code checkPermission} method doesn't allow the
-         *         {@code RuntimePermission("loggerFinder")}.
          */
         public Logger getLocalizedLogger(String name, ResourceBundle bundle,
                                          Module module) {
@@ -1750,16 +1371,8 @@ public final class System {
          * loaded.
          *
          * @return the {@link LoggerFinder LoggerFinder} instance.
-         * @throws SecurityException if a security manager is present and its
-         *         {@code checkPermission} method doesn't allow the
-         *         {@code RuntimePermission("loggerFinder")}.
          */
         public static LoggerFinder getLoggerFinder() {
-            @SuppressWarnings("removal")
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(LOGGERFINDER_PERMISSION);
-            }
             return accessProvider();
         }
 
@@ -1772,10 +1385,7 @@ public final class System {
             // just fetch it again.
             LoggerFinder finder = service;
             if (finder == null) {
-                PrivilegedAction<LoggerFinder> pa =
-                        () -> LoggerFinderLoader.getLoggerFinder();
-                finder = AccessController.doPrivileged(pa, null,
-                        LOGGERFINDER_PERMISSION);
+                finder = LoggerFinderLoader.getLoggerFinder();
                 if (finder instanceof TemporaryLoggerFinder) return finder;
                 service = finder;
             }
@@ -1881,26 +1491,15 @@ public final class System {
         if (caller == null) {
             throw new IllegalCallerException("no caller frame");
         }
-        final SecurityManager sm = System.getSecurityManager();
-        // We don't use LazyLoggers if a resource bundle is specified.
-        // Bootstrap sensitive classes in the JDK do not use resource bundles
-        // when logging. This could be revisited later, if it needs to.
-        if (sm != null) {
-            final PrivilegedAction<Logger> pa =
-                    () -> LoggerFinder.accessProvider()
-                            .getLocalizedLogger(name, rb, caller.getModule());
-            return AccessController.doPrivileged(pa, null,
-                                         LoggerFinder.LOGGERFINDER_PERMISSION);
-        }
         return LoggerFinder.accessProvider()
                 .getLocalizedLogger(name, rb, caller.getModule());
     }
 
     /**
-     * Initiates the {@linkplain Runtime##shutdown shutdown sequence} of the Java Virtual Machine.
-     * Unless the security manager denies exiting, this method initiates the shutdown sequence
-     * (if it is not already initiated) and then blocks indefinitely. This method neither returns
-     * nor throws an exception; that is, it does not complete either normally or abruptly.
+     * Initiates the {@linkplain Runtime##shutdown shutdown sequence} of the Java Virtual
+     * Machine. This method initiates the shutdown sequence (if it is not already initiated)
+     * and then blocks indefinitely. This method neither returns nor throws an exception;
+     * that is, it does not complete either normally or abruptly.
      * <p>
      * The argument serves as a status code. By convention, a nonzero status code
      * indicates abnormal termination.
@@ -1914,9 +1513,6 @@ public final class System {
      * The initiation of the shutdown sequence is logged by {@link Runtime#exit(int)}.
      *
      * @param  status exit status.
-     * @throws SecurityException
-     *         if a security manager exists and its {@code checkExit} method
-     *         doesn't allow exit with the specified status.
      * @see    java.lang.Runtime#exit(int)
      */
     public static void exit(int status) {
@@ -2010,22 +1606,23 @@ public final class System {
      * </pre></blockquote>
      *
      * @param      filename   the file to load.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkLink} method doesn't allow
-     *             loading of the specified dynamic library
      * @throws     UnsatisfiedLinkError  if either the filename is not an
      *             absolute path name, the native library is not statically
      *             linked with the VM, or the library cannot be mapped to
      *             a native library image by the host system.
      * @throws     NullPointerException if {@code filename} is {@code null}
+     * @throws     IllegalCallerException if the caller is in a module that
+     *             does not have native access enabled.
      *
      * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#load(java.lang.String)
-     * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     @CallerSensitive
+    @Restricted
     public static void load(String filename) {
-        Runtime.getRuntime().load0(Reflection.getCallerClass(), filename);
+        Class<?> caller = Reflection.getCallerClass();
+        Reflection.ensureNativeAccess(caller, System.class, "load", false);
+        Runtime.getRuntime().load0(caller, filename);
     }
 
     /**
@@ -2048,22 +1645,23 @@ public final class System {
      * </pre></blockquote>
      *
      * @param      libname   the name of the library.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkLink} method doesn't allow
-     *             loading of the specified dynamic library
      * @throws     UnsatisfiedLinkError if either the libname argument
      *             contains a file path, the native library is not statically
      *             linked with the VM,  or the library cannot be mapped to a
      *             native library image by the host system.
      * @throws     NullPointerException if {@code libname} is {@code null}
+     * @throws     IllegalCallerException if the caller is in a module that
+     *             does not have native access enabled.
      *
      * @spec jni/index.html Java Native Interface Specification
      * @see        java.lang.Runtime#loadLibrary(java.lang.String)
-     * @see        java.lang.SecurityManager#checkLink(java.lang.String)
      */
     @CallerSensitive
+    @Restricted
     public static void loadLibrary(String libname) {
-        Runtime.getRuntime().loadLibrary0(Reflection.getCallerClass(), libname);
+        Class<?> caller = Reflection.getCallerClass();
+        Reflection.ensureNativeAccess(caller, System.class, "loadLibrary", false);
+        Runtime.getRuntime().loadLibrary0(caller, libname);
     }
 
     /**
@@ -2264,6 +1862,7 @@ public final class System {
             super(fd);
         }
 
+        @Override
         public void write(int b) throws IOException {
             boolean attempted = Blocker.begin();
             try {
@@ -2324,23 +1923,12 @@ public final class System {
 
     /*
      * Invoked by VM.  Phase 3 is the final system initialization:
-     * 1. eagerly initialize bootstrap method factories that might interact
-     *    negatively with custom security managers and custom class loaders
-     * 2. set security manager
-     * 3. set system class loader
-     * 4. set TCCL
+     * 1. set system class loader
+     * 2. set TCCL
      *
      * This method must be called after the module system initialization.
-     * The security manager and system class loader may be a custom class from
-     * the application classpath or modulepath.
      */
-    @SuppressWarnings("removal")
     private static void initPhase3() {
-
-        // Initialize the StringConcatFactory eagerly to avoid potential
-        // bootstrap circularity issues that could be caused by a custom
-        // SecurityManager
-        Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
 
         // Emit a warning if java.io.tmpdir is set via the command line
         // to a directory that doesn't exist
@@ -2349,52 +1937,17 @@ public final class System {
         }
 
         String smProp = System.getProperty("java.security.manager");
-        boolean needWarning = false;
         if (smProp != null) {
             switch (smProp) {
                 case "disallow":
-                    allowSecurityManager = NEVER;
                     break;
                 case "allow":
-                    allowSecurityManager = MAYBE;
-                    break;
                 case "":
                 case "default":
-                    implSetSecurityManager(new SecurityManager());
-                    allowSecurityManager = MAYBE;
-                    needWarning = true;
-                    break;
                 default:
-                    try {
-                        ClassLoader cl = ClassLoader.getBuiltinAppClassLoader();
-                        Class<?> c = Class.forName(smProp, false, cl);
-                        Constructor<?> ctor = c.getConstructor();
-                        // Must be a public subclass of SecurityManager with
-                        // a public no-arg constructor
-                        if (!SecurityManager.class.isAssignableFrom(c) ||
-                            !Modifier.isPublic(c.getModifiers()) ||
-                            !Modifier.isPublic(ctor.getModifiers())) {
-                            throw new Error("Could not create SecurityManager: "
-                                             + ctor.toString());
-                        }
-                        // custom security manager may be in non-exported package
-                        ctor.setAccessible(true);
-                        SecurityManager sm = (SecurityManager) ctor.newInstance();
-                        implSetSecurityManager(sm);
-                        needWarning = true;
-                    } catch (Exception e) {
-                        throw new InternalError("Could not create SecurityManager", e);
-                    }
-                    allowSecurityManager = MAYBE;
+                    throw new Error("A command line option has attempted to allow or enable the Security Manager."
+                            + " Enabling a Security Manager is not supported.");
             }
-        } else {
-            allowSecurityManager = NEVER;
-        }
-
-        if (needWarning) {
-            System.err.println("""
-                    WARNING: A command line option has enabled the Security Manager
-                    WARNING: The Security Manager is deprecated and will be removed in a future release""");
         }
 
         // Emit a warning if `sun.jnu.encoding` is not supported.
@@ -2458,9 +2011,6 @@ public final class System {
             public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
                 Shutdown.add(slot, registerShutdownInProgress, hook);
             }
-            public Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc) {
-                return new Thread(target, acc);
-            }
             @SuppressWarnings("removal")
             public void invokeFinalize(Object o) throws Throwable {
                 o.finalize();
@@ -2480,14 +2030,6 @@ public final class System {
             }
             public Package definePackage(ClassLoader cl, String name, Module module) {
                 return cl.definePackage(name, module);
-            }
-            @SuppressWarnings("removal")
-            public void addNonExportedPackages(ModuleLayer layer) {
-                SecurityManager.addNonExportedPackages(layer);
-            }
-            @SuppressWarnings("removal")
-            public void invalidatePackageAccessCache() {
-                SecurityManager.invalidatePackageAccessCache();
             }
             public Module defineModule(ClassLoader loader,
                                        ModuleDescriptor descriptor,
@@ -2539,8 +2081,8 @@ public final class System {
             public void addEnableNativeAccessToAllUnnamed() {
                 Module.implAddEnableNativeAccessToAllUnnamed();
             }
-            public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass) {
-                m.ensureNativeAccess(owner, methodName, currentClass);
+            public void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni) {
+                m.ensureNativeAccess(owner, methodName, currentClass, jni);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
@@ -2557,6 +2099,9 @@ public final class System {
 
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
+            }
+            public int countNonZeroAscii(String s) {
+                return StringCoding.countNonZeroAscii(s);
             }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
@@ -2611,10 +2156,6 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value) {
-                return StringConcatHelper.prepend(indexCoder, buf, value);
-            }
-
             public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
             }
@@ -2627,8 +2168,16 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, value);
             }
 
-            public int stringSize(long i) {
-                return Long.stringSize(i);
+            public Object stringConcat1(String[] constants) {
+                return new StringConcatHelper.Concat1(constants);
+            }
+
+            public byte stringInitCoder() {
+                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
+            }
+
+            public byte stringCoder(String str) {
+                return str.coder();
             }
 
             public int getCharsLatin1(long i, int index, byte[] buf) {
@@ -2643,13 +2192,17 @@ public final class System {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
 
+            public String concat(String prefix, Object value, String suffix) {
+                return StringConcatHelper.concat(prefix, value, suffix);
+            }
+
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }
 
             @Override
-            public long findNative(ClassLoader loader, String entry) {
-                return ClassLoader.findNative(loader, entry);
+            public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
+                return ClassLoader.nativeLibrariesFor(loader);
             }
 
             @Override
@@ -2679,14 +2232,6 @@ public final class System {
 
             public Thread currentCarrierThread() {
                 return Thread.currentCarrierThread();
-            }
-
-            public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
-                if (Thread.currentThread() instanceof VirtualThread vthread) {
-                    return vthread.executeOnCarrierThread(task);
-                } else {
-                    return task.call();
-                }
             }
 
             public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {
@@ -2755,6 +2300,10 @@ public final class System {
                 }
             }
 
+            public Executor virtualThreadDefaultScheduler() {
+                return VirtualThread.defaultScheduler();
+            }
+
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                                       ContinuationScope contScope,
                                                       Continuation continuation) {
@@ -2773,11 +2322,6 @@ public final class System {
             @Override
             public boolean bytesCompatible(String string, Charset charset) {
                 return string.bytesCompatible(charset);
-            }
-
-            @Override
-            public boolean allowSecurityManager() {
-                return System.allowSecurityManager();
             }
         });
     }

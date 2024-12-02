@@ -53,6 +53,7 @@ public class UnixSystem {
      * Instantiate a {@code UnixSystem} and load
      * the native library to access the underlying system information.
      */
+    @SuppressWarnings("restricted")
     public UnixSystem() {
         System.loadLibrary("jaas");
         getUnixInfo();

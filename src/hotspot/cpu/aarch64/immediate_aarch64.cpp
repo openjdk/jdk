@@ -295,7 +295,7 @@ static int expandLogicalImmediate(uint32_t immN, uint32_t immr,
     uint64_t and_bits_sub = replicate(and_bit, 1, nbits);
     uint64_t or_bits_sub = replicate(or_bit, 1, nbits);
     uint64_t and_bits_top = (and_bits_sub << nbits) | ones(nbits);
-    uint64_t or_bits_top = (0 << nbits) | or_bits_sub;
+    uint64_t or_bits_top = (UCONST64(0) << nbits) | or_bits_sub;
 
     tmask = ((tmask
               & (replicate(and_bits_top, 2 * nbits, 32 / nbits)))

@@ -32,7 +32,6 @@
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/generationCounters.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "utilities/align.hpp"
@@ -43,7 +42,6 @@ class CSpaceCounters;
 class OldGenScanClosure;
 class YoungGenScanClosure;
 class DefNewTracer;
-class ScanWeakRefClosure;
 class SerialHeap;
 class STWGCTimer;
 
@@ -100,11 +98,6 @@ class DefNewGeneration: public Generation {
   // therefore we must remove their forwarding pointers.
   void remove_forwarding_pointers();
 
-  virtual void restore_preserved_marks();
-
-  // Preserved marks
-  PreservedMarksSet _preserved_marks_set;
-
   Stack<oop, mtGC> _promo_failure_scan_stack;
   void drain_promo_failure_scan_stack(void);
   bool _promo_failure_drain_in_progress;
@@ -118,18 +111,6 @@ class DefNewGeneration: public Generation {
   // sizing information
   size_t               _max_eden_size;
   size_t               _max_survivor_size;
-
-  // Allocation support
-  bool _should_allocate_from_space;
-  bool should_allocate_from_space() const {
-    return _should_allocate_from_space;
-  }
-  void clear_should_allocate_from_space() {
-    _should_allocate_from_space = false;
-  }
-  void set_should_allocate_from_space() {
-    _should_allocate_from_space = true;
-  }
 
   // Tenuring
   void adjust_desired_tenuring_threshold();
@@ -185,8 +166,6 @@ class DefNewGeneration: public Generation {
   // heuristic resizing decisions.
   size_t unsafe_max_alloc_nogc() const;
 
-  size_t contiguous_available() const;
-
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
@@ -224,10 +203,9 @@ class DefNewGeneration: public Generation {
     return result;
   }
 
-  HeapWord* allocate(size_t word_size, bool is_tlab);
-  HeapWord* allocate_from_space(size_t word_size);
-
-  HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  // Allocate requested size or return null; single-threaded and lock-free versions.
+  HeapWord* allocate(size_t word_size);
+  HeapWord* par_allocate(size_t word_size);
 
   void gc_epilogue(bool full);
 
@@ -241,16 +219,7 @@ class DefNewGeneration: public Generation {
   // GC support
   void compute_new_size();
 
-  // Returns true if the collection is likely to be safely
-  // completed. Even if this method returns true, a collection
-  // may not be guaranteed to succeed, and the system should be
-  // able to safely unwind and recover from that failure, albeit
-  // at some additional cost.
-  bool collection_attempt_is_safe();
-
   bool collect(bool clear_all_soft_refs);
-
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }
@@ -259,8 +228,7 @@ class DefNewGeneration: public Generation {
   void update_counters();
 
   // Printing
-  virtual const char* name() const;
-  virtual const char* short_name() const { return "DefNew"; }
+  const char* name() const { return "DefNew"; }
 
   void print_on(outputStream* st) const;
 

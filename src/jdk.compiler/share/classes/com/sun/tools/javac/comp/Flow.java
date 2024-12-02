@@ -787,7 +787,7 @@ public class Flow {
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             Set<PatternDescription> patternSet = new HashSet<>();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
-            Set<Object> booleanLiterals = new HashSet<>();
+            Set<Object> booleanLiterals = new HashSet<>(Set.of(0, 1));
             for (JCCase c : cases) {
                 if (!TreeInfo.unguardedCase(c))
                     continue;
@@ -800,7 +800,7 @@ public class Flow {
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
                         if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
                             Object value = ((JCLiteral) constantLabel.expr).value;
-                            booleanLiterals.add(value);
+                            booleanLiterals.remove(value);
                         } else {
                             Symbol s = TreeInfo.symbol(constantLabel.expr);
                             if (s != null && s.isEnum()) {
@@ -817,7 +817,7 @@ public class Flow {
                 }
             }
 
-            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.size() == 2) {
+            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
                 return true;
             }
 
@@ -827,30 +827,33 @@ public class Flow {
                 }
             }
             Set<PatternDescription> patterns = patternSet;
-            boolean genericPatternsExpanded = false;
+            boolean useHashes = true;
             try {
                 boolean repeat = true;
                 while (repeat) {
                     Set<PatternDescription> updatedPatterns;
                     updatedPatterns = reduceBindingPatterns(selector.type, patterns);
-                    updatedPatterns = reduceNestedPatterns(updatedPatterns);
+                    updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes);
                     updatedPatterns = reduceRecordPatterns(updatedPatterns);
                     updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                     repeat = !updatedPatterns.equals(patterns);
                     if (checkCovered(selector.type, patterns)) {
                         return true;
                     }
-                    if (!repeat && !genericPatternsExpanded) {
+                    if (!repeat) {
                         //there may be situation like:
-                        //class B extends S1, S2
+                        //class B permits S1, S2
                         //patterns: R(S1, B), R(S2, S2)
-                        //this should be joined to R(B, S2),
+                        //this might be joined to R(B, S2), as B could be rewritten to S2
                         //but hashing in reduceNestedPatterns will not allow that
-                        //attempt to once expand all types to their transitive permitted types,
-                        //on all depth of nesting:
-                        updatedPatterns = expandGenericPatterns(updatedPatterns);
-                        genericPatternsExpanded = true;
-                        repeat = !updatedPatterns.equals(patterns);
+                        //disable the use of hashing, and use subtyping in
+                        //reduceNestedPatterns to handle situations like this:
+                        repeat = useHashes;
+                        useHashes = false;
+                    } else {
+                        //if a reduction happened, make sure hashing in reduceNestedPatterns
+                        //is enabled, as the hashing speeds up the process significantly:
+                        useHashes = true;
                     }
                     patterns = updatedPatterns;
                 }
@@ -907,7 +910,7 @@ public class Flow {
                     Set<PatternDescription> toAdd = new HashSet<>();
 
                     for (Type sup : types.directSupertypes(bpOne.type)) {
-                        ClassSymbol clazz = (ClassSymbol) sup.tsym;
+                        ClassSymbol clazz = (ClassSymbol) types.erasure(sup).tsym;
 
                         clazz.complete();
 
@@ -1023,8 +1026,15 @@ public class Flow {
          * simplify the pattern. If that succeeds, the original found sub-set
          * of patterns is replaced with a new set of patterns of the form:
          * $record($prefix$, $resultOfReduction, $suffix$)
+         *
+         * useHashes: when true, patterns will be subject to exact equivalence;
+         *            when false, two binding patterns will be considered equivalent
+         *            if one of them is more generic than the other one;
+         *            when false, the processing will be significantly slower,
+         *            as pattern hashes cannot be used to speed up the matching process
          */
-        private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns) {
+        private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
+                                                             boolean useHashes) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
              * column is time-consuming task, so this method speeds it up by:
@@ -1049,13 +1059,13 @@ public class Flow {
                      mismatchingCandidate < nestedPatternsCount;
                      mismatchingCandidate++) {
                     int mismatchingCandidateFin = mismatchingCandidate;
-                    var groupByHashes =
+                    var groupEquivalenceCandidates =
                             current
                              .stream()
                              //error recovery, ignore patterns with incorrect number of nested patterns:
                              .filter(pd -> pd.nested.length == nestedPatternsCount)
-                             .collect(groupingBy(pd -> pd.hashCode(mismatchingCandidateFin)));
-                    for (var candidates : groupByHashes.values()) {
+                             .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
+                    for (var candidates : groupEquivalenceCandidates.values()) {
                         var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
                         for (int firstCandidate = 0;
@@ -1076,9 +1086,18 @@ public class Flow {
                                 RecordPattern rpOther = candidatesArr[nextCandidate];
                                 if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
-                                        if (i != mismatchingCandidate &&
-                                            !rpOne.nested[i].equals(rpOther.nested[i])) {
-                                            continue NEXT_PATTERN;
+                                        if (i != mismatchingCandidate) {
+                                            if (!rpOne.nested[i].equals(rpOther.nested[i])) {
+                                                if (useHashes ||
+                                                    //when not using hashes,
+                                                    //check if rpOne.nested[i] is
+                                                    //a subtype of rpOther.nested[i]:
+                                                    !(rpOne.nested[i] instanceof BindingPattern bpOne) ||
+                                                    !(rpOther.nested[i] instanceof BindingPattern bpOther) ||
+                                                    !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                    continue NEXT_PATTERN;
+                                                }
+                                            }
                                         }
                                     }
                                     join.append(rpOther);
@@ -1086,14 +1105,16 @@ public class Flow {
                             }
 
                             var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                            var updatedPatterns = reduceNestedPatterns(nestedPatterns);
+                            var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes);
 
                             updatedPatterns = reduceRecordPatterns(updatedPatterns);
                             updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
                             if (!nestedPatterns.equals(updatedPatterns)) {
-                                current.removeAll(join);
+                                if (useHashes) {
+                                    current.removeAll(join);
+                                }
 
                                 for (PatternDescription nested : updatedPatterns) {
                                     PatternDescription[] newNested =
@@ -1167,40 +1188,6 @@ public class Flow {
                 }
             }
             return pattern;
-        }
-
-        private Set<PatternDescription> expandGenericPatterns(Set<PatternDescription> patterns) {
-            var newPatterns = new HashSet<PatternDescription>(patterns);
-            boolean modified;
-            do {
-                modified = false;
-                for (PatternDescription pd : patterns) {
-                    if (pd instanceof RecordPattern rpOne) {
-                        for (int i = 0; i < rpOne.nested.length; i++) {
-                            Set<PatternDescription> toExpand = Set.of(rpOne.nested[i]);
-                            Set<PatternDescription> expanded = expandGenericPatterns(toExpand);
-                            if (expanded != toExpand) {
-                                expanded.removeAll(toExpand);
-                                for (PatternDescription exp : expanded) {
-                                    PatternDescription[] newNested = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
-                                    newNested[i] = exp;
-                                    modified |= newPatterns.add(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), newNested));
-                                }
-                            }
-                        }
-                    } else if (pd instanceof BindingPattern bp) {
-                        Set<Symbol> permittedSymbols = allPermittedSubTypes(bp.type.tsym, cs -> true);
-
-                        if (!permittedSymbols.isEmpty()) {
-                            for (Symbol permitted : permittedSymbols) {
-                                //TODO infer.instantiatePatternType(selectorType, csym); (?)
-                                modified |= newPatterns.add(new BindingPattern(permitted.type));
-                            }
-                        }
-                    }
-                }
-            } while (modified);
-            return newPatterns;
         }
 
         private Set<PatternDescription> removeCoveredRecordPatterns(Set<PatternDescription> patterns) {

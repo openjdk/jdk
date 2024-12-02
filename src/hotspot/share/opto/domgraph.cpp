@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,6 @@ struct Tarjan {
 // Compute the dominator tree of the CFG.  The CFG must already have been
 // constructed.  This is the Lengauer & Tarjan O(E-alpha(E,V)) algorithm.
 void PhaseCFG::build_dominator_tree() {
-  // Pre-grow the blocks array, prior to the ResourceMark kicking in
-  _blocks.map(number_of_blocks(), 0);
-
   ResourceMark rm;
   // Setup mappings from my Graph to Tarjan's stuff and back
   // Note: Tarjan uses 1-based arrays
@@ -242,6 +239,7 @@ uint Block_Stack::most_frequent_successor( Block *b ) {
     break;
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
@@ -286,8 +284,8 @@ uint PhaseCFG::do_DFS(Tarjan *tarjan, uint rpo_counter) {
 
 void Tarjan::COMPRESS()
 {
-  assert( _ancestor != 0, "" );
-  if( _ancestor->_ancestor != 0 ) {
+  assert( _ancestor != nullptr, "" );
+  if( _ancestor->_ancestor != nullptr ) {
     _ancestor->COMPRESS( );
     if( _ancestor->_label->_semi < _label->_semi )
       _label = _ancestor->_label;
@@ -412,10 +410,9 @@ void PhaseIdealLoop::Dominators() {
   // Setup mappings from my Graph to Tarjan's stuff and back
   // Note: Tarjan uses 1-based arrays
   NTarjan *ntarjan = NEW_RESOURCE_ARRAY(NTarjan,C->unique()+1);
-  // Initialize _control field for fast reference
-  int i;
-  for( i= C->unique()-1; i>=0; i-- )
-    ntarjan[i]._control = nullptr;
+  // Initialize all fields at once for safety and extra performance.
+  // Among other things, this initializes _control field for fast reference.
+  memset(ntarjan, 0, (C->unique() + 1)*sizeof(NTarjan));
 
   // Store the DFS order for the main loop
   const uint fill_value = max_juint;
@@ -431,6 +428,7 @@ void PhaseIdealLoop::Dominators() {
   ntarjan[0]._size = ntarjan[0]._semi = 0;
   ntarjan[0]._label = &ntarjan[0];
 
+  int i;
   for( i = dfsnum-1; i>1; i-- ) {        // For all nodes in reverse DFS order
     NTarjan *w = &ntarjan[i];            // Get Node from DFS
     assert(w->_control != nullptr,"bad DFS walk");
@@ -575,8 +573,8 @@ int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uin
 
 void NTarjan::COMPRESS()
 {
-  assert( _ancestor != 0, "" );
-  if( _ancestor->_ancestor != 0 ) {
+  assert( _ancestor != nullptr, "" );
+  if( _ancestor->_ancestor != nullptr ) {
     _ancestor->COMPRESS( );
     if( _ancestor->_label->_semi < _label->_semi )
       _label = _ancestor->_label;

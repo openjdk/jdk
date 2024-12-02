@@ -39,7 +39,7 @@ private:
   static uintptr_t _end;
 
 public:
-  static const size_t offset = 4 * K;
+  static const size_t Offset = 4 * K;
 
   static uintptr_t alloc(size_t size);
 };

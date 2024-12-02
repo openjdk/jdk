@@ -39,8 +39,10 @@
 // The MemoryFileTracker tracks memory of 'memory files',
 // storage with its own memory space separate from the process.
 // A typical example of such a file is a memory mapped file.
+// All memory is accounted as committed, there is no reserved memory.
+// Any reserved memory is expected to exist in the VirtualMemoryTracker.
 class MemoryFileTracker {
-  friend class MemoryFileTrackerTest;
+  friend class NMTMemoryFileTrackerTest;
 
   // Provide caching of stacks.
   NativeCallStackStorage _stack_storage;
@@ -48,7 +50,7 @@ class MemoryFileTracker {
 public:
   class MemoryFile : public CHeapObj<mtNMT> {
     friend MemoryFileTracker;
-    friend class MemoryFileTrackerTest;
+    friend class NMTMemoryFileTrackerTest;
     const char* _descriptive_name;
     VirtualMemorySnapshot _summary;
     VMATree _tree;
@@ -66,11 +68,21 @@ public:
   MemoryFileTracker(bool is_detailed_mode);
 
   void allocate_memory(MemoryFile* file, size_t offset, size_t size, const NativeCallStack& stack,
-                       MEMFLAGS flag);
+                       MemTag mem_tag);
   void free_memory(MemoryFile* file, size_t offset, size_t size);
 
   MemoryFile* make_file(const char* descriptive_name);
   void free_file(MemoryFile* file);
+
+  template<typename F>
+  void iterate_summary(F f) const {
+    for (int d = 0; d < _files.length(); d++) {
+      const MemoryFile* file = _files.at(d);
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        f(NMTUtil::index_to_tag(i), file->_summary.by_type(NMTUtil::index_to_tag(i)));
+      }
+    }
+  }
 
   void summary_snapshot(VirtualMemorySnapshot* snapshot) const;
 
@@ -96,8 +108,13 @@ public:
     static void free_file(MemoryFile* device);
 
     static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
-                                const NativeCallStack& stack, MEMFLAGS flag);
+                                const NativeCallStack& stack, MemTag mem_tag);
     static void free_memory(MemoryFile* device, size_t offset, size_t size);
+
+    template<typename F>
+    static void iterate_summary(F f) {
+      _tracker->iterate_summary(f);
+    };
 
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);
 

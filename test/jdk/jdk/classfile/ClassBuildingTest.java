@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public class ClassBuildingTest {
         transform = transform.andThen(ClassTransform.transformingMethods(MethodTransform.dropping(me
                 -> me instanceof SignatureAttribute)));
 
-        MethodHandles.lookup().defineClass(cc.transform(cm, transform));
+        MethodHandles.lookup().defineClass(cc.transformClass(cm, transform));
     }
 }
 

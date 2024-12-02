@@ -44,11 +44,10 @@ import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.Name;
 import jdk.jfr.Period;
-import jdk.jfr.StackTrace;
-import jdk.jfr.Threshold;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.consumer.RepositoryFiles;
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.Utils;
 
@@ -59,10 +58,13 @@ public final class MetadataRepository {
     private final Map<String, EventType> nativeEventTypes = LinkedHashMap.newHashMap(150);
     private final Map<String, EventControl> nativeControls = LinkedHashMap.newHashMap(150);
     private final SettingsManager settingsManager = new SettingsManager();
+    private final HiddenWait threadSleeper = new HiddenWait();
     private Constructor<EventConfiguration> cachedEventConfigurationConstructor;
     private boolean staleMetadata = true;
     private boolean unregistered;
     private long lastUnloaded = -1;
+
+    private long lastMillis;
 
     public MetadataRepository() {
         initializeJVMEventTypes();
@@ -313,11 +315,12 @@ public final class MetadataRepository {
         if (staleMetadata) {
             storeDescriptorInJVM();
         }
+        // Each chunk needs a unique timestamp. If two chunks get the same
+        // timestamp, the parser may stop prematurely at an earlier chunk.
+        // The resolution needs to be measured in milliseconds as this
+        // is what RecordingInfo:getStopTime() returns.
+        awaitEpochMilliShift();
         JVM.setOutput(filename);
-        // Each chunk needs a unique start timestamp and
-        // if the clock resolution is low, two chunks may
-        // get the same timestamp. Utils.getChunkStartNanos()
-        // ensures the timestamp is unique for the next chunk
         long chunkStart = JVMSupport.getChunkStartNanos();
         if (filename != null) {
             RepositoryFiles.notifyNewFile();
@@ -330,6 +333,18 @@ public final class MetadataRepository {
             unregistered = false;
         }
         return Utils.epochNanosToInstant(chunkStart);
+    }
+
+    private void awaitEpochMilliShift() {
+        while (true) {
+            long nanos = JVM.nanosNow();
+            long millis = Utils.epochNanosToInstant(nanos).toEpochMilli();
+            if (millis != lastMillis) {
+                lastMillis = millis;
+                return;
+            }
+            threadSleeper.takeNap(1);
+        }
     }
 
     private void unregisterUnloaded() {

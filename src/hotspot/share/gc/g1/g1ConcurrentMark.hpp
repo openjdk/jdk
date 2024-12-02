@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -810,6 +810,21 @@ private:
   // Makes the limit of the region up-to-date
   void update_region_limit();
 
+  // Handles the processing of the current region.
+  void process_current_region(G1CMBitMapClosure& bitmap_closure);
+
+  // Claims a new region if available.
+  void claim_new_region();
+
+  // Attempts to steal work from other tasks.
+  void attempt_stealing();
+
+  // Handles the termination protocol.
+  void attempt_termination(bool is_serial);
+
+  // Handles the has_aborted scenario.
+  void handle_abort(bool is_serial, double elapsed_time_ms);
+
   // Called when either the words scanned or the refs visited limit
   // has been reached
   void reached_limit();
@@ -949,7 +964,7 @@ public:
 // Class that's used to to print out per-region liveness
 // information. It's currently used at the end of marking and also
 // after we sort the old regions at the end of the cleanup operation.
-class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
+class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulators for these values.
   size_t _total_used_bytes;
   size_t _total_capacity_bytes;
@@ -957,6 +972,8 @@ class G1PrintRegionLivenessInfoClosure : public HeapRegionClosure {
 
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
+
+  size_t _young_cardset_bytes_per_region;
 
   // Accumulator for code roots memory size
   size_t _total_code_roots_bytes;

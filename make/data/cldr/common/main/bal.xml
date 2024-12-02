@@ -48,7 +48,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Cyrl" draft="provisional">روسی</script>
 			<script type="Hans" draft="provisional">هان (ساده کرتگێن)</script>
 			<script type="Hant" draft="provisional">هان (اسلیگێن)</script>
-			<script type="Latn" draft="provisional">لاتین</script>
+			<script type="Latn">لاتینی</script>
 			<script type="Zxxx" draft="provisional">نبشته نبوتگێن سیاهگ</script>
 			<script type="Zzzz" draft="provisional">کۆڈ نبوتگێن سیاهگ</script>
 		</scripts>
@@ -252,6 +252,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern draft="provisional">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
+					<availableFormats>
+						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
+						<dateFormatItem id="yMMMd">d MMM y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatFallback>{1} - {0}</intervalFormatFallback>
+					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -371,6 +378,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic draft="provisional">رۆنندی یورپئے ساهت</generic>
 					<standard draft="provisional">رۆنندی یورپئے گیشّتگێن ساهت</standard>
 					<daylight draft="provisional">رۆنندی یورپئے گرماگی ساهت</daylight>
+				</long>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard>گرین‌وِچ مین ٹائم</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">

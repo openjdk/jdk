@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,7 @@ static void commit(const HelperType& helper) {
     JavaThread* jt = JavaThread::cast(thread);
     if (jt->thread_state() == _thread_in_native) {
       // For a JavaThread to take a JFR stacktrace, it must be in _thread_in_vm. Can safepoint here.
+      MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
       ThreadInVMfromNative transition(jt);
       event.commit();
       return;

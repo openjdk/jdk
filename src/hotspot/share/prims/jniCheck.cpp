@@ -475,7 +475,7 @@ void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
   }
 
   // Verify that the class name given is a valid utf8 string
-  if (!UTF8::is_legal_utf8((const unsigned char*)name, (int)strlen(name), false)) {
+  if (!UTF8::is_legal_utf8((const unsigned char*)name, strlen(name), false)) {
     char msg[JVM_MAXPATHLEN];
     jio_snprintf(msg, JVM_MAXPATHLEN, "%s%s%s", fatal_non_utf8_class_name1, name, fatal_non_utf8_class_name2);
     ReportJNIFatalError(thr, msg);
@@ -1511,6 +1511,27 @@ JNI_ENTRY_CHECKED(jsize,
       checkString(thr, str);
     )
     jsize result = UNCHECKED()->GetStringUTFLength(env,str);
+    jlong full_length =  UNCHECKED()->GetStringUTFLengthAsLong(env,str);
+    if (full_length > result) {
+      ResourceMark rm(thr);
+      stringStream ss;
+      ss.print("WARNING: large String with modified UTF-8 length " JLONG_FORMAT
+                " is reporting a reduced length of %d - use GetStringUTFLengthAsLong instead",
+                full_length, result);
+      NativeReportJNIWarning(thr, ss.as_string());
+    }
+    functionExit(thr);
+    return result;
+JNI_END
+
+JNI_ENTRY_CHECKED(jlong,
+  checked_jni_GetStringUTFLengthAsLong(JNIEnv *env,
+                                       jstring str))
+    functionEnter(thr);
+    IN_VM(
+      checkString(thr, str);
+    )
+    jlong result = UNCHECKED()->GetStringUTFLengthAsLong(env,str);
     functionExit(thr);
     return result;
 JNI_END
@@ -2283,7 +2304,12 @@ struct JNINativeInterface_  checked_jni_NativeInterface = {
 
     // Virtual threads
 
-    checked_jni_IsVirtualThread
+    checked_jni_IsVirtualThread,
+
+    // Large UTF8 support
+
+    checked_jni_GetStringUTFLengthAsLong
+
 };
 
 

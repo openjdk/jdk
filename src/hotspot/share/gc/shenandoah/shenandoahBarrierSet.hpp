@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +32,26 @@
 
 class ShenandoahHeap;
 class ShenandoahBarrierSetAssembler;
+class ShenandoahCardTable;
 
 class ShenandoahBarrierSet: public BarrierSet {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahCardTable* _card_table;
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   ShenandoahSATBMarkQueueSet _satb_mark_queue_set;
 
 public:
-  ShenandoahBarrierSet(ShenandoahHeap* heap);
+  ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_region);
 
   static ShenandoahBarrierSetAssembler* assembler();
 
   inline static ShenandoahBarrierSet* barrier_set() {
     return barrier_set_cast<ShenandoahBarrierSet>(BarrierSet::barrier_set());
+  }
+
+  inline ShenandoahCardTable* card_table() {
+    return _card_table;
   }
 
   static ShenandoahSATBMarkQueueSet& satb_mark_queue_set() {
@@ -89,7 +96,6 @@ public:
   template <DecoratorSet decorators, typename T>
   inline void satb_barrier(T* field);
   inline void satb_enqueue(oop value);
-  inline void iu_barrier(oop obj);
 
   inline void keep_alive_if_weak(DecoratorSet decorators, oop value);
 
@@ -112,15 +118,19 @@ public:
   template <typename T>
   inline oop oop_xchg(DecoratorSet decorators, T* addr, oop new_value);
 
+  template <DecoratorSet decorators, typename T>
+  void write_ref_field_post(T* field);
+
+  void write_ref_array(HeapWord* start, size_t count);
+
 private:
   template <class T>
-  inline void arraycopy_marking(T* src, T* dst, size_t count);
+  inline void arraycopy_marking(T* src, T* dst, size_t count, bool is_old_marking);
   template <class T>
   inline void arraycopy_evacuation(T* src, size_t count);
   template <class T>
   inline void arraycopy_update(T* src, size_t count);
 
-  inline void clone_marking(oop src);
   inline void clone_evacuation(oop src);
   inline void clone_update(oop src);
 

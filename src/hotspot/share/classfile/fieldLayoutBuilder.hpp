@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,17 +101,13 @@ class LayoutRawBlock : public ResourceObj {
   // sort fields in decreasing order.
   // Note: with line types, the comparison should include alignment constraint if sizes are equals
   static int compare_size_inverted(LayoutRawBlock** x, LayoutRawBlock** y)  {
-#ifdef _WINDOWS
-    // qsort() on Windows reverse the order of fields with the same size
-    // the extension of the comparison function below preserves this order
     int diff = (*y)->size() - (*x)->size();
+    // qsort() may reverse the order of fields with the same size.
+    // The extension is to ensure stable sort.
     if (diff == 0) {
       diff = (*x)->field_index() - (*y)->field_index();
     }
     return diff;
-#else
-    return (*y)->size() - (*x)->size();
-#endif // _WINDOWS
   }
 
 };

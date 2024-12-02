@@ -48,14 +48,10 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
-import static sun.security.action.GetPropertyAction.privilegedGetProperty;
-
 /**
  * This class contains misc helper functions to support creation of memory segments.
  */
 public final class Utils {
-
-    public static final boolean IS_WINDOWS = privilegedGetProperty("os.name").startsWith("Windows");
 
     // Suppresses default constructor, ensuring non-instantiability.
     private Utils() {}
@@ -63,7 +59,8 @@ public final class Utils {
     private static final MethodHandle BYTE_TO_BOOL;
     private static final MethodHandle BOOL_TO_BYTE;
     private static final MethodHandle ADDRESS_TO_LONG;
-    private static final MethodHandle LONG_TO_ADDRESS;
+    private static final MethodHandle LONG_TO_ADDRESS_TARGET;
+    private static final MethodHandle LONG_TO_ADDRESS_NO_TARGET;
 
     static {
         try {
@@ -74,8 +71,10 @@ public final class Utils {
                     MethodType.methodType(byte.class, boolean.class));
             ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
                     MethodType.methodType(long.class, MemorySegment.class));
-            LONG_TO_ADDRESS = lookup.findStatic(Utils.class, "longToAddress",
-                    MethodType.methodType(MemorySegment.class, long.class, long.class, long.class));
+            LONG_TO_ADDRESS_TARGET = lookup.findStatic(Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, long.class, AddressLayout.class));
+            LONG_TO_ADDRESS_NO_TARGET = lookup.findStatic(Utils.class, "longToAddress",
+                    MethodType.methodType(MemorySegment.class, long.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -129,11 +128,10 @@ public final class Utils {
         if (layout.carrier() == boolean.class) {
             handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
         } else if (layout instanceof AddressLayout addressLayout) {
-            handle = MethodHandles.filterValue(handle,
-                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
-                    MethodHandles.explicitCastArguments(MethodHandles.insertArguments(LONG_TO_ADDRESS, 1,
-                                    pointeeByteSize(addressLayout), pointeeByteAlign(addressLayout)),
-                            MethodType.methodType(MemorySegment.class, baseCarrier)));
+            MethodHandle longToAddressAdapter = addressLayout.targetLayout().isPresent() ?
+                    MethodHandles.insertArguments(LONG_TO_ADDRESS_TARGET, 1, addressLayout) :
+                    LONG_TO_ADDRESS_NO_TARGET;
+            handle = MethodHandles.filterValue(handle, ADDRESS_TO_LONG, longToAddressAdapter);
         }
         return handle;
     }
@@ -144,6 +142,16 @@ public final class Utils {
 
     private static byte booleanToByte(boolean b) {
         return b ? (byte)1 : (byte)0;
+    }
+
+    @ForceInline
+    public static MemorySegment longToAddress(long addr) {
+        return longToAddress(addr, 0, 1);
+    }
+
+    @ForceInline
+    public static MemorySegment longToAddress(long addr, AddressLayout layout) {
+        return longToAddress(addr, pointeeByteSize(layout), pointeeByteAlign(layout));
     }
 
     @ForceInline

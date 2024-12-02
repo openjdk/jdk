@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,18 @@
  */
 package java.lang.classfile;
 
-import java.util.Set;
-import jdk.internal.classfile.impl.AccessFlagsImpl;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.javac.PreviewFeature;
+import java.util.Set;
+
+import jdk.internal.classfile.impl.AccessFlagsImpl;
 
 /**
  * Models the access flags for a class, method, or field.  Delivered as a
  * {@link ClassElement}, {@link FieldElement}, or {@link MethodElement}
  * when traversing the corresponding model type.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AccessFlags
         extends ClassElement, MethodElement, FieldElement
         permits AccessFlagsImpl {
@@ -64,52 +63,4 @@ public sealed interface AccessFlags
      * method, or field}
      */
     AccessFlag.Location location();
-
-    /**
-     * {@return an {@linkplain AccessFlags} for a class}
-     * @param mask the flags to be set, as a bit mask
-     */
-    static AccessFlags ofClass(int mask) {
-        return new AccessFlagsImpl(AccessFlag.Location.CLASS, mask);
-    }
-
-    /**
-     * {@return an {@linkplain AccessFlags} for a class}
-     * @param flags the flags to be set
-     */
-    static AccessFlags ofClass(AccessFlag... flags) {
-        return new AccessFlagsImpl(AccessFlag.Location.CLASS, flags);
-    }
-
-    /**
-     * {@return an {@linkplain AccessFlags} for a field}
-     * @param mask the flags to be set, as a bit mask
-     */
-    static AccessFlags ofField(int mask) {
-        return new AccessFlagsImpl(AccessFlag.Location.FIELD, mask);
-    }
-
-    /**
-     * {@return an {@linkplain AccessFlags} for a field}
-     * @param flags the flags to be set
-     */
-    static AccessFlags ofField(AccessFlag... flags) {
-        return new AccessFlagsImpl(AccessFlag.Location.FIELD, flags);
-    }
-
-    /**
-     * {@return an {@linkplain AccessFlags} for a method}
-     * @param mask the flags to be set, as a bit mask
-     */
-    static AccessFlags ofMethod(int mask) {
-        return new AccessFlagsImpl(AccessFlag.Location.METHOD, mask);
-    }
-
-    /**
-     * {@return an {@linkplain AccessFlags} for a method}
-     * @param flags the flags to be set
-     */
-    static AccessFlags ofMethod(AccessFlag... flags) {
-        return new AccessFlagsImpl(AccessFlag.Location.METHOD, flags);
-    }
 }

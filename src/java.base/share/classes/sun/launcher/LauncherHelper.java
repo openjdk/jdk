@@ -63,6 +63,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.jar.Attributes;
@@ -318,6 +319,8 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
+        ostream.println(INDENT + "default timezone = " +
+                TimeZone.getDefault().getID());
         ostream.println(INDENT + "tzdata version = " +
                 ZoneInfoFile.getVersion());
         if (verbose) {
@@ -370,6 +373,10 @@ public final class LauncherHelper {
         final long longRetvalNotSupported = -2;
 
         ostream.println(INDENT + "Provider: " + c.getProvider());
+        if (!c.isContainerized()) {
+            ostream.println(INDENT + "System not containerized.");
+            return;
+        }
         ostream.println(INDENT + "Effective CPU Count: " + c.getEffectiveCpuCount());
         ostream.println(formatCpuVal(c.getCpuPeriod(), INDENT + "CPU Period: ", longRetvalNotSupported));
         ostream.println(formatCpuVal(c.getCpuQuota(), INDENT + "CPU Quota: ", longRetvalNotSupported));
@@ -580,6 +587,15 @@ public final class LauncherHelper {
             ostream.println(getLocalizedMessage("java.launcher.X.macosx.usage",
                         File.pathSeparator));
         }
+    }
+
+    /**
+     * Prints the short usage text to the desired output stream.
+     */
+    static void printConciseUsageMessage(boolean printToStderr) {
+        initOutput(printToStderr);
+        ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
+                File.pathSeparator));
     }
 
     static void initOutput(boolean printToStderr) {

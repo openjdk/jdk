@@ -78,7 +78,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=8"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_64() {
@@ -88,7 +88,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_128() {
@@ -98,7 +98,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_256() {
@@ -108,7 +108,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.ADD_REDUCTION_VF, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=64"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testFloatAdd_512() {
@@ -127,7 +127,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=16"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_128() {
@@ -137,7 +137,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_256() {
@@ -147,7 +147,7 @@ public class TestVectorAddMulReduction {
     @Test
     @IR(counts = {IRNode.ADD_REDUCTION_VD, ">=1", "no_strict_order", ">=1"},
         failOn = {"requires_strict_order"},
-        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true", "rvv", "true"},
         applyIf = {"MaxVectorSize", ">=64"},
         phase = CompilePhase.PRINT_IDEAL)
     public static void testDoubleAdd_512() {

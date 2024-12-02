@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
-#include "code/codeBlob.hpp"
+#include "classfile/javaClasses.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/disassembler.hpp"
@@ -40,13 +40,17 @@
 #define __ _masm->
 
 static bool is_valid_XMM(XMMRegister reg) {
-  return reg->is_valid() && (UseAVX >= 3 || (reg->encoding() < 16)); // why is this not covered by is_valid()?
+  return reg->is_valid() && (reg->encoding() < (UseAVX >= 3 ? 32 : 16)); // why is this not covered by is_valid()?
+}
+
+static bool is_valid_gp(Register reg) {
+  return reg->is_valid() && (reg->encoding() < (UseAPX ? 32 : 16));
 }
 
 // for callee saved regs, according to the caller's ABI
 static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   int size = 0;
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       size += 8; // bytes
@@ -84,7 +88,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   int offset = reg_save_area_offset;
 
   __ block_comment("{ preserve_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(Address(rsp, offset), reg);
@@ -134,7 +138,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   int offset = reg_save_area_offset;
 
   __ block_comment("{ restore_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(reg, Address(rsp, offset));
@@ -165,10 +169,10 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   __ block_comment("} restore_callee_saved_regs ");
 }
 
-static const int upcall_stub_code_base_size = 1024;
+static const int upcall_stub_code_base_size = 1200;
 static const int upcall_stub_size_per_arg = 16;
 
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -277,7 +281,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("{ on_entry");
   __ vzeroupper();
   __ lea(c_rarg0, Address(rsp, frame_data_offset));
-  __ movptr(c_rarg1, (intptr_t)receiver);
   // stack already aligned
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry)));
   __ movptr(r15_thread, rax);
@@ -293,12 +296,10 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(j_rarg0, r15_thread);
-  __ block_comment("} receiver ");
-
-  __ mov_metadata(rbx, entry);
-  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t)receiver);
+  __ call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // puts target Method* in rbx
+  __ block_comment("} load target ");
 
   __ push_cont_fastpath();
 
@@ -373,7 +374,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char* name = _masm->code_string(ss.freeze());
 #else // PRODUCT
   const char* name = "upcall_stub";

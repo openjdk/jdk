@@ -176,13 +176,13 @@ public class DnsContext extends ComponentDirContext {
         } else if (propName.equals(INIT_TIMEOUT)) {
             int val = Integer.parseInt((String) propVal);
             if (timeout != val) {
-                timeout = val;
+                timeout = Math.max(val, 0);
                 resolver = null;
             }
         } else if (propName.equals(RETRIES)) {
             int val = Integer.parseInt((String) propVal);
             if (retries != val) {
-                retries = val;
+                retries = Math.clamp(val, 1, 30);
                 resolver = null;
             }
         }
@@ -257,11 +257,11 @@ public class DnsContext extends ComponentDirContext {
         val = (String) environment.get(INIT_TIMEOUT);
         timeout = (val == null)
             ? DEFAULT_INIT_TIMEOUT
-            : Integer.parseInt(val);
+            : Math.max(Integer.parseInt(val), 0);
         val = (String) environment.get(RETRIES);
         retries = (val == null)
             ? DEFAULT_RETRIES
-            : Integer.parseInt(val);
+            : Math.clamp(Integer.parseInt(val), 1, 30);
     }
 
     private CT getLookupCT(String attrId)

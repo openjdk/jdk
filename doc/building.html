@@ -329,8 +329,8 @@ GB of free disk space is required.</p>
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build
 machine, and instead create a 32-bit target using
 <code>--with-target-bits=32</code>.</p>
-<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in
-a future release.</p>
+<p>Note: The 32-bit x86 port is deprecated and may be removed in a
+future release.</p>
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of
 RAM. (The more cores to use, the more memory you need.) At least 6 GB of
@@ -393,8 +393,7 @@ Build Platforms</a>. From time to time, this is updated by contributors
 to list successes or failures of building on different platforms.</p>
 <h3 id="windows">Windows</h3>
 <p>Windows XP is not a supported platform, but all newer Windows should
-be able to build the JDK. (Note: The Windows 32-bit x86 port is
-deprecated and may be removed in a future release.)</p>
+be able to build the JDK.</p>
 <p>On Windows, it is important that you pay attention to the
 instructions in the <a href="#special-considerations">Special
 Considerations</a>.</p>
@@ -614,10 +613,9 @@ be accepted by <code>configure</code>.</p>
 <code>--with-toolchain-type=clang</code>.</p>
 <h3 id="apple-xcode">Apple Xcode</h3>
 <p>The oldest supported version of Xcode is 13.0.</p>
-<p>You will need the Xcode command line developer tools to be able to
-build the JDK. (Actually, <em>only</em> the command line tools are
-needed, not the IDE.) The simplest way to install these is to run:</p>
-<pre><code>xcode-select --install</code></pre>
+<p>You will need to download Xcode either from the App Store or specific
+versions can be easily located via the <a
+href="https://xcodereleases.com">Xcode Releases</a> website.</p>
 <p>When updating Xcode, it is advisable to keep an older version for
 building the JDK. To use a specific version of Xcode you have multiple
 options:</p>
@@ -2017,10 +2015,18 @@ some directory names have spaces. Usually, it assumes those directories
 have <a
 href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name">short
 paths</a>. You can run <code>fsutil file setshortname</code> in
-<code>cmd</code> on certain directories, such as
-<code>Microsoft Visual Studio</code> or <code>Windows Kits</code>, to
-assign arbitrary short paths so <code>configure</code> can access
-them.</p>
+<code>cmd</code> on directories to assign arbitrary short paths so
+<code>configure</code> can access them. If the result says "Access
+denied", it may be that there are processes running in that directory;
+in this case, you can reboot Windows in safe mode and run the command on
+those directories again.</p>
+<p>The only directories required to have short paths are
+<code>Microsoft Visual Studio</code> and <code>Windows Kits</code>; the
+rest of the "contains space" warnings from <code>configure</code>, such
+as <code>IntelliJ IDEA</code>, can be ignored. You can choose any short
+name; once it is set, <code>configure</code>'s tools like
+<code>cygpath</code> can convert the directory with spaces to your
+chosen short name and pass it to the build system.</p>
 <h3 id="getting-help">Getting Help</h3>
 <p>If none of the suggestions in this document helps you, or if you find
 what you believe is a bug in the build system, please contact the Build

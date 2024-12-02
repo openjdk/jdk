@@ -22,10 +22,7 @@
  */
 
 
-import java.io.File;
 import java.nio.file.Path;
-import java.lang.management.*;
-import java.util.zip.CRC32;
 
 import bootreporter.*;
 import jdk.test.lib.helpers.ClassFileInstaller;
@@ -34,27 +31,24 @@ import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
- * @bug 6263319
+ * @bug 6263319 8334167
  * @summary test setNativeMethodPrefix
  * @requires ((vm.opt.StartFlightRecording == null) | (vm.opt.StartFlightRecording == false)) & ((vm.opt.FlightRecorder == null) | (vm.opt.FlightRecorder == false))
- * @modules java.management
- *          java.instrument
+ * @modules java.instrument
  * @library /test/lib
  * @build bootreporter.StringIdCallback bootreporter.StringIdCallbackReporter
  *        asmlib.Instrumentor NativeMethodPrefixAgent
  * @enablePreview
  * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.
- * @run driver/timeout=240 NativeMethodPrefixApp roleDriver
- * @comment The test uses a higher timeout to prevent test timeouts noted in JDK-6528548
+ * @run main/native NativeMethodPrefixApp roleDriver
  */
 public class NativeMethodPrefixApp implements StringIdCallback {
 
-    // This test is fragile like a golden file test.
-    // It assumes that a specific non-native library method will call a specific
-    // native method.  The below may need to be updated based on library changes.
-    static String goldenNativeMethodName = "getStartupTime";
-
+    // we expect this native method, which is part of this test's application,
+    // to be instrumented and invoked
+    static String goldenNativeMethodName = "fooBarNativeMethod";
     static boolean[] gotIt = {false, false, false};
+    private static final String testLibraryPath = System.getProperty("test.nativepath");
 
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
@@ -69,21 +63,19 @@ public class NativeMethodPrefixApp implements StringIdCallback {
             launchApp(agentJar);
         } else {
             System.err.println("running app");
+            System.loadLibrary("NativeMethodPrefix"); // load the native library
             new NativeMethodPrefixApp().run();
         }
     }
 
     private static Path createAgentJar() throws Exception {
-        final String testClassesDir = System.getProperty("test.classes");
         final Path agentJar = Path.of("NativeMethodPrefixAgent.jar");
         final String manifest = """
                 Manifest-Version: 1.0
                 Premain-Class: NativeMethodPrefixAgent
                 Can-Retransform-Classes: true
                 Can-Set-Native-Method-Prefix: true
-                """
-                + "Boot-Class-Path: " + testClassesDir.replace(File.separatorChar, '/') + "/"
-                + "\n";
+                """;
         System.out.println("Manifest is:\n" + manifest);
         // create the agent jar
         ClassFileInstaller.writeJar(agentJar.getFileName().toString(),
@@ -97,10 +89,7 @@ public class NativeMethodPrefixApp implements StringIdCallback {
         final OutputAnalyzer oa = ProcessTools.executeTestJava(
                 "--enable-preview", // due to usage of ClassFile API PreviewFeature in the agent
                 "-javaagent:" + agentJar.toString(),
-                // We disable CheckIntrinsic because the NativeMethodPrefixAgent modifies
-                // the native method names, which then causes a failure in the VM check
-                // for the presence of an intrinsic on a @IntrinsicCandidate native method.
-                "-XX:+UnlockDiagnosticVMOptions", "-XX:-CheckIntrinsics",
+                "-Djava.library.path=" + testLibraryPath,
                 NativeMethodPrefixApp.class.getName());
         oa.shouldHaveExitValue(0);
         // make available stdout/stderr in the logs, even in case of successful completion
@@ -110,14 +99,11 @@ public class NativeMethodPrefixApp implements StringIdCallback {
     private void run() throws Exception {
         StringIdCallbackReporter.registerCallback(this);
         System.err.println("start");
-
-        java.lang.reflect.Array.getLength(new short[5]);
-        RuntimeMXBean mxbean = ManagementFactory.getRuntimeMXBean();
-        System.err.println(mxbean.getVmVendor());
-        // Simply load a class containing an @IntrinsicCandidate on a native method
-        // to exercise the VM code which verifies the presence of the intrinsic
-        // implementation for that method.
-        System.err.println(new CRC32());
+        final long val = new Dummy().callSomeNativeMethod();
+        if (val != 42) {
+            throw new RuntimeException("unexpected return value " + val
+                    + " from native method, expected 42");
+        }
 
         NativeMethodPrefixAgent.checkErrors();
 
@@ -136,5 +122,14 @@ public class NativeMethodPrefixApp implements StringIdCallback {
         } else {
             System.err.println("Tracked #" + id + ": " + name);
         }
+    }
+
+    private static class Dummy {
+
+        private long callSomeNativeMethod() {
+            return fooBarNativeMethod();
+        }
+
+        private native long fooBarNativeMethod();
     }
 }

@@ -235,14 +235,16 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
       # Additional warnings that are not activated by -Wall and -Wextra
-      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare \
-          -Wunused-function -Wundef -Wunused-value -Wreturn-type \
-          -Wtrampolines"
+      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wreturn-type -Wsign-compare \
+          -Wtrampolines -Wundef -Wunused-const-variable=1 -Wunused-function \
+          -Wunused-result -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
-      DISABLED_WARNINGS="unused-parameter unused"
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
+      DISABLED_WARNINGS="unused-parameter"
       # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
@@ -259,7 +261,9 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
-      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter"
       ;;
   esac
   AC_SUBST(DISABLE_WARNING_PREFIX)
@@ -476,7 +480,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # Always enable optional macros for VM.
   ALWAYS_CFLAGS_JVM="-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS"
 
-  ###############################################################################
+  ##############################################################################
 
   # Adjust flags according to debug level.
   # Setup debug/release defines
@@ -502,15 +506,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     ALWAYS_DEFINES_JVM="-D_GNU_SOURCE"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # Access APIs for Windows 8 and above
-    # see https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
-    ALWAYS_DEFINES_JDK="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE -DWIN32 -DIAL"
-    ALWAYS_DEFINES_JVM="-DNOMINMAX -DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
-        -D_CRT_SECURE_NO_WARNINGS -D_CRT_NONSTDC_NO_DEPRECATE"
+    # _WIN32_WINNT=0x0602 means access APIs for Windows 8 and above. See
+    # https://docs.microsoft.com/en-us/cpp/porting/modifying-winver-and-win32-winnt?view=msvc-170
+    ALWAYS_DEFINES="-DWIN32_LEAN_AND_MEAN -D_WIN32_WINNT=0x0602 \
+        -D_CRT_DECLARE_NONSTDC_NAMES -D_CRT_NONSTDC_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS"
+    ALWAYS_DEFINES_JDK="$ALWAYS_DEFINES -DWIN32 -DIAL"
+    ALWAYS_DEFINES_JVM="$ALWAYS_DEFINES -DNOMINMAX"
   fi
 
-  ###############################################################################
+  ##############################################################################
   #
   #
   # CFLAGS BASIC
@@ -908,6 +912,36 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         IF_FALSE: [$2FDLIBM_CFLAGS=""])
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
+
+  # Check whether the compiler supports the Arm C Language Extensions (ACLE)
+  # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
+  # ACLE and this flag are required to build the aarch64 SVE related functions in
+  # libvectormath.
+  if test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      AC_LANG_PUSH(C)
+      OLD_CFLAGS="$CFLAGS"
+      CFLAGS="$CFLAGS -march=armv8-a+sve"
+      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
+          [
+            svint32_t r = svdup_n_s32(1);
+            return 0;
+          ])],
+          [
+            AC_MSG_RESULT([yes])
+            $2SVE_CFLAGS="-march=armv8-a+sve"
+          ],
+          [
+            AC_MSG_RESULT([no])
+            $2SVE_CFLAGS=""
+          ]
+      )
+      CFLAGS="$OLD_CFLAGS"
+      AC_LANG_POP(C)
+    fi
+  fi
+  AC_SUBST($2SVE_CFLAGS)
 ])
 
 # FLAGS_SETUP_GCC6_COMPILER_FLAGS([PREFIX])
@@ -932,15 +966,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
 
   if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${BRANCH_PROTECTION_FLAG}],
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_FLAG],
           IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
     fi
   fi
 
-  BRANCH_PROTECTION_CFLAGS=""
   UTIL_ARG_ENABLE(NAME: branch-protection, DEFAULT: false,
-      RESULT: USE_BRANCH_PROTECTION, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
+      RESULT: BRANCH_PROTECTION_ENABLED, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
       DESC: [enable branch protection when compiling C/C++],
-      IF_ENABLED: [ BRANCH_PROTECTION_CFLAGS=${BRANCH_PROTECTION_FLAG}])
-  AC_SUBST(BRANCH_PROTECTION_CFLAGS)
+      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_FLAG])
 ])

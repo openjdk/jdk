@@ -298,7 +298,7 @@ sun_jpeg_fill_input_buffer(j_decompress_ptr cinfo)
     ret = (*env)->CallIntMethod(env, src->hInputStream, InputStream_readID,
                                 src->hInputBuffer, 0, buflen);
     if (ret > buflen) ret = buflen;
-    if ((*env)->ExceptionOccurred(env) || !GET_ARRAYS(env, src)) {
+    if ((*env)->ExceptionCheck(env) || !GET_ARRAYS(env, src)) {
         cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
     }
     if (ret <= 0) {
@@ -334,7 +334,7 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     RELEASE_ARRAYS(env, src);
     ret = (*env)->CallIntMethod(env, src->hInputStream,
                                 InputStream_availableID);
-    if ((*env)->ExceptionOccurred(env) || !GET_ARRAYS(env, src)) {
+    if ((*env)->ExceptionCheck(env) || !GET_ARRAYS(env, src)) {
         cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
     }
     if (ret < 0 || (unsigned int)ret <= src->remaining_skip) {
@@ -359,7 +359,7 @@ sun_jpeg_fill_suspended_buffer(j_decompress_ptr cinfo)
     ret = (*env)->CallIntMethod(env, src->hInputStream, InputStream_readID,
                                 src->hInputBuffer, offset, buflen);
     if ((ret > 0) && ((unsigned int)ret > buflen)) ret = (int)buflen;
-    if ((*env)->ExceptionOccurred(env) || !GET_ARRAYS(env, src)) {
+    if ((*env)->ExceptionCheck(env) || !GET_ARRAYS(env, src)) {
         cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
     }
     if (ret <= 0) {
@@ -439,7 +439,7 @@ sun_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
                                     InputStream_readID,
                                     src->hInputBuffer, 0, buflen);
         if (ret > buflen) ret = buflen;
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             cinfo->err->error_exit((struct jpeg_common_struct *) cinfo);
         }
         if (ret < 0) {
@@ -538,7 +538,7 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
      */
     jpeg_destroy_decompress(&cinfo);
     RELEASE_ARRAYS(env, &jsrc);
-    if (!(*env)->ExceptionOccurred(env)) {
+    if (!(*env)->ExceptionCheck(env)) {
         char buffer[JMSG_LENGTH_MAX];
         (*cinfo.err->format_message) ((struct jpeg_common_struct *) &cinfo,
                                       buffer);
@@ -584,7 +584,7 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
   ret = (*env)->CallBooleanMethod(env, this, sendHeaderInfoID,
                                   cinfo.image_width, cinfo.image_height,
                                   grayscale, hasalpha, buffered_mode);
-  if ((*env)->ExceptionOccurred(env) || !ret) {
+  if ((*env)->ExceptionCheck(env) || !ret) {
     /* No more interest in this image... */
     jpeg_destroy_decompress(&cinfo);
     return;
@@ -694,7 +694,7 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
                                               jsrc.hOutputBuffer,
                                               cinfo.output_scanline - 1);
           }
-          if ((*env)->ExceptionOccurred(env) || !ret ||
+          if ((*env)->ExceptionCheck(env) || !ret ||
               !GET_ARRAYS(env, &jsrc)) {
               /* No more interest in this image... */
               jpeg_destroy_decompress(&cinfo);

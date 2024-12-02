@@ -290,6 +290,12 @@ final class CompilerToVM {
     native HotSpotResolvedJavaType lookupJClass(long jclass);
 
     /**
+     * Gets the {@code jobject} value wrapped by {@code peerObject}.
+     * Must not be called if {@link Services#IS_IN_NATIVE_IMAGE} is {@code false}.
+     */
+    native long getJObjectValue(HotSpotObjectConstantImpl peerObject);
+
+    /**
      * Resolves the entry at index {@code cpi} in {@code constantPool} to an interned String object.
      *
      * The behavior of this method is undefined if {@code cpi} does not denote an
@@ -1508,4 +1514,18 @@ final class CompilerToVM {
     }
 
     native void getOopMapAt(HotSpotResolvedJavaMethodImpl method, long methodPointer, int bci, long[] oopMap);
+
+    /**
+     * If the current thread is a CompilerThread associated with a JVMCI compiler where
+     * newState != CompilerThread::_can_call_java, then _can_call_java is set to newState.
+     *
+     * @returns false if no change was made, otherwise true
+     */
+    native boolean updateCompilerThreadCanCallJava(boolean newState);
+
+    /**
+     * Returns the current {@code CompileBroker} compilation activity mode which is one of:
+     * {@code stop_compilation = 0}, {@code run_compilation = 1} or {@code shutdown_compilation = 2}
+     */
+    native int getCompilationActivityMode();
 }

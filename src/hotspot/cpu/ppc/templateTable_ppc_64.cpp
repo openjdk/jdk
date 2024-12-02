@@ -2130,8 +2130,8 @@ void TemplateTable::_return(TosState state) {
 
     // Load klass of this obj.
     __ load_klass(Rklass, R17_tos);
-    __ lwz(Rklass_flags, in_bytes(Klass::access_flags_offset()), Rklass);
-    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ lbz(Rklass_flags, in_bytes(Klass::misc_flags_offset()), Rklass);
+    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(KlassFlags::_misc_has_finalizer));
     __ bfalse(CCR0, Lskip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R17_tos /* obj */);
@@ -3840,8 +3840,9 @@ void TemplateTable::_new() {
       // Init1: Zero out newly allocated memory.
       // Initialize remaining object fields.
       Register Rbase = Rtags;
-      __ addi(Rinstance_size, Rinstance_size, 7 - (int)sizeof(oopDesc));
-      __ addi(Rbase, RallocatedObject, sizeof(oopDesc));
+      int header_size = oopDesc::header_size() * HeapWordSize;
+      __ addi(Rinstance_size, Rinstance_size, 7 - header_size);
+      __ addi(Rbase, RallocatedObject, header_size);
       __ srdi(Rinstance_size, Rinstance_size, 3);
 
       // Clear out object skipping header. Takes also care of the zero length case.
@@ -3851,18 +3852,22 @@ void TemplateTable::_new() {
     // --------------------------------------------------------------------------
     // Init2: Initialize the header: mark, klass
     // Init mark.
-    __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
-    __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
-
-    // Init klass.
-    __ store_klass_gap(RallocatedObject);
-    __ store_klass(RallocatedObject, RinstanceKlass, Rscratch); // klass (last for cms)
+    if (UseCompactObjectHeaders) {
+      __ ld(Rscratch, in_bytes(Klass::prototype_header_offset()), RinstanceKlass);
+      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+    } else {
+      __ load_const_optimized(Rscratch, markWord::prototype().value(), R0);
+      __ std(Rscratch, oopDesc::mark_offset_in_bytes(), RallocatedObject);
+      __ store_klass_gap(RallocatedObject);
+      __ store_klass(RallocatedObject, RinstanceKlass, Rscratch);
+    }
 
     // Check and trigger dtrace event.
-    SkipIfEqualZero::skip_to_label_if_equal_zero(_masm, Rscratch, &DTraceAllocProbes, Ldone);
-    __ push(atos);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
-    __ pop(atos);
+    if (DTraceAllocProbes) {
+      __ push(atos);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
+      __ pop(atos);
+    }
 
     __ b(Ldone);
   }

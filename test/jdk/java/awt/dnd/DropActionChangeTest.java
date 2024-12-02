@@ -21,17 +21,17 @@
  * questions.
  */
 
-import javax.swing.JFrame;
 import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.dnd.DnDConstants;
-import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragSource;
 import java.awt.dnd.DragSourceAdapter;
@@ -43,9 +43,13 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.AWTEventListener;
-import java.awt.event.MouseEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 
 /*
   @test
@@ -56,28 +60,24 @@ import java.awt.event.KeyEvent;
 */
 
 public class DropActionChangeTest extends JFrame implements AWTEventListener {
-    Robot robot;
-    Frame frame;
+    private static Robot robot;
+    private static Frame frame;
+    private static volatile DropActionChangeTest test;
     Panel panel;
     private volatile boolean failed;
     private volatile boolean dropEnd;
     private volatile Component clickedComponent;
     private final Object LOCK = new Object();
-    static final int FRAME_ACTIVATION_TIMEOUT = 3000;
-    static final int DROP_COMPLETION_TIMEOUT = 5000;
+    static final int DROP_COMPLETION_TIMEOUT = 8000;
     static final int MOUSE_RELEASE_TIMEOUT = 2000;
 
     public static void main(String[] args) throws Exception {
-        DropActionChangeTest test = new DropActionChangeTest();
+        EventQueue.invokeAndWait(() -> test = new DropActionChangeTest());
         EventQueue.invokeAndWait(test::init);
         try {
             test.start();
         } finally {
-            EventQueue.invokeAndWait(() -> {
-                if (test.frame != null) {
-                    test.frame.dispose();
-                }
-            });
+            EventQueue.invokeAndWait(DropActionChangeTest::disposeFrame);
         }
     }
 
@@ -97,10 +97,12 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
 
         final DragSourceListener dsl = new DragSourceAdapter() {
             public void dragDropEnd(DragSourceDropEvent e) {
-                System.err.println("DragSourseListener.dragDropEnd(): " +
+                System.err.println("DragSourceListener.dragDropEnd(): " +
                         "drop action=" + e.getDropAction());
                 if (e.getDropAction() != DnDConstants.ACTION_MOVE) {
-                    System.err.println("FAILURE: wrong drop action:" + e.getDropAction());
+                    System.err.println("FAILURE: wrong drop action:"
+                                       + e.getDropAction() + ", It should be "
+                                       + DnDConstants.ACTION_MOVE);
                     failed = true;
                 }
                 synchronized (LOCK) {
@@ -110,11 +112,7 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
             }
         };
 
-        DragGestureListener dgl = new DragGestureListener() {
-            public void dragGestureRecognized(DragGestureEvent dge) {
-                dge.startDrag(null, new StringSelection("test"), dsl);
-            }
-        };
+        DragGestureListener dgl = dge -> dge.startDrag(null, new StringSelection("test"), dsl);
 
         new DragSource().createDefaultDragGestureRecognizer(panel,
                 DnDConstants.ACTION_COPY_OR_MOVE, dgl);
@@ -142,11 +140,25 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
         frame.setVisible(true);
     }
 
+    private static void disposeFrame() {
+        if (frame != null) {
+            frame.dispose();
+        }
+        if (test != null) {
+            test.dispose();
+        }
+    }
+
     public void start() {
         try {
             robot = new Robot();
+            robot.setAutoDelay(100);
+            robot.waitForIdle();
+            robot.delay(500);
 
-            Point startPoint = panel.getLocationOnScreen();
+            AtomicReference<Point> startPointRef = new AtomicReference<>();
+            EventQueue.invokeAndWait(()-> startPointRef.set(panel.getLocationOnScreen()));
+            Point startPoint = startPointRef.get();
             startPoint.translate(50, 50);
 
             if (!pointInComponent(robot, startPoint, panel)) {
@@ -163,15 +175,18 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
             synchronized (LOCK) {
                 robot.keyPress(KeyEvent.VK_CONTROL);
                 robot.mouseMove(startPoint.x, startPoint.y);
-                robot.mousePress(InputEvent.BUTTON1_MASK);
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 Util.doDrag(robot, startPoint, medPoint);
+                robot.delay(500);
                 robot.keyRelease(KeyEvent.VK_CONTROL);
                 Util.doDrag(robot, medPoint, endPoint);
-                robot.mouseRelease(InputEvent.BUTTON1_MASK);
+                robot.delay(500);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 LOCK.wait(DROP_COMPLETION_TIMEOUT);
             }
             if (!dropEnd) {
-                System.err.println("DragSourseListener.dragDropEnd() was not called, returning");
+                captureScreen("No_Drop_End_");
+                System.err.println("DragSourceListener.dragDropEnd() was not called, returning");
                 return;
             }
         } catch (Throwable e) {
@@ -179,10 +194,22 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
         }
 
         if (failed) {
-            throw new RuntimeException("wrong drop action!");
+            captureScreen("Wrong_Drop_Action_");
+            throw new RuntimeException("Wrong drop action!");
         }
 
-        System.err.println("test passed!");
+        System.err.println("Test passed!");
+    }
+
+    private static void captureScreen(String str) {
+        try {
+            final Rectangle screenBounds = new Rectangle(
+                    Toolkit.getDefaultToolkit().getScreenSize());
+            ImageIO.write(robot.createScreenCapture(screenBounds), "png",
+                          new File(str + "Failure_Screen.png"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void reset() {
@@ -203,9 +230,9 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
         robot.waitForIdle();
         reset();
         robot.mouseMove(p.x, p.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         synchronized (LOCK) {
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             LOCK.wait(MOUSE_RELEASE_TIMEOUT);
         }
 
@@ -227,15 +254,11 @@ class Util {
     }
 
     public static void doDrag(Robot robot, Point startPoint, Point endPoint) {
+       robot.waitForIdle();
        for (Point p = new Point(startPoint); !p.equals(endPoint);
                 p.translate(Util.sign(endPoint.x - p.x),
                             Util.sign(endPoint.y - p.y))) {
            robot.mouseMove(p.x, p.y);
-           try {
-               Thread.sleep(100);
-           } catch (InterruptedException e) {
-             e.printStackTrace();
-           }
        }
     }
 }
