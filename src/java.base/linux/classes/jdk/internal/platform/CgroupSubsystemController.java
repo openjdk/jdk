@@ -64,10 +64,10 @@ public interface CgroupSubsystemController {
         if (controller == null) return null;
 
         Path filePath = Path.of(controller.path(), param);
-        try (BufferedReader bufferedReader = Files.newBufferedReader(filePath)) {
-            String line = bufferedReader.readLine();
-            return line;
-        } catch (IOException e) {
+        try (Stream<String> lines = Files.lines(filePath)) {
+            Optional<String> firstLine = lines.findFirst();
+            return firstLine.orElse(null);
+        } catch (UncheckedIOException | IOException e) {
             return null;
         }
     }
