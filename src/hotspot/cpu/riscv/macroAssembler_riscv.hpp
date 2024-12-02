@@ -1306,6 +1306,11 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper);
   void update_byte_crc32(Register crc, Register val, Register table);
+
+#ifdef COMPILER2
+  void vector_update_crc32(Register crc, Register buf, Register len,
+                           Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
+                           Register table0, Register table3);
   void kernel_crc32_vclmul_fold(Register crc, Register buf, Register len,
               Register table0, Register table1, Register table2, Register table3,
               Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
@@ -1324,11 +1329,6 @@ public:
                       Register tmp);
   void kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Register buf, Register len,
                                               Register vclmul_table, Register tmp1, Register tmp2);
-
-#ifdef COMPILER2
-  void vector_update_crc32(Register crc, Register buf, Register len,
-                           Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
-                           Register table0, Register table3);
 
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
