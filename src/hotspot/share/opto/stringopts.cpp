@@ -170,6 +170,9 @@ class StringConcat : public ResourceObj {
   int mode(int i) {
     return _mode.at(i);
   }
+  bool has_control(Node* ctrl) {
+    return _control.contains(ctrl);
+  }
   void add_control(Node* ctrl) {
     assert(!_control.contains(ctrl), "only push once");
     _control.push(ctrl);
@@ -456,6 +459,64 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   StringConcat* sc = new StringConcat(this, call);
   AllocateNode* alloc = nullptr;
 
+  enum class CheckAppendResult { GoodAppend,
+                                 NotAppend,
+                                 GiveUp };
+
+  auto check_append = [&](CallStaticJavaNode* cnode) -> CheckAppendResult {
+    if (cnode->method() != nullptr && !cnode->method()->is_static() &&
+        cnode->method()->holder() == m->holder() &&
+        cnode->method()->name() == ciSymbols::append_name() &&
+        (cnode->method()->signature()->as_symbol() == string_sig ||
+         cnode->method()->signature()->as_symbol() == char_sig ||
+         cnode->method()->signature()->as_symbol() == int_sig)) {
+      if (sc->has_control(cnode)) {
+        return CheckAppendResult::GoodAppend;
+      }
+      sc->add_control(cnode);
+      Node* arg = cnode->in(TypeFunc::Parms + 1);
+      if (arg == nullptr || arg->is_top()) {
+#ifndef PRODUCT
+        if (PrintOptimizeStringConcat) {
+          tty->print("giving up because the call is effectively dead");
+          cnode->jvms()->dump_spec(tty);
+          tty->cr();
+        }
+#endif
+        return CheckAppendResult::GiveUp;
+      }
+
+      if (cnode->method()->signature()->as_symbol() == int_sig) {
+        sc->push_int(arg);
+      } else if (cnode->method()->signature()->as_symbol() == char_sig) {
+        sc->push_char(arg);
+      } else if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
+        CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
+        if (csj->method() != nullptr &&
+            csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
+            arg->outcnt() == 1) {
+          // _control is the list of StringBuilder calls nodes which
+          // will be replaced by new String code after this optimization.
+          // Integer::toString() call is not part of StringBuilder calls
+          // chain. It could be eliminated only if its result is used
+          // only by this SB calls chain.
+          // Another limitation: it should be used only once because
+          // it is unknown that it is used only by this SB calls chain
+          // until all related SB calls nodes are collected.
+          assert(arg->unique_out() == cnode, "sanity");
+          sc->add_control(csj);
+          sc->push_int(csj->in(TypeFunc::Parms));
+        } else {
+          sc->push_string(arg);
+        }
+      } else {
+        sc->push_string(arg);
+      }
+      return CheckAppendResult::GoodAppend;
+    }
+    return CheckAppendResult::NotAppend;
+  };
+
   // possible opportunity for StringBuilder fusion
   CallStaticJavaNode* cnode = call;
   while (cnode) {
@@ -543,7 +604,8 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             }
 #endif
           }
-          break;
+        } else if (use != nullptr && check_append(use) == CheckAppendResult::GiveUp) {
+          return nullptr;
         }
       }
       if (constructor == nullptr) {
@@ -569,62 +631,24 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
       } else {
         return nullptr;
       }
-    } else if (cnode->method() == nullptr) {
-      break;
-    } else if (!cnode->method()->is_static() &&
-               cnode->method()->holder() == m->holder() &&
-               cnode->method()->name() == ciSymbols::append_name() &&
-               (cnode->method()->signature()->as_symbol() == string_sig ||
-                cnode->method()->signature()->as_symbol() == char_sig ||
-                cnode->method()->signature()->as_symbol() == int_sig)) {
-      sc->add_control(cnode);
-      Node* arg = cnode->in(TypeFunc::Parms + 1);
-      if (arg == nullptr || arg->is_top()) {
+    } else {
+      CheckAppendResult result = check_append(cnode);
+
+      if (result == CheckAppendResult::GiveUp) {
+        break;
+      } else if (result == CheckAppendResult::NotAppend) {
+        // some unhandled signature
 #ifndef PRODUCT
         if (PrintOptimizeStringConcat) {
-          tty->print("giving up because the call is effectively dead");
-          cnode->jvms()->dump_spec(tty); tty->cr();
+          tty->print("giving up because encountered unexpected signature ");
+          cnode->tf()->dump();
+          tty->cr();
+          cnode->in(TypeFunc::Parms + 1)->dump();
         }
 #endif
         break;
       }
-      if (cnode->method()->signature()->as_symbol() == int_sig) {
-        sc->push_int(arg);
-      } else if (cnode->method()->signature()->as_symbol() == char_sig) {
-        sc->push_char(arg);
-      } else {
-        if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
-          CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
-          if (csj->method() != nullptr &&
-              csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
-              arg->outcnt() == 1) {
-            // _control is the list of StringBuilder calls nodes which
-            // will be replaced by new String code after this optimization.
-            // Integer::toString() call is not part of StringBuilder calls
-            // chain. It could be eliminated only if its result is used
-            // only by this SB calls chain.
-            // Another limitation: it should be used only once because
-            // it is unknown that it is used only by this SB calls chain
-            // until all related SB calls nodes are collected.
-            assert(arg->unique_out() == cnode, "sanity");
-            sc->add_control(csj);
-            sc->push_int(csj->in(TypeFunc::Parms));
-            continue;
-          }
-        }
-        sc->push_string(arg);
-      }
-      continue;
-    } else {
-      // some unhandled signature
-#ifndef PRODUCT
-      if (PrintOptimizeStringConcat) {
-        tty->print("giving up because encountered unexpected signature ");
-        cnode->tf()->dump(); tty->cr();
-        cnode->in(TypeFunc::Parms + 1)->dump();
-      }
-#endif
-      break;
+      // else: it was an append yay!
     }
   }
   return nullptr;
