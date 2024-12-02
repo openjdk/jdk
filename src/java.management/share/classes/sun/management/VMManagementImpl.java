@@ -246,7 +246,7 @@ class VMManagementImpl implements VMManagement {
         }
 
         // construct PerfInstrumentation object
-        Perf perf =  Perf.getPerf();
+        Perf perf = Perf.getPerf();
         try {
             ByteBuffer bb = perf.attach(0);
             if (bb.capacity() == 0) {
