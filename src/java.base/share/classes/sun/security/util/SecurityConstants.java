@@ -58,12 +58,8 @@ public final class SecurityConstants {
 
     // Permission constants used in the various checkPermission() calls in JDK.
 
-    // java.lang.Class, java.net.URLConnection, java.security.AllPermission
+    // java.net.URLConnection, java.security.AllPermission
     public static final AllPermission ALL_PERMISSION = new AllPermission();
-
-    // com.sun.jndi.ldap.LdapDnsProviderService
-    public static final RuntimePermission GET_CLASSLOADER_PERMISSION =
-        new RuntimePermission("getClassLoader");
 
     public static final String PROVIDER_VER =
         System.getProperty("java.specification.version");
