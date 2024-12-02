@@ -763,6 +763,9 @@ class os: AllStatic {
   // Unload library
   static void  dll_unload(void *lib);
 
+  // Lookup the named function. This is used by the static JDK.
+  static void* lookup_function(const char* name);
+
   // Callback for loaded module information
   // Input parameters:
   //    char*     module_file_name,

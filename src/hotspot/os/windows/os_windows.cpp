@@ -1401,6 +1401,12 @@ void* os::dll_lookup(void *lib, const char *name) {
   return ret;
 }
 
+void* os::lookup_function(const char* name) {
+  // This is needed only for static builds which are not supported on Windows
+  ShouldNotReachHere();
+  return nullptr; // Satisfy compiler
+}
+
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
 //  * dirent_md.c       1.15 00/02/02
 //
