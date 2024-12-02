@@ -1658,7 +1658,7 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
     return false;
   }
 
-  // Replace exit test nodes. Need to revert changes this still doesn't make it a counted loop.
+  // Replace exit test nodes. Need to revert changes if this still doesn't make it a counted loop.
   Node* new_incr = incr->in(1);
 
   // Optimistically transform "(long) i < long_limit" to "i < (int) long_limit".
