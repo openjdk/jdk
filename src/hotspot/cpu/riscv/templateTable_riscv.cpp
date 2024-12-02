@@ -658,8 +658,12 @@ void TemplateTable::aload() {
 }
 
 void TemplateTable::locals_index_wide(Register reg) {
-  __ lhu(reg, at_bcp(2));
-  __ revb_h_h_u(reg, reg); // reverse bytes in half-word and zero-extend
+  assert_different_registers(reg, t1);
+  // Convert the 16-bit value into native byte-ordering and zero-extend
+  __ lbu(reg, at_bcp(2));
+  __ lbu(t1, at_bcp(3));
+  __ slli(reg, reg, 8);
+  __ orr(reg, reg, t1);
   __ neg(reg, reg);
 }
 
@@ -671,8 +675,12 @@ void TemplateTable::wide_iload() {
 
 void TemplateTable::wide_lload() {
   transition(vtos, ltos);
-  __ lhu(x11, at_bcp(2));
-  __ revb_h_h_u(x11, x11); // reverse bytes in half-word and zero-extend
+  // Convert the 16-bit value into native byte-ordering and zero-extend
+  __ lbu(x11, at_bcp(2));
+  __ lbu(t1, at_bcp(3));
+  __ slli(x11, x11, 8);
+  __ orr(x11, x11, t1);
+
   __ slli(x11, x11, LogBytesPerWord);
   __ sub(x11, xlocals, x11);
   __ ld(x10, Address(x11, Interpreter::local_offset_in_bytes(1)));
@@ -686,8 +694,12 @@ void TemplateTable::wide_fload() {
 
 void TemplateTable::wide_dload() {
   transition(vtos, dtos);
-  __ lhu(x11, at_bcp(2));
-  __ revb_h_h_u(x11, x11); // reverse bytes in half-word and zero-extend
+  // Convert the 16-bit value into native byte-ordering and zero-extend
+  __ lbu(x11, at_bcp(2));
+  __ lbu(t1, at_bcp(3));
+  __ slli(x11, x11, 8);
+  __ orr(x11, x11, t1);
+
   __ slli(x11, x11, LogBytesPerWord);
   __ sub(x11, xlocals, x11);
   __ fld(f10, Address(x11, Interpreter::local_offset_in_bytes(1)));
@@ -1471,12 +1483,14 @@ void TemplateTable::iinc() {
 
 void TemplateTable::wide_iinc() {
   transition(vtos, vtos);
-  __ lwu(x11, at_bcp(2)); // get constant and index
-  __ revb_h_w_u(x11, x11); // reverse bytes in half-word (32bit) and zero-extend
-  __ zero_extend(x12, x11, 16);
-  __ neg(x12, x12);
-  __ slli(x11, x11, 32);
-  __ srai(x11, x11, 48);
+  // get constant
+  // Convert the 16-bit value into native byte-ordering and sign-extend
+  __ lb(x11, at_bcp(4));
+  __ lbu(t1, at_bcp(5));
+  __ slli(x11, x11, 8);
+  __ orr(x11, x11, t1);
+
+  locals_index_wide(x12);
   __ ld(x10, iaddress(x12, t0, _masm));
   __ addw(x10, x10, x11);
   __ sd(x10, iaddress(x12, t0, _masm));
@@ -1625,10 +1639,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ lb(x12, at_bcp(1));
     __ lbu(t1, at_bcp(2));
     __ slli(x12, x12, 8);
-    __ add(x12, x12, t1);
+    __ orr(x12, x12, t1);
   } else {
     __ lwu(x12, at_bcp(1));
-    __ revb_w(x12, x12);
+    __ revbw(x12, x12);
   }
 
   // Handle all the JSR stuff here, then exit.
@@ -1893,8 +1907,8 @@ void TemplateTable::tableswitch() {
   // load lo & hi
   __ lwu(x12, Address(x11, BytesPerInt));
   __ lwu(x13, Address(x11, 2 * BytesPerInt));
-  __ revb_w(x12, x12);
-  __ revb_w(x13, x13);
+  __ revbw(x12, x12);
+  __ revbw(x13, x13);
   // check against lo & hi
   __ blt(x10, x12, default_case);
   __ bgt(x10, x13, default_case);
@@ -1905,7 +1919,7 @@ void TemplateTable::tableswitch() {
   __ profile_switch_case(x10, x11, x12);
   // continue execution
   __ bind(continue_execution);
-  __ revb_w(x13, x13);
+  __ revbw(x13, x13);
   __ add(xbcp, xbcp, x13);
   __ load_unsigned_byte(t0, Address(xbcp));
   __ dispatch_only(vtos, /*generate_poll*/true);
@@ -1925,7 +1939,7 @@ void TemplateTable::fast_linearswitch() {
   transition(itos, vtos);
   Label loop_entry, loop, found, continue_execution;
   // bswap x10 so we can avoid bswapping the table entries
-  __ revb_w(x10, x10);
+  __ revbw(x10, x10);
   // align xbcp
   __ la(x9, at_bcp(BytesPerInt)); // btw: should be able to get rid of
                                     // this instruction (change offsets
@@ -1936,7 +1950,7 @@ void TemplateTable::fast_linearswitch() {
   // Convert the 32-bit npairs (number of pairs) into native byte-ordering
   // We can use sign-extension here because npairs must be greater than or
   // equal to 0 per JVM spec on 'lookupswitch' bytecode.
-  __ revb_w(x11, x11);
+  __ revbw(x11, x11);
   __ j(loop_entry);
   // table search
   __ bind(loop);
@@ -1957,7 +1971,7 @@ void TemplateTable::fast_linearswitch() {
   __ profile_switch_case(x11, x10, x9);
   // continue execution
   __ bind(continue_execution);
-  __ revb_w(x13, x13);
+  __ revbw(x13, x13);
   __ add(xbcp, xbcp, x13);
   __ lbu(t0, Address(xbcp, 0));
   __ dispatch_only(vtos, /*generate_poll*/true);
@@ -2012,7 +2026,7 @@ void TemplateTable::fast_binaryswitch() {
   // Convert the 32-bit npairs (number of pairs) into native byte-ordering
   // We can use sign-extension here because npairs must be greater than or
   // equal to 0 per JVM spec on 'lookupswitch' bytecode.
-  __ revb_w(j, j);
+  __ revbw(j, j);
 
   // And start
   Label entry;
@@ -2030,7 +2044,7 @@ void TemplateTable::fast_binaryswitch() {
     // Convert array[h].match to native byte-ordering before compare
     __ shadd(temp, h, array, temp, 3);
     __ lwu(temp, Address(temp, 0));
-    __ revb_w(temp, temp);
+    __ revbw(temp, temp);
 
     Label L_done, L_greater;
     __ bge(key, temp, L_greater);
@@ -2053,14 +2067,14 @@ void TemplateTable::fast_binaryswitch() {
   // Convert array[i].match to native byte-ordering before compare
   __ shadd(temp, i, array, temp, 3);
   __ lwu(temp, Address(temp, 0));
-  __ revb_w(temp, temp);
+  __ revbw(temp, temp);
   __ bne(key, temp, default_case);
 
   // entry found -> j = offset
   __ shadd(temp, i, array, temp, 3);
   __ lwu(j, Address(temp, BytesPerInt));
   __ profile_switch_case(i, key, array);
-  __ revb_w(j, j);
+  __ revbw(j, j);
 
   __ add(temp, xbcp, j);
   __ load_unsigned_byte(t0, Address(temp, 0));
@@ -2073,7 +2087,7 @@ void TemplateTable::fast_binaryswitch() {
   __ bind(default_case);
   __ profile_switch_default(i);
   __ lwu(j, Address(array, -2 * BytesPerInt));
-  __ revb_w(j, j);
+  __ revbw(j, j);
 
   __ add(temp, xbcp, j);
   __ load_unsigned_byte(t0, Address(temp, 0));

@@ -35,8 +35,6 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintStream;
 
-import sun.security.action.GetPropertyAction;
-
 /**
  * A NetHooks provider that converts sockets from the TCP to SDP protocol prior
  * to binding or connecting.
@@ -54,7 +52,7 @@ public class SdpProvider extends NetHooks.Provider {
     private PrintStream log;
 
     public SdpProvider() {
-        Properties props = GetPropertyAction.privilegedGetProperties();
+        Properties props = System.getProperties();
         // if this property is not defined then there is nothing to do.
         String file = props.getProperty("com.sun.sdp.conf");
         if (file == null) {
