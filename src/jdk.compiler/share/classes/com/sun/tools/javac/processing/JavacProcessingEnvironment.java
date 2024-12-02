@@ -30,9 +30,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
@@ -62,7 +59,6 @@ import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.comp.Modules;
-import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.model.JavacElements;
@@ -348,45 +344,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     /**
-     * Returns an empty processor iterator if no processors are on the
-     * relevant path, otherwise if processors are present, logs an
-     * error.  Called when a service loader is unavailable for some
-     * reason, for example, because a service loader class cannot be found.
-     *
-     * @param key The resource key to use to log an error message
-     * @param e   If non-null, pass this exception to Abort
-     */
-    private Iterator<Processor> handleServiceLoaderUnavailability(String key, Exception e) {
-        if (fileManager instanceof JavacFileManager standardFileManager) {
-            Iterable<? extends Path> workingPath = fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH)
-                ? standardFileManager.getLocationAsPaths(ANNOTATION_PROCESSOR_PATH)
-                : standardFileManager.getLocationAsPaths(CLASS_PATH);
-
-            if (needClassLoader(options.get(Option.PROCESSOR), workingPath) )
-                handleException(key, e);
-
-        } else {
-            handleException(key, e);
-        }
-
-        return Collections.emptyIterator();
-    }
-
-    /**
-     * Handle a exception thrown during initializing the
-     * Processor iterator.
-     */
-    private void handleException(String key, Exception e) {
-        if (e != null) {
-            log.error(key, e.getLocalizedMessage());
-            throw new Abort(e);
-        } else {
-            log.error(key);
-            throw new Abort();
-        }
-    }
-
-    /**
      * Use a service loader appropriate for the platform to provide an
      * iterator over annotations processors; fails if a loader is
      * needed but unavailable.
@@ -399,13 +356,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         ServiceIterator(ClassLoader classLoader, Log log) {
             this.log = log;
             try {
-                try {
-                    loader = ServiceLoader.load(Processor.class, classLoader);
-                    this.iterator = loader.iterator();
-                } catch (Exception e) {
-                    // Fail softly if a loader is not actually needed.
-                    this.iterator = handleServiceLoaderUnavailability("proc.no.service", null);
-                }
+                loader = ServiceLoader.load(Processor.class, classLoader);
+                this.iterator = loader.iterator();
             } catch (Throwable t) {
                 log.error(Errors.ProcServiceProblem);
                 throw new Abort(t);
@@ -1528,32 +1480,6 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
 
     private boolean isModuleInfo(JavaFileObject fo, JavaFileObject.Kind kind) {
         return fo.isNameCompatible("module-info", kind);
-    }
-
-    /*
-     * Called retroactively to determine if a class loader was required,
-     * after we have failed to create one.
-     */
-    private boolean needClassLoader(String procNames, Iterable<? extends Path> workingpath) {
-        if (procNames != null)
-            return true;
-
-        URL[] urls = new URL[1];
-        for(Path pathElement : workingpath) {
-            try {
-                urls[0] = pathElement.toUri().toURL();
-                if (ServiceProxy.hasService(Processor.class, urls))
-                    return true;
-            } catch (MalformedURLException ex) {
-                throw new AssertionError(ex);
-            }
-            catch (ServiceProxy.ServiceConfigurationError e) {
-                log.error(Errors.ProcBadConfigFile(e.getLocalizedMessage()));
-                return true;
-            }
-        }
-
-        return false;
     }
 
     class ImplicitCompleter implements Completer {
