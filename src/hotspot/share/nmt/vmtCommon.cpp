@@ -130,7 +130,7 @@ public:
           committed_size = stack_bottom + stack_size - committed_start;
         }
         VirtualMemoryTracker::Instance::add_committed_region(committed_start, committed_size, ncs);
-        log_warning(cds)("st start: " INTPTR_FORMAT " size: " SIZE_FORMAT, p2i(committed_start), committed_size);
+        //log_warning(cds)("st start: " INTPTR_FORMAT " size: " SIZE_FORMAT, p2i(committed_start), committed_size);
         DEBUG_ONLY(found_stack = true;)
       }
 #ifdef ASSERT
