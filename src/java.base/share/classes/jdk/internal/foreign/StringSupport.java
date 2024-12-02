@@ -143,7 +143,7 @@ public final class StringSupport {
             if (mightContainZeroByte(val)) {
                 for (int j = 0; j < Long.BYTES; j++) {
                     if (SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j) == 0) {
-                        return requireWithinArraySize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
                     }
                 }
             }
@@ -152,7 +152,7 @@ public final class StringSupport {
         for (; offset < toOffset; offset++) {
             byte val = SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset);
             if (val == 0) {
-                return requireWithinArraySize(offset - fromOffset, segment, fromOffset, toOffset);
+                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
             }
         }
         throw nullNotFound(segment, fromOffset, toOffset);
@@ -176,7 +176,7 @@ public final class StringSupport {
             if (mightContainZeroShort(val)) {
                 for (int j = 0; j < Long.BYTES; j += Short.BYTES) {
                     if (SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
-                        return requireWithinArraySize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
                     }
                 }
             }
@@ -187,7 +187,7 @@ public final class StringSupport {
         for (; offset < endScan; offset += Short.BYTES) {
             short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
             if (val == 0) {
-                return requireWithinArraySize(offset - fromOffset, segment, fromOffset, toOffset);
+                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
             }
         }
         throw nullNotFound(segment, fromOffset, toOffset);
@@ -211,7 +211,7 @@ public final class StringSupport {
             if (mightContainZeroShort(val)) {
                 for (int j = 0; j < Long.BYTES; j += Integer.BYTES) {
                     if (SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset + j, !Architecture.isLittleEndian()) == 0) {
-                        return requireWithinArraySize(offset + j - fromOffset, segment, fromOffset, toOffset);
+                        return requireWithinStringSize(offset + j - fromOffset, segment, fromOffset, toOffset);
                     }
                 }
             }
@@ -222,7 +222,7 @@ public final class StringSupport {
         for (; offset < endScan; offset += Integer.BYTES) {
             int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + offset, !Architecture.isLittleEndian());
             if (val == 0) {
-                return requireWithinArraySize(offset - fromOffset, segment, fromOffset, toOffset);
+                return requireWithinStringSize(offset - fromOffset, segment, fromOffset, toOffset);
             }
         }
         throw nullNotFound(segment, fromOffset, toOffset);
@@ -254,10 +254,10 @@ public final class StringSupport {
     }
 
 
-    private static int requireWithinArraySize(long size,
-                                              AbstractMemorySegmentImpl segment,
-                                              long fromOffset,
-                                              long toOffset) {
+    private static int requireWithinStringSize(long size,
+                                               AbstractMemorySegmentImpl segment,
+                                               long fromOffset,
+                                               long toOffset) {
         if (size > ArraysSupport.SOFT_MAX_ARRAY_LENGTH) {
             throw stringTooLarge(segment, fromOffset, toOffset);
         }
