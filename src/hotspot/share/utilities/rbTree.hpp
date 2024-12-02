@@ -402,7 +402,7 @@ private:
 
           distant_nephew = sibling;
           sibling = close_nephew;
-          
+
           distant_nephew->color_red();
           sibling->color_black();
         }
