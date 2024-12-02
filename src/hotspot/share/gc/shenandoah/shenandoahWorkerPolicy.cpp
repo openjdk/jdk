@@ -35,6 +35,10 @@ uint ShenandoahWorkerPolicy::calc_workers_for_conc_marking() {
   return ConcGCThreads;
 }
 
+uint ShenandoahWorkerPolicy::calc_workers_for_rs_scanning() {
+  return ConcGCThreads;
+}
+
 uint ShenandoahWorkerPolicy::calc_workers_for_final_marking() {
   return ParallelGCThreads;
 }

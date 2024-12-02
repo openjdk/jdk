@@ -34,8 +34,6 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 // get array InputEvent.BUTTON_MASK via reflection
 // get array InputEvent.BUTTON_DOWN_MASK via reflection
@@ -52,22 +50,18 @@ public class ButtonArraysEquality {
         }
 
         // getButtonDownMasks()
-        Object obj = AccessController.doPrivileged(
-                                            new PrivilegedAction() {
-                                                public Object run() {
-                                                    try {
-                                                        Class clazz = Class.forName("java.awt.event.InputEvent");
-                                                        Method method  = clazz.getDeclaredMethod("getButtonDownMasks",new Class [] {});
-                                                        if (method != null) {
-                                                            method.setAccessible(true);
-                                                            return method.invoke(null, (Object[])null);
-                                                        }
-                                                    }catch (Exception e){
-                                                        throw new RuntimeException("Test failed. Exception occured:", e);
-                                                    }
-                                                    return null;
-                                                }
-                                            });
+        Object obj =  null;
+
+        try {
+            Class clazz = Class.forName("java.awt.event.InputEvent");
+            Method method  = clazz.getDeclaredMethod("getButtonDownMasks",new Class [] {});
+            if (method != null) {
+                method.setAccessible(true);
+                obj = method.invoke(null, (Object[])null);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Test failed. Exception occurred:", e);
+        }
 
         int [] buttonDownMasks = new int [Array.getLength(obj)];
         checkNullAndPutValuesToArray(buttonDownMasks, obj);

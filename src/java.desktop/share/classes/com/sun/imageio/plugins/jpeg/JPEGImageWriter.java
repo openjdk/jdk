@@ -175,16 +175,9 @@ public class JPEGImageWriter extends ImageWriter {
         initStatic();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void initStatic() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    System.loadLibrary("javajpeg");
-                    return null;
-                }
-            });
+        System.loadLibrary("javajpeg");
         initWriterIDs(JPEGQTable.class,
                       JPEGHuffmanTable.class);
     }
