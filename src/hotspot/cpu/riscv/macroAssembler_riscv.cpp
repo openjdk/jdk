@@ -2032,6 +2032,14 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Regist
   #undef CRC32_VCLMUL_LOAD_TABLE
 }
 
+// For more details of the algorithm, please check the paper:
+//   "Fast CRC Computation for Generic Polynomials Using PCLMULQDQ Instruction - Intel"
+//
+// Please also refer to the corresponding code in aarch64 or x86 ones.
+//
+// As the riscv carry-less multiplication is a bit different from the other platforms,
+// so the implementation itself is also a bit different from others.
+
 void MacroAssembler::kernel_crc32_vclmul_fold(Register crc, Register buf, Register len,
                         Register table0, Register table1, Register table2, Register table3,
                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
