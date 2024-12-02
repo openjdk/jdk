@@ -444,7 +444,12 @@ void VM_Version::initialize() {
   }
 
   if (UseSVE > 0) {
-    _initial_sve_vector_length = get_current_sve_vector_length();
+    int vl = get_current_sve_vector_length();
+    if (vl < 0) {
+      warning("Unable to get SVE vector length on this system. Disabling SVE.");
+      FLAG_SET_DEFAULT(UseSVE, 0);
+    }
+    _initial_sve_vector_length = vl;
   }
 
   // This machine allows unaligned memory accesses
