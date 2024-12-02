@@ -209,9 +209,9 @@ void VLoopVPointers::print() const {
   tty->print_cr("\nVLoopVPointers::print:");
 
   _body.for_each_mem([&] (const MemNode* mem, int bb_idx) {
-    const VPointer& xp = vpointer(mem);
+    const VPointer& p = vpointer(mem);
     tty->print("  ");
-    xp.print_on(tty);
+    p.print_on(tty);
   });
 }
 #endif
