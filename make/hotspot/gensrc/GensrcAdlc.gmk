@@ -109,9 +109,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       ADLCFLAGS += -DR18_RESERVED
     endif
   else ifeq ($(call isTargetOs, windows), true)
-    ifeq ($(call isTargetCpuBits, 64), true)
-      ADLCFLAGS += -D_WIN64=1
-    endif
+    ADLCFLAGS += -D_WIN64=1
     ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)
       ADLCFLAGS += -DR18_RESERVED
     endif

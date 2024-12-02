@@ -68,9 +68,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import java.security.PrivilegedAction;
-import java.security.AccessController;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public final class Util {
@@ -452,32 +449,19 @@ public final class Util {
             Method m_addExports = Class.forName("java.awt.Helper").getDeclaredMethod("addExports", String.class, java.lang.Module.class);
             // We may be called from non-X11 system, and this permission cannot be delegated to a test.
             m_addExports.invoke(null, "sun.awt.X11", Util.class.getModule());
-            @SuppressWarnings("removal")
-            Method m_getWMID = (Method)AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
-                        try {
-                            Method method = _clazz.getDeclaredMethod("getWMID", new Class[] {});
-                            if (method != null) {
-                                method.setAccessible(true);
-                            }
-                            return method;
-                        } catch (NoSuchMethodException e) {
-                            assert false;
-                        } catch (SecurityException e) {
-                            assert false;
-                        }
-                        return null;
-                    }
-                });
-            return ((Integer)m_getWMID.invoke(null, new Object[] {})).intValue();
-        } catch (ClassNotFoundException cnfe) {
-            cnfe.printStackTrace();
-        } catch (NoSuchMethodException nsme) {
-            nsme.printStackTrace();
-        } catch (IllegalAccessException iae) {
-            iae.printStackTrace();
-        } catch (InvocationTargetException ite) {
-            ite.printStackTrace();
+            Method m_getWMID = null;
+            try {
+                m_getWMID = _clazz.getDeclaredMethod("getWMID", new Class[] {});
+                if (m_getWMID != null) {
+                    m_getWMID.setAccessible(true);
+                }
+            } catch (NoSuchMethodException e) {
+                assert false;
+            }
+            return (Integer) m_getWMID.invoke(null, new Object[]{});
+        } catch (ClassNotFoundException | NoSuchMethodException
+                 | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
         }
         return -1;
     }

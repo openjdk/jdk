@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,18 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @modules java.rmi/sun.rmi.registry
+ * @modules java.rmi/java.rmi.server:+open
+ *          java.rmi/sun.rmi.registry
  *          java.rmi/sun.rmi.server
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
- * @build TestLibrary ServiceConfiguration Foo
- * @run main/othervm/policy=security.policy DefaultProperty
+ * @build TestLibrary ServiceConfiguration
+ * @run main/othervm DefaultProperty
  */
 
-import java.net.MalformedURLException;
-import java.net.URL;
-
+import java.lang.reflect.Field;
 import java.rmi.server.RMIClassLoader;
+import java.rmi.server.RMIClassLoaderSpi;
 
 public class DefaultProperty {
 
@@ -51,30 +51,19 @@ public class DefaultProperty {
         System.setProperty(
             "java.rmi.server.RMIClassLoaderSpi", "default");
 
-        String classname = "Foo";
+        // Force loading of RMIClassLoader, which will initialize the
+        // provider instance.
+        RMIClassLoaderSpi def = RMIClassLoader.getDefaultProviderInstance();
 
-        URL codebaseURL = null;
-        try {
-            codebaseURL = TestLibrary.installClassInCodebase(
-                classname, "remote_codebase");
-        } catch (MalformedURLException e) {
-            TestLibrary.bomb(e);
-        }
+        Field fProvider = RMIClassLoader.class.getDeclaredField("provider");
+        fProvider.setAccessible(true);
+        RMIClassLoaderSpi actual = (RMIClassLoaderSpi) fProvider.get(null);
 
-        TestLibrary.suggestSecurityManager(null);
-
-        Class fooClass = RMIClassLoader.loadClass(codebaseURL, classname);
-        if (!fooClass.getName().equals(classname)) {
-            throw new RuntimeException(
-                "wrong class name, expected: " + classname +
-                ", received: " + fooClass.getName());
-        }
-
-        String annotation = RMIClassLoader.getClassAnnotation(fooClass);
-        if (!annotation.equals(codebaseURL.toString())) {
-            throw new RuntimeException(
-                "wrong class annotation, expected: " + codebaseURL.toString() +
-                ", received: " + annotation);
+        if (def != actual) {
+            System.err.println("TEST FAILED");
+            System.err.println("default provider = " + def);
+            System.err.println("actual provider = " + actual);
+            throw new AssertionError("TEST FAILED");
         }
 
         System.err.println("TEST PASSED");

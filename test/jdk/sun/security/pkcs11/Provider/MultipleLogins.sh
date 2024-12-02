@@ -123,7 +123,7 @@ ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         ${TESTSRC}${FS}MultipleLogins.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
-TEST_ARGS="${TESTVMOPTS} -classpath ${TESTCLASSPATH} \
+TEST_ARGS="${TESTVMOPTS} ${TESTJAVAOPTS} -classpath ${TESTCLASSPATH} \
         --add-modules jdk.crypto.cryptoki \
         --add-exports jdk.crypto.cryptoki/sun.security.pkcs11=ALL-UNNAMED \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
@@ -134,9 +134,6 @@ TEST_ARGS="${TESTVMOPTS} -classpath ${TESTCLASSPATH} \
 
 # run test without security manager
 ${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} MultipleLogins || exit 10
-
-# run test with security manager
-${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} -Djava.security.manager=allow MultipleLogins useSimplePolicy || exit 11
 
 echo Done
 exit 0

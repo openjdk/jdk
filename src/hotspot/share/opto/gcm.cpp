@@ -1681,7 +1681,7 @@ void PhaseCFG::global_code_motion() {
   PhaseIFG ifg(&live_arena);
   if (OptoRegScheduling && block_size_threshold_ok) {
     regalloc.mark_ssa();
-    Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+    Compile::TracePhase tp(_t_computeLive);
     rm_live.reset_to_mark();           // Reclaim working storage
     IndexSet::reset_memory(C, &live_arena);
     uint node_size = regalloc._lrg_map.max_lrg_id();

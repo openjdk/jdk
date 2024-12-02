@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6505888
  * @summary Tests bean with the property that is guarded by UnmodifiableList
- * @run main/othervm -Djava.security.manager=allow Test6505888
+ * @run main/othervm Test6505888
  * @author Sergey Malenkov
  */
 
@@ -36,7 +36,7 @@ import java.util.List;
 
 public final class Test6505888 extends AbstractTest {
     public static void main(String[] args) {
-        new Test6505888().test(true);
+        new Test6505888().test();
     }
 
     protected ListBean getObject() {

@@ -171,7 +171,11 @@ public class ConnectionFlowControlTest {
                         var response = responses.get(keys[i]);
                         String ckey = response.headers().firstValue("X-Connection-Key").get();
                         if (label == null) label = ckey;
-                        assertEquals(ckey, label, "Unexpected key for " + query);
+                        if (i < max - 1) {
+                            // the connection window might be exceeded at i == max - 2, which
+                            // means that the last request could go on a new connection.
+                            assertEquals(ckey, label, "Unexpected key for " + query);
+                        }
                         int wait = uri.startsWith("https://") ? 500 : 250;
                         try (InputStream is = response.body()) {
                             Thread.sleep(Utils.adjustTimeout(wait));

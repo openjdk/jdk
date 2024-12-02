@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,20 @@
 
 package javax.security.auth;
 
-import java.security.AccessController;
 import java.security.Principal;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
 
 /**
- * A {@code SubjectDomainCombiner} updates ProtectionDomains
- * with Principals from the {@code Subject} associated with this
- * {@code SubjectDomainCombiner}.
+ * SubjectDomainCombiner was used to dynamically update ProtectionDomains with
+ * Principals for access control operations and decisions. This feature no
+ * longer exists.
  *
  * @since 1.4
- * @deprecated This class is only useful in conjunction with
- *       {@linkplain SecurityManager the Security Manager}, which is deprecated
- *       and subject to removal in a future release. Consequently, this class
- *       is also deprecated and subject to removal. There is no replacement for
+ * @deprecated This class was only useful in conjunction with the Security
+ *       Manager, which is no longer supported. There is no replacement for
  *       the Security Manager or this class.
  */
 @SuppressWarnings("removal")
@@ -84,17 +80,8 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
      *          {@code SubjectDomainCombiner}, or {@code null}
      *          if no {@code Subject} is associated with this
      *          {@code SubjectDomainCombiner}.
-     *
-     * @exception SecurityException if the caller does not have permission
-     *          to get the {@code Subject} associated with this
-     *          {@code SubjectDomainCombiner}.
      */
     public Subject getSubject() {
-        java.lang.SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new AuthPermission
-                ("getSubjectFromDomainCombiner"));
-        }
         return subject;
     }
 
@@ -150,14 +137,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
             if (subject == null) {
                 debug.println("null subject");
             } else {
-                final Subject s = subject;
-                AccessController.doPrivileged
-                    (new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                        debug.println(s.toString());
-                        return null;
-                    }
-                });
+                debug.println(subject.toString());
             }
             printInputDomains(currentDomains, assignedDomains);
         }
@@ -355,11 +335,7 @@ public class SubjectDomainCombiner implements java.security.DomainCombiner {
         if (pd == null) {
             return "null";
         }
-        return AccessController.doPrivileged(new PrivilegedAction<String>() {
-            public String run() {
-                return pd.toString();
-            }
-        });
+        return pd.toString();
     }
 
     /**

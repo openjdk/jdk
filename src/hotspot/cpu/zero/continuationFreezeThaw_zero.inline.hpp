@@ -48,6 +48,10 @@ void FreezeBase::adjust_interpreted_frame_unextended_sp(frame& f) {
   Unimplemented();
 }
 
+inline void FreezeBase::prepare_freeze_interpreted_top_frame(frame& f) {
+  Unimplemented();
+}
+
 inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, const frame& hf) {
   Unimplemented();
 }
@@ -81,6 +85,15 @@ inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& cal
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {
   Unimplemented();
+}
+
+inline void ThawBase::patch_pd(frame& f, intptr_t* caller_sp) {
+  Unimplemented();
+}
+
+inline intptr_t* ThawBase::push_cleanup_continuation() {
+  Unimplemented();
+  return nullptr;
 }
 
 template <typename ConfigT>

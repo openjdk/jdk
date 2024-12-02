@@ -241,6 +241,11 @@ public final class DirectCodeBuilder
                         if (crSize < characterRangesCount)
                             b.patchU2(pos, crSize);
                     }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return constantPool.utf8Entry(Attributes.NAME_CHARACTER_RANGE_TABLE);
+                    }
                 };
                 attributes.withAttribute(a);
             }
@@ -265,6 +270,11 @@ public final class DirectCodeBuilder
                         if (lvSize < localVariablesCount)
                             b.patchU2(pos, lvSize);
                     }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return constantPool.utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TABLE);
+                    }
                 };
                 attributes.withAttribute(a);
             }
@@ -288,6 +298,11 @@ public final class DirectCodeBuilder
                         }
                         if (lvtSize < localVariableTypesCount)
                             b.patchU2(pos, lvtSize);
+                    }
+
+                    @Override
+                    public Utf8Entry attributeName() {
+                        return constantPool.utf8Entry(Attributes.NAME_LOCAL_VARIABLE_TYPE_TABLE);
                     }
                 };
                 attributes.withAttribute(a);
@@ -371,6 +386,11 @@ public final class DirectCodeBuilder
                 dcb.attributes.writeTo(buf);
                 buf.setLabelContext(null);
             }
+
+            @Override
+            public Utf8Entry attributeName() {
+                return constantPool.utf8Entry(Attributes.NAME_CODE);
+            }
         };
     }
 
@@ -415,6 +435,11 @@ public final class DirectCodeBuilder
             b.writeInt(buf.size() + 2);
             b.writeU2(buf.size() / 4);
             b.writeBytes(buf);
+        }
+
+        @Override
+        public Utf8Entry attributeName() {
+            return buf.constantPool().utf8Entry(Attributes.NAME_LINE_NUMBER_TABLE);
         }
     }
 

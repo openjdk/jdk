@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,6 @@ package javax.xml.xpath;
 
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -48,12 +45,7 @@ class XPathFactoryFinder  {
     /** debug support code. */
     private static boolean debug = false;
     static {
-        // Use try/catch block to support applets
-        try {
-            debug = SecuritySupport.getSystemProperty("jaxp.debug") != null;
-        } catch (Exception unused) {
-            debug = false;
-        }
+        debug = System.getProperty("jaxp.debug") != null;
     }
 
     /**
@@ -157,7 +149,7 @@ class XPathFactoryFinder  {
         // system property look up
         try {
             debugPrintln(()->"Looking up system property '"+propertyName+"'" );
-            String r = SecuritySupport.getSystemProperty(propertyName);
+            String r = System.getProperty(propertyName);
             if(r!=null) {
                 debugPrintln(()->"The value is '"+r+"'");
                 xpathFactory = createInstance(r);
@@ -208,20 +200,12 @@ class XPathFactoryFinder  {
      * @param className Name of class to create.
      * @return Created class or <code>null</code>.
      */
-    @SuppressWarnings("removal")
     private Class<?> createClass(String className) {
         Class<?> clazz;
-        // make sure we have access to restricted packages
-        boolean internal = false;
-        if (System.getSecurityManager() != null) {
-            if (className != null && className.startsWith(DEFAULT_PACKAGE)) {
-                internal = true;
-            }
-        }
 
         // use appropriate ClassLoader
         try {
-            if (classLoader != null && !internal) {
+            if (classLoader != null) {
                     clazz = Class.forName(className, false, classLoader);
             } else {
                     clazz = Class.forName(className);
@@ -264,8 +248,7 @@ class XPathFactoryFinder  {
         try {
             xPathFactory = (XPathFactory) clazz.getConstructor().newInstance();
         } catch (ClassCastException | IllegalAccessException | IllegalArgumentException |
-            InstantiationException | InvocationTargetException | NoSuchMethodException |
-            SecurityException ex) {
+            InstantiationException | InvocationTargetException | NoSuchMethodException ex) {
             debugPrintln(()->"could not instantiate " + clazz.getName());
             if (debug) {
                     ex.printStackTrace();
@@ -274,18 +257,6 @@ class XPathFactoryFinder  {
         }
 
         return xPathFactory;
-    }
-
-    // Call isObjectModelSupportedBy with initial context.
-    @SuppressWarnings("removal")
-    private boolean isObjectModelSupportedBy(final XPathFactory factory,
-            final String objectModel,
-            AccessControlContext acc) {
-        return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                        return factory.isObjectModelSupported(objectModel);
-                    }
-                }, acc);
     }
 
     /**
@@ -297,28 +268,20 @@ class XPathFactoryFinder  {
      *         if none is found.
      * @throws XPathFactoryConfigurationException if a configuration error is found.
      */
-    @SuppressWarnings("removal")
     private XPathFactory findServiceProvider(final String objectModel)
             throws XPathFactoryConfigurationException {
 
         assert objectModel != null;
-        // store current context.
-        final AccessControlContext acc = AccessController.getContext();
         try {
-            return AccessController.doPrivileged(new PrivilegedAction<XPathFactory>() {
-                public XPathFactory run() {
-                    final ServiceLoader<XPathFactory> loader =
-                            ServiceLoader.load(SERVICE_CLASS);
-                    for (XPathFactory factory : loader) {
-                        // restore initial context to call
-                        // factory.isObjectModelSupportedBy
-                        if (isObjectModelSupportedBy(factory, objectModel, acc)) {
-                            return factory;
-                        }
-                    }
-                    return null; // no factory found.
+            final ServiceLoader<XPathFactory> loader =
+                    ServiceLoader.load(SERVICE_CLASS);
+            for (XPathFactory factory : loader) {
+                // factory.isObjectModelSupportedBy
+                if (factory.isObjectModelSupported(objectModel)) {
+                    return factory;
                 }
-            });
+            }
+            return null; // no factory found.
         } catch (ServiceConfigurationError error) {
             throw new XPathFactoryConfigurationException(error);
         }
