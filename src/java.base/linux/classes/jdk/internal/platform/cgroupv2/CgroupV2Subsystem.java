@@ -27,15 +27,16 @@ package jdk.internal.platform.cgroupv2;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.internal.platform.CgroupInfo;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
-import jdk.internal.platform.CgroupUtil;
 
 public class CgroupV2Subsystem implements CgroupSubsystem {
 
@@ -328,10 +329,9 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     }
 
     private long sumTokensIOStat(Function<String, Long> mapFunc) {
-        try {
-            return CgroupUtil.readFilePrivileged(Paths.get(unified.path(), "io.stat"))
-                                .map(mapFunc)
-                                .collect(Collectors.summingLong(e -> e));
+        try (Stream<String> lines = Files.lines(Paths.get(unified.path(), "io.stat"))) {
+            return lines.map(mapFunc)
+                    .collect(Collectors.summingLong(e -> e));
         } catch (UncheckedIOException | IOException e) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }

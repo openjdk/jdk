@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +26,11 @@
 
 package jdk.internal.platform;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -61,13 +64,13 @@ public interface CgroupSubsystemController {
     public static String getStringValue(CgroupSubsystemController controller, String param) {
         if (controller == null) return null;
 
-        try {
-            return CgroupUtil.readStringValue(controller, param);
-        }
-        catch (IOException e) {
+        try (BufferedReader bufferedReader =
+                         Files.newBufferedReader(Paths.get(controller.path(), param))) {
+            String line = bufferedReader.readLine();
+            return line;
+        } catch (IOException e) {
             return null;
         }
-
     }
 
     /**
@@ -93,7 +96,7 @@ public interface CgroupSubsystemController {
         }
         try {
             Path filePath = Paths.get(controller.path(), param);
-            List<String> lines = CgroupUtil.readAllLinesPrivileged(filePath);
+            List<String> lines = Files.readAllLines(filePath);
             for (String line : lines) {
                 if (line.startsWith(match)) {
                     retval = conversion.apply(line);
@@ -161,7 +164,7 @@ public interface CgroupSubsystemController {
     public static long getLongEntry(CgroupSubsystemController controller, String param, String entryname, long defaultRetval) {
         if (controller == null) return defaultRetval;
 
-        try (Stream<String> lines = CgroupUtil.readFilePrivileged(Paths.get(controller.path(), param))) {
+        try (Stream<String> lines = Files.lines(Paths.get(controller.path(), param))) {
 
             Optional<String> result = lines.map(line -> line.split(" "))
                                            .filter(line -> (line.length == 2 &&

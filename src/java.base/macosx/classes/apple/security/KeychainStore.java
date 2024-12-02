@@ -188,15 +188,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
         jdk.internal.loader.BootLoader.loadLibrary("osxsecurity");
     }
 
-    private static void permissionCheck() {
-        @SuppressWarnings("removal")
-        SecurityManager sec = System.getSecurityManager();
-
-        if (sec != null) {
-            sec.checkPermission(new RuntimePermission("useKeychainStore"));
-        }
-    }
-
     private final String storeName;
 
     /**
@@ -228,7 +219,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
     public Key engineGetKey(String alias, char[] password)
         throws NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        permissionCheck();
 
         // An empty password is rejected by MacOS API, no private key data
         // is exported. If no password is passed (as is the case when
@@ -332,7 +322,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * <i>key entry</i> without a certificate chain).
      */
     public Certificate[] engineGetCertificateChain(String alias) {
-        permissionCheck();
 
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
@@ -363,7 +352,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * does not contain a certificate.
      */
     public Certificate engineGetCertificate(String alias) {
-        permissionCheck();
 
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
@@ -420,7 +408,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * not exist
      */
     public Date engineGetCreationDate(String alias) {
-        permissionCheck();
 
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
 
@@ -461,7 +448,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                                   Certificate[] chain)
         throws KeyStoreException
     {
-        permissionCheck();
 
         synchronized(entries) {
             try {
@@ -532,7 +518,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
                                   Certificate[] chain)
         throws KeyStoreException
     {
-        permissionCheck();
 
         synchronized(entries) {
             // key must be encoded as EncryptedPrivateKeyInfo as defined in
@@ -582,7 +567,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
     public void engineDeleteEntry(String alias)
         throws KeyStoreException
     {
-        permissionCheck();
 
         String lowerAlias = alias.toLowerCase(Locale.ROOT);
         synchronized(entries) {
@@ -597,7 +581,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * @return enumeration of the alias names
      */
     public Enumeration<String> engineAliases() {
-        permissionCheck();
         return entries.keys();
     }
 
@@ -609,7 +592,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * @return true if the alias exists, false otherwise
      */
     public boolean engineContainsAlias(String alias) {
-        permissionCheck();
         return entries.containsKey(alias.toLowerCase(Locale.ROOT));
     }
 
@@ -619,7 +601,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * @return the number of entries in this keystore
      */
     public int engineSize() {
-        permissionCheck();
         return entries.size();
     }
 
@@ -631,7 +612,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * <i>key entry</i>, false otherwise.
      */
     public boolean engineIsKeyEntry(String alias) {
-        permissionCheck();
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
         return entry instanceof KeyEntry;
     }
@@ -644,7 +624,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * <i>trusted certificate entry</i>, false otherwise.
      */
     public boolean engineIsCertificateEntry(String alias) {
-        permissionCheck();
         Object entry = entries.get(alias.toLowerCase(Locale.ROOT));
         return entry instanceof TrustedCertEntry;
     }
@@ -666,7 +645,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
      * or null if no such entry exists in this keystore.
      */
     public String engineGetCertificateAlias(Certificate cert) {
-        permissionCheck();
         Certificate certElem;
 
         for (Enumeration<String> e = entries.keys(); e.hasMoreElements(); ) {
@@ -704,7 +682,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
     public void engineStore(OutputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        permissionCheck();
 
         // Delete items that do have a keychain item ref.
         for (Enumeration<String> e = deletedEntries.keys(); e.hasMoreElements(); ) {
@@ -795,7 +772,6 @@ abstract sealed class KeychainStore extends KeyStoreSpi {
     public void engineLoad(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        permissionCheck();
 
         // Release any stray keychain references before clearing out the entries.
         synchronized(entries) {
