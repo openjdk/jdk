@@ -87,7 +87,7 @@ public class UDivINodeIdealizationTests {
         Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned(13, 13)), identityAgain(a));
         Asserts.assertEQ(Integer.divideUnsigned(a, 8), divByPow2(a), "divByPow2 " + a);
         Asserts.assertEQ(Integer.divideUnsigned(a, Integer.MIN_VALUE), divByPow2Big(a));
-        Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned(-2129457054, -2129457054)), identityAgainButBig(a));
+        Asserts.assertEQ(Integer.divideUnsigned(a, Integer.divideUnsigned((1 << 20) + 1, (1 << 20) + 1)), identityAgainButBig(a));
     }
 
     @Test
@@ -116,7 +116,8 @@ public class UDivINodeIdealizationTests {
     @IR(failOn = {IRNode.UDIV})
     // Checks x / (c / c) => x
     public int identityAgainButBig(int x) {
-        return Integer.divideUnsigned(x, Integer.divideUnsigned(-2129457054, -2129457054));  // Integer.parseUnsignedInt("2165510242") = -2129457054
+        // (1L << 20) + 1 is an arbitrary integer that cannot be optimized by the power of 2 optimizations
+        return Integer.divideUnsigned(x, Integer.divideUnsigned((1 << 20) + 1, (1 << 20) + 1));
     }
 
     @Test
