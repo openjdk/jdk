@@ -279,8 +279,8 @@
                                                                             \
   product(uint, G1OldCSetGroupSize, 5, EXPERIMENTAL,         \
           "The maximum number of old CSet regions in a collection group. "  \
-          "These will be evacuated in the same GC pause. The first group "  \
-          "may exceed this limit depending on G1MixedGCCountTarget.")       \
+          "All regions in a group will be evacuated in the same GC pause. The first group calculated after marking from marking candidates "  \
+          "may exceed this limit as it is calculated based on G1MixedGCCountTarget.")       \
           range(1, 256)                                                     \
                                                                             \
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
