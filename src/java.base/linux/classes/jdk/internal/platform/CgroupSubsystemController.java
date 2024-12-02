@@ -64,8 +64,8 @@ public interface CgroupSubsystemController {
     public static String getStringValue(CgroupSubsystemController controller, String param) {
         if (controller == null) return null;
 
-        try (BufferedReader bufferedReader =
-                         Files.newBufferedReader(Paths.get(controller.path(), param))) {
+        Path filePath = Path.of(controller.path(), param);
+        try (BufferedReader bufferedReader = Files.newBufferedReader(filePath)) {
             String line = bufferedReader.readLine();
             return line;
         } catch (IOException e) {
