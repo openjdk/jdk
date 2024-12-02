@@ -72,9 +72,7 @@ constexpr T align_down(T size, A alignment) {
 
 template<typename T, typename A, ENABLE_IF(std::is_integral<T>::value)>
 constexpr T align_up(T size, A alignment) {
-  T mask = checked_cast<T>(alignment_mask(alignment));
-  assert(size <= std::numeric_limits<T>::max() - mask, "overflow");
-  T adjusted = size + mask;
+  T adjusted = checked_cast<T>(size + alignment_mask(alignment));
   return align_down(adjusted, alignment);
 }
 
