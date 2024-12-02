@@ -913,7 +913,7 @@ public class Deflater implements AutoCloseable {
      * @since 24
      */
     @Override
-    public final void close() {
+    public void close() {
         end();
     }
 

@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /*
  * @test
  * @bug 8225763
- * @summary Test the close() and end() methods on java.util.zip.Deflater
+ * @summary Test that the close() and end() methods on java.util.zip.Deflater
  * @run junit DeflaterClose
  */
 public class DeflaterClose {
@@ -40,7 +40,7 @@ public class DeflaterClose {
     private static final String data = "foobarhelloworld!!!!";
 
     /**
-     * Closes the Deflater multiple times and then expects end() to be called that
+     * Closes the Deflater multiple times and then expects close() and end() to be called that
      * many times.
      */
     @Test
@@ -49,22 +49,48 @@ public class DeflaterClose {
         final Deflater simpleDeflater = new Deflater();
         closeMultipleTimesAfterCompressing(numTimes, simpleDeflater);
 
+        final OverrideClose overriddenClose = new OverrideClose();
+        closeMultipleTimesAfterCompressing(numTimes, overriddenClose);
+        // make sure close was called numTimes
+        assertEquals(numTimes, overriddenClose.numTimesCloseCalled, "close() was expected to be" +
+                " called " + numTimes + ", but was called " + overriddenClose.numTimesCloseCalled +
+                " time(s) on " + overriddenClose.getClass().getName());
+
         final OverrideEnd overriddenEnd = new OverrideEnd();
         closeMultipleTimesAfterCompressing(numTimes, overriddenEnd);
         // make sure end was called called numTimes
         assertEquals(numTimes, overriddenEnd.numTimesEndCalled, "end() was expected to be called " +
                 numTimes + ", but was called " + overriddenEnd.numTimesEndCalled + " time(s) on " +
                 overriddenEnd.getClass().getName());
+
+        final OverrideCloseAndEnd overriddenCloseAndEnd = new OverrideCloseAndEnd();
+        closeMultipleTimesAfterCompressing(numTimes, overriddenCloseAndEnd);
+        // make sure end was called called numTimes
+        assertEquals(numTimes, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected to be called " +
+                numTimes + ", but was called" + overriddenCloseAndEnd.numTimesEndCalled +
+                " time(s) on " + overriddenCloseAndEnd.getClass().getName());
+        assertEquals(numTimes, overriddenCloseAndEnd.numTimesCloseCalled, "close() was expected" +
+                " to be called " + numTimes + ", but was called " +
+                overriddenClose.numTimesCloseCalled + " time(s) on " +
+                overriddenCloseAndEnd.getClass().getName());
     }
 
     /**
-     * Closes the Deflater first and then calls end(). Verifies that end() was called
-     * twice (once internally through close() and once explicitly).
+     * Closes the Deflater first and then calls end(). Verifies that close() was called
+     * just once but end() was called twice (once internally through close() and once
+     * explicitly)
      */
     @Test
     public void testCloseThenEnd() throws Exception {
         final Deflater simpleDeflater = new Deflater();
         compressCloseThenEnd(simpleDeflater);
+
+        final OverrideClose overriddenClose = new OverrideClose();
+        compressCloseThenEnd(overriddenClose);
+        // make sure close was called once
+        assertEquals(1, overriddenClose.numTimesCloseCalled, "close() was expected to be called" +
+                " once, but was called " + overriddenClose.numTimesCloseCalled +
+                " time(s) on " + overriddenClose.getClass().getName());
 
         final OverrideEnd overriddenEnd = new OverrideEnd();
         compressCloseThenEnd(overriddenEnd);
@@ -72,16 +98,34 @@ public class DeflaterClose {
         assertEquals(2, overriddenEnd.numTimesEndCalled, "end() was expected to be called" +
                 " twice, but was called " + overriddenEnd.numTimesEndCalled +
                 " time(s) on " + overriddenEnd.getClass().getName());
+
+        final OverrideCloseAndEnd overriddenCloseAndEnd = new OverrideCloseAndEnd();
+        compressCloseThenEnd(overriddenCloseAndEnd);
+        // make sure end was called twice (once through close and once explicitly)
+        // and close was called once
+        assertEquals(2, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected to" +
+                " be called twice, but was called " + overriddenCloseAndEnd.numTimesEndCalled +
+                " time(s) on " + overriddenCloseAndEnd.getClass().getName());
+        assertEquals(1, overriddenCloseAndEnd.numTimesCloseCalled, "close() was expected to be" +
+                " called once, but was called " + overriddenClose.numTimesCloseCalled +
+                " time(s) on " + overriddenCloseAndEnd.getClass().getName());
     }
 
     /**
-     * Calls end() on the Deflater first and then calls close(). Verifies that end() was called
-     * twice.
+     * Calls end() on the Deflater first and then calls close(). Verifies that close() was called
+     * just once and end() twice.
      */
     @Test
     public void testEndThenClose() throws Exception {
         final Deflater simpleDeflater = new Deflater();
         compressEndThenClose(simpleDeflater);
+
+        final OverrideClose overriddenClose = new OverrideClose();
+        compressEndThenClose(overriddenClose);
+        // make sure close was called once
+        assertEquals(1, overriddenClose.numTimesCloseCalled, "close() was expected to be called" +
+                " once, but was called " + overriddenClose.numTimesCloseCalled +
+                " time(s) on " + overriddenClose.getClass().getName());
 
         final OverrideEnd overriddenEnd = new OverrideEnd();
         compressEndThenClose(overriddenEnd);
@@ -90,6 +134,17 @@ public class DeflaterClose {
         assertEquals(2, overriddenEnd.numTimesEndCalled, "end() was expected to be called twice," +
                 " but was called " + overriddenEnd.numTimesEndCalled +
                 " time(s) on " + overriddenEnd.getClass().getName());
+
+        final OverrideCloseAndEnd overriddenCloseAndEnd = new OverrideCloseAndEnd();
+        compressEndThenClose(overriddenCloseAndEnd);
+        // make sure end was called twice (once through the explicit end call and
+        // once through close())
+        assertEquals(2, overriddenCloseAndEnd.numTimesEndCalled, "end() was expected to be called" +
+                " twice, but was called " + overriddenCloseAndEnd.numTimesEndCalled +
+                " time(s) on " + overriddenCloseAndEnd.getClass().getName());
+        assertEquals(1, overriddenCloseAndEnd.numTimesCloseCalled, "close() was expected to be " +
+                "called once, but was called " + overriddenClose.numTimesCloseCalled +
+                " time(s) on " + overriddenCloseAndEnd.getClass().getName());
     }
 
     private void closeMultipleTimesAfterCompressing(final int numTimes, final Deflater deflater) {
@@ -136,6 +191,33 @@ public class DeflaterClose {
         public void end() {
             this.numTimesEndCalled++;
             super.end();
+        }
+    }
+
+    private static final class OverrideClose extends Deflater {
+        private int numTimesCloseCalled = 0;
+
+        @Override
+        public void close() {
+            this.numTimesCloseCalled++;
+            super.close();
+        }
+    }
+
+    private static final class OverrideCloseAndEnd extends Deflater {
+        private int numTimesEndCalled = 0;
+        private int numTimesCloseCalled = 0;
+
+        @Override
+        public void end() {
+            this.numTimesEndCalled++;
+            super.end();
+        }
+
+        @Override
+        public void close() {
+            this.numTimesCloseCalled++;
+            super.close();
         }
     }
 }
