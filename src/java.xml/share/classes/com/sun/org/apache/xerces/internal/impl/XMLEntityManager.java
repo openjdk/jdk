@@ -1214,7 +1214,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             resourceIdentifier.setBaseSystemId(baseSystemId);
             resourceIdentifier.setExpandedSystemId(expandedSystemId);
             xmlInputSource = fEntityResolver.resolveEntity(resourceIdentifier);
-            resolveByResolver = (xmlInputSource != null) ? true : false;
+            resolveByResolver = xmlInputSource != null;
         }
 
         // Step 2: custom catalog if specified
