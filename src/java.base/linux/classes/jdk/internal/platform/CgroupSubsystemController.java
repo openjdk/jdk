@@ -32,7 +32,6 @@ import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -95,7 +94,7 @@ public interface CgroupSubsystemController {
             return retval;
         }
         try {
-            Path filePath = Paths.get(controller.path(), param);
+            Path filePath = Path.of(controller.path(), param);
             List<String> lines = Files.readAllLines(filePath);
             for (String line : lines) {
                 if (line.startsWith(match)) {
@@ -164,7 +163,7 @@ public interface CgroupSubsystemController {
     public static long getLongEntry(CgroupSubsystemController controller, String param, String entryname, long defaultRetval) {
         if (controller == null) return defaultRetval;
 
-        try (Stream<String> lines = Files.lines(Paths.get(controller.path(), param))) {
+        try (Stream<String> lines = Files.lines(Path.of(controller.path(), param))) {
 
             Optional<String> result = lines.map(line -> line.split(" "))
                                            .filter(line -> (line.length == 2 &&
