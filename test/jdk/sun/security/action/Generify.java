@@ -35,16 +35,7 @@ public class Generify {
 
     public static void main(String[] args) throws Exception {
 
-        System.setProperty("boolean", "true");
         System.setProperty("property", "propertyvalue");
-
-        Boolean b = AccessController.doPrivileged
-                        (new GetBooleanAction("boolean"));
-        if (b.booleanValue() == true) {
-            System.out.println("boolean test passed");
-        } else {
-            throw new SecurityException("boolean test failed");
-        }
 
         String prop = AccessController.doPrivileged
                         (new GetPropertyAction("property"));
