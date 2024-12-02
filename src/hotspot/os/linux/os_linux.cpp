@@ -562,6 +562,7 @@ void os::init_system_properties_values() {
 // Base path of extensions installed on the system.
 #define SYS_EXT_DIR     "/usr/java/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
+#define JVM_LIB_NAME "libjvm.so"
 
   // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
@@ -576,22 +577,32 @@ void os::init_system_properties_values() {
     char *pslash;
     os::jvm_path(buf, bufsize);
 
-    // Found the full path to libjvm.so.
-    // Now cut the path to <java_home>/jre if we can.
+    // Found the full path to the binary. It is normally of this structure:
+    //   <jdk_path>/lib/<hotspot_variant>/libjvm.so
+    // but can also be like this for a statically linked binary:
+    //   <jdk_path>/bin/<executable>
     pslash = strrchr(buf, '/');
     if (pslash != nullptr) {
-      *pslash = '\0';            // Get rid of /libjvm.so.
-    }
-    pslash = strrchr(buf, '/');
-    if (pslash != nullptr) {
-      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+      if (strncmp(pslash + 1, JVM_LIB_NAME, strlen(JVM_LIB_NAME)) == 0) {
+        // Binary name is libjvm.so. Get rid of /libjvm.so.
+        *pslash = '\0';
+      }
+
+      // Get rid of /<hotspot_variant>, if binary is libjvm.so,
+      // or cut off /<executable>, if it is a statically linked binary.
+      pslash = strrchr(buf, '/');
+      if (pslash != nullptr) {
+        *pslash = '\0';
+      }
     }
     Arguments::set_dll_dir(buf);
 
+    // Get rid of /lib, if binary is libjvm.so,
+    // or cut off /bin, if it is a statically linked binary.
     if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
       if (pslash != nullptr) {
-        *pslash = '\0';        // Get rid of /lib.
+        *pslash = '\0';
       }
     }
     Arguments::set_java_home(buf);

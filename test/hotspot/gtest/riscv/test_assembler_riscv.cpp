@@ -47,8 +47,7 @@ class CmovTester {
       _masm.mv(c_rarg0, c_rarg2);
       _masm.ret();
     }
-    _masm.flush();
-    OrderAccess::cross_modify_fence();
+    _masm.flush(); // icache invalidate
     int64_t ret = ((zicond_func)entry)(a0, a1, a2, a3);
     ASSERT_EQ(ret, result);
     BufferBlob::free(bb);
@@ -103,6 +102,161 @@ TEST_VM(RiscV, cmov) {
     UseZicond = false;
     run_cmov_tests();
     UseZicond = true;
+  }
+}
+
+template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
+class CmpxchgTester {
+ public:
+  typedef TESTSIZE (*cmpxchg_func)(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result);
+
+  static TESTSIZE base_cmpxchg(int variant, intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result, bool boolean_result = false) {
+    BufferBlob* bb = BufferBlob::create("riscvTest", 128);
+    CodeBuffer code(bb);
+    MacroAssembler _masm(&code);
+    address entry = _masm.pc();
+    {
+      switch(variant) {
+        default:
+          _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
+                        ASMSIZE, Assembler::relaxed, Assembler::relaxed,
+                        /*result*/ c_rarg3, boolean_result);
+          _masm.mv(c_rarg0, c_rarg3);
+          break;
+        case 1:
+          // expected == result
+          _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
+                        ASMSIZE, Assembler::relaxed, Assembler::relaxed,
+                        /*result*/ c_rarg1, boolean_result);
+          _masm.mv(c_rarg0, c_rarg1);
+          break;
+        case 2:
+          // new_value == result
+          _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/c_rarg2,
+                        ASMSIZE, Assembler::relaxed, Assembler::relaxed,
+                        /*result*/ c_rarg2, boolean_result);
+          _masm.mv(c_rarg0, c_rarg2);
+          break;
+        case 3:
+          // expected == new_value
+          _masm.cmpxchg(/*addr*/ c_rarg0, /*expected*/ c_rarg1, /*new_value*/ c_rarg1,
+                        ASMSIZE, Assembler::relaxed, Assembler::relaxed,
+                        /*result*/ c_rarg2, boolean_result);
+          _masm.mv(c_rarg0, c_rarg2);
+          break;
+
+      }
+      _masm.ret();
+    }
+    _masm.flush(); // icache invalidate
+    TESTSIZE ret = ((cmpxchg_func)entry)(addr, expected, new_value, result);
+    BufferBlob::free(bb);
+    return ret;
+  }
+};
+
+template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
+void plain_cmpxchg_test(int variant, TESTSIZE dv, TESTSIZE ex, TESTSIZE nv, TESTSIZE eret, TESTSIZE edata, bool bv) {
+  TESTSIZE data = dv;
+  TESTSIZE ret = CmpxchgTester<TESTSIZE, ASMSIZE>::base_cmpxchg(variant, (intptr_t)&data, ex, nv, /* dummy */ 67, bv);
+  ASSERT_EQ(ret,  eret);
+  ASSERT_EQ(data, edata);
+}
+
+template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
+void run_plain_cmpxchg_tests() {
+  // Normal
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   0 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                        1337 /* return */    , 42 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   0 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                        1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   0 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                           1 /* return */    , 42 /* end value*/, true /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   0 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                           0 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
+
+  // result == expected register
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                        1337 /* return */    , 42 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                        1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                           1 /* return */    , 42 /* end value*/, true /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   1 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                           0 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
+
+  // new_value == result register
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                        1337 /* return */    , 42 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                        1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                           1 /* return */    , 42 /* end value*/, true /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   2 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                           0 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
+
+  // expected == new_value register
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   3 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                        1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   3 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                        1337 /* return */  , 1337 /* end value*/, false /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   3 /* variant */ , 1337 /* start value*/,
+                                        1337 /* expected */,   42 /* new value */,
+                                           1 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
+
+  plain_cmpxchg_test<TESTSIZE, ASMSIZE>(   3 /* variant */ , 1337 /* start value*/,
+                                        1336 /* expected */,   42 /* new value */,
+                                           0 /* return */  , 1337 /* end value*/, true /* boolean ret*/);
+}
+
+TEST_VM(RiscV, cmpxchg_int64_plain_lr_sc) {
+  bool zacas = UseZacas;
+  UseZacas = false;
+  run_plain_cmpxchg_tests<int64_t, Assembler::int64>();
+  UseZacas = zacas;
+}
+
+TEST_VM(RiscV, cmpxchg_int64_plain_maybe_zacas) {
+  if (UseZacas) {
+    run_plain_cmpxchg_tests<int64_t, Assembler::int64>();
+  }
+}
+
+TEST_VM(RiscV, cmpxchg_int32_plain_lr_sc) {
+  bool zacas = UseZacas;
+  UseZacas = false;
+  run_plain_cmpxchg_tests<int32_t, Assembler::int32>();
+  UseZacas = zacas;
+}
+
+TEST_VM(RiscV, cmpxchg_int32_plain_maybe_zacas) {
+  if (UseZacas) {
+    run_plain_cmpxchg_tests<int32_t, Assembler::int32>();
   }
 }
 
