@@ -275,6 +275,8 @@ JDK_RCFLAGS=$(RCFLAGS) \
 #     and EXTRA_HEADER_DIRS will be added.
 #   JDK_LIBS_<os> or JDK_LIBS_<osType> -- additional JDK_LIBS for the given OS
 #     or OS type only
+#   ONLY_EXPORTED -- if true, this library will be flagged as not
+#     to be included for this module when building static libs
 #   EXTRA_RCFLAGS -- additional RCFLAGS to append.
 #   RC_FILEDESC -- override the default FILEDESC for Windows version.rc
 #   DEFAULT_LIBCXX -- if false, do not add LIBCXX to LIBS for C++ compilations
@@ -301,6 +303,15 @@ define SetupJdkNativeCompilationBody
     $1_MODULES_PATH := modules_libs
     $1_RC_EXT := dll
     $1_RC_FTYPE := 0x2L
+  endif
+
+  ifneq ($$(MODULE), )
+    # Record the fact that this native library is part of the current module
+    # (unless told otherwise). This variable stores information about all
+    # created libraries, and is read by ModuleWrapper.
+    ifneq ($$($1_ONLY_EXPORTED), true)
+      $$(MODULE)_INCLUDED_LIBS += $$($1_NAME)
+    endif
   endif
 
   ifeq ($$($1_OUTPUT_DIR), )
@@ -422,10 +433,10 @@ define SetupJdkNativeCompilationBody
   ifneq ($$($1_DEFAULT_LDFLAGS), false)
     ifeq ($$($1_TYPE), EXECUTABLE)
       # Set the default flags first to be able to override
-      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKEXE)) $$($1_LDFLAGS)
+      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKEXE) $$($1_LDFLAGS))
     else
       # Set the default flags first to be able to override
-      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKLIB)) $$($1_LDFLAGS)
+      $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKLIB) $$($1_LDFLAGS))
     endif
   endif
 

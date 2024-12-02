@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
 
-import sun.security.action.GetPropertyAction;
 import sun.security.rsa.RSAUtil.KeyType;
 
 /**
@@ -91,7 +90,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
     public static final int MAX_RESTRICTED_EXPLEN = 64;
 
     private static final boolean restrictExpLen =
-        "true".equalsIgnoreCase(GetPropertyAction.privilegedGetProperty(
+        "true".equalsIgnoreCase(System.getProperty(
                 "sun.security.rsa.restrictRSAExponent", "true"));
 
     static RSAKeyFactory getInstance(KeyType type) {
