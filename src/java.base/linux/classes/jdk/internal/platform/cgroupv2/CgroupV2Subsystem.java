@@ -332,7 +332,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     private long sumTokensIOStat(Function<String, Long> mapFunc) {
         try (Stream<String> lines = Files.lines(Path.of(unified.path(), "io.stat"))) {
             return lines.map(mapFunc)
-                    .collect(Collectors.summingLong(e -> e));
+                        .collect(Collectors.summingLong(e -> e));
         } catch (UncheckedIOException | IOException e) {
             return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
         }
