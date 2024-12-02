@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
@@ -85,7 +86,7 @@ void ShenandoahControlThread::run_service() {
 
     if (alloc_failure_pending) {
       // Allocation failure takes precedence: we have to deal with it first thing
-      log_info(gc)("Trigger: Handle Allocation Failure");
+      heuristics->log_trigger("Handle Allocation Failure");
 
       cause = GCCause::_allocation_failure;
 
@@ -104,7 +105,7 @@ void ShenandoahControlThread::run_service() {
       }
     } else if (is_gc_requested) {
       cause = requested_gc_cause;
-      log_info(gc)("Trigger: GC request (%s)", GCCause::to_string(cause));
+      heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
 
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
@@ -315,19 +316,21 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) return;
 
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, heap->global_generation());
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
 
-  ShenandoahConcurrentGC gc;
+  ShenandoahConcurrentGC gc(heap->global_generation(), false);
   if (gc.collect(cause)) {
     // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
     heap->notify_gc_progress();
-    heap->heuristics()->record_success_concurrent();
-    heap->shenandoah_policy()->record_success_concurrent(gc.abbreviated());
+    heap->global_generation()->heuristics()->record_success_concurrent();
+    heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
+    heap->log_heap_status("At end of GC");
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
     check_cancellation_or_degen(gc.degen_point());
+    heap->log_heap_status("At end of cancelled GC");
   }
 }
 
@@ -350,8 +353,9 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, heap->global_generation());
 
   ShenandoahFullGC gc;
   gc.collect(cause);
@@ -359,11 +363,11 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
-
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   GCIdMark gc_id_mark;
-  ShenandoahGCSession session(cause);
+  ShenandoahGCSession session(cause, heap->global_generation());
 
-  ShenandoahDegenGC gc(point);
+  ShenandoahDegenGC gc(point, heap->global_generation());
   gc.collect(cause);
 }
 
