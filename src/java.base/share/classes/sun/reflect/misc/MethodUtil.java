@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.AccessController;
 import java.security.AllPermission;
 import java.security.CodeSource;
 import java.security.PermissionCollection;
+import java.security.PrivilegedExceptionAction;
 import java.security.SecureClassLoader;
 
 
@@ -114,15 +115,21 @@ public final class MethodUtil extends SecureClassLoader {
         }
     }
 
+    @SuppressWarnings("removal")
     private static Method getTrampoline() {
         try {
-            Class<?> t = getTrampolineClass();
-            Class<?>[] types = {
-                    Method.class, Object.class, Object[].class
-            };
-            Method b = t.getDeclaredMethod("invoke", types);
-            b.setAccessible(true);
-            return b;
+            return AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Method>() {
+                    public Method run() throws Exception {
+                        Class<?> t = getTrampolineClass();
+                        Class<?>[] types = {
+                            Method.class, Object.class, Object[].class
+                        };
+                        Method b = t.getDeclaredMethod("invoke", types);
+                        b.setAccessible(true);
+                        return b;
+                    }
+                });
         } catch (Exception e) {
             throw new InternalError("bouncer cannot be found", e);
         }
