@@ -176,7 +176,7 @@ public class TestIntCountedLoopLongLimit {
         }
     }
 
-    private static final long SOME_LONG = 42;
+    private static volatile long SOME_LONG = 42;
 
     // Test optimization is not applied if the limit is not invariant.
     // This is handled by the existing counted loop detection, but we might as well test it here, too.
