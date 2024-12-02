@@ -236,6 +236,10 @@ public:
     this->remove_all();
   }
 
+  int size() {
+    return _node_count;
+  }
+
   void upsert(const K& k, const V& v) {
     TreapNode* found = find(_root, k);
     if (found != nullptr) {
@@ -325,14 +329,18 @@ public:
   struct Range {
     TreapNode* start;
     TreapNode* end;
+    Range(TreapNode* start, TreapNode* end)
+    : start(start), end(end) {}
   };
 
+  // Return the range [start, end)
+  // where start->key() <= addr < end->key().
+  // Failure to find the range leads to start and/or end being null.
   Range find_enclosing_range(K addr) {
     TreapNode* start = closest_leq(addr);
     TreapNode* end = closest_gt(addr);
-    return Range{start, end};
+    return Range(start, end);
   }
-
 
   // Visit all TreapNodes in ascending key order.
   template<typename F>

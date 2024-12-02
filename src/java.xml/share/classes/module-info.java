@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -602,8 +602,8 @@
  * A positive integer. A value less than or equal to 0 indicates no limit.
  * If the value is not an integer, a NumberFormatException is thrown.
  * </td>
- * <td style="text-align:center">64000</td>
- * <td style="text-align:center">64000</td>
+ * <td style="text-align:center">2500</td>
+ * <td style="text-align:center">2500</td>
  * <td style="text-align:center" rowspan="9">Yes</td>
  * <td style="text-align:center" rowspan="9">
  *     <a href="#DOM">DOM</a><br>
@@ -619,8 +619,8 @@
  * <td id="EALimit">{@systemProperty jdk.xml.elementAttributeLimit}</td>
  * <td>Limits the number of attributes an element can have.
  * </td>
- * <td style="text-align:center">10000</td>
- * <td style="text-align:center">10000</td>
+ * <td style="text-align:center">200</td>
+ * <td style="text-align:center">200</td>
  * </tr>
  * <tr>
  * <td id="OccurLimit">{@systemProperty jdk.xml.maxOccurLimit}</td>
@@ -636,37 +636,37 @@
  * <td>Limits the total size of all entities that include general and parameter
  * entities. The size is calculated as an aggregation of all entities.
  * </td>
- * <td style="text-align:center">5x10^7</td>
- * <td style="text-align:center">5x10^7</td>
+ * <td style="text-align:center">100000</td>
+ * <td style="text-align:center">100000</td>
  * </tr>
  * <tr>
  * <td id="GELimit">{@systemProperty jdk.xml.maxGeneralEntitySizeLimit}</td>
  * <td>Limits the maximum size of any general entities.
  * </td>
- * <td style="text-align:center">0</td>
- * <td style="text-align:center">0</td>
+ * <td style="text-align:center">100000</td>
+ * <td style="text-align:center">100000</td>
  * </tr>
  * <tr>
  * <td id="PELimit">{@systemProperty jdk.xml.maxParameterEntitySizeLimit}</td>
  * <td>Limits the maximum size of any parameter entities, including the result
  * of nesting multiple parameter entities.
  * </td>
- * <td style="text-align:center">10^6</td>
- * <td style="text-align:center">10^6</td>
+ * <td style="text-align:center">15000</td>
+ * <td style="text-align:center">15000</td>
  * </tr>
  * <tr>
  * <td id="ERLimit">{@systemProperty jdk.xml.entityReplacementLimit}</td>
  * <td>Limits the total number of nodes in all entity references.
  * </td>
- * <td style="text-align:center">3x10^6</td>
- * <td style="text-align:center">3x10^6</td>
+ * <td style="text-align:center">100000</td>
+ * <td style="text-align:center">100000</td>
  * </tr>
  * <tr>
  * <td id="ElementDepth">{@systemProperty jdk.xml.maxElementDepth}</td>
  * <td>Limits the maximum element depth.
  * </td>
- * <td style="text-align:center">0</td>
- * <td style="text-align:center">0</td>
+ * <td style="text-align:center">100</td>
+ * <td style="text-align:center">100</td>
  * </tr>
  * <tr>
  * <td id="NameLimit">{@systemProperty jdk.xml.maxXMLNameLimit}</td>
