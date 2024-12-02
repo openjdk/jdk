@@ -1621,8 +1621,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
 // When comparing an int incrementor with long limit, check if the limit is within int range. If so, treat it as an int
 // counted loop but deoptimize if the limit is out of int range.
-// This is common pattern with "for ( int i =...; i < long_limit; ...)" where int "i" is implicitly promoted to long,
-// "(long) i < long_limit", and therefore making it not an int counted loop without this optimization.
+// This is common pattern with "for (int i =...; i < long_limit; ...)" where int "i" is implicitly promoted to long,
+// i.e., "(long) i < long_limit", and therefore making it not an int counted loop without this transformation.
 bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
   if (iv_bt != T_INT) {
     return false;
@@ -1633,8 +1633,12 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
     return false;
   }
 
-  Node* ctrl = x->in(LoopNode::EntryControl);
-  if (!ctrl->is_IfTrue() || !ctrl->in(0)->is_ParsePredicate()) { // impossible to insert loop limit check?
+  Node* init_control = x->in(LoopNode::EntryControl);
+
+  // Make sure there is a parse predicate for us to insert the loop limit check.
+  const Predicates predicates(init_control);
+  const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+  if (!loop_limit_check_predicate_block->has_parse_predicate()) {
     return false;
   }
 
@@ -1644,26 +1648,30 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   Node* limit = nullptr;
   Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
 
-  // Check exit test is a "(long) i < limit" pattern.
+  // Check exit test is a "(long) i < long_limit" pattern.
   if (cmp == nullptr || cmp->Opcode() != Op_CmpL || incr == nullptr || incr->Opcode() != Op_ConvI2L) {
     return false;
   }
 
+  ParsePredicateNode* loop_limit_check_parse_predicate = loop_limit_check_predicate_block->parse_predicate();
+  if (!is_dominator(get_ctrl(limit), loop_limit_check_parse_predicate->in(0))) {
+    return false;
+  }
+
+  // Replace exit test nodes. Need to revert changes this still doesn't make it a counted loop.
   Node* new_incr = incr->in(1);
 
-  // Optimistically transform "(long) i < limit" to "i < (int) limit".
+  // Optimistically transform "(long) i < long_limit" to "i < (int) long_limit".
   Node* new_limit = _igvn.register_new_node_with_optimizer(new ConvL2INode(limit), limit);
-  set_early_ctrl(new_limit, ctrl);
+  set_early_ctrl(new_limit, get_ctrl(limit));
 
   Node* new_cmp = _igvn.register_new_node_with_optimizer(
       cmp->in(1) == incr ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr),
-//      new CmpINode(new_incr, new_limit),
       cmp);
-  set_early_ctrl(new_cmp, ctrl);
+  set_early_ctrl(new_cmp, get_ctrl(cmp));
 
   // back_control[0] -> iff[1] -> bool[1] -> cmp
   Node* bol = back_control->in(0)->in(1);
-
   _igvn.rehash_node_delayed(bol);
   bol->replace_edge(cmp, new_cmp, &_igvn);
 
@@ -1676,16 +1684,13 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
     return false;
   }
 
-  // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check.
-  // Check if the long limit is less or equal to jint_max.
-  Node* cmp_limit_max = new CmpLNode(limit, _igvn.longcon(max_jint));
-  Node* bol_max = new BoolNode(cmp_limit_max, BoolTest::le);
-  insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_max, bol_max);
+  assert(loop->is_invariant(new_limit), "limit must be a loop invariant");
 
-  // Check if the long limit is greater or equal to jint_min.
-  Node* cmp_limit_min = new CmpLNode(limit, _igvn.longcon(min_jint));
-  Node* bol_min = new BoolNode(cmp_limit_min, BoolTest::ge);
-  insert_loop_limit_check_predicate((IfTrueNode*) ctrl, cmp_limit_min, bol_min);
+  // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check.
+  // i.e., deoptimize if "(long) (int) long_limit == long_limit" is false.
+  Node* cmp_limit = new CmpLNode(new ConvI2LNode(new_limit), limit);
+  Node* bol_limit = new BoolNode(cmp_limit, BoolTest::eq);
+  insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol_limit);
 
   return true;
 }

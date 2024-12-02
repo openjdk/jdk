@@ -31,17 +31,18 @@ import java.util.Random;
 /**
  * @test
  * @bug 8336759
- * @summary test long limits in int counted loops are speculatively converted to int for counted loop optimizations
+ * @summary test long limits in int counted loops are speculatively converted to int for counted loop
+ *         optimizations
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.loopopts.TestIntLoopLongLimit
+ * @run driver compiler.loopopts.TestIntCountedLoopLongLimit
  */
-public class TestIntLoopLongLimit {
+public class TestIntCountedLoopLongLimit {
     private static final Random RNG = jdk.test.lib.Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags(
-                "-XX:+IgnoreUnrecognizedVMOptions", // StressLongCountedLoop is only available in debug builds
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
+                // StressLongCountedLoop is only available in debug builds
                 "-XX:StressLongCountedLoop=0", // Don't convert int counted loops to long ones
                 "-XX:PerMethodTrapLimit=100" // allow slow-path loop limit checks
         );
@@ -81,7 +82,8 @@ public class TestIntLoopLongLimit {
     }
 
     // Test counted loops, regardless of limit types, are correctly constructed.
-    @Run(test = { "testControlledCountedLoop", "testCountedLoopWithLongLimit", "testCountedLoopWithSwappedComparisonOperand" })
+    @Run(test = { "testControlledCountedLoop", "testCountedLoopWithLongLimit",
+            "testCountedLoopWithSwappedComparisonOperand" })
     public static void runTestSimpleCountedLoops(RunInfo info) {
         long limit = RNG.nextLong(0, 1024 * 1024); // Choice a small number to avoid tests taking too long
         int expected = testControlledCountedLoop((int) limit);
@@ -124,6 +126,7 @@ public class TestIntLoopLongLimit {
     // Use a larger stride to avoid tests taking too long
     private static final int LARGE_STRIDE = Integer.MAX_VALUE / 1024;
 
+    // Test counted loop deoptimizes if the long limit falls outside int range.
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
     public static int testCountedLoopWithOverflow(long limit) {
@@ -171,5 +174,22 @@ public class TestIntLoopLongLimit {
             System.out.println(Integer.MIN_VALUE - limit);
             Asserts.assertEQ(1, testCountedLoopWithUnderflow(Integer.MIN_VALUE - limit));
         }
+    }
+
+    private static final long SOME_LONG = 42;
+
+    // Test optimization is not applied if the limit is not invariant.
+    // This is handled by the existing counted loop detection, but we might as well test it here, too.
+    @Test
+    @IR(counts = { IRNode.CONV_I2L, "1" })
+    @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.CONV_L2I })
+    @Arguments(values = { Argument.NUMBER_42 })
+    public static int testLimitNotInvariant(long limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) {
+            sum += 1;
+            limit = SOME_LONG;
+        }
+        return sum;
     }
 }
