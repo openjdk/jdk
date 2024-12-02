@@ -31,7 +31,7 @@
 #include "unittest.hpp"
 
 using Tree = VMATree;
-using TNode = Tree::RBNode;
+using TNode = Tree::TreapNode;
 using NCS = NativeCallStackStorage;
 
 class NMTVMATreeTest : public testing::Test {
@@ -50,16 +50,16 @@ public:
 
   // Utilities
 
-  VMATree::RBNode* tree_root(VMATree& tree) {
+  VMATree::TreapNode* treap_root(VMATree& tree) {
     return tree._tree._root;
   }
 
-  VMATree::VMARBTree& rbtree(VMATree& tree) {
+  VMATree::VMATreap& treap(VMATree& tree) {
     return tree._tree;
   }
 
-  VMATree::RBNode* find(VMATree::VMARBTree& tree, const VMATree::position key) {
-    return tree.find(tree._root, key);
+  VMATree::TreapNode* find(VMATree::VMATreap& treap, const VMATree::position key) {
+    return treap.find(treap._root, key);
   }
 
   NativeCallStack make_stack(size_t a) {
@@ -67,17 +67,17 @@ public:
     return stack;
   }
 
-  VMATree::StateType in_type_of(VMATree::RBNode* x) {
+  VMATree::StateType in_type_of(VMATree::TreapNode* x) {
     return x->val().in.type();
   }
 
-  VMATree::StateType out_type_of(VMATree::RBNode* x) {
+  VMATree::StateType out_type_of(VMATree::TreapNode* x) {
     return x->val().out.type();
   }
 
   int count_nodes(Tree& tree) {
     int count = 0;
-    rbtree(tree).visit_in_order([&](TNode* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       ++count;
     });
     return count;
@@ -113,14 +113,14 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.release_mapping(i * 100, 100);
     }
-    EXPECT_EQ(nullptr, tree_root(tree));
+    EXPECT_EQ(nullptr, treap_root(tree));
 
     // Other way around
     tree.reserve_mapping(0, 100 * 10, rd);
     for (int i = 9; i >= 0; i--) {
       tree.release_mapping(i * 100, 100);
     }
-    EXPECT_EQ(nullptr, tree_root(tree));
+    EXPECT_EQ(nullptr, treap_root(tree));
   }
 
   // Committing in a whole reserved range results in 2 nodes
@@ -130,7 +130,7 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
-    rbtree(tree).visit_in_order([&](TNode* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       VMATree::StateType in = in_type_of(x);
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
@@ -155,7 +155,7 @@ public:
     };
 
     int i = 0;
-    rbtree(tree).visit_in_order([&](TNode* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       if (i < 16) {
         found[i] = x->key();
       }
@@ -227,7 +227,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
-    rbtree(tree).visit_in_order([&](TNode* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.regiondata().mem_tag, mtTest);
@@ -254,7 +254,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 500000, rd);
     tree.release_mapping(0, 500000);
 
-    EXPECT_EQ(nullptr, tree_root(tree));
+    EXPECT_EQ(nullptr, treap_root(tree));
   }
 
   { // A committed region inside of/replacing a reserved region
@@ -264,7 +264,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(0, 100, rd2);
-    rbtree(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
+    treap(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.regiondata().mem_tag);
       }
@@ -278,9 +278,9 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree tree;
     Tree::RegionData rd{si[0], mtNMT};
     tree.reserve_mapping(0, 0, rd);
-    EXPECT_EQ(nullptr, tree_root(tree));
+    EXPECT_EQ(nullptr, treap_root(tree));
     tree.commit_mapping(0, 0, rd);
-    EXPECT_EQ(nullptr, tree_root(tree));
+    EXPECT_EQ(nullptr, treap_root(tree));
   }
 }
 
@@ -526,10 +526,10 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
         ASSERT_LE(end, SimpleVMATracker::num_pages);
         SimpleVMATracker::Info endi = tr->pages[end];
 
-        VMATree::VMARBTree& rbtree = this->rbtree(tree);
-        VMATree::RBNode* startn = find(rbtree, start * page_size);
+        VMATree::VMATreap& treap = this->treap(tree);
+        VMATree::TreapNode* startn = find(treap, start * page_size);
         ASSERT_NE(nullptr, startn);
-        VMATree::RBNode* endn = find(rbtree, (end * page_size) + page_size);
+        VMATree::TreapNode* endn = find(treap, (end * page_size) + page_size);
         ASSERT_NE(nullptr, endn);
 
         const NativeCallStack& start_stack = ncss.get(startn->val().out.stack());
