@@ -26,7 +26,6 @@
 
 package jdk.internal.platform;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.math.BigInteger;
