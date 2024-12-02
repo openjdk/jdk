@@ -1666,7 +1666,8 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   set_early_ctrl(new_limit, get_ctrl(limit));
 
   Node* new_cmp = _igvn.register_new_node_with_optimizer(
-      cmp->in(1) == incr ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr),
+      cmp->in(1) == incr
+          ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr),
       cmp);
   set_early_ctrl(new_cmp, get_ctrl(cmp));
 
