@@ -1251,12 +1251,12 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
     __ null_check(clazz.result(), info);
   }
 
-  address cpu_instanceof_fn = Runtime1::entry_for(C1StubId::is_instance_of_id);
-  if (instanceof_fn == nullptr) {
-    cpu_instanceof_fn = CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
+  address pd_instanceof_fn = Runtime1::entry_for(C1StubId::is_instance_of_id);
+  if (pd_instanceof_fn == nullptr) {
+    pd_instanceof_fn = CAST_FROM_FN_PTR(address, Runtime1::is_instance_of);
   }
   LIR_Opr call_result = call_runtime(clazz.value(), object.value(),
-                                     cpu_instanceof_fn,
+                                     pd_instanceof_fn,
                                      x->type(),
                                      nullptr); // null CodeEmitInfo results in a leaf call
   __ move(call_result, result);
