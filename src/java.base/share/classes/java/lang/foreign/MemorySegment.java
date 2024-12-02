@@ -1278,7 +1278,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if no {@code '\0'} terminator is present in
-     *         this segment between the given {@code offset} to the end of this segment.
+     *         this segment between the given {@code offset} and the end of this segment.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1315,7 +1315,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if no {@code '\0'} terminator is present in
-     *         this segment between the given {@code offset} to the end of this segment.
+     *         this segment between the given {@code offset} and the end of this segment.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
