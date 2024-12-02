@@ -57,42 +57,42 @@ public:
     RBNode* _parent;
     RBNode* _left;
     RBNode* _right;
-    unsigned int _black_height; // MSB encodes Red/Black, 0 - red, 1 - black
 
     K _key;
     V _value;
+
+    enum Color : uint8_t { BLACK, RED };
+    Color _color;
 
   public:
     const K& key() const { return _key; }
     V& val() { return _value; }
 
-    unsigned int black_height() const {
-      return _black_height & (-1U >> 1);
-    }
-
     bool is_black() const  {
-      return (_black_height & ~(-1U >> 1)) != 0;
+      return _color == BLACK;
     }
 
     bool is_red() const {
-      return (_black_height & ~(-1U >> 1)) == 0;
+      return _color == RED;
     }
 
   private:
     void color_black() {
-      _black_height |= ~(-1U >> 1);
+      _color = BLACK;
     }
 
     void color_red() {
-      _black_height &= (-1U >> 1);
+      _color = RED;
     }
-    RBNode(const K& k, const V& v)
-        : _parent(nullptr), _left(nullptr), _right(nullptr), _black_height(0U),
-          _key(k), _value(v) {}
+
+    RBNode(const K &k, const V &v)
+        : _parent(nullptr), _left(nullptr), _right(nullptr),
+          _key(k), _value(v), _color(RED) {}
 
     bool is_right_child() {
       return _parent != nullptr && _parent->_right == this;
     }
+
     bool is_left_child() {
       return _parent != nullptr && _parent->_left == this;
     }
@@ -189,10 +189,6 @@ public:
 
 #ifdef ASSERT
     bool is_correct(unsigned int num_blacks) const {
-      if (black_height() != num_blacks) {
-        return false;
-      }
-
       if (is_black()) {
         num_blacks--;
       }
@@ -241,13 +237,6 @@ private:
   void free_node(RBNode* node) {
     _allocator.free(node);
     _num_nodes--;
-  }
-
-  static inline int black_height(RBNode* node) {
-    if (node == nullptr) {
-      return 0;
-    }
-    return node->black_height();
   }
 
   static inline bool is_black(RBNode* node) {
@@ -312,9 +301,9 @@ private:
     return node;
   }
 
-  void fix_violations(RBNode* node) {
+  void fix_insert_violations(RBNode* node) {
     if(node->is_black()) { // node's value was updated
-      return;                    // Tree is already correct
+      return;              // Tree is already correct
     }
 
     RBNode* parent = node->_parent;
@@ -323,8 +312,8 @@ private:
 
       RBNode* grandparent = parent->_parent;
       if (grandparent == nullptr) { // Parent is the tree root
+        assert(parent == _root, "parent must be root");
         parent->color_black();      // Color parent black to eliminate the red-violation
-        parent->_black_height++;
         return;
       }
 
@@ -350,8 +339,6 @@ private:
         // Swap parent and grandparent colors to eliminate the red-violation
         parent->color_black();
         grandparent->color_red();
-        parent->_black_height++;
-        grandparent->_black_height--;
 
         if (_root == grandparent) {
           _root = parent;
@@ -364,8 +351,6 @@ private:
       // Paint both black, paint grandparent red to not create a black-violation
       parent->color_black();
       uncle->color_black();
-      parent->_black_height++;
-      uncle->_black_height++;
       grandparent->color_red();
 
       // Move up two levels to check for new potential red-violation
@@ -374,17 +359,20 @@ private:
     }
   }
 
-  void remove_inner(RBNode* node) {
+  void remove_black_leaf(RBNode* node) {
     // Black node removed, balancing needed
     RBNode* parent = node->_parent;
     while (parent != nullptr) {
+      // Sibling must exist. If it did not, node would need to be red to not break tree properties,
+      // and could be trivially removed before reaching here
       RBNode* sibling = node->is_left_child() ? parent->_right : parent->_left;
       if (is_red(sibling)) { // Sibling red, parent and nephews must be black
+        assert(is_black(parent), "parent must be black");
+        assert(is_black(sibling->_left), "nephew must be black");
+        assert(is_black(sibling->_right), "nephew must be black");
         // Swap parent and sibling colors
         parent->color_red();
-        parent->_black_height--;
         sibling->color_black();
-        sibling->_black_height++;
 
         // Rotate parent down and sibling up
         if (node->is_left_child()) {
@@ -412,13 +400,11 @@ private:
             sibling->rotate_left();
           }
 
-          sibling->color_red();
-          sibling->_black_height--;
-          close_nephew->color_black();
-          close_nephew->_black_height++;
-
           distant_nephew = sibling;
           sibling = close_nephew;
+          
+          distant_nephew->color_red();
+          sibling->color_black();
         }
 
         // Distant nephew red
@@ -440,20 +426,16 @@ private:
         }
         parent->color_black();
         if (sibling->is_black()) {
-          parent->_black_height--;
-          sibling->_black_height++;
         }
 
         // Color distant nephew black to restore black balance
         distant_nephew->color_black();
-        distant_nephew->_black_height++;
         return;
       }
 
       if (is_red(parent)) { // parent red, sibling and nephews black
         // Swap parent and sibling colors to restore black balance
         sibling->color_red();
-        sibling->_black_height--;
         parent->color_black();
         return;
       }
@@ -461,13 +443,12 @@ private:
       // Parent, sibling, and both nephews black
       // Color sibling red and move up one level
       sibling->color_red();
-      sibling->_black_height--;
-      parent->_black_height--;
       node = parent;
       parent = node->_parent;
     }
   }
 
+  // Assumption: node has at most one child. Two children is handled in `remove()`
   void remove_from_tree(RBNode* node) {
     RBNode* parent = node->_parent;
     RBNode* left = node->_left;
@@ -475,32 +456,40 @@ private:
     if (left != nullptr) { // node has a left only-child
       // node must be black, and child red, otherwise a black-violation would exist
       // Remove node and color the child black.
-      node->_left->color_black();
-      node->_left->_black_height++;
-      node->_left->_parent = node->_parent;
+      assert(right == nullptr, "right must be nullptr");
+      assert(is_black(node), "node must be black");
+      assert(is_red(left), "child must be red");
+      left->color_black();
+      left->_parent = parent;
       if (parent == nullptr) {
-        _root = node->_left;
+        assert(node == _root, "node must be root");
+        _root = left;
       } else {
-        node->_parent->replace_child(node, left);
+        parent->replace_child(node, left);
       }
     } else if (right != nullptr) { // node has a right only-child
-      node->_right->color_black();
-      node->_right->_black_height++;
-      node->_right->_parent = node->_parent;
+      // node must be black, and child red, otherwise a black-violation would exist
+      // Remove node and color the child black.
+      assert(left == nullptr, "left must be nullptr");
+      assert(is_black(node), "node must be black");
+      assert(is_red(right), "child must be red");
+      right->color_black();
+      right->_parent = parent;
       if (parent == nullptr) {
-        _root = node->_right;
+        assert(node == _root, "node must be root");
+        _root = right;
       } else {
-        node->_parent->replace_child(node, right);
+        parent->replace_child(node, right);
       }
     } else { // node has no children
       if (node == _root) { // Tree empty
         _root = nullptr;
       } else {
         if (is_black(node)) {
-          // removed node is black, creating a black imbalance
-          remove_inner(node);
+          // Removed node is black, creating a black imbalance
+          remove_black_leaf(node);
         }
-        node->_parent->replace_child(node, nullptr);
+        parent->replace_child(node, nullptr);
       }
     }
   }
@@ -530,7 +519,7 @@ public:
 
   void upsert(const K& k, const V& v) {
     RBNode* node = insert_node(k, v);
-    fix_violations(node);
+    fix_insert_violations(node);
   }
 
   bool remove(const K& k) {
