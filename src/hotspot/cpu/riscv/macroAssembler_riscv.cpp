@@ -1713,6 +1713,58 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     }
 }
 
+void MacroAssembler::crc32_vclmul_fold_16_bytes_vectorsize_16(VectorRegister vx, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register buf, Register tmp, const int STEP) {
+  assert_different_registers(vx, vt, vtmp1, vtmp2, vtmp3, vtmp4);
+  vclmul_vv(vtmp1, vx, vt);
+  vclmulh_vv(vtmp2, vx, vt);
+  vle64_v(vtmp4, buf); addi(buf, buf, STEP);
+  // low parts
+  vredxor_vs(vtmp3, vtmp1, vtmp4);
+  // high parts
+  vslidedown_vi(vx, vtmp4, 1);
+  vredxor_vs(vtmp1, vtmp2, vx);
+  // merge low and high back
+  vslideup_vi(vx, vtmp1, 1);
+  vmv_x_s(tmp, vtmp3);
+  vmv_s_x(vx, tmp);
+}
+
+void MacroAssembler::crc32_vclmul_fold_16_bytes_vectorsize_16_2(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register tmp) {
+  assert_different_registers(vx, vy, vt, vtmp1, vtmp2, vtmp3, vtmp4);
+  vclmul_vv(vtmp1, vx, vt);
+  vclmulh_vv(vtmp2, vx, vt);
+  // low parts
+  vredxor_vs(vtmp3, vtmp1, vy);
+  // high parts
+  vslidedown_vi(vtmp4, vy, 1);
+  vredxor_vs(vtmp1, vtmp2, vtmp4);
+  // merge low and high back
+  vslideup_vi(vx, vtmp1, 1);
+  vmv_x_s(tmp, vtmp3);
+  vmv_s_x(vx, tmp);
+}
+
+void MacroAssembler::crc32_vclmul_fold_16_bytes_vectorsize_16_3(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                      VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4,
+                      Register tmp) {
+  assert_different_registers(vx, vy, vt, vtmp1, vtmp2, vtmp3, vtmp4);
+  vclmul_vv(vtmp1, vx, vt);
+  vclmulh_vv(vtmp2, vx, vt);
+  // low parts
+  vredxor_vs(vtmp3, vtmp1, vy);
+  // high parts
+  vslidedown_vi(vtmp4, vy, 1);
+  vredxor_vs(vtmp1, vtmp2, vtmp4);
+  // merge low and high back
+  vslideup_vi(vy, vtmp1, 1);
+  vmv_x_s(tmp, vtmp3);
+  vmv_s_x(vy, tmp);
+}
+
 void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Register buf, Register len,
                                               Register vclmul_table, Register tmp1, Register tmp2) {
   assert_different_registers(crc, buf, len, vclmul_table, tmp1, tmp2, t1);
@@ -1758,31 +1810,14 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Regist
   align(OptoLoopAlignment);
   bind(L_16_bytes_loop);
   {
-    #define CRC32_VCLMUL_FOLD_16_BYTES(vx, vt, vtmp1, vtmp2, vtmp3, vtmp4) \
-      assert_different_registers(vx, vt, vtmp1, vtmp2, vtmp3, vtmp4); \
-      vclmul_vv(vtmp1, vx, vt); \
-      vclmulh_vv(vtmp2, vx, vt); \
-      vle64_v(vtmp4, buf); addi(buf, buf, STEP); \
-      /* low parts */ \
-      vredxor_vs(vtmp3, vtmp1, vtmp4); \
-      /* high parts */ \
-      vslidedown_vi(vx, vtmp4, 1); \
-      vredxor_vs(vtmp1, vtmp2, vx); \
-      /* merge low and high back */ \
-      vslideup_vi(vx, vtmp1, 1); \
-      vmv_x_s(tmp2, vtmp3); \
-      vmv_s_x(vx, tmp2);
-
-    CRC32_VCLMUL_FOLD_16_BYTES(v0, v31, v8, v9, v10, v11);
-    CRC32_VCLMUL_FOLD_16_BYTES(v1, v31, v12, v13, v14, v15);
-    CRC32_VCLMUL_FOLD_16_BYTES(v2, v31, v16, v17, v18, v19);
-    CRC32_VCLMUL_FOLD_16_BYTES(v3, v31, v20, v21, v22, v23);
-    CRC32_VCLMUL_FOLD_16_BYTES(v4, v31, v24, v25, v26, v27);
-    CRC32_VCLMUL_FOLD_16_BYTES(v5, v31, v8, v9, v10, v11);
-    CRC32_VCLMUL_FOLD_16_BYTES(v6, v31, v12, v13, v14, v15);
-    CRC32_VCLMUL_FOLD_16_BYTES(v7, v31, v16, v17, v18, v19);
-
-    #undef CRC32_VCLMUL_FOLD_16_BYTES
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v0, v31, v8, v9, v10, v11, buf, tmp2, STEP);
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v1, v31, v12, v13, v14, v15, buf, tmp2, STEP);
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v2, v31, v16, v17, v18, v19, buf, tmp2, STEP);
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v3, v31, v20, v21, v22, v23, buf, tmp2, STEP);
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v4, v31, v24, v25, v26, v27, buf, tmp2, STEP);
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v5, v31, v8, v9, v10, v11, buf, tmp2, STEP);
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v6, v31, v12, v13, v14, v15, buf, tmp2, STEP);
+    crc32_vclmul_fold_16_bytes_vectorsize_16(v7, v31, v16, v17, v18, v19, buf, tmp2, STEP);
   }
   sub(len, len, loop_step);
   bge(len, loop_step, L_16_bytes_loop);
@@ -1794,55 +1829,25 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Regist
   addi(vclmul_table, vclmul_table, TABLE_STEP);
   vle64_v(v31, vclmul_table);
 
-  #define CRC32_VCLMUL_FOLD_16_BYTES_2(vx, vy, vt, vtmp1, vtmp2, vtmp3, vtmp4) \
-    assert_different_registers(vx, vy, vt, vtmp1, vtmp2, vtmp3, vtmp4); \
-    vclmul_vv(vtmp1, vx, vt); \
-    vclmulh_vv(vtmp2, vx, vt); \
-    /* low parts */ \
-    vredxor_vs(vtmp3, vtmp1, vy); \
-    /* high parts */ \
-    vslidedown_vi(vtmp4, vy, 1); \
-    vredxor_vs(vtmp1, vtmp2, vtmp4); \
-    /* merge low and high back */ \
-    vslideup_vi(vx, vtmp1, 1); \
-    vmv_x_s(tmp2, vtmp3); \
-    vmv_s_x(vx, tmp2);
-
-  CRC32_VCLMUL_FOLD_16_BYTES_2(v0, v4, v31, v8, v9, v10, v11);
-  CRC32_VCLMUL_FOLD_16_BYTES_2(v1, v5, v31, v12, v13, v14, v15);
-  CRC32_VCLMUL_FOLD_16_BYTES_2(v2, v6, v31, v16, v17, v18, v19);
-  CRC32_VCLMUL_FOLD_16_BYTES_2(v3, v7, v31, v20, v21, v22, v23);
-
-  #undef CRC32_VCLMUL_FOLD_16_BYTES_2
+  crc32_vclmul_fold_16_bytes_vectorsize_16_2(v0, v4, v31, v8, v9, v10, v11, tmp2);
+  crc32_vclmul_fold_16_bytes_vectorsize_16_2(v1, v5, v31, v12, v13, v14, v15, tmp2);
+  crc32_vclmul_fold_16_bytes_vectorsize_16_2(v2, v6, v31, v16, v17, v18, v19, tmp2);
+  crc32_vclmul_fold_16_bytes_vectorsize_16_2(v3, v7, v31, v20, v21, v22, v23, tmp2);
 
 
   // ======== folding into 16 bytes from 64 bytes in register ========
 
-  #define CRC32_VCLMUL_FOLD_16_BYTES_3(vx, vy, vt, vtmp1, vtmp2, vtmp3, vtmp4) \
-    assert_different_registers(vx, vy, vt, vtmp1, vtmp2, vtmp3, vtmp4); \
-    vclmul_vv(vtmp1, vx, vt); \
-    vclmulh_vv(vtmp2, vx, vt); \
-    /* low parts */ \
-    vredxor_vs(vtmp3, vtmp1, vy); \
-    /* high parts */ \
-    vslidedown_vi(vtmp4, vy, 1); \
-    vredxor_vs(vtmp1, vtmp2, vtmp4); \
-    /* merge low and high back */ \
-    vslideup_vi(vy, vtmp1, 1); \
-    vmv_x_s(tmp2, vtmp3); \
-    vmv_s_x(vy, tmp2);
+  addi(vclmul_table, vclmul_table, TABLE_STEP);
+  vle64_v(v31, vclmul_table);
+  crc32_vclmul_fold_16_bytes_vectorsize_16_3(v0, v3, v31, v8, v9, v10, v11, tmp2);
 
   addi(vclmul_table, vclmul_table, TABLE_STEP);
   vle64_v(v31, vclmul_table);
-  CRC32_VCLMUL_FOLD_16_BYTES_3(v0, v3, v31, v8, v9, v10, v11);
+  crc32_vclmul_fold_16_bytes_vectorsize_16_3(v1, v3, v31, v12, v13, v14, v15, tmp2);
 
   addi(vclmul_table, vclmul_table, TABLE_STEP);
   vle64_v(v31, vclmul_table);
-  CRC32_VCLMUL_FOLD_16_BYTES_3(v1, v3, v31, v12, v13, v14, v15);
-
-  addi(vclmul_table, vclmul_table, TABLE_STEP);
-  vle64_v(v31, vclmul_table);
-  CRC32_VCLMUL_FOLD_16_BYTES_3(v2, v3, v31, v16, v17, v18, v19);
+  crc32_vclmul_fold_16_bytes_vectorsize_16_3(v2, v3, v31, v16, v17, v18, v19, tmp2);
 
   #undef FOLD_2_VCLMUL_3
 
@@ -1852,6 +1857,22 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Regist
   vmv_x_s(tmp1, v3);
   vslidedown_vi(v1, v3, 1);
   vmv_x_s(tmp2, v1);
+}
+
+void MacroAssembler::crc32_vclmul_fold_to_16_bytes_vectorsize_32(VectorRegister vx, VectorRegister vy, VectorRegister vt,
+                            VectorRegister vtmp1, VectorRegister vtmp2, VectorRegister vtmp3, VectorRegister vtmp4) {
+  assert_different_registers(vx, vy, vt, vtmp1, vtmp2, vtmp3, vtmp4);
+  vclmul_vv(vtmp1, vx, vt);
+  vclmulh_vv(vtmp2, vx, vt);
+  // low parts
+  vredxor_vs(vtmp3, vtmp1, vy);
+  // high parts
+  vslidedown_vi(vtmp4, vy, 1);
+  vredxor_vs(vtmp1, vtmp2, vtmp4);
+  // merge low and high back
+  vslideup_vi(vy, vtmp1, 1);
+  vmv_x_s(t1, vtmp3);
+  vmv_s_x(vy, t1);
 }
 
 void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Register buf, Register len,
@@ -1989,31 +2010,17 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Regist
 
   vsetivli(zr, 2, Assembler::e64, Assembler::m1, Assembler::mu, Assembler::tu);
 
-  #define CRC32_VCLMUL_FOLD_TO_16_BYTES(vx, vy, vt) \
-    assert_different_registers(vx, vy, vt, v28, v29, v30, v31); \
-    vclmul_vv(v28, vx, vt); \
-    vclmulh_vv(v29, vx, vt); \
-    /* low parts */ \
-    vredxor_vs(v30, v28, vy); \
-    /* high parts */ \
-    vslidedown_vi(v31, vy, 1); \
-    vredxor_vs(v28, v29, v31); \
-    /* merge low and high back */ \
-    vslideup_vi(vy, v28, 1); \
-    vmv_x_s(t1, v30); \
-    vmv_s_x(vy, t1);
+  addi(vclmul_table, vclmul_table, TABLE_STEP);
+  vle64_v(v8, vclmul_table);
+  crc32_vclmul_fold_to_16_bytes_vectorsize_32(v4, v20, v8, v28, v29, v30, v31);
 
   addi(vclmul_table, vclmul_table, TABLE_STEP);
   vle64_v(v8, vclmul_table);
-  CRC32_VCLMUL_FOLD_TO_16_BYTES(v4, v20, v8);
+  crc32_vclmul_fold_to_16_bytes_vectorsize_32(v16, v20, v8, v28, v29, v30, v31);
 
   addi(vclmul_table, vclmul_table, TABLE_STEP);
   vle64_v(v8, vclmul_table);
-  CRC32_VCLMUL_FOLD_TO_16_BYTES(v16, v20, v8);
-
-  addi(vclmul_table, vclmul_table, TABLE_STEP);
-  vle64_v(v8, vclmul_table);
-  CRC32_VCLMUL_FOLD_TO_16_BYTES(v18, v20, v8);
+  crc32_vclmul_fold_to_16_bytes_vectorsize_32(v18, v20, v8, v28, v29, v30, v31);
 
 
   // ======== final: move result to scalar regsiters ========
@@ -2022,7 +2029,6 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Regist
   vslidedown_vi(v4, v20, 1);
   vmv_x_s(tmp2, v4);
 
-  #undef CRC32_VCLMUL_FOLD_TO_16_BYTES
   #undef CRC32_VCLMUL_LOAD_TABLE
 }
 
