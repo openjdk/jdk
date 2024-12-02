@@ -1688,7 +1688,8 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
 
   // Optimistically assume limit in within int range, but add guards and traps to loop_limit_check.
   // i.e., deoptimize if "(long) (int) long_limit == long_limit" is false.
-  Node* cmp_limit = new CmpLNode(new ConvI2LNode(new_limit), limit);
+  Node* i2l_limit = _igvn.register_new_node_with_optimizer(new ConvI2LNode(new_limit));
+  Node* cmp_limit = new CmpLNode(i2l_limit, limit);
   Node* bol_limit = new BoolNode(cmp_limit, BoolTest::eq);
   insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol_limit);
 
