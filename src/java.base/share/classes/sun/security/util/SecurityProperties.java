@@ -155,7 +155,7 @@ public class SecurityProperties {
         if ("".equals(rawPropVal)) {
             return def;
         }
-     
+
         String lower = rawPropVal.toLowerCase(Locale.ROOT);
         if ("true".equals(lower)) {
             return true;
@@ -166,8 +166,8 @@ public class SecurityProperties {
                 dbg.println("Warning: Unexpected value for " + prop +
                             ": " + rawPropVal +
                             ". Using default value: " + def);
-            } 
+            }
             return def;
         }
-    }   
+    }
 }
