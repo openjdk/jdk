@@ -63,10 +63,10 @@ public final class SunNativeProvider extends Provider {
         System.err.println(NAME + ": " + message);
     }
 
-    private static final Oid[] MECH_OIDS = constructMechMap();
+    private static final Oid[] MECH_OIDS = getMechOIDs();
 
     @SuppressWarnings("restricted")
-    private static Oid[] constructMechMap() {
+    private static Oid[] getMechOIDs() {
         try {
             // Ensure the InetAddress class is loaded before
             // loading j2gss. The library will access this class
