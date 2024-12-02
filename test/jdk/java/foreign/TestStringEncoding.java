@@ -250,6 +250,32 @@ public class TestStringEncoding {
         }
     }
 
+    // This test ensures that we do not address outside the segment even though there
+    // are odd bytes at the end.
+    @Test(dataProvider = "strings")
+    public void offBoundaryTrailingBytes(String testString) {
+        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
+            return;
+        }
+        for (var charset : standardCharsets()) {
+            for (var arena: arenas()) {
+                try (arena) {
+                    MemorySegment strSegment = arena.allocateFrom(testString, charset);
+                    // Add an odd byte at the end
+                    MemorySegment inSegment = arena.allocate(strSegment.byteSize() + 1);
+                    // Make sure there are no null-terminators so that we will try to scan
+                    // the entire segment.
+                    inSegment.fill((byte) 1);
+                    for (int i = 0; i < 4; i++) {
+                        final int offset = i;
+                        var e = expectThrows(IndexOutOfBoundsException.class, () -> inSegment.getString(offset, charset));
+                        assertTrue(e.getMessage().contains("No null terminator found"));
+                    }
+                }
+            }
+        }
+    }
+
     private static final int TEST_LENGTH_MAX = 277;
 
     private Random deterministicRandom() {
