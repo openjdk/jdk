@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +28,8 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -122,6 +125,7 @@ private:
     _REGION_STATES_NUM        // last
   };
 
+public:
   static const char* region_state_to_string(RegionState s) {
     switch (s) {
       case _empty_uncommitted:       return "Empty Uncommitted";
@@ -140,6 +144,7 @@ private:
     }
   }
 
+private:
   // This method protects from accidental changes in enum order:
   int region_state_to_ordinal(RegionState s) const {
     switch (s) {
@@ -167,12 +172,13 @@ public:
   }
 
   // Allowed transitions from the outside code:
-  void make_regular_allocation();
+  void make_regular_allocation(ShenandoahAffiliation affiliation);
+  void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
   void make_humongous_cont();
-  void make_humongous_start_bypass();
-  void make_humongous_cont_bypass();
+  void make_humongous_start_bypass(ShenandoahAffiliation affiliation);
+  void make_humongous_cont_bypass(ShenandoahAffiliation affiliation);
   void make_pinned();
   void make_unpinned();
   void make_cset();
@@ -197,6 +203,11 @@ public:
   bool is_committed()              const { return !is_empty_uncommitted(); }
   bool is_cset()                   const { return _state == _cset   || _state == _pinned_cset; }
   bool is_pinned()                 const { return _state == _pinned || _state == _pinned_cset || _state == _pinned_humongous_start; }
+  bool is_regular_pinned()         const { return _state == _pinned; }
+
+  inline bool is_young() const;
+  inline bool is_old() const;
+  inline bool is_affiliated() const;
 
   // Macro-properties:
   bool is_alloc_allowed()          const { return is_empty() || is_regular() || _state == _pinned; }
@@ -229,19 +240,26 @@ private:
   HeapWord* _new_top;
   double _empty_time;
 
+  HeapWord* _top_before_promoted;
+
   // Seldom updated fields
   RegionState _state;
+  HeapWord* _coalesce_and_fill_boundary; // for old regions not selected as collection set candidates.
 
   // Frequently updated fields
   HeapWord* _top;
 
   size_t _tlab_allocs;
   size_t _gclab_allocs;
+  size_t _plab_allocs;
 
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
   HeapWord* volatile _update_watermark;
+
+  uint _age;
+  CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
@@ -327,8 +345,19 @@ public:
     return _index;
   }
 
-  // Allocation (return null if full)
-  inline HeapWord* allocate(size_t word_size, ShenandoahAllocRequest::Type type);
+  inline void save_top_before_promote();
+  inline HeapWord* get_top_before_promote() const { return _top_before_promoted; }
+  inline void restore_top_before_promote();
+  inline size_t garbage_before_padded_for_promote() const;
+
+  // If next available memory is not aligned on address that is multiple of alignment, fill the empty space
+  // so that returned object is aligned on an address that is a multiple of alignment_in_bytes.  Requested
+  // size is in words.  It is assumed that this->is_old().  A pad object is allocated, filled, and registered
+  // if necessary to assure the new allocation is properly aligned.  Return nullptr if memory is not available.
+  inline HeapWord* allocate_aligned(size_t word_size, ShenandoahAllocRequest &req, size_t alignment_in_bytes);
+
+  // Allocation (return nullptr if full)
+  inline HeapWord* allocate(size_t word_size, const ShenandoahAllocRequest& req);
 
   inline void clear_live_data();
   void set_live_data(size_t s);
@@ -349,7 +378,36 @@ public:
 
   void recycle();
 
-  void oop_iterate(OopIterateClosure* cl);
+  inline void begin_preemptible_coalesce_and_fill() {
+    _coalesce_and_fill_boundary = _bottom;
+  }
+
+  inline void end_preemptible_coalesce_and_fill() {
+    _coalesce_and_fill_boundary = _end;
+  }
+
+  inline void suspend_coalesce_and_fill(HeapWord* next_focus) {
+    _coalesce_and_fill_boundary = next_focus;
+  }
+
+  inline HeapWord* resume_coalesce_and_fill() {
+    return _coalesce_and_fill_boundary;
+  }
+
+  // Coalesce contiguous spans of garbage objects by filling header and registering start locations with remembered set.
+  // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parsable. Old regions must be
+  // parsable because the mark bitmap is not reliable during the concurrent old mark.
+  // Return true iff region is completely coalesced and filled.  Returns false if cancelled before task is complete.
+  bool oop_coalesce_and_fill(bool cancellable);
+
+  // Invoke closure on every reference contained within the humongous object that spans this humongous
+  // region if the reference is contained within a DIRTY card and the reference is no more than words following
+  // start within the humongous object.
+  void oop_iterate_humongous_slice_dirty(OopIterateClosure* cl, HeapWord* start, size_t words, bool write_table) const;
+
+  // Invoke closure on every reference contained within the humongous object starting from start and
+  // ending at start + words.
+  void oop_iterate_humongous_slice_all(OopIterateClosure* cl, HeapWord* start, size_t words) const;
 
   HeapWord* block_start(const void* p) const;
   size_t block_size(const HeapWord* p) const;
@@ -369,24 +427,53 @@ public:
 
   size_t capacity() const       { return byte_size(bottom(), end()); }
   size_t used() const           { return byte_size(bottom(), top()); }
+  size_t used_before_promote() const { return byte_size(bottom(), get_top_before_promote()); }
   size_t free() const           { return byte_size(top(),    end()); }
+
+  // Does this region contain this address?
+  bool contains(HeapWord* p) const {
+    return (bottom() <= p) && (p < top());
+  }
 
   inline void adjust_alloc_metadata(ShenandoahAllocRequest::Type type, size_t);
   void reset_alloc_metadata();
   size_t get_shared_allocs() const;
   size_t get_tlab_allocs() const;
   size_t get_gclab_allocs() const;
+  size_t get_plab_allocs() const;
 
   inline HeapWord* get_update_watermark() const;
   inline void set_update_watermark(HeapWord* w);
   inline void set_update_watermark_at_safepoint(HeapWord* w);
 
+  inline ShenandoahAffiliation affiliation() const;
+  inline const char* affiliation_name() const;
+
+  void set_affiliation(ShenandoahAffiliation new_affiliation);
+
+  // Region ageing and rejuvenation
+  uint age() const { return _age; }
+  CENSUS_NOISE(uint youth() const { return _youth; })
+
+  void increment_age() {
+    const uint max_age = markWord::max_age;
+    assert(_age <= max_age, "Error");
+    if (_age++ >= max_age) {
+      _age = max_age;   // clamp
+    }
+  }
+
+  void reset_age() {
+    CENSUS_NOISE(_youth += _age;)
+    _age = 0;
+  }
+
+  CENSUS_NOISE(void clear_youth() { _youth = 0; })
+
 private:
+  void decrement_humongous_waste() const;
   void do_commit();
   void do_uncommit();
-
-  void oop_iterate_objects(OopIterateClosure* cl);
-  void oop_iterate_humongous(OopIterateClosure* cl);
 
   inline void internal_increase_live_data(size_t s);
 

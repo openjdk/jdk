@@ -32,6 +32,7 @@
 #include "screencast_pipewire.h"
 #include "screencast_portal.h"
 
+extern volatile bool isGtkMainThread;
 
 extern struct ScreenSpace screenSpace;
 
@@ -65,6 +66,27 @@ gboolean validateToken(const gchar *token) {
                          token);
     }
     return isValid;
+}
+
+void waitForCallback(struct DBusCallbackHelper *helper) {
+    if (!helper) {
+        return;
+    }
+
+    if (isGtkMainThread) {
+        gtk->gtk_main();
+    } else {
+        while (!helper->isDone) {
+            // do not block if there is a GTK loop running
+            gtk->g_main_context_iteration(NULL, gtk->gtk_main_level() == 0);
+        }
+    }
+}
+
+void callbackEnd() {
+    if (isGtkMainThread) {
+        gtk->gtk_main_quit();
+    }
 }
 
 /**
@@ -362,6 +384,7 @@ static void callbackScreenCastCreateSession(
     }
 
     helper->isDone = TRUE;
+    callbackEnd();
 }
 
 gboolean portalScreenCastCreateSession() {
@@ -426,9 +449,7 @@ gboolean portalScreenCastCreateSession() {
                          err->message);
         ERR_HANDLE(err);
     } else {
-        while (!helper.isDone) {
-            gtk->g_main_context_iteration(NULL, TRUE);
-        }
+        waitForCallback(&helper);
     }
 
     unregisterScreenCastCallback(&helper);
@@ -472,6 +493,8 @@ static void callbackScreenCastSelectSources(
     if (result) {
         gtk->g_variant_unref(result);
     }
+
+    callbackEnd();
 }
 
 gboolean portalScreenCastSelectSources(const gchar *token) {
@@ -552,9 +575,7 @@ gboolean portalScreenCastSelectSources(const gchar *token) {
         DEBUG_SCREENCAST("Failed to call SelectSources: %s\n", err->message);
         ERR_HANDLE(err);
     } else {
-        while (!helper.isDone) {
-            gtk->g_main_context_iteration(NULL, TRUE);
-        }
+        waitForCallback(&helper);
     }
 
     unregisterScreenCastCallback(&helper);
@@ -640,6 +661,8 @@ static void callbackScreenCastStart(
     if (streams) {
         gtk->g_variant_unref(streams);
     }
+
+    callbackEnd();
 }
 
 ScreenCastResult portalScreenCastStart(const gchar *token) {
@@ -693,9 +716,7 @@ ScreenCastResult portalScreenCastStart(const gchar *token) {
         DEBUG_SCREENCAST("Failed to start session: %s\n", err->message);
         ERR_HANDLE(err);
     } else {
-        while (!helper.isDone) {
-            gtk->g_main_context_iteration(NULL, TRUE);
-        }
+        waitForCallback(&helper);
     }
 
     unregisterScreenCastCallback(&helper);

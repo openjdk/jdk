@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @modules java.base/sun.security.action
  */
 
-import java.io.*;
 import java.security.*;
 import sun.security.action.*;
 
@@ -73,15 +72,6 @@ public class Generify {
             System.out.println("property test passed");
         } else {
             throw new SecurityException("property test failed");
-        }
-
-        File f = new File(System.getProperty("test.src", "."), "Generify.java");
-        FileInputStream fis = AccessController.doPrivileged
-                        (new OpenFileInputStreamAction(f));
-        if (fis != null) {
-            System.out.println("file test passed");
-        } else {
-            throw new SecurityException("file test failed");
         }
     }
 }
