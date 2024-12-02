@@ -330,14 +330,14 @@ static int compare_region_idx(const uint a, const uint b) {
   return static_cast<int>(a-b);
 }
 
-// The current mechanism for evacuting pinned old regions is a below:
-// * pinned regions in marking collection set candidate (available during mixed gc) are evacuated like
-//   pinned young regions to avoid complexity of dealing with pinned regions that are part of a
-//   collection group sharing a single cardset. These regions will partially evacuated and added to the
-//   retained collection set by the handle evacuation failure mechanism.
+// The current mechanism for evacuating pinned old regions is as below:
+// * pinned regions in the marking collection set candidate list (available during mixed gc) are evacuated like
+//   pinned young regions to avoid the complexity of dealing with pinned regions that are part of a
+//   collection group sharing a single cardset. These regions will be partially evacuated and added to the
+//   retained collection set by the evacuation failure handling mechanism.
 // * evacuating pinned regions out of retained collection set candidates would also just take up time
-//   with no actual space freed in old gen. Better to concentrate on others. So we skipped over pinned
-//   regions in retained collection set candidates Retained collection set candidates are aged out, ie.
+//   with no actual space freed in old gen. Better to concentrate on others. So we skip over pinned
+//   regions in retained collection set candidates. Retained collection set candidates are aged out, ie.
 //   made to regular old regions without remembered sets after a few attempts to save computation costs
 //   of keeping them candidates for very long living pinned regions.
 void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
