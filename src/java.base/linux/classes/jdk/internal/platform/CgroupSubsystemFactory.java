@@ -32,7 +32,6 @@ import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -142,7 +141,7 @@ public class CgroupSubsystemFactory {
                                                            String cgroups,
                                                            String selfCgroup) throws IOException {
         final Map<String, CgroupInfo> infos = new HashMap<>();
-        List<String> lines = Files.readAllLines(Paths.get(cgroups));
+        List<String> lines = Files.readAllLines(Path.of(cgroups));
         for (String line : lines) {
             if (line.startsWith("#")) {
                 continue;
@@ -182,7 +181,7 @@ public class CgroupSubsystemFactory {
         // However, continuing in that case does not make sense as we'd need
         // information from mountinfo for the mounted controller paths which we wouldn't
         // find anyway in that case.
-        lines = Files.readAllLines(Paths.get(mountInfo));
+        lines = Files.readAllLines(Path.of(mountInfo));
         boolean anyCgroupMounted = false;
         for (String line: lines) {
             boolean cgroupsControllerFound = amendCgroupInfos(line, infos, isCgroupsV2);
@@ -198,8 +197,7 @@ public class CgroupSubsystemFactory {
         // See:
         //   setCgroupV1Path() for the action run for cgroups v1 systems
         //   setCgroupV2Path() for the action run for cgroups v2 systems
-        try (Stream<String> selfCgroupLines =
-                     Files.lines(Paths.get(selfCgroup))) {
+        try (Stream<String> selfCgroupLines = Files.lines(Path.of(selfCgroup))) {
             Consumer<String[]> action = (tokens -> setCgroupV1Path(infos, tokens));
             if (isCgroupsV2) {
                 action = (tokens -> setCgroupV2Path(infos, tokens));
@@ -313,7 +311,7 @@ public class CgroupSubsystemFactory {
             String mountPath = lineMatcher.group(2);
             String fsType = lineMatcher.group(3);
             if (fsType.equals("cgroup")) {
-                Path p = Paths.get(mountPath);
+                Path p = Path.of(mountPath);
                 String[] controllerNames = p.getFileName().toString().split(",");
                 for (String controllerName: controllerNames) {
                     switch (controllerName) {
