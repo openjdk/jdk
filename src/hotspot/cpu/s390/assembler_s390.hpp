@@ -992,8 +992,8 @@ class Assembler : public AbstractAssembler {
 #define BASR_ZOPC   (unsigned  int)(13 << 8)
 #define BCT_ZOPC    (unsigned  int)(70 << 24)
 #define BCTR_ZOPC   (unsigned  int)(6 << 8)
-#define BCTG_ZOPC   (unsigned  long)(227L << 40 | 70)
-#define BCTGR_ZOPC  (unsigned int)(0xb946 << 16)
+#define BCTG_ZOPC   (unsigned long)(227L << 40 | 70)
+#define BCTGR_ZOPC  (unsigned  int)(0xb946 << 16)
 // Absolute
 #define BC_ZOPC     (unsigned  int)(71 << 24)
 #define BAL_ZOPC    (unsigned  int)(69 << 24)
@@ -2071,7 +2071,7 @@ class Assembler : public AbstractAssembler {
   inline void z_llill(Register r1, int64_t i2);                 // r1 = i2_imm16    ; uint64 <- uint16
 
   // load halfword immediate on condition
-  inline void z_lochi(Register r1, int64_t i2, branch_condition m3);   // load immediate r1[32-63] = i2_simm16   ; int32 <- int16
+  inline void z_lochi( Register r1, int64_t i2, branch_condition m3);  // load immediate r1[32-63] = i2_simm16   ; int32 <- int16
   inline void z_lochhi(Register r1, int64_t i2, branch_condition m3);  // load immediate r1[ 0-31] = i2_simm16   ; int32 <- int16
   inline void z_locghi(Register r1, int64_t i2, branch_condition m3);  // load immediate r1[ 0-63] = i2_simm16   ; int64 <- int16
 
