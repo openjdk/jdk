@@ -65,10 +65,6 @@ class NativeStackPrinter : public StackObj {
   NativeStackPrinter(Thread* current_or_null)
     : NativeStackPrinter(current_or_null, nullptr, nullptr, 0) {}
 
-  NativeStackPrinter()
-    : NativeStackPrinter(nullptr, nullptr, nullptr, 0) {}
-
-
   // Prints the stack of the current thread to the given stream.
   // We first try to print via os::platform_print_native_stack. If that
   // succeeds then lastpc is set and we return true. Otherwise we do a
