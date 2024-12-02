@@ -30,8 +30,25 @@ import java.util.regex.Pattern;
  * TODO
  */
 public final class Template {
-    private static final Pattern LOCAL_VARIABLE_PATTERN = Pattern.compile("\\$(\\w+)");
-    private static final Pattern REPLACEMENT_PATTERN = Pattern.compile("\\$(\\w+)");
+    // Match local variables:
+    //   $name
+    private static final String LOCAL_VARIABLE_PATTERN = "(\\$\\w+)";
+
+    // Match replacements:
+    //   \{name}
+    //   \{name:generator}
+    //   \{name:generator(arg1,arg2)}
+    //   \{:generator}
+    private static final String REPLACEMENT_CHARS = "\\w:\\(\\),";
+    private static final String REPLACEMENT_PATTERN = "(\\\\\\{[" + REPLACEMENT_CHARS + "]+\\})";
+
+    // Match either local variable or replacement.
+    private static final String ALL_PATTERNS = "" +
+                                               LOCAL_VARIABLE_PATTERN +
+                                               "|" +
+                                               REPLACEMENT_PATTERN +
+                                               "";
+    private static final Pattern PATTERNS = Pattern.compile(ALL_PATTERNS);
 
     private String templateString;
 
@@ -40,18 +57,15 @@ public final class Template {
     }
 
     public String instantiate() {
-        Matcher matcher = LOCAL_VARIABLE_PATTERN.matcher(templateString);
+        Matcher matcher = PATTERNS.matcher(templateString);
 
         while (matcher.find()) {
-            String variableName = matcher.group(1);
+            System.out.println("group: " + matcher.group());
             int start = matcher.start();
             int end = matcher.end();
             String extract = templateString.substring(start, end);
-            System.out.println("Found local variable: " + variableName + " vs " + extract);
-            //String replacement = variableName + uniqueId;
-            //matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+            System.out.println("Found: " + extract);
         }
-        // matcher.appendTail(result);
 
         return templateString;
     }

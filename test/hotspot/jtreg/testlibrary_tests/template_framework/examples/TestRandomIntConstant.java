@@ -65,7 +65,8 @@ public class TestRandomIntConstant {
             public class InnerTest {
                 public static int test() {
                     int $con1 = \\{conx:int_con};
-                    int $con2 = \\{cony:int_con};
+                    int $con2 = \\{cony};
+                    int $con2 = \\{conz:int_con(3,11)};
                     return $con1 + $con2;
                 }
             }
