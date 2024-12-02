@@ -109,9 +109,9 @@ public final class StringSupport {
     }
 
     /**
-     * {@return the shortest distance beginning at the provided {@code fromOffset}
-     *          to the encountering of a zero byte in the provided {@code segment}
-     *          checking bytes before the {@code toOffset}}
+     * {@return the index of the first zero byte beginning at the provided
+     *          {@code fromOffset} to the encountering of a zero byte in the provided
+     *          {@code segment} checking bytes before the {@code toOffset}}
      * <p>
      * The method is using a heuristic method to determine if a long word contains a
      * zero byte. The method might have false positives but never false negatives.
