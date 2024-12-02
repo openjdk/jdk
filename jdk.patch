@@ -1,0 +1,18 @@
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/query/FieldBuilder.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/query/FieldBuilder.java
+index c6916bc52ef..391db7cc930 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/query/FieldBuilder.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/query/FieldBuilder.java
+@@ -353,9 +353,10 @@ record WildcardElement(String name, String label, ValueDescriptor field) {
+                 var subFields = we.field().getFields().reversed();
+                 if (!subFields.isEmpty() && !KNOWN_TYPES.contains(we.field().getTypeName())) {
+                     for (ValueDescriptor subField : subFields) {
+-                        String n = we.name + "." + subField.getName();
+-                        String l = we.label + " : " + makeLabel(subField, false);
+-                        if (stack.size() < 2) { // Limit depth to 2
++                        // Limit depth to 2
++                        if (!we.name.contains(".")) {
++                            String n = we.name + "." + subField.getName();
++                            String l = we.label + " : " + makeLabel(subField, false);
+                             stack.push(new WildcardElement(n, l, subField));
+                         }
+                     }
