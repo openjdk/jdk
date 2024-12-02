@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,18 @@ package java.security;
 
 
 /**
- * A computation to be performed with privileges enabled, that throws one or
- * more checked exceptions.  The computation is performed by invoking
+ * A computation to be performed that throws one or more checked exceptions.
+ * The computation is performed by invoking
  * {@code AccessController.doPrivileged} on the
  * {@code PrivilegedExceptionAction} object.  This interface is
  * used only for computations that throw checked exceptions;
  * computations that do not throw
  * checked exceptions should use {@code PrivilegedAction} instead.
  * @param <T> the type of the result of running the computation
+ *
+ * @apiNote
+ * This action cannot be performed with privileges enabled as the 
+ * Security Manager is no longer supported.
  *
  * @since 1.2
  * @see AccessController
@@ -47,7 +51,7 @@ package java.security;
 public interface PrivilegedExceptionAction<T> {
     /**
      * Performs the computation.  This method will be called by
-     * {@code AccessController.doPrivileged} after enabling privileges.
+     * {@code AccessController.doPrivileged}.
      *
      * @return a class-dependent value that may represent the results of the
      *         computation.  Each class that implements
