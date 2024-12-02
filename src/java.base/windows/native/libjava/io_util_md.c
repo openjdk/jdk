@@ -342,20 +342,8 @@ handleNonSeekAvailable(FD fd, long *pbytes) {
         return FALSE;
     }
 
-    if (! PeekNamedPipe(han, NULL, 0, NULL, pbytes, NULL)) {
-        /* PeekNamedPipe fails when at EOF.  In that case we
-         * simply make *pbytes = 0 which is consistent with the
-         * behavior we get on Solaris when an fd is at EOF.
-         * The only alternative is to raise an Exception,
-         * which isn't really warranted. It also fails if the
-         * handle is to the NUL device (ERROR_INVALID_FUNCTION),
-         * so *pbytes = 0 is also set in that case.
-         */
-        DWORD lastError = GetLastError();
-        if (lastError != ERROR_BROKEN_PIPE &&
-            lastError != ERROR_INVALID_FUNCTION) {
-            return FALSE;
-        }
+    if (!PeekNamedPipe(han, NULL, 0, NULL, pbytes, NULL)) {
+        // If PeekNamedPipe fails, set the number of available bytes to zero.
         *pbytes = 0;
     }
     return TRUE;
