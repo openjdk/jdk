@@ -467,8 +467,9 @@ static double calculate_extra_young_gc_time(const ZDirectorStats& stats) {
   const double potential_young_gc_time_per_bytes_freed = young_gc_time / (reclaimed_per_young_gc + old_garbage);
 
   if (current_young_gc_time_per_bytes_freed == std::numeric_limits<double>::infinity()) {
-    // To avoid potential "infinity - infinity".
-    return old_garbage == 0.0 ? 0.0 : std::numeric_limits<double>::infinity();
+    // Young collection's are not reclaiming any memory. Return infinity as a signal
+    // to trigger an old collection, regardless of the amount of old garbage.
+    return std::numeric_limits<double>::infinity();
   }
 
   // Calculate extra time per young collection inflicted by *not* doing an
