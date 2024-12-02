@@ -379,13 +379,37 @@ public class JlinkTask {
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
         Set<String> roots = new HashSet<>();
+        boolean isLinkableRuntime = LinkableRuntimeImage.isLinkableRuntime();
         for (String mod : options.addMods) {
+            // For linking from packaged modules options.modulePath.size() is
+            // always > 0 since we add the default packaged modules in
+            // JlinkTask.run() after options processing and the 'jmods' folder
+            // exists.
             if (mod.equals(ALL_MODULE_PATH) && options.modulePath.size() > 0) {
                 ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, Set.of());
                 // all observable modules are roots
                 finder.findAll()
                       .stream()
                       .map(ModuleReference::descriptor)
+                      .map(ModuleDescriptor::name)
+                      .forEach(mn -> roots.add(mn));
+            } else if (mod.equals(ALL_MODULE_PATH) &&
+                       options.modulePath.isEmpty() && isLinkableRuntime) {
+                // Handle ALL-MODULE-PATH for the case when linking from the
+                // run-time image.
+                ModuleFinder finder = newModuleFinder(List.of(), options.limitMods, Set.of());
+                // All observable modules that isn't jdk.jlink and doesn't
+                // depend on jdk.jlink module.
+                // jdk.jlink is not allowed to be used when linking
+                // from the run-time image (JEP 493).
+                finder.findAll()
+                      .stream()
+                      .map(ModuleReference::descriptor)
+                      .filter(a -> {
+                          return !("jdk.jlink".equals(a.name()) ||
+                                      a.requires().stream()
+                                                  .anyMatch(r -> "jdk.jlink".equals(r.name())));
+                          })
                       .map(ModuleDescriptor::name)
                       .forEach(mn -> roots.add(mn));
             } else {
