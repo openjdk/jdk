@@ -446,7 +446,7 @@ void VM_Version::initialize() {
   if (UseSVE > 0) {
     int vl = get_current_sve_vector_length();
     if (vl < 0) {
-      warning("Unable to get SVE vector length on this system. Disabling SVE.");
+      warning("Unable to get SVE vector length on this system. Disabling SVE. Specify -XX:UseSVE=0 to shun this warning.");
       FLAG_SET_DEFAULT(UseSVE, 0);
     } else {
       _initial_sve_vector_length = vl;
@@ -518,7 +518,8 @@ void VM_Version::initialize() {
   if (UseSVE > 0) {
     if (FLAG_IS_DEFAULT(MaxVectorSize)) {
       MaxVectorSize = _initial_sve_vector_length;
-    } else if (MaxVectorSize < FloatRegister::sve_vl_min) {
+    }
+    if (MaxVectorSize < FloatRegister::sve_vl_min) {
       warning("SVE does not support vector length less than %d bytes. Disabling SVE.",
               FloatRegister::sve_vl_min);
       UseSVE = 0;
