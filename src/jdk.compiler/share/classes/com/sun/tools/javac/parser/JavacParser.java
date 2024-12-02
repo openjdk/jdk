@@ -669,7 +669,7 @@ public class JavacParser implements Parser {
             deferredLintHandler.report(lint -> {
                 if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS) &&
                         !shebang(c, pos)) {
-                    log.warning(Lint.LintCategory.DANGLING_DOC_COMMENTS,
+                    log.warning(
                             pos, Warnings.DanglingDocComment);
                 }
             });

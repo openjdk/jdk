@@ -79,8 +79,6 @@ import javax.tools.StandardLocation;
 
 import jdk.internal.jmod.JmodFile;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -224,7 +222,7 @@ public class Locations {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
                     if (warn) {
-                        log.warning(LintCategory.PATH, Warnings.InvalidPath(s));
+                        log.warning(Warnings.InvalidPath(s));
                     }
                 }
             }
@@ -319,8 +317,8 @@ public class Locations {
         private void addDirectory(Path dir, boolean warn) {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
-                    log.warning(Lint.LintCategory.PATH,
-                                Warnings.DirPathElementNotFound(dir));
+                    log.warning(
+                            Warnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -365,8 +363,8 @@ public class Locations {
             if (!fsInfo.exists(file)) {
                 /* No such file or directory exists */
                 if (warn) {
-                    log.warning(Lint.LintCategory.PATH,
-                                Warnings.PathElementNotFound(file));
+                    log.warning(
+                            Warnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -388,14 +386,14 @@ public class Locations {
                         try {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
-                                log.warning(Lint.LintCategory.PATH,
-                                            Warnings.UnexpectedArchiveFile(file));
+                                log.warning(
+                                        Warnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
-                                log.warning(Lint.LintCategory.PATH,
-                                            Warnings.InvalidArchiveFile(file));
+                                log.warning(
+                                        Warnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -1662,7 +1660,7 @@ public class Locations {
                     Warning key = Files.exists(prefix)
                             ? Warnings.DirPathElementNotDirectory(prefix)
                             : Warnings.DirPathElementNotFound(prefix);
-                    log.warning(Lint.LintCategory.PATH, key);
+                    log.warning(key);
                 }
                 return;
             }

@@ -259,9 +259,9 @@ public class MandatoryWarningHandler {
     private void logMandatoryWarning(DiagnosticPosition pos, Warning warnKey) {
         // Note: the following log methods are safe if lintCategory is null.
         if (enforceMandatory)
-            log.mandatoryWarning(lintCategory, pos, warnKey);
+            log.mandatoryWarning(pos, warnKey);
         else
-            log.warning(lintCategory, pos, warnKey);
+            log.warning(pos, warnKey);
     }
 
     /**

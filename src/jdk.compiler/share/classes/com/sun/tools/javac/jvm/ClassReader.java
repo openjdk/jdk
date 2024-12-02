@@ -855,7 +855,7 @@ public class ClassReader {
                 if (lintClassfile && !warnedAttrs.contains(name)) {
                     JavaFileObject prev = log.useSource(currentClassFile);
                     try {
-                        log.warning(LintCategory.CLASSFILE, (DiagnosticPosition) null,
+                        log.warning((DiagnosticPosition) null,
                                     Warnings.FutureAttr(name, version.major, version.minor, majorVersion, minorVersion));
                     } finally {
                         log.useSource(prev);
@@ -1610,7 +1610,7 @@ public class ClassReader {
             //the RuntimeVisibleParameterAnnotations and RuntimeInvisibleParameterAnnotations
             //provide annotations for a different number of parameters, ignore:
             if (lintClassfile) {
-                log.warning(LintCategory.CLASSFILE, Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
+                log.warning(Warnings.RuntimeVisibleInvisibleParamAnnotationsMismatch(currentClassFile));
             }
             for (int pnum = 0; pnum < numParameters; pnum++) {
                 readAnnotations();
@@ -2960,7 +2960,7 @@ public class ClassReader {
     private void dropParameterAnnotations() {
         parameterAnnotations = null;
         if (lintClassfile) {
-            log.warning(LintCategory.CLASSFILE, Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
+            log.warning(Warnings.RuntimeInvisibleParameterAnnotations(currentClassFile));
         }
     }
     /**

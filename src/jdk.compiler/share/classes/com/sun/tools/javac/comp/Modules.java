@@ -52,7 +52,6 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
 import com.sun.source.tree.ModuleTree.ModuleKind;
-import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
@@ -1275,7 +1274,7 @@ public class Modules extends JCTree.Visitor {
             if (lintOptions) {
                 for (ModuleSymbol msym : limitMods) {
                     if (!observable.contains(msym)) {
-                        log.warning(LintCategory.OPTIONS,
+                        log.warning(
                                 Warnings.ModuleForOptionNotFound(Option.LIMIT_MODULES, msym));
                     }
                 }
@@ -1731,7 +1730,7 @@ public class Modules extends JCTree.Visitor {
 
         if (!unknownModules.contains(msym)) {
             if (lintOptions) {
-                log.warning(LintCategory.OPTIONS,
+                log.warning(
                         Warnings.ModuleForOptionNotFound(Option.ADD_EXPORTS, msym));
             }
             unknownModules.add(msym);
@@ -1790,7 +1789,7 @@ public class Modules extends JCTree.Visitor {
                     targetModule = syms.enterModule(names.fromString(targetName));
                     if (!allModules.contains(targetModule)) {
                         if (lintOptions) {
-                            log.warning(LintCategory.OPTIONS, Warnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule));
+                            log.warning(Warnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule));
                         }
                         continue;
                     }

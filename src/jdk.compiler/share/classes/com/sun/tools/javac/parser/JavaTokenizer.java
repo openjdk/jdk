@@ -35,12 +35,10 @@ import com.sun.tools.javac.parser.Tokens.Comment.CommentStyle;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.EndPosTable;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.*;
 
 import java.nio.CharBuffer;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.sun.tools.javac.parser.Tokens.*;
@@ -228,7 +226,7 @@ public class JavaTokenizer extends UnicodeReader {
      */
     protected void lexWarning(LintCategory lc, int pos, JCDiagnostic.Warning key) {
         DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
-        log.warning(lc, dp, key);
+        log.warning(dp, key);
     }
 
     /**
