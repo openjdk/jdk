@@ -28,8 +28,6 @@ package sun.awt.shell;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.concurrent.Callable;
-import java.util.stream.Stream;
-
 
 /**
  * @author Michael Martak
