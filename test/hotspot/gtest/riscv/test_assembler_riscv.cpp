@@ -111,8 +111,7 @@ class NarrowCmpxchgTester {
   typedef TESTSIZE (*cmpxchg_func)(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result,
                                    int64_t scratch0, int64_t scratch1, int64_t scratch2);
 
-  static TESTSIZE narrow_cmpxchg(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result,
-                                 int64_t scratch0, int64_t scratch1, int64_t scratch2, bool boolean_result = false) {
+  static TESTSIZE narrow_cmpxchg(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result, bool boolean_result = false) {
     BufferBlob* bb = BufferBlob::create("riscvTest", 128);
     CodeBuffer code(bb);
     MacroAssembler _masm(&code);
@@ -125,7 +124,7 @@ class NarrowCmpxchgTester {
       _masm.ret();
     }
     _masm.flush(); // icache invalidate
-    TESTSIZE ret = ((cmpxchg_func)entry)(addr, expected, new_value, result, scratch0, scratch1, scratch2);
+    TESTSIZE ret = ((cmpxchg_func)entry)(addr, expected, new_value, result, -1, -1, -1);
     BufferBlob::free(bb);
     return ret;
   }
@@ -140,26 +139,22 @@ void run_narrow_cmpxchg_tests() {
     memset(data, -1, sizeof(data));
 
     data[i] = 121;
-    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 121, 42, /* result */ 67,
-                                                                          -1, -1, -1, false);
+    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 121, 42, /* result */ 67, false);
     ASSERT_EQ(ret, 121);
     ASSERT_EQ(data[i], 42);
 
     data[i] = 121;
-    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 120, 42, /* result */ 67,
-                                                                          -1, -1, -1, false);
+    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 120, 42, /* result */ 67, false);
     ASSERT_EQ(ret, 121);
     ASSERT_EQ(data[i], 121);
 
     data[i] = 121;
-    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 121, 42, /* result */ 67,
-                                                                          -1, -1, -1, true);
+    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 121, 42, /* result */ 67, true);
     ASSERT_EQ(ret, 1);
     ASSERT_EQ(data[i], 42);
 
     data[i] = 121;
-    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 120, 42, /* result */ 67,
-                                                                          -1, -1, -1, true);
+    ret = NarrowCmpxchgTester<TESTSIZE, ASMSIZE>::narrow_cmpxchg((intptr_t)&data[i], 120, 42, /* result */ 67, true);
     ASSERT_EQ(ret, 0);
     ASSERT_EQ(data[i], 121);
   }
