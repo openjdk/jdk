@@ -586,10 +586,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         final LintCategory category;
 
         public Warning(String prefix, String key, Object... args) {
-            super(DiagnosticType.WARNING, prefix, key, args);
-            category = key.contains(".lint.") ?
-                    LintCategory.get(key.split("\\.")[2]) :
-                    null;
+            this(null, prefix, key, args);
         }
 
         public Warning(LintCategory category, String prefix, String key, Object... args) {
