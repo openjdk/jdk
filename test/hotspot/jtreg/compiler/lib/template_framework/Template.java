@@ -23,10 +23,16 @@
 
 package compiler.lib.template_framework;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * TODO
  */
 public final class Template {
+    private static final Pattern LOCAL_VARIABLE_PATTERN = Pattern.compile("\\$(\\w+)");
+    private static final Pattern REPLACEMENT_PATTERN = Pattern.compile("\\$(\\w+)");
+
     private String templateString;
 
     public Template(String templateString) {
@@ -34,6 +40,19 @@ public final class Template {
     }
 
     public String instantiate() {
+        Matcher matcher = LOCAL_VARIABLE_PATTERN.matcher(templateString);
+
+        while (matcher.find()) {
+            String variableName = matcher.group(1);
+            int start = matcher.start();
+            int end = matcher.end();
+            String extract = templateString.substring(start, end);
+            System.out.println("Found local variable: " + variableName + " vs " + extract);
+            //String replacement = variableName + uniqueId;
+            //matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
+        }
+        // matcher.appendTail(result);
+
         return templateString;
     }
 }
