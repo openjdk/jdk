@@ -81,8 +81,8 @@ public final class AppleProvider extends Provider {
 
         final Provider p = this;
         putService(new ProviderService(p, "KeyStore",
-                "KeychainStore", "apple.security.KeychainStore$USER"));
+                   "KeychainStore", "apple.security.KeychainStore$USER"));
         putService(new ProviderService(p, "KeyStore",
-                "KeychainStore-ROOT", "apple.security.KeychainStore$ROOT"));
+                   "KeychainStore-ROOT", "apple.security.KeychainStore$ROOT"));
     }
 }
