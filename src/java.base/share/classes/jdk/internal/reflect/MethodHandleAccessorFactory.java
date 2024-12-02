@@ -370,10 +370,11 @@ final class MethodHandleAccessorFactory {
         if (member instanceof Method method && isSignaturePolymorphicMethod(method))
             return true;
 
-        // Lookup always calls MethodHandle::setVarargs on a member with ACC_VARARGS
-        // bit set, which verifies that the last parameter of the member must be
-        // an array type.  Such restriction does not exist in core reflection
-        // and the JVM.  Fall back to use the native implementation instead.
+        // For members with ACC_VARARGS bit set, MethodHandles produced by lookup
+        // always have variable arity set and hence the last parameter of the member
+        // must be an array type.  Such restriction does not exist in core reflection
+        // and the JVM, which always use fixed-arity invocations.  Fall back to use
+        // the native implementation instead.
         int paramCount = member.getParameterCount();
         if (member.isVarArgs() &&
                 (paramCount == 0 || !(reflectionFactory.getExecutableSharedParameterTypes(member)[paramCount-1].isArray()))) {
