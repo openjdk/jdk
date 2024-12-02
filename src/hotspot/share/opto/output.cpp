@@ -1439,6 +1439,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
   int current_offset  = 0;
   int last_call_offset = -1;
   int last_avoid_back_to_back_offset = -1;
+  int last_insn_offset = 0;
 #ifdef ASSERT
   uint* jmp_target = NEW_RESOURCE_ARRAY(uint,nblocks);
   uint* jmp_offset = NEW_RESOURCE_ARRAY(uint,nblocks);
@@ -1610,7 +1611,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
           // If this is a null check, then add the start of the previous instruction to the list
         else if( mach->is_MachNullCheck() ) {
-          inct_starts[inct_cnt++] = previous_offset;
+          inct_starts[inct_cnt++] = Matcher::offset_for_null_check(previous_offset, last_insn_offset);
         }
 
           // If this is a branch, then fill in the label with the target BB's label
@@ -1714,6 +1715,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       DEBUG_ONLY(uint instr_offset = masm->offset());
       n->emit(masm, C->regalloc());
       current_offset = masm->offset();
+      last_insn_offset = current_offset;
 
       // Above we only verified that there is enough space in the instruction section.
       // However, the instruction may emit stubs that cause code buffer expansion.

@@ -2498,6 +2498,10 @@ static bool is_bmi_pattern(Node* n, Node* m) {
   return false;
 }
 
+int Matcher::offset_for_null_check(int previous_offset, int last_insn_offset) {
+  return previous_offset;
+}
+
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   // If 'n' and 'm' are part of a graph for BMI instruction, clone the input 'm'.

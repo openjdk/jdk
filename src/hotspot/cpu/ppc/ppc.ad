@@ -998,6 +998,10 @@ int MachNode::compute_padding(int current_offset) const {
   return 0;
 }
 
+int Matcher::offset_for_null_check(int previous_offset, int last_insn_offset) {
+  return previous_offset;
+}
+
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   if (is_encode_and_store_pattern(n, m)) {

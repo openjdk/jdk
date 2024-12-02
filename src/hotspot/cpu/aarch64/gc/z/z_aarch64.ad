@@ -101,11 +101,11 @@ static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address 
 %}
 
 // Load Pointer
-instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
+instruct zLoadP(iRegPNoSp dst, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
   predicate(UseZGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
-  effect(TEMP dst, KILL cr);
+  effect(TEMP dst, TEMP tmp, KILL cr);
 
   ins_cost(4 * INSN_COST);
 
@@ -115,9 +115,9 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
     Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     if (ref_addr.getMode() == Address::base_plus_offset) {
       // Fix up any out-of-range offsets.
-      assert_different_registers(rscratch2, as_Register($mem$$base));
-      assert_different_registers(rscratch2, $dst$$Register);
-      ref_addr = __ legitimize_address(ref_addr, 8, rscratch2);
+      assert_different_registers($tmp$$Register, as_Register($mem$$base));
+      assert_different_registers($tmp$$Register, $dst$$Register);
+      ref_addr = __ legitimize_address(ref_addr, 8, $tmp$$Register);
     }
     __ ldr($dst$$Register, ref_addr);
     z_load_barrier(masm, this, ref_addr, $dst$$Register, rscratch1);
@@ -147,18 +147,24 @@ instruct zLoadPVolatile(iRegPNoSp dst, indirect mem /* sync_memory */, rFlagsReg
 %}
 
 // Store Pointer
-instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp, rFlagsReg cr)
+instruct zStoreP(memory mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
   predicate(UseZGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
-  effect(TEMP tmp, KILL cr);
+  effect(TEMP tmp1, TEMP tmp2, KILL cr);
 
   ins_cost(125); // XXX
   format %{ "movq    $mem, $src\t# ptr" %}
   ins_encode %{
-    const Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
-    z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp$$Register, rscratch2, false /* is_atomic */);
-    __ str($tmp$$Register, ref_addr);
+    Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    if (ref_addr.getMode() == Address::base_plus_offset) {
+      // Fix up any out-of-range offsets.
+      assert_different_registers($tmp1$$Register, as_Register($mem$$base));
+      assert_different_registers($tmp1$$Register, $src$$Register);
+      ref_addr = __ legitimize_address(ref_addr, 8, $tmp1$$Register);
+    }
+    z_store_barrier(masm, this, ref_addr, $src$$Register, $tmp2$$Register, rscratch2, false /* is_atomic */);
+    __ str($tmp2$$Register, ref_addr);
   %}
   ins_pipe(pipe_serial);
 %}
