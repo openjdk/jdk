@@ -5323,7 +5323,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 bool MacroAssembler::check_klass_decode_mode(address base, int shift, const size_t range) {
   assert(UseCompressedClassPointers, "not using compressed class pointers");
   const uint64_t base_address = (uint64_t)base;
-  const uint64_t range_mask = right_n_bits(ceil_log2(range));
+  const uint64_t range_mask = right_n_bits(log2i_ceil(range));
   const uint64_t shifted_base = base_address >> shift;
 
   return (base == nullptr ||
