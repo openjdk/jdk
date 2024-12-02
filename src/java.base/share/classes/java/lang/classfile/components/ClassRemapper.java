@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import jdk.internal.classfile.impl.ClassRemapperImpl;
+import jdk.internal.javac.PreviewFeature;
 
 import static java.util.Objects.requireNonNull;
 
@@ -54,8 +55,9 @@ import static java.util.Objects.requireNonNull;
  * Arrays of reference types are always decomposed, mapped as the base reference
  * types and composed back to arrays.
  *
- * @since 24
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassRemapper extends ClassTransform permits ClassRemapperImpl {
 
     /**

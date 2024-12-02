@@ -31,6 +31,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 
 import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * {@link CodeLocalsShifter} is a {@link CodeTransform} shifting locals to
@@ -38,8 +39,9 @@ import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
  * Locals pointing to the receiver or to method arguments slots are never shifted.
  * All locals pointing beyond the method arguments are re-indexed in order of appearance.
  *
- * @since 24
+ * @since 22
  */
+@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeLocalsShifter extends CodeTransform permits CodeLocalsShifterImpl {
 
     /**
