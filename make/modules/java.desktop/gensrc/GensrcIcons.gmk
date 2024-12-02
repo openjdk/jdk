@@ -37,23 +37,6 @@ GENSRC_AWT_ICONS_SRC += \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon32.png \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
 
-
-AWT_ICONPATH := $(MODULE_SRC)/share/classes/sun/awt/resources
-
-GENSRC_AWT_ICONS_SRC += \
-    $(AWT_ICONPATH)/security-icon-bw16.png \
-    $(AWT_ICONPATH)/security-icon-interim16.png \
-    $(AWT_ICONPATH)/security-icon-yellow16.png \
-    $(AWT_ICONPATH)/security-icon-bw24.png \
-    $(AWT_ICONPATH)/security-icon-interim24.png \
-    $(AWT_ICONPATH)/security-icon-yellow24.png \
-    $(AWT_ICONPATH)/security-icon-bw32.png \
-    $(AWT_ICONPATH)/security-icon-interim32.png \
-    $(AWT_ICONPATH)/security-icon-yellow32.png \
-    $(AWT_ICONPATH)/security-icon-bw48.png \
-    $(AWT_ICONPATH)/security-icon-interim48.png \
-    $(AWT_ICONPATH)/security-icon-yellow48.png
-
 GENSRC_AWT_ICONS_FILES := $(notdir $(GENSRC_AWT_ICONS_SRC))
 
 GENSRC_AWT_ICONS_SHORT_NAME = $(subst .,_,$(subst -,_,$(1)))

@@ -353,7 +353,7 @@ class MetaspaceObj {
   void* operator new(size_t size, ClassLoaderData* loader_data,
                      size_t word_size,
                      Type type) throw();
-  void operator delete(void* p) { ShouldNotCallThis(); }
+  void operator delete(void* p) = delete;
 
   // Declare a *static* method with the same signature in any subclass of MetaspaceObj
   // that should be read-only by default. See symbol.hpp for an example. This function

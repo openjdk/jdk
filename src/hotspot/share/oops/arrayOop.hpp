@@ -79,11 +79,11 @@ private:
   }
 
   // The _length field is not declared in C++.  It is allocated after the
-  // declared nonstatic fields in arrayOopDesc if not compressed, otherwise
-  // it occupies the second half of the _klass field in oopDesc.
+  // mark-word when using compact headers (+UseCompactObjectHeaders), otherwise
+  // after the compressed Klass* when running with compressed class-pointers
+  // (+UseCompressedClassPointers), or else after the full Klass*.
   static int length_offset_in_bytes() {
-    return UseCompressedClassPointers ? klass_gap_offset_in_bytes() :
-                               (int)sizeof(arrayOopDesc);
+    return oopDesc::base_offset_in_bytes();
   }
 
   // Returns the offset of the first element.

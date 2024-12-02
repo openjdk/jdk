@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,31 @@ package gc.shenandoah;
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGarbageThreshold=100 -Xmx100m
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test id=generational
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      gc.shenandoah.TestReferenceRefersToShenandoah
+ */
+
+/* @test id=generational-100
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @modules java.base
+ * @run main jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGarbageThreshold=100 -Xmx100m
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
@@ -99,7 +124,11 @@ public class TestReferenceRefersToShenandoah {
         if (!WB.isObjectInOldGen(o)) {
             WB.fullGC();
             if (!WB.isObjectInOldGen(o)) {
-                fail("object not promoted by full gc");
+                // This is just a warning, because failing would
+                // be overspecifying for generational shenandoah,
+                // which need not necessarily promote objects upon
+                // a full GC.
+                warn("object not promoted by full gc");
             }
         }
     }
@@ -124,6 +153,10 @@ public class TestReferenceRefersToShenandoah {
 
     private static void fail(String msg) throws Exception {
         throw new RuntimeException(msg);
+    }
+
+    private static void warn(String msg) {
+        System.out.println("Warning: " + msg);
     }
 
     private static void expectCleared(Reference<TestObject> ref,

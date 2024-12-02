@@ -35,7 +35,6 @@ import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code RuntimeInvisibleTypeAnnotations} attribute (JVMS {@jvms 4.7.21}), which
@@ -50,9 +49,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 8.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface RuntimeInvisibleTypeAnnotationsAttribute
         extends Attribute<RuntimeInvisibleTypeAnnotationsAttribute>,
                 ClassElement, MethodElement, FieldElement, CodeElement

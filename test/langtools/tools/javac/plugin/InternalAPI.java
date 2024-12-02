@@ -31,7 +31,7 @@
  *           jdk.compiler/com.sun.tools.javac.main
  *           jdk.jlink
  *  @build toolbox.ToolBox toolbox.JavacTask toolbox.JarTask
- *  @run main InternalAPI
+ *  @run main/othervm InternalAPI
  */
 
 import java.io.IOException;

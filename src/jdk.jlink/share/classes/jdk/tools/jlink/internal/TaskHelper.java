@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,21 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.MessageFormat;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.stream.Stream;
 import java.util.Collections;
-import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.MissingResourceException;
 import java.util.Comparator;
-
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.builder.ImageBuilder;
@@ -55,7 +53,6 @@ import jdk.tools.jlink.internal.plugins.ExcludeJmodSectionPlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.Plugin.Category;
-import jdk.tools.jlink.plugin.PluginException;
 
 /**
  *
@@ -584,7 +581,7 @@ public final class TaskHelper {
             return null;
         }
 
-        public void showHelp(String progName) {
+        public void showHelp(String progName, boolean linkableRuntimeEnabled) {
             log.println(bundleHelper.getMessage("main.usage", progName));
             Stream.concat(options.stream(), pluginOptions.mainOptions.stream())
                 .filter(option -> !option.isHidden())
@@ -594,6 +591,17 @@ public final class TaskHelper {
                 });
 
             log.println(bundleHelper.getMessage("main.command.files"));
+            // If the JDK build has the run-time image capability show it
+            // in the help output in human readable form.
+            String qualifier = null;
+            if (linkableRuntimeEnabled) {
+                qualifier = bundleHelper.getMessage("main.runtime.image.linking.cap.enabled");
+            } else {
+                qualifier = bundleHelper.getMessage("main.runtime.image.linking.cap.disabled");
+            }
+            log.println(bundleHelper.getMessage("main.runtime.image.linking.cap.sect.header"));
+            log.println(bundleHelper.getMessage("main.runtime.image.linking.cap.msg",
+                                                qualifier));
         }
 
         public void listPlugins() {

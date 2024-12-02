@@ -114,8 +114,6 @@ class CompileReplay : public StackObj {
  private:
   FILE*   _stream;
   Thread* _thread;
-  Handle  _protection_domain;
-  bool    _protection_domain_initialized;
   Handle  _loader;
   int     _version;
 
@@ -144,8 +142,6 @@ class CompileReplay : public StackObj {
   CompileReplay(const char* filename, TRAPS) {
     _thread = THREAD;
     _loader = Handle(_thread, SystemDictionary::java_system_loader());
-    _protection_domain = Handle();
-    _protection_domain_initialized = false;
 
     _stream = os::fopen(filename, "rt");
     if (_stream == nullptr) {
@@ -558,7 +554,7 @@ class CompileReplay : public StackObj {
       if (_iklass != nullptr) {
         k = (Klass*)_iklass->find_klass(ciSymbol::make(klass_name->as_C_string()))->constant_encoding();
       } else {
-        k = SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, THREAD);
+        k = SystemDictionary::resolve_or_fail(klass_name, _loader, true, THREAD);
       }
       if (HAS_PENDING_EXCEPTION) {
         oop throwable = PENDING_EXCEPTION;
@@ -579,7 +575,7 @@ class CompileReplay : public StackObj {
   // Lookup a klass
   Klass* resolve_klass(const char* klass, TRAPS) {
     Symbol* klass_name = SymbolTable::new_symbol(klass);
-    return SystemDictionary::resolve_or_fail(klass_name, _loader, _protection_domain, true, THREAD);
+    return SystemDictionary::resolve_or_fail(klass_name, _loader, true, THREAD);
   }
 
   // Parse the standard tuple of <klass> <name> <signature>
@@ -895,18 +891,6 @@ class CompileReplay : public StackObj {
   void process_instanceKlass(TRAPS) {
     // just load the referenced class
     Klass* k = parse_klass(CHECK);
-
-    if (_version >= 1) {
-      if (!_protection_domain_initialized && k != nullptr) {
-        assert(_protection_domain() == nullptr, "must be uninitialized");
-        // The first entry is the holder class of the method for which a replay compilation is requested.
-        // Use the same protection domain to load all subsequent classes in order to resolve all classes
-        // in signatures of inlinees. This ensures that inlining can be done as stated in the replay file.
-        _protection_domain = Handle(_thread, k->protection_domain());
-      }
-
-      _protection_domain_initialized = true;
-    }
 
     if (k == nullptr) {
       return;
