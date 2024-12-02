@@ -58,17 +58,17 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
   size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < min_threshold) {
-    log_info(gc)("Trigger: Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
-                 byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
-                 byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    log_trigger("Free (" SIZE_FORMAT "%s) is below minimum threshold (" SIZE_FORMAT "%s)",
+                byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
+                byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
     return true;
   }
 
   size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
   if (bytes_allocated > threshold_bytes_allocated) {
-    log_info(gc)("Trigger: Allocated since last cycle (" SIZE_FORMAT "%s) is larger than allocation threshold (" SIZE_FORMAT "%s)",
-                 byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),
-                 byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
+    log_trigger("Allocated since last cycle (" SIZE_FORMAT "%s) is larger than allocation threshold (" SIZE_FORMAT "%s)",
+                byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),
+                byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
     return true;
   }
 
@@ -89,7 +89,7 @@ void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(Shenando
 
   size_t live_cset = 0;
   for (size_t idx = 0; idx < size; idx++) {
-    ShenandoahHeapRegion* r = data[idx]._region;
+    ShenandoahHeapRegion* r = data[idx].get_region();
     size_t new_cset = live_cset + r->get_live_data_bytes();
     if (new_cset < max_cset && r->garbage() > threshold) {
       live_cset = new_cset;

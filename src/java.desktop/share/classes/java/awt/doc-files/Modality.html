@@ -46,7 +46,6 @@
       <li><a href="#ShowHideBlocking">Show/hide blocking</a></li>
       <li><a href="#ModalExclusion">Modal exclusion</a></li>
       <li><a href="#Related">Related AWT features</a></li>
-      <li><a href="#Security">Security</a></li>
       <li><a href="#PlatformSupport">Platform support</a></li>
       <li><a href="#Compatibility">Compatibility</a></li>
       <li><a href="#Examples">Examples</a></li>
@@ -128,7 +127,6 @@
         so a toolkit-modal dialog shown from an applet may affect other
         applets and all windows of the browser instance which embeds the
         Java runtime environment for this toolkit.
-        See the security section below.
     </li></ol>
     <p>
       Modality priority is arranged by the strength of blocking: modeless,
@@ -331,21 +329,8 @@
       If the modal dialog to be hidden does not have focus, the active window remains
       unchanged.
 
-    <a id="Security"></a>
-    <h2>Security</h2>
-
-    <p>
-      A special <code>AWTPermission</code>, <code>"toolkitModality"</code>,
-      is required to show toolkit-modal
-      dialogs. This would prevent, for example, blocking a browser or
-      Java Web Start (JWS) by modal dialogs shown from applets.
-    </p><p>
-      The same permission is required to exclude a window from toolkit modality.
-      This would prevent, for example, a dialog shown from an applet not to be
-      blocked by a browser's or JWS's modal dialog.
-
     <a id="PlatformSupport"></a>
-    </p><h2>Platform support</h2>
+    <h2>Platform support</h2>
 
     <p>
       Two <code>java.awt.Toolkit</code> methods allow you to check whether

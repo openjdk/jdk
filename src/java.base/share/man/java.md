@@ -979,7 +979,7 @@ the Java HotSpot Virtual Machine.
     : Disallow use of the memory-access methods by throwing an
       `UnsupportedOperationException` on every usage.
 
-    The default value when the option is not specified is `allow`.
+    The default value when the option is not specified is `warn`.
 
 
 ## Extra Options for macOS

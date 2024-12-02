@@ -292,15 +292,10 @@ void TemplateTable::bipush() {
 
 void TemplateTable::sipush() {
   transition(vtos, itos);
-  if (AvoidUnalignedAccesses) {
-    __ load_signed_byte(x10, at_bcp(1));
-    __ load_unsigned_byte(t1, at_bcp(2));
-    __ slli(x10, x10, 8);
-    __ add(x10, x10, t1);
-  } else {
-    __ load_unsigned_short(x10, at_bcp(1));
-    __ revb_h_h(x10, x10); // reverse bytes in half-word and sign-extend
-  }
+  __ load_signed_byte(x10, at_bcp(1));
+  __ load_unsigned_byte(t1, at_bcp(2));
+  __ slli(x10, x10, 8);
+  __ add(x10, x10, t1);
 }
 
 void TemplateTable::ldc(LdcType type) {
@@ -1626,18 +1621,14 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
   // load branch displacement
   if (!is_wide) {
-    if (AvoidUnalignedAccesses) {
-      __ lb(x12, at_bcp(1));
-      __ lbu(t1, at_bcp(2));
-      __ slli(x12, x12, 8);
-      __ add(x12, x12, t1);
-    } else {
-      __ lhu(x12, at_bcp(1));
-      __ revb_h_h(x12, x12); // reverse bytes in half-word and sign-extend
-    }
+    // Convert the 16-bit value into native byte-ordering and sign-extend
+    __ lb(x12, at_bcp(1));
+    __ lbu(t1, at_bcp(2));
+    __ slli(x12, x12, 8);
+    __ add(x12, x12, t1);
   } else {
     __ lwu(x12, at_bcp(1));
-    __ revb_w_w(x12, x12); // reverse bytes in word and sign-extend
+    __ revb_w(x12, x12);
   }
 
   // Handle all the JSR stuff here, then exit.
@@ -1902,8 +1893,8 @@ void TemplateTable::tableswitch() {
   // load lo & hi
   __ lwu(x12, Address(x11, BytesPerInt));
   __ lwu(x13, Address(x11, 2 * BytesPerInt));
-  __ revb_w_w(x12, x12); // reverse bytes in word (32bit) and sign-extend
-  __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
+  __ revb_w(x12, x12);
+  __ revb_w(x13, x13);
   // check against lo & hi
   __ blt(x10, x12, default_case);
   __ bgt(x10, x13, default_case);
@@ -1914,7 +1905,7 @@ void TemplateTable::tableswitch() {
   __ profile_switch_case(x10, x11, x12);
   // continue execution
   __ bind(continue_execution);
-  __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
+  __ revb_w(x13, x13);
   __ add(xbcp, xbcp, x13);
   __ load_unsigned_byte(t0, Address(xbcp));
   __ dispatch_only(vtos, /*generate_poll*/true);
@@ -1934,7 +1925,7 @@ void TemplateTable::fast_linearswitch() {
   transition(itos, vtos);
   Label loop_entry, loop, found, continue_execution;
   // bswap x10 so we can avoid bswapping the table entries
-  __ revb_w_w(x10, x10); // reverse bytes in word (32bit) and sign-extend
+  __ revb_w(x10, x10);
   // align xbcp
   __ la(x9, at_bcp(BytesPerInt)); // btw: should be able to get rid of
                                     // this instruction (change offsets
@@ -1942,6 +1933,9 @@ void TemplateTable::fast_linearswitch() {
   __ andi(x9, x9, -BytesPerInt);
   // set counter
   __ lwu(x11, Address(x9, BytesPerInt));
+  // Convert the 32-bit npairs (number of pairs) into native byte-ordering
+  // We can use sign-extension here because npairs must be greater than or
+  // equal to 0 per JVM spec on 'lookupswitch' bytecode.
   __ revb_w(x11, x11);
   __ j(loop_entry);
   // table search
@@ -1963,7 +1957,7 @@ void TemplateTable::fast_linearswitch() {
   __ profile_switch_case(x11, x10, x9);
   // continue execution
   __ bind(continue_execution);
-  __ revb_w_w(x13, x13); // reverse bytes in word (32bit) and sign-extend
+  __ revb_w(x13, x13);
   __ add(xbcp, xbcp, x13);
   __ lbu(t0, Address(xbcp, 0));
   __ dispatch_only(vtos, /*generate_poll*/true);
@@ -2015,7 +2009,9 @@ void TemplateTable::fast_binaryswitch() {
   __ mv(i, zr);                            // i = 0
   __ lwu(j, Address(array, -BytesPerInt)); // j = length(array)
 
-  // Convert j into native byteordering
+  // Convert the 32-bit npairs (number of pairs) into native byte-ordering
+  // We can use sign-extension here because npairs must be greater than or
+  // equal to 0 per JVM spec on 'lookupswitch' bytecode.
   __ revb_w(j, j);
 
   // And start
@@ -2034,7 +2030,7 @@ void TemplateTable::fast_binaryswitch() {
     // Convert array[h].match to native byte-ordering before compare
     __ shadd(temp, h, array, temp, 3);
     __ lwu(temp, Address(temp, 0));
-    __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
+    __ revb_w(temp, temp);
 
     Label L_done, L_greater;
     __ bge(key, temp, L_greater);
@@ -2057,14 +2053,14 @@ void TemplateTable::fast_binaryswitch() {
   // Convert array[i].match to native byte-ordering before compare
   __ shadd(temp, i, array, temp, 3);
   __ lwu(temp, Address(temp, 0));
-  __ revb_w_w(temp, temp); // reverse bytes in word (32bit) and sign-extend
+  __ revb_w(temp, temp);
   __ bne(key, temp, default_case);
 
   // entry found -> j = offset
   __ shadd(temp, i, array, temp, 3);
   __ lwu(j, Address(temp, BytesPerInt));
   __ profile_switch_case(i, key, array);
-  __ revb_w_w(j, j); // reverse bytes in word (32bit) and sign-extend
+  __ revb_w(j, j);
 
   __ add(temp, xbcp, j);
   __ load_unsigned_byte(t0, Address(temp, 0));
@@ -2077,7 +2073,7 @@ void TemplateTable::fast_binaryswitch() {
   __ bind(default_case);
   __ profile_switch_default(i);
   __ lwu(j, Address(array, -2 * BytesPerInt));
-  __ revb_w_w(j, j); // reverse bytes in word (32bit) and sign-extend
+  __ revb_w(j, j);
 
   __ add(temp, xbcp, j);
   __ load_unsigned_byte(t0, Address(temp, 0));
