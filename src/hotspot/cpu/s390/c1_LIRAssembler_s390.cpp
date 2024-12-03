@@ -1533,18 +1533,10 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       jint c = right->as_constant_ptr()->as_jint();
       switch (code) {
         case lir_add:
-                      if (Immediate::is_simm16(c)) {
-                        __ z_ahi(lreg, c);
-                      } else {
-                        __ z_afi(lreg, c);
-                      }
+                      __ add2reg_32(lreg, c);
                       break;
         case lir_sub:
-                      if (c != min_jint) {
-                        __ z_afi(lreg, -c);
-                      } else {
-                        __ z_afi(lreg, c); // note: -min_jint == min_jint
-                      }
+                      __ z_afi(lreg, java_negate(c));
                       break;
         case lir_mul: __ z_msfi(lreg, c);  break;
         default: ShouldNotReachHere();

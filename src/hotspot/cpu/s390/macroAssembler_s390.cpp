@@ -681,6 +681,17 @@ void MacroAssembler::add2reg(Register r1, int64_t imm, Register r2) {
   z_agfi(r1, imm);
 }
 
+void MacroAssembler::add2reg_32(Register r1, int64_t imm) {
+  assert(Immediate::is_simm32(imm), "probably an implicit conversion went wrong");
+
+  if (Immediate::is_simm16(imm)) {
+    z_ahi(r1, imm);
+    return;
+  }
+  // imm is simm32
+  z_afi(r1, imm);
+}
+
 // Generic operation r := b + x + d
 //
 // Addition of several operands with address generation semantics - sort of:
