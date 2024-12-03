@@ -34,9 +34,12 @@ public class CodeGeneratorLibrary {
 
     CodeGeneratorLibrary(CodeGeneratorLibrary parent, HashMap<String,CodeGenerator> library) {
         this.parent = parent;
-        for (String name : library.keySet()) {
-            if (parent.find(name) != null) {
-                throw new TemplateFrameworkException("Code library already has a generator for name " + name);
+        if (parent != null) {
+            for (String name : library.keySet()) {
+                System.out.println("cg name: " + name);
+                if (parent.find(name) != null) {
+                    throw new TemplateFrameworkException("Code library already has a generator for name " + name);
+                }
             }
         }
 	this.library = new HashMap<String,CodeGenerator>(library);
@@ -58,7 +61,8 @@ public class CodeGeneratorLibrary {
 
     public static CodeGeneratorLibrary standard() {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
-        //codeGenerators.put("xyz", null);
+        // TODO implement the cases properly!
+        codeGenerators.put("int_con", (Scope scope, Parameters parameters) -> { scope.outStream().addCode("123"); });
         return new CodeGeneratorLibrary(null, codeGenerators);
     }
 }
