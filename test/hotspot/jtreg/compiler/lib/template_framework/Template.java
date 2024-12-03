@@ -95,15 +95,24 @@ public final class Template implements CodeGenerator {
     public void instantiate(Scope scope, Parameters parameters) {
         Matcher matcher = PATTERNS.matcher(templateString);
 
+        int pos = 0;
         while (matcher.find()) {
-            System.out.println("group: " + matcher.group());
             int start = matcher.start();
             int end = matcher.end();
-            String extract = templateString.substring(start, end);
-            System.out.println("Found: " + extract);
-        }
 
+            // We have segments:  [pos...start] [start...end]
+            //                    nonTemplated  templated
+            String nonTemplated = templateString.substring(pos, start);
+            String templated = templateString.substring(start, end);
+            pos = end;
+
+            System.out.println("Found: " + templated);
+            scope.addCode(nonTemplated);
+            scope.addCode(templated);
+        }
+        // Cleanup: part after the last templated segments.
+        String nonTemplated = templateString.substring(pos);
+        scope.addCode(nonTemplated);
         scope.addNewline();
-        scope.addCode(templateString);
     }
 }

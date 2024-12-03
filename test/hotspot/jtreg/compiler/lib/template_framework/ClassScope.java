@@ -43,6 +43,7 @@ public class ClassScope implements Scope {
         this.indentation = 0;
         this.lastWasNewline = false;
         openClass();
+        addNewline();
     }
 
     public void addCodeToLine(String snippet) {
