@@ -673,10 +673,11 @@ public:
 
 };
 
+template <MemTag mt>
 class RBTreeCHeapAllocator {
 public:
   void* allocate(size_t sz) {
-    void* allocation = os::malloc(sz, mtNMT);
+    void* allocation = os::malloc(sz, mt);
     if (allocation == nullptr) {
       vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR,
                             "red-black tree failed allocation");
@@ -687,8 +688,8 @@ public:
   void free(void* ptr) { os::free(ptr); }
 };
 
-template <typename K, typename V, typename COMPARATOR>
-using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator>;
+template <typename K, typename V, typename COMPARATOR, MemTag mt>
+using RBTreeCHeap = RBTree<K, V, COMPARATOR, RBTreeCHeapAllocator<mt>>;
 
 
 #endif // SHARE_UTILITIES_RBTREE_HPP
