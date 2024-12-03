@@ -26,7 +26,6 @@
 package jdk.tools.jlink.internal;
 
 import static jdk.tools.jlink.internal.LinkableRuntimeImage.RESPATH_PATTERN;
-import static jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException.Reason.MODIFIED_FILE;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -54,7 +53,6 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
-import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 
@@ -221,7 +219,9 @@ public class JRTArchive implements Archive {
                         Path path = BASE.resolve(m.resPath);
                         if (shaSumMismatch(path, m.hashOrTarget, m.symlink)) {
                             if (errorOnModifiedFile) {
-                                throw new RuntimeImageLinkException(path.toString(), MODIFIED_FILE);
+                                String msg = taskHelper.getMessage("err.runtime.link.modified.file", path.toString());
+                                IOException cause = new IOException(msg);
+                                throw new UncheckedIOException(cause);
                             } else {
                                 taskHelper.warning("err.runtime.link.modified.file", path.toString());
                             }
