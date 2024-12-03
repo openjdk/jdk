@@ -72,7 +72,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
 /**
  * A {@code Locale} represents a specific geographical, political,
  * or cultural region. An API that requires a {@code Locale} to perform
- * its task is <em>locale-sensitive</em> and uses the {@code Locale}
+ * its task is <dfn>{@index "locale-sensitive"}</dfn> and uses the {@code Locale}
  * to tailor information for the user. These <em>locale-sensitive</em> APIs
  * are principally in the <i>java.text</i> and <i>java.util</i> packages.
  * For example, displaying a number is a <em>locale-sensitive</em> operation&mdash;
