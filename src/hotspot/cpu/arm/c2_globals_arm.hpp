@@ -37,7 +37,7 @@ define_pd_global(bool, CICompileOSR,                 true);
 define_pd_global(bool, InlineIntrinsics,             true);
 define_pd_global(bool, PreferInterpreterNativeStubs, false);
 define_pd_global(bool, ProfileTraps,                 true);
-define_pd_global(bool, UseOnStackReplacement,        true);
+define_pd_global(bool, UseOnStackReplacement,        false);
 define_pd_global(bool, ProfileInterpreter,           true);
 define_pd_global(bool, TieredCompilation,            false);
 define_pd_global(intx, CompileThreshold,             10000);

@@ -300,9 +300,9 @@ class Bytecodes: AllStatic {
     _nofast_putfield      ,          //  <- _putfield
     _nofast_aload_0       ,          //  <- _aload_0
     _nofast_iload         ,          //  <- _iload
+    _check_loop_cond      ,
 
     _shouldnotreachhere   ,          // For debugging
-
 
     number_of_codes
   };
@@ -396,7 +396,12 @@ class Bytecodes: AllStatic {
   static int         depth          (Code code)    { check(code);      return _depth         [code]; }
   // Note: Length functions must return <=0 for invalid bytecodes.
   // Calling check(code) in length functions would throw an unwanted assert.
-  static int         length_for     (Code code)    { return is_valid(code) ? _lengths[code] & 0xF : -1; }
+  static int         length_for     (Code code)    {
+      if (code == _check_loop_cond) {
+          return length_for(_if_icmpge);
+      }
+      return is_valid(code) ? _lengths[code] & 0xF : -1;
+  }
   static int         wide_length_for(Code code)    { return is_valid(code) ? _lengths[code]  >> 4 : -1; }
   static bool        can_trap       (Code code)    { check(code);      return has_all_flags(code, _bc_can_trap, false); }
   static Code        java_code      (Code code)    { check(code);      return _java_code     [code]; }

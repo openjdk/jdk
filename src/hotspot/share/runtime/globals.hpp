@@ -1144,7 +1144,7 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseFastSignatureHandlers, true,                             \
           "Use fast signature handlers for native calls")                   \
                                                                             \
-  product(bool, UseLoopCounter, true,                                       \
+  product(bool, UseLoopCounter, false,                                       \
           "Increment invocation counter on backward branch")                \
                                                                             \
   product_pd(bool, UseOnStackReplacement,                                   \

@@ -652,6 +652,11 @@ void TemplateTable::fast_iload2()
   __ ldr(r0, iaddress(r1));
 }
 
+void TemplateTable::check_loop_cond() {
+    transition(vtos, vtos);
+    __ stop("not implemented");
+}
+
 void TemplateTable::fast_iload()
 {
   transition(vtos, itos);
@@ -1755,7 +1760,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result)
   __ bind(done);
 }
 
-void TemplateTable::branch(bool is_jsr, bool is_wide)
+void TemplateTable::branch(bool is_jsr, bool is_wide, int offset)
 {
   __ profile_taken_branch(r0, r1);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +

@@ -636,7 +636,7 @@ void TemplateTable::nofast_iload() {
 void TemplateTable::iload_internal(RewriteControl rc) {
   transition(vtos, itos);
   if (RewriteFrequentPairs && rc == may_rewrite) {
-    Label rewrite, done;
+    Label rewrite, done, loop_check, cont;
     const Register bc = LP64_ONLY(c_rarg3) NOT_LP64(rcx);
     LP64_ONLY(assert(rbx != bc, "register damaged"));
 
@@ -655,6 +655,21 @@ void TemplateTable::iload_internal(RewriteControl rc) {
 
     __ jccb(Assembler::equal, rewrite);
 
+    __ cmpl(rbx, Bytecodes::_sipush);
+    __ jccb(Assembler::equal, loop_check);
+    __ jmp(cont);
+
+    __ bind(loop_check);
+
+    __ load_unsigned_byte(rax,
+                            at_bcp(Bytecodes::length_for(Bytecodes::_iload) + Bytecodes::length_for(Bytecodes::_sipush)));
+
+    __ cmpl(rax, Bytecodes::_if_icmpge);
+    __ movl(bc, Bytecodes::_check_loop_cond);
+
+    __ jccb(Assembler::equal, rewrite);
+
+    __ bind(cont);
     // if _caload, rewrite to fast_icaload
     __ cmpl(rbx, Bytecodes::_caload);
     __ movl(bc, Bytecodes::_fast_icaload);
@@ -673,6 +688,29 @@ void TemplateTable::iload_internal(RewriteControl rc) {
   // Get the local value into tos
   locals_index(rbx);
   __ movl(rax, iaddress(rbx));
+}
+
+// usage check_loop_cond localVariableIndex _ iterations iterations2 _ branchTo1 branchTo2
+void TemplateTable::check_loop_cond() {
+    transition(vtos, vtos);
+    // iload
+    locals_index(rbx);
+    __ movl(rdx, iaddress(rbx));
+    // sipush
+    __ load_unsigned_short(rax, at_bcp(Bytecodes::length_for(Bytecodes::_iload) + 1));
+    __ bswapl(rax);
+    __ sarl(rax, 16);
+    // if_icmpge
+    Label not_taken;
+    __ increment(rbcp, Bytecodes::length_for(Bytecodes::_iload) + Bytecodes::length_for(Bytecodes::_sipush));
+    __ cmpl(rdx, rax);
+    __ jcc(Assembler::less, not_taken);
+    branch(false, false, 1);
+    __ bind(not_taken);
+    __ profile_not_taken_branch(rax);
+    // iinc
+    //    locals_index(rbx);
+    //    __ addl(iaddress(rbx), 1);
 }
 
 void TemplateTable::fast_iload2() {
@@ -2128,7 +2166,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
   }
 }
 
-void TemplateTable::branch(bool is_jsr, bool is_wide) {
+void TemplateTable::branch(bool is_jsr, bool is_wide, int offset) {
   __ get_method(rcx); // rcx holds method
   __ profile_taken_branch(rax, rbx); // rax holds updated MDP, rbx
                                      // holds bumped taken count
@@ -2142,7 +2180,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   if (is_wide) {
     __ movl(rdx, at_bcp(1));
   } else {
-    __ load_signed_short(rdx, at_bcp(1));
+    __ load_signed_short(rdx, at_bcp(offset));
   }
   __ bswapl(rdx);
 

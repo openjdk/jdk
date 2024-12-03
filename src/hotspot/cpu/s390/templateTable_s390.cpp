@@ -706,6 +706,11 @@ void TemplateTable::fast_iload2() {
   __ mem2reg_opt(Z_tos, iaddress(_masm, Z_R1_scratch), false);
 }
 
+void TemplateTable::check_loop_cond() {
+    transition(vtos, vtos);
+    __ stop("not implemented");
+}
+
 void TemplateTable::fast_iload() {
   transition(vtos, itos);
 
@@ -1872,7 +1877,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
   }
 }
 
-void TemplateTable::branch(bool is_jsr, bool is_wide) {
+void TemplateTable::branch(bool is_jsr, bool is_wide, int offset) {
   const Register   bumped_count = Z_tmp_1;
   const Register   method       = Z_tmp_2;
   const Register   m_counters   = Z_R1_scratch;

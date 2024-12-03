@@ -551,6 +551,11 @@ void TemplateTable::fast_iload2() {
   __ push_i(R3_ARG1);
 }
 
+void TemplateTable::check_loop_cond() {
+    transition(vtos, vtos);
+    __ stop("not implemented");
+}
+
 void TemplateTable::fast_iload() {
   transition(vtos, itos);
   // Get the local value into tos
@@ -1636,7 +1641,7 @@ void TemplateTable::branch_conditional(ConditionRegister crx, TemplateTable::Con
   __ bc(bo, bi, L);
 }
 
-void TemplateTable::branch(bool is_jsr, bool is_wide) {
+void TemplateTable::branch(bool is_jsr, bool is_wide, int offset) {
 
   const Register Rscratch1    = R11_scratch1,
                  Rscratch2    = R12_scratch2,

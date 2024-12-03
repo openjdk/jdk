@@ -497,6 +497,8 @@ void TemplateTable::initialize() {
   def(Bytecodes::_nofast_aload_0      , ____|____|clvm|____, vtos, atos, nofast_aload_0      ,  _           );
   def(Bytecodes::_nofast_iload        , ubcp|____|clvm|____, vtos, itos, nofast_iload        ,  _           );
 
+  def(Bytecodes::_check_loop_cond       , ubcp|____|clvm|____, vtos, vtos, check_loop_cond        ,  _           );
+
   def(Bytecodes::_shouldnotreachhere   , ____|____|____|____, vtos, vtos, shouldnotreachhere ,  _           );
 }
 

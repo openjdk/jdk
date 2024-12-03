@@ -73,6 +73,7 @@
   def(_nofast_putfield           , "nofast_putfield"           , "bJJ"  , nullptr    , T_ILLEGAL, -2, true , _putfield          ) \
   def(_nofast_aload_0            , "nofast_aload_0"            , "b"    , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
   def(_nofast_iload              , "nofast_iload"              , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
+  def(_check_loop_cond           , "check_loop_cond"           , "bi_i_", nullptr    , T_VOID    , 0, false, _iload             ) \
                                                                                                                                   \
   def(_shouldnotreachhere        , "_shouldnotreachhere"       , "b"    , nullptr    , T_VOID   ,  0, false, _shouldnotreachhere)
 

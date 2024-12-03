@@ -258,7 +258,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     DumpState();
     if (JLI_IsTraceLauncher()) {
         int i;
-        printf("Java args:\n");
+        printf("Java123 args:\n");
         for (i = 0; i < jargc ; i++) {
             printf("jargv[%d] = %s\n", i, jargv[i]);
         }
