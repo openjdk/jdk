@@ -1536,7 +1536,7 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
                       __ add2reg_32(lreg, c);
                       break;
         case lir_sub:
-                      __ z_afi(lreg, java_negate(c));
+                      __ add2reg_32(lreg, java_negate(c));
                       break;
         case lir_mul: __ z_msfi(lreg, c);  break;
         default: ShouldNotReachHere();

@@ -657,7 +657,7 @@ void MacroAssembler::add2reg(Register r1, int64_t imm, Register r2) {
         z_aghik(r1, r2, imm);
         return;
       }
-      z_lgr(r1, r2);
+      lgr_if_needed(r1, r2);
       z_aghi(r1, imm);
       return;
     }
@@ -681,14 +681,51 @@ void MacroAssembler::add2reg(Register r1, int64_t imm, Register r2) {
   z_agfi(r1, imm);
 }
 
-void MacroAssembler::add2reg_32(Register r1, int64_t imm) {
+void MacroAssembler::add2reg_32(Register r1, int64_t imm, Register r2) {
   assert(Immediate::is_simm32(imm), "probably an implicit conversion went wrong");
 
-  if (Immediate::is_simm16(imm)) {
-    z_ahi(r1, imm);
+  if (r2 == noreg) { r2 = r1; }
+
+  // Handle special case imm == 0.
+  if (imm == 0) {
+    lr_if_needed(r1, r2);
+    // Nothing else to do.
     return;
   }
+
+  if (!PreferLAoverADD || (r2 == Z_R0)) {
+    bool distinctOpnds = VM_Version::has_DistinctOpnds();
+
+    if (Immediate::is_simm16(imm)) {
+      if (r1 == r2){
+        z_ahi(r1, imm);
+        return;
+      }
+      if (distinctOpnds) {
+        z_ahik(r1, r2, imm);
+        return;
+      }
+      lr_if_needed(r1, r2);
+      z_ahi(r1, imm);
+      return;
+    }
+  } else {
+    // Can we encode imm in 12 bits unsigned?
+    if (Displacement::is_shortDisp(imm)) {
+      z_la(r1, imm, r2);
+      return;
+    }
+    // Can we encode imm in 20 bits signed?
+    if (Displacement::is_validDisp(imm)) {
+      // Always use LAY instruction, so we don't need the tmp register.
+      z_lay(r1, imm, r2);
+      return;
+    }
+
+  }
+
   // imm is simm32
+  lr_if_needed(r1, r2);
   z_afi(r1, imm);
 }
 

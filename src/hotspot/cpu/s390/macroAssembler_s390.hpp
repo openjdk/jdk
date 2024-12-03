@@ -157,7 +157,7 @@ class MacroAssembler: public Assembler {
 
   // Generic operation r1 := r2 + imm.
   void add2reg   (Register r1, int64_t imm, Register r2 = noreg);
-  void add2reg_32(Register r1, int64_t imm);
+  void add2reg_32(Register r1, int64_t imm, Register r2 = noreg);
 
   // Generic operation r := b + x + d.
   void add2reg_with_index(Register r, int64_t d, Register x, Register b = noreg);
