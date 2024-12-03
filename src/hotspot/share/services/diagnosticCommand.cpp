@@ -128,6 +128,8 @@ void DCmd::register_dcmds(){
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpToFileDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadSchedulerDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<VThreadPollersDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderHierarchyDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
@@ -151,8 +153,7 @@ void DCmd::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
 
   // Enhanced JMX Agent Support
-  // These commands won't be exported via the DiagnosticCommandMBean until an
-  // appropriate permission is created for them
+  // These commands not currently exported via the DiagnosticCommandMBean
   uint32_t jmx_agent_export_flags = DCmd_Source_Internal | DCmd_Source_AttachAPI;
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartRemoteDCmd>(jmx_agent_export_flags, true,false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JMXStartLocalDCmd>(jmx_agent_export_flags, true,false));
@@ -695,7 +696,7 @@ void JMXStartRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
     JavaValue result(T_VOID);
 
@@ -768,7 +769,7 @@ void JMXStartLocalDCmd::execute(DCmdSource source, TRAPS) {
 
     loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, k, vmSymbols::startLocalAgent_name(), vmSymbols::void_method_signature(), CHECK);
@@ -785,7 +786,7 @@ void JMXStopRemoteDCmd::execute(DCmdSource source, TRAPS) {
 
     loadAgentModule(CHECK);
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
     JavaValue result(T_VOID);
     JavaCalls::call_static(&result, k, vmSymbols::stopRemoteAgent_name(), vmSymbols::void_method_signature(), CHECK);
@@ -806,7 +807,7 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
 
   loadAgentModule(CHECK);
   Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
-  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, Handle(), true, CHECK);
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_agent_Agent(), loader, true, CHECK);
 
   JavaValue result(T_OBJECT);
   JavaCalls::call_static(&result, k, vmSymbols::getAgentStatus_name(), vmSymbols::void_string_signature(), CHECK);
@@ -884,21 +885,17 @@ void CodeHeapAnalyticsDCmd::execute(DCmdSource source, TRAPS) {
 EventLogDCmd::EventLogDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
   _log("log", "Name of log to be printed. If omitted, all logs are printed.", "STRING", false, nullptr),
-  _max("max", "Maximum number of events to be printed (newest first). If omitted, all events are printed.", "STRING", false, nullptr)
+  _max("max", "Maximum number of events to be printed (newest first). If omitted or zero, all events are printed.", "INT", false, "0")
 {
   _dcmdparser.add_dcmd_option(&_log);
   _dcmdparser.add_dcmd_option(&_max);
 }
 
 void EventLogDCmd::execute(DCmdSource source, TRAPS) {
-  const char* max_value = _max.value();
-  int max = -1;
-  if (max_value != nullptr) {
-    char* endptr = nullptr;
-    if (!parse_integer(max_value, &max)) {
-      output()->print_cr("Invalid max option: \"%s\".", max_value);
-      return;
-    }
+  int max = (int)_max.value();
+  if (max < 0) {
+    output()->print_cr("Invalid max option: \"%d\".", max);
+    return;
   }
   const char* log_name = _log.value();
   if (log_name != nullptr) {
@@ -1078,13 +1075,6 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
 
   Symbol* sym = vmSymbols::jdk_internal_vm_ThreadDumper();
   Klass* k = SystemDictionary::resolve_or_fail(sym, true, CHECK);
-  InstanceKlass* ik = InstanceKlass::cast(k);
-  if (HAS_PENDING_EXCEPTION) {
-    java_lang_Throwable::print(PENDING_EXCEPTION, output());
-    output()->cr();
-    CLEAR_PENDING_EXCEPTION;
-    return;
-  }
 
   // invoke the ThreadDump method to dump to file
   JavaValue result(T_OBJECT);
@@ -1113,6 +1103,45 @@ void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const cha
   typeArrayOop ba = typeArrayOop(res);
   jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
   output()->print_raw((const char*)addr, ba->length());
+}
+
+// Calls a static no-arg method on jdk.internal.vm.JcmdVThreadCommands that returns a byte[] with
+// the output. If the method completes successfully then the bytes are copied to the output stream.
+// If the method fails then the exception is printed to the output stream.
+static void execute_vthread_command(Symbol* method_name, outputStream* output, TRAPS) {
+  ResourceMark rm(THREAD);
+  HandleMark hm(THREAD);
+
+  Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_JcmdVThreadCommands(), true, CHECK);
+
+  JavaValue result(T_OBJECT);
+  JavaCallArguments args;
+  JavaCalls::call_static(&result,
+                         k,
+                         method_name,
+                         vmSymbols::void_byte_array_signature(),
+                         &args,
+                         THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    java_lang_Throwable::print(PENDING_EXCEPTION, output);
+    output->cr();
+    CLEAR_PENDING_EXCEPTION;
+    return;
+  }
+
+  // copy the bytes to the output stream
+  oop res = cast_to_oop(result.get_jobject());
+  typeArrayOop ba = typeArrayOop(res);
+  jbyte* addr = typeArrayOop(res)->byte_at_addr(0);
+  output->print_raw((const char*)addr, ba->length());
+}
+
+void VThreadSchedulerDCmd::execute(DCmdSource source, TRAPS) {
+  execute_vthread_command(vmSymbols::printScheduler_name(), output(), CHECK);
+}
+
+void VThreadPollersDCmd::execute(DCmdSource source, TRAPS) {
+  execute_vthread_command(vmSymbols::printPollers_name(), output(), CHECK);
 }
 
 CompilationMemoryStatisticDCmd::CompilationMemoryStatisticDCmd(outputStream* output, bool heap) :

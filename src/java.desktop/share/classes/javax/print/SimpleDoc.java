@@ -108,7 +108,6 @@ public final class SimpleDoc implements Doc {
        Class<?> repClass = null;
        try {
             String className = flavor.getRepresentationClassName();
-            sun.reflect.misc.ReflectUtil.checkPackageAccess(className);
             repClass = Class.forName(className, false,
                               Thread.currentThread().getContextClassLoader());
        } catch (Throwable e) {

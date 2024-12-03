@@ -336,29 +336,31 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int  argc         = *pargc;
     char **argv       = *pargv;
 
-    /* Find out where the JDK is that we will be using. */
-    if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE) ) {
-        JLI_ReportErrorMessage(LAUNCHER_ERROR1);
-        exit(2);
-    }
-    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-                 jdkroot, FILESEP, FILESEP);
-    /* Find the specified JVM type */
-    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-        JLI_ReportErrorMessage(CFG_ERROR7);
-        exit(1);
-    }
+    if (!JLI_IsStaticallyLinked()) {
+        /* Find out where the JDK is that we will be using. */
+        if (!GetJDKInstallRoot(jdkroot, so_jdkroot, JNI_FALSE) ) {
+            JLI_ReportErrorMessage(LAUNCHER_ERROR1);
+            exit(2);
+        }
+        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+                     jdkroot, FILESEP, FILESEP);
+        /* Find the specified JVM type */
+        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+            JLI_ReportErrorMessage(CFG_ERROR7);
+            exit(1);
+        }
 
-    jvmpath[0] = '\0';
-    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-        JLI_ReportErrorMessage(CFG_ERROR9);
-        exit(4);
-    }
+        jvmpath[0] = '\0';
+        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+            JLI_ReportErrorMessage(CFG_ERROR9);
+            exit(4);
+        }
 
-    if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
-        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-        exit(4);
+        if (!GetJVMPath(jdkroot, jvmtype, jvmpath, so_jvmpath)) {
+            JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+            exit(4);
+        }
     }
 
     /*
@@ -415,6 +417,8 @@ GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
 
+    JLI_TraceLauncher("Attempt to get JDK installation root from launcher executable path\n");
+
     if (GetApplicationHome(path, pathsize)) {
         /* Is the JDK co-located with the application? */
         if (JLI_IsStaticallyLinked()) {
@@ -428,18 +432,6 @@ GetJDKInstallRoot(char *path, jint pathsize, jboolean speculative)
             if (access(libjava, F_OK) == 0) {
                 return JNI_TRUE;
             }
-        }
-        /* ensure storage for path + /jre + NULL */
-        if ((JLI_StrLen(path) + 4 + 1) > (size_t) pathsize) {
-            JLI_TraceLauncher("Insufficient space to store JRE path\n");
-            return JNI_FALSE;
-        }
-        /* Does the app ship a private JRE in <apphome>/jre directory? */
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/jre/lib/" JAVA_DLL, path);
-        if (access(libjava, F_OK) == 0) {
-            JLI_StrCat(path, "/jre");
-            JLI_TraceLauncher("JRE path is %s\n", path);
-            return JNI_TRUE;
         }
     }
 

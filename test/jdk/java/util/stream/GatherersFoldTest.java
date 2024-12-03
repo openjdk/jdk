@@ -34,7 +34,6 @@ import static org.junit.jupiter.api.Assumptions.*;
 /**
  * @test
  * @summary Tests the API and contract of Gatherers.fold
- * @enablePreview
  * @run junit GatherersFoldTest
  */
 

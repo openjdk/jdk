@@ -30,7 +30,7 @@
  *           jdk.compiler/com.sun.tools.javac.main
  *           jdk.jlink
  *  @build toolbox.ToolBox toolbox.JavacTask toolbox.JarTask
- *  @run main AutostartPlugins
+ *  @run main/othervm AutostartPlugins
  */
 
 import java.io.IOException;

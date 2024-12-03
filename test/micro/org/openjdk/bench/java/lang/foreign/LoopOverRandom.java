@@ -46,7 +46,7 @@ import jdk.internal.misc.Unsafe;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED"})
 public class LoopOverRandom extends JavaLayouts {
     static final int SEED = 0;
 

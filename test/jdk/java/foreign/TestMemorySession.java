@@ -326,52 +326,56 @@ public class TestMemorySession {
         int iteration = 1000;
         AtomicInteger lock = new AtomicInteger();
         boolean[] result = new boolean[1];
-        lock.set(-2);
         MemorySessionImpl[] scopes = new MemorySessionImpl[iteration];
         for (int i = 0; i < iteration; i++) {
             scopes[i] = MemorySessionImpl.toMemorySession(Arena.ofShared());
         }
 
+        // These two threads proceed the scopes array in a lock-step manner, the first thread wait
+        // for the second thread on the lock variable, while the second thread wait for the first
+        // thread on the closing of the current scope
+
         // This thread tries to close the scopes
         Thread t1 = new Thread(() -> {
-            for (int i = 0; i < iteration; i++) {
+            for (int i = 0; i < iteration;) {
                 MemorySessionImpl scope = scopes[i];
                 while (true) {
                     try {
                         scope.close();
+                        // Continue to the next iteration after a successful close
                         break;
-                    } catch (IllegalStateException e) {}
+                    } catch (IllegalStateException e) {
+                        // Wait for the release and try again
+                    }
                 }
-                // Keep the 2 threads operating on the same scope
-                int k = lock.getAndAdd(1) + 1;
-                while (k != i * 2) {
+                // Wait for the other thread to complete its iteration
+                int prev = i;
+                while (prev == i) {
+                    i = lock.get();
                     Thread.onSpinWait();
-                    k = lock.get();
                 }
             }
         });
 
         // This thread tries to acquire the scopes, then check if it is alive after an acquire failure
         Thread t2 = new Thread(() -> {
-            for (int i = 0; i < iteration; i++) {
+            for (int i = 0; i < iteration;) {
                 MemorySessionImpl scope = scopes[i];
                 while (true) {
                     try {
                         scope.acquire0();
                     } catch (IllegalStateException e) {
+                        // The scope has been closed, proceed to the next iteration
                         if (scope.isAlive()) {
                             result[0] = true;
                         }
                         break;
                     }
+                    // Release and try again
                     scope.release0();
                 }
-                // Keep the 2 threads operating on the same scope
-                int k = lock.getAndAdd(1) + 1;
-                while (k != i * 2) {
-                    Thread.onSpinWait();
-                    k = lock.get();
-                }
+                // Proceed to the next iteration
+                i = lock.getAndAdd(1) + 1;
             }
         });
 

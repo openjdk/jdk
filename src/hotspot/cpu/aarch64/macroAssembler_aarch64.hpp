@@ -875,9 +875,11 @@ public:
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+  void load_narrow_klass_compact(Register dst, Register src);
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
-  void cmp_klass(Register oop, Register trial_klass, Register tmp);
+  void cmp_klass(Register obj, Register klass, Register tmp);
+  void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
@@ -938,8 +940,11 @@ public:
   void pop_CPU_state(bool restore_vectors = false, bool use_sve = false,
                      int sve_vector_size_in_bytes = 0, int total_predicate_in_bytes = 0);
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
+  void push_cont_fastpath(Register java_thread = rthread);
+  void pop_cont_fastpath(Register java_thread = rthread);
+
+  void inc_held_monitor_count(Register tmp);
+  void dec_held_monitor_count(Register tmp);
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);

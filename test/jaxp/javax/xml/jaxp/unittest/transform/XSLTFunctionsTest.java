@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package transform;
 
 import java.io.FilePermission;
-import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -37,29 +36,22 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.URIResolver;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
-
 import static org.testng.Assert.assertEquals;
-import static jaxp.library.JAXPTestUtilities.runWithAllPerm;
 import static jaxp.library.JAXPTestUtilities.clearSystemProperty;
 import static jaxp.library.JAXPTestUtilities.setSystemProperty;
-import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @compile DocumentExtFunc.java
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.XSLTFunctionsTest
  * @run testng/othervm transform.XSLTFunctionsTest
  * @summary This class contains tests for XSLT functions.
  */
 
-@Listeners({jaxp.library.FilePolicy.class})
 public class XSLTFunctionsTest {
     /**
      * @bug 8165116
@@ -79,9 +71,7 @@ public class XSLTFunctionsTest {
         Transformer t = tf.newTransformer(new StreamSource(new StringReader(xsl)));
 
         //Transform the xml
-        tryRunWithTmpPermission(
-                () -> t.transform(new StreamSource(new StringReader(xml)), new StreamResult(new StringWriter())),
-                new FilePermission(output, "write"), new FilePermission(redirect, "write"));
+        t.transform(new StreamSource(new StringReader(xml)), new StreamResult(new StringWriter()));
 
         // Verifies that the output is redirected successfully
         String userDir = getSystemProperty("user.dir");
@@ -173,7 +163,7 @@ public class XSLTFunctionsTest {
         TransformerFactory tf = TransformerFactory.newInstance();
         tf.setFeature(ORACLE_ENABLE_EXTENSION_FUNCTION, true);
         tf.setAttribute(EXTENSION_CLASS_LOADER,
-                runWithAllPerm(() -> Thread.currentThread().getContextClassLoader()));
+                Thread.currentThread().getContextClassLoader());
         Transformer t = tf.newTransformer( xslsrc );
         t.setErrorListener(tf.getErrorListener());
 

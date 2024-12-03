@@ -34,21 +34,5 @@
 // Processor dependent initialization of C2 compiler for ppc.
 
 void Compile::pd_compiler2_init() {
-
-  // Power7 and later.
-  if (PowerArchitecturePPC64 > 6) {
-    if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
-      FLAG_SET_ERGO(UsePopCountInstruction, true);
-    }
-  }
-
-  if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
-    FLAG_SET_ERGO(ConditionalMoveLimit, 0);
-  }
-
-  if (OptimizeFill) {
-    warning("OptimizeFill is not supported on this CPU.");
-    FLAG_SET_DEFAULT(OptimizeFill, false);
-  }
-
+  guarantee(CodeEntryAlignment >= InteriorEntryAlignment, "");
 }

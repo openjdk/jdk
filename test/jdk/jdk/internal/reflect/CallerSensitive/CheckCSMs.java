@@ -70,20 +70,13 @@ public class CheckCSMs {
     // The goal is to remove this list of Non-final instance @CS methods
     // over time.  Do not add any new one to this list.
     private static final Set<String> KNOWN_NON_FINAL_CSMS =
-        Set.of("java/io/ObjectStreamField#getType ()Ljava/lang/Class;",
-               "java/lang/Runtime#load (Ljava/lang/String;)V",
-               "java/lang/Runtime#loadLibrary (Ljava/lang/String;)V",
-               "java/lang/Thread#getContextClassLoader ()Ljava/lang/ClassLoader;",
-               "javax/sql/rowset/serial/SerialJavaObject#getFields ()[Ljava/lang/reflect/Field;"
+        Set.of("java/lang/Runtime#load (Ljava/lang/String;)V",
+               "java/lang/Runtime#loadLibrary (Ljava/lang/String;)V"
         );
 
     // These non-static non-final methods must not have @CallerSensitiveAdapter
     // methods that takes an additional caller class parameter.
-    private static Set<String> UNSUPPORTED_VIRTUAL_METHODS =
-        Set.of("java/io/ObjectStreamField#getType (Ljava/lang/Class;)Ljava/lang/Class;",
-               "java/lang/Thread#getContextClassLoader (Ljava/lang/Class;)Ljava/lang/ClassLoader;",
-               "javax/sql/rowset/serial/SerialJavaObject#getFields (Ljava/lang/Class;)[Ljava/lang/reflect/Field;"
-        );
+    private static Set<String> UNSUPPORTED_VIRTUAL_METHODS = Set.of();
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0 && args[0].equals("--list")) {

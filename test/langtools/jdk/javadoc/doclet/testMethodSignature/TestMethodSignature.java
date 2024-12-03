@@ -72,13 +72,13 @@ public class TestMethodSignature extends JavadocTester {
 
                 """
                     <div class="member-signature"><span class="modifiers">public static</span>&nbsp;\
-                    <span class="type-parameters-long">&lt;T1 extends java.lang.AutoCloseable,<wbr>
-                    T2 extends java.lang.AutoCloseable,<wbr>
-                    T3 extends java.lang.AutoCloseable,<wbr>
-                    T4 extends java.lang.AutoCloseable,<wbr>
-                    T5 extends java.lang.AutoCloseable,<wbr>
-                    T6 extends java.lang.AutoCloseable,<wbr>
-                    T7 extends java.lang.AutoCloseable,<wbr>
+                    <span class="type-parameters">&lt;T1 extends java.lang.AutoCloseable, \
+                    T2 extends java.lang.AutoCloseable, \
+                    T3 extends java.lang.AutoCloseable, \
+                    T4 extends java.lang.AutoCloseable, \
+                    T5 extends java.lang.AutoCloseable, \
+                    T6 extends java.lang.AutoCloseable, \
+                    T7 extends java.lang.AutoCloseable, \
                     T8 extends java.lang.AutoCloseable&gt;</span>
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
                     h8Types</a>&lt;T1,<wbr>T2,<wbr>T3,<wbr>T4,<wbr>T5,<wbr>T6,<wbr>T7,<wbr>T8&gt;</s\
@@ -100,13 +100,13 @@ public class TestMethodSignature extends JavadocTester {
                                date="a date",
                                comments="some comment about the method below")
                     </span><span class="modifiers">public static</span>&nbsp;<span class="type-param\
-                    eters-long">&lt;T1 extends java.lang.AutoCloseable,<wbr>
-                    T2 extends java.lang.AutoCloseable,<wbr>
-                    T3 extends java.lang.AutoCloseable,<wbr>
-                    T4 extends java.lang.AutoCloseable,<wbr>
-                    T5 extends java.lang.AutoCloseable,<wbr>
-                    T6 extends java.lang.AutoCloseable,<wbr>
-                    T7 extends java.lang.AutoCloseable,<wbr>
+                    eters">&lt;T1 extends java.lang.AutoCloseable, \
+                    T2 extends java.lang.AutoCloseable, \
+                    T3 extends java.lang.AutoCloseable, \
+                    T4 extends java.lang.AutoCloseable, \
+                    T5 extends java.lang.AutoCloseable, \
+                    T6 extends java.lang.AutoCloseable, \
+                    T7 extends java.lang.AutoCloseable, \
                     T8 extends java.lang.AutoCloseable&gt;</span>
                     <span class="return-type"><a href="C.With8Types.html" title="class in pkg">C.Wit\
                     h8Types</a>&lt;T1,<wbr>T2,<wbr>T3,<wbr>T4,<wbr>T5,<wbr>T6,<wbr>T7,<wbr>T8&gt;</s\
