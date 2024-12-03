@@ -175,37 +175,11 @@ class PartialArrayStateManager : public CHeapObj<mtGC> {
   // Limit on the number of allocators this manager supports.
   uint _max_allocators;
 
-  // CounterValues is an integral type large enough to encode a pair of
-  // allocator counters as a single unit for atomic manipulation.
-  using CounterValues = LP64_ONLY(uint64_t) NOT_LP64(uint32_t);
-  using Counter = LP64_ONLY(uint32_t) NOT_LP64(uint16_t);
-
-  union CounterState;
-
-  // A pair of Counters, packaged as an atomic unit.  One counter is the
-  // number of constructed allocators and one is the number of destructed
-  // allocators. The counters are atomic to permit concurrent construction,
-  // and to permit concurrent destruction.  They are an atomic unit to detect
-  // and reject mixing the two phases, without concern for questions of
-  // ordering that might arise if they were separate atomic values.
-  //
-  // The constructed count is used to track how many allocators, and so how
-  // many arenas, are active.  Construction of an allocator increments this
-  // count.  The destructed count is (debug-only) used to track how many
-  // allocators are no longer active.  Destruction of an allocator increments
-  // this count.
-  //
-  // The constructed count must not exceed the configured limit on the number
-  // of allocators.  It is used by reset() to determine how many arenas have
-  // been constructed.  reset() clears the counters.
-  //
-  // In a debug build, the pair is used to assert usage according to the
-  // phase.  We're in the allocating phase if the destructed count is zero.
-  // If it's non-zero then we're in the releasing phase. The destructed count
-  // must never exceed the constructed count.  reset() is not permitted when
-  // destructed < constructed.
-  volatile CounterValues _counters;
-  CounterValues increment_counters(Counter constructed, Counter destructed);
+  // The number of allocators that have been registered/released.
+  // Atomic to support concurrent registration, and concurrent release.
+  // Phasing restriction forbids registration concurrent with release.
+  volatile uint _registered_allocators;
+  DEBUG_ONLY(volatile uint _released_allocators;)
 
   // These are all for sole use of the befriended allocator class.
   Arena* register_allocator();
