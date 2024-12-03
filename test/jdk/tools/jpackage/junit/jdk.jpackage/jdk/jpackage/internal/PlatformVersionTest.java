@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,95 +23,76 @@
 package jdk.jpackage.internal;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.lang.reflect.Method;
-import static org.junit.Assert.assertEquals;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-@RunWith(Parameterized.class)
 public class PlatformVersionTest {
 
-    public PlatformVersionTest(Function<String, DottedVersion> parser,
-            String version, boolean valid) {
-        this.parser = parser;
-        this.version = version;
-        this.valid = valid;
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "0.0",
+        "255.255",
+        "0.0.0",
+        "255.255.65535",
+        "0.0.0.0",
+        "255.255.65535.999999"
+    })
+    public void testValidMsiProductVersion(String version) {
+        testImpl(PlatformVersion.WIN_MSI_PRODUCT_VERSION_CLASS, version, true);
     }
 
-    @Parameters
-    public static List<Object[]> data() {
-        List<Object[]> data = new ArrayList<>();
-        addTo(data, WIN_MSI_PRODUCT_VERSION_PARSER, true,
-            "0.0",
-            "255.255",
-            "0.0.0",
-            "255.255.65535",
-            "0.0.0.0",
-            "255.255.65535.999999"
-        );
-
-        addTo(data, WIN_MSI_PRODUCT_VERSION_PARSER, false,
-            "0",
-            "256.01",
-            "255.256",
-            "255.255.65536",
-            "1.2.3.4.5"
-        );
-
-        addTo(data, MAC_CFBUNDLE_VERSION_PARSER, true,
-            "1",
-            "1.2",
-            "1.2.3"
-        );
-
-        addTo(data, MAC_CFBUNDLE_VERSION_PARSER, false,
-            "0",
-            "0.1",
-            "1.2.3.4"
-        );
-
-        return data;
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "0",
+        "256.01",
+        "255.256",
+        "255.255.65536",
+        "1.2.3.4.5"
+    })
+    public void testInvalidMsiProductVersion(String version) {
+        testImpl(PlatformVersion.WIN_MSI_PRODUCT_VERSION_CLASS, version, false);
     }
 
-    private static void addTo(List<Object[]> data,
-            Function<String, DottedVersion> parser, boolean valid,
-            String... values) {
-        if (parser != null) {
-            data.addAll(Stream.of(values).map(version -> new Object[]{parser,
-                version, valid}).collect(Collectors.toList()));
-        }
+    @ParameterizedTest
+    @ValueSource(strings = {"1", "1.2", "1.2.3"})
+    public void testValidCfBundleVersion(String version) {
+        testImpl(PlatformVersion.MAC_CFBUNDLE_VERSION_CLASS, version, true);
     }
 
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "0.1", "1.2.3.4"})
+    public void testInvalidCfBundleVersion(String version) {
+        testImpl(PlatformVersion.MAC_CFBUNDLE_VERSION_CLASS, version, false);
+    }
 
-    @Test
-    public void testIt() {
+    private static void testImpl(PlatformVersion parser, String version, boolean valid) {
+        assumeTrue(parser.parser != null);
         if (valid) {
-            assertEquals(parser.apply(version).toString(), version);
+            assertEquals(parser.parse(version).toString(), version);
         } else {
-            exceptionRule.expect(IllegalArgumentException.class);
-            parser.apply(version);
+            assertThrowsExactly(IllegalArgumentException.class, () -> parser.parse(version));
         }
     }
 
-    private final Function<String, DottedVersion> parser;
-    private final String version;
-    private final boolean valid;
+    enum PlatformVersion {
+        MAC_CFBUNDLE_VERSION_CLASS("jdk.jpackage.internal.CFBundleVersion"),
+        WIN_MSI_PRODUCT_VERSION_CLASS("jdk.jpackage.internal.MsiVersion");
 
-    private final static Function<String, DottedVersion> MAC_CFBUNDLE_VERSION_PARSER = findParser(
-            "jdk.jpackage.internal.CFBundleVersion");
-    private final static Function<String, DottedVersion> WIN_MSI_PRODUCT_VERSION_PARSER = findParser(
-            "jdk.jpackage.internal.MsiVersion");
+        PlatformVersion(String className) {
+            parser = findParser(className);
+        }
+
+        DottedVersion parse(String versionString) {
+            return parser.apply(versionString);
+        }
+
+        private Function<String, DottedVersion> parser;
+    }
 
     private static Function<String, DottedVersion> findParser(String className) {
         try {
@@ -124,8 +105,8 @@ public class PlatformVersionTest {
                     throw new RuntimeException(ex);
                 } catch (InvocationTargetException ex) {
                     Throwable causeEx = ex.getCause();
-                    if (causeEx instanceof RuntimeException) {
-                        throw (RuntimeException)causeEx;
+                    if (causeEx instanceof RuntimeException rtEx) {
+                        throw rtEx;
                     }
                     throw new RuntimeException(causeEx);
                 }
@@ -136,4 +117,5 @@ public class PlatformVersionTest {
             throw new IllegalArgumentException(ex);
         }
     }
+
 }

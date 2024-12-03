@@ -710,9 +710,7 @@ void HeapShared::scan_java_class(Klass* orig_k) {
       assert(success, "must be");
     }
 
-    if (orig_ik->is_linked()) {
-      orig_ik->constants()->add_dumped_interned_strings();
-    }
+    orig_ik->constants()->add_dumped_interned_strings();
   }
 }
 

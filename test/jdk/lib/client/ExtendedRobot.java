@@ -57,22 +57,14 @@ public class ExtendedRobot extends Robot {
 
     private final int syncDelay = DEFAULT_SYNC_DELAY;
 
-    //TODO: uncomment three lines below after moving functionality to java.awt.Robot
-    //{
-    //    syncDelay = AccessController.doPrivileged(new GetIntegerAction("java.awt.robotdelay", DEFAULT_SYNC_DELAY));
-    //}
-
     /**
      * Constructs an ExtendedRobot object in the coordinate system of the primary screen.
      *
      * @throws  AWTException if the platform configuration does not allow low-level input
      *          control. This exception is always thrown when
      *          GraphicsEnvironment.isHeadless() returns true
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      *
      * @see     java.awt.GraphicsEnvironment#isHeadless
-     * @see     SecurityManager#checkPermission
-     * @see     java.awt.AWTPermission
      */
     public ExtendedRobot() throws AWTException {
         super();
@@ -99,12 +91,9 @@ public class ExtendedRobot extends Robot {
      *          GraphicsEnvironment.isHeadless() returns true.
      * @throws  IllegalArgumentException if {@code screen} is not a screen
      *          GraphicsDevice.
-     * @throws  SecurityException if {@code createRobot} permission is not granted
      *
      * @see     java.awt.GraphicsEnvironment#isHeadless
      * @see     GraphicsDevice
-     * @see     SecurityManager#checkPermission
-     * @see     java.awt.AWTPermission
      */
     public ExtendedRobot(GraphicsDevice screen) throws AWTException {
         super(screen);

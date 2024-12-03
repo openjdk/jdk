@@ -62,6 +62,7 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 # OPTIMIZATION   Override default optimization level (LOW)
 # OUTPUT_DIR   Override default output directory
 # VERSION_INFO_RESOURCE   Override default Windows resource file
+# STATIC_LAUNCHER   If true, will use settings for building a static launcher
 SetupBuildLauncher = $(NamedParamsMacroTemplate)
 define SetupBuildLauncherBody
   # Setup default values (unless overridden)
@@ -120,6 +121,15 @@ define SetupBuildLauncherBody
     $1_EXTRA_FILES += $(TOPDIR)/make/data/lsan/lsan_default_options.c
   endif
 
+  ifneq ($$($1_STATIC_LAUNCHER), true)
+      $1_JDK_LIBS := java.base:libjli
+      $1_JDK_LIBS_windows := java.base:libjava
+  else
+    ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
+      $1_LDFLAGS_FILTER_OUT := -Wl$(COMMA)--exclude-libs$(COMMA)ALL
+    endif
+  endif
+
   ##############################################################################
   ## Build launcher "$1"
   ##############################################################################
@@ -140,8 +150,9 @@ define SetupBuildLauncherBody
       LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
-      JDK_LIBS := java.base:libjli, \
-      JDK_LIBS_windows := java.base:libjava, \
+      LDFLAGS_FILTER_OUT := $$($1_LDFLAGS_FILTER_OUT), \
+      JDK_LIBS := $$($1_JDK_LIBS), \
+      JDK_LIBS_windows := $$($1_JDK_LIBS_windows), \
       LIBS := $$($1_LIBS), \
       LIBS_unix := $(LIBZ_LIBS), \
       LIBS_linux := $(LIBDL) -lpthread, \
@@ -150,6 +161,7 @@ define SetupBuildLauncherBody
           -framework Cocoa \
           -framework Security, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
+      OBJECT_DIR := $$($1_OBJECT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       EXTRA_RCFLAGS := $$($1_EXTRA_RCFLAGS), \
       MANIFEST := $(JAVA_MANIFEST), \

@@ -31,7 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.MalformedURLException;
-import sun.net.util.URLUtil;
 
 public class URLImageSource extends InputStreamImageSource {
     URL url;
@@ -40,21 +39,7 @@ public class URLImageSource extends InputStreamImageSource {
     int actualPort;
 
     public URLImageSource(URL u) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            try {
-                java.security.Permission perm =
-                      URLUtil.getConnectPermission(u);
-                if (perm != null) {
-                    sm.checkPermission(perm);
-                }
-            } catch (java.io.IOException ioe) {
-                sm.checkConnect(u.getHost(), u.getPort());
-            }
-        }
         this.url = u;
-
     }
 
     public URLImageSource(String href) throws MalformedURLException {
@@ -68,30 +53,6 @@ public class URLImageSource extends InputStreamImageSource {
 
     public URLImageSource(URLConnection uc) {
         this(uc.getURL(), uc);
-    }
-
-    final boolean checkSecurity(Object context, boolean quiet) {
-        // If actualHost is not null, then the host/port parameters that
-        // the image was actually fetched from were different than the
-        // host/port parameters the original URL specified for at least
-        // one of the download attempts.  The original URL security was
-        // checked when the applet got a handle to the image, so we only
-        // need to check for the real host/port.
-        if (actualHost != null) {
-            try {
-                @SuppressWarnings("removal")
-                SecurityManager security = System.getSecurityManager();
-                if (security != null) {
-                    security.checkConnect(actualHost, actualPort, context);
-                }
-            } catch (SecurityException e) {
-                if (!quiet) {
-                    throw e;
-                }
-                return false;
-            }
-        }
-        return true;
     }
 
     private synchronized URLConnection getConnection() throws IOException {
@@ -121,6 +82,7 @@ public class URLImageSource extends InputStreamImageSource {
                 // listed in the original URL, or it can come from one other
                 // host/port that the URL is redirected to.  More than that
                 // and we give up and just throw a SecurityException.
+                // This is not directly related to SecurityManager so keep it.
                 if (actualHost != null && (!actualHost.equals(u.getHost()) ||
                                            actualPort != u.getPort()))
                 {

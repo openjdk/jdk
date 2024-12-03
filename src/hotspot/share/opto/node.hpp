@@ -2114,4 +2114,51 @@ inline int Op_DivModIL(BasicType bt, bool is_unsigned) {
   }
 }
 
+// Interface to define actions that should be taken when running DataNodeBFS. Each use can extend this class to specify
+// a customized BFS.
+class BFSActions : public StackObj {
+ public:
+  // Should a node's inputs further be visited in the BFS traversal? By default, we visit all data inputs. Override this
+  // method to provide a custom filter.
+  virtual bool should_visit(Node* node) const {
+    // By default, visit all inputs.
+    return true;
+  };
+
+  // Is the visited node a target node that we are looking for in the BFS traversal? We do not visit its inputs further
+  // but the BFS will continue to visit all unvisited nodes in the queue.
+  virtual bool is_target_node(Node* node) const = 0;
+
+  // Defines an action that should be taken when we visit a target node in the BFS traversal.
+  virtual void target_node_action(Node* target_node) = 0;
+};
+
+// Class to perform a BFS traversal on the data nodes from a given start node. The provided BFSActions guide which
+// data node's inputs should be further visited, which data nodes are target nodes and what to do with the target nodes.
+class DataNodeBFS : public StackObj {
+  BFSActions& _bfs_actions;
+
+ public:
+  explicit DataNodeBFS(BFSActions& bfs_action) : _bfs_actions(bfs_action) {}
+
+  // Run the BFS starting from 'start_node' and apply the actions provided to this class.
+  void run(Node* start_node) {
+    ResourceMark rm;
+    Unique_Node_List _nodes_to_visit;
+    _nodes_to_visit.push(start_node);
+    for (uint i = 0; i < _nodes_to_visit.size(); i++) {
+      Node* next = _nodes_to_visit[i];
+      for (uint j = 1; j < next->req(); j++) {
+        Node* input = next->in(j);
+        if (_bfs_actions.is_target_node(input)) {
+          assert(_bfs_actions.should_visit(input), "must also pass node filter");
+          _bfs_actions.target_node_action(input);
+        } else if (_bfs_actions.should_visit(input)) {
+          _nodes_to_visit.push(input);
+        }
+      }
+    }
+  }
+};
+
 #endif // SHARE_OPTO_NODE_HPP
