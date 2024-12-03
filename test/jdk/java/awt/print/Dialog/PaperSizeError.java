@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6360339
+ * @bug 6360339 8343224
  * @key printer
  * @summary Test for fp error in paper size calculations.
  * @run main/manual PaperSizeError
