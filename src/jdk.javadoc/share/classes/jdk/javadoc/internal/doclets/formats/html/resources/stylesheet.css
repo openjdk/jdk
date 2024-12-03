@@ -793,7 +793,6 @@ div.block {
 .type-signature {
     margin-top: 0;
 }
-.member-signature .type-parameters-long,
 .member-signature .parameters,
 .member-signature .exceptions {
     display: inline-block;
