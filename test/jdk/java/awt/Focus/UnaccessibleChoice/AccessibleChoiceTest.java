@@ -49,11 +49,10 @@ import javax.imageio.ImageIO;
  */
 
 public class AccessibleChoiceTest {
-    //Declare things used in the test, like buttons and labels here
     static Frame frame;
     static Choice choice;
     static Button button;
-    static CountDownLatch go;
+    static volatile CountDownLatch go;
     static volatile Point loc;
     static volatile int bWidth;
     static volatile int bHeight;
@@ -108,8 +107,8 @@ public class AccessibleChoiceTest {
             bWidth = button.getWidth();
             bHeight = button.getHeight();
         });
-        robot.mouseMove(loc.x + bWidth / 2, loc.y
-                + bHeight / 2);
+        robot.mouseMove(loc.x + bWidth / 2,
+                        loc.y + bHeight / 2);
         robot.delay(500);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
