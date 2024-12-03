@@ -51,7 +51,7 @@ public class FluidAndNonFluid {
     @Run(test = {"fluid", "nonFluid", "nonFinal", "nonFluidExtraneousVariable", "nonFluidConditional",
         "nonFluidOpaqueCall"})
     public void runMethod() {
-        Asserts.assertEQ("ac", fluidNoParam());
+        Asserts.assertEQ("0ac", fluidNoParam());
         Asserts.assertEQ("ac", nonFluidNoParam());
         Asserts.assertEQ("ac", fluid("c"));
         Asserts.assertEQ("ac", nonFluid("c"));
@@ -64,7 +64,7 @@ public class FluidAndNonFluid {
     @Test
     @IR(failOn = {IRNode.ALLOC_OF, "StringBuilder", IRNode.CALL_OF_METHOD, "toString", IRNode.INTRINSIC_TRAP})
     public static String fluidNoParam() {
-        return new StringBuilder().append("a").append("c").toString();
+        return new StringBuilder("0").append("a").append("c").toString();
     }
 
     @Test

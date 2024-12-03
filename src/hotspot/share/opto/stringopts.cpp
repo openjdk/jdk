@@ -550,7 +550,11 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             !use->method()->is_static() &&
             use->method()->name() == ciSymbols::object_initializer_name() &&
             use->method()->holder() == m->holder()) {
-          // Matched the constructor.
+          //  Matched the constructor.
+          if (constructor != nullptr) {
+            // The constructor again. We must only process it once.
+            continue;
+          }
           ciSymbol* sig = use->method()->signature()->as_symbol();
           if (sig == ciSymbols::void_method_signature() ||
               sig == ciSymbols::int_void_signature() ||
