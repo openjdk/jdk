@@ -752,9 +752,9 @@ public class Robot {
     }
 
     /**
-     * A convenience method that simulates clicking a mouse button by calling mousePress
-     * and mouseRelease. Invokes waitForIdle with a default delay of 20ms after mousePress
-     * and mouseRelease calls. For specifics on valid inputs please see
+     * A convenience method that simulates clicking a mouse button by calling {@code mousePress}
+     * and {@code mouseRelease}. Invokes {@code waitForIdle} with a default delay of 20ms after
+     * {@code mousePress} and {@code mouseRelease} calls. For specifics on valid inputs please see
      * {@link java.awt.Robot#mousePress(int)}.
      *
      * @param   buttons The button mask; a combination of one or more mouse button masks.
@@ -792,7 +792,7 @@ public class Robot {
     }
 
     /**
-     * A convenience method that calls waitForIdle then waits an additional specified
+     * A convenience method that calls {@code waitForIdle} then waits an additional specified
      * {@code delayValue} time in milliseconds.
      *
      * @param   delayValue  Additional delay length in milliseconds to wait until thread
@@ -811,11 +811,13 @@ public class Robot {
     /**
      * A convenience method that moves the mouse in multiple
      * steps from its current location to the destination coordinates
-     * with a 2 pixel step-length and a 20-millisecond delay.
+     * with a default step-length and delay.
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
-     * @see     #glide(int, int, int, int)
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_STEP_DELAY
+     * @see     #glide(int, int, int, int, int, int)
      * @since   25
      */
     public void glide(int x, int y) {
@@ -826,12 +828,14 @@ public class Robot {
     /**
      * A convenience method that moves the mouse in multiple steps
      * from source coordinates to the destination coordinates with
-     * a 2 pixel step-length and a 20-millisecond delay.
+     * a default step-length and delay.
      *
      * @param   fromX   Source point x coordinate
      * @param   fromY   Source point y coordinate
      * @param   toX     Destination point x coordinate
      * @param   toY     Destination point y coordinate
+     * @see     #DEFAULT_STEP_LENGTH
+     * @see     #DEFAULT_STEP_DELAY
      * @see     #glide(int, int, int, int, int, int)
      * @since   25
      */
@@ -892,8 +896,9 @@ public class Robot {
     }
 
     /**
-     * A convenience method that simulates typing a key by calling keyPress and keyRelease.
-     * Invokes waitForIdle with a default delay of 20ms after keyPress and keyRelease calls.
+     * A convenience method that simulates typing a key by calling {@code keyPress}
+     * and {@code keyRelease}. Invokes {@code waitForIdle} with a default delay of 20
+     * milliseconds after {@code keyPress} and {@code keyRelease} calls.
      * <p>
      * Key codes that have more than one physical key associated with them
      * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
