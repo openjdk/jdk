@@ -1318,7 +1318,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IndexOutOfBoundsException if no string terminator (e.g. {@code '\0'}) is
      *         present in this segment between the given {@code offset} and the end of
      *         this segment. The byte size of the string terminator depends on the
-     *         selected {@code charset}
+     *         selected {@code charset}. For instance, this is 1 for
+     *         {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
