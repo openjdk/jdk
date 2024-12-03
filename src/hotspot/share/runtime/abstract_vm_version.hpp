@@ -27,7 +27,6 @@
 
 #include "memory/allStatic.hpp"  // For declaration of class AllStatic
 #include "utilities/globalDefinitions.hpp"
-#include "runtime/os.hpp"
 
 typedef enum {
   NoDetectedVirtualization,
