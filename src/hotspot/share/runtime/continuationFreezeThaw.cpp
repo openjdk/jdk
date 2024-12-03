@@ -1669,21 +1669,20 @@ static inline freeze_result freeze_epilog(ContinuationWrapper& cont) {
   return freeze_ok;
 }
 
-static freeze_result freeze_epilog(JavaThread* current, ContinuationWrapper& cont, freeze_result res) {
+static freeze_result freeze_epilog(JavaThread* thread, ContinuationWrapper& cont, freeze_result res) {
   if (UNLIKELY(res != freeze_ok)) {
-    JFR_ONLY(current->set_last_freeze_fail_result(res);)
+    JFR_ONLY(thread->set_last_freeze_fail_result(res);)
     verify_continuation(cont.continuation());
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     return res;
   }
 
-  JVMTI_ONLY(jvmti_yield_cleanup(current, cont)); // can safepoint
+  JVMTI_ONLY(jvmti_yield_cleanup(thread, cont)); // can safepoint
   return freeze_epilog(cont);
 }
 
-static freeze_result preempt_epilog(JavaThread* current, ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
+static freeze_result preempt_epilog(ContinuationWrapper& cont, freeze_result res, frame& old_last_frame) {
   if (UNLIKELY(res != freeze_ok)) {
-    JFR_ONLY(current->set_last_freeze_fail_result(res);)
     verify_continuation(cont.continuation());
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     return res;
@@ -1744,7 +1743,7 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
     CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
-    return !preempt ? freeze_epilog(cont) : preempt_epilog(current, cont, freeze_ok, freeze.last_frame());
+    return !preempt ? freeze_epilog(cont) : preempt_epilog(cont, freeze_ok, freeze.last_frame());
   }
 
   if (preempt) {
@@ -1754,7 +1753,7 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
     freeze_result res = fast ? freeze.try_freeze_fast() : freeze.freeze_slow();
 
     CONT_JFR_ONLY(freeze.jfr_info().post_jfr_event(&event, oopCont, current);)
-    preempt_epilog(current, cont, res, freeze.last_frame());
+    preempt_epilog(cont, res, freeze.last_frame());
     return res;
   }
 
