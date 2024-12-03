@@ -81,7 +81,7 @@ public class IndependenceSwingTest {
         tf1 = new JTextField();
         tf1.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent fe) {
-                tf1.setText("Clipboards_Independance_Testing");
+                tf1.setText("Clipboards_Independence_Testing");
             }
         });
 
