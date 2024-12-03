@@ -265,7 +265,7 @@ class WeakCmpxchgTester {
  public:
   typedef TESTSIZE (*cmpxchg_narrow)(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result,
                                    int64_t scratch0, int64_t scratch1, int64_t scratch2);
-  
+
   typedef TESTSIZE (*cmpxchg_func)(intptr_t addr, TESTSIZE expected, TESTSIZE new_value, TESTSIZE result);
 
   static TESTSIZE weak_narrow_cmpxchg(intptr_t addr, TESTSIZE expected, TESTSIZE new_value) {
@@ -285,7 +285,7 @@ class WeakCmpxchgTester {
     BufferBlob::free(bb);
     return ret;
   }
-  
+
   static TESTSIZE weak_cmpxchg(intptr_t addr, TESTSIZE expected, TESTSIZE new_value) {
     BufferBlob* bb = BufferBlob::create("riscvTest", 128);
     CodeBuffer code(bb);
