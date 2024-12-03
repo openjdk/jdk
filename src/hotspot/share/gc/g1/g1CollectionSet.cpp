@@ -81,6 +81,7 @@ void G1CollectionSet::init_region_lengths(uint eden_cset_region_length,
          "Young region length %u should match collection set length %u", young_region_length(), _collection_set_cur_length);
 
   _initial_old_region_length = 0;
+  assert(_optional_groups.length() == 0, "Should not have any optional groups yet");
   _optional_groups.clear();
 }
 
@@ -355,8 +356,6 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
       log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
     }
 
-    uint num_optional_regions = _optional_groups.num_regions();
-
     if (candidates()->retained_groups().num_regions() > 0) {
       select_candidates_from_retained(time_remaining_ms);
     }
@@ -576,7 +575,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   // for the regions in these groups.
   candidates()->remove(&remove_from_retained);
 
-  groups_to_abandon.abandon();
+  groups_to_abandon.clear(true /* uninstall_group_cardset */);
 
   log_debug(gc, ergo, cset)("Finish adding retained candidates to collection set. Initial: %u, optional: %u, pinned: %u, "
                             "predicted initial time: %1.2fms, predicted optional time: %1.2fms, "
@@ -652,7 +651,6 @@ void G1CollectionSet::prepare_optional_group(G1CSetCandidateGroup* gr, uint cur_
 void G1CollectionSet::add_group_to_collection_set(G1CSetCandidateGroup* gr) {
   for (G1CollectionSetCandidateInfo ci : *gr) {
     G1HeapRegion* r = ci._r;
-
     r->uninstall_group_cardset();
     r->rem_set()->set_state_complete();
     add_region_to_collection_set(r);

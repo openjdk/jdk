@@ -71,7 +71,6 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
   // The set of cards in the Java heap
   G1CardSet _card_set;
 
-  //
   double _gc_efficiency;
 
 public:
@@ -108,9 +107,7 @@ public:
     return _card_set_mm.memory_stats();
   }
 
-  void clear();
-
-  void abandon();
+  void clear(bool uninstall_group_cardset = false);
 
   G1CSetCandidateGroupIterator begin() const {
     return _candidates.begin();
@@ -132,10 +129,11 @@ public:
   G1CSetCandidateGroupList();
   void append(G1CSetCandidateGroup* group);
 
-  // Empty contents of the list.
-  void clear();
-
-  void abandon();
+  // Delete all groups from the list. The cardset cleanup for regions within the
+  // groups could have been done elsewhere  (e.g. when adding groups to the
+  // collection set or to retained regions). The uninstall_group_cardset is set to
+  // true if cleanup needs to happen as we clear the groups from the list.
+  void clear(bool uninstall_group_cardset = false);
 
   G1CSetCandidateGroup* at(uint index);
 
@@ -169,19 +167,19 @@ public:
   void iterate(Func&& f) const;
 };
 
-// Tracks all collection set candidates, i.e. regions that could/should be evacuated soon.
+// Tracks all collection set candidates, i.e. region groups that could/should be evacuated soon.
 //
-// These candidate regions are tracked in two list of regions, sorted by decreasing
+// These candidate groups are tracked in two list of region groups, sorted by decreasing
 // "gc efficiency".
 //
-// * marking_regions: the set of regions selected by concurrent marking to be
-//                    evacuated to keep overall heap occupancy stable.
-//                    They are guaranteed to be evacuated and cleared out during
-//                    the mixed phase.
+// * from_marking_groups: the set of region groups selected by concurrent marking to be
+//                        evacuated to keep overall heap occupancy stable.
+//                        They are guaranteed to be evacuated and cleared out during
+//                        the mixed phase.
 //
-// * retained_regions: set of regions selected for evacuation during evacuation
-//                     failure.
-//                     Any young collection will try to evacuate them.
+// * retained_groups: set of region groups selected for evacuation during evacuation
+//                    failure.
+//                    Any young collection will try to evacuate them.
 //
 class G1CollectionSetCandidates : public CHeapObj<mtGC> {
 
@@ -194,7 +192,10 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
 
   CandidateOrigin* _contains_map;
   G1CSetCandidateGroupList _from_marking_groups; // Set of regions selected by concurrent marking.
-  G1CSetCandidateGroupList _retained_groups; // Set of regions retained due to evacuation failure.
+  // Set of regions retained due to evacuation failure. Groups added to this list
+  // should contain only one region, making it easier to evacuate retained regions
+  // in any young collection.
+  G1CSetCandidateGroupList _retained_groups;
   uint _max_regions;
 
   // The number of regions from the last merge of candidates from the marking.

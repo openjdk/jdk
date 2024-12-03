@@ -60,18 +60,24 @@ void G1CSetCandidateGroup::calculate_efficiency() {
   _gc_efficiency = reclaimable_bytes / group_total_time_ms;
 }
 
-void G1CSetCandidateGroup::clear() {
+void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
+  if (uninstall_group_cardset) {
+    for (G1CollectionSetCandidateInfo ci : _candidates) {
+      G1HeapRegion* r = ci._r;
+      r->uninstall_group_cardset();
+      r->rem_set()->clear(true /* only_cardset */);
+    }
+  }
+#ifdef ASSERT
+  else {
+    for (G1CollectionSetCandidateInfo ci : _candidates) {
+      G1HeapRegion* r = ci._r;
+      assert(r->rem_set()->card_set() != &_card_set , "Pre-condition!");
+    }
+  }
+#endif
   _card_set.clear();
   _candidates.clear();
-}
-
-void G1CSetCandidateGroup::abandon() {
-  for (G1CollectionSetCandidateInfo ci : _candidates) {
-    G1HeapRegion* r = ci._r;
-    r->uninstall_group_cardset();
-    r->rem_set()->clear(true /* only_cardset */);
-  }
-  clear();
 }
 
 double G1CSetCandidateGroup::predict_group_total_time_ms() const {
@@ -160,18 +166,9 @@ G1CSetCandidateGroup* G1CSetCandidateGroupList::at(uint index) {
   return _groups.at(index);
 }
 
-void G1CSetCandidateGroupList::clear() {
+void G1CSetCandidateGroupList::clear(bool uninstall_group_cardset) {
   for (G1CSetCandidateGroup* gr : _groups) {
-    gr->clear();
-    delete gr;
-  }
-  _groups.clear();
-  _num_regions = 0;
-}
-
-void G1CSetCandidateGroupList::abandon() {
-  for (G1CSetCandidateGroup* gr : _groups) {
-    gr->abandon();
+    gr->clear(uninstall_group_cardset);
     delete gr;
   }
   _groups.clear();
@@ -244,6 +241,7 @@ G1CollectionSetCandidates::G1CollectionSetCandidates() :
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
   FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
   _from_marking_groups.clear();
+  _retained_groups.clear();
 }
 
 bool G1CollectionSetCandidates::is_from_marking(G1HeapRegion* r) const {
@@ -259,8 +257,8 @@ void G1CollectionSetCandidates::initialize(uint max_regions) {
 }
 
 void G1CollectionSetCandidates::clear() {
-  _retained_groups.abandon();
-  _from_marking_groups.abandon();
+  _retained_groups.clear(true /* uninstall_group_cardset */);
+  _from_marking_groups.clear(true /* uninstall_group_cardset */);
   for (uint i = 0; i < _max_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
