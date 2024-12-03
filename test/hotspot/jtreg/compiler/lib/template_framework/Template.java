@@ -96,12 +96,14 @@ public final class Template implements CodeGenerator {
     private class InstantiationState {
         public final Scope scope;
         public final Parameters parameters;
+        public final CodeStream outStream;
         private HashMap<String,String> localVariableToType;
         private HashMap<String,String> replacementsMap;
 
         public InstantiationState(Scope scope, Parameters parameters) {
             this.scope = scope;
             this.parameters = parameters;
+            this.outStream = scope.outStream();
             this.localVariableToType = new HashMap<String,String>();
         }
 
@@ -121,9 +123,9 @@ public final class Template implements CodeGenerator {
 
         public void addCodeForVariable(String name) {
             int id = parameters.instantiationID;
-            scope.addCodeToLine(name);
-            scope.addCodeToLine("_");
-            scope.addCodeToLine(Integer.toString(id));
+            outStream.addCodeToLine(name);
+            outStream.addCodeToLine("_");
+            outStream.addCodeToLine(Integer.toString(id));
         }
 
         public void handleGeneratorCall(String name,
@@ -131,12 +133,12 @@ public final class Template implements CodeGenerator {
                                         HashMap<String,String> parametersMap,
                                         String[] variableList) {
             // TODO
-            scope.addCodeToLine("TODO1");
+            outStream.addCodeToLine("TODO1");
         }
 
         public void repeatReplacement(String name) {
             // TODO
-            scope.addCodeToLine("TODO2");
+            outStream.addCodeToLine("TODO2");
         }
     }
 
@@ -157,7 +159,7 @@ public final class Template implements CodeGenerator {
             pos = end;
 
             // The nonTemplated code segment can simply be added.
-            scope.addCode(nonTemplated);
+            state.outStream.addCode(nonTemplated);
 
             // The templated code needs to be analyzed and transformed or recursively generated.
             handleTemplated(state, templated);
@@ -165,8 +167,7 @@ public final class Template implements CodeGenerator {
 
         // Cleanup: part after the last templated segments.
         String nonTemplated = templateString.substring(pos);
-        scope.addCode(nonTemplated);
-        scope.addNewline();
+        state.outStream.addCode(nonTemplated);
     }
 
     private void handleTemplated(InstantiationState state, String templated) {
@@ -216,7 +217,7 @@ public final class Template implements CodeGenerator {
                                                              "parameter with value " + parameterValue + ", so we " +
                                                              "cannot also define a generator. Got " + templated);
                     }
-                    state.scope.addCode(parameterValue);
+                    state.outStream.addCode(parameterValue);
                     return;
                 }
             }

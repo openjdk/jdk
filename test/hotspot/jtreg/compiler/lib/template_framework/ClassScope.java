@@ -31,9 +31,6 @@ public class ClassScope implements Scope {
     private final String className;
 
     private CodeStream stream;
-    private StringBuilder code;
-    private int indentation;
-    private boolean lastWasNewline;
 
     // TODO public or hidden in the API? - well we probably want to be able to use it programmatically...
     public ClassScope(String packageName, String className) {
@@ -41,45 +38,11 @@ public class ClassScope implements Scope {
         this.className = className;
 
         this.stream = new CodeStream();
-
-        this.code = new StringBuilder();
-        this.indentation = 0;
-        this.lastWasNewline = false;
         openClass();
-        addNewline();
     }
 
-    public CodeStream outputStream() {
+    public CodeStream outStream() {
         return stream;
-    }
-
-    public void addCodeToLine(String snippet) {
-        // If we just had a newline, and we are now pushing code,
-	// then we have to set the correct indentation.
-        if (lastWasNewline) {
-            this.code.append(" ".repeat(indentation));
-        }
-        this.code.append(snippet);
-        lastWasNewline = false;
-    }
-
-    public void addNewline() {
-        this.code.append("\n");
-        this.lastWasNewline = true;
-    }
-
-    public void indent() {
-        this.indentation += 4;
-        if (indentation > 100) {
-            throw new TemplateFrameworkException("Indentation should not be too deep, is " + indentation);
-        }
-    }
-
-    public void indentPop() {
-        this.indentation -= 4;
-        if (indentation < 0) {
-            throw new TemplateFrameworkException("Indentation should not go negative");
-        }
     }
 
     /**
@@ -87,27 +50,26 @@ public class ClassScope implements Scope {
      */
     public String toString() {
         closeClass();
-        return code.toString();
+        return stream.toString();
     }
 
     private void openClass() {
-        addCodeToLine("package ");
-        addCodeToLine(packageName);
-        addCodeToLine(";");
-        addNewline();
-        addNewline();
-        addCodeToLine("public class ");
-        addCodeToLine(className);
-        addCodeToLine("{");
-        indent();
+        stream.addCodeToLine("package ");
+        stream.addCodeToLine(packageName);
+        stream.addCodeToLine(";");
+        stream.addNewline();
+        stream.addNewline();
+        stream.addCodeToLine("public class ");
+        stream.addCodeToLine(className);
+        stream.addCodeToLine("{");
+        stream.indent();
+        stream.addNewline();
     }
 
     private void closeClass() {
-        indentPop();
-        if (indentation != 0) {
-            throw new TemplateFrameworkException("Indentation should be zero but is " + indentation);
-        }
-        addNewline();
-        addCodeToLine("}");
+        stream.outdent();
+        stream.addNewline();
+        stream.addCodeToLine("}");
+        stream.close();
     }
 }

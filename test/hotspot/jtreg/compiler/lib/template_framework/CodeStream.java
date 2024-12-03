@@ -45,10 +45,12 @@ public class CodeStream {
 
     private List<Token> stream;
     public boolean closed;
+    private int indentCount;
 
     public CodeStream() {
         this.stream = new ArrayList<Token>();
         this.closed = false;
+        this.indentCount = 0;
         checkOpen();
     }
 
@@ -59,7 +61,7 @@ public class CodeStream {
     }
 
     public void checkClosed() {
-        if (closed) {
+        if (!closed) {
             throw new TemplateFrameworkException("Stream is still open.");
         }
     }
@@ -92,14 +94,23 @@ public class CodeStream {
         stream.add(NEWLINE);
     }
 
+    // TODO check balance and zero indent at end
     public void indent() {
         checkOpen();
         stream.add(INDENT);
+        indentCount++;
+        if (indentCount > 100) {
+            throw new TemplateFrameworkException("Indentation should not be too deep, is " + indentCount);
+        }
     }
 
     public void outdent() {
         checkOpen();
         stream.add(OUTDENT);
+        indentCount--;
+        if (indentCount < 0) {
+            throw new TemplateFrameworkException("Indentation should not become negative.");
+        }
     }
 
     public void addCodeStream(CodeStream nestedStream) {
@@ -110,13 +121,64 @@ public class CodeStream {
 
     public void close() {
         checkOpen();
+        if (indentCount != 0) {
+            throw new TemplateFrameworkException("Indentation must be zero when closing, is " + indentCount);
+        }
         closed = true;
         checkClosed();
     }
 
+    private class State {
+        private StringBuilder stringBuilder = new StringBuilder();
+        private boolean lastWasNewline = false;
+        private int indentation = 0;
+
+        public State() {}
+
+        public void addCodeToLine(String code) {
+            // If we just had a newline, and we are now pushing code,
+            // then we have to set the correct indentation.
+            if (lastWasNewline) {
+                stringBuilder.append(" ".repeat(4 * indentation));
+            }
+            stringBuilder.append(code);
+            lastWasNewline = false;
+        }
+
+        public void addNewline() {
+            stringBuilder.append("\n");
+            lastWasNewline = true;
+        }
+
+        public void indent() {
+            indentation++;
+        }
+
+        public void outdent() {
+            indentation--;
+        }
+
+        public String toString() {
+            return stringBuilder.toString();
+        }
+    }
+
     public String toString() {
         checkClosed();
-        // TODO
-        return "";
+        State state = new State();
+        collect(state);
+        return state.toString();
+    }
+
+    public void collect(State state) {
+        for (Token t : stream) {
+            switch (t) {
+                case CodeSegment(String code)            -> { state.addCodeToLine(code); }
+                case Newline()                           -> { state.addNewline();  }
+                case Indent()                            -> { state.indent(); }
+                case Outdent()                           -> { state.outdent(); }
+                case NestedCodeStream(CodeStream stream) -> { stream.collect(state); }
+            }
+        }
     }
 } 
