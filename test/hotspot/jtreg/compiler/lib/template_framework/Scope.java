@@ -31,4 +31,5 @@ public interface Scope {
     // TODO available variables
 
     public abstract CodeStream outStream();
+    public abstract CodeGeneratorLibrary library();
 }

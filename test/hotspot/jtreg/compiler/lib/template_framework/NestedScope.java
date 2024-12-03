@@ -39,6 +39,10 @@ public class NestedScope implements Scope {
         return stream;
     }
 
+    public CodeGeneratorLibrary library() {
+        return parent.library();
+    }
+
     public void close() {
         stream.close();
     }

@@ -144,10 +144,15 @@ public final class Template implements CodeGenerator {
                                                      ". Got " + templated);
             }
 
-            // TODO generate code
+            CodeGenerator generator = scope.library().find(generatorName);
+            if (generator == null) {
+                throw new TemplateFrameworkException("Template generator not found: " + generatorName +
+                                                     ". Got " + templated);
+            }
+
             NestedScope nestedScope = new NestedScope(scope);
             Parameters parameters = new Parameters(argumentsMap);
-            nestedScope.outStream().addCodeToLine("TODO1");
+            generator.instantiate(nestedScope, parameters);
             nestedScope.close();
             CodeStream generatorStream = nestedScope.outStream();
 

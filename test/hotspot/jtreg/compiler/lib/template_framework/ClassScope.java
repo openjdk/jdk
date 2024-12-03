@@ -30,19 +30,29 @@ public class ClassScope implements Scope {
     private final String packageName;
     private final String className;
 
+    private CodeGeneratorLibrary codeGeneratorLibrary;
     private CodeStream stream;
 
     // TODO public or hidden in the API? - well we probably want to be able to use it programmatically...
-    public ClassScope(String packageName, String className) {
+    public ClassScope(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary) {
         this.packageName = packageName;
         this.className = className;
+        this.codeGeneratorLibrary = codeGeneratorLibrary;
 
         this.stream = new CodeStream();
         openClass();
     }
 
+    public ClassScope(String packageName, String className) {
+        this(packageName, className, CodeGeneratorLibrary.standard());
+    }
+
     public CodeStream outStream() {
         return stream;
+    }
+
+    public CodeGeneratorLibrary library() {
+        return this.codeGeneratorLibrary;
     }
 
     /**
