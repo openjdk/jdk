@@ -53,6 +53,13 @@ class PhaseStringOpts : public Phase {
   // a single string construction.
   StringConcat* build_candidate(CallStaticJavaNode* call);
 
+  enum class CheckAppendResult { GoodAppend,
+                                 NotAppend,
+                                 GiveUp };
+
+  // Called from build_candidate. Looks at a call that might be an append. If so, adds it to the StringConcat.
+  CheckAppendResult check_append_candidate(CallStaticJavaNode* cnode, StringConcat* sc, ciMethod* m, ciSymbol* string_sig, ciSymbol* int_sig, ciSymbol* char_sig);
+
   // Replace all the SB calls in concat with an optimization String allocation
   void replace_string_concat(StringConcat* concat);
 

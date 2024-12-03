@@ -411,27 +411,85 @@ Node_List PhaseStringOpts::collect_toString_calls() {
   return string_calls;
 }
 
-// Recognize a fluent-chain of StringBuilder/Buffer. They are either explicit usages
+PhaseStringOpts::CheckAppendResult PhaseStringOpts::check_append_candidate(CallStaticJavaNode* cnode,
+                                                                           StringConcat* sc,
+                                                                           ciMethod* m,
+                                                                           ciSymbol* string_sig,
+                                                                           ciSymbol* int_sig,
+                                                                           ciSymbol* char_sig) {
+  if (cnode->method() != nullptr && !cnode->method()->is_static() &&
+      cnode->method()->holder() == m->holder() &&
+      cnode->method()->name() == ciSymbols::append_name() &&
+      (cnode->method()->signature()->as_symbol() == string_sig ||
+       cnode->method()->signature()->as_symbol() == char_sig ||
+       cnode->method()->signature()->as_symbol() == int_sig)) {
+    if (sc->has_control(cnode)) {
+      return CheckAppendResult::GoodAppend;
+    }
+    sc->add_control(cnode);
+    Node* arg = cnode->in(TypeFunc::Parms + 1);
+    if (arg == nullptr || arg->is_top()) {
+#ifndef PRODUCT
+      if (PrintOptimizeStringConcat) {
+        tty->print("giving up because the call is effectively dead");
+        cnode->jvms()->dump_spec(tty);
+        tty->cr();
+      }
+#endif
+      return CheckAppendResult::GiveUp;
+    }
+
+    if (cnode->method()->signature()->as_symbol() == int_sig) {
+      sc->push_int(arg);
+    } else if (cnode->method()->signature()->as_symbol() == char_sig) {
+      sc->push_char(arg);
+    } else if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
+      CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
+      if (csj->method() != nullptr &&
+          csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
+          arg->outcnt() == 1) {
+        // _control is the list of StringBuilder calls nodes which
+        // will be replaced by new String code after this optimization.
+        // Integer::toString() call is not part of StringBuilder calls
+        // chain. It could be eliminated only if its result is used
+        // only by this SB calls chain.
+        // Another limitation: it should be used only once because
+        // it is unknown that it is used only by this SB calls chain
+        // until all related SB calls nodes are collected.
+        assert(arg->unique_out() == cnode, "sanity");
+        sc->add_control(csj);
+        sc->push_int(csj->in(TypeFunc::Parms));
+      } else {
+        sc->push_string(arg);
+      }
+    } else {
+      sc->push_string(arg);
+    }
+    return CheckAppendResult::GoodAppend;
+  }
+  return CheckAppendResult::NotAppend;
+}
+
+// Recognize fluent-chain and non-fluent uses of StringBuilder/Buffer. They are either explicit usages
 // of them or the legacy bytecodes of string concatenation prior to JEP-280. eg.
 //
 // String result = new StringBuilder()
 //   .append("foo")
 //   .append("bar")
 //   .append(123)
-//   .toString(); // "foobar123"
+//   .toString(); // "foobar123"+
 //
-// PS: Only a certain subset of constructor and append methods are acceptable.
-// The criterion is that the length of argument is easy to work out in this phrase.
-// It will drop complex cases such as Object.
+// Fluent-chains are recognized by walking upwards along the receivers, starting from toString().
+// Once the allocation of the StringBuilder has been reached, DU pairs are examined to find the
+// constructor and non-fluent uses of the StringBuilder such as in this example:
 //
-// Since it walks along the receivers of fluent-chain, it will give up if the codeshape is
-// not "fluent" enough. eg.
 //   StringBuilder sb = new StringBuilder();
 //   sb.append("foo");
 //   sb.toString();
 //
-// The receiver of toString method is the result of Allocation Node(CheckCastPP).
-// The append method is overlooked. It will fail at validate_control_flow() test.
+// PS: Only a certain subset of constructor and append methods are acceptable.
+// The criterion is that the length of argument is easy to work out in this phrase.
+// It will drop complex cases such as Object.
 //
 StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
   ciMethod* m = call->method();
@@ -458,64 +516,6 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 
   StringConcat* sc = new StringConcat(this, call);
   AllocateNode* alloc = nullptr;
-
-  enum class CheckAppendResult { GoodAppend,
-                                 NotAppend,
-                                 GiveUp };
-
-  auto check_append = [&](CallStaticJavaNode* cnode) -> CheckAppendResult {
-    if (cnode->method() != nullptr && !cnode->method()->is_static() &&
-        cnode->method()->holder() == m->holder() &&
-        cnode->method()->name() == ciSymbols::append_name() &&
-        (cnode->method()->signature()->as_symbol() == string_sig ||
-         cnode->method()->signature()->as_symbol() == char_sig ||
-         cnode->method()->signature()->as_symbol() == int_sig)) {
-      if (sc->has_control(cnode)) {
-        return CheckAppendResult::GoodAppend;
-      }
-      sc->add_control(cnode);
-      Node* arg = cnode->in(TypeFunc::Parms + 1);
-      if (arg == nullptr || arg->is_top()) {
-#ifndef PRODUCT
-        if (PrintOptimizeStringConcat) {
-          tty->print("giving up because the call is effectively dead");
-          cnode->jvms()->dump_spec(tty);
-          tty->cr();
-        }
-#endif
-        return CheckAppendResult::GiveUp;
-      }
-
-      if (cnode->method()->signature()->as_symbol() == int_sig) {
-        sc->push_int(arg);
-      } else if (cnode->method()->signature()->as_symbol() == char_sig) {
-        sc->push_char(arg);
-      } else if (arg->is_Proj() && arg->in(0)->is_CallStaticJava()) {
-        CallStaticJavaNode* csj = arg->in(0)->as_CallStaticJava();
-        if (csj->method() != nullptr &&
-            csj->method()->intrinsic_id() == vmIntrinsics::_Integer_toString &&
-            arg->outcnt() == 1) {
-          // _control is the list of StringBuilder calls nodes which
-          // will be replaced by new String code after this optimization.
-          // Integer::toString() call is not part of StringBuilder calls
-          // chain. It could be eliminated only if its result is used
-          // only by this SB calls chain.
-          // Another limitation: it should be used only once because
-          // it is unknown that it is used only by this SB calls chain
-          // until all related SB calls nodes are collected.
-          assert(arg->unique_out() == cnode, "sanity");
-          sc->add_control(csj);
-          sc->push_int(csj->in(TypeFunc::Parms));
-        } else {
-          sc->push_string(arg);
-        }
-      } else {
-        sc->push_string(arg);
-      }
-      return CheckAppendResult::GoodAppend;
-    }
-    return CheckAppendResult::NotAppend;
-  };
 
   // possible opportunity for StringBuilder fusion
   CallStaticJavaNode* cnode = call;
@@ -604,7 +604,8 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
             }
 #endif
           }
-        } else if (use != nullptr && check_append(use) == CheckAppendResult::GiveUp) {
+        } else if (use != nullptr &&
+                   check_append_candidate(use, sc, m, string_sig, int_sig, char_sig) == CheckAppendResult::GiveUp) {
           return nullptr;
         }
       }
@@ -632,7 +633,7 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
         return nullptr;
       }
     } else {
-      CheckAppendResult result = check_append(cnode);
+      CheckAppendResult result = check_append_candidate(cnode, sc, m, string_sig, int_sig, char_sig);
 
       if (result == CheckAppendResult::GiveUp) {
         break;
@@ -648,7 +649,6 @@ StringConcat* PhaseStringOpts::build_candidate(CallStaticJavaNode* call) {
 #endif
         break;
       }
-      // else: it was an append yay!
     }
   }
   return nullptr;
