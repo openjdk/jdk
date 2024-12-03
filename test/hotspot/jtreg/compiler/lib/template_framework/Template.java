@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
  *   - Must generate code, variables, etc, push it to Scope.
  *   - Call nested CodeGenerator recursively - how to do Instantiator ... maybe via args?
  *
- * Instantiator / Args for free variables
+ * Parameters (Instantiator / Args for free variables)
  * - Must be passed on CodeGenerator initialization
  * - For Templates: fills free variable replacements
  * - For CodeGenerator: can be queried and used freely. This allows passing int values etc. as parameters.
@@ -58,7 +58,7 @@ import java.util.regex.Pattern;
  *   Ok, so the args are strings. Basically w characters only, because Templates cannot pass anything else.
  *
  */
-public final class Template {
+public final class Template implements CodeGenerator {
     // Match local variables:
     //   $name
     private static final String VARIABLE_PATTERN = "(\\$\\w+)";
@@ -92,7 +92,7 @@ public final class Template {
         this.templateString = templateString;
     }
 
-    public String instantiate() {
+    public String instantiate(Scope scope, Parameters parameters) {
         Matcher matcher = PATTERNS.matcher(templateString);
 
         while (matcher.find()) {

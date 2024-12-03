@@ -47,7 +47,7 @@ public class TestRandomIntConstant {
         comp.compile();
 
         // Object ret = XYZ.test(5);
-        Object ret = comp.invoke("InnerTest", "test", new Object[] {});
+        Object ret = comp.invoke("p.xyz.InnerTest", "test", new Object[] {});
         System.out.println("res: " + ret);
 
         // // Extract return value of invocation, verify its value.
@@ -60,6 +60,9 @@ public class TestRandomIntConstant {
 
     // Generate a source Java file as String
     public static String generate() {
+        ClassScope scope = new ClassScope("p.xyz", "InnerTest");
+        Parameters parameters = new Parameters();
+
         Template template = new Template(
             """
             public class InnerTest {
@@ -72,6 +75,6 @@ public class TestRandomIntConstant {
             }
             """
         );
-        return template.instantiate();
+        return template.instantiate(scope, parameters);
     }
 }

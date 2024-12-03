@@ -31,4 +31,3 @@ public interface Scope {
     // TODO available variables
     // TODO API for adding code
 }
-

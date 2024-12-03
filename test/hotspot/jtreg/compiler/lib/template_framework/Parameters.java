@@ -26,30 +26,39 @@ package compiler.lib.template_framework;
 import java.util.HashMap;
 
 /**
- * Parameters is a set of key-value pairs, i.e. pairs of parameter-name and parameter-value.
+ * Parameters is required to instantiate a CodeGenerator (e.g. Template).
+ *
+ * It has a set of key-value pairs, i.e. pairs of argument-name and argument-value.
+ * In templates, these are used to fill free variables (e.g. "#{var1}").
+ *
+ * It also has a unique instantiationID. This is used to differentiate names from
+ * the same CodeGenerator (e.g. Template), the ID is simply appended to local variable
+ * names to ensure there are no conflicts.
  * TODO public?
  */
 public class Parameters {
+    private static int instantiationIDCounter = 0;
+
     private HashMap<String, String> argumentsMap;
+    public final int instantiationID;
 
     /**
      * Create an empty Parameters set, then add key-value pairs afterwards.
      */
     public Parameters() {
         argumentsMap = new HashMap<String, String>();
+        instantiationID = instantiationIDCounter++;
     }
 
-    public add(String name, String value) {
+    public void add(String name, String value) {
         // TODO check it is empty, else throw special exception and catch somewhere
         argumentsMap.put(name, value);
     }
 
-    public get(String name) {
+    public String get(String name) {
         // TODO check it has it.
         return argumentsMap.get(name);
     }
 
     // TODO verify that we have exactly the names we expect, and no different.
 }
-
-
