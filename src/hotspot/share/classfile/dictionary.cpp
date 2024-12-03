@@ -44,7 +44,7 @@ const size_t REHASH_LEN = 100;
 Dictionary::Dictionary(ClassLoaderData* loader_data, size_t table_size)
   : _number_of_entries(0), _loader_data(loader_data) {
 
-  size_t start_size_log_2 = MAX2(ceil_log2(table_size), 2); // 2 is minimum size even though some dictionaries only have one entry
+  size_t start_size_log_2 = MAX2(log2i_ceil(table_size), 2); // 2 is minimum size even though some dictionaries only have one entry
   size_t current_size = ((size_t)1) << start_size_log_2;
   log_info(class, loader, data)("Dictionary start size: " SIZE_FORMAT " (" SIZE_FORMAT ")",
                                 current_size, start_size_log_2);

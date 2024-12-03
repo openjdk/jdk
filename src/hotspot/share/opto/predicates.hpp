@@ -400,6 +400,15 @@ class TemplateAssertionPredicate : public Predicate {
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
+
+#ifdef ASSERT
+  static void verify(IfTrueNode* template_assertion_predicate_success_proj) {
+    TemplateAssertionPredicate template_assertion_predicate(template_assertion_predicate_success_proj);
+    template_assertion_predicate.verify();
+  }
+
+  void verify() const;
+#endif // ASSERT
 };
 
 // Class to represent an Initialized Assertion Predicate which always has a halt node on the failing path.
@@ -419,6 +428,10 @@ class InitializedAssertionPredicate : public Predicate {
     return _if_node->in(0);
   }
 
+  OpaqueInitializedAssertionPredicateNode* opaque_node() const {
+    return _if_node->in(1)->as_OpaqueInitializedAssertionPredicate();
+  }
+
   IfNode* head() const override {
     return _if_node;
   }
@@ -433,6 +446,15 @@ class InitializedAssertionPredicate : public Predicate {
 
   void kill(PhaseIdealLoop* phase) const;
   static bool is_predicate(Node* node);
+
+#ifdef ASSERT
+  static void verify(IfTrueNode* initialized_assertion_predicate_success_proj) {
+    InitializedAssertionPredicate initialized_assertion_predicate(initialized_assertion_predicate_success_proj);
+    initialized_assertion_predicate.verify();
+  }
+
+  void verify() const;
+#endif // ASSERT
 };
 
 // Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Expression.
