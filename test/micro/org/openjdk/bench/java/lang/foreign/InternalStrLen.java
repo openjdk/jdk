@@ -60,12 +60,6 @@ public class InternalStrLen {
     private MemorySegment doubleByteSegment;
     private MemorySegment quadByteSegment;
 
-    // Aliases for testing internal methods that already have access to AMSI
-    private AbstractMemorySegmentImpl abstractSingleByteSegment;
-    private AbstractMemorySegmentImpl abstractSingleByteSegmentMisaligned;
-    private AbstractMemorySegmentImpl abstractDoubleByteSegment;
-    private AbstractMemorySegmentImpl abstractQuadByteSegment;
-
     @Param({"1", "4", "16", "251", "1024"})
     int size;
 
@@ -88,10 +82,6 @@ public class InternalStrLen {
         singleByteSegmentMisaligned = arena.allocate(singleByteSegment.byteSize() + 1).
                 asSlice(1);
         MemorySegment.copy(singleByteSegment, 0, singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
-        abstractSingleByteSegment = (AbstractMemorySegmentImpl) singleByteSegment;
-        abstractSingleByteSegmentMisaligned = (AbstractMemorySegmentImpl) singleByteSegmentMisaligned;
-        abstractDoubleByteSegment = (AbstractMemorySegmentImpl) doubleByteSegment;
-        abstractQuadByteSegment = (AbstractMemorySegmentImpl) quadByteSegment;
     }
 
     @Benchmark
@@ -116,22 +106,22 @@ public class InternalStrLen {
 
     @Benchmark
     public int chunkedSingle() {
-        return StringSupport.strlenByte(abstractSingleByteSegment, 0, singleByteSegment.byteSize());
+        return StringSupport.strlenByte((AbstractMemorySegmentImpl) singleByteSegment, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedSingleMisaligned() {
-        return StringSupport.strlenByte(abstractSingleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
+        return StringSupport.strlenByte((AbstractMemorySegmentImpl) singleByteSegmentMisaligned, 0, singleByteSegment.byteSize());
     }
 
     @Benchmark
     public int chunkedDouble() {
-        return StringSupport.strlenShort(abstractDoubleByteSegment, 0, doubleByteSegment.byteSize());
+        return StringSupport.strlenShort((AbstractMemorySegmentImpl) doubleByteSegment, 0, doubleByteSegment.byteSize());
     }
 
     @Benchmark
     public int changedElementQuad() {
-        return StringSupport.strlenInt(abstractQuadByteSegment, 0, quadByteSegment.byteSize());
+        return StringSupport.strlenInt((AbstractMemorySegmentImpl) quadByteSegment, 0, quadByteSegment.byteSize());
     }
 
     // These are the legacy methods
