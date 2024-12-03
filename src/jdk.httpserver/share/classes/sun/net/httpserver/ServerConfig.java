@@ -49,8 +49,8 @@ class ServerConfig {
     private static final int  DEFAULT_MAX_REQ_HEADER_SIZE = 380 * 1024;
     private static final long DEFAULT_DRAIN_AMOUNT = 64 * 1024;
 
-    private static long idleTimerScheduleMillis;
-    private static long idleIntervalMillis;
+    private static final long idleTimerScheduleMillis;
+    private static final long idleIntervalMillis;
     // The maximum number of bytes to drain from an inputstream
     private static final long drainAmount;
     // the maximum number of connections that the server will allow to be open
@@ -59,14 +59,14 @@ class ServerConfig {
     private static final int maxConnections;
     private static final int maxIdleConnections;
     // The maximum number of request headers allowable
-    private static int maxReqHeaders;
+    private static final int maxReqHeaders;
     // a maximum value for the header list size. This is the
     // names size + values size + 32 bytes per field line
-    private static int maxReqHeadersSize;
+    private static final int maxReqHeadersSize;
     // max time a request or response is allowed to take
     private static final long maxReqTime;
     private static final long maxRspTime;
-    private static long reqRspTimerScheduleMillis;
+    private static final long reqRspTimerScheduleMillis;
     private static final boolean debug;
 
     // the value of the TCP_NODELAY socket-level option
@@ -74,16 +74,17 @@ class ServerConfig {
 
     static {
 
-        idleIntervalMillis = Long.getLong("sun.net.httpserver.idleInterval", DEFAULT_IDLE_INTERVAL_IN_SECS) * 1000;
-        if (idleIntervalMillis <= 0) {
-            idleIntervalMillis = DEFAULT_IDLE_INTERVAL_IN_SECS * 1000;
-        }
+        long providedIdleIntervalSecs = Long.getLong("sun.net.httpserver.idleInterval", DEFAULT_IDLE_INTERVAL_IN_SECS);
+        idleIntervalMillis = Math.multiplyExact(
+                providedIdleIntervalSecs > 0 ? providedIdleIntervalSecs : DEFAULT_IDLE_INTERVAL_IN_SECS,
+                1000);
 
-        idleTimerScheduleMillis = Long.getLong("sun.net.httpserver.clockTick", DEFAULT_IDLE_TIMER_SCHEDULE_MILLIS);
-        if (idleTimerScheduleMillis <= 0) {
-            // ignore zero or negative value and use the default schedule
-            idleTimerScheduleMillis = DEFAULT_IDLE_TIMER_SCHEDULE_MILLIS;
-        }
+        long providedIdleTimerScheduleMillis =
+                Long.getLong("sun.net.httpserver.clockTick", DEFAULT_IDLE_TIMER_SCHEDULE_MILLIS);
+        // Ignore zero or negative value and use the default schedule
+        idleTimerScheduleMillis = providedIdleTimerScheduleMillis > 0
+                ? providedIdleTimerScheduleMillis
+                : DEFAULT_IDLE_TIMER_SCHEDULE_MILLIS;
 
         maxConnections = Integer.getInteger("jdk.httpserver.maxConnections", DEFAULT_MAX_CONNECTIONS);
 
@@ -91,28 +92,25 @@ class ServerConfig {
 
         drainAmount = Long.getLong("sun.net.httpserver.drainAmount", DEFAULT_DRAIN_AMOUNT);
 
-        maxReqHeaders = Integer.getInteger("sun.net.httpserver.maxReqHeaders", DEFAULT_MAX_REQ_HEADERS);
-        if (maxReqHeaders <= 0) {
-            maxReqHeaders = DEFAULT_MAX_REQ_HEADERS;
-        }
+        int providedMaxReqHeaders = Integer.getInteger("sun.net.httpserver.maxReqHeaders", DEFAULT_MAX_REQ_HEADERS);
+        maxReqHeaders = providedMaxReqHeaders > 0 ? providedMaxReqHeaders : DEFAULT_MAX_REQ_HEADERS;
 
-        // a value <= 0 means unlimited
-        maxReqHeadersSize = Integer.getInteger("sun.net.httpserver.maxReqHeaderSize", DEFAULT_MAX_REQ_HEADER_SIZE);
-        if (maxReqHeadersSize <= 0) {
-            maxReqHeadersSize = 0;
-        }
+        // A value <= 0 means unlimited
+        maxReqHeadersSize = Math.max(
+                Integer.getInteger("sun.net.httpserver.maxReqHeaderSize", DEFAULT_MAX_REQ_HEADER_SIZE),
+                0);
 
         maxReqTime = Long.getLong("sun.net.httpserver.maxReqTime", DEFAULT_MAX_REQ_TIME);
 
         maxRspTime = Long.getLong("sun.net.httpserver.maxRspTime", DEFAULT_MAX_RSP_TIME);
 
-        reqRspTimerScheduleMillis = Long.getLong(
+        long providedReqRspTimerScheduleMillis = Long.getLong(
                 "sun.net.httpserver.timerMillis",
                 DEFAULT_REQ_RSP_TIMER_TASK_SCHEDULE_MILLIS);
-        if (reqRspTimerScheduleMillis <= 0) {
-            // ignore any negative or zero value for this configuration and reset to default schedule
-            reqRspTimerScheduleMillis = DEFAULT_REQ_RSP_TIMER_TASK_SCHEDULE_MILLIS;
-        }
+        // Ignore any negative or zero value for this configuration and reset to default schedule
+        reqRspTimerScheduleMillis = providedReqRspTimerScheduleMillis > 0
+                ? providedReqRspTimerScheduleMillis
+                : DEFAULT_REQ_RSP_TIMER_TASK_SCHEDULE_MILLIS;
 
         debug = Boolean.getBoolean("sun.net.httpserver.debug");
 
