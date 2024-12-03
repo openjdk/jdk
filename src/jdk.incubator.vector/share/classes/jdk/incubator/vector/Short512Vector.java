@@ -506,6 +506,13 @@ final class Short512Vector extends ShortVector {
                                      Short512Mask.class, (Short512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Short512Vector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2) {
+        return (Short512Vector)
+            super.selectFromTemplate((Short512Vector) v1, (Short512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

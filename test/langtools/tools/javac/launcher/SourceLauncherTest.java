@@ -241,25 +241,6 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testSecurityManager(Path base) throws IOException {
-        Path sourceFile = base.resolve("HelloWorld.java");
-        tb.writeJavaFiles(base,
-                "class HelloWorld {\n" +
-                        "    public static void main(String... args) {\n" +
-                        "        System.out.println(\"Hello World!\");\n" +
-                        "    }\n" +
-                        "}");
-
-        String log = new JavaTask(tb)
-                .vmOptions("-Djava.security.manager=default")
-                .className(sourceFile.toString())
-                .run(Task.Expect.FAIL)
-                .getOutput(Task.OutputKind.STDERR);
-        checkContains("stderr", log,
-                "error: cannot use source-code launcher with a security manager enabled");
-    }
-
-    @Test
     public void testSystemProperty(Path base) throws IOException {
         tb.writeJavaFiles(base,
             "class ShowProperty {\n" +

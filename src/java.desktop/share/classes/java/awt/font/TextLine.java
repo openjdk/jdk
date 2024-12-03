@@ -864,19 +864,15 @@ final class TextLine {
         return new Rectangle2D.Float(left, top, right-left, bottom-top);
     }
 
-    public Shape getOutline(AffineTransform tx) {
+    public Shape getOutline() {
 
         GeneralPath dstShape = new GeneralPath(GeneralPath.WIND_NON_ZERO);
 
         for (int i=0, n = 0; i < fComponents.length; i++, n += 2) {
             TextLineComponent tlc = fComponents[getComponentLogicalIndex(i)];
-
             dstShape.append(tlc.getOutline(locs[n], locs[n+1]), false);
         }
 
-        if (tx != null) {
-            dstShape.transform(tx);
-        }
         return dstShape;
     }
 

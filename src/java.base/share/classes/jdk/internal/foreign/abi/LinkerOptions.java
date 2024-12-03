@@ -63,11 +63,7 @@ public class LinkerOptions {
             optionMap.put(option.getClass(), opImpl);
         }
 
-        LinkerOptions linkerOptions = new LinkerOptions(optionMap);
-        if (linkerOptions.hasCapturedCallState() && linkerOptions.isCritical()) {
-            throw new IllegalArgumentException("Incompatible linker options: captureCallState, critical");
-        }
-        return linkerOptions;
+        return new LinkerOptions(optionMap);
     }
 
     public static LinkerOptions empty() {

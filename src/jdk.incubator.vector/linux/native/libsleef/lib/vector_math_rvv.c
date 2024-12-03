@@ -31,6 +31,8 @@
 // At run-time, if the library is found and the bridge functions are available in the
 // library, then the java vector API will call into the bridge functions and sleef.
 
+#if __GNUC__ >= 14 || (defined(__clang_major__) && __clang_major__ >= 17)
+
 #ifdef __riscv_v_intrinsic
 
 #include <stdint.h>
@@ -117,4 +119,6 @@ DEFINE_VECTOR_MATH_BINARY_RVV(hypotdx_u05, vdouble_rvvm1_sleef)
 
 #undef DEFINE_VECTOR_MATH_BINARY_RVV
 
-#endif /* __riscv_v_intrinsic */
+#endif  /* __riscv_v_intrinsic */
+
+#endif  /* check gcc and clang version */

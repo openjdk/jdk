@@ -342,7 +342,6 @@ public:
   static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
   static const RegMask* predicate_reg_mask(void);
-  static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);
 
   // Vector width in bytes
   static int vector_width_in_bytes(BasicType bt);

@@ -493,6 +493,13 @@ final class Float128Vector extends FloatVector {
                                      Float128Mask.class, (Float128Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Float128Vector selectFrom(Vector<Float> v1,
+                                   Vector<Float> v2) {
+        return (Float128Vector)
+            super.selectFromTemplate((Float128Vector) v1, (Float128Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override

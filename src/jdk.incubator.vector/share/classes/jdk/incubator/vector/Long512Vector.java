@@ -496,6 +496,13 @@ final class Long512Vector extends LongVector {
                                      Long512Mask.class, (Long512Mask) m);  // specialize
     }
 
+    @Override
+    @ForceInline
+    public Long512Vector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2) {
+        return (Long512Vector)
+            super.selectFromTemplate((Long512Vector) v1, (Long512Vector) v2);  // specialize
+    }
 
     @ForceInline
     @Override
