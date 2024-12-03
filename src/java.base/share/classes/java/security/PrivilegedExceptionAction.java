@@ -37,7 +37,7 @@ package java.security;
  * @param <T> the type of the result of running the computation
  *
  * @apiNote
- * This action cannot be performed with privileges enabled as the 
+ * This action cannot be performed with privileges enabled as the
  * Security Manager is no longer supported.
  *
  * @since 1.2
