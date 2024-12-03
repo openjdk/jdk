@@ -24,26 +24,14 @@
 package compiler.lib.template_framework;
 
 /**
- * TODO public?
+ * Exception thrown in the Template Framework. Most likely, the user is responsible for the failure.
  */
-public interface Scope {
-    // TODO nesting
-    // TODO available variables
-
-    /**
-     * TODO takes care of newline and nesting
-     */
-    default public void addCode(String code) {
-        String[] snippets = code.split("\n");
-        for (int i = 0; i < snippets.length; i++) {
-            if (i > 0) { addNewline(); }
-            addCodeToLine(snippets[i]);
-        }
+public class TemplateFrameworkException extends RuntimeException {
+    public TemplateFrameworkException(String message) {
+        super("Exception in Template Framework:" + System.lineSeparator() + message);
     }
 
-    // TODO desc
-    public abstract void addCodeToLine(String snippet);
-    public abstract void addNewline();
-    public abstract void indent();
-    public abstract void indentPop();
+    public TemplateFrameworkException(String message, Throwable e) {
+        super("Exception in Template Framework:" + System.lineSeparator() + message, e);
+    }
 }

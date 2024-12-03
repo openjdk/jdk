@@ -62,12 +62,16 @@ public class ClassScope implements Scope {
 
     public void indent() {
         this.indentation += 4;
-        // TODO assert <= big
+        if (indentation > 100) {
+            throw new TemplateFrameworkException("Indentation should not be too deep, is " + indentation);
+        }
     }
 
     public void indentPop() {
         this.indentation -= 4;
-        // TODO assert >=0
+        if (indentation < 0) {
+            throw new TemplateFrameworkException("Indentation should not go negative");
+        }
     }
 
     /**
@@ -92,7 +96,9 @@ public class ClassScope implements Scope {
 
     private void closeClass() {
         indentPop();
-        // TODO assert =0
+        if (indentation != 0) {
+            throw new TemplateFrameworkException("Indentation should be zero but is " + indentation);
+        }
         addNewline();
         addCodeToLine("}");
     }

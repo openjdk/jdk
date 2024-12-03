@@ -51,12 +51,17 @@ public class Parameters {
     }
 
     public void add(String name, String value) {
-        // TODO check it is empty, else throw special exception and catch somewhere
+        if (argumentsMap.containsKey(name)) {
+            throw new TemplateFrameworkException("Parameter " + name + " cannot be added as " + value +
+                                                 ", is already added as " + argumentsMap.get(name));
+        }
         argumentsMap.put(name, value);
     }
 
     public String get(String name) {
-        // TODO check it has it.
+        if (!argumentsMap.containsKey(name)) {
+            throw new TemplateFrameworkException("Parameter " + name + " was not added.");
+        }
         return argumentsMap.get(name);
     }
 
