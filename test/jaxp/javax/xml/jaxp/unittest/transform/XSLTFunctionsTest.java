@@ -159,7 +159,7 @@ public class XSLTFunctionsTest {
      * @param externalDoc Content of the external xml document
      * @param expectedResult Expected transformation result
      **/
-    //@Test(dataProvider = "document")
+    @Test(dataProvider = "document")
     public void testDocument(final String xml, final String xsl,
                              final String externalDoc, final String expectedResult) throws Exception {
         // Prepare sources for transormation
