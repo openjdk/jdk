@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  * Brainstorming
  * -------------
  *
- * Context
+ * Scope
  * - Nesting
  * - available variables
  * - API for adding code?
@@ -45,8 +45,8 @@ import java.util.regex.Pattern;
  * CodeGenerator
  * - Can be Template or Programmatic
  * - Can have free variables - to be set by Instantiator?
- * - On instantiation, gets Context and Instantiator/Args for free variables
- *   - Must generate code, variables, etc, push it to Context.
+ * - On instantiation, gets Scope and Instantiator/Args for free variables
+ *   - Must generate code, variables, etc, push it to Scope.
  *   - Call nested CodeGenerator recursively - how to do Instantiator ... maybe via args?
  *
  * Instantiator / Args for free variables

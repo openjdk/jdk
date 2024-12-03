@@ -26,16 +26,16 @@ package compiler.lib.template_framework;
 import java.util.HashMap;
 
 /**
- * Arguments is a set of key-value pairs, i.e. pairs of argument-name and argument-value.
+ * Parameters is a set of key-value pairs, i.e. pairs of parameter-name and parameter-value.
  * TODO public?
  */
-public class Arguments {
+public class Parameters {
     private HashMap<String, String> argumentsMap;
 
     /**
-     * Create an empty Arguments set, then add key-value pairs afterwards.
+     * Create an empty Parameters set, then add key-value pairs afterwards.
      */
-    public Arguments() {
+    public Parameters() {
         argumentsMap = new HashMap<String, String>();
     }
 

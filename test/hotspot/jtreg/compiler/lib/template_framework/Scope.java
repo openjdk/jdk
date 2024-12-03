@@ -26,7 +26,7 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public interface Context {
+public interface Scope {
     // TODO nesting
     // TODO available variables
     // TODO API for adding code
