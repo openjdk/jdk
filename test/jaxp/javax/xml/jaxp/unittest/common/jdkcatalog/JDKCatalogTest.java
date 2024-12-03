@@ -209,12 +209,8 @@ public class JDKCatalogTest {
             throws Exception {
         Path path = Paths.get(SRC_DIR + "/dtdtest.xml");
         String xmlString = Files.lines(path).map(line -> {
-            if (line.contains(PUBLIC_ID)) {
-                line = line.replace(PUBLIC_ID, publicId);
-            }
-            if (line.contains(SYSTEM_ID)) {
-                line = line.replace(SYSTEM_ID, systemId);
-            }
+            line = line.replace(PUBLIC_ID, publicId);
+            line = line.replace(SYSTEM_ID, systemId);
             return line;
         }).collect(Collectors.joining(System.lineSeparator()));
         return xmlString;
