@@ -77,7 +77,10 @@ public enum SourceVersion {
      *      switch in preview, module Import Declarations in preview,
      *      implicitly declared classes and instance main in third
      *      preview, flexible constructor bodies in second preview)
-     *  24: tbd
+     *  24: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in second preview, module Import Declarations in second
+     *      preview, simple source files and instance main in fourth
+     *      preview, flexible constructor bodies in third preview)
      */
 
     /**

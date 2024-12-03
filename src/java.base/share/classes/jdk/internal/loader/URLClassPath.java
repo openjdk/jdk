@@ -903,7 +903,11 @@ public class URLClassPath {
         private FileLoader(URL url) throws IOException {
             super(url);
             String path = url.getFile().replace('/', File.separatorChar);
-            path = ParseUtil.decode(path);
+            try {
+                path = ParseUtil.decode(path);
+            } catch (IllegalArgumentException iae) {
+                throw new IOException(iae);
+            }
             dir = (new File(path)).getCanonicalFile();
             @SuppressWarnings("deprecation")
             var _unused = normalizedBase = new URL(getBaseURL(), ".");

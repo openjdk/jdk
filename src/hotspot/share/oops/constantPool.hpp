@@ -162,6 +162,7 @@ class ConstantPool : public Metadata {
     assert(is_within_bounds(cp_index), "index out of bounds");
     return (jdouble*) &base()[cp_index];
   }
+  static void check_and_add_dumped_interned_string(oop obj);
 
   ConstantPool(Array<u1>* tags);
   ConstantPool();

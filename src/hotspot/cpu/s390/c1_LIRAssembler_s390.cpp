@@ -2539,13 +2539,11 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   } else {
     bool need_slow_path = !k->is_loaded() ||
                           ((int) k->super_check_offset() == in_bytes(Klass::secondary_super_cache_offset()));
-    intptr_t super_check_offset = k->is_loaded() ? k->super_check_offset() : -1L;
     __ load_klass(klass_RInfo, obj);
     // Perform the fast part of the checking logic.
     __ check_klass_subtype_fast_path(klass_RInfo, k_RInfo, Rtmp1,
                                      (need_slow_path ? success_target : nullptr),
-                                     failure_target, nullptr,
-                                     RegisterOrConstant(super_check_offset));
+                                     failure_target, nullptr);
     if (need_slow_path) {
       // Call out-of-line instance of __ check_klass_subtype_slow_path(...):
       address a = Runtime1::entry_for (C1StubId::slow_subtype_check_id);

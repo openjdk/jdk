@@ -64,7 +64,6 @@ import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AWTPermissions;
 import sun.awt.AppContext;
 import sun.awt.DebugSettings;
 import sun.awt.SunToolkit;
@@ -599,10 +598,7 @@ public class Window extends Container implements Accessible {
         if (owner != null) {
             owner.addOwnedWindow(weakThis);
             if (owner.isAlwaysOnTop()) {
-                try {
-                    setAlwaysOnTop(true);
-                } catch (SecurityException ignore) {
-                }
+                setAlwaysOnTop(true);
             }
         }
 
@@ -1306,10 +1302,7 @@ public class Window extends Container implements Accessible {
     // to insure that it cannot be overridden by client subclasses.
     final void toBack_NoClientCode() {
         if(isAlwaysOnTop()) {
-            try {
-                setAlwaysOnTop(false);
-            }catch(SecurityException e) {
-            }
+            setAlwaysOnTop(false);
         }
         if (visible) {
             WindowPeer peer = (WindowPeer)this.peer;
@@ -1626,13 +1619,6 @@ public class Window extends Container implements Accessible {
         }
         if (modalExclusionType == exclusionType) {
             return;
-        }
-        if (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(AWTPermissions.TOOLKIT_MODALITY_PERMISSION);
-            }
         }
         modalExclusionType = exclusionType;
 
@@ -2169,12 +2155,6 @@ public class Window extends Container implements Accessible {
      * @since 1.5
      */
     public final void setAlwaysOnTop(boolean alwaysOnTop) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
-        }
-
         boolean oldAlwaysOnTop;
         synchronized(this) {
             oldAlwaysOnTop = this.alwaysOnTop;
@@ -2205,10 +2185,7 @@ public class Window extends Container implements Accessible {
         for (WeakReference<Window> ref : ownedWindowArray) {
             Window window = ref.get();
             if (window != null) {
-                try {
-                    window.setAlwaysOnTop(alwaysOnTop);
-                } catch (SecurityException ignore) {
-                }
+                window.setAlwaysOnTop(alwaysOnTop);
             }
         }
     }
@@ -3046,7 +3023,7 @@ public class Window extends Container implements Accessible {
          setModalExclusionType(et); // since 6.0
          boolean aot = f.get("alwaysOnTop", false);
          if(aot) {
-             setAlwaysOnTop(aot); // since 1.5; subject to permission check
+             setAlwaysOnTop(aot);
          }
          shape = (Shape)f.get("shape", null);
          opacity = (Float)f.get("opacity", 1.0f);
