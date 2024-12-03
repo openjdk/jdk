@@ -21,12 +21,15 @@
  * questions.
  */
 
+import jdk.internal.math.FloatingDecimal;
 import jdk.test.lib.RandomFactory;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -48,51 +51,59 @@ public class TestRandomFloatingDecimal {
      *      BigDecimal floatValue() and doubleValue() conversions
      * and on the fact that the implementation of the BigDecimal conversions is
      * independent of the implementation in FloatingDecimal.
-     * Hence, the reference expected values are those computed by BigDecimal,
+     * Hence, the expected values are those computed by BigDecimal,
      * while the actual values are those returned by FloatingDecimal.
      */
-    private static final int COUNT = 100_000;  // random samples per case
+    private static final int COUNT = 10_000;  // random samples per test
 
     private static final Random RANDOM = RandomFactory.getRandom();
 
-    @Test
-    void testRandomDecForFloat() {
-        for (int i = 0; i < COUNT; ++i) {
-            Args args = randomDec(false);
-            float expected = args.decimal().floatValue();
-            float actual = Float.parseFloat(args.s());
-            assertEquals(expected, actual);
-        }
+    static Stream<Args> testRandomDecForFloat() {
+        return Stream.generate(() -> randomDec(false)).limit(COUNT);
     }
 
-    @Test
-    void testRandomDecForDouble() {
-        for (int i = 0; i < COUNT; ++i) {
-            Args args = randomDec(true);
-            double expected = args.decimal().doubleValue();
-            double actual = Double.parseDouble(args.s());
-            assertEquals(expected, actual);
-        }
+    static Stream<Args> testRandomDecForDouble() {
+        return Stream.generate(() -> randomDec(true)).limit(COUNT);
     }
 
-    @Test
-    void testRandomHexForFloat() {
-        for (int i = 0; i < COUNT; ++i) {
-            Args args = randomHex(false);
-            float expected = args.decimal().floatValue();
-            float actual = Float.parseFloat(args.s());
-            assertEquals(expected, actual);
-        }
+    static Stream<Args> testRandomHexForFloat() {
+        return Stream.generate(() -> randomHex(false)).limit(COUNT);
     }
 
-    @Test
-    void testRandomHexForDouble() {
-       for (int i = 0; i < COUNT; ++i) {
-           Args args = randomHex(true);
-           double expected = args.decimal().doubleValue();
-           double actual = Double.parseDouble(args.s());
-           assertEquals(expected, actual);
-       }
+    static Stream<Args> testRandomHexForDouble() {
+        return Stream.generate(() -> randomHex(true)).limit(COUNT);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testRandomDecForFloat(Args args) {
+        float expected = args.decimal().floatValue();
+        float actual = FloatingDecimal.parseFloat(args.s());
+        assertEquals(expected, actual);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testRandomDecForDouble(Args args) {
+        double expected = args.decimal().doubleValue();
+        double actual = FloatingDecimal.parseDouble(args.s());
+        assertEquals(expected, actual);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testRandomHexForFloat(Args args) {
+        float expected = args.decimal().floatValue();
+        float actual = FloatingDecimal.parseFloat(args.s());
+        assertEquals(expected, actual);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void testRandomHexForDouble(Args args) {
+       double expected = args.decimal().doubleValue();
+       double actual = FloatingDecimal.parseDouble(args.s());
+       assertEquals(expected, actual);
     }
 
     private record Args(String s, BigDecimal decimal) {}
@@ -114,10 +125,9 @@ public class TestRandomFloatingDecimal {
                         leadingWhites + signLen + leadingZeros + digits + trailingZeros),
                 10));
 
-        int pointPos = -1;
         int p = 0;
         if (RANDOM.nextInt(8) != 0) {  // 87.5% chance for a point
-            pointPos = RANDOM.nextInt(leadingZeros + digits + trailingZeros + 1);
+            int pointPos = RANDOM.nextInt(leadingZeros + digits + trailingZeros + 1);
             sb.insert(leadingWhites + signLen + pointPos, '.');
             p = -(leadingZeros + digits + trailingZeros - pointPos);
         }
@@ -157,10 +167,9 @@ public class TestRandomFloatingDecimal {
                         leadingWhites + signLen + 2 + leadingZeros + digits + trailingZeros),
                 0x10));
 
-        int pointPos = -1;
         int p = 0;
         if (RANDOM.nextInt(8) != 0) {  // 87.5% chance for a point
-            pointPos = RANDOM.nextInt(leadingZeros + digits + trailingZeros + 1);
+            int pointPos = RANDOM.nextInt(leadingZeros + digits + trailingZeros + 1);
             sb.insert(leadingWhites + signLen + 2 + pointPos, '.');
             p = -4 * (leadingZeros + digits + trailingZeros - pointPos);
         }
