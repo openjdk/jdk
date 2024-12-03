@@ -62,6 +62,8 @@ public class TestRandomIntConstant {
     public static String generate() {
         ClassScope scope = new ClassScope("p.xyz", "InnerTest");
         Parameters parameters = new Parameters();
+        parameters.add("param1", "1");
+        parameters.add("param2", "2");
 
         Template template = new Template(
             """
@@ -70,7 +72,7 @@ public class TestRandomIntConstant {
                 int ${con2:int} = #{cony};
                 int $con2 = #{conz:int_con(3,11):con1};
                 #{:code:con1,con2}
-                return $con1 + $con2;
+                return $con1 + $con2 + #{param1};
             }
             """
         );

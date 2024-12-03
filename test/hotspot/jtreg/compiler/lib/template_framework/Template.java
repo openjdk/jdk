@@ -97,6 +97,7 @@ public final class Template implements CodeGenerator {
         public final Scope scope;
         public final Parameters parameters;
         private HashMap<String,String> localVariableToType;
+        private HashMap<String,String> replacementsMap;
 
         public InstantiationState(Scope scope, Parameters parameters) {
             this.scope = scope;
@@ -124,6 +125,7 @@ public final class Template implements CodeGenerator {
             scope.addCodeToLine("_");
             scope.addCodeToLine(Integer.toString(id));
         }
+
     }
 
     public void instantiate(Scope scope, Parameters parameters) {
@@ -184,8 +186,62 @@ public final class Template implements CodeGenerator {
             String name = parts[0];
             String generator = (parts.length > 1) ? parts[1] : "";
             String variables = (parts.length > 2) ? parts[2] : "";
+
+            // Can only have variables if there is a generator.
+            if (generator.equals("") && !variables.equals("")) {
+                throw new TemplateFrameworkException("Template replacement syntax error. Cannot have variables " +
+                                                     "without generator. Usage: ${name:generator:variables}. Got " +
+                                                     templated);
+            }
+
+            // Check if it is a parameter.
+            if (!name.equals("")) {
+                String parameterValue = state.parameters.get(name);
+                if (parameterValue != null) {
+                    // It is a parameter value.
+                    if (!generator.equals("") || !variables.equals("")) {
+                        throw new TemplateFrameworkException("Template replacement error: " + name + "is given as " +
+                                                             "parameter with value " + parameterValue + ", so we " +
+                                                             "cannot also define a generator. Got " + templated);
+                    }
+                    state.scope.addCode(parameterValue);
+                    return;
+                }
+            }
+
             System.out.println("Replacement: #{" + name + ":" + generator + ":" + variables + "}");
             // TODO
+
+            // Recursive generator call.
+            if (!generator.equals("")) {
+                // Parse generator string.
+                int openPos = generator.indexOf('(');
+                int closePos = generator.indexOf(')');
+                if ((openPos == -1) != (closePos == -1) || (closePos != -1 && closePos != generator.length() - 1)) {
+                    throw new TemplateFrameworkException("Template replacement syntax error (generator brackets). " +
+                                                         "Got: " + templated);
+                }
+                String generatorName = null;
+                String generatorParameters = null;
+                if (openPos == -1) {
+                    generatorName = generator;
+                    generatorParameters = "";
+                } else {
+                    generatorName = generator.substring(0, openPos);
+                    generatorParameters = generator.substring(openPos + 1, generator.length() - 1);
+                }
+                if (generatorName.contains("(") ||
+                    generatorName.contains(")") ||
+                    generatorParameters.contains("(") ||
+                    generatorParameters.contains(")")) {
+                    throw new TemplateFrameworkException("Template replacement syntax error (generator brackets). " +
+                                                         "Generator name: " + generatorName + ". " +
+                                                         "Generator parameters: " + generatorParameters + ". " +
+                                                         "Found in: " + templated);
+                }
+                System.out.println("Generator: " + generatorName + " " + generatorParameters);
+            }
+
             state.scope.addCode(templated);
         } else {
             throw new TemplateFrameworkException("Template pattern not handled: " + templated);

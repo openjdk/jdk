@@ -59,9 +59,6 @@ public class Parameters {
     }
 
     public String get(String name) {
-        if (!argumentsMap.containsKey(name)) {
-            throw new TemplateFrameworkException("Parameter " + name + " was not added.");
-        }
         return argumentsMap.get(name);
     }
 
