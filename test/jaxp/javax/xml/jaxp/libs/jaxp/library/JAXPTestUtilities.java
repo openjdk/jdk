@@ -61,15 +61,9 @@ import org.xml.sax.SAXException;
  * This is an interface provide basic support for JAXP functional test.
  */
 public class JAXPTestUtilities {
-    public static String CLS_DIR = System.getProperty("test.classes");
-    public static String SRC_DIR = System.getProperty("test.src");
-    public static boolean isWindows = false;
-    static {
-        if (System.getProperty("os.name").contains("Windows")) {
-            isWindows = true;
-        }
-    };
-
+    public static final String CLS_DIR = System.getProperty("test.classes");
+    public static final String SRC_DIR = System.getProperty("test.src");
+    public static final boolean isWindows = System.getProperty("os.name").contains("Windows");
     /**
      * Prefix for error message.
      */

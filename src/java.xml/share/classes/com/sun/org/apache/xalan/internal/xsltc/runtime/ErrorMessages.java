@@ -281,7 +281,7 @@ public class ErrorMessages extends ListResourceBundle {
               + "To enable extension functions, set ''jdk.xml.enableExtensionFunctions'' to ''true''."},
 
         {BasisLibrary.UNALLOWED_EXTENSION_ELEMENT_ERR,
-        "Use of the extension function ''{0}'' is not allowed when extension "
+        "Use of the extension element ''{0}'' is not allowed when extension "
               + "functions are disabled by the secure processing feature or "
               + "the property ''jdk.xml.enableExtensionFunctions''. "
               + "To enable extension functions, set ''jdk.xml.enableExtensionFunctions'' to ''true''."},
