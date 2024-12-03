@@ -39,6 +39,7 @@ import jdk.jfr.events.SecurityPropertyModificationEvent;
 import jdk.jfr.events.SecurityProviderServiceEvent;
 import jdk.jfr.events.SerializationMisdeclarationEvent;
 import jdk.jfr.events.SocketConnectEvent;
+import jdk.jfr.events.SocketConnectFailedEvent;
 import jdk.jfr.events.SocketReadEvent;
 import jdk.jfr.events.SocketWriteEvent;
 import jdk.jfr.events.TLSHandshakeEvent;
@@ -68,6 +69,7 @@ final class MirrorEvents {
         register("jdk.internal.event.SecurityProviderServiceEvent", SecurityProviderServiceEvent.class);
         register("jdk.internal.event.SerializationMisdeclarationEvent", SerializationMisdeclarationEvent.class);
         register("jdk.internal.event.SocketConnectEvent", SocketConnectEvent.class);
+        register("jdk.internal.event.SocketConnectFailedEvent", SocketConnectFailedEvent.class);
         register("jdk.internal.event.SocketReadEvent", SocketReadEvent.class);
         register("jdk.internal.event.SocketWriteEvent", SocketWriteEvent.class);
         register("jdk.internal.event.ThreadSleepEvent", ThreadSleepEvent.class);

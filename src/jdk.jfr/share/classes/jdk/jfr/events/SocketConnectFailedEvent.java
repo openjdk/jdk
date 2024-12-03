@@ -32,11 +32,11 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.Type;
 
-@Name(Type.EVENT_NAME_PREFIX + "SocketConnect")
-@Label("Socket Connect")
+@Name(Type.EVENT_NAME_PREFIX + "SocketConnectFailed")
+@Label("Socket Connect Failed")
 @Category("Java Application")
-@Description("Socket connection established")
-public class SocketConnectEvent extends MirrorEvent {
+@Description("Socket connection could not be established")
+public class SocketConnectFailedEvent extends MirrorEvent {
 
     @Label("Remote Host")
     public String host;
@@ -46,4 +46,7 @@ public class SocketConnectEvent extends MirrorEvent {
 
     @Label("Remote Port")
     public int port;
+
+    @Label("Connect Exception Message")
+    public String connectExceptionMessage;
 }

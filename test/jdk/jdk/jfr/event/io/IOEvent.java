@@ -74,13 +74,14 @@ public class IOEvent {
     public static final String EVENT_FILE_READ = EventNames.FileRead;
     public static final String EVENT_FILE_WRITE = EventNames.FileWrite;
     public static final String EVENT_SOCKET_CONNECT = EventNames.SocketConnect;
+    public static final String EVENT_SOCKET_CONNECT_FAILED = EventNames.SocketConnectFailed;
     public static final String EVENT_SOCKET_READ = EventNames.SocketRead;
     public static final String EVENT_SOCKET_WRITE = EventNames.SocketWrite;
 
-    public enum EventType { UnknownEvent, FileForce, FileRead, FileWrite, SocketConnect, SocketRead, SocketWrite }
+    public enum EventType { UnknownEvent, FileForce, FileRead, FileWrite, SocketConnect, SocketConnectFailed, SocketRead, SocketWrite }
 
     private static final String[] eventPaths = {
-        EVENT_UNKNOWN, EVENT_FILE_FORCE, EVENT_FILE_READ, EVENT_FILE_WRITE, EVENT_SOCKET_CONNECT, EVENT_SOCKET_READ, EVENT_SOCKET_WRITE
+        EVENT_UNKNOWN, EVENT_FILE_FORCE, EVENT_FILE_READ, EVENT_FILE_WRITE, EVENT_SOCKET_CONNECT, EVENT_SOCKET_CONNECT_FAILED, EVENT_SOCKET_READ, EVENT_SOCKET_WRITE
     };
 
     public static boolean isWriteEvent(EventType eventType) {
@@ -97,6 +98,11 @@ public class IOEvent {
 
     public static IOEvent createSocketConnectEvent(Socket s) {
         return new IOEvent(Thread.currentThread().getName(), EventType.SocketConnect, 0, getAddress(s), false);
+    }
+
+
+    public static IOEvent createSocketConnectFailedEvent(Socket s) {
+        return new IOEvent(Thread.currentThread().getName(), EventType.SocketConnectFailed, 0, getAddress(s), false);
     }
 
     public static IOEvent createSocketWriteEvent(long size, Socket s) {

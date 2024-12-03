@@ -63,6 +63,7 @@ public final class JDKEvents {
         jdk.internal.event.SecurityProviderServiceEvent.class,
         jdk.internal.event.SerializationMisdeclarationEvent.class,
         jdk.internal.event.SocketConnectEvent.class,
+        jdk.internal.event.SocketConnectFailedEvent.class,
         jdk.internal.event.SocketReadEvent.class,
         jdk.internal.event.SocketWriteEvent.class,
         jdk.internal.event.ThreadSleepEvent.class,

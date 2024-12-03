@@ -34,7 +34,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -72,9 +71,9 @@ public class TestSocketAdapterEvents {
     private void test() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
-                recording.enable(IOEvent.EVENT_SOCKET_READ).withThreshold(Duration.ofMillis(0));
-                recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT);
+                recording.enable(IOEvent.EVENT_SOCKET_READ);
+                recording.enable(IOEvent.EVENT_SOCKET_WRITE);
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();
@@ -88,21 +87,21 @@ public class TestSocketAdapterEvents {
                              InputStream is = s.getInputStream()) {
 
                             int readInt = is.read();
-                            assertEquals(readInt, writeInt, "Wrong readInt");
+                            assertEquals(writeInt, readInt, "Wrong readInt");
                             addExpectedEvent(IOEvent.createSocketReadEvent(1, s));
 
                             int bytesRead = is.read(bs, 0, 3);
-                            assertEquals(bytesRead, 3, "Wrong bytesRead partial buffer");
+                            assertEquals(3, bytesRead, "Wrong bytesRead partial buffer");
                             addExpectedEvent(IOEvent.createSocketReadEvent(bytesRead, s));
 
                             bytesRead = is.read(bs);
-                            assertEquals(bytesRead, writeBuf.length, "Wrong bytesRead full buffer");
+                            assertEquals(writeBuf.length, bytesRead, "Wrong bytesRead full buffer");
                             addExpectedEvent(IOEvent.createSocketReadEvent(bytesRead, s));
 
                             // Try to read more, but writer have closed. Should
                             // get EOF.
                             readInt = is.read();
-                            assertEquals(readInt, -1, "Wrong readInt at EOF");
+                            assertEquals(-1, readInt, "Wrong readInt at EOF");
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, s));
                         }
                     }
@@ -133,7 +132,7 @@ public class TestSocketAdapterEvents {
     private static void testConnectException() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT_FAILED);
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();
@@ -152,8 +151,8 @@ public class TestSocketAdapterEvents {
 
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
-                Asserts.assertEquals(events.size(), 1);
-                IOHelper.checkConnectionEventException(events.get(0), connectException);
+                Asserts.assertEquals(1, events.size());
+                IOHelper.checkConnectEventException(events.get(0), connectException);
             }
         }
     }

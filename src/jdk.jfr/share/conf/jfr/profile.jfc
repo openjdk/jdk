@@ -740,6 +740,12 @@
       <setting name="threshold" control="socket-threshold">10 ms</setting>
     </event>
 
+    <event name="jdk.SocketConnectFailed">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="threshold" control="socket-threshold">10 ms</setting>
+    </event>
+
     <event name="jdk.SocketRead">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>

@@ -32,7 +32,6 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,9 +70,9 @@ public class TestSocketChannelEvents {
     private void test() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
-                recording.enable(IOEvent.EVENT_SOCKET_READ).withThreshold(Duration.ofMillis(0));
-                recording.enable(IOEvent.EVENT_SOCKET_WRITE).withThreshold(Duration.ofMillis(0));
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT);
+                recording.enable(IOEvent.EVENT_SOCKET_READ);
+                recording.enable(IOEvent.EVENT_SOCKET_WRITE);
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();
@@ -86,13 +85,13 @@ public class TestSocketChannelEvents {
                         ByteBuffer bufB = ByteBuffer.allocate(bufSizeB);
                         try (SocketChannel sc = ssc.accept()) {
                             int readSize = sc.read(bufA);
-                            assertEquals(readSize, bufSizeA, "Wrong readSize bufA");
+                            assertEquals(bufSizeA, readSize, "Wrong readSize bufA");
                             addExpectedEvent(IOEvent.createSocketReadEvent(bufSizeA, sc.socket()));
 
                             bufA.clear();
                             bufA.limit(1);
                             readSize = (int) sc.read(new ByteBuffer[] { bufA, bufB });
-                            assertEquals(readSize, 1 + bufSizeB, "Wrong readSize 1+bufB");
+                            assertEquals(1 + bufSizeB, readSize, "Wrong readSize 1+bufB");
                             addExpectedEvent(IOEvent.createSocketReadEvent(readSize, sc.socket()));
 
                             // We try to read, but client have closed. Should
@@ -100,7 +99,7 @@ public class TestSocketChannelEvents {
                             bufA.clear();
                             bufA.limit(1);
                             readSize = sc.read(bufA);
-                            assertEquals(readSize, -1, "Wrong readSize at EOF");
+                            assertEquals(-1, readSize, "Wrong readSize at EOF");
                             addExpectedEvent(IOEvent.createSocketReadEvent(-1, sc.socket()));
                         }
                     }
@@ -126,7 +125,7 @@ public class TestSocketChannelEvents {
                     bufA.clear();
                     bufA.limit(1);
                     int bytesWritten = (int) sc.write(new ByteBuffer[] { bufA, bufB });
-                    assertEquals(bytesWritten, 1 + bufSizeB, "Wrong bytesWritten 1+bufB");
+                    assertEquals(1 + bufSizeB, bytesWritten, "Wrong bytesWritten 1+bufB");
                     addExpectedEvent(IOEvent.createSocketWriteEvent(bytesWritten, sc.socket()));
                 }
 
@@ -141,7 +140,7 @@ public class TestSocketChannelEvents {
     private void testNonBlockingConnect() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT);
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();
@@ -169,7 +168,7 @@ public class TestSocketChannelEvents {
     private static void testConnectException() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT_FAILED);
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();
@@ -187,8 +186,8 @@ public class TestSocketChannelEvents {
 
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
-                Asserts.assertEquals(events.size(), 1);
-                IOHelper.checkConnectionEventException(events.get(0), connectException);
+                Asserts.assertEquals(1, events.size());
+                IOHelper.checkConnectEventException(events.get(0), connectException);
             }
         }
     }
@@ -196,7 +195,7 @@ public class TestSocketChannelEvents {
     private static void testNonBlockingConnectException() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-                recording.enable(IOEvent.EVENT_SOCKET_CONNECT).withThreshold(Duration.ofMillis(0));
+                recording.enable(IOEvent.EVENT_SOCKET_CONNECT_FAILED);
                 recording.start();
 
                 InetAddress lb = InetAddress.getLoopbackAddress();
@@ -207,9 +206,10 @@ public class TestSocketChannelEvents {
                 IOException connectException = null;
                 try (SocketChannel sc = SocketChannel.open()) {
                     sc.configureBlocking(false);
-                    sc.connect(addr);
-                    while (! sc.finishConnect()) {
-                        Thread.sleep(1);
+                    boolean connected = sc.connect(addr);
+                    while (!connected) {
+                        Thread.sleep(10);
+                        connected = sc.finishConnect();
                     }
                 } catch (IOException ioe) {
                     // we expect this
@@ -218,8 +218,8 @@ public class TestSocketChannelEvents {
 
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
-                Asserts.assertEquals(events.size(), 1);
-                IOHelper.checkConnectionEventException(events.get(0), connectException);
+                Asserts.assertEquals(1, events.size());
+                IOHelper.checkConnectEventException(events.get(0), connectException);
             }
         }
     }

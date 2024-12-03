@@ -54,6 +54,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.SocketConnectEvent;
+import jdk.internal.event.SocketConnectFailedEvent;
 import jdk.internal.ref.CleanerFactory;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
@@ -619,9 +620,17 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 connectEx = SocketExceptions.of(ioe, isa);
             }
         }
-        if (connectStart != 0L && SocketConnectEvent.enabled()) {
-            SocketConnectEvent.offer(connectStart, isa.getHostString(), address, port, connectEx);
+
+        // record JFR event
+        if (connectStart != 0L) {
+            String hostname = isa.getHostString();
+            if (connectEx == null && SocketConnectEvent.enabled()) {
+                SocketConnectEvent.offer(connectStart, hostname , address, port);
+            } else if (connectEx != null && SocketConnectFailedEvent.enabled()) {
+                SocketConnectFailedEvent.offer(connectStart, hostname, address, port, connectEx);
+            }
         }
+
         if (connectEx != null) {
             throw connectEx;
         }

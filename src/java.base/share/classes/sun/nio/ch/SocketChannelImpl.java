@@ -60,6 +60,7 @@ import static java.net.StandardProtocolFamily.INET6;
 import static java.net.StandardProtocolFamily.UNIX;
 
 import jdk.internal.event.SocketConnectEvent;
+import jdk.internal.event.SocketConnectFailedEvent;
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
 import sun.net.ConnectionResetException;
@@ -1007,10 +1008,12 @@ class SocketChannelImpl
         }
 
         // record JFR event
-        if (connectStart != 0L
-                && SocketConnectEvent.enabled()
-                && (connected || connectEx != null)) {
-            SocketConnectEvent.offer(connectStart, sa, connectEx);
+        if (connectStart != 0L) {
+            if (connected && SocketConnectEvent.enabled()) {
+                SocketConnectEvent.offer(connectStart, sa);
+            } else if (connectEx != null && SocketConnectFailedEvent.enabled()) {
+                SocketConnectFailedEvent.offer(connectStart, sa, connectEx);
+            }
         }
 
         if (connectEx == null) {
@@ -1112,10 +1115,12 @@ class SocketChannelImpl
         }
 
         // record JFR event
-        if (connectStart != 0L
-                && SocketConnectEvent.enabled()
-                && (connected || connectEx != null)) {
-            SocketConnectEvent.offer(connectStart, remoteAddress(), connectEx);
+        if (connectStart != 0L) {
+            if (connected && SocketConnectEvent.enabled()) {
+                SocketConnectEvent.offer(connectStart, remoteAddress());
+            } else if (connectEx != null && SocketConnectFailedEvent.enabled()) {
+                SocketConnectFailedEvent.offer(connectStart, remoteAddress(), connectEx);
+            }
         }
 
         if (connectEx != null) {
@@ -1390,8 +1395,12 @@ class SocketChannelImpl
         }
 
         // record JFR event
-        if (connectStart != 0L && SocketConnectEvent.enabled()) {
-            SocketConnectEvent.offer(connectStart, sa, connectEx);
+        if (connectStart != 0L) {
+            if (connectEx == null && SocketConnectEvent.enabled()) {
+                SocketConnectEvent.offer(connectStart, sa);
+            } else if (connectEx != null && SocketConnectFailedEvent.enabled()) {
+                SocketConnectFailedEvent.offer(connectStart, sa, connectEx);
+            }
         }
 
         if (connectEx != null) {

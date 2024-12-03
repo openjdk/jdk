@@ -132,10 +132,10 @@ public class IOHelper {
         }
     }
 
-    public static void checkConnectionEventException(RecordedEvent event, IOException ioe) {
-        Asserts.assertEquals(event.getEventType().getName(),IOEvent.EVENT_SOCKET_CONNECT);
+    public static void checkConnectEventException(RecordedEvent event, IOException ioe) {
+        Asserts.assertEquals(IOEvent.EVENT_SOCKET_CONNECT_FAILED, event.getEventType().getName());
         Asserts.assertNotNull(ioe);
-        String eventMessage = event.getString("exceptionMessage");
+        String eventMessage = event.getString("connectExceptionMessage");
         Asserts.assertEquals(eventMessage, ioe.getMessage());
     }
 }
