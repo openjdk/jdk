@@ -74,10 +74,11 @@ class ServerConfig {
 
     static {
 
-        long providedIdleIntervalSecs = Long.getLong("sun.net.httpserver.idleInterval", DEFAULT_IDLE_INTERVAL_IN_SECS);
-        idleIntervalMillis = Math.multiplyExact(
-                providedIdleIntervalSecs > 0 ? providedIdleIntervalSecs : DEFAULT_IDLE_INTERVAL_IN_SECS,
-                1000);
+        long providedIdleIntervalMillis =
+                Long.getLong("sun.net.httpserver.idleInterval", DEFAULT_IDLE_INTERVAL_IN_SECS) * 1000;
+        idleIntervalMillis = providedIdleIntervalMillis > 0
+                ? providedIdleIntervalMillis
+                : Math.multiplyExact(DEFAULT_IDLE_INTERVAL_IN_SECS, 1000);
 
         long providedIdleTimerScheduleMillis =
                 Long.getLong("sun.net.httpserver.clockTick", DEFAULT_IDLE_TIMER_SCHEDULE_MILLIS);
