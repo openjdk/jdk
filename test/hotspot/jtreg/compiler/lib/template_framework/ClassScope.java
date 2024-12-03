@@ -31,7 +31,8 @@ public class ClassScope implements Scope {
     private final String className;
 
     private StringBuilder code;
-    // TODO indentation?
+    private int indentation;
+    private boolean lastWasNewline;
 
     // TODO public or hidden in the API? - well we probably want to be able to use it programmatically...
     public ClassScope(String packageName, String className) {
@@ -39,7 +40,34 @@ public class ClassScope implements Scope {
         this.className = className;
 
         this.code = new StringBuilder();
+        this.indentation = 0;
+        this.lastWasNewline = false;
         openClass();
+    }
+
+    public void addCodeToLine(String snippet) {
+        // If we just had a newline, and we are now pushing code,
+	// then we have to set the correct indentation.
+        if (lastWasNewline) {
+            this.code.append(" ".repeat(indentation));
+        }
+        this.code.append(snippet);
+        lastWasNewline = false;
+    }
+
+    public void addNewline() {
+        this.code.append("\n");
+        this.lastWasNewline = true;
+    }
+
+    public void indent() {
+        this.indentation += 4;
+        // TODO assert <= big
+    }
+
+    public void indentPop() {
+        this.indentation -= 4;
+        // TODO assert >=0
     }
 
     /**
@@ -51,14 +79,21 @@ public class ClassScope implements Scope {
     }
 
     private void openClass() {
-        code.append("package ");
-        code.append(packageName);
-        code.append(";\n\npublic class ");
-        code.append(className);
-        code.append("{\n");
+        addCodeToLine("package ");
+        addCodeToLine(packageName);
+        addCodeToLine(";");
+        addNewline();
+        addNewline();
+        addCodeToLine("public class ");
+        addCodeToLine(className);
+        addCodeToLine("{");
+        indent();
     }
 
     private void closeClass() {
-        code.append("\n}");
+        indentPop();
+        // TODO assert =0
+        addNewline();
+        addCodeToLine("}");
     }
 }

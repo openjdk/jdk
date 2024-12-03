@@ -30,4 +30,21 @@ public interface Scope {
     // TODO nesting
     // TODO available variables
     // TODO API for adding code
+
+    /**
+     * TODO takes care of newline and nesting
+     */
+    default public void addCode(String code) {
+        String[] snippets = code.split("\n");
+        for (int i = 0; i < snippets.length; i++) {
+            if (i > 0) { addNewline(); }
+            addCodeToLine(snippets[i]);
+        }
+    }
+
+    // TODO desc
+    public abstract void addCodeToLine(String snippet);
+    public abstract void addNewline();
+    public abstract void indent();
+    public abstract void indentPop();
 }

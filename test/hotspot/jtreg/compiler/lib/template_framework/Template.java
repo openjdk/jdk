@@ -102,5 +102,8 @@ public final class Template implements CodeGenerator {
             String extract = templateString.substring(start, end);
             System.out.println("Found: " + extract);
         }
+
+        scope.addNewline();
+        scope.addCode(templateString);
     }
 }
