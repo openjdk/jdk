@@ -4489,23 +4489,31 @@ void os::Linux::numa_init() {
   // TBD Add notes about other policies and cpunodebind.
 
   if (!Linux::libnuma_init()) {
+    if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
+        (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
+      // Only issue a warning if the user explicitly asked for NUMA support
+      log_warning(os)("NUMA support is disabled as libnuma not initialized");
+    }
     FLAG_SET_ERGO(UseNUMA, false);
     FLAG_SET_ERGO(UseNUMAInterleaving, false); // Also depends on libnuma.
   } else {
     Linux::set_configured_numa_policy(Linux::identify_numa_policy());
-    if ((Linux::numa_max_node() < 1) || Linux::is_bound_to_single_node() ||
-        (!Linux::is_running_in_interleave_mode() && Linux::_numa_membind_bitmask != nullptr &&
-        Linux::_numa_cpunodebind_bitmask != nullptr &&
-        !_numa_bitmask_equal(Linux::_numa_membind_bitmask, Linux::_numa_cpunodebind_bitmask)) ||
-        (Linux::is_running_in_interleave_mode() && Linux::_numa_interleave_bitmask != nullptr &&
-        Linux::_numa_cpunodebind_bitmask != nullptr &&
-        !_numa_bitmask_equal(Linux::_numa_interleave_bitmask, Linux::_numa_cpunodebind_bitmask))) {
-      // If there's only one node (they start from 0) or if the process
-      // is bound explicitly to a single node using membind, disable NUMA
-      if (UseNUMA && FLAG_IS_CMDLINE(UseNUMA))
-        warning("UseNUMA is disabled as the process bound to a single numa node"
-                " or cpu and memory nodes are not aligned");
+    if (Linux::numa_max_node() < 1 ||
+        Linux::is_bound_to_single_mem_node() ||
+        Linux::mem_and_cpu_node_mismatch()) {
+      // Disable NUMA support if:
+      // 1. Only a single NUMA node is available
+      // 2. The process is bound to a single NUMA node
+      // 3. The process memory and cpu node configuration is misaligned
+      if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
+          (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
+        // Only issue a warning if the user explicitly asked for NUMA support
+       log_warning(os)("NUMA support is disabled as the process bound to a single"
+                       " numa node or cpu and memory nodes are not aligned");
+      }
       FLAG_SET_ERGO(UseNUMA, false);
+      FLAG_SET_ERGO(UseNUMAInterleaving, false);
+
     } else {
       LogTarget(Info,os) log;
       LogStream ls(log);

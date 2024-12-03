@@ -368,19 +368,24 @@ class os::Linux {
   }
   // Check if bound to only one numa node.
   // Returns true if bound to a single numa node, otherwise returns false.
-  static bool is_bound_to_single_node() {
+  static bool is_bound_to_single_mem_node() {
     int nodes = 0;
     unsigned int node = 0;
     unsigned int highest_node_number = 0;
 
-    if (_numa_membind_bitmask != nullptr && _numa_max_node != nullptr && _numa_bitmask_isbitset != nullptr) {
+    struct bitmask* mem_nodes_bitmask = Linux::_numa_membind_bitmask;
+    if (Linux::is_running_in_interleave_mode()) {
+      mem_nodes_bitmask = Linux::_numa_interleave_bitmask;
+    }
+
+    if (mem_nodes_bitmask != nullptr && _numa_max_node != nullptr && _numa_bitmask_isbitset != nullptr) {
       highest_node_number = _numa_max_node();
     } else {
       return false;
     }
 
     for (node = 0; node <= highest_node_number; node++) {
-      if (_numa_bitmask_isbitset(_numa_membind_bitmask, node)) {
+      if (_numa_bitmask_isbitset(mem_nodes_bitmask, node)) {
         nodes++;
       }
     }
@@ -390,6 +395,19 @@ class os::Linux {
     } else {
       return false;
     }
+  }
+  // Check if cpu and memory nodes are aligned, returns true if nodes misalign
+  static bool mem_and_cpu_node_mismatch() {
+    struct bitmask* mem_nodes_bitmask = Linux::_numa_membind_bitmask;
+    if (Linux::is_running_in_interleave_mode()) {
+      mem_nodes_bitmask = Linux::_numa_interleave_bitmask;
+    }
+
+    if (mem_nodes_bitmask == nullptr || Linux::_numa_cpunodebind_bitmask == nullptr) {
+      return false;
+    }
+
+    return !_numa_bitmask_equal(mem_nodes_bitmask, Linux::_numa_cpunodebind_bitmask);
   }
 
   static const GrowableArray<int>* numa_nindex_to_node() {
