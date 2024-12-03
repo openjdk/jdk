@@ -106,8 +106,8 @@ void PartialArrayStateAllocator::release(PartialArrayState* state) {
 PartialArrayStateManager::PartialArrayStateManager(uint max_allocators)
   : _arenas(NEW_C_HEAP_ARRAY(Arena, max_allocators, mtGC)),
     _max_allocators(max_allocators),
-    _registered_allocators(0),
-    _released_allocators(0)
+    _registered_allocators(0)
+    DEBUG_ONLY(COMMA _released_allocators(0))
 {}
 
 PartialArrayStateManager::~PartialArrayStateManager() {
