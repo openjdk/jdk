@@ -305,7 +305,7 @@ class WeakCmpxchgTester {
 };
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
-void run_narrow_cmpxchg_tests() {
+void run_weak_cmpxchg_narrow_value_tests() {
   // Assume natural aligned
   TESTSIZE data[8];
   TESTSIZE ret;
@@ -327,31 +327,31 @@ void run_narrow_cmpxchg_tests() {
 TEST_VM(RiscV, cmpxchg_weak_int16_lr_sc) {
   bool zacas = UseZacas;
   UseZacas = false;
-  run_narrow_cmpxchg_tests<int16_t, Assembler::int16>();
+  run_weak_cmpxchg_narrow_value_tests<int16_t, Assembler::int16>();
   UseZacas = zacas;
 }
 
 TEST_VM(RiscV, cmpxchg_weak_int8_lr_sc) {
   bool zacas = UseZacas;
   UseZacas = false;
-  run_narrow_cmpxchg_tests<int8_t, Assembler::int8>();
+  run_weak_cmpxchg_narrow_value_tests<int8_t, Assembler::int8>();
   UseZacas = zacas;
 }
 
 TEST_VM(RiscV, cmpxchg_weak_int16_maybe_zacas) {
   if (UseZacas) {
-    run_narrow_cmpxchg_tests<int16_t, Assembler::int16>();
+    run_weak_cmpxchg_narrow_value_tests<int16_t, Assembler::int16>();
   }
 }
 
 TEST_VM(RiscV, cmpxchg_weak_int8_maybe_zacas) {
   if (UseZacas) {
-    run_narrow_cmpxchg_tests<int8_t, Assembler::int8>();
+    run_weak_cmpxchg_narrow_value_tests<int8_t, Assembler::int8>();
   }
 }
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
-void weak_cmpxchg_test() {
+void run_weak_cmpxchg_tests() {
   TESTSIZE data = 121;
   TESTSIZE ret = WeakCmpxchgTester<TESTSIZE, ASMSIZE>::weak_cmpxchg((intptr_t)&data, 121, 42);
   ASSERT_EQ(ret, 1);
@@ -366,26 +366,26 @@ void weak_cmpxchg_test() {
 TEST_VM(RiscV, cmpxchg_weak_int64_lr_sc) {
   bool zacas = UseZacas;
   UseZacas = false;
-  weak_cmpxchg_test<int64_t, Assembler::int64>();
+  run_weak_cmpxchg_tests<int64_t, Assembler::int64>();
   UseZacas = zacas;
 }
 
 TEST_VM(RiscV, cmpxchg_weak_int64_maybe_zacas) {
   if (UseZacas) {
-    weak_cmpxchg_test<int64_t, Assembler::int64>();
+    run_weak_cmpxchg_tests<int64_t, Assembler::int64>();
   }
 }
 
 TEST_VM(RiscV, cmpxchg_weak_int32_lr_sc) {
   bool zacas = UseZacas;
   UseZacas = false;
-  weak_cmpxchg_test<int32_t, Assembler::int32>();
+  run_weak_cmpxchg_tests<int32_t, Assembler::int32>();
   UseZacas = zacas;
 }
 
 TEST_VM(RiscV, cmpxchg_weak_int32_maybe_zacas) {
   if (UseZacas) {
-    weak_cmpxchg_test<int32_t, Assembler::int32>();
+    run_weak_cmpxchg_tests<int32_t, Assembler::int32>();
   }
 }
 
