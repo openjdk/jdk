@@ -84,4 +84,6 @@ enum {
   pd_arraycopystub_reserved_argument_area_size = 5
 };
 
+#define HAVE_PD_C1_IS_INSTANCE_OF_STUB true
+
 #endif // CPU_X86_C1_DEFS_X86_HPP
