@@ -476,7 +476,9 @@ void TemplateTable::initialize() {
   def(Bytecodes::_fast_faccess_0      , ubcp|____|____|____, vtos, ftos, fast_xaccess        ,  ftos        );
 
   def(Bytecodes::_fast_iload          , ubcp|____|____|____, vtos, itos, fast_iload          ,  _       );
+  def(Bytecodes::_fast_iload_before_add, ubcp|____|____|____, vtos, itos, fast_iload          ,  _       );
   def(Bytecodes::_fast_iload2         , ubcp|____|____|____, vtos, itos, fast_iload2         ,  _       );
+  def(Bytecodes::_fast_iadd2          , ubcp|____|____|____, vtos, itos, fast_iadd2         ,  _       );
   def(Bytecodes::_fast_icaload        , ubcp|____|____|____, vtos, itos, fast_icaload        ,  _       );
 
   def(Bytecodes::_fast_invokevfinal   , ubcp|disp|clvm|____, vtos, vtos, fast_invokevfinal   , f2_byte      );

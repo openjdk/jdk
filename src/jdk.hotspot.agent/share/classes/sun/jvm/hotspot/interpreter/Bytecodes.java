@@ -267,24 +267,26 @@ public class Bytecodes {
   public static final int _fast_aaccess_0       = 222;
   public static final int _fast_faccess_0       = 223;
   public static final int _fast_iload           = 224;
-  public static final int _fast_iload2          = 225;
-  public static final int _fast_icaload         = 226;
-  public static final int _fast_invokevfinal    = 227;
-  public static final int _fast_linearswitch    = 228;
-  public static final int _fast_binaryswitch    = 229;
-  public static final int _fast_aldc            = 230;
-  public static final int _fast_aldc_w          = 231;
-  public static final int _return_register_finalizer = 232;
-  public static final int _invokehandle         = 233;
+  public static final int _fast_iload_before_add= 225;
+  public static final int _fast_iload2          = 226;
+  public static final int _fast_iadd2           = 227;
+  public static final int _fast_icaload         = 228;
+  public static final int _fast_invokevfinal    = 229;
+  public static final int _fast_linearswitch    = 230;
+  public static final int _fast_binaryswitch    = 231;
+  public static final int _fast_aldc            = 232;
+  public static final int _fast_aldc_w          = 233;
+  public static final int _return_register_finalizer = 234;
+  public static final int _invokehandle         = 235;
 
   // Bytecodes rewritten at CDS dump time
-  public static final int _nofast_getfield      = 234;
-  public static final int _nofast_putfield      = 235;
-  public static final int _nofast_aload_0       = 236;
-  public static final int _nofast_iload         = 237;
-  public static final int _shouldnotreachhere   = 238; // For debugging
+  public static final int _nofast_getfield      = 236;
+  public static final int _nofast_putfield      = 237;
+  public static final int _nofast_aload_0       = 238;
+  public static final int _nofast_iload         = 239;
+  public static final int _shouldnotreachhere   = 240; // For debugging
 
-  public static final int number_of_codes       = 239;
+  public static final int number_of_codes       = 241;
 
   // Flag bits derived from format strings, can_trap, can_rewrite, etc.:
   // semantic flags:

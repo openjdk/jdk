@@ -59,21 +59,23 @@ final class VerificationBytecodes {
             _fast_aaccess_0 = 222,
             _fast_faccess_0 = 223,
             _fast_iload = 224,
-            _fast_iload2 = 225,
-            _fast_icaload = 226,
-            _fast_invokevfinal = 227,
-            _fast_linearswitch = 228,
-            _fast_binaryswitch = 229,
-            _fast_aldc = 230,
-            _fast_aldc_w = 231,
-            _return_register_finalizer = 232,
-            _invokehandle = 233,
-            _nofast_getfield = 234,
-            _nofast_putfield = 235,
-            _nofast_aload_0 = 236,
-            _nofast_iload = 237,
-            _shouldnotreachhere = 238,
-            number_of_codes = 239;
+            _fast_iload_before_add = 225,
+            _fast_iload2 = 226,
+            _fast_iadd2 = 227,
+            _fast_icaload = 228,
+            _fast_invokevfinal = 229,
+            _fast_linearswitch = 230,
+            _fast_binaryswitch = 231,
+            _fast_aldc = 232,
+            _fast_aldc_w = 233,
+            _return_register_finalizer = 234,
+            _invokehandle = 235,
+            _nofast_getfield = 236,
+            _nofast_putfield = 237,
+            _nofast_aload_0 = 238,
+            _nofast_iload = 239,
+            _shouldnotreachhere = 240,
+            number_of_codes = 241;
 
     static int code_or_bp_at(byte[] code, int bci) {
         return code[bci] & 0xff;
@@ -366,7 +368,9 @@ final class VerificationBytecodes {
         def(_fast_aaccess_0, "fast_aaccess_0", "b_JJ", null, T_OBJECT, 1, ClassFile.ALOAD_0);
         def(_fast_faccess_0, "fast_faccess_0", "b_JJ", null, T_OBJECT, 1, ClassFile.ALOAD_0);
         def(_fast_iload, "fast_iload", "bi", null, T_INT, 1, ClassFile.ILOAD);
+        def(_fast_iload, "fast_iload_before_add", "bi", null, T_INT, 1, ClassFile.ILOAD);
         def(_fast_iload2, "fast_iload2", "bi_i", null, T_INT, 2, ClassFile.ILOAD);
+        def(_fast_iadd2, "fast_iadd2", "bi_i_", null, T_INT, -1, ClassFile.ILOAD);
         def(_fast_icaload, "fast_icaload", "bi_", null, T_INT, 0, ClassFile.ILOAD);
         def(_fast_invokevfinal, "fast_invokevfinal", "bJJ", null, T_ILLEGAL, -1, ClassFile.INVOKEVIRTUAL);
         def(_fast_linearswitch, "fast_linearswitch", "", null, T_VOID, -1, ClassFile.LOOKUPSWITCH);

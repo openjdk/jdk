@@ -142,6 +142,7 @@ class TemplateTable: AllStatic {
   static void iload();
   static void fast_iload();
   static void fast_iload2();
+  static void fast_iadd2();
   static void fast_icaload();
   static void lload();
   static void fload();

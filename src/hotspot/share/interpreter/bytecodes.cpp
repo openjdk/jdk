@@ -55,7 +55,9 @@
   def(_fast_faccess_0            , "fast_faccess_0"            , "b_JJ" , nullptr    , T_OBJECT ,  1, true , _aload_0           ) \
                                                                                                                                   \
   def(_fast_iload                , "fast_iload"                , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
+  def(_fast_iload_before_add     , "fast_iload_before_add"     , "bi"   , nullptr    , T_INT    ,  1, false, _iload             ) \
   def(_fast_iload2               , "fast_iload2"               , "bi_i" , nullptr    , T_INT    ,  2, false, _iload             ) \
+  def(_fast_iadd2                , "fast_iadd2"                , "bi_i_", nullptr    , T_INT    , -1, false, _iload              ) \
   def(_fast_icaload              , "fast_icaload"              , "bi_"  , nullptr    , T_INT    ,  0, false, _iload             ) \
                                                                                                                                   \
   def(_fast_invokevfinal         , "fast_invokevfinal"         , "bJJ"  , nullptr    , T_ILLEGAL, -1, true , _invokevirtual     ) \

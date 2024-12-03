@@ -652,6 +652,11 @@ void TemplateTable::fast_iload2()
   __ ldr(r0, iaddress(r1));
 }
 
+void TemplateTable::fast_iadd2() {
+    transition(vtos, itos);
+    __ stop("not implemented");
+}
+
 void TemplateTable::fast_iload()
 {
   transition(vtos, itos);

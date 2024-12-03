@@ -655,9 +655,18 @@ void TemplateTable::iload_internal(RewriteControl rc) {
 
     __ jccb(Assembler::equal, rewrite);
 
+    __ cmpl(rbx, Bytecodes::_fast_iload_before_add);
+    __ movl(bc, Bytecodes::_fast_iadd2);
+
+    __ jccb(Assembler::equal, rewrite);
+
     // if _caload, rewrite to fast_icaload
     __ cmpl(rbx, Bytecodes::_caload);
     __ movl(bc, Bytecodes::_fast_icaload);
+    __ jccb(Assembler::equal, rewrite);
+
+    __ cmpl(rbx, Bytecodes::_iadd);
+    __ movl(bc, Bytecodes::_fast_iload_before_add);
     __ jccb(Assembler::equal, rewrite);
 
     // rewrite so iload doesn't check again.
@@ -682,6 +691,15 @@ void TemplateTable::fast_iload2() {
   __ push(itos);
   locals_index(rbx, 3);
   __ movl(rax, iaddress(rbx));
+}
+
+void TemplateTable::fast_iadd2() {
+    transition(vtos, itos);
+    locals_index(rbx);
+    __ movl(rax, iaddress(rbx));
+    locals_index(rbx, 3);
+    __ movl(rdx, iaddress(rbx));
+    __ addl (rax, rdx);
 }
 
 void TemplateTable::fast_iload() {

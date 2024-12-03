@@ -706,6 +706,11 @@ void TemplateTable::fast_iload2() {
   __ mem2reg_opt(Z_tos, iaddress(_masm, Z_R1_scratch), false);
 }
 
+void TemplateTable::fast_iadd2() {
+    transition(vtos, itos);
+    __ stop("not implemented");
+}
+
 void TemplateTable::fast_iload() {
   transition(vtos, itos);
 

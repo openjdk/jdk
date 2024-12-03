@@ -272,7 +272,9 @@ class Bytecodes: AllStatic {
     _fast_faccess_0       ,
 
     _fast_iload           ,
+    _fast_iload_before_add,
     _fast_iload2          ,
+    _fast_iadd2           ,
     _fast_icaload         ,
 
     _fast_invokevfinal    ,

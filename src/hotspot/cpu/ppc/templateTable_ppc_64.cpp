@@ -551,6 +551,11 @@ void TemplateTable::fast_iload2() {
   __ push_i(R3_ARG1);
 }
 
+void TemplateTable::fast_iadd2() {
+    transition(vtos, itos);
+    __ stop("not implemented");
+}
+
 void TemplateTable::fast_iload() {
   transition(vtos, itos);
   // Get the local value into tos
