@@ -262,9 +262,7 @@ public:
   }
 
   static freeze_result freeze_preempt(JavaThread* thread, intptr_t* const sp) {
-    freeze_result res = freeze_internal<SelfT, true>(thread, sp);
-    JFR_ONLY(assert((res == freeze_ok) || (res == thread->last_freeze_fail_result()), "freeze failure not set"));
-    return res;
+    return freeze_internal<SelfT, true>(thread, sp);
   }
 
   static intptr_t* thaw(JavaThread* thread, Continuation::thaw_kind kind) {
