@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +27,10 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/atomic.hpp"
@@ -58,16 +61,39 @@ static const char* reference_type_name(ReferenceType type) {
 }
 
 template <typename T>
+static void card_mark_barrier(T* field, oop value) {
+  assert(ShenandoahCardBarrier, "Card-mark barrier should be on");
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
+  assert(heap->is_in_or_null(value), "Should be in heap");
+  if (heap->is_in_old(field) && heap->is_in_young(value)) {
+    // For Shenandoah, each generation collects all the _referents_ that belong to the
+    // collected generation. We can end up with discovered lists that contain a mixture
+    // of old and young _references_. These references are linked together through the
+    // discovered field in java.lang.Reference. In some cases, creating or editing this
+    // list may result in the creation of _new_ old-to-young pointers which must dirty
+    // the corresponding card. Failing to do this may cause heap verification errors and
+    // lead to incorrect GC behavior.
+    heap->old_generation()->mark_card_as_dirty(field);
+  }
+}
+
+template <typename T>
 static void set_oop_field(T* field, oop value);
 
 template <>
 void set_oop_field<oop>(oop* field, oop value) {
   *field = value;
+  if (ShenandoahCardBarrier) {
+    card_mark_barrier(field, value);
+  }
 }
 
 template <>
 void set_oop_field<narrowOop>(narrowOop* field, oop value) {
   *field = CompressedOops::encode(value);
+  if (ShenandoahCardBarrier) {
+    card_mark_barrier(field, value);
+  }
 }
 
 static oop lrb(oop obj) {
@@ -268,6 +294,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
   T* referent_addr = (T*) java_lang_ref_Reference::referent_addr_raw(reference);
   T heap_oop = RawAccess<>::oop_load(referent_addr);
   oop referent = CompressedOops::decode(heap_oop);
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   if (is_inactive<T>(reference, referent, type)) {
     log_trace(gc,ref)("Reference inactive: " PTR_FORMAT, p2i(reference));
@@ -281,6 +308,11 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
 
   if (is_softly_live(reference, type)) {
     log_trace(gc,ref)("Reference softly live: " PTR_FORMAT, p2i(reference));
+    return false;
+  }
+
+  if (!heap->is_in_active_generation(referent)) {
+    log_trace(gc,ref)("Referent outside of active generation: " PTR_FORMAT, p2i(referent));
     return false;
   }
 
@@ -349,6 +381,9 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
   }
 
   // Add reference to discovered list
+  // Each worker thread has a private copy of refproc_data, which includes a private discovered list.  This means
+  // there's no risk that a different worker thread will try to manipulate my discovered list head while I'm making
+  // reference the head of my discovered list.
   ShenandoahRefProcThreadLocal& refproc_data = _ref_proc_thread_locals[worker_id];
   oop discovered_head = refproc_data.discovered_list_head<T>();
   if (discovered_head == nullptr) {
@@ -357,6 +392,17 @@ bool ShenandoahReferenceProcessor::discover(oop reference, ReferenceType type, u
     discovered_head = reference;
   }
   if (reference_cas_discovered<T>(reference, discovered_head)) {
+    // We successfully set this reference object's next pointer to discovered_head.  This marks reference as discovered.
+    // If reference_cas_discovered fails, that means some other worker thread took credit for discovery of this reference,
+    // and that other thread will place reference on its discovered list, so I can ignore reference.
+
+    // In case we have created an interesting pointer, mark the remembered set card as dirty.
+    if (ShenandoahCardBarrier) {
+      T* addr = reinterpret_cast<T*>(java_lang_ref_Reference::discovered_addr_raw(reference));
+      card_mark_barrier(addr, discovered_head);
+    }
+
+    // Make the discovered_list_head point to reference.
     refproc_data.set_discovered_list_head<T>(reference);
     assert(refproc_data.discovered_list_head<T>() == reference, "reference must be new discovered head");
     log_trace(gc, ref)("Discovered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
@@ -371,7 +417,8 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
     return false;
   }
 
-  log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
+  log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s, %s)",
+          p2i(reference), reference_type_name(type), ShenandoahHeap::heap()->heap_region_containing(reference)->affiliation_name());
   uint worker_id = WorkerThread::worker_id();
   _ref_proc_thread_locals[worker_id].inc_encountered(type);
 
@@ -386,8 +433,9 @@ template <typename T>
 oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
-#ifdef ASSERT
   HeapWord* raw_referent = reference_referent_raw<T>(reference);
+
+#ifdef ASSERT
   assert(raw_referent == nullptr || ShenandoahHeap::heap()->marking_context()->is_marked(raw_referent),
          "only drop references with alive referents");
 #endif
@@ -395,6 +443,13 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   // Unlink and return next in list
   oop next = reference_discovered<T>(reference);
   reference_set_discovered<T>(reference, nullptr);
+  // When this reference was discovered, it would not have been marked. If it ends up surviving
+  // the cycle, we need to dirty the card if the reference is old and the referent is young.  Note
+  // that if the reference is not dropped, then its pointer to the referent will be nulled before
+  // evacuation begins so card does not need to be dirtied.
+  if (ShenandoahCardBarrier) {
+    card_mark_barrier(cast_from_oop<HeapWord*>(reference), cast_to_oop(raw_referent));
+  }
   return next;
 }
 
@@ -446,11 +501,12 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
   }
 
   // Prepend discovered references to internal pending list
+  // set_oop_field maintains the card mark barrier as this list is constructed.
   if (!CompressedOops::is_null(*list)) {
     oop head = lrb(CompressedOops::decode_not_null(*list));
     shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
     oop prev = Atomic::xchg(&_pending_list, head);
-    RawAccess<>::oop_store(p, prev);
+    set_oop_field(p, prev);
     if (prev == nullptr) {
       // First to prepend to list, record tail
       _pending_list_tail = reinterpret_cast<void*>(p);
@@ -522,10 +578,23 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahPhaseTimings::Ph
 void ShenandoahReferenceProcessor::enqueue_references_locked() {
   // Prepend internal pending list to external pending list
   shenandoah_assert_not_in_cset_except(&_pending_list, _pending_list, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
+
+  // During reference processing, we maintain a local list of references that are identified by
+  //   _pending_list and _pending_list_tail.  _pending_list_tail points to the next field of the last Reference object on
+  //   the local list.
+  //
+  // There is also a global list of reference identified by Universe::_reference_pending_list
+
+  // The following code has the effect of:
+  //  1. Making the global Universe::_reference_pending_list point to my local list
+  //  2. Overwriting the next field of the last Reference on my local list to point at the previous head of the
+  //     global Universe::_reference_pending_list
+
+  oop former_head_of_global_list = Universe::swap_reference_pending_list(_pending_list);
   if (UseCompressedOops) {
-    *reinterpret_cast<narrowOop*>(_pending_list_tail) = CompressedOops::encode(Universe::swap_reference_pending_list(_pending_list));
+    set_oop_field<narrowOop>(reinterpret_cast<narrowOop*>(_pending_list_tail), former_head_of_global_list);
   } else {
-    *reinterpret_cast<oop*>(_pending_list_tail) = Universe::swap_reference_pending_list(_pending_list);
+    set_oop_field<oop>(reinterpret_cast<oop*>(_pending_list_tail), former_head_of_global_list);
   }
 }
 
@@ -534,7 +603,6 @@ void ShenandoahReferenceProcessor::enqueue_references(bool concurrent) {
     // Nothing to enqueue
     return;
   }
-
   if (!concurrent) {
     // When called from mark-compact or degen-GC, the locking is done by the VMOperation,
     enqueue_references_locked();

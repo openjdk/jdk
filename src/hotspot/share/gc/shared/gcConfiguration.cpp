@@ -47,6 +47,11 @@ GCName GCConfiguration::young_collector() const {
   }
 
   if (UseShenandoahGC) {
+#if INCLUDE_SHENANDOAHGC
+    if (ShenandoahCardBarrier) {
+      return ShenandoahYoung;
+    }
+#endif
     return NA;
   }
 
@@ -67,6 +72,11 @@ if (UseZGC) {
   }
 
   if (UseShenandoahGC) {
+#if INCLUDE_SHENANDOAHGC
+    if (ShenandoahCardBarrier) {
+      return ShenandoahOld;
+    }
+#endif
     return Shenandoah;
   }
 

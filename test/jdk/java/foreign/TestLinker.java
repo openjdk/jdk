@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.foreign
+ * @modules java.base/jdk.internal.foreign java.base/jdk.internal.foreign.abi.fallback
  * @run testng TestLinker
  * @run testng/othervm TestLinker
  */
 
 import jdk.internal.foreign.CABI;
+import jdk.internal.foreign.abi.fallback.FallbackLinker;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -181,7 +182,7 @@ public class TestLinker extends NativeTestHelper {
         var fd = FunctionDescriptor.of(struct, struct, struct);
         var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
         assertEquals(e.getMessage(),
-                "The padding layout x2 was preceded by another padding layout x1 in [b1x1x2i4]");
+                "The padding layout x2 was preceded by another padding layout x1 in " + struct);
     }
 
     @Test
@@ -199,7 +200,7 @@ public class TestLinker extends NativeTestHelper {
         var fd = FunctionDescriptor.of(struct, struct, struct);
         var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
         assertEquals(e.getMessage(),
-                "The padding layout x2 was preceded by another padding layout x1 in [b1x1x2x4x8x16[[[4:j8]]|x32]]");
+                "The padding layout x2 was preceded by another padding layout x1 in " + struct);
     }
 
     @Test
@@ -208,7 +209,7 @@ public class TestLinker extends NativeTestHelper {
         var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(3), ValueLayout.JAVA_INT);
         var fd = FunctionDescriptor.of(union, union, union);
         var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "Superfluous padding x3 in [x3|i4]");
+        assertEquals(e.getMessage(), "Superfluous padding x3 in " + union);
     }
 
     @Test
@@ -217,7 +218,7 @@ public class TestLinker extends NativeTestHelper {
         var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(4), ValueLayout.JAVA_INT);
         var fd = FunctionDescriptor.of(union, union, union);
         var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "Superfluous padding x4 in [x4|i4]");
+        assertEquals(e.getMessage(), "Superfluous padding x4 in " + union);
     }
 
     @Test
@@ -226,7 +227,7 @@ public class TestLinker extends NativeTestHelper {
         var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(5), ValueLayout.JAVA_INT);
         var fd = FunctionDescriptor.of(union, union, union);
         var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "Layout '[x5|i4]' has unexpected size: 5 != 4");
+        assertEquals(e.getMessage(), "Layout '" + union + "' has unexpected size: 5 != 4");
     }
 
     @Test
@@ -239,7 +240,7 @@ public class TestLinker extends NativeTestHelper {
                 MemoryLayout.paddingLayout(16));
         var fd = FunctionDescriptor.of(union, union, union);
         var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "More than one padding in [[3:i4]|j8|x16|x16]");
+        assertEquals(e.getMessage(), "More than one padding in " + union);
     }
 
     @Test
@@ -250,7 +251,13 @@ public class TestLinker extends NativeTestHelper {
         var padding5a1 = MemoryLayout.paddingLayout(5);
         var struct8a8 = MemoryLayout.structLayout(sequence0a8, sequence3a1, padding5a1);
         var fd = FunctionDescriptor.of(struct8a8, struct8a8, struct8a8);
-        linker.downcallHandle(fd);
+        if (linker.getClass().equals(FallbackLinker.class)) {
+            // The fallback linker does not support empty layouts (FFI_BAD_TYPEDEF)
+            var iae = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+            assertTrue(iae.getMessage().contains("is empty"));
+        } else {
+            linker.downcallHandle(fd);
+        }
     }
 
     @DataProvider
