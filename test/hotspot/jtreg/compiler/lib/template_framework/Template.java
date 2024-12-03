@@ -23,6 +23,7 @@
 
 package compiler.lib.template_framework;
 
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,15 +87,50 @@ public final class Template implements CodeGenerator {
                                                "";
     private static final Pattern PATTERNS = Pattern.compile(ALL_PATTERNS);
 
-    private String templateString;
+    private final String templateString;
 
     public Template(String templateString) {
         this.templateString = templateString;
     }
 
-    public void instantiate(Scope scope, Parameters parameters) {
-        Matcher matcher = PATTERNS.matcher(templateString);
+    private class InstantiationState {
+        public final Scope scope;
+        public final Parameters parameters;
+        private HashMap<String,String> localVariableToType;
 
+        public InstantiationState(Scope scope, Parameters parameters) {
+            this.scope = scope;
+            this.parameters = parameters;
+            this.localVariableToType = new HashMap<String,String>();
+        }
+
+        public void registerVariable(String name, String type) {
+            if (localVariableToType.containsKey(name)) {
+                throw new TemplateFrameworkException("Template local variable with type declaration " +
+                                                     "${" + name + ":" + type + "} was not the first use of the variable.");
+            }
+            localVariableToType.put(name, type);
+        }
+
+        public void registerVariable(String name) {
+            if (!localVariableToType.containsKey(name)) {
+                localVariableToType.put(name, null);
+            }
+        }
+
+        public void addCodeForVariable(String name) {
+            int id = parameters.instantiationID;
+            scope.addCodeToLine(name);
+            scope.addCodeToLine("_");
+            scope.addCodeToLine(Integer.toString(id));
+        }
+    }
+
+    public void instantiate(Scope scope, Parameters parameters) {
+        InstantiationState state = new InstantiationState(scope, parameters);
+
+        // Parse the templateString, detect templated and nonTemplated segments.
+        Matcher matcher = PATTERNS.matcher(templateString);
         int pos = 0;
         while (matcher.find()) {
             int start = matcher.start();
@@ -106,13 +142,42 @@ public final class Template implements CodeGenerator {
             String templated = templateString.substring(start, end);
             pos = end;
 
-            System.out.println("Found: " + templated);
+            // The nonTemplated code segment can simply be added.
             scope.addCode(nonTemplated);
-            scope.addCode(templated);
+
+            // The templated code needs to be analyzed and transformed or recursively generated.
+            handleTemplated(state, templated);
         }
+
         // Cleanup: part after the last templated segments.
         String nonTemplated = templateString.substring(pos);
         scope.addCode(nonTemplated);
         scope.addNewline();
+    }
+
+    private void handleTemplated(InstantiationState state, String templated) {
+        System.out.println("Found: " + templated);
+        if (templated.startsWith("${")) {
+            // Local variable with type declaration: ${name:type}
+            int pos = templated.indexOf(':');
+            String name = templated.substring(2, pos);
+            String type = templated.substring(pos+1, templated.length() - 1);
+            if (type.contains(":")) {
+                throw new TemplateFrameworkException("Template local variable with type declaration should have format " +
+                                                     "${name:type}, but got " + templated);
+            }
+            state.registerVariable(name, type);
+            state.addCodeForVariable(name);
+        } else if (templated.startsWith("$")) {
+            // Local variable: $name
+            String name = templated.substring(1);
+            state.registerVariable(name);
+            state.addCodeForVariable(name);
+        } else if (templated.startsWith("#")) {
+            // TODO
+            state.scope.addCode(templated);
+        } else {
+            throw new TemplateFrameworkException("Template pattern not handled: " + templated);
+        }
     }
 }
