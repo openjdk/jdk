@@ -81,11 +81,6 @@ final class StackStreamFactory {
     @Native private static final int SHOW_HIDDEN_FRAMES        = 0x20;  // LambdaForms are hidden by the VM
     @Native private static final int FILL_LIVE_STACK_FRAMES    = 0x100;
 
-    /*
-     * For Throwable to use StackWalker, set useNewThrowable to true.
-     * Performance work and extensive testing is needed to replace the
-     * VM built-in backtrace filled in Throwable with the StackWalker.
-     */
     static final boolean isDebug =
             "true".equals(System.getProperty("stackwalk.debug"));
 
