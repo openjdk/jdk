@@ -30,6 +30,7 @@ public class ClassScope implements Scope {
     private final String packageName;
     private final String className;
 
+    private CodeStream stream;
     private StringBuilder code;
     private int indentation;
     private boolean lastWasNewline;
@@ -39,11 +40,17 @@ public class ClassScope implements Scope {
         this.packageName = packageName;
         this.className = className;
 
+        this.stream = new CodeStream();
+
         this.code = new StringBuilder();
         this.indentation = 0;
         this.lastWasNewline = false;
         openClass();
         addNewline();
+    }
+
+    public CodeStream outputStream() {
+        return stream;
     }
 
     public void addCodeToLine(String snippet) {

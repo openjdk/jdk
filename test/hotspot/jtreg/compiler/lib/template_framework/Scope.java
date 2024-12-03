@@ -30,6 +30,8 @@ public interface Scope {
     // TODO nesting
     // TODO available variables
 
+    public abstract CodeStream outputStream();
+
     /**
      * TODO takes care of newline and nesting
      */
