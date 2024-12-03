@@ -474,7 +474,8 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
     // at the next remembered set scan of the old generation.
     // Thus, we can safely skip card-marking of initializing stores on a
     // freshly-allocated object. If any of the assumptions above change in
-    // the future, this code will need to be re-examined.
+    // the future, this code will need to be re-examined; see check in
+    // ShenandoahCardBarrier::on_slowpath_allocation_exit().
     return;
   }
 

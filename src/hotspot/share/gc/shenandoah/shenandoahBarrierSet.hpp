@@ -84,6 +84,10 @@ public:
   inline void clone_barrier(oop src);
   void clone_barrier_runtime(oop src);
 
+  // Support for optimizing compilers to call the barrier set on slow path allocations
+  // that did not enter a TLAB. Used for e.g. ReduceInitialCardMarks to take any
+  // compensating actions to restore card-marks that might otherwise be incorrectly elided.
+  virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
   virtual void on_thread_attach(Thread* thread);
