@@ -29,6 +29,7 @@
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/orderAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
