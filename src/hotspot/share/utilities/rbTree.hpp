@@ -41,13 +41,10 @@
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 class RBTree {
   friend class RBTreeTest;
-  friend class NMTVMATreeTest;
 
 private:
-
   ALLOCATOR _allocator;
   size_t _num_nodes;
-  bool _num_outdated;
 
 public:
   class RBNode {
@@ -68,22 +65,12 @@ public:
     const K& key() const { return _key; }
     V& val() { return _value; }
 
-    bool is_black() const  {
-      return _color == BLACK;
-    }
-
-    bool is_red() const {
-      return _color == RED;
-    }
-
   private:
-    void color_black() {
-      _color = BLACK;
-    }
+    bool is_black() const { return _color == BLACK; }
+    bool is_red() const { return _color == RED; }
 
-    void color_red() {
-      _color = RED;
-    }
+    void color_black() { _color = BLACK; }
+    void color_red() { _color = RED; }
 
     RBNode(const K &k, const V &v)
         : _parent(nullptr), _left(nullptr), _right(nullptr),
@@ -95,17 +82,6 @@ public:
 
     bool is_left_child() {
       return _parent != nullptr && _parent->_left == this;
-    }
-
-    void update_children(RBNode* left, RBNode* right) {
-      _left = left;
-      _right = right;
-      if (left != nullptr) {
-        left->_parent = this;
-      }
-      if (right != nullptr) {
-        right->_parent = this;
-      }
     }
 
     void replace_child(RBNode* old_child, RBNode* new_child) {
@@ -506,16 +482,10 @@ private:
 public:
   NONCOPYABLE(RBTree);
 
-  RBTree() : _allocator(), _num_nodes(0), _num_outdated(false), _root(nullptr) {}
+  RBTree() : _allocator(), _num_nodes(0), _root(nullptr) {}
   ~RBTree() { this->remove_all(); }
 
-  size_t size() {
-    if (_num_outdated) {
-      _num_nodes = _root->count_nodes();
-      _num_outdated = false;
-    }
-    return _num_nodes;
-  }
+  size_t size() { return _num_nodes; }
 
   void upsert(const K& k, const V& v) {
     RBNode* node = insert_node(k, v);
@@ -659,7 +629,7 @@ public:
 
 private:
   template<bool Forward>
-  class RBTreeIteratorImpl : public StackObj {
+  class IteratorImpl : public StackObj {
   private:
     const RBTree* const _tree;
     GrowableArrayCHeap<RBNode*, mtInternal> _to_visit;
@@ -680,7 +650,7 @@ private:
     }
 
   public:
-    RBTreeIteratorImpl(const RBTree* tree) : _tree(tree) {
+    IteratorImpl(const RBTree* tree) : _tree(tree) {
       Forward ? push_left(tree->_root) : push_right(tree->_root);
     }
 
@@ -698,8 +668,8 @@ private:
   };
 
 public:
-  using RBTreeIterator = RBTreeIteratorImpl<true>; // Forward iterator
-  using RBTreeReverseIterator = RBTreeIteratorImpl<false>; // Backward iterator
+  using Iterator = IteratorImpl<true>; // Forward iterator
+  using ReverseIterator = IteratorImpl<false>; // Backward iterator
 
 };
 

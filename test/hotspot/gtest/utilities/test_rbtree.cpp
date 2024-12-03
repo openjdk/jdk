@@ -283,13 +283,13 @@ public:
       tree.upsert(n, n);
     }
 
-    RBTreeCHeap<int, int, Cmp>::RBTreeIterator iterator(&tree);
+    RBTreeCHeap<int, int, Cmp>::Iterator iterator(&tree);
     for (int n = 0; n <= num_nodes; n++) {
       EXPECT_TRUE(iterator.has_next());
       EXPECT_EQ(iterator.next()->val(), n);
     }
 
-    RBTreeCHeap<int, int, Cmp>::RBTreeReverseIterator reverse_iterator(&tree);
+    RBTreeCHeap<int, int, Cmp>::ReverseIterator reverse_iterator(&tree);
     for (int n = num_nodes; n >= 0; n--) {
       EXPECT_TRUE(reverse_iterator.has_next());
       EXPECT_EQ(reverse_iterator.next()->val(), n);
