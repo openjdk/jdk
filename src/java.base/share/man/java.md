@@ -280,7 +280,7 @@ first matching close quote are preserved by simply removing the pair of quotes.
 In case a matching quote is not found, the launcher will abort with an error
 message. `@`-files are supported as they are specified in the command line.
 Any wildcard literal `*` in the `JDK_JAVA_OPTIONS` environment variable
-content isn't expanded and is passed as-is to the java launcher. In order to
+content isn't expanded and is passed as-is to the starting VM. In order to
 mitigate potential misuse of `JDK_JAVA_OPTIONS` behavior, options that specify
 the main class (such as `-jar`) or cause the `java` launcher to exit without
 executing the main class (such as `-h`) are disallowed in the environment
