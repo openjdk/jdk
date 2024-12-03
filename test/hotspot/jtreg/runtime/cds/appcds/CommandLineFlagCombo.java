@@ -63,6 +63,7 @@ public class CommandLineFlagCombo {
         "-Xint",
         "-Xmixed",
         "-Xcomp",
+        "-XX:+SegmentedCodeCache",
     };
 
     public static void main(String[] args) throws Exception {
