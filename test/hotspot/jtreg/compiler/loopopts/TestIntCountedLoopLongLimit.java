@@ -25,6 +25,7 @@ package compiler.loopopts;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 
 import java.util.Random;
 
@@ -38,7 +39,11 @@ import java.util.Random;
  * @run driver compiler.loopopts.TestIntCountedLoopLongLimit
  */
 public class TestIntCountedLoopLongLimit {
-    private static final Random RNG = jdk.test.lib.Utils.getRandomInstance();
+    private static final Random RNG = Utils.getRandomInstance();
+
+    // Use a larger stride to avoid tests taking too long
+    private static final int LARGE_STRIDE = Integer.MAX_VALUE / 1024;
+    private static volatile long SOME_LONG = 42;
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions",
@@ -85,7 +90,7 @@ public class TestIntCountedLoopLongLimit {
     @Run(test = { "testControlledCountedLoop", "testCountedLoopWithLongLimit",
             "testCountedLoopWithSwappedComparisonOperand" })
     public static void runTestSimpleCountedLoops(RunInfo info) {
-        long limit = RNG.nextLong(0, 1024 * 1024); // Choice a small number to avoid tests taking too long
+        long limit = RNG.nextLong(0, 1024 * 1024); // Choose a small number to avoid tests taking too long
         int expected = testControlledCountedLoop((int) limit);
         int observed1 = testCountedLoopWithLongLimit(limit);
         int observed2 = testCountedLoopWithSwappedComparisonOperand(limit);
@@ -122,9 +127,6 @@ public class TestIntCountedLoopLongLimit {
         Asserts.assertEQ(limit, (long) testIvReplacedCountedLoop(limit));
         Asserts.assertEQ(limit, testLongIvReplacedCountedLoop(limit));
     }
-
-    // Use a larger stride to avoid tests taking too long
-    private static final int LARGE_STRIDE = Integer.MAX_VALUE / 1024;
 
     // Test counted loop deoptimizes if the long limit falls outside int range.
     @Test
@@ -175,8 +177,6 @@ public class TestIntCountedLoopLongLimit {
             Asserts.assertEQ(1, testCountedLoopWithUnderflow(Integer.MIN_VALUE - limit));
         }
     }
-
-    private static volatile long SOME_LONG = 42;
 
     // Test optimization is not applied if the limit is not invariant.
     // This is handled by the existing counted loop detection, but we might as well test it here, too.

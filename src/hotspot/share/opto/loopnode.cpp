@@ -1615,30 +1615,51 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
 #endif
 
 //------------------------------is_counted_loop--------------------------------
-bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
-  return do_is_counted_loop(x, loop, iv_bt) || is_counted_loop_with_speculative_long_limit(x, loop, iv_bt);
+bool PhaseIdealLoop::try_convert_to_counted_loop(Node* loop_head, IdealLoopTree*&loop, BasicType iv_bt) {
+  return convert_to_counted_loop(loop_head, loop, iv_bt)
+         || convert_to_counted_loop_with_speculative_long_limit(loop_head, loop, iv_bt);
 }
 
 // When comparing an int incrementor with long limit, check if the limit is within int range. If so, treat it as an int
 // counted loop but deoptimize if the limit is out of int range.
 // This is common pattern with "for (int i =...; i < long_limit; ...)" where int "i" is implicitly promoted to long,
 // i.e., "(long) i < long_limit", and therefore making it not an int counted loop without this transformation.
-bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
+//
+// In summary, we transform
+//
+//  for (int i = 0; (long) i < long_limit; i++) {...}
+//
+// to
+//
+//  if (int_min <= long_limit && long_limit <= int_max) {
+//    for (int i = 0; i < (int) long_limit; i++) {...}
+//  } else {
+//    trap: loop_limit_check
+//  }
+bool PhaseIdealLoop::convert_to_counted_loop_with_speculative_long_limit(Node* loop_head, IdealLoopTree*&loop,
+                                                                         BasicType iv_bt) {
   if (iv_bt != T_INT) {
     return false;
   }
 
-  Node* back_control = loop_exit_control(x, loop);
+  Node* back_control = loop_exit_control(loop_head, loop);
   if (back_control == nullptr) {
     return false;
   }
 
-  Node* init_control = x->in(LoopNode::EntryControl);
+  Node* init_control = loop_head->in(LoopNode::EntryControl);
 
-  // Make sure there is a parse predicate for us to insert the loop limit check.
+  // Make sure there is a Loop Limit Check Parse Predicate for us to insert the Loop Limit Check Predicate above it.
   const Predicates predicates(init_control);
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
   if (!loop_limit_check_predicate_block->has_parse_predicate()) {
+#ifdef ASSERT
+    if (TraceLoopLimitCheck) {
+      tty->print("Missing Loop Limit Check Parse Predicate:");
+      loop->dump_head();
+      loop_head->dump(1);
+    }
+#endif
     return false;
   }
 
@@ -1647,7 +1668,6 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   Node* incr = nullptr;
   Node* limit = nullptr;
   Node* cmp = loop_exit_test(back_control, loop, incr, limit, bt, cl_prob);
-
   // Check exit test is a "(long) i < long_limit" pattern.
   if (cmp == nullptr || cmp->Opcode() != Op_CmpL || incr == nullptr || incr->Opcode() != Op_ConvI2L) {
     return false;
@@ -1665,10 +1685,8 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   Node* new_limit = _igvn.register_new_node_with_optimizer(new ConvL2INode(limit), limit);
   set_early_ctrl(new_limit, get_ctrl(limit));
 
-  Node* new_cmp = _igvn.register_new_node_with_optimizer(
-      cmp->in(1) == incr
-          ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr),
-      cmp);
+  Node* new_cmp = cmp->in(1) == incr ? new CmpINode(new_incr, new_limit) : new CmpINode(new_limit, new_incr);
+  _igvn.register_new_node_with_optimizer(new_cmp, cmp);
   set_early_ctrl(new_cmp, get_ctrl(cmp));
 
   // back_control[0] -> iff[1] -> bool[1] -> cmp
@@ -1677,11 +1695,10 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   bol->replace_edge(cmp, new_cmp, &_igvn);
 
   // Check if it's a counted loop after type conversion for the limit.
-  if (!do_is_counted_loop(x, loop, iv_bt)) {
+  if (!convert_to_counted_loop(loop_head, loop, iv_bt)) {
     // Revert back to the original cmp (and its associated incr and limit) node.
     _igvn.rehash_node_delayed(bol);
     bol->replace_edge(new_cmp, cmp, &_igvn);
-
     return false;
   }
 
@@ -1693,14 +1710,13 @@ bool PhaseIdealLoop::is_counted_loop_with_speculative_long_limit(Node* x, IdealL
   Node* cmp_limit = new CmpLNode(i2l_limit, limit);
   Node* bol_limit = new BoolNode(cmp_limit, BoolTest::eq);
   insert_loop_limit_check_predicate(init_control->as_IfTrue(), cmp_limit, bol_limit);
-
   return true;
 }
 
-bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_bt) {
+bool PhaseIdealLoop::convert_to_counted_loop(Node* loop_head, IdealLoopTree*&loop, BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
-  Node* back_control = loop_exit_control(x, loop);
+  Node* back_control = loop_exit_control(loop_head, loop);
   if (back_control == nullptr) {
     return false;
   }
@@ -1721,7 +1737,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
   }
 
   Node* phi_incr = nullptr;
-  incr = loop_iv_incr(incr, x, loop, phi_incr);
+  incr = loop_iv_incr(incr, loop_head, loop, phi_incr);
   if (incr == nullptr) {
     return false;
   }
@@ -1750,7 +1766,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
   jlong stride_con = stride->get_integer_as_long(iv_bt);
   assert(stride_con != 0, "missed some peephole opt");
 
-  PhiNode* phi = loop_iv_phi(xphi, phi_incr, x, loop);
+  PhiNode* phi = loop_iv_phi(xphi, phi_incr, loop_head, loop);
 
   if (phi == nullptr ||
       (trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != incr) ||
@@ -1859,22 +1875,22 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //
 
-  if (x->Opcode() == Op_Region) {
-    // x has not yet been transformed to Loop or LongCountedLoop.
+  if (loop_head->Opcode() == Op_Region) {
+    // loop_head has not yet been transformed to Loop or LongCountedLoop.
     // This should only happen if we are inside an infinite loop.
     // It happens like this:
     //   build_loop_tree -> do not attach infinite loop and nested loops
     //   beautify_loops  -> does not transform the infinite and nested loops to LoopNode, because not attached yet
     //   build_loop_tree -> find and attach infinite and nested loops
     //   counted_loop    -> nested Regions are not yet transformed to LoopNodes, we land here
-    assert(x->as_Region()->is_in_infinite_subgraph(),
-           "x can only be a Region and not Loop if inside infinite loop");
+    assert(loop_head->as_Region()->is_in_infinite_subgraph(),
+           "loop_head can only be a Region and not Loop if inside infinite loop");
     // Come back later when Region is transformed to LoopNode
     return false;
   }
 
-  assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
-  C->print_method(PHASE_BEFORE_CLOOPS, 3, x);
+  assert(loop_head->Opcode() == Op_Loop || loop_head->Opcode() == Op_LongCountedLoop, "regular loops only");
+  C->print_method(PHASE_BEFORE_CLOOPS, 3, loop_head);
 
   // ===================================================
   // We can only convert this loop to a counted loop if we can guarantee that the iv phi will never overflow at runtime.
@@ -2080,7 +2096,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
   const jlong final_correction = canonicalized_correction + limit_correction;
 
   int sov = check_stride_overflow(final_correction, limit_t, iv_bt);
-  Node* init_control = x->in(LoopNode::EntryControl);
+  Node* init_control = loop_head->in(LoopNode::EntryControl);
 
   // If sov==0, limit's type always satisfies the condition, for
   // example, when it is an array length.
@@ -2090,7 +2106,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
     }
     // (1) Loop Limit Check Predicate is required because we could not statically prove that
     //     limit + final_correction = adjusted_limit - 1 + stride <= max_int
-    assert(!x->as_Loop()->is_loop_nest_inner_loop(), "loop was transformed");
+    assert(!loop_head->as_Loop()->is_loop_nest_inner_loop(), "loop was transformed");
     const Predicates predicates(init_control);
     const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
     if (!loop_limit_check_predicate_block->has_parse_predicate()) {
@@ -2099,7 +2115,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
       if (TraceLoopLimitCheck) {
         tty->print("Missing Loop Limit Check Parse Predicate:");
         loop->dump_head();
-        x->dump(1);
+        loop_head->dump(1);
       }
 #endif
       return false;
@@ -2152,7 +2168,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
       if (TraceLoopLimitCheck) {
         tty->print("Missing Loop Limit Check Parse Predicate:");
         loop->dump_head();
-        x->dump(1);
+        loop_head->dump(1);
       }
 #endif
       return false;
@@ -2194,7 +2210,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
 
   Node* sfpt = nullptr;
   if (loop->_child == nullptr) {
-    sfpt = find_safepoint(back_control, x, loop);
+    sfpt = find_safepoint(back_control, loop_head, loop);
   } else {
     sfpt = iff->in(0);
     if (sfpt->Opcode() != Op_SafePoint) {
@@ -2202,8 +2218,8 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
     }
   }
 
-  if (x->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
-    Node* backedge_sfpt = x->in(LoopNode::LoopBackControl);
+  if (loop_head->in(LoopNode::LoopBackControl)->Opcode() == Op_SafePoint) {
+    Node* backedge_sfpt = loop_head->in(LoopNode::LoopBackControl);
     if (((iv_bt == T_INT && LoopStripMiningIter != 0) ||
          iv_bt == T_LONG) &&
         sfpt == nullptr) {
@@ -2225,7 +2241,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
 
 #ifdef ASSERT
   if (iv_bt == T_INT &&
-      !x->as_Loop()->is_loop_nest_inner_loop() &&
+      !loop_head->as_Loop()->is_loop_nest_inner_loop() &&
       StressLongCountedLoop > 0 &&
       trunc1 == nullptr &&
       convert_to_long_loop(cmp, phi, loop)) {
@@ -2348,7 +2364,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
 
   // Now setup a new CountedLoopNode to replace the existing LoopNode
   BaseCountedLoopNode *l = BaseCountedLoopNode::make(entry_control, back_control, iv_bt);
-  l->set_unswitch_count(x->as_Loop()->unswitch_count()); // Preserve
+  l->set_unswitch_count(loop_head->as_Loop()->unswitch_count()); // Preserve
   // The following assert is approximately true, and defines the intention
   // of can_be_counted_loop.  It fails, however, because phase->type
   // is not yet initialized for this loop and its parts.
@@ -2358,7 +2374,7 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
   loop->_head = l;
   // Fix all data nodes placed at the old loop head.
   // Uses the lazy-update mechanism of 'get_ctrl'.
-  lazy_replace( x, l );
+  lazy_replace(loop_head, l );
   set_idom(l, entry_control, dom_depth(entry_control) + 1);
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
@@ -2417,11 +2433,11 @@ bool PhaseIdealLoop::do_is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType 
   }
 
 #ifndef PRODUCT
-  if (x->as_Loop()->is_loop_nest_inner_loop() && iv_bt == T_LONG) {
+  if (loop_head->as_Loop()->is_loop_nest_inner_loop() && iv_bt == T_LONG) {
     Atomic::inc(&_long_loop_counted_loops);
   }
 #endif
-  if (iv_bt == T_LONG && x->as_Loop()->is_loop_nest_outer_loop()) {
+  if (iv_bt == T_LONG && loop_head->as_Loop()->is_loop_nest_outer_loop()) {
     l->mark_loop_nest_outer_loop();
   }
 
@@ -4236,7 +4252,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
 
   IdealLoopTree* loop = this;
   if (_head->is_CountedLoop() ||
-      phase->is_counted_loop(_head, loop, T_INT)) {
+      phase->try_convert_to_counted_loop(_head, loop, T_INT)) {
 
     if (LoopStripMiningIter == 0 || _head->as_CountedLoop()->is_strip_mined()) {
       // Indicate we do not need a safepoint here
@@ -4250,7 +4266,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     // Look for induction variables
     phase->replace_parallel_iv(this);
   } else if (_head->is_LongCountedLoop() ||
-             phase->is_counted_loop(_head, loop, T_LONG)) {
+             phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
     assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
