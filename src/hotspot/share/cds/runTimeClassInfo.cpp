@@ -78,7 +78,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
 InstanceKlass* RunTimeClassInfo::klass() const {
   if (MetaspaceShared::is_in_shared_metaspace(this)) {
     // <this> is inside a mmaped CDS archive.
-    return ArchiveUtils::from_offset<InstanceKlass*>(_klass_offset);
+    return ArchiveUtils::offset_to_archived_address<InstanceKlass*>(_klass_offset);
   } else {
     // <this> is a temporary copy of a RunTimeClassInfo that's being initialized
     // by the ArchiveBuilder.
