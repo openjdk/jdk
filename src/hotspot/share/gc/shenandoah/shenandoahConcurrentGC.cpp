@@ -1046,6 +1046,9 @@ void ShenandoahConcurrentGC::op_strong_roots() {
 }
 
 void ShenandoahConcurrentGC::op_cleanup_early() {
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                      ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
+                      "cleanup early.");
   ShenandoahHeap::heap()->free_set()->recycle_trash();
 }
 
@@ -1178,6 +1181,9 @@ void ShenandoahConcurrentGC::op_final_roots() {
 }
 
 void ShenandoahConcurrentGC::op_cleanup_complete() {
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                        ShenandoahWorkerPolicy::calc_workers_for_conc_cleanup(),
+                        "cleanup complete.");
   ShenandoahHeap::heap()->free_set()->recycle_trash();
 }
 

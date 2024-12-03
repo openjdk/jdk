@@ -1002,7 +1002,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     return nullptr;
   }
   HeapWord* result = nullptr;
-  try_recycle_trashed(r);
+  r->recycle_under_lock();
   in_new_region = r->is_empty();
 
   if (in_new_region) {
@@ -1213,7 +1213,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   // Initialize regions:
   for (idx_t i = beg; i <= end; i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    try_recycle_trashed(r);
+    r->recycle_under_lock();
 
     assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
     assert(r->is_empty(), "Should be empty");
@@ -1255,15 +1255,62 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   return _heap->get_region(beg)->bottom();
 }
 
-void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
-  if (r->is_trash()) {
-    r->recycle();
+struct ShenandoahRecycleStats {
+  volatile size_t recycled_heap_space = 0;
+  volatile size_t recycled_regions = 0;
+};
+
+class ShenandoahRecycleTrashedRegionTask : public WorkerTask {
+private:
+  ShenandoahRegionIterator _regions;
+
+public:
+  ShenandoahRecycleStats   _young_recycle_stats;
+  ShenandoahRecycleStats   _old_recycle_stats;
+  ShenandoahRecycleStats   _global_recycle_stats;
+
+  ShenandoahRecycleTrashedRegionTask() :
+    WorkerTask("Shenandoah Recycle trashed region.") {}
+
+  void work(uint worker_id) {
+    const ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahHeapRegion* region = nullptr;
+    while ((region = _regions.next()) != nullptr) {
+      if (!region->is_trash()) {
+        continue;
+      }
+      ShenandoahAffiliation affiliation = region->affiliation();
+      ShenandoahGeneration* generation = heap->generation_for(affiliation);
+      ShenandoahRecycleStats* recycle_stats =
+        generation->is_global() ? &_global_recycle_stats
+                                : (generation->is_young() ? &_young_recycle_stats : &_old_recycle_stats);
+      region->try_recycle(&(recycle_stats->recycled_heap_space), &(recycle_stats->recycled_regions));
+    }
   }
-}
+};
 
 void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->assert_gc_workers(heap->workers()->active_workers());
+
+  ShenandoahRecycleTrashedRegionTask task;
+  heap->workers()->run_task(&task);
+
+  ShenandoahHeapLocker locker(_heap->lock());
+  if (!heap->mode()->is_generational()) {
+    heap->decrease_used(heap->global_generation(), task._global_recycle_stats.recycled_heap_space);
+    heap->global_generation()->decrease_affiliated_region_count(task._global_recycle_stats.recycled_regions);
+  } else {
+    heap->decrease_used(heap->young_generation(), task._young_recycle_stats.recycled_heap_space);
+    heap->young_generation()->decrease_affiliated_region_count(task._young_recycle_stats.recycled_regions);
+
+    heap->decrease_used(heap->old_generation(), task._old_recycle_stats.recycled_heap_space);
+    heap->old_generation()->decrease_affiliated_region_count(task._old_recycle_stats.recycled_regions);
+  }
+  /*
   size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
@@ -1303,7 +1350,7 @@ void ShenandoahFreeSet::recycle_trash() {
       const size_t REGIONS_PER_BATCH = 32;
       size_t max_idx = MIN2(count, idx + REGIONS_PER_BATCH);
       while (idx < max_idx) {
-        try_recycle_trashed(_trash_regions[idx++]);
+        try_recycle_trashed_under_lock(_trash_regions[idx++]);
       }
       total_batches++;
       batch_end_time = os::javaTimeNanos();
@@ -1312,6 +1359,7 @@ void ShenandoahFreeSet::recycle_trash() {
       predicted_next_batch_end_time = batch_end_time + batch_process_time_estimate;
     } while ((idx < count) && (predicted_next_batch_end_time < deadline));
   }
+  */
 }
 
 void ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {

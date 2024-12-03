@@ -88,6 +88,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   if (ZapUnusedHeapArea && committed) {
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
+  recycling.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -329,7 +330,6 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 }
 
 void ShenandoahHeapRegion::make_empty() {
-  shenandoah_assert_heaplocked();
   reset_age();
   CENSUS_NOISE(clear_youth();)
   switch (_state) {
@@ -569,27 +569,57 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
   return r;
 }
 
-void ShenandoahHeapRegion::recycle() {
-  shenandoah_assert_heaplocked();
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGeneration* generation = heap->generation_for(affiliation());
 
-  heap->decrease_used(generation, used());
-  generation->decrement_affiliated_region_count();
+void ShenandoahHeapRegion::recycle_internal() {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   set_top(bottom());
   clear_live_data();
   reset_alloc_metadata();
-
   heap->marking_context()->reset_top_at_mark_start(this);
-
   set_update_watermark(bottom());
-
-  make_empty();
-
-  set_affiliation(FREE);
   if (ZapUnusedHeapArea) {
     SpaceMangler::mangle_region(MemRegion(bottom(), end()));
+  }
+
+  make_empty();
+  set_affiliation(FREE);
+}
+
+void ShenandoahHeapRegion::recycle_under_lock() {
+  shenandoah_assert_heaplocked();
+  if (is_trash() && recycling.try_set()) {
+    if (is_trash()) {
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
+      ShenandoahGeneration* generation = heap->generation_for(affiliation());
+
+      heap->decrease_used(generation, used());
+      generation->decrement_affiliated_region_count();
+
+      recycle_internal();
+      recycling.unset();
+    }
+  } else {
+    while (recycling.is_set()) {
+      if (os::is_MP()) {
+        SpinPause();
+      } else {
+        os::naked_yield();
+      }
+    }
+  }
+}
+
+void ShenandoahHeapRegion::try_recycle(volatile size_t* recycled_heap_space, volatile size_t* recycled_regions) {
+  shenandoah_assert_not_heaplocked();
+  if (is_trash() && recycling.try_set()) {
+    if (is_trash()) {
+      Atomic::add(recycled_heap_space, used());
+      Atomic::inc(recycled_regions);
+
+      recycle_internal();
+    }
+    recycling.unset();
   }
 }
 
@@ -795,11 +825,11 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_index((unsigned) index());
     evt.set_start((uintptr_t)bottom());
     evt.set_used(used());
-    evt.set_from(_state);
+    evt.set_from(state());
     evt.set_to(to);
     evt.commit();
   }
-  _state = to;
+  Atomic::store(&_state, to);
 }
 
 void ShenandoahHeapRegion::record_pin() {
