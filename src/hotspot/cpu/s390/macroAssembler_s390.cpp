@@ -693,35 +693,18 @@ void MacroAssembler::add2reg_32(Register r1, int64_t imm, Register r2) {
     return;
   }
 
-  if (!PreferLAoverADD || (r2 == Z_R0)) {
-    bool distinctOpnds = VM_Version::has_DistinctOpnds();
-
-    if (Immediate::is_simm16(imm)) {
-      if (r1 == r2){
-        z_ahi(r1, imm);
-        return;
-      }
-      if (distinctOpnds) {
-        z_ahik(r1, r2, imm);
-        return;
-      }
-      lr_if_needed(r1, r2);
+  if (Immediate::is_simm16(imm)) {
+    if (r1 == r2){
       z_ahi(r1, imm);
       return;
     }
-  } else {
-    // Can we encode imm in 12 bits unsigned?
-    if (Displacement::is_shortDisp(imm)) {
-      z_la(r1, imm, r2);
+    if (VM_Version::has_DistinctOpnds()) {
+      z_ahik(r1, r2, imm);
       return;
     }
-    // Can we encode imm in 20 bits signed?
-    if (Displacement::is_validDisp(imm)) {
-      // Always use LAY instruction, so we don't need the tmp register.
-      z_lay(r1, imm, r2);
-      return;
-    }
-
+    lr_if_needed(r1, r2);
+    z_ahi(r1, imm);
+    return;
   }
 
   // imm is simm32
