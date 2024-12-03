@@ -6245,6 +6245,7 @@ instruct evmulL_reg(vec dst, vec src1, vec src2) %{
              VM_Version::supports_avx512dq()) ||
             VM_Version::supports_avx512vldq());
   match(Set dst (MulVL src1 src2));
+  ins_cost(500);
   format %{ "evpmullq $dst,$src1,$src2\t! mul packedL" %}
   ins_encode %{
     assert(UseAVX > 2, "required");
@@ -6261,6 +6262,7 @@ instruct evmulL_mem(vec dst, vec src, memory mem) %{
              VM_Version::supports_avx512vldq()));
   match(Set dst (MulVL src (LoadVector mem)));
   format %{ "evpmullq $dst,$src,$mem\t! mul packedL" %}
+  ins_cost(500);
   ins_encode %{
     assert(UseAVX > 2, "required");
     int vlen_enc = vector_length_encoding(this);
@@ -6272,6 +6274,7 @@ instruct evmulL_mem(vec dst, vec src, memory mem) %{
 instruct vmulL(vec dst, vec src1, vec src2, vec xtmp) %{
   predicate(UseAVX == 0);
   match(Set dst (MulVL src1 src2));
+  ins_cost(500);
   effect(TEMP dst, TEMP xtmp);
   format %{ "mulVL   $dst, $src1, $src2\t! using $xtmp as TEMP" %}
   ins_encode %{
@@ -6298,6 +6301,7 @@ instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
               !VM_Version::supports_avx512vldq())));
   match(Set dst (MulVL src1 src2));
   effect(TEMP xtmp1, TEMP xtmp2);
+  ins_cost(500);
   format %{ "vmulVL  $dst, $src1, $src2\t! using $xtmp1, $xtmp2 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
@@ -6310,6 +6314,30 @@ instruct vmulL_reg(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2) %{
     // Get the lo-lo products
     __ vpmuludq($xtmp1$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
     __ vpaddq($dst$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuludq_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0 && n->as_MulVL()->has_uint_inputs());
+  match(Set dst (MulVL src1 src2));
+  ins_cost(100);
+  format %{ "vpmuludq $dst,$src1,$src2\t! muludq packedL" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmuludq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vmuldq_reg(vec dst, vec src1, vec src2) %{
+  predicate(UseAVX > 0 && n->as_MulVL()->has_int_inputs());
+  match(Set dst (MulVL src1 src2));
+  ins_cost(100);
+  format %{ "vpmuldq $dst,$src1,$src2\t! muldq packedL" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ vpmuldq($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
