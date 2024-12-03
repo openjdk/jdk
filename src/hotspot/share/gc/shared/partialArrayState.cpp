@@ -97,6 +97,7 @@ void PartialArrayStateAllocator::release(PartialArrayState* state) {
   if (refcount != 0) {
     assert(refcount + 1 != 0, "refcount underflow");
   } else {
+    OrderAccess::acquire();
     // Don't need to call destructor; can't if not destructible.
     static_assert(!std::is_destructible<PartialArrayState>::value, "expected");
     _free_list = ::new (state) FreeListEntry(_free_list);
