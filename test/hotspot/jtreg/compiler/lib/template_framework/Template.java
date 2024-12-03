@@ -136,7 +136,7 @@ public final class Template implements CodeGenerator {
 
         public void handleGeneratorCall(String name,
                                         String generatorName,
-                                        HashMap<String,String> parametersMap,
+                                        HashMap<String,String> argumentsMap,
                                         String[] variableList,
                                         String templated) {
             if (!name.equals("") && replacementsMap.containsKey(name)) {
@@ -145,9 +145,11 @@ public final class Template implements CodeGenerator {
             }
 
             // TODO generate code
-            CodeStream generatorStream = new CodeStream();
-            generatorStream.addCodeToLine("TODO1");
-            generatorStream.close();
+            NestedScope nestedScope = new NestedScope(scope);
+            Parameters parameters = new Parameters(argumentsMap);
+            nestedScope.outStream().addCodeToLine("TODO1");
+            nestedScope.close();
+            CodeStream generatorStream = nestedScope.outStream();
 
             // Map replacement for later repeats.
             if (!name.equals("")) {
@@ -201,7 +203,6 @@ public final class Template implements CodeGenerator {
     }
 
     private void handleTemplated(InstantiationState state, String templated) {
-        System.out.println("Found: " + templated);
         if (templated.startsWith("${")) {
             // Local variable with type declaration: ${name:type}
             int pos = templated.indexOf(':');
@@ -252,9 +253,6 @@ public final class Template implements CodeGenerator {
                 }
             }
 
-            System.out.println("Replacement: #{" + name + ":" + generator + ":" + variables + "}");
-            // TODO
-
             // Recursive generator call.
             if (!generator.equals("")) {
                 // Parse generator string.
@@ -265,30 +263,29 @@ public final class Template implements CodeGenerator {
                                                          "Got: " + templated);
                 }
                 String generatorName = null;
-                String generatorParameters = null;
+                String generatorArguments = null;
                 if (openPos == -1) {
                     generatorName = generator;
-                    generatorParameters = "";
+                    generatorArguments = "";
                 } else {
                     generatorName = generator.substring(0, openPos);
-                    generatorParameters = generator.substring(openPos + 1, generator.length() - 1);
+                    generatorArguments = generator.substring(openPos + 1, generator.length() - 1);
                 }
                 if (generatorName.contains("(") ||
                     generatorName.contains(")") ||
-                    generatorParameters.contains("(") ||
-                    generatorParameters.contains(")")) {
+                    generatorArguments.contains("(") ||
+                    generatorArguments.contains(")")) {
                     throw new TemplateFrameworkException("Template replacement syntax error (generator brackets). " +
                                                          "Generator name: " + generatorName + ". " +
-                                                         "Generator parameters: " + generatorParameters + ". " +
+                                                         "Generator arguments: " + generatorArguments + ". " +
                                                          "Found in: " + templated);
                 }
-                System.out.println("Generator: " + generatorName + " " + generatorParameters);
 
-                HashMap<String,String> parametersMap = parseKeyValuePairs(generatorParameters);
+                HashMap<String,String> argumentsMap = parseKeyValuePairs(generatorArguments);
 
                 String[] variableList = variables.equals("") ? new String[0] : variables.split(",");
 
-                state.handleGeneratorCall(name, generatorName, parametersMap, variableList, templated);
+                state.handleGeneratorCall(name, generatorName, argumentsMap, variableList, templated);
                 return;
             }
 

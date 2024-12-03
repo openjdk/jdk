@@ -46,8 +46,12 @@ public class Parameters {
      * Create an empty Parameters set, then add key-value pairs afterwards.
      */
     public Parameters() {
-        argumentsMap = new HashMap<String,String>();
-        instantiationID = instantiationIDCounter++;
+        this(new HashMap<String,String>());
+    }
+
+    public Parameters(HashMap<String,String> argumentsMap) {
+        this.argumentsMap = new HashMap<String,String>(argumentsMap);
+        this.instantiationID = instantiationIDCounter++;
     }
 
     public void add(String name, String value) {
