@@ -73,7 +73,7 @@ public class IndependenceAWTTest {
     }
 
     private static void createAndShowUI() {
-        frame = new Frame("IndependenceSwingTest");
+        frame = new Frame("IndependenceAWTTest");
         frame.setSize(200, 200);
 
         // This textfield will be used to update the contents of clipboards
