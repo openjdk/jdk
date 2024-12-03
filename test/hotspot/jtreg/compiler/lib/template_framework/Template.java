@@ -28,6 +28,35 @@ import java.util.regex.Pattern;
 
 /**
  * TODO
+ *
+ * Brainstorming
+ * -------------
+ *
+ * Context
+ * - Nesting
+ * - available variables
+ * - API for adding code?
+ *
+ * Template
+ * - Manages local variables
+ * - Replacements: nested CodeGenerator
+ * - Can have free variables - to be set by Instantiator?
+ *
+ * CodeGenerator
+ * - Can be Template or Programmatic
+ * - Can have free variables - to be set by Instantiator?
+ * - On instantiation, gets Context and Instantiator/Args for free variables
+ *   - Must generate code, variables, etc, push it to Context.
+ *   - Call nested CodeGenerator recursively - how to do Instantiator ... maybe via args?
+ *
+ * Instantiator / Args for free variables
+ * - Must be passed on CodeGenerator initialization
+ * - For Templates: fills free variable replacements
+ * - For CodeGenerator: can be queried and used freely. This allows passing int values etc. as parameters.
+ * - The args could either be a list or dict... I think dict with named args is better because
+ *   that goes better with the Templates where an order is not really given for the free variables.
+ *   Ok, so the args are strings. Basically w characters only, because Templates cannot pass anything else.
+ *
  */
 public final class Template {
     // Match local variables:
