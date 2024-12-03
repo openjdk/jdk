@@ -173,7 +173,18 @@ public final class Template implements CodeGenerator {
             String name = templated.substring(1);
             state.registerVariable(name);
             state.addCodeForVariable(name);
-        } else if (templated.startsWith("#")) {
+        } else if (templated.startsWith("#{")) {
+            // Replacement: #{name:generator:variables}
+            String replacement = templated.substring(2, templated.length() - 1);
+            String[] parts = replacement.split(":");
+            if (parts.length > 3) {
+                throw new TemplateFrameworkException("Template replacement syntax error. Should be " +
+                                                     "#{name:generator:variables}, but got " + templated);
+            }
+            String name = parts[0];
+            String generator = (parts.length > 1) ? parts[1] : "";
+            String variables = (parts.length > 2) ? parts[2] : "";
+            System.out.println("Replacement: #{" + name + ":" + generator + ":" + variables + "}");
             // TODO
             state.scope.addCode(templated);
         } else {
