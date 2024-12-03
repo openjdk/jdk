@@ -35,10 +35,6 @@ package java.security;
  * instead.
  * @param <T> the type of the result of running the computation
  *
- * @apiNote
- * This action cannot be performed with privileges enabled as the
- * Security Manager is no longer supported.
- *
  * @since 1.2
  * @see AccessController
  * @see AccessController#doPrivileged(PrivilegedAction)
