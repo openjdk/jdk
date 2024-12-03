@@ -32,19 +32,26 @@ import java.util.regex.Pattern;
 public final class Template {
     // Match local variables:
     //   $name
-    private static final String LOCAL_VARIABLE_PATTERN = "(\\$\\w+)";
+    private static final String VARIABLE_PATTERN = "(\\$\\w+)";
+
+    // Match local variable with type declaration:
+    //   ${name:type}
+    private static final String VARIABLE_WITH_TYPE_CHARS = "\\w:";
+    private static final String VARIABLE_WITH_TYPE_PATTERN = "(\\$\\{[" + VARIABLE_WITH_TYPE_CHARS + "]+\\})";
 
     // Match replacements:
-    //   \{name}
-    //   \{name:generator}
-    //   \{name:generator(arg1,arg2)}
-    //   \{:generator}
+    //   #{name}
+    //   #{name:generator}
+    //   #{name:generator(arg1,arg2)}
+    //   #{:generator}
     private static final String REPLACEMENT_CHARS = "\\w:\\(\\),";
-    private static final String REPLACEMENT_PATTERN = "(\\\\\\{[" + REPLACEMENT_CHARS + "]+\\})";
+    private static final String REPLACEMENT_PATTERN = "(#\\{[" + REPLACEMENT_CHARS + "]+\\})";
 
-    // Match either local variable or replacement.
+    // Match either variable or replacement.
     private static final String ALL_PATTERNS = "" +
-                                               LOCAL_VARIABLE_PATTERN +
+                                               VARIABLE_PATTERN +
+                                               "|" +
+                                               VARIABLE_WITH_TYPE_PATTERN +
                                                "|" +
                                                REPLACEMENT_PATTERN +
                                                "";
