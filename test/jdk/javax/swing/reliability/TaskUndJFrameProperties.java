@@ -65,7 +65,7 @@ public class TaskUndJFrameProperties extends Task<GUIUndFrame> {
         Point button2Center = gui.jbutton2.getLocationOnScreen();
         button2Center.translate(gui.jbutton2.getWidth()/2, gui.jbutton2.getHeight()/2);
 
-        robot.glide(button1Origin, button1Center);
+        robot.glide(button1Origin.x, button1Center.x, button1Origin.y, button1Center.y);
         robot.waitForIdle(1000);
         robot.click();
         //After Hide
