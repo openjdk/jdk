@@ -72,9 +72,9 @@ public final class Template implements CodeGenerator {
     // Match replacements:
     //   #{name}
     //   #{name:generator}
-    //   #{name:generator(arg1,arg2)}
+    //   #{name:generator(arg1=v1,arg2=v2)}
     //   #{:generator}
-    private static final String REPLACEMENT_CHARS = "\\w:\\(\\),";
+    private static final String REPLACEMENT_CHARS = "\\w:\\(\\),=";
     private static final String REPLACEMENT_PATTERN = "(#\\{[" + REPLACEMENT_CHARS + "]+\\})";
 
     // Match either variable or replacement.
@@ -240,11 +240,36 @@ public final class Template implements CodeGenerator {
                                                          "Found in: " + templated);
                 }
                 System.out.println("Generator: " + generatorName + " " + generatorParameters);
+
+                HashMap<String,String> parametersMap = parseKeyValuePairs(generatorParameters);
+                // TODO
             }
 
             state.scope.addCode(templated);
         } else {
             throw new TemplateFrameworkException("Template pattern not handled: " + templated);
         }
+    }
+
+    private static HashMap<String,String> parseKeyValuePairs(String pairs) {
+        HashMap<String,String> map = new HashMap<String,String>();
+        if (!pairs.equals("")) {
+            for (String pair : pairs.split(",")) {
+                String[] parts = pair.split("=");
+                if (parts.length != 2) {
+                    throw new TemplateFrameworkException("Template syntax error in key value pairs. " +
+                                                         "Got: " + pairs);
+                }
+                String key = parts[0];
+                String val = parts[1];
+                String oldVal = map.put(key, val);
+                if (oldVal != null) {
+                    throw new TemplateFrameworkException("Template syntax error in key value pairs. " +
+                                                         "Duplicate of key " + key + ". " +
+                                                         "Got: " + pairs);
+                }
+            }
+        }
+        return map;
     }
 }

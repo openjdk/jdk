@@ -39,14 +39,14 @@ import java.util.HashMap;
 public class Parameters {
     private static int instantiationIDCounter = 0;
 
-    private HashMap<String, String> argumentsMap;
+    private HashMap<String,String> argumentsMap;
     public final int instantiationID;
 
     /**
      * Create an empty Parameters set, then add key-value pairs afterwards.
      */
     public Parameters() {
-        argumentsMap = new HashMap<String, String>();
+        argumentsMap = new HashMap<String,String>();
         instantiationID = instantiationIDCounter++;
     }
 
