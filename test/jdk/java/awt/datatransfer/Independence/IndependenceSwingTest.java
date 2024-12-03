@@ -59,6 +59,7 @@ public class IndependenceSwingTest {
     private static Clipboard primaryClip;
     private static ExtendedRobot robot;
     private static volatile Point ttf1Center;
+    private static volatile Point glideStartLocation;
 
     public static void main (String[] args) throws Exception {
         try {
@@ -165,9 +166,12 @@ public class IndependenceSwingTest {
             Point center = tf1.getLocationOnScreen();
             center.translate(tf1.getWidth() / 2, tf1.getHeight() / 2);
             ttf1Center = center;
+
+            glideStartLocation = frame.getLocationOnScreen();
+            glideStartLocation.x -= 10;
         });
 
-        robot.glide(new Point(0, 0), ttf1Center);
+        robot.glide(glideStartLocation, ttf1Center);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle(20);
