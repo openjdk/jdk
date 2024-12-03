@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +25,27 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahMemoryPool.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 
-ShenandoahMemoryPool::ShenandoahMemoryPool(ShenandoahHeap* heap) :
-        CollectedMemoryPool("Shenandoah",
+ShenandoahMemoryPool::ShenandoahMemoryPool(ShenandoahHeap* heap,
+                                           const char* name) :
+        CollectedMemoryPool(name,
                             heap->initial_capacity(),
                             heap->max_capacity(),
                             true /* support_usage_threshold */),
                             _heap(heap) {}
+
+ShenandoahMemoryPool::ShenandoahMemoryPool(ShenandoahHeap* heap,
+                                           const char* name,
+                                           size_t initial_capacity,
+                                           size_t max_capacity) :
+        CollectedMemoryPool(name,
+                            initial_capacity,
+                            max_capacity,
+                            true /* support_usage_threshold */),
+                            _heap(heap) {}
+
 
 MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
   size_t initial   = initial_size();
@@ -51,3 +66,44 @@ MemoryUsage ShenandoahMemoryPool::get_memory_usage() {
 
   return MemoryUsage(initial, used, committed, max);
 }
+
+size_t ShenandoahMemoryPool::used_in_bytes() {
+  return _heap->used();
+}
+
+size_t ShenandoahMemoryPool::max_size() const {
+  return _heap->max_capacity();
+}
+
+ShenandoahGenerationalMemoryPool::ShenandoahGenerationalMemoryPool(ShenandoahHeap* heap, const char* name,
+                                                                   ShenandoahGeneration* generation) :
+        ShenandoahMemoryPool(heap, name, 0, heap->max_capacity()),
+        _generation(generation) { }
+
+MemoryUsage ShenandoahGenerationalMemoryPool::get_memory_usage() {
+  size_t initial   = initial_size();
+  size_t max       = max_size();
+  size_t used      = used_in_bytes();
+  size_t committed = _generation->used_regions_size();
+
+  return MemoryUsage(initial, used, committed, max);
+}
+
+size_t ShenandoahGenerationalMemoryPool::used_in_bytes() {
+  return _generation->used();
+}
+
+size_t ShenandoahGenerationalMemoryPool::max_size() const {
+  return _generation->max_capacity();
+}
+
+
+ShenandoahYoungGenMemoryPool::ShenandoahYoungGenMemoryPool(ShenandoahHeap* heap) :
+        ShenandoahGenerationalMemoryPool(heap,
+                             "Shenandoah Young Gen",
+                             heap->young_generation()) { }
+
+ShenandoahOldGenMemoryPool::ShenandoahOldGenMemoryPool(ShenandoahHeap* heap) :
+        ShenandoahGenerationalMemoryPool(heap,
+                             "Shenandoah Old Gen",
+                             heap->old_generation()) { }

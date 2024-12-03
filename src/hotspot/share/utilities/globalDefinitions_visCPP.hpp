@@ -72,12 +72,6 @@
 // 64-bit integer-suffix (LL) instead.
 #define NULL 0LL
 
-// NULL vs NULL_WORD:
-// On Linux NULL is defined as a special type '__null'. Assigning __null to
-// integer variable will cause gcc warning. Use NULL_WORD in places where a
-// pointer is stored as integer value.
-#define NULL_WORD NULL
-
 typedef int64_t ssize_t;
 
 // Non-standard stdlib-like stuff:
