@@ -320,31 +320,38 @@ static bool matches_property_suffix(const char* option, const char* property, si
 // any of the reserved module properties.
 // property should be passed without the leading "-D".
 bool Arguments::is_internal_module_property(const char* property) {
-  if  (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
+  return internal_module_property_helper(property, false);
+}
+
+// Returns true if property is one of those recognized by is_internal_module_property() but
+// is not supported by CDS archived full module graph.
+bool Arguments::is_incompatible_cds_internal_module_property(const char* property) {
+  return internal_module_property_helper(property, true);
+}
+
+bool Arguments::internal_module_property_helper(const char* property, bool check_for_cds) {
+  if (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
     if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
         matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
         matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
         matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
-        matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
-        matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
-        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN) ||
-        matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
+        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN)) {
       return true;
+    }
+
+    if (!check_for_cds) {
+      // CDS notes: these properties are supported by CDS archived full module graph.
+      if (matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
+          matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
+          matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
+        return true;
+      }
     }
   }
   return false;
-}
-
-bool Arguments::is_add_modules_property(const char* key) {
-  return (strcmp(key, MODULE_PROPERTY_PREFIX ADDMODS) == 0);
-}
-
-// Return true if the key matches the --module-path property name ("jdk.module.path").
-bool Arguments::is_module_path_property(const char* key) {
-  return (strcmp(key, MODULE_PROPERTY_PREFIX PATH) == 0);
 }
 
 // Process java launcher properties.

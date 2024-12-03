@@ -71,9 +71,6 @@ public class ToolkitImage extends Image {
     }
 
     public ImageProducer getSource() {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         return source;
     }
 
@@ -88,9 +85,6 @@ public class ToolkitImage extends Image {
      * If the width isn't known, then the image is reconstructed.
      */
     public int getWidth() {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if ((availinfo & ImageObserver.WIDTH) == 0) {
             reconstruct(ImageObserver.WIDTH);
         }
@@ -103,9 +97,6 @@ public class ToolkitImage extends Image {
      * notified when the data is available.
      */
     public synchronized int getWidth(ImageObserver iw) {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if ((availinfo & ImageObserver.WIDTH) == 0) {
             addWatcher(iw, true);
             if ((availinfo & ImageObserver.WIDTH) == 0) {
@@ -120,9 +111,6 @@ public class ToolkitImage extends Image {
      * If the height isn't known, then the image is reconstructed.
      */
     public int getHeight() {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if ((availinfo & ImageObserver.HEIGHT) == 0) {
             reconstruct(ImageObserver.HEIGHT);
         }
@@ -135,9 +123,6 @@ public class ToolkitImage extends Image {
      * notified when the data is available.
      */
     public synchronized int getHeight(ImageObserver iw) {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if ((availinfo & ImageObserver.HEIGHT) == 0) {
             addWatcher(iw, true);
             if ((availinfo & ImageObserver.HEIGHT) == 0) {
@@ -162,9 +147,6 @@ public class ToolkitImage extends Image {
             throw new NullPointerException("null property name is not allowed");
         }
 
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if (properties == null) {
             addWatcher(observer, true);
             if (properties == null) {
@@ -179,16 +161,10 @@ public class ToolkitImage extends Image {
     }
 
     public boolean hasError() {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         return (availinfo & ImageObserver.ERROR) != 0;
     }
 
     public int check(ImageObserver iw) {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if ((availinfo & ImageObserver.ERROR) == 0 &&
             ((~availinfo) & (ImageObserver.WIDTH |
                              ImageObserver.HEIGHT |
@@ -199,9 +175,6 @@ public class ToolkitImage extends Image {
     }
 
     public void preload(ImageObserver iw) {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if ((availinfo & ImageObserver.ALLBITS) == 0) {
             addWatcher(iw, true);
         }
@@ -273,9 +246,6 @@ public class ToolkitImage extends Image {
     }
 
     public void flush() {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
 
         ImageRepresentation ir;
         synchronized (this) {
@@ -297,9 +267,6 @@ public class ToolkitImage extends Image {
     }
 
     public synchronized ImageRepresentation getImageRep() {
-        if (src != null) {
-            src.checkSecurity(null, false);
-        }
         if (imagerep == null) {
             imagerep = makeImageRep();
         }

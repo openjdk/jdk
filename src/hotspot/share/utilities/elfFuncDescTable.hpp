@@ -35,9 +35,8 @@
 
 /*
 
-On PowerPC-64 (and other architectures like for example IA64) a pointer to a
-function is not just a plain code address, but instead a pointer to a so called
-function descriptor (which is simply a structure containing 3 pointers).
+On PowerPC-64 a pointer to a function is not just a plain code address, but instead a pointer
+to a so-called function descriptor (which is simply a structure containing 3 pointers).
 This fact is also reflected in the ELF ABI for PowerPC-64.
 
 On architectures like x86 or SPARC, the ELF symbol table contains the start
