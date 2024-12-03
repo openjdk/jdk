@@ -378,7 +378,13 @@ public class OfLiteralTest {
                 // Empty literals
                 Arguments.of(InetAddressClass.INET_ADDRESS, ""),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, ""),
-                Arguments.of(InetAddressClass.INET6_ADDRESS, "")
+                Arguments.of(InetAddressClass.INET6_ADDRESS, ""),
+
+                // Blank literals
+                Arguments.of(InetAddressClass.INET_ADDRESS, "    "),
+                Arguments.of(InetAddressClass.INET4_ADDRESS, "    "),
+                Arguments.of(InetAddressClass.INET6_ADDRESS, "    "),
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "    ")
         );
         // Construct arguments for a test case with IPv6-scoped address with scope-id
         // specified as a string with non-existing network interface name
