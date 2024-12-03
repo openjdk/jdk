@@ -5291,45 +5291,44 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode(KlassDecodeNone);
 
 MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
-  assert(UseCompressedClassPointers, "not using compressed class pointers");
   assert(Metaspace::initialized(), "metaspace not initialized yet");
+  assert(_klass_decode_mode != KlassDecodeNone, "should be initialized");
+  return _klass_decode_mode;
+}
+
+MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base, int shift, const size_t range) {
+  assert(UseCompressedClassPointers, "not using compressed class pointers");
 
   if (_klass_decode_mode != KlassDecodeNone) {
     return _klass_decode_mode;
   }
 
-  if (CompressedKlassPointers::base() == nullptr) {
+  if (base == nullptr) {
     return (_klass_decode_mode = KlassDecodeZero);
   }
 
   if (operand_valid_for_logical_immediate(
-        /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
-    const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
+        /*is32*/false, (uint64_t)base)) {
     const uint64_t range_mask = right_n_bits(log2i_ceil(range));
-    if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
+    if (((uint64_t)base & range_mask) == 0) {
       return (_klass_decode_mode = KlassDecodeXor);
     }
   }
 
   const uint64_t shifted_base =
-    (uint64_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift();
-  guarantee((shifted_base & 0xffff0000ffffffff) == 0,
-            "compressed class base bad alignment");
+    (uint64_t)base >> shift;
+  if ((shifted_base & 0xffff0000ffffffff) == 0) {
+    return (_klass_decode_mode = KlassDecodeMovk);
+  }
 
-  return (_klass_decode_mode = KlassDecodeMovk);
+  // No valid encoding.
+  assert(_klass_decode_mode == KlassDecodeNone, "cannot reset");
+  return KlassDecodeNone;
 }
 
 // Check if one of the above decoding modes will work for given base, shift and range.
 bool MacroAssembler::check_klass_decode_mode(address base, int shift, const size_t range) {
-  assert(UseCompressedClassPointers, "not using compressed class pointers");
-  const uint64_t base_address = (uint64_t)base;
-  const uint64_t range_mask = right_n_bits(log2i_ceil(range));
-  const uint64_t shifted_base = base_address >> shift;
-
-  return (base == nullptr ||
-         (operand_valid_for_logical_immediate(/*is32*/false, base_address) &&
-            ((base_address & range_mask) == 0))  ||
-         (shifted_base & 0xffff0000ffffffff) == 0);
+  return klass_decode_mode(base, shift, range) != KlassDecodeNone;
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
