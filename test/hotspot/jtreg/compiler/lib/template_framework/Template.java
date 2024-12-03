@@ -126,6 +126,18 @@ public final class Template implements CodeGenerator {
             scope.addCodeToLine(Integer.toString(id));
         }
 
+        public void handleGeneratorCall(String name,
+                                        String generatorName,
+                                        HashMap<String,String> parametersMap,
+                                        String[] variableList) {
+            // TODO
+            scope.addCodeToLine("TODO1");
+        }
+
+        public void repeatReplacement(String name) {
+            // TODO
+            scope.addCodeToLine("TODO2");
+        }
     }
 
     public void instantiate(Scope scope, Parameters parameters) {
@@ -242,10 +254,15 @@ public final class Template implements CodeGenerator {
                 System.out.println("Generator: " + generatorName + " " + generatorParameters);
 
                 HashMap<String,String> parametersMap = parseKeyValuePairs(generatorParameters);
-                // TODO
+
+                String[] variableList = variables.equals("") ? new String[0] : variables.split(",");
+
+                state.handleGeneratorCall(name, generatorName, parametersMap, variableList);
+                return;
             }
 
-            state.scope.addCode(templated);
+            // Default case: Repeat an earlier replacement.
+            state.repeatReplacement(name);
         } else {
             throw new TemplateFrameworkException("Template pattern not handled: " + templated);
         }
