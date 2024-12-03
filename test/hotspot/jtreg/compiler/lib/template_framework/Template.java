@@ -92,7 +92,7 @@ public final class Template implements CodeGenerator {
         this.templateString = templateString;
     }
 
-    public String instantiate(Scope scope, Parameters parameters) {
+    public void instantiate(Scope scope, Parameters parameters) {
         Matcher matcher = PATTERNS.matcher(templateString);
 
         while (matcher.find()) {
@@ -102,7 +102,5 @@ public final class Template implements CodeGenerator {
             String extract = templateString.substring(start, end);
             System.out.println("Found: " + extract);
         }
-
-        return templateString;
     }
 }

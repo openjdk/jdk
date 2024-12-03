@@ -41,7 +41,7 @@ public class TestRandomIntConstant {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("InnerTest", generate());
+        comp.addJavaSourceCode("p.xyz.InnerTest", generate());
 
         // Compile the source file.
         comp.compile();
@@ -75,6 +75,7 @@ public class TestRandomIntConstant {
             }
             """
         );
-        return template.instantiate(scope, parameters);
+        template.instantiate(scope, parameters);
+        return scope.toString();
     }
 }

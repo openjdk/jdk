@@ -26,6 +26,39 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public interface CodeGenerator {
-    public abstract void instantiate(Scope scope, Parameters parameters);
+public class ClassScope implements Scope {
+    private final String packageName;
+    private final String className;
+
+    private StringBuilder code;
+    // TODO indentation?
+
+    // TODO public or hidden in the API? - well we probably want to be able to use it programmatically...
+    public ClassScope(String packageName, String className) {
+        this.packageName = packageName;
+        this.className = className;
+
+        this.code = new StringBuilder();
+        openClass();
+    }
+
+    /**
+     * Collect all the generated code and return it as a String.
+     */
+    public String toString() {
+        closeClass();
+        return code.toString();
+    }
+
+    private void openClass() {
+        code.append("package ");
+        code.append(packageName);
+        code.append(";\n\npublic class ");
+        code.append(className);
+        code.append("{\n");
+    }
+
+    private void closeClass() {
+        code.append("\n}");
+    }
 }
