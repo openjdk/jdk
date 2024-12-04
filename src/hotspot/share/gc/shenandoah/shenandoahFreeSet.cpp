@@ -1259,10 +1259,9 @@ private:
   ShenandoahRegionIterator _regions;
 public:
   ShenandoahRecycleTrashedRegionTask() :
-    WorkerTask("Shenandoah Recycle trashed region.") {}
+    WorkerTask("Shenandoah Recycle Trashed Regions") {}
 
   void work(uint worker_id) {
-    const ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahHeapRegion* region = nullptr;
     while ((region = _regions.next()) != nullptr) {
       if (!region->is_trash()) {

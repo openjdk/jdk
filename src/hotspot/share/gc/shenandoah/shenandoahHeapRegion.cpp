@@ -613,7 +613,7 @@ void ShenandoahHeapRegion::recycle_under_lock() {
 
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
-  if (is_trash() && _recycling.try_set()) {
+  if (_recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
       ShenandoahHeap* heap = ShenandoahHeap::heap();
