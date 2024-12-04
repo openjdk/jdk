@@ -315,7 +315,6 @@ module java.base {
     exports sun.reflect.misc to
         java.desktop,
         java.management,
-        java.rmi,
         java.sql.rowset;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
@@ -328,7 +327,6 @@ module java.base {
     exports sun.security.pkcs to
         jdk.jartool;
     exports sun.security.provider to
-        java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
         jdk.security.auth;
@@ -343,7 +341,6 @@ module java.base {
         jdk.jartool;
     exports sun.security.util to
         java.naming,
-        java.rmi,
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,
