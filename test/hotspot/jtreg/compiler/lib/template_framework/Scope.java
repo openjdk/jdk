@@ -46,11 +46,4 @@ public class Scope {
     public void close() {
         stream.close();
     }
-
-    /**
-     * Collect all the generated code and return it as a String.
-     */
-    public String toString() {
-        return stream.toString();
-    }
 }

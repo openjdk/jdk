@@ -60,22 +60,27 @@ public class TestRandomIntConstant {
 
     // Generate a source Java file as String
     public static String generate() {
-        ClassScope scope = new ClassScope("p.xyz", "InnerTest");
+        BaseScope scope = new BaseScope();
         Parameters parameters = new Parameters();
         parameters.add("param1", "1");
         parameters.add("param2", "2");
 
         Template template = new Template(
             """
-            public static int test() {
-                int $con1 = #{conx:int_con};
-                int ${con2:int} = #{cony:int_con};
-                $con2 = #{conz:int_con(lo=3,hi=11):con1};
-                return $con1 + $con2 + #{param1};
+            package p.xyz;
+
+            public class InnerTest {
+                public static int test() {
+                    int $con1 = #{conx:int_con};
+                    int ${con2:int} = #{cony:int_con};
+                    $con2 = #{conz:int_con(lo=3,hi=11):con1};
+                    return $con1 + $con2 + #{param1};
+                }
             }
             """
         );
         template.instantiate(scope, parameters);
+        scope.close();
         return scope.toString();
     }
 }

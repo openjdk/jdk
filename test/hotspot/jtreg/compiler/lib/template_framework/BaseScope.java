@@ -26,23 +26,16 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public class ClassScope extends Scope {
-    private final String packageName;
-    private final String className;
+public class BaseScope extends Scope {
     private final CodeGeneratorLibrary codeGeneratorLibrary;
 
-    // TODO public or hidden in the API? - well we probably want to be able to use it programmatically...
-    public ClassScope(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary) {
+    public BaseScope(CodeGeneratorLibrary codeGeneratorLibrary) {
         super(null);
-        this.packageName = packageName;
-        this.className = className;
         this.codeGeneratorLibrary = codeGeneratorLibrary;
-
-        openClass();
     }
 
-    public ClassScope(String packageName, String className) {
-        this(packageName, className, CodeGeneratorLibrary.standard());
+    public BaseScope() {
+        this(CodeGeneratorLibrary.standard());
     }
 
 
@@ -51,30 +44,10 @@ public class ClassScope extends Scope {
         return codeGeneratorLibrary;
     }
 
-    // TODO not that smart...
-    @Override
+    /**
+     * Collect all the generated code and return it as a String.
+     */
     public String toString() {
-        closeClass();
-        close();
         return stream.toString();
-    }
-
-    private void openClass() {
-        stream.addCodeToLine("package ");
-        stream.addCodeToLine(packageName);
-        stream.addCodeToLine(";");
-        stream.addNewline();
-        stream.addNewline();
-        stream.addCodeToLine("public class ");
-        stream.addCodeToLine(className);
-        stream.addCodeToLine("{");
-        stream.indent();
-        stream.addNewline();
-    }
-
-    private void closeClass() {
-        stream.outdent();
-        stream.addNewline();
-        stream.addCodeToLine("}");
     }
 }

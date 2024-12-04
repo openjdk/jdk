@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 /**
  * TODO
  *
+ * - indentation of templates?
  * - Extend library
  * - Implement variable sampling
  * - Fuel
