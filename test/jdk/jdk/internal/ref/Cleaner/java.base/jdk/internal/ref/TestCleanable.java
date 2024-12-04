@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,17 +21,19 @@
  * questions.
  */
 
-package jdk.internal.access;
+package jdk.internal.ref;
 
-import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
+import java.lang.ref.Cleaner;
 
-public interface JavaSecurityAccess {
+public class TestCleanable extends PhantomCleanable<Object> {
+    static final Object TARGET = new Object();
 
-    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  @SuppressWarnings("removal") AccessControlContext stack,
-                                  @SuppressWarnings("removal") AccessControlContext context);
+    public TestCleanable(Cleaner cleaner) {
+        super(TARGET, cleaner);
+    }
 
-    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  @SuppressWarnings("removal") AccessControlContext context);
+    @Override
+    protected void performCleanup() {
+        // no action
+    }
 }

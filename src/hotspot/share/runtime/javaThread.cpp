@@ -518,6 +518,10 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
   _SleepEvent(ParkEvent::Allocate(this)),
 
+#if INCLUDE_JFR
+  _last_freeze_fail_result(freeze_ok),
+#endif
+
   _lock_stack(this),
   _om_cache(this) {
   set_jni_functions(jni_functions());

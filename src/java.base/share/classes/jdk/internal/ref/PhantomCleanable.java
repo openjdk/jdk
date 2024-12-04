@@ -44,14 +44,21 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
         implements Cleaner.Cleanable {
 
     /**
-     * Links to previous and next in a doubly-linked list.
-     */
-    PhantomCleanable<?> prev = this, next = this;
-
-    /**
      * The list of PhantomCleanable; synchronizes insert and remove.
      */
-    private final PhantomCleanable<?> list;
+    private final CleanerImpl.CleanableList list;
+
+    /**
+     * Node for this PhantomCleanable in the list.
+     * Synchronized by the same lock as the list itself.
+     */
+    CleanerImpl.CleanableList.Node node;
+
+    /**
+     * Index of this PhantomCleanable in the list node.
+     * Synchronized by the same lock as the list itself.
+     */
+    int index;
 
     /**
      * Constructs new {@code PhantomCleanable} with
@@ -62,64 +69,20 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      * @param referent the referent to track
      * @param cleaner  the {@code Cleaner} to register with
      */
+    @SuppressWarnings("this-escape")
     public PhantomCleanable(T referent, Cleaner cleaner) {
         super(Objects.requireNonNull(referent), CleanerImpl.getCleanerImpl(cleaner).queue);
-        this.list = CleanerImpl.getCleanerImpl(cleaner).phantomCleanableList;
-        insert();
+        index = -1;
+        list = CleanerImpl.getCleanerImpl(cleaner).activeList;
+        list.insert(this);
+
+        // Check that list insertion populated the backlinks.
+        assert node != null;
+        assert index >= 0;
 
         // Ensure referent and cleaner remain accessible
         Reference.reachabilityFence(referent);
         Reference.reachabilityFence(cleaner);
-    }
-
-    /**
-     * Construct a new root of the list; not inserted.
-     */
-    PhantomCleanable() {
-        super(null, null);
-        this.list = this;
-    }
-
-    /**
-     * Insert this PhantomCleanable after the list head.
-     */
-    private void insert() {
-        synchronized (list) {
-            prev = list;
-            next = list.next;
-            next.prev = this;
-            list.next = this;
-        }
-    }
-
-    /**
-     * Remove this PhantomCleanable from the list.
-     *
-     * @return true if Cleanable was removed or false if not because
-     * it had already been removed before
-     */
-    private boolean remove() {
-        synchronized (list) {
-            if (next != this) {
-                next.prev = prev;
-                prev.next = next;
-                prev = this;
-                next = this;
-                return true;
-            }
-            return false;
-        }
-    }
-
-    /**
-     * Returns true if the list's next reference refers to itself.
-     *
-     * @return true if the list is empty
-     */
-    boolean isListEmpty() {
-        synchronized (list) {
-            return list == list.next;
-        }
     }
 
     /**
@@ -128,7 +91,7 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      */
     @Override
     public final void clean() {
-        if (remove()) {
+        if (list.remove(this)) {
             super.clear();
             performCleanup();
         }
@@ -140,7 +103,7 @@ public abstract class PhantomCleanable<T> extends PhantomReference<T>
      */
     @Override
     public void clear() {
-        if (remove()) {
+        if (list.remove(this)) {
             super.clear();
         }
     }
