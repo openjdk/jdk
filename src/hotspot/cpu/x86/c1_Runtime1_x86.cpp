@@ -1329,7 +1329,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         Register klass = c_rarg0, obj = c_rarg1, result = rax;
         __ movptr(klass, Address(c_rarg0, java_lang_Class::klass_offset()));
 
-        Label done, is_secondary;
+        Label done, is_secondary, same;
 
         __ xorq(result, result);
         __ testq(klass, klass);
@@ -1351,10 +1351,17 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ bind(is_secondary);
 
         __ load_klass(obj, obj, /*tmp*/r9);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmpptr(obj, klass);
+        __ jcc(Assembler::equal, same);
+
         __ lookup_secondary_supers_table_var(obj, klass,
                                              /*temps*/rdx, rcx, r8, r9,
                                              result);
         __ testq(result, result);
+
+        __ bind(same);
         __ setcc(Assembler::equal, result);
 
         __ bind(done);
