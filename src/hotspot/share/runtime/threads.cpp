@@ -398,7 +398,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
 
     JDK_Version::set_runtime_vendor_vm_bug_url(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_bug_url_name()));
 
-    VM_Version::override_vm_vendor(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_name()));
+    VM_Version::set_vm_vendor(get_java_version_info(ik, vmSymbols::java_runtime_vendor_vm_name()));
   }
 
   // an instance of OutOfMemory exception has been allocated earlier

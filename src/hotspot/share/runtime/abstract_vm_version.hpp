@@ -79,7 +79,7 @@ class Abstract_VM_Version: AllStatic {
   static unsigned int _data_cache_line_flush_size;
 
   // Allow Jlink to override vendor from java.lang.VersionProps
-  static const char*  _vendor_branding_override;
+  static const char*  _vm_vendor;
 
  public:
 
@@ -109,7 +109,7 @@ class Abstract_VM_Version: AllStatic {
   static const char* vm_name();
   // Vendor
   static const char* vm_vendor();
-  static void override_vm_vendor(const char* vendor_override);
+  static void set_vm_vendor(const char* vm_vendor);
 
   // VM version information string printed by launcher (java -version)
   static const char* vm_info_string();

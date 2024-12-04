@@ -129,18 +129,14 @@ const char* Abstract_VM_Version::vm_name() {
 #endif
 
 static const char vm_vendor_string[sizeof(VENDOR) < VENDOR_PADDING ? VENDOR_PADDING : sizeof(VENDOR)] = VENDOR;
-const char* Abstract_VM_Version::_vendor_branding_override = nullptr;
+const char* Abstract_VM_Version::_vm_vendor = vm_vendor_string;
 
 const char* Abstract_VM_Version::vm_vendor() {
-  return _vendor_branding_override != nullptr ? _vendor_branding_override : vm_vendor_string;
+  return _vm_vendor;
 }
 
-void Abstract_VM_Version::override_vm_vendor(const char* vendor_override) {
-  if (_vendor_branding_override != nullptr) {
-    os::free((void *)_vendor_branding_override);
-  }
-
-  _vendor_branding_override = (vendor_override == nullptr) ? nullptr : os::strdup(vendor_override);
+void Abstract_VM_Version::set_vm_vendor(const char* vm_vendor) {
+  _vm_vendor = os::strdup(vm_vendor);
 }
 
 const char* Abstract_VM_Version::vm_info_string() {

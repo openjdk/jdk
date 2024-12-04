@@ -94,7 +94,6 @@ class VersionProps {
     private static String VENDOR_URL_VM_BUG =
         "@@VENDOR_URL_VM_BUG@@";
 
-    @SuppressWarnings("unused")
     private static String VENDOR_VM =
         "@@VENDOR@@";
 
