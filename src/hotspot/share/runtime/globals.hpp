@@ -1158,9 +1158,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, VerifyJNIFields, trueInDebug,                               \
           "Verify jfieldIDs for instance fields")                           \
                                                                             \
-  develop(bool, VerifyFPU, false,                                           \
-          "Verify FPU state (check for NaN's, etc.)")                       \
-                                                                            \
   develop(bool, VerifyActivationFrameSize, false,                           \
           "Verify that activation frame didn't become smaller than its "    \
           "minimal size")                                                   \

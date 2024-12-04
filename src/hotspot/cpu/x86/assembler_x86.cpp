@@ -706,7 +706,7 @@ void Assembler::emit_operand_helper(int reg_enc, int base_enc, int index_enc,
       address next_ip = pc() + sizeof(int32_t) + post_addr_length;
       int64_t adjusted = disp;
       // Do rip-rel adjustment for 64bit
-      adjusted -=  (next_ip - inst_mark());
+      adjusted -= (next_ip - inst_mark());
       assert(is_simm32(adjusted),
              "must be 32bit offset (RIP relative address)");
       emit_data((int32_t) adjusted, rspec, disp32_operand);
@@ -1168,7 +1168,6 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     default:
       ip++;
     }
-    // TODO: cleanup
     debug_only(has_disp32 = true); // has both kinds of operands!
     break;
 

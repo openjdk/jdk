@@ -974,7 +974,6 @@ private:
                                          int cur_tuple_type, int in_size_in_bits, int cur_encoding);
 
   // Generic instructions
-  // In some sense these belong in macro assembler but there is no need for both varieties to exist
 
   void init_attributes(void);
   void clear_attributes(void) { _attributes = nullptr; }

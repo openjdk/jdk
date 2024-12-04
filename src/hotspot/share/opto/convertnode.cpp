@@ -180,11 +180,6 @@ const Type* ConvD2INode::Value(PhaseGVN* phase) const {
   return TypeInt::make( SharedRuntime::d2i( td->getd() ) );
 }
 
-//------------------------------Ideal------------------------------------------
-Node *ConvD2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return nullptr;
-}
-
 //------------------------------Identity---------------------------------------
 // Int's can be converted to doubles with no loss of bits.  Hence
 // converting an integer to a double and back to an integer is a NOP.
@@ -209,11 +204,6 @@ Node* ConvD2LNode::Identity(PhaseGVN* phase) {
      in(1)->in(1)->Opcode() == Op_ConvD2L )
   return in(1)->in(1);
   return this;
-}
-
-//------------------------------Ideal------------------------------------------
-Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  return nullptr;
 }
 
 //=============================================================================

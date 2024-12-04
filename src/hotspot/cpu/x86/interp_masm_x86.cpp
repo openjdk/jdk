@@ -677,7 +677,6 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               address* table,
                                               bool verifyoop,
                                               bool generate_poll) {
-  verify_FPU(1, state);
   if (VerifyActivationFrameSize) {
     Label L;
     mov(rcx, rbp);
@@ -1743,10 +1742,6 @@ void InterpreterMacroAssembler::_interp_verify_oop(Register reg, TosState state,
   if (state == atos) {
     MacroAssembler::_verify_oop_checked(reg, "broken oop", file, line);
   }
-}
-
-void InterpreterMacroAssembler::verify_FPU(int stack_depth, TosState state) {
-  // TODO: Cleanup?
 }
 
 // Jump if ((*counter_addr += increment) & mask) == 0

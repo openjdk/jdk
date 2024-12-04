@@ -373,7 +373,6 @@ void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState t
   if (PrintBytecodePairHistogram)                                histogram_bytecode_pair(t);
   if (TraceBytecodes)                                            trace_bytecode(t);
   if (StopInterpreterAt > 0)                                     stop_interpreter_at();
-  __ verify_FPU(1, t->tos_in());
 #endif // !PRODUCT
   int step = 0;
   if (!t->does_dispatch()) {
