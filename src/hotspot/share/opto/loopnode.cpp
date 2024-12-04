@@ -1615,7 +1615,7 @@ bool PhaseIdealLoop::convert_to_long_loop(Node* cmp, Node* phi, IdealLoopTree* l
 #endif
 
 //------------------------------is_counted_loop--------------------------------
-bool PhaseIdealLoop::try_convert_to_counted_loop(Node* loop_head, IdealLoopTree*&loop, BasicType iv_bt) {
+bool PhaseIdealLoop::try_convert_to_counted_loop(Node* loop_head, IdealLoopTree*& loop, BasicType iv_bt) {
   return convert_to_counted_loop(loop_head, loop, iv_bt)
          || convert_to_counted_loop_with_speculative_long_limit(loop_head, loop, iv_bt);
 }
