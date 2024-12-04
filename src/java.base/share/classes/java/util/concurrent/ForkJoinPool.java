@@ -610,12 +610,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * it tries to deactivate()), giving up (and rescanning) on "ctl"
      * contention. To avoid missed signals during deactivation, the
      * method rescans and reactivates if there may have been a missed
-     * (external) signal during deactivation. To reduce false-alarm
-     * reactivations while doing so, we scan multiple times
-     * (analogously to method quiescent()) before trying to
-     * reactivate.  Because idle workers are often not yet blocked
-     * (parked), we use a WorkQueue field to advertise that a waiter
-     * actually needs unparking upon signal.
+     * signal during deactivation. To reduce false-alarm reactivations
+     * while doing so, we scan multiple times (analogously to method
+     * quiescent()) before trying to reactivate.  Because idle workers
+     * are often not yet blocked (parked), we use a WorkQueue field to
+     * advertise that a waiter actually needs unparking upon signal.
      *
      * Quiescence. Workers scan looking for work, giving up when they
      * don't find any, without being sure that none are available.
@@ -2013,7 +2012,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
             if ((q = qs[k & (n - 1)]) == null)
-                Thread.onSpinWait();          // interleave spins and rechecks
+                Thread.onSpinWait();
             else if ((a = q.array) != null && (cap = a.length) > 0 &&
                      a[q.base & (cap - 1)] != null && --prechecks < 0 &&
                      (int)(c = ctl) == activePhase &&
