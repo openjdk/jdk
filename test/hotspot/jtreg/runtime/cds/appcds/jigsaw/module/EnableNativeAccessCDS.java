@@ -47,14 +47,14 @@ public class EnableNativeAccessCDS {
         OutputAnalyzer oa = TestCommon.dumpBaseArchive(
             archiveName,
             loggingOption,
-            "--enable-native-access", module0,
+            "--enable-native-access=" + module0,
             "-version");
         oa.shouldHaveExitValue(0);
 
         // same module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
-            "--enable-native-access", module0,
+            "--enable-native-access=" + module0,
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("use_full_module_graph = true");
@@ -62,7 +62,7 @@ public class EnableNativeAccessCDS {
         // different module specified during runtime
         oa = TestCommon.execCommon(
             loggingOption,
-            "--enable-native-access", module1,
+            "--enable-native-access=" + module1,
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime jdk.httpserver dump time java.base")
@@ -88,7 +88,7 @@ public class EnableNativeAccessCDS {
         // run with --enable-native-access
         oa = TestCommon.execCommon(
             loggingOption,
-            "--enable-native-access", module0,
+            "--enable-native-access=" + module0,
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.enable.native.access: java.base specified during runtime but not during dump time")
@@ -100,14 +100,14 @@ public class EnableNativeAccessCDS {
         oa = TestCommon.dumpBaseArchive(
             archiveName,
             loggingOption,
-            "--enable-native-access", module0 + "," + module1,
+            "--enable-native-access=" + module0 + "," + module1,
             "-version");
         oa.shouldHaveExitValue(0);
 
         // same module specified during runtime but in a different order
         oa = TestCommon.execCommon(
             loggingOption,
-            "--enable-native-access", module1 + "," + module0,
+            "--enable-native-access=" + module1 + "," + module0,
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("use_full_module_graph = true");
@@ -115,8 +115,8 @@ public class EnableNativeAccessCDS {
         // same module specified during runtime but specifying --enable-native-access twice
         oa = TestCommon.execCommon(
             loggingOption,
-            "--enable-native-access", module0,
-            "--enable-native-access", module1,
+            "--enable-native-access=" + module0,
+            "--enable-native-access=" + module1,
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("use_full_module_graph = true");
@@ -124,7 +124,7 @@ public class EnableNativeAccessCDS {
         // run with only one same module
         oa = TestCommon.execCommon(
             loggingOption,
-            "--enable-native-access", module0,
+            "--enable-native-access=" + module0,
             "-version");
         oa.shouldHaveExitValue(0)
           .shouldContain("Mismatched values for property jdk.module.enable.native.access: runtime java.base dump time java.base,jdk.httpserver")
