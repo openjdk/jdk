@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8345403
+ * @summary FloatingDecimal parsing methods (use -Dseed=X to set seed)
+ * @modules java.base/jdk.internal.math
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run junit TestRandomFloatingDecimal
+ * @key randomness
+ */
+
 import jdk.internal.math.FloatingDecimal;
 import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -33,16 +44,6 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * @test
- * @bug 8345403
- * @summary FloatingDecimal parsing methods (use -Dseed=X to set seed)
- * @modules java.base/jdk.internal.math
- * @library /test/lib
- * @build jdk.test.lib.RandomFactory
- * @run junit TestRandomFloatingDecimal
- * @key randomness
- */
 public class TestRandomFloatingDecimal {
 
     /*
@@ -126,7 +127,7 @@ public class TestRandomFloatingDecimal {
                 10));
 
         int p = 0;
-        if (RANDOM.nextInt(8) != 0) {  // 87.5% chance for a point
+        if (RANDOM.nextInt(8) != 0) {  // 87.5% chance of point presence
             int pointPos = RANDOM.nextInt(leadingZeros + digits + trailingZeros + 1);
             sb.insert(leadingWhites + signLen + pointPos, '.');
             p = -(leadingZeros + digits + trailingZeros - pointPos);
@@ -210,10 +211,7 @@ public class TestRandomFloatingDecimal {
         if (e < 0) {
             sb.append('-');
         } else if (e == 0) {
-            switch (RANDOM.nextInt(4)) {  // 50% chance of tacit sign
-                case 0 -> sb.append('-');
-                case 1 -> sb.append('+');
-            }
+            appendRandomSign(sb);
         } else if (RANDOM.nextBoolean()) {
             sb.append('+');
         }
@@ -236,9 +234,7 @@ public class TestRandomFloatingDecimal {
     }
 
     private static void appendZeros(StringBuilder sb, int count) {
-        for (; count > 0; --count) {
-            sb.append('0');
-        }
+        sb.repeat('0', count);
     }
 
     private static void appendRandomDecDigits(StringBuilder sb, int count) {
@@ -256,11 +252,9 @@ public class TestRandomFloatingDecimal {
     }
 
     private static char randomHexDigit(int min) {
-        int c = Character.forDigit(RANDOM.nextInt(min, 0x10), 0x10);
+        char c = Character.forDigit(RANDOM.nextInt(min, 0x10), 0x10);
         /* Randomize letter case as well. */
-        return (char) (c >= 'a'
-                        ? RANDOM.nextBoolean() ? c : c - ('a' - 'A')
-                        : c);
+        return RANDOM.nextBoolean() ? Character.toLowerCase(c) : Character.toUpperCase(c);
     }
 
     private static char randomDecDigit(int min) {
