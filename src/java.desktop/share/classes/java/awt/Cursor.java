@@ -298,9 +298,9 @@ public class Cursor implements java.io.Serializable {
             loadSystemCustomCursorProperties();
 
             String prefix = CURSOR_DOT_PREFIX + name;
-            String key    = prefix + DOT_FILE_SUFFIX;
 
-            String fileName = systemCustomCursorProperties.getProperty(key);
+            String fileName =
+                systemCustomCursorProperties.getProperty(prefix + DOT_FILE_SUFFIX);
 
             if (fileName == null) {
                 if (log.isLoggable(PlatformLogger.Level.FINER)) {
@@ -309,7 +309,7 @@ public class Cursor implements java.io.Serializable {
                 return null;
             }
 
-            final String localized = systemCustomCursorProperties.getProperty(
+            String localized = systemCustomCursorProperties.getProperty(
                     prefix + DOT_NAME_SUFFIX, name);
 
             String hotspot = systemCustomCursorProperties.getProperty(prefix + DOT_HOTSPOT_SUFFIX);
