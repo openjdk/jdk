@@ -2698,8 +2698,8 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
                                                            const char* file_name,
                                                            TRAPS) {
   JavaValue result(T_OBJECT);
-  TempNewSymbol class_name_sym = SymbolTable::new_symbol(file_name);
-  Handle ext_class_name = java_lang_String::externalize_classname(class_name_sym, CHECK_NULL);
+  oop class_name = java_lang_String::create_oop_from_str(file_name, THREAD);
+  Handle h_class_name = Handle(THREAD, class_name);
 
   // byte[] ClassLoader.getResourceAsByteArray(String name)
   JavaCalls::call_virtual(&result,
@@ -2707,7 +2707,7 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
                           vmClasses::ClassLoader_klass(),
                           vmSymbols::getResourceAsByteArray_name(),
                           vmSymbols::getResourceAsByteArray_signature(),
-                          ext_class_name,
+                          h_class_name,
                           CHECK_NULL);
   assert(result.get_type() == T_OBJECT, "just checking");
   oop obj = result.get_oop();
