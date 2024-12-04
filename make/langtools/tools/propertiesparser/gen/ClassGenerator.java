@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
@@ -117,6 +118,7 @@ public class ClassGenerator {
     enum FactoryKind {
         ERR("err", "Error", "Errors"),
         WARN("warn", "Warning", "Warnings"),
+        LINT_WARN("warn", "LintWarning", "LintWarnings"),
         NOTE("note", "Note", "Notes"),
         MISC("misc", "Fragment", "Fragments"),
         OTHER(null, null, null);
@@ -139,13 +141,24 @@ public class ClassGenerator {
         /**
          * Utility method for parsing a factory kind from a resource key prefix.
          */
-        static FactoryKind parseFrom(String prefix) {
+        static FactoryKind of(Entry<String, Message> messageEntry) {
+            String prefix = messageEntry.getKey().split("\\.")[1];
+            FactoryKind selected = null;
             for (FactoryKind k : FactoryKind.values()) {
                 if (k.prefix == null || k.prefix.equals(prefix)) {
-                    return k;
+                    selected = k;
+                    break;
                 }
             }
-            return null;
+            if (selected == WARN) {
+                for (MessageLine line : messageEntry.getValue().getLines(false)) {
+                    if (line.isLint()) {
+                        selected = LINT_WARN;
+                        break;
+                    }
+                }
+            }
+            return selected;
         }
     }
 
@@ -158,7 +171,7 @@ public class ClassGenerator {
                 messageFile.messages.entrySet().stream()
                         .collect(
                                 Collectors.groupingBy(
-                                        e -> FactoryKind.parseFrom(e.getKey().split("\\.")[1]),
+                                        FactoryKind::of,
                                         TreeMap::new,
                                         toList()));
         //generate nested classes
@@ -168,7 +181,7 @@ public class ClassGenerator {
             if (entry.getKey() == FactoryKind.OTHER) continue;
             //emit members
             String members = entry.getValue().stream()
-                    .flatMap(e -> generateFactoryMethodsAndFields(e.getKey(), e.getValue()).stream())
+                    .flatMap(e -> generateFactoryMethodsAndFields(entry.getKey(), e.getKey(), e.getValue()).stream())
                     .collect(Collectors.joining("\n\n"));
             //emit nested class
             String factoryDecl =
@@ -233,7 +246,7 @@ public class ClassGenerator {
     /**
      * Generate a list of factory methods/fields to be added to a given factory nested class.
      */
-    List<String> generateFactoryMethodsAndFields(String key, Message msg) {
+    List<String> generateFactoryMethodsAndFields(FactoryKind k, String key, Message msg) {
         MessageInfo msgInfo = msg.getMessageInfo();
         List<MessageLine> lines = msg.getLines(false);
         String javadoc = lines.stream()
@@ -241,7 +254,6 @@ public class ClassGenerator {
                 .map(ml -> ml.text)
                 .collect(Collectors.joining("\n *"));
         String[] keyParts = key.split("\\.");
-        FactoryKind k = FactoryKind.parseFrom(keyParts[1]);
         String lintCategory = lines.stream()
                 .filter(MessageLine::isLint)
                 .map(MessageLine::lintCategory)

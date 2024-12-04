@@ -304,8 +304,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         //where
             DiagnosticInfo normalize(DiagnosticInfo diagnosticInfo) {
                 //replace all nested FragmentKey with full-blown JCDiagnostic objects
-                LintCategory category = diagnosticInfo instanceof Warning warning ?
-                        warning.category : null;
+                LintCategory category = diagnosticInfo instanceof LintWarning lintWarning ?
+                        lintWarning.category : null;
                 return DiagnosticInfo.of(diagnosticInfo.type, category, diagnosticInfo.prefix, diagnosticInfo.code,
                         Stream.of(diagnosticInfo.args).map(o -> {
                             return (o instanceof Fragment frag) ?
@@ -542,7 +542,9 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
                 case ERROR:
                     return new Error(prefix, code, args);
                 case WARNING:
-                    return new Warning(lc, prefix, code, args);
+                    return lc == null ?
+                            new Warning(prefix, code, args) :
+                            new LintWarning(lc, prefix, code, args);
                 case NOTE:
                     return new Note(prefix, code, args);
                 case FRAGMENT:
@@ -584,16 +586,25 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     /**
      * Class representing warning diagnostic keys.
      */
-    public static final class Warning extends DiagnosticInfo {
+    public static sealed class Warning extends DiagnosticInfo {
+        public Warning(String prefix, String key, Object... args) {
+            super(DiagnosticType.WARNING, prefix, key, args);
+        }
+    }
+
+    /**
+     * Class representing warning diagnostic keys.
+     */
+    public static final class LintWarning extends Warning {
         final LintCategory category;
 
-        public Warning(String prefix, String key, Object... args) {
-            this(null, prefix, key, args);
+        public LintWarning(LintCategory category, String prefix, String key, Object... args) {
+            super(prefix, key, args);
+            this.category = category;
         }
 
-        public Warning(LintCategory category, String prefix, String key, Object... args) {
-            super(DiagnosticType.WARNING, prefix, key, args);
-            this.category = category;
+        public LintCategory getLintCategory() {
+            return category;
         }
     }
 
@@ -697,8 +708,8 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Get the associated lint category, or null if none.
      */
     public LintCategory getLintCategory() {
-        return diagnosticInfo instanceof Warning warning ?
-                warning.category : null;
+        return diagnosticInfo instanceof LintWarning lintWarning ?
+                lintWarning.category : null;
     }
 
     /**

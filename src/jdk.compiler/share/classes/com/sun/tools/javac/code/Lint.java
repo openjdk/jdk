@@ -33,7 +33,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 
@@ -93,6 +96,7 @@ public class Lint
         return l;
     }
 
+    private final Log log;
     private final AugmentVisitor augmentor;
 
     private final EnumSet<LintCategory> values;
@@ -146,12 +150,14 @@ public class Lint
 
         context.put(lintKey, this);
         augmentor = new AugmentVisitor(context);
+        log = Log.instance(context);
     }
 
     protected Lint(Lint other) {
         this.augmentor = other.augmentor;
         this.values = other.values.clone();
         this.suppressedValues = other.suppressedValues.clone();
+        this.log = other.log;
     }
 
     @Override
@@ -383,6 +389,15 @@ public class Lint
      */
     public boolean isSuppressed(LintCategory lc) {
         return suppressedValues.contains(lc);
+    }
+
+    /**
+     * Helper method. Log a lint warning if its lint category is enabled.
+     */
+    public void logIfEnabled(DiagnosticPosition pos, LintWarning warning) {
+        if (isEnabled(warning.getLintCategory())) {
+            log.warning(pos, warning);
+        }
     }
 
     protected static class AugmentVisitor implements Attribute.Visitor {

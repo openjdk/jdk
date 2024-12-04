@@ -77,6 +77,8 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardJavaFileManager.PathFactory;
 import javax.tools.StandardLocation;
 
+import com.sun.tools.javac.code.Lint;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import jdk.internal.jmod.JmodFile;
 
 import com.sun.tools.javac.main.Option;
@@ -222,7 +224,7 @@ public class Locations {
                     entries.add(getPath(s));
                 } catch (IllegalArgumentException e) {
                     if (warn) {
-                        log.warning(Warnings.InvalidPath(s));
+                        log.warning(LintWarnings.InvalidPath(s));
                     }
                 }
             }
@@ -318,7 +320,7 @@ public class Locations {
             if (!Files.isDirectory(dir)) {
                 if (warn) {
                     log.warning(
-                            Warnings.DirPathElementNotFound(dir));
+                            LintWarnings.DirPathElementNotFound(dir));
                 }
                 return;
             }
@@ -364,7 +366,7 @@ public class Locations {
                 /* No such file or directory exists */
                 if (warn) {
                     log.warning(
-                            Warnings.PathElementNotFound(file));
+                            LintWarnings.PathElementNotFound(file));
                 }
                 super.add(file);
                 return;
@@ -387,13 +389,13 @@ public class Locations {
                             FileSystems.newFileSystem(file, (ClassLoader)null).close();
                             if (warn) {
                                 log.warning(
-                                        Warnings.UnexpectedArchiveFile(file));
+                                        LintWarnings.UnexpectedArchiveFile(file));
                             }
                         } catch (IOException | ProviderNotFoundException e) {
                             // FIXME: include e.getLocalizedMessage in warning
                             if (warn) {
                                 log.warning(
-                                        Warnings.InvalidArchiveFile(file));
+                                        LintWarnings.InvalidArchiveFile(file));
                             }
                             return;
                         }
@@ -1658,8 +1660,8 @@ public class Locations {
             if (!Files.isDirectory(prefix)) {
                 if (warn) {
                     Warning key = Files.exists(prefix)
-                            ? Warnings.DirPathElementNotDirectory(prefix)
-                            : Warnings.DirPathElementNotFound(prefix);
+                            ? LintWarnings.DirPathElementNotDirectory(prefix)
+                            : LintWarnings.DirPathElementNotFound(prefix);
                     log.warning(key);
                 }
                 return;

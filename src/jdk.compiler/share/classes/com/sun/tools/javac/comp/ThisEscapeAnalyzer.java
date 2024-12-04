@@ -51,6 +51,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -421,12 +422,12 @@ class ThisEscapeAnalyzer extends TreeScanner {
             previous = warning;
 
             // Emit warnings showing the entire stack trace
-            JCDiagnostic.Warning key = Warnings.PossibleThisEscape;
+            JCDiagnostic.Warning key = LintWarnings.PossibleThisEscape;
             int remain = warning.length;
             do {
                 DiagnosticPosition pos = warning[--remain];
                 log.warning(pos, key);
-                key = Warnings.PossibleThisEscapeLocation;
+                key = LintWarnings.PossibleThisEscapeLocation;
             } while (remain > 0);
         }
         warningList.clear();

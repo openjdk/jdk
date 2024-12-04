@@ -33,6 +33,7 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.Note;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 
@@ -110,21 +111,25 @@ public class MandatoryWarningHandler {
      *                True if mandatory warnings and notes are being enforced.
      * @param prefix  A common prefix for the set of message keys for
      *                the messages that may be generated.
+     * @param lc      An associated lint category for the warnings, or null if none.
      */
     public MandatoryWarningHandler(Log log, Source source, boolean verbose,
-                                   boolean enforceMandatory, String prefix) {
+                                   boolean enforceMandatory, String prefix,
+                                   LintCategory lc) {
         this.log = log;
         this.source = source;
         this.verbose = verbose;
         this.prefix = prefix;
         this.enforceMandatory = enforceMandatory;
+        this.lintCategory = lc;
     }
 
     /**
      * Report a mandatory warning.
      */
-    public void report(DiagnosticPosition pos, Warning warnKey) {
+    public void report(DiagnosticPosition pos, LintWarning warnKey) {
         JavaFileObject currentSource = log.currentSourceFile();
+        Assert.check(warnKey.getLintCategory() == lintCategory);
 
         if (verbose) {
             if (sourcesWithReportedWarnings == null)
@@ -242,6 +247,12 @@ public class MandatoryWarningHandler {
      * True if mandatory warnings and notes are being enforced.
      */
     private final boolean enforceMandatory;
+
+    /**
+     * A LintCategory to be included in point-of-use diagnostics to indicate
+     * how messages might be suppressed (i.e. with @SuppressWarnings).
+     */
+    private final LintCategory lintCategory;
 
     /**
      * Reports a mandatory warning to the log.  If mandatory warnings
