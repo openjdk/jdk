@@ -30,6 +30,7 @@ import jdk.test.lib.Asserts;
  * @bug 8345219
  * @summary Test that code generation for FP conversion works as intended
  * @library /test/lib /
+ * @requires os.arch != "x86" & os.arch != "i386"
  * @run driver compiler.c2.irTests.TestFPConversion
  */
 public class TestFPConversion {
