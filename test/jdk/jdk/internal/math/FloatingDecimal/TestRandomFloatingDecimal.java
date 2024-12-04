@@ -169,7 +169,7 @@ public class TestRandomFloatingDecimal {
                 0x10));
 
         int p = 0;
-        if (RANDOM.nextInt(8) != 0) {  // 87.5% chance for a point
+        if (RANDOM.nextInt(8) != 0) {  // 87.5% chance of point presence
             int pointPos = RANDOM.nextInt(leadingZeros + digits + trailingZeros + 1);
             sb.insert(leadingWhites + signLen + 2 + pointPos, '.');
             p = -4 * (leadingZeros + digits + trailingZeros - pointPos);
