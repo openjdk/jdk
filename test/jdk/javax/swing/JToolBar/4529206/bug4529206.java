@@ -30,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
+import javax.swing.plaf.basic.BasicToolBarUI;
 
 /*
  * @test
@@ -64,7 +65,7 @@ public class bug4529206 {
     }
 
     private static void makeToolbarFloat() {
-        javax.swing.plaf.basic.BasicToolBarUI ui = (javax.swing.plaf.basic.BasicToolBarUI) jToolBar1.getUI();
+        BasicToolBarUI ui = (BasicToolBarUI) jToolBar1.getUI();
         if (!ui.isFloating()) {
             ui.setFloatingLocation(100, 100);
             ui.setFloating(true, jToolBar1.getLocation());
@@ -88,8 +89,8 @@ public class bug4529206 {
 
             SwingUtilities.invokeAndWait(() -> {
                 if (frame.isFocused()) {
-                    throw
-                      new RuntimeException("setFloating does not work correctly");
+                    throw new RuntimeException(
+                        "setFloating does not work correctly");
                 }
             });
         } finally {
