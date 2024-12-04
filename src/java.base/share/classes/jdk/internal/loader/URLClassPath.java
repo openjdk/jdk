@@ -654,7 +654,10 @@ public class URLClassPath {
             }
         }
 
-        /* Throws if the given jar file does not start with the correct LOC */
+        /*
+         * Throws an IOException if the LOC file Header Signature (0x04034b50),
+         * is not found starting at byte 0 of the given jar.
+         */
         static JarFile checkJar(JarFile jar) throws IOException {
             if (!JAR_CHECKING_ENABLED) {
                 return jar;
