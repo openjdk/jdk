@@ -9979,8 +9979,9 @@ instruct ShouldNotReachHere() %{
 instruct partialSubtypeCheck(rarg1RegP index, rarg2RegP sub, rarg3RegP super, flagsReg pcc,
                              rarg4RegP scratch1, rarg5RegP scratch2) %{
   match(Set index (PartialSubtypeCheck sub super));
+  predicate(!UseSecondarySupersTable);
   effect(KILL pcc, KILL scratch1, KILL scratch2);
-  ins_cost(10 * DEFAULT_COST);
+  ins_cost(20 * DEFAULT_COST); // slightly larger than the next version
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "  CALL   PartialSubtypeCheck\n" %}
   ins_encode %{
@@ -9991,21 +9992,45 @@ instruct partialSubtypeCheck(rarg1RegP index, rarg2RegP sub, rarg3RegP super, fl
   ins_pipe(pipe_class_dummy);
 %}
 
+// Two versions of partialSubtypeCheck, both used when we need to
+// search for a super class in the secondary supers array. The first
+// is used when we don't know _a priori_ the class being searched
+// for. The second, far more common, is used when we do know: this is
+// used for instanceof, checkcast, and any case where C2 can determine
+// it by constant propagation.
+instruct partialSubtypeCheckVarSuper(rarg2RegP sub, rarg3RegP super,
+                                     r11TempRegP result,
+                                     rarg1RegP temp1, rarg4RegP temp2, rarg5RegP temp3, r10TempRegP temp4,
+                                     flagsReg pcc) %{
+  match(Set result (PartialSubtypeCheck sub super));
+  predicate(UseSecondarySupersTable);
+  effect(KILL pcc, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
+  ins_cost(10 * DEFAULT_COST); // slightly larger than the next version
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
+  ins_encode %{
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register,
+                                         $temp1$$Register, $temp2$$Register, $temp3$$Register, $temp4$$Register,
+                                         $result$$Register);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+
 instruct partialSubtypeCheckConstSuper(rarg2RegP sub, rarg1RegP super, immP super_con,
                                        r11TempRegP result, rarg5RegP temp1, rarg4RegP temp2,
                                        rarg3RegP temp3, r10TempRegP temp4, flagsReg pcc) %{
   match(Set result (PartialSubtypeCheck sub (Binary super super_con)));
   predicate(UseSecondarySupersTable);
   effect(KILL pcc, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
-  ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
+  ins_cost(5 * DEFAULT_COST); // smaller than the next version
   format %{ "partialSubtypeCheck $result, $sub, $super, $super_con" %}
 
   ins_encode %{
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      __ lookup_secondary_supers_table($sub$$Register, $super$$Register,
-                                                 $temp1$$Register, $temp2$$Register, $temp3$$Register,
-                                                 $temp4$$Register, $result$$Register, super_klass_slot);
+      __ lookup_secondary_supers_table_const($sub$$Register, $super$$Register,
+                                             $temp1$$Register, $temp2$$Register, $temp3$$Register,
+                                             $temp4$$Register, $result$$Register, super_klass_slot);
     } else {
       AddressLiteral stub_address(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot));
       __ load_const_optimized(Z_ARG4, stub_address);
@@ -10014,21 +10039,6 @@ instruct partialSubtypeCheckConstSuper(rarg2RegP sub, rarg1RegP super, immP supe
 
   %}
 
-  ins_pipe(pipe_class_dummy);
-%}
-
-instruct partialSubtypeCheck_vs_zero(flagsReg pcc, rarg2RegP sub, rarg3RegP super, immP0 zero,
-                                     rarg1RegP index, rarg4RegP scratch1, rarg5RegP scratch2) %{
-  match(Set pcc (CmpI (PartialSubtypeCheck sub super) zero));
-  effect(KILL scratch1, KILL scratch2, KILL index);
-  ins_cost(10 * DEFAULT_COST);
-  // TODO: s390 port size(FIXED_SIZE);
-  format %{ "CALL   PartialSubtypeCheck_vs_zero\n" %}
-  ins_encode %{
-    AddressLiteral stub_address(StubRoutines::zarch::partial_subtype_check());
-    __ load_const_optimized(Z_ARG4, stub_address);
-    __ z_basr(Z_R14, Z_ARG4);
-  %}
   ins_pipe(pipe_class_dummy);
 %}
 
