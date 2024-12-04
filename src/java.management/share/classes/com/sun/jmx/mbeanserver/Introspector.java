@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,10 @@ import javax.management.NotCompliantMBeanException;
 import com.sun.jmx.remote.util.EnvHelp;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
 import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * This class contains the methods for performing all the tests needed to verify
@@ -66,12 +64,7 @@ import sun.reflect.misc.ReflectUtil;
  * @since 1.5
  */
 public class Introspector {
-    public static final boolean ALLOW_NONPUBLIC_MBEAN;
-    static {
-        @SuppressWarnings("removal")
-        String val = AccessController.doPrivileged(new GetPropertyAction("jdk.jmx.mbeans.allowNonPublic"));
-        ALLOW_NONPUBLIC_MBEAN = Boolean.parseBoolean(val);
-    }
+    public static final boolean ALLOW_NONPUBLIC_MBEAN = Boolean.parseBoolean(System.getProperty("jdk.jmx.mbeans.allowNonPublic"));
 
      /*
      * ------------------------------------------
@@ -276,7 +269,6 @@ public class Introspector {
             throws NotCompliantMBeanException {
         if (mbeanInterface == null)
             mbeanInterface = getStandardMBeanInterface(baseClass);
-        ReflectUtil.checkPackageAccess(mbeanInterface);
         MBeanIntrospector<?> introspector = StandardMBeanIntrospector.getInstance();
         return getClassMBeanInfo(introspector, baseClass, mbeanInterface);
     }
@@ -401,18 +393,12 @@ public class Introspector {
         for (Annotation a : annots) {
             Class<? extends Annotation> c = a.annotationType();
             Method[] elements = c.getMethods();
-            boolean packageAccess = false;
             for (Method element : elements) {
                 DescriptorKey key = element.getAnnotation(DescriptorKey.class);
                 if (key != null) {
                     String name = key.value();
                     Object value;
                     try {
-                        // Avoid checking access more than once per annotation
-                        if (!packageAccess) {
-                            ReflectUtil.checkPackageAccess(c);
-                            packageAccess = true;
-                        }
                         value = MethodUtil.invoke(element, a, null);
                     } catch (RuntimeException e) {
                         // we don't expect this - except for possibly
@@ -560,7 +546,6 @@ public class Introspector {
                     readMethod = SimpleIntrospector.getReadMethod(clazz, element);
                 }
                 if (readMethod != null) {
-                    ReflectUtil.checkPackageAccess(readMethod.getDeclaringClass());
                     return MethodUtil.invoke(readMethod, complex, new Class<?>[0]);
                 }
 

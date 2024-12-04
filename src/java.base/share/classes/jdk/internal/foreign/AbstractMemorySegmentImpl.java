@@ -889,23 +889,27 @@ public abstract sealed class AbstractMemorySegmentImpl
         layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }
 
+    @ForceInline
     @Override
     public String getString(long offset) {
         return getString(offset, sun.nio.cs.UTF_8.INSTANCE);
     }
 
+    @ForceInline
     @Override
     public String getString(long offset, Charset charset) {
         Objects.requireNonNull(charset);
         return StringSupport.read(this, offset, charset);
     }
 
+    @ForceInline
     @Override
     public void setString(long offset, String str) {
         Objects.requireNonNull(str);
         setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
     }
 
+    @ForceInline
     @Override
     public void setString(long offset, String str, Charset charset) {
         Objects.requireNonNull(charset);

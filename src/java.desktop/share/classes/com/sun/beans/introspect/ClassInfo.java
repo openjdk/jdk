@@ -45,11 +45,7 @@ public final class ClassInfo {
         if (type == null) {
             return DEFAULT;
         }
-        try {
-            return CACHE.get(type);
-        } catch (SecurityException exception) {
-            return DEFAULT;
-        }
+        return CACHE.get(type);
     }
 
     public static void clear() {
