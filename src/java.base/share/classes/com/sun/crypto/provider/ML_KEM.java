@@ -237,7 +237,7 @@ public final class ML_KEM {
         System.arraycopy(kPkePrivateKey, 0, decapsKey, 0, kPkePrivateKey.length);
         Arrays.fill(kPkePrivateKey, (byte)0);
         System.arraycopy(encapsKey, 0, decapsKey,
-            kPkePrivateKey.length, encapsKey.length);
+                kPkePrivateKey.length, encapsKey.length);
 
         mlKemH.update(encapsKey);
         try {
@@ -272,7 +272,7 @@ public final class ML_KEM {
         var kHatAndRandomCoins = mlKemG.digest();
         var randomCoins = Arrays.copyOfRange(kHatAndRandomCoins, 32, 64);
         var cipherText = kPkeEncrypt(new K_PKE_EncryptionKey(encapsulationKey.keyBytes),
-            randomMessage, randomCoins);
+                randomMessage, randomCoins);
         Arrays.fill(randomCoins, (byte) 0);
         byte[] sharedSecret = Arrays.copyOfRange(kHatAndRandomCoins, 0, 32);
         Arrays.fill(kHatAndRandomCoins, (byte) 0);
@@ -302,7 +302,7 @@ public final class ML_KEM {
 
         byte[] kPkePrivateKeyBytes = new byte[mlKem_k * encode12PolyLen];
         System.arraycopy(decapsKeyBytes, 0, kPkePrivateKeyBytes, 0,
-            kPkePrivateKeyBytes.length);
+                kPkePrivateKeyBytes.length);
 
         byte[] encapsKeyBytes = new byte[mlKem_k * encode12PolyLen + 32];
         System.arraycopy(decapsKeyBytes, mlKem_k * encode12PolyLen,
@@ -416,8 +416,8 @@ public final class ML_KEM {
                 pkEncoded, (mlKem_k * ML_KEM_N * 12) / 8, rho.length);
 
         return new K_PKE_KeyPair(
-            new K_PKE_EncryptionKey(pkEncoded),
-            new K_PKE_DecryptionKey(skEncoded));
+                new K_PKE_EncryptionKey(pkEncoded),
+                new K_PKE_DecryptionKey(skEncoded));
     }
 
     private K_PKE_CipherText kPkeEncrypt(
@@ -832,10 +832,10 @@ public final class ML_KEM {
             int b0 = nttb[2 * m];
             int b1 = nttb[2 * m + 1];
             int r = montMul(a0, b0) +
-                montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
+                    montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
             result[2 * m] = (short) montMul(r, MONT_R_SQUARE_MOD_Q);
             result[2 * m + 1] = (short) montMul(
-                (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
+                    (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
         }
     }
 
@@ -1008,9 +1008,9 @@ public final class ML_KEM {
 
         for (int i = 0; i < parsedLength * 3 / 2; i += 3) {
             parsed[(i / 3) * 2] = (short) ((condensed[i + index] & 0xff) +
-                256 * (condensed[i + index + 1] & 0xf));
+                    256 * (condensed[i + index + 1] & 0xf));
             parsed[(i / 3) * 2 + 1] = (short) (((condensed[i + index + 1] >>> 4) & 0xf) +
-                16 * (condensed[i + index + 2] & 0xff));
+                    16 * (condensed[i + index + 2] & 0xff));
         }
     }
 
@@ -1163,8 +1163,7 @@ public final class ML_KEM {
     // representative of its residue class.
     private void mlKemBarrettReduce(short[] poly) {
         for (int m = 0; m < ML_KEM_N; m++) {
-            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >>
-                BARRETT_SHIFT;
+            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >> BARRETT_SHIFT;
             poly[m] = (short) (poly[m] - tmp * ML_KEM_Q);
         }
     }
@@ -1176,8 +1175,8 @@ public final class ML_KEM {
         int a = b * c;
         int aHigh = a >> MONT_R_BITS;
         int aLow = a & ((1 << MONT_R_BITS) - 1);
-        int m = ((MONT_Q_INV_MOD_R * aLow) << (32 - MONT_R_BITS)) >>
-                (32 - MONT_R_BITS); // signed low product
+        // signed low product
+        int m = ((MONT_Q_INV_MOD_R * aLow) << (32 - MONT_R_BITS)) >> (32 - MONT_R_BITS);
 
         return (aHigh - ((m * MONT_Q) >> MONT_R_BITS)); // subtract signed high product
     }

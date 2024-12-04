@@ -25,7 +25,6 @@
 
 package sun.security.provider;
 
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import sun.security.provider.SHA3.SHAKE128;
 import sun.security.provider.SHA3.SHAKE256;
 
@@ -527,13 +526,13 @@ public class ML_DSA {
                 int tOffset = j*4;
                 int vOffset = (i*320) + (j*5);
                 t1[i][tOffset] = (v[vOffset] & 0xFF) +
-                    ((v[vOffset+1] << 8) & 0x3FF);
+                        ((v[vOffset+1] << 8) & 0x3FF);
                 t1[i][tOffset+1] = ((v[vOffset+1] >> 2) & 0x3F) +
-                    ((v[vOffset+2] << 6) & 0x3FF);
+                        ((v[vOffset+2] << 6) & 0x3FF);
                 t1[i][tOffset+2] = ((v[vOffset+2] >> 4) & 0xF) +
-                    ((v[vOffset+3] << 4) & 0x3FF);
+                        ((v[vOffset+3] << 4) & 0x3FF);
                 t1[i][tOffset+3] = ((v[vOffset+3] >> 6) & 0x3) +
-                    ((v[vOffset+4] << 2) & 0x3FF);
+                        ((v[vOffset+4] << 2) & 0x3FF);
             }
         }
         return t1;
@@ -875,8 +874,8 @@ public class ML_DSA {
                         rawOfs = 0;
                     }
                     tmp = (rawAij[rawOfs] & 0xFF) +
-                        ((rawAij[rawOfs + 1] & 0xFF) << 8) +
-                        ((rawAij[rawOfs + 2] & 0x7F) << 16);
+                            ((rawAij[rawOfs + 1] & 0xFF) << 8) +
+                            ((rawAij[rawOfs + 2] & 0x7F) << 16);
                     rawOfs += 3;
                     if (tmp < ML_DSA_Q) {
                         aij[ofs] = tmp;
@@ -981,7 +980,7 @@ public class ML_DSA {
         int multiplier = (gamma2 == 95232 ? 22 : 8);
         for (int i = 0; i < mlDsa_k; i++) {
             ML_DSA.mlDsaDecomposePoly(input[i], lowPart[i],
-                highPart[i], gamma2 * 2, multiplier);
+                    highPart[i], gamma2 * 2, multiplier);
         }
     }
 
@@ -1057,7 +1056,7 @@ public class ML_DSA {
                     int tmp = coeffs[j];
                     coeffs[j] = (tmp + coeffs[j + l]);
                     coeffs[j + l] = montMul(tmp - coeffs[j + l],
-                        MONT_ZETAS_FOR_INVERSE_NTT[m]);
+                            MONT_ZETAS_FOR_INVERSE_NTT[m]);
                 }
                 m++;
             }
