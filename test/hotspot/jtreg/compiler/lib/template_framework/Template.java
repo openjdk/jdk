@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
  *
  */
 public final class Template implements CodeGenerator {
+    public static final int DEFAULT_FUEL_COST = 10;
     // Match local variables:
     //   $name
     private static final String VARIABLE_PATTERN = "(\\$\\w+)";
@@ -70,9 +71,20 @@ public final class Template implements CodeGenerator {
     private static final Pattern PATTERNS = Pattern.compile(ALL_PATTERNS);
 
     private final String templateString;
+    private final int templateFuelCost;
+
+
+    public Template(String templateString, int fuelCost) {
+        this.templateString = templateString;
+        this.templateFuelCost = fuelCost;
+    }
 
     public Template(String templateString) {
-        this.templateString = templateString;
+        this(templateString, DEFAULT_FUEL_COST);
+    }
+
+    public int fuelCost() {
+        return templateFuelCost;
     }
 
     private class InstantiationState {
@@ -130,7 +142,7 @@ public final class Template implements CodeGenerator {
                                                      ". Got " + templated);
             }
 
-            Scope nestedScope = new Scope(scope);
+            Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost());
             Parameters parameters = new Parameters(argumentsMap);
             generator.instantiate(nestedScope, parameters);
             nestedScope.close();

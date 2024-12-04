@@ -54,6 +54,7 @@ public final class SelectorCodeGenerator implements CodeGenerator {
     }
 
     private String choose(Scope scope) {
+        System.out.println("fuel: " + scope.fuel);
         // TODO maybe cache the generators, so we can more quickly iterate?
         // Total weight of allowed choices
         double total = 0;
@@ -64,7 +65,7 @@ public final class SelectorCodeGenerator implements CodeGenerator {
             if (codeGenerator == null) {
                 throw new TemplateFrameworkException("CodeGenerator not found in library: " + name);
             }
-            // TODO check fuel
+            if (scope.fuel < codeGenerator.fuelCost()) { continue; }
             total += weight;
         }
 
@@ -79,13 +80,17 @@ public final class SelectorCodeGenerator implements CodeGenerator {
             String name = entry.getKey();
             float weight = entry.getValue().floatValue();
             CodeGenerator codeGenerator = scope.library().find(name);
-            // TODO check fuel
+            if (scope.fuel < codeGenerator.fuelCost()) { continue; }
             total2 += weight;
             if (r <= total2) {
                 return name;
             }
         }
         throw new TemplateFrameworkException("Failed to select total=" + total + ", r=" + r);
+    }
+
+    public int fuelCost() {
+        return 0; // We only forward, at no cost.
     }
 
     public void instantiate(Scope scope, Parameters parameters) {
@@ -97,7 +102,12 @@ public final class SelectorCodeGenerator implements CodeGenerator {
             throw new TemplateFrameworkException("Template generator not found: " + generatorName);
         }
 
-        // Dispatch via same scope and parameters.
-        generator.instantiate(scope, parameters);
+        // Dispatch via with new scope, but the same parameters.
+        Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost());
+        generator.instantiate(nestedScope, parameters);
+        nestedScope.close();
+
+        // Add all generated code to the outer scope's stream.
+        scope.stream.addCodeStream(nestedScope.stream);
     }
 } 

@@ -63,7 +63,7 @@ public class CodeGeneratorLibrary {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
 
         // Constants.
-        codeGenerators.put("int_con", (Scope scope, Parameters parameters) -> { scope.stream.addCode("123"); });
+        codeGenerators.put("int_con", new Template("123"));
 
         // Code blocks.
         codeGenerators.put("empty", new Template(
@@ -83,8 +83,8 @@ public class CodeGeneratorLibrary {
 
         // Selector for code blocks.
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("empty");
-        selectorForCode.add("empty", 1); // TODO rm
-        selectorForCode.add("split", 1);
+        selectorForCode.add("empty", 0.2f); // TODO rm
+        selectorForCode.add("split", 100);
         codeGenerators.put("code", selectorForCode);
 
         return new CodeGeneratorLibrary(null, codeGenerators);

@@ -28,10 +28,12 @@ package compiler.lib.template_framework;
  */
 public class Scope {
     public final Scope parent;
+    public final long fuel;
     public final CodeStream stream;
 
-    public Scope(Scope parent) {
+    public Scope(Scope parent, long fuel) {
         this.parent = parent;
+        this.fuel = fuel;
         this.stream = new CodeStream();
     }
 

@@ -27,17 +27,17 @@ package compiler.lib.template_framework;
  * TODO public?
  */
 public class BaseScope extends Scope {
+    public static final int DEFAULT_FUEL = 20;
     private final CodeGeneratorLibrary codeGeneratorLibrary;
 
-    public BaseScope(CodeGeneratorLibrary codeGeneratorLibrary) {
-        super(null);
+    public BaseScope(long fuel, CodeGeneratorLibrary codeGeneratorLibrary) {
+        super(null, fuel);
         this.codeGeneratorLibrary = codeGeneratorLibrary;
     }
 
     public BaseScope() {
-        this(CodeGeneratorLibrary.standard());
+        this(DEFAULT_FUEL, CodeGeneratorLibrary.standard());
     }
-
 
     @Override
     public CodeGeneratorLibrary library() {
