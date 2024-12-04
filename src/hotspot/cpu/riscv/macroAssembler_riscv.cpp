@@ -3576,7 +3576,7 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   bind(done);
 }
 
-void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
+void MacroAssembler::weak_cmpxchg(Register addr, Register expected,
                                   Register new_val,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
