@@ -25,7 +25,6 @@
 #ifndef SHARE_C1_C1_LINEARSCAN_HPP
 #define SHARE_C1_C1_LINEARSCAN_HPP
 
-#include "c1/c1_FpuStackSim.hpp"
 #include "c1/c1_FrameMap.hpp"
 #include "c1/c1_IR.hpp"
 #include "c1/c1_Instruction.hpp"
@@ -174,8 +173,6 @@ class LinearScan : public CompilationResourceObj {
   bool          has_fpu_registers() const        { return _has_fpu_registers; }
   int           num_loops() const                { return ir()->num_loops(); }
   bool          is_interval_in_loop(int interval, int loop) const { return _interval_in_loop.at(interval, loop); }
-
-  bool use_fpu_stack_allocation() const          { return false; }
 
   // access to interval list
   int           interval_count() const           { return _intervals.length(); }
@@ -347,11 +344,6 @@ class LinearScan : public CompilationResourceObj {
 
   void assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw);
   void assign_reg_num();
-
-
-  // Phase 8: fpu stack allocation
-  // (Used only on x86 when fpu operands are present)
-  void allocate_fpu_stack();
 
 
   // helper functions for printing state
@@ -943,7 +935,6 @@ class LinearScanTimers : public StackObj {
     timer_sort_intervals_after,
     timer_eliminate_spill_moves,
     timer_assign_reg_num,
-    timer_allocate_fpu_stack,
     timer_optimize_lir,
 
     number_of_timers

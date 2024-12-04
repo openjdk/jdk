@@ -43,7 +43,6 @@ class LIR_Op;
 class ciType;
 class ValueType;
 class LIR_OpVisitState;
-class FpuStackSim;
 
 //---------------------------------------------------------------------
 //                 LIR Operands

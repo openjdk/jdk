@@ -1837,8 +1837,7 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, int reg_num, MoveRes
   int reg = interval->assigned_reg();
   int regHi = interval->assigned_regHi();
 
-  if ((reg < nof_regs && interval->always_in_memory()) ||
-      (use_fpu_stack_allocation() && reg >= pd_first_fpu_reg && reg <= pd_last_fpu_reg)) {
+  if ((reg < nof_regs && interval->always_in_memory())) {
     // the interval is split to get a short range that is located on the stack
     // in the following two cases:
     // * the interval started in memory (e.g. method parameter), but is currently in a register
@@ -2973,15 +2972,9 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
       compute_oop_map(iw, visitor, op);
 
       // compute debug information
-      if (!use_fpu_stack_allocation()) {
-        // compute debug information if fpu stack allocation is not needed.
-        // when fpu stack allocation is needed, the debug information can not
-        // be computed here because the exact location of fpu operands is not known
-        // -> debug information is created inside the fpu stack allocator
-        int n = visitor.info_count();
-        for (int k = 0; k < n; k++) {
-          compute_debug_info(visitor.info_at(k), op_id);
-        }
+      int n = visitor.info_count();
+      for (int k = 0; k < n; k++) {
+        compute_debug_info(visitor.info_at(k), op_id);
       }
     }
 
@@ -3077,14 +3070,6 @@ void LinearScan::do_linear_scan() {
 
   NOT_PRODUCT(print_lir(2, "LIR after assignment of register numbers:"));
   NOT_PRODUCT(LinearScanStatistic::compute(this, _stat_after_asign));
-
-  { TIME_LINEAR_SCAN(timer_allocate_fpu_stack);
-
-    if (use_fpu_stack_allocation()) {
-      allocate_fpu_stack(); // Only has effect on Intel
-      NOT_PRODUCT(print_lir(2, "LIR after FPU stack allocation:"));
-    }
-  }
 
 #ifndef RISCV
   // Disable these optimizations on riscv temporarily, because it does not
@@ -6753,7 +6738,6 @@ const char* LinearScanTimers::timer_name(int idx) {
     case timer_sort_intervals_after:     return "Sort Intervals After";
     case timer_eliminate_spill_moves:    return "Spill optimization";
     case timer_assign_reg_num:           return "Assign Reg Num";
-    case timer_allocate_fpu_stack:       return "Allocate FPU Stack";
     case timer_optimize_lir:             return "Optimize LIR";
     default: ShouldNotReachHere();       return "";
   }
