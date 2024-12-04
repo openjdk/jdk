@@ -1238,8 +1238,6 @@ bool PhaseIdealLoop::short_running_loop(IdealLoopTree* loop, jint stride_con, co
   IfNode* exit_test = head->loopexit();
 
   if (bt == T_LONG) {
-    // const TypeLong* new_limit_t = new_limit->Value(&_igvn)->is_long();
-    // new_limit = new ConvL2INode(new_limit, TypeInt::make(checked_cast<int>(new_limit_t->_lo), checked_cast<int>(new_limit_t->_hi), new_limit_t->_widen));
     new_limit = new ConvL2INode(new_limit);
     register_new_node(new_limit, entry_control);
   }

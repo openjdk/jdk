@@ -29,8 +29,8 @@ import jdk.test.whitebox.WhiteBox;
 import java.util.Objects;
 /*
  * @test
- * @bug 8342330
- * @summary C2: MemorySegment API slow with short running loops
+ * @bug 8342692
+ * @summary C2: long counted loop/long range checks: don't create loop-nest for short running loops
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

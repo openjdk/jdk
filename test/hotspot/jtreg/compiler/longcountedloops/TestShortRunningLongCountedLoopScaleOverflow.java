@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8342330
- * @summary C2: MemorySegment API slow with short running loops
+ * @bug 8342692
+ * @summary C2: long counted loop/long range checks: don't create loop-nest for short running loops
  * @requires vm.compiler2.enabled
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:LoopMaxUnroll=0
  *                   -XX:-UseLoopPredicate -XX:-RangeCheckElimination TestShortRunningLongCountedLoopScaleOverflow

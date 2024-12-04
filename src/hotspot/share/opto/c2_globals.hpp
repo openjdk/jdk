@@ -811,7 +811,8 @@
           "of constructors")                                                \
                                                                             \
   product(uintx, ShortLoopIter, 1000,                                       \
-          "Number of iterations for a short running loop")                  \
+          "long counted loop/long range checks: don't create loop nest if"  \
+          "loop runs for fewer iterations than ShortLoopIter")              \
           range(0, max_juint)                                               \
 
 // end of C2_FLAGS
