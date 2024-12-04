@@ -77,7 +77,7 @@ public:
     return (decorators & IN_NATIVE) != 0;
   }
 
-  void print_on(outputStream* st) const;
+  void print_on(outputStream* st) const override;
 
   template <class T>
   inline void arraycopy_barrier(T* src, T* dst, size_t count);
