@@ -67,18 +67,6 @@ public class CodeStream {
     }
 
     /**
-     * Add any code string, including newlines "\n".
-     */
-    public void addCode(String code) {
-        checkOpen();
-        String[] snippets = code.split("\n");
-        for (int i = 0; i < snippets.length; i++) {
-            if (i > 0) { addNewline(); }
-            addCodeToLine(snippets[i]);
-        }
-    }
-
-    /**
      * Add code to the current line, no newline allowed.
      */
     public void addCodeToLine(String code) {

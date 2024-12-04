@@ -30,10 +30,8 @@ import java.util.regex.Pattern;
 /**
  * TODO
  *
- * - indentation of templates?
  * - Extend library
  * - Implement variable sampling
- * - Fuel
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
  *   - Integrate with IR Framework
@@ -60,13 +58,18 @@ public final class Template implements CodeGenerator {
     private static final String REPLACEMENT_CHARS = "\\w:\\(\\),=";
     private static final String REPLACEMENT_PATTERN = "(#\\{[" + REPLACEMENT_CHARS + "]+\\})";
 
-    // Match either variable or replacement.
+    // Match newline + indentation:
+    private static final String NEWLINE_AND_INDENTATION_PATTERN = "(\\n *)";
+
+    // Match either variable or replacement or newline.
     private static final String ALL_PATTERNS = "" +
                                                VARIABLE_PATTERN +
                                                "|" +
                                                VARIABLE_WITH_TYPE_PATTERN +
                                                "|" +
                                                REPLACEMENT_PATTERN +
+                                               "|" +
+                                               NEWLINE_AND_INDENTATION_PATTERN +
                                                "";
     private static final Pattern PATTERNS = Pattern.compile(ALL_PATTERNS);
 
@@ -75,7 +78,8 @@ public final class Template implements CodeGenerator {
 
 
     public Template(String templateString, int fuelCost) {
-        this.templateString = templateString;
+        // Trim to remove the newline at the end of mutli-line strings.
+        this.templateString = templateString.trim();
         this.templateFuelCost = fuelCost;
     }
 
@@ -176,6 +180,7 @@ public final class Template implements CodeGenerator {
         // Parse the templateString, detect templated and nonTemplated segments.
         Matcher matcher = PATTERNS.matcher(templateString);
         int pos = 0;
+        int indentation = 0;
         while (matcher.find()) {
             int start = matcher.start();
             int end = matcher.end();
@@ -187,15 +192,38 @@ public final class Template implements CodeGenerator {
             pos = end;
 
             // The nonTemplated code segment can simply be added.
-            scope.stream.addCode(nonTemplated);
+            scope.stream.addCodeToLine(nonTemplated);
 
-            // The templated code needs to be analyzed and transformed or recursively generated.
-            handleTemplated(state, templated);
+            if (templated.startsWith("\n")) {
+                // Newline with indentation
+                int spaces = templated.length() - 1;
+                if (spaces % 4 != 0) {
+                    throw new TemplateFrameworkException("Template non factor-of-4 indentation: " + spaces);
+                }
+                int localIndentation = spaces / 4;
+                while (indentation < localIndentation) {
+                    indentation++;
+                    scope.stream.indent();
+                }
+                while (indentation > localIndentation) {
+                    indentation--;
+                    scope.stream.outdent();
+                }
+                scope.stream.addNewline();
+            } else {
+                // The templated code needs to be analyzed and transformed or recursively generated.
+                handleTemplated(state, templated);
+            }
         }
 
         // Cleanup: part after the last templated segments.
         String nonTemplated = templateString.substring(pos);
-        scope.stream.addCode(nonTemplated);
+        scope.stream.addCodeToLine(nonTemplated);
+
+        while (indentation > 0) {
+            indentation--;
+            scope.stream.outdent();
+        }
     }
 
     private void handleTemplated(InstantiationState state, String templated) {
@@ -244,7 +272,7 @@ public final class Template implements CodeGenerator {
                                                              "parameter with value " + parameterValue + ", so we " +
                                                              "cannot also define a generator. Got " + templated);
                     }
-                    state.scope.stream.addCode(parameterValue);
+                    state.scope.stream.addCodeToLine(parameterValue);
                     return;
                 }
             }
