@@ -1713,7 +1713,7 @@ bool PhaseIdealLoop::convert_to_counted_loop_with_speculative_long_limit(Node* l
   return true;
 }
 
-bool PhaseIdealLoop::convert_to_counted_loop(Node* loop_head, IdealLoopTree*&loop, BasicType iv_bt) {
+bool PhaseIdealLoop::convert_to_counted_loop(Node* loop_head, IdealLoopTree*& loop, BasicType iv_bt) {
   PhaseGVN *gvn = &_igvn;
 
   Node* back_control = loop_exit_control(loop_head, loop);
