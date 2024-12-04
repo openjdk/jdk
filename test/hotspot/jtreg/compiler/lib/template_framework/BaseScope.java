@@ -27,7 +27,7 @@ package compiler.lib.template_framework;
  * TODO public?
  */
 public class BaseScope extends Scope {
-    public static final int DEFAULT_FUEL = 30;
+    public static final int DEFAULT_FUEL = 50;
     private final CodeGeneratorLibrary codeGeneratorLibrary;
 
     public BaseScope(long fuel, CodeGeneratorLibrary codeGeneratorLibrary) {

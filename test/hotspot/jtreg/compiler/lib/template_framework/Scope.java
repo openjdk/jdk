@@ -42,11 +42,18 @@ public class Scope {
         public VariableSet(VariableSet parent) {
             this.parent = parent;
             this.variables = new HashMap<String,ArrayList<String>>();
-            this.totalVariables = new HashMap<String,Integer>();
+
+            // Initize counts to parent, or zero.
+            this.totalVariables = (parent == null) ? new HashMap<String,Integer>()
+                                                   : new HashMap<String,Integer>(parent.totalVariables);
         }
 
         public String sample(String type) {
             return "TODO_" + type;
+        }
+
+        public void add(String name, String type) {
+            // TODO
         }
     }
 
