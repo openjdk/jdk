@@ -25,8 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import jdk.internal.util.OperatingSystem;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,6 +42,8 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.FileUtils;
 
 /**
@@ -469,8 +469,11 @@ class StandardBundlerParam<T> extends BundlerParamInfo<T> {
                             }
                         }
 
-                        if (javaBasePath == null ||
-                                !Files.exists(javaBasePath)) {
+                        // JEP 493 allows for a JDK build without JMODs, thus
+                        // check for a linkable runtime before issuing the warning
+                        boolean linkableRuntime = JLinkBundlerHelper.isLinkableRuntime();
+                        if (!linkableRuntime && (javaBasePath == null ||
+                                                 !Files.exists(javaBasePath))) {
                             Log.error(String.format(I18N.getString(
                                     "warning.no.jdk.modules.found")));
                         }

@@ -85,4 +85,6 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
         jdk.tools.jlink.internal.plugins.CDSPlugin,
         jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin;
+
+    exports jdk.tools.jlink.internal to jdk.jpackage;
 }
