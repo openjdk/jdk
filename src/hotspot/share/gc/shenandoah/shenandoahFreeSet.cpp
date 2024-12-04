@@ -1264,9 +1264,6 @@ public:
   void work(uint worker_id) {
     ShenandoahHeapRegion* region = nullptr;
     while ((region = _regions.next()) != nullptr) {
-      if (!region->is_trash()) {
-        continue;
-      }
       region->try_recycle();
     }
   }

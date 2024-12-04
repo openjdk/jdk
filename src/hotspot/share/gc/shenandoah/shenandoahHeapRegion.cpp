@@ -597,8 +597,8 @@ void ShenandoahHeapRegion::recycle_under_lock() {
       generation->decrement_affiliated_region_count();
 
       recycle_internal();
-      _recycling.unset();
     }
+    _recycling.unset();
   } else {
     // Ensure recycling is unset before returning to mutator to continue memory allocation.
     while (_recycling.is_set()) {
@@ -613,7 +613,7 @@ void ShenandoahHeapRegion::recycle_under_lock() {
 
 void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
-  if (_recycling.try_set()) {
+  if (is_trash() && _recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
       ShenandoahHeap* heap = ShenandoahHeap::heap();
