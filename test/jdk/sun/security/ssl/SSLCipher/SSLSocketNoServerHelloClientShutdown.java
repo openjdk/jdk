@@ -53,6 +53,8 @@ import javax.net.ssl.SSLSocket;
  * To reproduce @bug 8331682 (client sends an unencrypted TLS alert during
  * TLSv1.3 handshake) with SSLSockets we use an SSLSocket on the server side
  * and a plain TCP socket backed by SSLEngine on the client side.
+ * Using SSLEngine allows the client to force the generation of the plaintext
+ * alert messages.
  */
 public class SSLSocketNoServerHelloClientShutdown
     extends SSLEngineNoServerHelloClientShutdown {
