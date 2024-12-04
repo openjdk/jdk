@@ -1525,7 +1525,7 @@ public final class Files {
             return ServiceLoader.load(FileTypeDetector.class,
                                       ClassLoader.getSystemClassLoader())
                 .stream()
-                .map(p -> p.get())
+                .map(ServiceLoader.Provider::get)
                 .toList();
         }
     }
