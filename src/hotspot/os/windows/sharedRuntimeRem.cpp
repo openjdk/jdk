@@ -32,7 +32,7 @@
 #define __LO(x) *(int*)&x
 
 // This code is a copy of __ieee754_fmod() formerly from the JDK's libfdlibm and
-// used to be a workaround for issues with the WIndows x64 CRT implementation of
+// used to be a workaround for issues with the Windows x64 CRT implementation of
 // fmod, but while Windows x64 now uses handwritten assembly, it was discovered
 // that Windows ARM64 now also suffers from the same bug, so this is now used
 // on Windows ARM64 instead. Microsoft has acknowledged that this is an issue in
