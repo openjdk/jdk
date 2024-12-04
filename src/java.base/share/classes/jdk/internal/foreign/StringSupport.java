@@ -204,7 +204,7 @@ public final class StringSupport {
             throw nullNotFound(segment, fromOffset, toOffset);
         }
         long offset = fromOffset;
-        // For quad words, it does not pay off to use long scanning on x64
+        // For quad byte strings, it does not pay off to use long scanning on x64
         if (!Architecture.isX64()) {
             final long longBytes = length & LONG_MASK;
             final long longLimit = fromOffset + longBytes;
