@@ -969,11 +969,9 @@ public final class ML_KEM {
         return vector;
     }
 
-    static void implMlKemNtt(short[] poly, short[] ntt_zetas) {
-        implMlKemNttJava(poly);
-    }
-
-    private static void implMlKemNttJava(short[] poly) {
+    // The elements of poly should be in the range [-ML_KEM_Q, ML_KEM_Q]
+    // The elements of poly at return will be in the range of [0, ML_KEM_Q]
+    private void mlKemNTT(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -982,20 +980,12 @@ public final class ML_KEM {
         for (int m = 0; m < ML_KEM_N; m++) {
             poly[m] = (short) coeffs[m];
         }
-    }
-
-    // The elements of poly should be in the range [-ML_KEM_Q, ML_KEM_Q]
-    // The elements of poly at return will be in the range of [0, ML_KEM_Q]
-    private void mlKemNTT(short[] poly) {
-        implMlKemNtt(poly, MONT_ZETAS_FOR_VECTOR_NTT_ARR);
         mlKemBarrettReduce(poly);
     }
 
-    static void implMlKemInverseNtt(short[] poly, short[] zetas) {
-        implMlKemInverseNttJava(poly);
-    }
-
-    private static void implMlKemInverseNttJava(short[] poly) {
+    // Works in place, but also returns its (modified) input so that it can
+    // be used in expressions
+    private short[] mlKemInverseNTT(short[] poly) {
         int[] coeffs = new int[ML_KEM_N];
         for (int m = 0; m < ML_KEM_N; m++) {
             coeffs[m] = poly[m];
@@ -1004,12 +994,6 @@ public final class ML_KEM {
         for (int m = 0; m < ML_KEM_N; m++) {
             poly[m] = (short) coeffs[m];
         }
-    }
-
-    // Works in place, but also returns its (modified) input so that it can
-    // be used in expressions
-    private short[] mlKemInverseNTT(short[] poly) {
-        implMlKemInverseNtt(poly, MONT_ZETAS_FOR_VECTOR_INVERSE_NTT_ARR);
         return poly;
     }
 
@@ -1100,32 +1084,21 @@ public final class ML_KEM {
         return result;
     }
 
-    static void implMlKemNttMult(short[] result, short[] ntta, short[] nttb,
-                                short[] zetas) {
-        implMlKemNttMultJava(result, ntta, nttb);
-    }
-
-    private static void implMlKemNttMultJava(short[] result,
-                                             short[] ntta, short[] nttb) {
-
+    // Multiplies two polynomials represented in the NTT domain.
+    // The result is a representation of the product still in the NTT domain.
+    // The coefficients in the result are in the range (-ML_KEM_Q, ML_KEM_Q).
+    private void nttMult(short[] result, short[] ntta, short[] nttb) {
         for (int m = 0; m < ML_KEM_N / 2; m++) {
             int a0 = ntta[2 * m];
             int a1 = ntta[2 * m + 1];
             int b0 = nttb[2 * m];
             int b1 = nttb[2 * m + 1];
             int r = montMul(a0, b0) +
-                    montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
+                montMul(montMul(a1, b1), MONT_ZETAS_FOR_NTT_MULT[m]);
             result[2 * m] = (short) montMul(r, MONT_R_SQUARE_MOD_Q);
             result[2 * m + 1] = (short) montMul(
-                    (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
+                (montMul(a0, b1) + montMul(a1, b0)), MONT_R_SQUARE_MOD_Q);
         }
-    }
-
-    // Multiplies two polynomials represented in the NTT domain.
-    // The result is a representation of the product still in the NTT domain.
-    // The coefficients in the result are in the range (-ML_KEM_Q, ML_KEM_Q).
-    private void nttMult(short[] result, short[] ntta, short[] nttb) {
-        implMlKemNttMult(result, ntta, nttb, MONT_ZETAS_FOR_VECTOR_NTT_MULT_ARR);
     }
 
     // Adds the vector of polynomials b to a in place, i.e. a will hold
@@ -1142,36 +1115,15 @@ public final class ML_KEM {
         return a;
     }
 
-    static void implMlKemAddPoly(short[] result, short[] a, short[] b) {
-        implMlKemAddPolyJava(result, a, b);
-    }
-
-    private static void implMlKemAddPolyJava(short[] result, short[] a, short[] b) {
-        for (int m = 0; m < ML_KEM_N; m++) {
-            int r = a[m] + b[m] + ML_KEM_Q; // This makes r > -ML_KEM_Q
-            result[m] = (short) r;
-        }
-    }
-
     // Adds the polynomial b to a in place, i.e. (the modified) a will hold
     // the result.
     // The coefficients are supposed be greater than -ML_KEM_Q in a and
     // greater than -ML_KEM_Q and less than ML_KEM_Q in b.
     // The coefficients in the result are greater than -ML_KEM_Q.
     private void mlKemAddPoly(short[] a, short[] b) {
-        implMlKemAddPoly(a, a, b);
-    }
-
-    static void implMlKemAddPoly(short[] result, short[] a, short[] b, short[] c) {
-        implMlKemAddPolyJava(result, a, b, c);
-    }
-
-    private static void implMlKemAddPolyJava(short[] result, short[] a,
-                                             short[] b, short[] c) {
-
         for (int m = 0; m < ML_KEM_N; m++) {
-            int r = a[m] + b[m] + c[m] + 2 * ML_KEM_Q; // This makes r > - ML_KEM_Q
-            result[m] = (short) r;
+            int r = a[m] + b[m] + ML_KEM_Q; // This makes r > -ML_KEM_Q
+            a[m] = (short) r;
         }
     }
 
@@ -1181,7 +1133,10 @@ public final class ML_KEM {
     // greater than -ML_KEM_Q and less than ML_KEM_Q.
     // The coefficients in the result are nonnegative and less than ML_KEM_Q.
     private short[] mlKemAddPoly(short[] a, short[] b, short[] c) {
-        implMlKemAddPoly(a, a, b, c);
+        for (int m = 0; m < ML_KEM_N; m++) {
+            int r = a[m] + b[m] + c[m] + 2 * ML_KEM_Q; // This makes r > - ML_KEM_Q
+            a[m] = (short) r;
+        }
         mlKemBarrettReduce(a);
         return a;
     }
@@ -1304,23 +1259,6 @@ public final class ML_KEM {
         return result;
     }
 
-    private static void implMlKem12To16(byte[] condensed, int index,
-                                        short[] parsed, int parsedLength) {
-
-        implMlKem12To16Java(condensed, index, parsed, parsedLength);
-    }
-
-    private static void implMlKem12To16Java(byte[] condensed, int index,
-                                            short[] parsed, int parsedLength) {
-
-        for (int i = 0; i < parsedLength * 3 / 2; i += 3) {
-            parsed[(i / 3) * 2] = (short) ((condensed[i + index] & 0xff) +
-                    256 * (condensed[i + index + 1] & 0xf));
-            parsed[(i / 3) * 2 + 1] = (short) (((condensed[i + index + 1] >>> 4) & 0xf) +
-                    16 * (condensed[i + index + 2] & 0xff));
-        }
-    }
-
     // The intrinsic implementations assume that the input and output buffers
     // are such that condensed can be read in 192-byte chunks and
     // parsed can be written in 128 shorts chunks. In other words,
@@ -1330,7 +1268,12 @@ public final class ML_KEM {
     private void twelve2Sixteen(byte[] condensed, int index,
                                 short[] parsed, int parsedLength) {
 
-        implMlKem12To16(condensed, index, parsed, parsedLength);
+        for (int i = 0; i < parsedLength * 3 / 2; i += 3) {
+            parsed[(i / 3) * 2] = (short) ((condensed[i + index] & 0xff) +
+                256 * (condensed[i + index + 1] & 0xf));
+            parsed[(i / 3) * 2 + 1] = (short) (((condensed[i + index + 1] >>> 4) & 0xf) +
+                16 * (condensed[i + index + 2] & 0xff));
+        }
     }
 
     private static void decodePoly5(byte[] condensed, int index, short[] parsed) {
@@ -1471,18 +1414,6 @@ public final class ML_KEM {
         return result;
     }
 
-    static void implMlKemBarrettReduce(short[] coeffs) {
-        implMlKemBarrettReduceJava(coeffs);
-    }
-
-    private static void implMlKemBarrettReduceJava(short[] coeffs) {
-        for (int m = 0; m < ML_KEM_N; m++) {
-            int tmp = ((int) coeffs[m] * BARRETT_MULTIPLIER) >>
-                    BARRETT_SHIFT;
-            coeffs[m] = (short) (coeffs[m] - tmp * ML_KEM_Q);
-        }
-    }
-
     // The input elements can have any short value.
     // Modifies poly such that upon return poly[i] will be
     // in the range [0, ML_KEM_Q] and will be congruent with the original
@@ -1493,7 +1424,11 @@ public final class ML_KEM {
     // will be in the range [0, ML_KEM_Q), i.e. it will be the canonical
     // representative of its residue class.
     private void mlKemBarrettReduce(short[] poly) {
-        implMlKemBarrettReduce(poly);
+        for (int m = 0; m < ML_KEM_N; m++) {
+            int tmp = ((int) poly[m] * BARRETT_MULTIPLIER) >>
+                BARRETT_SHIFT;
+            poly[m] = (short) (poly[m] - tmp * ML_KEM_Q);
+        }
     }
 
     // Precondition: -(2^MONT_R_BITS -1) * MONT_Q <= b * c < (2^MONT_R_BITS - 1) * MONT_Q

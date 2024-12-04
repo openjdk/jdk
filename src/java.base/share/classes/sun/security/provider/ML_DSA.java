@@ -1032,12 +1032,6 @@ public class ML_DSA {
     */
 
     public static int[] mlDsaNtt(int[] coeffs) {
-        implMlDsaAlmostNttJava(coeffs);
-        implMlDsaMontMulByConstantJava(coeffs,  MONT_R_MOD_Q);
-        return coeffs;
-    }
-
-    static void implMlDsaAlmostNttJava(int[] coeffs) {
         int dimension = ML_DSA_N;
         int m = 0;
         for (int l = dimension / 2; l > 0; l /= 2) {
@@ -1050,15 +1044,11 @@ public class ML_DSA {
                 m++;
             }
         }
-    }
-
-    public static int[] mlDsaInverseNtt(int[] coeffs) {
-        implMlDsaAlmostInverseNttJava(coeffs);
-        implMlDsaMontMulByConstantJava(coeffs, MONT_DIM_INVERSE);
+        montMulByConstant(coeffs,  MONT_R_MOD_Q);
         return coeffs;
     }
 
-    static void implMlDsaAlmostInverseNttJava(int[] coeffs) {
+    public static int[] mlDsaInverseNtt(int[] coeffs) {
         int dimension = ML_DSA_N;
         int m = 0;
         for (int l = 1; l < dimension; l *= 2) {
@@ -1072,6 +1062,8 @@ public class ML_DSA {
                 m++;
             }
         }
+        montMulByConstant(coeffs, MONT_DIM_INVERSE);
+        return coeffs;
     }
 
     void mlDsaVectorNtt(int[][] vector) {
@@ -1086,22 +1078,13 @@ public class ML_DSA {
         }
     }
 
-    //Todo
-    public static void mlDsaNttMultiply(int[] res, int[] coeffs1, int[] coeffs2) {
-        implMlDsaNttMultJava(res, coeffs1, coeffs2);
-    }
-
-    static void implMlDsaNttMultJava(int[] product, int[] coeffs1, int[] coeffs2) {
+    public static void mlDsaNttMultiply(int[] product, int[] coeffs1, int[] coeffs2) {
         for (int i = 0; i < ML_DSA_N; i++) {
             product[i] = montMul(coeffs1[i], toMont(coeffs2[i]));
         }
     }
 
     public static void montMulByConstant(int[] coeffs, int constant) {
-        implMlDsaMontMulByConstantJava(coeffs, constant);
-    }
-
-    static void implMlDsaMontMulByConstantJava(int[] coeffs, int constant) {
         for (int i = 0; i < ML_DSA_N; i++) {
             coeffs[i] = montMul((coeffs[i]), constant);
         }
@@ -1109,17 +1092,6 @@ public class ML_DSA {
 
     public static void mlDsaDecomposePoly(int[] input, int[] lowPart, int[] highPart,
                                          int twoGamma2, int multiplier) {
-        implMlDsaDecomposePoly(input, lowPart, highPart, twoGamma2, multiplier);
-    }
-
-    @IntrinsicCandidate
-    static void implMlDsaDecomposePoly(int[] input, int[] lowPart, int[] highPart,
-                                          int twoGamma2, int multiplier) {
-        decomposePolyJava(input, lowPart, highPart, twoGamma2, multiplier);
-    }
-
-    static void decomposePolyJava(int[] input, int[] lowPart, int[] highPart,
-                                 int twoGamma2, int multiplier) {
         for (int m = 0; m < ML_DSA_N; m++) {
             int rplus = input[m];
             rplus = rplus - ((rplus + 5373807) >> 23) * ML_DSA_Q;
