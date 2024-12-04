@@ -27,7 +27,7 @@ SuperInitFails.java:49:33: compiler.err.call.must.only.appear.in.ctor
 SuperInitFails.java:53:32: compiler.err.call.must.only.appear.in.ctor
 SuperInitFails.java:83:18: compiler.err.ctor.calls.not.allowed.here
 SuperInitFails.java:89:13: compiler.err.return.before.superclass.initialized
-SuperInitFails.java:150:18: compiler.err.ctor.calls.not.allowed.here
+SuperInitFails.java:150:18: compiler.err.call.must.only.appear.in.ctor
 - compiler.note.preview.filename: SuperInitFails.java, DEFAULT
 - compiler.note.preview.recompile
 30 errors

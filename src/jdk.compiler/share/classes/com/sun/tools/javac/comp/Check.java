@@ -4083,6 +4083,29 @@ public class Check {
         public void visitClassDef(JCClassDecl tree) {
             // don't descend any further
         }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            final boolean constructorPrev = constructor;
+            final boolean firstStatementPrev = firstStatement;
+            final JCReturn earlyReturnPrev = earlyReturn;
+            final Name initCallPrev = initCall;
+            final int scanDepthPrev = scanDepth;
+            constructor = false;
+            firstStatement = false;
+            earlyReturn = null;
+            initCall = null;
+            scanDepth = 0;
+            try {
+                super.visitLambda(tree);
+            } finally {
+                constructor = constructorPrev;
+                firstStatement = firstStatementPrev;
+                earlyReturn = earlyReturnPrev;
+                initCall = initCallPrev;
+                scanDepth = scanDepthPrev;
+            }
+        }
     }
 
 /* *************************************************************************
