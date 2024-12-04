@@ -83,8 +83,9 @@ public class URLClassPath {
         Properties props = System.getProperties();
         JAVA_VERSION = props.getProperty("java.version");
         DEBUG = (props.getProperty("sun.misc.URLClassPath.debug") != null);
-        // do the jar check only if this system property is set to the value "false"
         String p = props.getProperty("sun.misc.URLClassPath.disableJarChecking");
+        // JAR check is disabled by default and will be enabled only if the "disable JAR check"
+        // system property has been set to "false".
         JAR_CHECKING_ENABLED = p != null && p.equals("false");
 
         // This property will be removed in a later release
