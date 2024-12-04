@@ -90,7 +90,7 @@ class VM_Version: public Abstract_VM_Version {
 #define  MiscInstrExt3Mask              0x0000000000000004UL  // z15
 
 #define BEAREnhFacilityMask             0x4000000000000000UL  // z16, BEAR-enhancement facility, Bit: 193
-#define NNPAssistFacilityMask           0x0000000000040000UL  // z16, Neural-network-processing-assist facility, Bit: 165
+#define NNPAssistFacilityMask           0x0000000004000000UL  // z16, Neural-network-processing-assist facility, Bit: 165
 // ----------------------------------------------
 // --- FeatureBitString Bits  64..127 (DW[1]) ---
 // ----------------------------------------------
