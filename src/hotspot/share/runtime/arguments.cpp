@@ -1768,12 +1768,12 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 //===========================================================================================================
 // Parsing of main arguments
 
-unsigned int addreads_count = 0;
-unsigned int addexports_count = 0;
-unsigned int addopens_count = 0;
-unsigned int patch_mod_count = 0;
-unsigned int enable_native_access_count = 0;
-bool patch_mod_javabase = false;
+static unsigned int addreads_count = 0;
+static unsigned int addexports_count = 0;
+static unsigned int addopens_count = 0;
+static unsigned int patch_mod_count = 0;
+static unsigned int enable_native_access_count = 0;
+static bool patch_mod_javabase = false;
 
 // Check the consistency of vm_init_args
 bool Arguments::check_vm_args_consistency() {
