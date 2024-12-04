@@ -57,7 +57,7 @@ public final class RuntimeUtil {
     /**
      * Cached reference to the system (root) thread group.
      */
-    static final ThreadGroup systemThreadGroup;
+    private static final ThreadGroup systemThreadGroup;
     static {
         ThreadGroup group = Thread.currentThread().getThreadGroup();
         ThreadGroup parent;
@@ -73,7 +73,8 @@ public final class RuntimeUtil {
      * be a vestige of it having had a different security policy from
      * the system thread group, so this might no longer be necessary.
      */
-    static final ThreadGroup userThreadGroup = new ThreadGroup(systemThreadGroup, "RMI Runtime");
+    private static final ThreadGroup userThreadGroup =
+        new ThreadGroup(systemThreadGroup, "RMI Runtime");
 
     /** runtime package log */
     private static final Log runtimeLog =
