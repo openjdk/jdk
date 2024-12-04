@@ -3867,3 +3867,13 @@ JVM_END
 JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
   return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END
+
+JVM_ENTRY(jstring, JVM_GetCPUFeaturesString(JNIEnv* env))
+//  char buf[1024];
+//  VM_Version::insert_features_names(buf, sizeof(buf), VM_Version::_features_names);
+//  const char* features = os::strdup(buf);
+  const char* features = VM_Version::features_string(); // FIXME: enumerate cpu feature only
+  ThreadToNativeFromVM ttn(thread);
+  jstring features_string = env->NewStringUTF(features);
+  return features_string;
+JVM_END

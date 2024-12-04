@@ -24,10 +24,15 @@
 #include "simdsort-support.hpp"
 #ifdef __SIMDSORT_SUPPORTED_LINUX
 
-#include "simdsort.h"
+#include "library_entries.h"
 
 #include "avx512-32bit-qsort.hpp"
 #include "avx512-64bit-qsort.hpp"
+
+//#define DLL_PUBLIC __attribute__((visibility("default")))
+#define DLL_PUBLIC
+#define INSERTION_SORT_THRESHOLD_32BIT 16
+#define INSERTION_SORT_THRESHOLD_64BIT 20
 
 DLL_PUBLIC
 void avx512_sort_int(int32_t* array, int32_t from_index, int32_t to_index) {

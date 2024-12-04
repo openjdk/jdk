@@ -1147,6 +1147,12 @@ JVM_GetClassFileVersion(JNIEnv *env, jclass current);
 JNIEXPORT jboolean JNICALL
 JVM_PrintWarningAtDynamicAgentLoad(void);
 
+/*
+ * FIXME
+ */
+JNIEXPORT jstring JNICALL
+JVM_GetCPUFeaturesString(JNIEnv* env);
+
 #define JNI_ONLOAD_SYMBOLS   {"JNI_OnLoad"}
 #define JNI_ONUNLOAD_SYMBOLS {"JNI_OnUnload"}
 #define JVM_ONLOAD_SYMBOLS      {"JVM_OnLoad"}

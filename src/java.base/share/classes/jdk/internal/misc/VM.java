@@ -433,6 +433,11 @@ public class VM {
     public static native long getNanoTimeAdjustment(long offsetInSeconds);
 
     /**
+     * FIXME
+     */
+    public static native String getCPUFeaturesString();
+
+    /**
      * Returns the VM arguments for this runtime environment.
      *
      * @implNote

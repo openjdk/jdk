@@ -141,59 +141,28 @@ final class DualPivotQuicksort {
         void sort(A a, int low, int high);
     }
 
-    /**
-     * Sorts the specified range of the array into ascending numerical order.
-     *
-     * @param elemType the class of the elements of the array to be sorted
-     * @param array the array to be sorted
-     * @param offset the relative offset, in bytes, from the base address of
-     * the array to sort, otherwise if the array is {@code null},an absolute
-     * address pointing to the first element to sort from.
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     * @param so the method reference for the fallback implementation
-     */
-//    @ForceInline
-//    private static <A> void sort(Class<?> elemType, A array, long offset, int low, int high, SortOperation<A> so) {
-//        so.sort(array, low, high);
-//    }
-
-    // FIXME
-    private static int AVX = computeAVXLevel();
-
-    private static int computeAVXLevel() {
-        if (SIMDSortLibrary.isPresent()) {
-            if (VectorSupport.getMaxLaneCount(long.class) == 8) {
-                return 3;
-            } else if (VectorSupport.getMaxLaneCount(long.class) == 4) {
-                return 2;
-            }
-        }
-        return 0; // not supported
-    }
-
     @ForceInline
     private static void sort(int[] array, int low, int high, SortOperation<int[]> so) {
-        switch (AVX) {
-            case 3: SIMDSortLibrary.avx512_sort_int(MemorySegment.ofArray(array), low, high); break;
-            case 2: SIMDSortLibrary.avx2_sort_int(MemorySegment.ofArray(array), low, high); break;
-            default: so.sort(array, low, high); break;
+        if (!SIMDSortLibrary.SORT_INT_ADDR.equals(MemorySegment.NULL)) {
+            SIMDSortLibrary.sort_int(MemorySegment.ofArray(array), low, high);
+        } else {
+            so.sort(array, low, high);
         }
     }
 
     @ForceInline
     private static void sort(float[] array, int low, int high, SortOperation<float[]> so) {
-        switch (AVX) {
-            case 3: SIMDSortLibrary.avx512_sort_int(MemorySegment.ofArray(array), low, high); break;
-            case 2: SIMDSortLibrary.avx2_sort_int(MemorySegment.ofArray(array), low, high); break;
-            default: so.sort(array, low, high); break;
+        if (!SIMDSortLibrary.SORT_FLOAT_ADDR.equals(MemorySegment.NULL)) {
+            SIMDSortLibrary.sort_float(MemorySegment.ofArray(array), low, high);
+        } else {
+            so.sort(array, low, high);
         }
     }
 
     @ForceInline
     private static void sort(long[] array, int low, int high, SortOperation<long[]> so) {
-        if (AVX == 3) {
-            SIMDSortLibrary.avx512_sort_long(MemorySegment.ofArray(array), low, high);
+        if (!SIMDSortLibrary.SORT_LONG_ADDR.equals(MemorySegment.NULL)) {
+            SIMDSortLibrary.sort_long(MemorySegment.ofArray(array), low, high);
         } else {
             so.sort(array, low, high);
         }
@@ -201,8 +170,8 @@ final class DualPivotQuicksort {
 
     @ForceInline
     private static void sort(double[] array, int low, int high, SortOperation<double[]> so) {
-        if (AVX == 3) {
-            SIMDSortLibrary.avx512_sort_long(MemorySegment.ofArray(array), low, high);
+        if (!SIMDSortLibrary.SORT_DOUBLE_ADDR.equals(MemorySegment.NULL)) {
+            SIMDSortLibrary.sort_double(MemorySegment.ofArray(array), low, high);
         } else {
             so.sort(array, low, high);
         }
@@ -226,32 +195,11 @@ final class DualPivotQuicksort {
         int[] partition(A a, int low, int high, int pivotIndex1, int pivotIndex2);
     }
 
-    /**
-     * Partitions the specified range of the array using the two pivots provided.
-     *
-     * @param array the array to be partitioned
-     * the array to partition, otherwise if the array is {@code null},an absolute
-     * address pointing to the first element to partition from.
-     * @param low the index of the first element, inclusive, to be partitioned
-     * @param high the index of the last element, exclusive, to be partitioned
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     * @param po the method reference for the fallback implementation
-     */
-//    @ForceInline
-//    private static <A> int[] partition(Class<?> elemType, A array, long offset, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<A> po) {
-//        return po.partition(array, low, high, pivotIndex1, pivotIndex2);
-//    }
-
     @ForceInline
     private static int[] partition(int[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<int[]> po) {
-        if (AVX >= 2) {
+        if (SIMDSortLibrary.PARTITION_INT_ADDR != MemorySegment.NULL) {
             int[] result = new int[2];
-            if (AVX == 3) {
-                SIMDSortLibrary.avx512_partition_int(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            } else {
-                SIMDSortLibrary.avx2_partition_int(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            }
+            SIMDSortLibrary.partition_int(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
             return result;
         } else {
             return po.partition(array, low, high, pivotIndex1, pivotIndex2);
@@ -260,13 +208,9 @@ final class DualPivotQuicksort {
 
     @ForceInline
     private static int[] partition(float[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<float[]> po) {
-        if (AVX >= 2) {
+        if (SIMDSortLibrary.PARTITION_FLOAT_ADDR != MemorySegment.NULL) {
             int[] result = new int[2];
-            if (AVX == 3) {
-                SIMDSortLibrary.avx512_partition_float(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            } else {
-                SIMDSortLibrary.avx2_partition_float(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            }
+            SIMDSortLibrary.partition_float(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
             return result;
         } else {
             return po.partition(array, low, high, pivotIndex1, pivotIndex2);
@@ -275,9 +219,9 @@ final class DualPivotQuicksort {
 
     @ForceInline
     private static int[] partition(long[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<long[]> po) {
-        if (AVX == 3) {
+        if (SIMDSortLibrary.PARTITION_LONG_ADDR != MemorySegment.NULL) {
             int[] result = new int[2];
-            SIMDSortLibrary.avx512_partition_long(MemorySegment.ofArray(array), low, high,  MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
+            SIMDSortLibrary.partition_long(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
             return result;
         } else {
             return po.partition(array, low, high, pivotIndex1, pivotIndex2);
@@ -286,9 +230,9 @@ final class DualPivotQuicksort {
 
     @ForceInline
     private static int[] partition(double[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<double[]> po) {
-        if (AVX == 3) {
+        if (SIMDSortLibrary.PARTITION_DOUBLE_ADDR != MemorySegment.NULL) {
             int[] result = new int[2];
-            SIMDSortLibrary.avx512_partition_double(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(new int[2]), pivotIndex1, pivotIndex2);
+            SIMDSortLibrary.partition_double(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
             return result;
         } else {
             return po.partition(array, low, high, pivotIndex1, pivotIndex2);

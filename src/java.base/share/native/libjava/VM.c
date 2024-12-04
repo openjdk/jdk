@@ -32,7 +32,8 @@
 
 /* Only register the performance-critical methods */
 static JNINativeMethod methods[] = {
-    {"getNanoTimeAdjustment", "(J)J", (void *)&JVM_GetNanoTimeAdjustment}
+    {"getNanoTimeAdjustment", "(J)J",                 (void *)&JVM_GetNanoTimeAdjustment},
+    {"getCPUFeaturesString",  "()Ljava/lang/String;", (void *)&JVM_GetCPUFeaturesString}
 };
 
 JNIEXPORT jobject JNICALL
