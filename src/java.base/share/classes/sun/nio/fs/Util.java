@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package sun.nio.fs;
 import java.util.*;
 import java.nio.file.*;
 import java.nio.charset.Charset;
-import sun.security.action.GetPropertyAction;
+import jdk.internal.util.StaticProperty;
 
 /**
  * Utility methods
@@ -38,7 +38,7 @@ class Util {
     private Util() { }
 
     private static final Charset jnuEncoding = Charset.forName(
-        GetPropertyAction.privilegedGetProperty("sun.jnu.encoding"));
+        StaticProperty.jnuEncoding());
 
     /**
      * Returns {@code Charset} corresponding to the sun.jnu.encoding property

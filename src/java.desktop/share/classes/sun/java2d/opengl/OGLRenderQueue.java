@@ -30,8 +30,6 @@ import sun.java2d.pipe.RenderBuffer;
 import sun.java2d.pipe.RenderQueue;
 
 import static sun.java2d.pipe.BufferedOpCodes.*;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * OGL-specific implementation of RenderQueue.  This class provides a
@@ -44,13 +42,12 @@ public class OGLRenderQueue extends RenderQueue {
     private static OGLRenderQueue theInstance;
     private final QueueFlusher flusher;
 
-    @SuppressWarnings("removal")
     private OGLRenderQueue() {
         /*
          * The thread must be a member of a thread group
          * which will not get GCed before VM exit.
          */
-        flusher = AccessController.doPrivileged((PrivilegedAction<QueueFlusher>) QueueFlusher::new);
+        flusher = new QueueFlusher();
     }
 
     /**

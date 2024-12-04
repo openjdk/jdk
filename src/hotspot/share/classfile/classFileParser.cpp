@@ -822,7 +822,6 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
         interf = SystemDictionary::resolve_super_or_fail(_class_name,
                                                          unresolved_klass,
                                                          Handle(THREAD, _loader_data->class_loader()),
-                                                         _protection_domain,
                                                          false, CHECK);
       }
 
@@ -1795,6 +1794,7 @@ void ClassFileParser::throwIllegalSignature(const char* type,
   assert(sig != nullptr, "invariant");
 
   ResourceMark rm(THREAD);
+  // Names are all known to be < 64k so we know this formatted message is not excessively large.
   Exceptions::fthrow(THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
       "%s \"%s\" in class %s has illegal signature \"%s\"", type,
@@ -4074,6 +4074,8 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
       char* msg = Reflection::verify_class_access_msg(this_klass,
                                                       InstanceKlass::cast(super),
                                                       vca_result);
+
+      // Names are all known to be < 64k so we know this formatted message is not excessively large.
       if (msg == nullptr) {
         bool same_module = (this_klass->module() == super->module());
         Exceptions::fthrow(
@@ -4122,6 +4124,8 @@ void ClassFileParser::check_super_interface_access(const InstanceKlass* this_kla
       char* msg = Reflection::verify_class_access_msg(this_klass,
                                                       k,
                                                       vca_result);
+
+      // Names are all known to be < 64k so we know this formatted message is not excessively large.
       if (msg == nullptr) {
         bool same_module = (this_klass->module() == k->module());
         Exceptions::fthrow(
@@ -4218,6 +4222,8 @@ static void check_illegal_static_method(const InstanceKlass* this_klass, TRAPS) 
     // if m is static and not the init method, throw a verify error
     if ((m->is_static()) && (m->name() != vmSymbols::class_initializer_name())) {
       ResourceMark rm(THREAD);
+
+      // Names are all known to be < 64k so we know this formatted message is not excessively large.
       Exceptions::fthrow(
         THREAD_AND_LOCATION,
         vmSymbols::java_lang_VerifyError(),
@@ -4237,6 +4243,7 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   assert(_major_version >= JAVA_9_VERSION || !is_module, "JVM_ACC_MODULE should not be set");
   if (is_module) {
     ResourceMark rm(THREAD);
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_NoClassDefFoundError(),
@@ -4260,6 +4267,7 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
       (is_interface && major_gte_1_5 && (is_super || is_enum)) ||
       (!is_interface && major_gte_1_5 && is_annotation)) {
     ResourceMark rm(THREAD);
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
@@ -4296,6 +4304,7 @@ void ClassFileParser::verify_class_version(u2 major, u2 minor, Symbol* class_nam
   }
 
   if (major > max_version) {
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_UnsupportedClassVersionError(),
@@ -4311,6 +4320,7 @@ void ClassFileParser::verify_class_version(u2 major, u2 minor, Symbol* class_nam
 
   if (minor == JAVA_PREVIEW_MINOR_VERSION) {
     if (major != max_version) {
+      // Names are all known to be < 64k so we know this formatted message is not excessively large.
       Exceptions::fthrow(
         THREAD_AND_LOCATION,
         vmSymbols::java_lang_UnsupportedClassVersionError(),
@@ -4363,6 +4373,7 @@ void ClassFileParser::verify_legal_field_modifiers(jint flags,
 
   if (is_illegal) {
     ResourceMark rm(THREAD);
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
@@ -4446,6 +4457,7 @@ void ClassFileParser::verify_legal_method_modifiers(jint flags,
 
   if (is_illegal) {
     ResourceMark rm(THREAD);
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
@@ -4687,6 +4699,7 @@ void ClassFileParser::verify_legal_class_name(const Symbol* name, TRAPS) const {
   if (!legal) {
     ResourceMark rm(THREAD);
     assert(_class_name != nullptr, "invariant");
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
@@ -4720,6 +4733,7 @@ void ClassFileParser::verify_legal_field_name(const Symbol* name, TRAPS) const {
   if (!legal) {
     ResourceMark rm(THREAD);
     assert(_class_name != nullptr, "invariant");
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
@@ -4757,6 +4771,7 @@ void ClassFileParser::verify_legal_method_name(const Symbol* name, TRAPS) const 
   if (!legal) {
     ResourceMark rm(THREAD);
     assert(_class_name != nullptr, "invariant");
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_ClassFormatError(),
@@ -5528,6 +5543,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
     if (_class_name != class_name_in_cp) {
       if (_class_name != vmSymbols::unknown_class_name()) {
         ResourceMark rm(THREAD);
+        // Names are all known to be < 64k so we know this formatted message is not excessively large.
         Exceptions::fthrow(THREAD_AND_LOCATION,
                            vmSymbols::java_lang_NoClassDefFoundError(),
                            "%s (wrong name: %s)",
@@ -5691,7 +5707,6 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                        SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
                                                                loader,
-                                                               _protection_domain,
                                                                true,
                                                                CHECK);
     }

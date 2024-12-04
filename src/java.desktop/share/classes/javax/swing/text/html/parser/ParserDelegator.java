@@ -121,9 +121,6 @@ public class ParserDelegator extends HTMLEditorKit.Parser implements Serializabl
 
     /**
      * Fetch a resource relative to the ParserDelegator classfile.
-     * If this is called on 1.2 the loading will occur under the
-     * protection of a doPrivileged call to allow the ParserDelegator
-     * to function when used in an applet.
      *
      * @param name the name of the resource, relative to the
      *  ParserDelegator class.

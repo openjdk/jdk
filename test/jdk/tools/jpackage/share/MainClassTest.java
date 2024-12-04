@@ -44,7 +44,7 @@ import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CfgFile;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 
 
 

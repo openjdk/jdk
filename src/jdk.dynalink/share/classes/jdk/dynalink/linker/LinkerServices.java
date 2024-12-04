@@ -215,10 +215,7 @@ public interface LinkerServices {
      * operation to the context of some caller class, consider performing it
      * within an invocation of this method and passing a full-strength lookup
      * for that class, as it will associate that lookup with the current thread
-     * for the duration of the operation. Note that since you are passing a
-     * {@link SecureLookupSupplier}, any invoked type converter factories will
-     * still need to hold the necessary runtime permission to be able to get the
-     * lookup should they need it.
+     * for the duration of the operation.
      * @param <T> the type of the return value provided by the passed-in supplier.
      * @param operation the operation to execute in context of the specified lookup.
      * @param lookupSupplier secure supplier of the lookup

@@ -24,7 +24,6 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import javax.xml.transform.Result;
@@ -36,7 +35,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.IOUtils;
+import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.PackageTest;
@@ -148,7 +147,7 @@ public class WinLongVersionTest {
 
             Path scriptPath = resourceDir.resolve(String.format(
                     "%s-post-msi.wsf", cmd.name()));
-            IOUtils.createXml(scriptPath, xml -> {
+            XmlUtils.createXml(scriptPath, xml -> {
                 xml.writeStartElement("job");
                 xml.writeAttribute("id", "main");
                 xml.writeStartElement("script");
@@ -194,7 +193,7 @@ public class WinLongVersionTest {
             cmd.setFakeRuntime();
 
             // Create package without Upgrade table
-            Document doc = IOUtils.initDocumentBuilder().parse(
+            Document doc = XmlUtils.initDocumentBuilder().parse(
                     Files.newInputStream(TKit.SRC_ROOT.resolve(
                             "windows/classes/jdk/jpackage/internal/resources/main.wxs")));
             XPath xPath = XPathFactory.newInstance().newXPath();
