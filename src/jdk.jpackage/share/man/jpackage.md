@@ -661,6 +661,12 @@ jpackage will lookup files by specific names in the resource directory.
 
 :   WiX project file for installer UI
 
+`wix-conv.xsl`
+
+:   WiX source code converter. Used for converting WiX sources from WiX v3 to v4 schema when WiX v4 or newer is used
+
+    Default resource is *wix3-to-wix4-conv.xsl*
+
 
 #### Resource directory files considered only when building Windows EXE installer:
 
