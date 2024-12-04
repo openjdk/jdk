@@ -279,7 +279,6 @@ IfProjNode* PhaseIdealLoop::clone_parse_predicate(ParsePredicateSuccessProj* par
   IfProjNode* new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, new_entry, reason, Op_ParsePredicate,
                                                                slow_loop);
   assert(new_predicate_proj->is_IfTrue(), "the success projection of a Parse Predicate is a true projection");
-  ParsePredicateNode* parse_predicate = new_predicate_proj->in(0)->as_ParsePredicate();
   return new_predicate_proj;
 }
 
