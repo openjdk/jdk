@@ -265,7 +265,7 @@ private:
   uint _age;
   CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
-  ShenandoahSharedFlag recycling;
+  ShenandoahSharedFlag _recycling;
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);

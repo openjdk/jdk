@@ -88,7 +88,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   if (ZapUnusedHeapArea && committed) {
     SpaceMangler::mangle_region(MemRegion(_bottom, _end));
   }
-  recycling.unset();
+  _recycling.unset();
 }
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
@@ -588,7 +588,7 @@ void ShenandoahHeapRegion::recycle_internal() {
 
 void ShenandoahHeapRegion::recycle_under_lock() {
   shenandoah_assert_heaplocked();
-  if (is_trash() && recycling.try_set()) {
+  if (is_trash() && _recycling.try_set()) {
     if (is_trash()) {
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       ShenandoahGeneration* generation = heap->generation_for(affiliation());
@@ -597,10 +597,11 @@ void ShenandoahHeapRegion::recycle_under_lock() {
       generation->decrement_affiliated_region_count();
 
       recycle_internal();
-      recycling.unset();
+      _recycling.unset();
     }
   } else {
-    while (recycling.is_set()) {
+    // Ensure recycling is unset before returning to mutator to continue memory allocation.
+    while (_recycling.is_set()) {
       if (os::is_MP()) {
         SpinPause();
       } else {
@@ -612,14 +613,15 @@ void ShenandoahHeapRegion::recycle_under_lock() {
 
 void ShenandoahHeapRegion::try_recycle(volatile size_t* recycled_heap_space, volatile size_t* recycled_regions) {
   shenandoah_assert_not_heaplocked();
-  if (is_trash() && recycling.try_set()) {
+  if (is_trash() && _recycling.try_set()) {
+    // Double check region state after win the race to set recycling flag
     if (is_trash()) {
       Atomic::add(recycled_heap_space, used());
       Atomic::inc(recycled_regions);
 
       recycle_internal();
     }
-    recycling.unset();
+    _recycling.unset();
   }
 }
 
