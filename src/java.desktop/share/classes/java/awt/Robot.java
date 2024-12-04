@@ -118,12 +118,13 @@ public class Robot {
     private DirectColorModel screenCapCM = null;
 
     /**
-     * Default step delay (in milliseconds) for mouse glide and click.
+     * Default 20 milliseconds delay for mouse {@code click} and
+     * step delay for mouse {@code glide}.
      */
-    public static final int DEFAULT_STEP_DELAY = 20;
+    public static final int DEFAULT_DELAY = 20;
 
     /**
-     * Default step length (in pixels) for mouse glide.
+     * Default 2 pixel step length for mouse {@code glide}.
      */
     public static final int DEFAULT_STEP_LENGTH = 2;
 
@@ -753,7 +754,7 @@ public class Robot {
 
     /**
      * A convenience method that simulates clicking a mouse button by calling {@code mousePress}
-     * and {@code mouseRelease}. Invokes {@code waitForIdle} with a default delay of 20ms after
+     * and {@code mouseRelease}. Invokes {@code waitForIdle} with a default {@link #DEFAULT_DELAY delay} after
      * {@code mousePress} and {@code mouseRelease} calls. For specifics on valid inputs please see
      * {@link java.awt.Robot#mousePress(int)}.
      *
@@ -768,6 +769,7 @@ public class Robot {
      * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     #mousePress(int)
      * @see     #mouseRelease(int)
+     * @see     #DEFAULT_DELAY
      * @see     InputEvent#getMaskForButton(int)
      * @see     Toolkit#areExtraMouseButtonsEnabled()
      * @see     java.awt.event.MouseEvent
@@ -775,9 +777,9 @@ public class Robot {
      */
     public void click(int buttons) {
         mousePress(buttons);
-        waitForIdle(DEFAULT_STEP_DELAY);
+        waitForIdle(DEFAULT_DELAY);
         mouseRelease(buttons);
-        waitForIdle(DEFAULT_STEP_DELAY);
+        waitForIdle(DEFAULT_DELAY);
     }
 
     /**
@@ -811,12 +813,12 @@ public class Robot {
     /**
      * A convenience method that moves the mouse in multiple
      * steps from its current location to the destination coordinates
-     * with a default step-length and delay.
+     * with a default {@link #DEFAULT_STEP_LENGTH step-length} and {@link #DEFAULT_DELAY delay}.
      *
      * @param   x   Destination point x coordinate
      * @param   y   Destination point y coordinate
      * @see     #DEFAULT_STEP_LENGTH
-     * @see     #DEFAULT_STEP_DELAY
+     * @see     #DEFAULT_DELAY
      * @see     #glide(int, int, int, int, int, int)
      * @since   25
      */
@@ -828,25 +830,25 @@ public class Robot {
     /**
      * A convenience method that moves the mouse in multiple steps
      * from source coordinates to the destination coordinates with
-     * a default step-length and delay.
+     * a default {@link #DEFAULT_STEP_LENGTH step-length} and {@link #DEFAULT_DELAY delay}.
      *
      * @param   fromX   Source point x coordinate
      * @param   fromY   Source point y coordinate
      * @param   toX     Destination point x coordinate
      * @param   toY     Destination point y coordinate
      * @see     #DEFAULT_STEP_LENGTH
-     * @see     #DEFAULT_STEP_DELAY
+     * @see     #DEFAULT_DELAY
      * @see     #glide(int, int, int, int, int, int)
      * @since   25
      */
     public void glide(int fromX, int fromY, int toX, int toY) {
-        glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_STEP_DELAY);
+        glide(fromX, fromY, toX, toY, DEFAULT_STEP_LENGTH, DEFAULT_DELAY);
     }
 
     /**
      * A convenience method that moves the mouse in multiple
      * steps from source point to the destination point with
-     * given step-length and delay.
+     * given {@code stepLength} and {@code stepDelay}.
      *
      * @param   srcX        Source point x coordinate
      * @param   srcY        Source point y coordinate
@@ -892,13 +894,13 @@ public class Robot {
 
         // Ensure the mouse moves to the right destination.
         // The steps may have led the mouse to a slightly wrong place.
-        mouseMove(destX, destY);
+        if (x != destX || y != destY) mouseMove(destX, destY);
     }
 
     /**
      * A convenience method that simulates typing a key by calling {@code keyPress}
-     * and {@code keyRelease}. Invokes {@code waitForIdle} with a default delay of 20
-     * milliseconds after {@code keyPress} and {@code keyRelease} calls.
+     * and {@code keyRelease}. Invokes {@code waitForIdle} with a default {@link #DEFAULT_DELAY delay}
+     * after {@code keyPress} and {@code keyRelease} calls.
      * <p>
      * Key codes that have more than one physical key associated with them
      * (e.g. {@code KeyEvent.VK_SHIFT} could mean either the
@@ -908,28 +910,16 @@ public class Robot {
      * @throws  IllegalArgumentException if {@code keycode} is not
      *          a valid key
      * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
-     * @see     java.awt.Robot#keyPress(int)
-     * @see     java.awt.Robot#keyRelease(int)
+     * @see     #keyPress(int)
+     * @see     #keyRelease(int)
      * @see     java.awt.event.KeyEvent
+     * @see     #DEFAULT_DELAY
      * @since   25
      */
     public synchronized void type(int keycode) {
         keyPress(keycode);
-        waitForIdle(DEFAULT_STEP_DELAY);
+        waitForIdle(DEFAULT_DELAY);
         keyRelease(keycode);
-        waitForIdle(DEFAULT_STEP_DELAY);
-    }
-
-    /**
-     * Types given character
-     *
-     * @param   c   Character to type (e.g. {@code 'a'})
-     * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
-     * @see     #type(int)
-     * @see     java.awt.event.KeyEvent
-     * @since   25
-     */
-    public synchronized void type(char c) {
-        type(KeyEvent.getExtendedKeyCodeForChar(c));
+        waitForIdle(DEFAULT_DELAY);
     }
 }
