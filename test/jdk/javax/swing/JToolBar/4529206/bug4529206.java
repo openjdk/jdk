@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class bug4529206 {
     static JButton jButton1;
 
     private static void test() {
-        frame = new JFrame();
+        frame = new JFrame("bug4529206");
         JPanel jPanFrame = (JPanel) frame.getContentPane();
         jPanFrame.setLayout(new BorderLayout());
         frame.setSize(new Dimension(200, 100));
@@ -79,10 +79,11 @@ public class bug4529206 {
         try {
             SwingUtilities.invokeAndWait(() -> test());
             Robot robot = new Robot();
-            robot.setAutoWaitForIdle(true);
+            robot.waitForIdle();
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> makeToolbarFloat());
+            robot.waitForIdle();
             robot.delay(300);
 
             SwingUtilities.invokeAndWait(() -> {
