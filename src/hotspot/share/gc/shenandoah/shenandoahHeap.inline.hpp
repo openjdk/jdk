@@ -332,6 +332,11 @@ void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
 uint ShenandoahHeap::get_object_age(oop obj) {
   markWord w = obj->mark();
   assert(!w.is_marked(), "must not be forwarded");
+  if (UseObjectMonitorTable) {
+    assert(LockingMode == LM_LIGHTWEIGHT, "Must use LW locking, too");
+    assert(w.age() <= markWord::max_age, "Impossible!");
+    return w.age();
+  }
   if (w.has_monitor()) {
     w = w.monitor()->header();
   } else if (w.is_being_inflated() || w.has_displaced_mark_helper()) {
