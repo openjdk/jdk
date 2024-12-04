@@ -3868,6 +3868,10 @@ JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
   return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
+JVM_ENTRY(jlong, JVM_GetCPUFeatures(JNIEnv* env))
+  return VM_Version::features();
+JVM_END
+
 JVM_ENTRY(jstring, JVM_GetCPUFeaturesString(JNIEnv* env))
 //  char buf[1024];
 //  VM_Version::insert_features_names(buf, sizeof(buf), VM_Version::_features_names);

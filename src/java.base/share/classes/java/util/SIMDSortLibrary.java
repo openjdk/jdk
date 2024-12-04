@@ -1,6 +1,7 @@
 package java.util;
 
 import jdk.internal.misc.VM;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
 import java.lang.invoke.*;
@@ -22,9 +23,7 @@ class SIMDSortLibrary {
 
     static final boolean DEBUG   = Boolean.getBoolean("java.util.SIMDSortLibrary.DEBUG");
     static final boolean DISABLE = Boolean.getBoolean("java.util.SIMDSortLibrary.DISABLE");
-
-    static final Arena LIBRARY_ARENA = Arena.ofAuto();
-    static final boolean TRACE_DOWNCALLS = Boolean.getBoolean("jextract.trace.downcalls");
+    static final boolean TRACE   = Boolean.getBoolean("java.util.SIMDSortLibrary.TRACE");
 
     static void traceDowncall(String name, Object... args) {
          String traceArgs = Arrays.stream(args)
@@ -52,7 +51,7 @@ class SIMDSortLibrary {
             return null;
         }
         try {
-            return SymbolLookup.libraryLookup(System.mapLibraryName("simdsort"), LIBRARY_ARENA);
+            return SymbolLookup.libraryLookup(System.mapLibraryName("simdsort"), Arena.ofAuto());
         } catch (Exception e) {
             debug("library failed to load: " + e);
             return null;
@@ -63,78 +62,115 @@ class SIMDSortLibrary {
         return SYMBOL_LOOKUP != null;
     }
 
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
+    public static final ValueLayout.OfInt  C_INT = ValueLayout.JAVA_INT;
+    public static final ValueLayout.OfLong C_INT64 = ValueLayout.JAVA_LONG;
 
     public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, JAVA_BYTE));
 
-    public static final MemorySegment SORT_INT_ADDR;
-    public static final MemorySegment SORT_LONG_ADDR;
-    public static final MemorySegment SORT_FLOAT_ADDR;
-    public static final MemorySegment SORT_DOUBLE_ADDR;
+    public static final MethodHandle SORT_INT;
+    public static final MethodHandle SORT_LONG;
+    public static final MethodHandle SORT_FLOAT;
+    public static final MethodHandle SORT_DOUBLE;
 
-    public static final MemorySegment PARTITION_INT_ADDR;
-    public static final MemorySegment PARTITION_LONG_ADDR;
-    public static final MemorySegment PARTITION_FLOAT_ADDR;
-    public static final MemorySegment PARTITION_DOUBLE_ADDR;
-
-    // FIXME
-    private static int AVX = computeAVXLevel();
+    public static final MethodHandle PARTITION_INT;
+    public static final MethodHandle PARTITION_LONG;
+    public static final MethodHandle PARTITION_FLOAT;
+    public static final MethodHandle PARTITION_DOUBLE;
 
     static {
-        debug("AVX=%d", AVX);
-        debug("cpu_features=%s", VM.getCPUFeaturesString());
-    }
+        debug("cpu_features[0x%016x]=%s", VM.getCPUFeatures(), VM.getCPUFeaturesString());
 
-    private static int computeAVXLevel() {
-        if (SIMDSortLibrary.isPresent()) {
-            if (VectorSupport.getMaxLaneCount(long.class) == 8) {
-                String cpuFeatures = VM.getCPUFeaturesString();
-                if (cpuFeatures.contains("avx512dq")) {
-                    return 4;
-                } else {
-                    return 3;
-                }
-            } else if (VectorSupport.getMaxLaneCount(long.class) == 4) {
-                return 2;
-            }
-        }
-        return 0; // not supported
-    }
-
-    static {
         if (isPresent()) {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment lib = arena.allocate(library.LAYOUT);
-                simdsort_link(lib, AVX);
+                
+                simdsort_link(lib, VM.getCPUFeatures());
 
-                SORT_INT_ADDR    = library.sort_jint(lib);
-                SORT_LONG_ADDR   = library.sort_jlong(lib);
-                SORT_FLOAT_ADDR  = library.sort_jfloat(lib);
-                SORT_DOUBLE_ADDR = library.sort_jdouble(lib);
+                MethodHandle sortInvoker = Linker.nativeLinker().downcallHandle(
+                        FunctionDescriptor.ofVoid(C_POINTER, C_INT, C_INT),
+                        Linker.Option.critical(true));
 
-                PARTITION_INT_ADDR    = library.partition_jint(lib);
-                PARTITION_LONG_ADDR   = library.partition_jlong(lib);
-                PARTITION_FLOAT_ADDR  = library.partition_jfloat(lib);
-                PARTITION_DOUBLE_ADDR = library.partition_jdouble(lib);
+                SORT_INT = prepareSort(int[].class, wrapAddress(library.sort_jint(lib), sortInvoker));
+                SORT_LONG = prepareSort(long[].class, wrapAddress(library.sort_jlong(lib), sortInvoker));
+                SORT_FLOAT = prepareSort(float[].class, wrapAddress(library.sort_jfloat(lib), sortInvoker));
+                SORT_DOUBLE = prepareSort(double[].class, wrapAddress(library.sort_jdouble(lib), sortInvoker));
+
+                MethodHandle partitionInvoker = Linker.nativeLinker().downcallHandle(
+                        FunctionDescriptor.ofVoid(C_POINTER, C_INT, C_INT, C_POINTER, C_INT, C_INT),
+                        Linker.Option.critical(true));
+
+                PARTITION_INT = preparePartition(int[].class, wrapAddress(library.partition_jint(lib), partitionInvoker));
+                PARTITION_LONG = preparePartition(long[].class, wrapAddress(library.partition_jlong(lib), partitionInvoker));
+                PARTITION_FLOAT = preparePartition(float[].class, wrapAddress(library.partition_jfloat(lib), partitionInvoker));
+                PARTITION_DOUBLE = preparePartition(double[].class, wrapAddress(library.partition_jdouble(lib), partitionInvoker));
             }
         } else {
-            SORT_INT_ADDR    = MemorySegment.NULL;
-            SORT_LONG_ADDR   = MemorySegment.NULL;
-            SORT_FLOAT_ADDR  = MemorySegment.NULL;
-            SORT_DOUBLE_ADDR = MemorySegment.NULL;
+            SORT_INT    = null;
+            SORT_LONG   = null;
+            SORT_FLOAT  = null;
+            SORT_DOUBLE = null;
 
-            PARTITION_INT_ADDR    = MemorySegment.NULL;
-            PARTITION_LONG_ADDR   = MemorySegment.NULL;
-            PARTITION_FLOAT_ADDR  = MemorySegment.NULL;
-            PARTITION_DOUBLE_ADDR = MemorySegment.NULL;
+            PARTITION_INT    = null;
+            PARTITION_LONG   = null;
+            PARTITION_FLOAT  = null;
+            PARTITION_DOUBLE = null;
         }
     }
 
-    private static class simdsort_link {
-        static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(C_POINTER, C_INT);
-        static final MemorySegment ADDR = findOrThrow("simdsort_link");
-        static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    private static MethodHandle prepareSort(Class<?> cls, MethodHandle mh) {
+        if (mh != null) {
+            try {
+                MethodType mt = MethodType.methodType(MemorySegment.class, cls);
+                MethodHandle ofArray = MethodHandles.lookup().findStatic(MemorySegment.class, "ofArray", mt);
+                return MethodHandles.filterArguments(mh, 0, ofArray);
+            } catch (NoSuchMethodException | IllegalAccessException e) {
+                throw new InternalError(e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    private static MethodHandle preparePartition(Class<?> cls, MethodHandle mh) {
+        if (mh != null) {
+            try {
+                MethodHandle ofArray = MethodHandles.lookup().findStatic(MemorySegment.class, "ofArray",
+                        MethodType.methodType(MemorySegment.class, cls));
+                mh = MethodHandles.filterArguments(mh, 0, ofArray);
+
+                MethodHandle ofIntArray = MethodHandles.lookup().findStatic(MemorySegment.class, "ofArray",
+                        MethodType.methodType(MemorySegment.class, int[].class));
+                mh = MethodHandles.filterArguments(mh, 3, ofIntArray);
+
+                MethodHandle allocArray = MethodHandles.insertArguments(
+                        MethodHandles.arrayConstructor(int[].class), 0, 2);
+
+                MethodHandle tmp = MethodHandles.identity(int[].class);
+                tmp = MethodHandles.dropArguments(tmp, 1, int.class, int.class); // append
+                tmp = MethodHandles.dropArguments(tmp, 0, cls, int.class, int.class); // prepend
+
+                assert tmp.type().changeReturnType(void.class) == mh.type();
+
+                mh = MethodHandles.foldArguments(tmp, mh);
+
+                mh = MethodHandles.collectArguments(mh, 3, allocArray);
+
+                return mh;
+            } catch (NoSuchMethodException | IllegalAccessException e) {
+                throw new InternalError(e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    private static MethodHandle wrapAddress(MemorySegment func, MethodHandle invoker) {
+        if (func != MemorySegment.NULL) {
+            return invoker.bindTo(func);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -142,302 +178,76 @@ class SIMDSortLibrary {
      * void simdsort_link(struct library *lib, int config)
      * }
      */
-    public static void simdsort_link(MemorySegment lib, int config) {
-        var mh$ = simdsort_link.HANDLE;
+    private static class simdsort_link {
+        static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(C_POINTER, C_INT64);
+        static final MemorySegment ADDR = findOrThrow("simdsort_link");
+        static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    private static void simdsort_link(MemorySegment lib, long config) {
         try {
-            if (TRACE_DOWNCALLS) {
+            if (TRACE) {
                 traceDowncall("simdsort_link", lib, config);
             }
-            mh$.invokeExact(lib, config);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
+            simdsort_link.HANDLE.invokeExact(lib, config);
+        } catch (Throwable t) {
+            throw new InternalError(t);
         }
     }
 
-    public static void sort_int(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("sort_int", array, from_index, to_index);
-            }
-            SORT_HANDLE.invokeExact(SORT_INT_ADDR, array, from_index, to_index);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
+    static <A> DualPivotQuicksort.SortOperation<A> wrapSort(Class<A> cls, DualPivotQuicksort.SortOperation<A> defaultImpl) {
+        return wrapSort(sortFor(cls), defaultImpl);
+    }
+
+    static MethodHandle sortFor(Class<?> cls) {
+        if (cls == int[].class) {
+            return SORT_INT;
+        } else if (cls == long[].class) {
+            return SORT_LONG;
+        } else if (cls == float[].class) {
+            return SORT_FLOAT;
+        } else if (cls == double[].class) {
+            return SORT_DOUBLE;
+        } else {
+            throw new InternalError("not supported: " + cls);
         }
     }
 
-    public static void sort_long(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("sort_long", array, from_index, to_index);
-            }
-            SORT_HANDLE.invokeExact(SORT_LONG_ADDR, array, from_index, to_index);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
+    @SuppressWarnings("unchecked")
+    static <A> DualPivotQuicksort.SortOperation<A> wrapSort(MethodHandle impl, DualPivotQuicksort.SortOperation<A> defaultImpl) {
+        if (impl != null) {
+            return MethodHandleProxies.asInterfaceInstance(DualPivotQuicksort.SortOperation.class, impl);
+        } else {
+            return defaultImpl;
         }
     }
 
-    public static void sort_float(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("sort_float", array, from_index, to_index);
-            }
-            SORT_HANDLE.invokeExact(SORT_FLOAT_ADDR, array, from_index, to_index);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
+    static <A> DualPivotQuicksort.PartitionOperation<A> wrapPartition(Class<A> cls, DualPivotQuicksort.PartitionOperation<A> defaultImpl) {
+        return wrapPartition(partitionFor(cls), defaultImpl);
+    }
+
+    static MethodHandle partitionFor(Class<?> cls) {
+        if (cls == int[].class) {
+            return PARTITION_INT;
+        } else if (cls == long[].class) {
+            return PARTITION_LONG;
+        } else if (cls == float[].class) {
+            return PARTITION_FLOAT;
+        } else if (cls == double[].class) {
+            return PARTITION_DOUBLE;
+        } else {
+            throw new InternalError("not supported: " + cls);
         }
     }
 
-    public static void sort_double(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("sort_int", array, from_index, to_index);
-            }
-            SORT_HANDLE.invokeExact(SORT_DOUBLE_ADDR, array, from_index, to_index);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
+    @SuppressWarnings("unchecked")
+    static <A> DualPivotQuicksort.PartitionOperation<A> wrapPartition(MethodHandle impl, DualPivotQuicksort.PartitionOperation<A> defaultImpl) {
+        if (impl != null) {
+            return MethodHandleProxies.asInterfaceInstance(DualPivotQuicksort.PartitionOperation.class, impl);
+        } else {
+            return defaultImpl;
         }
     }
-
-    public static void partition_int(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("partition_int", array, from_index, to_index);
-            }
-            PART_HANDLE.invokeExact(PARTITION_INT_ADDR, array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    public static void partition_long(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("partition_long", array, from_index, to_index);
-            }
-            PART_HANDLE.invokeExact(PARTITION_LONG_ADDR, array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    public static void partition_float(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("partition_float", array, from_index, to_index);
-            }
-            PART_HANDLE.invokeExact(PARTITION_FLOAT_ADDR, array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    public static void partition_double(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("partition_double", array, from_index, to_index);
-            }
-            PART_HANDLE.invokeExact(PARTITION_DOUBLE_ADDR, array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    public static final FunctionDescriptor SORT_DESC = FunctionDescriptor.ofVoid(C_POINTER, C_INT, C_INT);
-    public static final FunctionDescriptor PART_DESC = FunctionDescriptor.ofVoid(C_POINTER, C_INT, C_INT, C_POINTER, C_INT, C_INT);
-
-    public static final MethodHandle SORT_HANDLE = Linker.nativeLinker().downcallHandle(SORT_DESC, Linker.Option.critical(true));
-    public static final MethodHandle PART_HANDLE = Linker.nativeLinker().downcallHandle(PART_DESC, Linker.Option.critical(true));
-
-    private static class avx2_sort_int {
-        public static final MemorySegment ADDR = findOrThrow("avx2_sort_int");
-    }
-
-    public static void avx2_sort_int(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx2_sort_int", array, from_index, to_index);
-            }
-            SORT_HANDLE.invokeExact(avx2_sort_int.ADDR, array, from_index, to_index);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx2_sort_float {
-        public static final MemorySegment ADDR = findOrThrow("avx2_sort_float");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, SORT_DESC);
-    }
-
-    public static void avx2_sort_float(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx2_sort_float", array, from_index, to_index);
-            }
-            SORT_HANDLE.invokeExact(avx2_sort_float.ADDR, array, from_index, to_index);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx512_sort_int {
-        public static final MemorySegment ADDR = findOrThrow("avx512_sort_int");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, SORT_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx512_sort_int(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_sort_int", array, from_index, to_index);
-            }
-            avx512_sort_int.HANDLE.invokeExact(array, from_index, to_index);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-    private static class avx512_sort_long {
-        public static final MemorySegment ADDR = findOrThrow("avx512_sort_long");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, SORT_DESC, Linker.Option.critical(true));
-    }
-
-     public static void avx512_sort_long(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_sort_long", array, from_index, to_index);
-            }
-            avx512_sort_long.HANDLE.invokeExact(array, from_index, to_index);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx512_sort_float {
-        public static final MemorySegment ADDR = findOrThrow("avx512_sort_float");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, SORT_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx512_sort_float(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_sort_float", array, from_index, to_index);
-            }
-            avx512_sort_float.HANDLE.invokeExact(array, from_index, to_index);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx512_sort_double {
-        public static final MemorySegment ADDR = findOrThrow("avx512_sort_double");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, SORT_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx512_sort_double(MemorySegment array, int from_index, int to_index) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_sort_double", array, from_index, to_index);
-            }
-            avx512_sort_double.HANDLE.invokeExact(array, from_index, to_index);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx2_partition_int {
-        public static final MemorySegment ADDR = findOrThrow("avx2_partition_int");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, PART_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx2_partition_int(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx2_partition_int", array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-            }
-            avx2_partition_int.HANDLE.invokeExact(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx2_partition_float {
-        public static final MemorySegment ADDR = findOrThrow("avx2_partition_float");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, PART_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx2_partition_float(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx2_partition_float", array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-            }
-            avx2_partition_float.HANDLE.invokeExact(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx512_partition_int {
-        public static final MemorySegment ADDR = findOrThrow("avx512_partition_int");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, PART_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx512_partition_int(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_partition_int", array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-            }
-            avx512_partition_int.HANDLE.invokeExact(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx512_partition_long {
-        public static final MemorySegment ADDR = findOrThrow("avx512_partition_long");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, PART_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx512_partition_long(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_partition_long", array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-            }
-            avx512_partition_long.HANDLE.invokeExact(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-            throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx512_partition_float {
-        public static final MemorySegment ADDR = findOrThrow("avx512_partition_float");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, PART_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx512_partition_float(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_partition_float", array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-            }
-            avx512_partition_float.HANDLE.invokeExact(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
-    private static class avx512_partition_double {
-        public static final MemorySegment ADDR = findOrThrow("avx512_partition_double");
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, PART_DESC, Linker.Option.critical(true));
-    }
-
-    public static void avx512_partition_double(MemorySegment array, int from_index, int to_index, MemorySegment pivot_indices, int index_pivot1, int index_pivot2) {
-        try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("avx512_partition_double", array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-            }
-            avx512_partition_double.HANDLE.invokeExact(array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
-        } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
-        }
-    }
-
 
     /**
      * {@snippet lang=c :

@@ -435,6 +435,11 @@ public class VM {
     /**
      * FIXME
      */
+    public static native long getCPUFeatures();
+
+    /**
+     * FIXME
+     */
     public static native String getCPUFeaturesString();
 
     /**

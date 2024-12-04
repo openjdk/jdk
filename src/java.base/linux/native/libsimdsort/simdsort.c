@@ -4,10 +4,13 @@
 
 #define DLL_PUBLIC __attribute__((visibility("default")))
 
+const int64_t VM_AVX2     = (1ULL << 19);
+const int64_t VM_AVX512DQ = (1ULL << 28);
+
 DLL_PUBLIC
-void simdsort_link(struct library* lib, int config) {
-    bool has_avx512dq = config > 3;
-    bool has_avx2     = config > 1;
+void simdsort_link(struct library* lib, int64_t vm_features) {
+    bool has_avx512dq = (vm_features & VM_AVX512DQ) != 0;
+    bool has_avx2     = (vm_features & VM_AVX2) != 0;
 
     lib->sort_jint    = has_avx512dq ? &avx512_sort_int :
                         has_avx2     ? &avx2_sort_int : 0;

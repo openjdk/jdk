@@ -25,13 +25,9 @@
 
 package java.util;
 
-import java.lang.foreign.MemorySegment;
 import java.util.concurrent.CountedCompleter;
 import java.util.concurrent.RecursiveTask;
-import jdk.internal.misc.Unsafe;
-import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.vector.VectorSupport;
 
 /**
  * This class implements powerful and fully optimized versions, both
@@ -130,7 +126,7 @@ final class DualPivotQuicksort {
      * of the array into ascending order.
      */
     @FunctionalInterface
-    private static interface SortOperation<A> {
+    public interface SortOperation<A> {
         /**
          * Sorts the specified range of the array.
          *
@@ -141,48 +137,12 @@ final class DualPivotQuicksort {
         void sort(A a, int low, int high);
     }
 
-    @ForceInline
-    private static void sort(int[] array, int low, int high, SortOperation<int[]> so) {
-        if (!SIMDSortLibrary.SORT_INT_ADDR.equals(MemorySegment.NULL)) {
-            SIMDSortLibrary.sort_int(MemorySegment.ofArray(array), low, high);
-        } else {
-            so.sort(array, low, high);
-        }
-    }
-
-    @ForceInline
-    private static void sort(float[] array, int low, int high, SortOperation<float[]> so) {
-        if (!SIMDSortLibrary.SORT_FLOAT_ADDR.equals(MemorySegment.NULL)) {
-            SIMDSortLibrary.sort_float(MemorySegment.ofArray(array), low, high);
-        } else {
-            so.sort(array, low, high);
-        }
-    }
-
-    @ForceInline
-    private static void sort(long[] array, int low, int high, SortOperation<long[]> so) {
-        if (!SIMDSortLibrary.SORT_LONG_ADDR.equals(MemorySegment.NULL)) {
-            SIMDSortLibrary.sort_long(MemorySegment.ofArray(array), low, high);
-        } else {
-            so.sort(array, low, high);
-        }
-    }
-
-    @ForceInline
-    private static void sort(double[] array, int low, int high, SortOperation<double[]> so) {
-        if (!SIMDSortLibrary.SORT_DOUBLE_ADDR.equals(MemorySegment.NULL)) {
-            SIMDSortLibrary.sort_double(MemorySegment.ofArray(array), low, high);
-        } else {
-            so.sort(array, low, high);
-        }
-    }
-
     /**
      * Represents a function that accepts the array and partitions the specified range
      * of the array using the pivots provided.
      */
     @FunctionalInterface
-    interface PartitionOperation<A> {
+    public interface PartitionOperation<A> {
         /**
          * Partitions the specified range of the array using the given pivots.
          *
@@ -195,49 +155,25 @@ final class DualPivotQuicksort {
         int[] partition(A a, int low, int high, int pivotIndex1, int pivotIndex2);
     }
 
-    @ForceInline
-    private static int[] partition(int[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<int[]> po) {
-        if (SIMDSortLibrary.PARTITION_INT_ADDR != MemorySegment.NULL) {
-            int[] result = new int[2];
-            SIMDSortLibrary.partition_int(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            return result;
-        } else {
-            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
-        }
-    }
+    private static final SortOperation<int[]> insertionSortInt = SIMDSortLibrary.wrapSort(int[].class, DualPivotQuicksort::insertionSort);
+    private static final SortOperation<long[]> insertionSortLong = SIMDSortLibrary.wrapSort(long[].class, DualPivotQuicksort::insertionSort);
+    private static final SortOperation<float[]> insertionSortFloat = SIMDSortLibrary.wrapSort(float[].class, DualPivotQuicksort::insertionSort);
+    private static final SortOperation<double[]> insertionSortDouble = SIMDSortLibrary.wrapSort(double[].class, DualPivotQuicksort::insertionSort);
 
-    @ForceInline
-    private static int[] partition(float[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<float[]> po) {
-        if (SIMDSortLibrary.PARTITION_FLOAT_ADDR != MemorySegment.NULL) {
-            int[] result = new int[2];
-            SIMDSortLibrary.partition_float(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            return result;
-        } else {
-            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
-        }
-    }
+    private static final SortOperation<int[]> mixedInsertionSortInt = SIMDSortLibrary.wrapSort(int[].class, DualPivotQuicksort::mixedInsertionSort);
+    private static final SortOperation<long[]> mixedInsertionSortLong = SIMDSortLibrary.wrapSort(long[].class, DualPivotQuicksort::mixedInsertionSort);
+    private static final SortOperation<float[]> mixedInsertionSortFloat = SIMDSortLibrary.wrapSort(float[].class, DualPivotQuicksort::mixedInsertionSort);
+    private static final SortOperation<double[]> mixedInsertionSortDouble = SIMDSortLibrary.wrapSort(double[].class, DualPivotQuicksort::mixedInsertionSort);
 
-    @ForceInline
-    private static int[] partition(long[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<long[]> po) {
-        if (SIMDSortLibrary.PARTITION_LONG_ADDR != MemorySegment.NULL) {
-            int[] result = new int[2];
-            SIMDSortLibrary.partition_long(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            return result;
-        } else {
-            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
-        }
-    }
+    private static final PartitionOperation<int[]> partitionSinglePivotInt = SIMDSortLibrary.wrapPartition(int[].class, DualPivotQuicksort::partitionSinglePivot);
+    private static final PartitionOperation<long[]> partitionSinglePivotLong = SIMDSortLibrary.wrapPartition(long[].class, DualPivotQuicksort::partitionSinglePivot);
+    private static final PartitionOperation<float[]> partitionSinglePivotFloat = SIMDSortLibrary.wrapPartition(float[].class, DualPivotQuicksort::partitionSinglePivot);
+    private static final PartitionOperation<double[]> partitionSinglePivotDouble = SIMDSortLibrary.wrapPartition(double[].class, DualPivotQuicksort::partitionSinglePivot);
 
-    @ForceInline
-    private static int[] partition(double[] array, int low, int high, int pivotIndex1, int pivotIndex2, PartitionOperation<double[]> po) {
-        if (SIMDSortLibrary.PARTITION_DOUBLE_ADDR != MemorySegment.NULL) {
-            int[] result = new int[2];
-            SIMDSortLibrary.partition_double(MemorySegment.ofArray(array), low, high, MemorySegment.ofArray(result), pivotIndex1, pivotIndex2);
-            return result;
-        } else {
-            return po.partition(array, low, high, pivotIndex1, pivotIndex2);
-        }
-    }
+    private static final PartitionOperation<int[]> partitionDualPivotInt = SIMDSortLibrary.wrapPartition(int[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final PartitionOperation<long[]> partitionDualPivotLong = SIMDSortLibrary.wrapPartition(long[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final PartitionOperation<float[]> partitionDualPivotFloat = SIMDSortLibrary.wrapPartition(float[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final PartitionOperation<double[]> partitionDualPivotDouble = SIMDSortLibrary.wrapPartition(double[].class, DualPivotQuicksort::partitionDualPivot);
 
     /**
      * Calculates the double depth of parallel merging.
@@ -301,7 +237,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
+                mixedInsertionSortInt.sort(a, low, high);
                 return;
             }
 
@@ -309,7 +245,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(a, low, high, DualPivotQuicksort::insertionSort);
+                insertionSortInt.sort(a, low, high);
                 return;
             }
 
@@ -395,7 +331,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partitionDualPivotInt.partition(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 
@@ -419,7 +355,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partitionSinglePivotInt.partition(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1104,7 +1040,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
+                mixedInsertionSortLong.sort(a, low, high);
                 return;
             }
 
@@ -1112,7 +1048,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(a, low, high, DualPivotQuicksort::insertionSort);
+                insertionSortLong.sort(a, low, high);
                 return;
             }
 
@@ -1199,7 +1135,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partitionDualPivotLong.partition(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1220,7 +1156,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partitionSinglePivotLong.partition(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2693,7 +2629,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
+                mixedInsertionSortFloat.sort(a, low, high);
                 return;
             }
 
@@ -2701,7 +2637,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(a, low, high, DualPivotQuicksort::insertionSort);
+                insertionSortFloat.sort(a, low, high);
                 return;
             }
 
@@ -2788,7 +2724,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partitionDualPivotFloat.partition(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2809,7 +2745,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partitionSinglePivotFloat.partition(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -3545,7 +3481,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                sort(a, low, high, DualPivotQuicksort::mixedInsertionSort);
+                mixedInsertionSortDouble.sort(a, low, high);
                 return;
             }
 
@@ -3553,7 +3489,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                sort(a, low, high, DualPivotQuicksort::insertionSort);
+                insertionSortDouble.sort(a, low, high);
                 return;
             }
 
@@ -3640,7 +3576,7 @@ final class DualPivotQuicksort {
                 * the pivots. These values are inexpensive approximation
                 * of tertiles. Note, that pivot1 < pivot2.
                 */
-                int[] pivotIndices = partition(a, low, high, e1, e5, DualPivotQuicksort::partitionDualPivot);
+                int[] pivotIndices = partitionDualPivotDouble.partition(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -3661,7 +3597,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partition(a, low, high, e3, e3, DualPivotQuicksort::partitionSinglePivot);
+                int[] pivotIndices = partitionSinglePivotDouble.partition(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 

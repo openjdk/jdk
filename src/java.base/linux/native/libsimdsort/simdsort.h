@@ -8,27 +8,6 @@
 extern "C" {
 #endif
 
-
-//typedef void (*sort_jint_func)(jint*, jint, jint);
-//typedef void (*sort_jlong_func)(jlong*, jint, jint);
-//typedef void (*sort_jfloat_func)(jfloat*, jint, jint);
-//typedef void (*sort_jdouble_func)(jdouble*, jint, jint);
-
-
-//typedef struct partition (*partition_jint_func)(jint*, jint, jint, jint, jint);
-//typedef struct partition (*partition_jlong_func)(jlong*, jint, jint, jint, jint);
-//typedef struct partition (*partition_jfloat_func)(jfloat*, jint, jint, jint, jint);
-//typedef struct partition (*partition_jdouble_func)(jdouble*, jint, jint, jint, jint);
-//typedef void (*partition_jint_func)(jint*, jint, jint, jint*, jint, jint);
-//typedef void (*partition_jlong_func)(jlong*, jint, jint, jint*, jint, jint);
-//typedef void (*partition_jfloat_func)(jfloat*, jint, jint, jint*, jint, jint);
-//typedef void (*partition_jdouble_func)(jdouble*, jint, jint, jint*, jint, jint);
-
-//struct partition { 
-//  jint lower;
-//  jint upper;
-//};
-  
 struct library {
   void (*sort_jint)   (jint*,    jint, jint);
   void (*sort_jlong)  (jlong*,   jint, jint);
@@ -41,7 +20,7 @@ struct library {
   void (*partition_jdouble)(jdouble*, jint, jint, jint*, jint, jint);
 };
 
-void simdsort_link(struct library* lib, int config);
+void simdsort_link(struct library* lib, int64_t vm_features);
 
 
 #ifdef __cplusplus

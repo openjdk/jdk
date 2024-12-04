@@ -32,8 +32,7 @@
 
 /* Only register the performance-critical methods */
 static JNINativeMethod methods[] = {
-    {"getNanoTimeAdjustment", "(J)J",                 (void *)&JVM_GetNanoTimeAdjustment},
-    {"getCPUFeaturesString",  "()Ljava/lang/String;", (void *)&JVM_GetCPUFeaturesString}
+    {"getNanoTimeAdjustment", "(J)J", (void *)&JVM_GetNanoTimeAdjustment}
 };
 
 JNIEXPORT jobject JNICALL
@@ -55,4 +54,14 @@ Java_jdk_internal_misc_VM_initialize(JNIEnv *env, jclass cls) {
 JNIEXPORT jobjectArray JNICALL
 Java_jdk_internal_misc_VM_getRuntimeArguments(JNIEnv *env, jclass cls) {
     return JVM_GetVmArguments(env);
+}
+
+JNIEXPORT jlong JNICALL
+Java_jdk_internal_misc_VM_getCPUFeatures(JNIEnv *env, jclass cls) {
+    return JVM_GetCPUFeatures(env);
+}
+
+JNIEXPORT jstring JNICALL
+Java_jdk_internal_misc_VM_getCPUFeaturesString(JNIEnv *env, jclass cls) {
+    return JVM_GetCPUFeaturesString(env);
 }
