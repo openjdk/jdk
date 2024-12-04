@@ -63,6 +63,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
@@ -73,7 +74,6 @@ import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.internal.TaskHelper.BadArgs;
 import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
-import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -309,7 +309,7 @@ public class JlinkTask {
             }
             cleanupOutput(outputPath);
             return EXIT_ERROR;
-        } catch (IllegalArgumentException | ResolutionException | RuntimeImageLinkException e) {
+        } catch (IllegalArgumentException | ResolutionException e) {
             log.println(taskHelper.getMessage("error.prefix") + " " + e.getMessage());
             if (DEBUG) {
                 e.printStackTrace(log);
@@ -618,6 +618,12 @@ public class JlinkTask {
             // Do not permit linking from run-time image and also including jdk.jlink module
             if (cf.findModule(JlinkTask.class.getModule().getName()).isPresent()) {
                 String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
+                throw new IllegalArgumentException(msg);
+            }
+            // Do not permit linking from run-time image when the current image
+            // is being patched.
+            if (ModuleBootstrap.patcher().hasPatches()) {
+                String msg = taskHelper.getMessage("err.runtime.link.patched.module");
                 throw new IllegalArgumentException(msg);
             }
 
@@ -1039,7 +1045,7 @@ public class JlinkTask {
         @Override
         public ExecutableImage retrieve(ImagePluginStack stack) throws IOException {
             ExecutableImage image = ImageFileCreator.create(archives,
-                    targetPlatform.arch().byteOrder(), stack, generateRuntimeImage, taskHelper);
+                    targetPlatform.arch().byteOrder(), stack, generateRuntimeImage);
             if (packagedModulesPath != null) {
                 // copy the packaged modules to the given path
                 Files.createDirectories(packagedModulesPath);
