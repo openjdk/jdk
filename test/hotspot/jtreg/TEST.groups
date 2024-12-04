@@ -491,6 +491,7 @@ hotspot_cds_relocation = \
   runtime/modules/PatchModule/PatchModuleClassList.java \
   runtime/NMT \
   serviceability/sa \
+ -serviceability/sa/TestJhsdbJstackPrintVMLocks.java \
  -runtime/cds/DeterministicDump.java
 
 hotspot_cds_verify_shared_spaces = \
