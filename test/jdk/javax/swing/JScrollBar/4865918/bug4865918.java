@@ -56,10 +56,8 @@ public class bug4865918 {
             robot.waitForIdle();
             robot.delay(200);
 
-            int value = getValue();
-
-            if (value != 9) {
-                throw new Error("The scrollbar block increment is incorect");
+            if (getValue() != 9) {
+                throw new RuntimeException("The scrollbar block increment is incorrect");
             }
         } finally {
             if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
@@ -69,11 +67,8 @@ public class bug4865918 {
     private static int getValue() throws Exception {
         final int[] result = new int[1];
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                result[0] = sbar.getValue();
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            result[0] = sbar.getValue();
         });
 
         return result[0];
