@@ -147,7 +147,7 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase, BasicType loop_bt)
       jlong init_con = (stride_con > 0) ? init_type->is_int()->_lo : init_type->is_int()->_hi;
       jlong limit_con = (stride_con > 0) ? limit_type->is_int()->_hi : limit_type->is_int()->_lo;
       int stride_m = stride_con - (stride_con > 0 ? 1 : -1);
-      jlong trip_count = (limit_con - init_con + stride_m)/stride_con;
+      jlong trip_count = (limit_con - init_con + stride_m) / stride_con;
       // The loop body is always executed at least once even if init >= limit (for stride_con > 0) or
       // init <= limit (for stride_con < 0).
       trip_count = MAX2(trip_count, (jlong)1);
