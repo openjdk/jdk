@@ -1768,7 +1768,7 @@ public class CSS implements Serializable {
 
         // Can continue to scan
         boolean notReachEnd = true;
-        while(notReachEnd = (index[0] < length
+        while (notReachEnd = (index[0] < length
               && ((aChar = string.charAt(index[0])) != ')'))) {
             if (seplist.indexOf(aChar) > -1/* || Character.isSpaceChar(aChar)*/) {
                 sep = true;
@@ -1837,7 +1837,7 @@ public class CSS implements Serializable {
             index[0]++;
             // From here next expected chars are only 0123456789.
             // Only next four digits are take in count.
-            while(index[0] < length
+            while (index[0] < length
                   && ((aChar = string.charAt(index[0])) != ')')
                   && Character.isDigit(aChar)) {
                 index[0]++;
@@ -1858,7 +1858,7 @@ public class CSS implements Serializable {
             // Exponent value
             int exponent = 0;
             // From here next expected chars are only 0123456789
-            while(index[0] < length
+            while (index[0] < length
                   && ((aChar = string.charAt(index[0])) != ')')
                   && Character.isDigit(aChar)) {
                 index[0]++;
@@ -1876,22 +1876,28 @@ public class CSS implements Serializable {
         if (start != index[0]) {
             float value = significand;
             if (index[0] < length && string.charAt(index[0]) == '%') {
+                index[0]++;
+                /* Should replace the previous line in the next version
                 if (index[2] == 2) {
                     index[0]++;
                 } else {
                     index[2] = 0;
                     return 0;
                 }
+                */
                 if (tenpower > Integer.MIN_VALUE + 2) {
                     tenpower -= 2;
                 } else return 0;
             } else if (index[1] < 4) {
+                value = value / 255f;
+                /* Should replace the previous line in the next version
                 if (index[2] == 1) {
                     value = value / 255f;
                 } else {
                     index[2] = 0;
                     return 0;
                 }
+                */
             }
             // Reject negative value;
             // Clamp value in [[0,255]] or [0,1]
