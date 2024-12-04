@@ -619,6 +619,8 @@ void ShenandoahHeapRegion::try_recycle(volatile size_t* recycled_heap_space, vol
       Atomic::add(recycled_heap_space, used());
       Atomic::inc(recycled_regions);
 
+      OrderAccess::fence();
+
       recycle_internal();
     }
     _recycling.unset();
