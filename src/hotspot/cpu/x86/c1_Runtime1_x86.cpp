@@ -1320,6 +1320,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
     case C1StubId::is_instance_of_id:
       {
+#ifdef LINUX
         // Mirror: c_rarg0
         // Object: c_rarg1
         // Temps: rdx, rcx, r8, r9
@@ -1366,6 +1367,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
         __ bind(done);
         __ ret(0);
+#endif // LINUX
       }
       break;
 
