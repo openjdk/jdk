@@ -48,8 +48,8 @@ class VM_Version: public Abstract_VM_Version {
 #define  StoreFacilityListExtendedMask  0x0100000000000000UL  // z9
 #define  ETF2Mask                       0x0000800000000000UL  // z900
 #define  CryptoFacilityMask             0x0000400000000000UL  // z990 (aka message-security assist)
-#define  LongDispFacilityMask           0x0000200000000000UL  // z900 with microcode update
-#define  LongDispFacilityHighPerfMask   0x0000300000000000UL  // z990
+#define  LongDispFacilityMask           0x0000200000000000UL  // z900 with microcode update, Bit: 18
+#define  LongDispFacilityHighPerfMask   0x0000100000000000UL  // z990, Bit: 19
 #define  HFPMultiplyAndAddMask          0x0000080000000000UL  // z990
 #define  ExtImmedFacilityMask           0x0000040000000000UL  // z9
 #define  ETF3Mask                       0x0000020000000000UL  // z990/z9 (?)
@@ -64,7 +64,8 @@ class VM_Version: public Abstract_VM_Version {
 #define  ExecuteExtensionsMask          0x0000000010000000UL  // z10
 #define  FPExtensionsMask               0x0000000004000000UL  // z196
 #define  FPSupportEnhancementsMask      0x0000000000400000UL  // z10
-#define  DecimalFloatingPointMask       0x0000000000300000UL  // z10
+#define  DecimalFloatingPointMask       0x0000000000200000UL  // z10, Bit: 42
+#define  DecimalFloatingPointHighPerfMask 0x0000000000100000UL  // z10, Bit: 43
 // z196 begin
 #define  DistinctOpndsMask              0x0000000000040000UL  // z196
 #define  FastBCRSerializationMask       DistinctOpndsMask
@@ -459,6 +460,7 @@ class VM_Version: public Abstract_VM_Version {
   static bool has_FPExtensions()              { return  (_features[0] & FPExtensionsMask)              == FPExtensionsMask; }
   static bool has_FPSupportEnhancements()     { return  (_features[0] & FPSupportEnhancementsMask)     == FPSupportEnhancementsMask; }
   static bool has_DecimalFloatingPoint()      { return  (_features[0] & DecimalFloatingPointMask)      == DecimalFloatingPointMask; }
+  static bool has_DecimalFloatingPointHighPerf() { return  (_features[0] & DecimalFloatingPointHighPerfMask) == DecimalFloatingPointHighPerfMask; }
   static bool has_InterlockedAccessV1()       { return  (_features[0] & InterlockedAccess1Mask)        == InterlockedAccess1Mask; }
   static bool has_LoadAndALUAtomicV1()        { return  (_features[0] & InterlockedAccess1Mask)        == InterlockedAccess1Mask; }
   static bool has_PopCount()                  { return  (_features[0] & PopulationCountMask)           == PopulationCountMask; }
@@ -515,6 +517,7 @@ class VM_Version: public Abstract_VM_Version {
 
   // CPU feature setters (to force model-specific behaviour). Test/debugging only.
   static void set_has_DecimalFloatingPoint()      { _features[0] |= DecimalFloatingPointMask; }
+  static void set_has_DecimalFloatingPointHighPerf() { _features[0] |= DecimalFloatingPointHighPerfMask; }
   static void set_has_FPSupportEnhancements()     { _features[0] |= FPSupportEnhancementsMask; }
   static void set_has_ExecuteExtensions()         { _features[0] |= ExecuteExtensionsMask; }
   static void set_has_MemWithImmALUOps()          { _features[0] |= GnrlInstrExtFacilityMask; }
