@@ -48,10 +48,8 @@ public interface AnnotatedTypeVariable extends AnnotatedType {
      * Given an {@code AnnotatedTypeVariable tv}, the call {@code
      * tv.getAnnotatedBounds()} is equivalent to:
      * {@snippet lang=java :
-     * // @link region substring="getType" target="#getType()"
      * // @link substring="getAnnotatedBounds" target="TypeVariable#getAnnotatedBounds()" :
-     * ((TypeVariable<?>) tv.getType()).getAnnotatedBounds()
-     * // @end
+     * ((TypeVariable<?>) tv.getType()).getAnnotatedBounds() // @link substring="getType" target="#getType()"
      * }
      *
      * @throws TypeNotPresentException if any of the bounds refers to a
