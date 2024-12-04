@@ -1384,9 +1384,6 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_AddReductionVL:
-      if (UseSSE < 2) { // requires at least SSE2
-        return false;
-      }
       break;
     case Op_AbsVB:
     case Op_AbsVS:
@@ -1559,14 +1556,7 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_SignumF:
-      if (UseSSE < 1) {
-        return false;
-      }
-      break;
     case Op_SignumD:
-      if (UseSSE < 2) {
-        return false;
-      }
       break;
     case Op_CompressM:
       if (!VM_Version::supports_avx512vl() || !VM_Version::supports_bmi2()) {
@@ -1574,14 +1564,7 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
     case Op_SqrtF:
-      if (UseSSE < 1) {
-        return false;
-      }
-      break;
     case Op_SqrtD:
-      if (UseSSE < 2) {
-        return false;
-      }
       break;
     case Op_ConvF2HF:
     case Op_ConvHF2F:
@@ -4460,7 +4443,7 @@ instruct ReplI_zero(vec dst, immI_0 zero) %{
 %}
 
 instruct ReplI_M1(vec dst, immI_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::is_non_long_integral_vector(n));
+  predicate(Matcher::is_non_long_integral_vector(n));
   match(Set dst (Replicate con));
   format %{ "vallones $dst" %}
   ins_encode %{
@@ -4540,7 +4523,7 @@ instruct ReplL_zero(vec dst, immL0 zero) %{
 %}
 
 instruct ReplL_M1(vec dst, immL_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::vector_element_basic_type(n) == T_LONG);
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (Replicate con));
   format %{ "vallones $dst" %}
   ins_encode %{
@@ -6912,7 +6895,6 @@ instruct vshiftL_arith_reg(vec dst, vec src, vec shift, vec tmp) %{
   ins_encode %{
     uint vlen = Matcher::vector_length(this);
     if (vlen == 2) {
-      assert(UseSSE >= 2, "required");
       __ movdqu($dst$$XMMRegister, $src$$XMMRegister);
       __ psrlq($dst$$XMMRegister, $shift$$XMMRegister);
       __ movdqu($tmp$$XMMRegister, ExternalAddress(vector_long_sign_mask()), noreg);
@@ -8286,7 +8268,6 @@ instruct vabsnegD(vec dst, vec src) %{
     int opcode = this->ideal_Opcode();
     uint vlen = Matcher::vector_length(this);
     if (vlen == 2) {
-      assert(UseSSE >= 2, "required");
       __ vabsnegd(opcode, $dst$$XMMRegister, $src$$XMMRegister);
     } else {
       int vlen_enc = vector_length_encoding(this);

@@ -912,12 +912,6 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_SSE4A;
   }
 
-  if (UseSSE < 2)
-    _features &= ~CPU_SSE2;
-
-  if (UseSSE < 1)
-    _features &= ~CPU_SSE;
-
   //since AVX instructions is slower than SSE in some ZX cpus, force USEAVX=0.
   if (is_zx() && ((cpu_family() == 6) || (cpu_family() == 7))) {
     UseAVX = 0;
@@ -927,18 +921,13 @@ void VM_Version::get_processor_features() {
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
   // older Pentiums which do not support it.
   int use_sse_limit = 0;
-  if (UseSSE > 0) {
-    if (UseSSE > 3 && supports_sse4_1()) {
-      use_sse_limit = 4;
-    } else if (UseSSE > 2 && supports_sse3()) {
-      use_sse_limit = 3;
-    } else if (UseSSE > 1 && supports_sse2()) {
-      use_sse_limit = 2;
-    } else if (UseSSE > 0 && supports_sse()) {
-      use_sse_limit = 1;
-    } else {
-      use_sse_limit = 0;
-    }
+  if (UseSSE > 3 && supports_sse4_1()) {
+    use_sse_limit = 4;
+  } else if (UseSSE > 2 && supports_sse3()) {
+    use_sse_limit = 3;
+  } else {
+    assert(supports_sse2(), "Checked before");
+    use_sse_limit = 2;
   }
   if (FLAG_IS_DEFAULT(UseSSE)) {
     FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
@@ -1208,7 +1197,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
   }
 
-  if (supports_fma() && UseSSE >= 2) { // Check UseSSE since FMA code uses SSE instructions
+  if (supports_fma()) {
     if (FLAG_IS_DEFAULT(UseFMA)) {
       UseFMA = true;
     }
@@ -1271,23 +1260,11 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-#ifdef COMPILER2
-  if (UseFPUForSpilling) {
-    if (UseSSE < 2) {
-      // Only supported with SSE2+
-      FLAG_SET_DEFAULT(UseFPUForSpilling, false);
-    }
-  }
-#endif
-
 #if COMPILER2_OR_JVMCI
   int max_vector_size = 0;
-  if (UseSSE < 2) {
-    // Vectors (in XMM) are only supported with SSE2+
-    // SSE is always 2 on x64.
-    max_vector_size = 0;
-  } else if (UseAVX == 0 || !os_supports_avx_vectors()) {
-    // 16 byte vectors (in XMM) are supported with SSE2+
+  if (UseAVX == 0 || !os_supports_avx_vectors()) {
+    // 16 byte vectors (in XMM) are supported with SSE2+.
+    // SSE2 is the minimum for x86_64.
     max_vector_size = 16;
   } else if (UseAVX == 1 || UseAVX == 2) {
     // 32 bytes vectors (in YMM) are only supported with AVX+
@@ -1743,7 +1720,7 @@ void VM_Version::get_processor_features() {
 #endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
-  if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {
+  if (!UseFastStosb && UseUnalignedLoadStores) {
     if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
       UseXMMForObjInit = true;
     }
@@ -1856,22 +1833,18 @@ void VM_Version::get_processor_features() {
 #endif
     log->cr();
     log->print("Allocation");
-    if (AllocatePrefetchStyle <= 0 || (UseSSE == 0 && !supports_3dnow_prefetch())) {
+    if (AllocatePrefetchStyle <= 0) {
       log->print_cr(": no prefetching");
     } else {
       log->print(" prefetching: ");
-      if (UseSSE == 0 && supports_3dnow_prefetch()) {
+      if (AllocatePrefetchInstr == 0) {
+        log->print("PREFETCHNTA");
+      } else if (AllocatePrefetchInstr == 1) {
+        log->print("PREFETCHT0");
+      } else if (AllocatePrefetchInstr == 2) {
+        log->print("PREFETCHT2");
+      } else if (AllocatePrefetchInstr == 3) {
         log->print("PREFETCHW");
-      } else if (UseSSE >= 1) {
-        if (AllocatePrefetchInstr == 0) {
-          log->print("PREFETCHNTA");
-        } else if (AllocatePrefetchInstr == 1) {
-          log->print("PREFETCHT0");
-        } else if (AllocatePrefetchInstr == 2) {
-          log->print("PREFETCHT2");
-        } else if (AllocatePrefetchInstr == 3) {
-          log->print("PREFETCHW");
-        }
       }
       if (AllocatePrefetchLines > 1) {
         log->print_cr(" at distance %d, %d lines of %d bytes", AllocatePrefetchDistance, AllocatePrefetchLines, AllocatePrefetchStepSize);

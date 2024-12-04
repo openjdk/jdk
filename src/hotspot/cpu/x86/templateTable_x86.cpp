@@ -1034,7 +1034,7 @@ void TemplateTable::lastore() {
 void TemplateTable::fastore() {
   transition(ftos, vtos);
   __ pop_i(rbx);
-  // value is in UseSSE >= 1 ? xmm0 : ST(0)
+  // value is in xmm0
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx
@@ -1047,7 +1047,7 @@ void TemplateTable::fastore() {
 void TemplateTable::dastore() {
   transition(dtos, vtos);
   __ pop_i(rbx);
-  // value is in UseSSE >= 2 ? xmm0 : ST(0)
+  // value is in xmm0
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx

@@ -2126,37 +2126,29 @@ LIR_Opr LinearScan::calc_operand_for_interval(const Interval* interval) {
 #ifndef __SOFTFP__
       case T_FLOAT: {
 #ifdef X86
-        if (UseSSE >= 1) {
-          int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
-          if (UseAVX < 3) {
-            last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
-          }
-#endif // LP64
-          assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
-          assert(interval->assigned_regHi() == any_reg, "must not have hi register");
-          return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
+        int last_xmm_reg = pd_last_xmm_reg;
+        if (UseAVX < 3) {
+          last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
         }
-#endif // X86
-
+        assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
+        assert(interval->assigned_regHi() == any_reg, "must not have hi register");
+        return LIR_OprFact::single_xmm(assigned_reg - pd_first_xmm_reg);
+#else
         assert(assigned_reg >= pd_first_fpu_reg && assigned_reg <= pd_last_fpu_reg, "no fpu register");
         assert(interval->assigned_regHi() == any_reg, "must not have hi register");
         return LIR_OprFact::single_fpu(assigned_reg - pd_first_fpu_reg);
+#endif // X86
       }
 
       case T_DOUBLE: {
 #ifdef X86
-        if (UseSSE >= 2) {
           int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
           if (UseAVX < 3) {
             last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
           }
-#endif // LP64
           assert(assigned_reg >= pd_first_xmm_reg && assigned_reg <= last_xmm_reg, "no xmm register");
           assert(interval->assigned_regHi() == any_reg, "must not have hi register (double xmm values are stored in one register)");
           return LIR_OprFact::double_xmm(assigned_reg - pd_first_xmm_reg);
-        }
 #endif // X86
 
 #if defined(ARM32)
@@ -2718,17 +2710,8 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
     } else if (opr->is_double_xmm()) {
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation");
       VMReg rname_first  = opr->as_xmm_double_reg()->as_VMReg();
-#  ifdef _LP64
       first = new LocationValue(Location::new_reg_loc(Location::dbl, rname_first));
       second = _int_0_scope_value;
-#  else
-      first = new LocationValue(Location::new_reg_loc(Location::normal, rname_first));
-      // %%% This is probably a waste but we'll keep things as they were for now
-      if (true) {
-        VMReg rname_second = rname_first->next();
-        second = new LocationValue(Location::new_reg_loc(Location::normal, rname_second));
-      }
-#  endif
 #endif
 
     } else if (opr->is_double_fpu()) {
@@ -3170,11 +3153,9 @@ LIR_Opr LinearScan::get_operand(int reg_num) {
 
 #ifdef X86
   int last_xmm_reg = pd_last_xmm_reg;
-#ifdef _LP64
   if (UseAVX < 3) {
     last_xmm_reg = pd_first_xmm_reg + (pd_nof_xmm_regs_frame_map / 2) - 1;
   }
-#endif
 #endif
   if (reg_num >= pd_first_cpu_reg && reg_num <= pd_last_cpu_reg) {
     opr = LIR_OprFact::single_cpu(reg_num);

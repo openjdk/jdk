@@ -510,11 +510,12 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ push(rdx);
 
   const Register pre_val = rax;
+  const Register thread = r15_thread;
   const Register tmp = rdx;
 
-  Address queue_active(r15_thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
-  Address queue_index(r15_thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
-  Address buffer(r15_thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
+  Address queue_active(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()));
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
   Label done;
   Label runtime;
@@ -548,7 +549,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
 
   // load the pre-value
   __ load_parameter(0, rcx);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), rcx, r15_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), rcx, thread);
 
   __ pop_call_clobbered_registers();
 
@@ -573,8 +574,10 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   // At this point we know new_value is non-null and the new_value crosses regions.
   // Must check to see if card is already dirty
 
-  Address queue_index(r15_thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
-  Address buffer(r15_thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
+  const Register thread = r15_thread;
+
+  Address queue_index(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()));
+  Address buffer(thread, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()));
 
   __ push(rax);
   __ push(rcx);
@@ -616,7 +619,7 @@ void G1BarrierSetAssembler::generate_c1_post_barrier_runtime_stub(StubAssembler*
   __ bind(runtime);
   __ push_call_clobbered_registers();
 
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, r15_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry), card_addr, thread);
 
   __ pop_call_clobbered_registers();
 

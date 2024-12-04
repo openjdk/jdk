@@ -852,7 +852,7 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     __ bind(L_skip_barrier);
   }
 
-  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, false, C->stub_function() != nullptr);
+  __ verified_entry(framesize, C->output()->need_stack_bang(bangsize)?bangsize:0, C->stub_function() != nullptr);
 
   C->output()->set_frame_complete(__ offset());
 

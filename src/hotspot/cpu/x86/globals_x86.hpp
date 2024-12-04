@@ -92,9 +92,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
                    range,                                                   \
                    constraint)                                              \
                                                                             \
-  develop(bool, IEEEPrecision, true,                                        \
-          "Enables IEEE precision (for INTEL only)")                        \
-                                                                            \
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \

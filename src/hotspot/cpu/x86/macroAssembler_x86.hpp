@@ -482,25 +482,16 @@ class MacroAssembler: public Assembler {
   void cmpss2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
   void cmpsd2int(XMMRegister opr1, XMMRegister opr2, Register dst, bool unordered_is_less);
 
-  // branch to L if FPU flag C2 is set/not set
-  // tmp is a temporary register, if none is available use noreg
-  void jC2 (Register tmp, Label& L);
-  void jnC2(Register tmp, Label& L);
-
-  // Load float value from 'address'. If UseSSE >= 1, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
+  // Load float value from 'address'. The value is loaded into register xmm0.
   void load_float(Address src);
 
-  // Store float value to 'address'. If UseSSE >= 1, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
+  // Store float value to 'address'. The value is stored from register xmm0.
   void store_float(Address dst);
 
-  // Load double value from 'address'. If UseSSE >= 2, the value is loaded into
-  // register xmm0. Otherwise, the value is loaded onto the FPU stack.
+  // Load double value from 'address'. The value is loaded into register xmm0.
   void load_double(Address src);
 
-  // Store double value to 'address'. If UseSSE >= 2, the value is stored
-  // from register xmm0. Otherwise, the value is stored from the FPU stack.
+  // Store double value to 'address'. The value is stored from register xmm0.
   void store_double(Address dst);
 
   void push_IU_state();

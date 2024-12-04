@@ -335,18 +335,21 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ cmpptr(rbx, 0); // rbx contains the incoming method for c2i adapters.
   __ jcc(Assembler::equal, bad_call);
 
+  Register tmp1 = rscratch1;
+  Register tmp2 = rscratch2;
+
   // Pointer chase to the method holder to find out if the method is concurrently unloading.
   Label method_live;
-  __ load_method_holder_cld(rscratch1, rbx);
+  __ load_method_holder_cld(tmp1, rbx);
 
    // Is it a strong CLD?
-  __ cmpl(Address(rscratch1, ClassLoaderData::keep_alive_ref_count_offset()), 0);
+  __ cmpl(Address(tmp1, ClassLoaderData::keep_alive_ref_count_offset()), 0);
   __ jcc(Assembler::greater, method_live);
 
    // Is it a weak but alive CLD?
-  __ movptr(rscratch1, Address(rscratch1, ClassLoaderData::holder_offset()));
-  __ resolve_weak_handle(rscratch1, rscratch2);
-  __ cmpptr(rscratch1, 0);
+  __ movptr(tmp1, Address(tmp1, ClassLoaderData::holder_offset()));
+  __ resolve_weak_handle(tmp1, tmp2);
+  __ cmpptr(tmp1, 0);
   __ jcc(Assembler::notEqual, method_live);
 
   __ bind(bad_call);

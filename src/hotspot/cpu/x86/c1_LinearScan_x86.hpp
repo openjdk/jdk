@@ -65,18 +65,16 @@ inline void LinearScan::pd_add_temps(LIR_Op* op) {
       // could also consider not killing all xmm registers if we
       // assume that slow paths are uncommon but it's not clear that
       // would be a good idea.
-      if (UseSSE > 0) {
 #ifdef ASSERT
-        if (TraceLinearScanLevel >= 2) {
-          tty->print_cr("killing XMMs for trig");
-        }
+      if (TraceLinearScanLevel >= 2) {
+        tty->print_cr("killing XMMs for trig");
+      }
 #endif
-        int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
-        int op_id = op->id();
-        for (int xmm = 0; xmm < num_caller_save_xmm_regs; xmm++) {
-          LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(xmm);
-          add_temp(reg_num(opr), op_id, noUse, T_ILLEGAL);
-        }
+      int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
+      int op_id = op->id();
+      for (int xmm = 0; xmm < num_caller_save_xmm_regs; xmm++) {
+        LIR_Opr opr = FrameMap::caller_save_xmm_reg_at(xmm);
+        add_temp(reg_num(opr), op_id, noUse, T_ILLEGAL);
       }
       break;
     }
@@ -95,7 +93,7 @@ inline bool LinearScanWalker::pd_init_regs_for_alloc(Interval* cur) {
     _first_reg = pd_first_byte_reg;
     _last_reg = FrameMap::last_byte_reg();
     return true;
-  } else if ((UseSSE >= 1 && cur->type() == T_FLOAT) || (UseSSE >= 2 && cur->type() == T_DOUBLE)) {
+  } else if ((cur->type() == T_FLOAT) || (cur->type() == T_DOUBLE)) {
     _first_reg = pd_first_xmm_reg;
     _last_reg = last_xmm_reg;
     return true;
