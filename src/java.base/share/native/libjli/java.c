@@ -1025,7 +1025,14 @@ SetClassPath(const char *s)
                        - 2 /* strlen("%s") */
                        + JLI_StrLen(s);
     def = JLI_MemAlloc(defSize);
+_Pragma("GCC diagnostic push")
+// Disable -Wstringop-overread which is introduced in GCC 7.
+// https://gcc.gnu.org/gcc-7/changes.html
+#if !defined(__clang_major__) && (__GNUC__ >= 7)
+_Pragma("GCC diagnostic ignored \"-Wformat-truncation\"")
+#endif
     snprintf(def, defSize, format, s);
+_Pragma("GCC diagnostic pop")
     AddOption(def, NULL);
     if (s != orig)
         JLI_MemFree((char *) s);
