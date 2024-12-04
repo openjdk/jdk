@@ -89,9 +89,6 @@ class VM_Version: public Abstract_VM_Version {
 // z13 end
 #define  MiscInstrExt2Mask              0x0000000000000020UL  // z14
 #define  MiscInstrExt3Mask              0x0000000000000004UL  // z15
-
-#define BEAREnhFacilityMask             0x4000000000000000UL  // z16, BEAR-enhancement facility, Bit: 193
-#define NNPAssistFacilityMask           0x0000000004000000UL  // z16, Neural-network-processing-assist facility, Bit: 165
 // ----------------------------------------------
 // --- FeatureBitString Bits  64..127 (DW[1]) ---
 // ----------------------------------------------
@@ -118,6 +115,12 @@ class VM_Version: public Abstract_VM_Version {
 #define  VectorPackedDecimalEnhMask     0x0000008000000000UL  // z15
 #define  CryptoExtension9Mask           0x0000001000000000UL  // z15 (aka message-security assist extension 9)
 #define  DeflateMask                    0x0000010000000000UL  // z15
+#define NNPAssistFacilityMask           0x0000000004000000UL  // z16, Neural-network-processing-assist facility, Bit: 165
+
+// ----------------------------------------------
+// --- FeatureBitString Bits 193..200 (DW[3]) ---
+// ----------------------------------------------
+#define  BEAREnhFacilityMask            0x4000000000000000UL  // z16, BEAR-enhancement facility, Bit: 193
 
   enum {
     _max_cache_levels = 8,    // As limited by ECAG instruction.
