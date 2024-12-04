@@ -62,7 +62,7 @@ public class CodeGeneratorLibrary {
     public static CodeGeneratorLibrary standard() {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
         // TODO implement the cases properly!
-        codeGenerators.put("int_con", (Scope scope, Parameters parameters) -> { scope.outStream().addCode("123"); });
+        codeGenerators.put("int_con", (Scope scope, Parameters parameters) -> { scope.stream.addCode("123"); });
         return new CodeGeneratorLibrary(null, codeGenerators);
     }
 }

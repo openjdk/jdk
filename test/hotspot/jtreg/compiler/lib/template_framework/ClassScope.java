@@ -26,20 +26,18 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public class ClassScope implements Scope {
+public class ClassScope extends Scope {
     private final String packageName;
     private final String className;
-
-    private CodeGeneratorLibrary codeGeneratorLibrary;
-    private CodeStream stream;
+    private final CodeGeneratorLibrary codeGeneratorLibrary;
 
     // TODO public or hidden in the API? - well we probably want to be able to use it programmatically...
     public ClassScope(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary) {
+        super(null);
         this.packageName = packageName;
         this.className = className;
         this.codeGeneratorLibrary = codeGeneratorLibrary;
 
-        this.stream = new CodeStream();
         openClass();
     }
 
@@ -47,19 +45,17 @@ public class ClassScope implements Scope {
         this(packageName, className, CodeGeneratorLibrary.standard());
     }
 
-    public CodeStream outStream() {
-        return stream;
-    }
 
+    @Override
     public CodeGeneratorLibrary library() {
-        return this.codeGeneratorLibrary;
+        return codeGeneratorLibrary;
     }
 
-    /**
-     * Collect all the generated code and return it as a String.
-     */
+    // TODO not that smart...
+    @Override
     public String toString() {
         closeClass();
+        close();
         return stream.toString();
     }
 
@@ -80,6 +76,5 @@ public class ClassScope implements Scope {
         stream.outdent();
         stream.addNewline();
         stream.addCodeToLine("}");
-        stream.close();
     }
 }

@@ -77,7 +77,6 @@ public final class Template implements CodeGenerator {
     private class InstantiationState {
         public final Scope scope;
         public final Parameters parameters;
-        public final CodeStream outStream;
 
         // Map local variable types, so we know them after their declaration.
         private HashMap<String,String> localVariableToType;
@@ -89,7 +88,6 @@ public final class Template implements CodeGenerator {
         public InstantiationState(Scope scope, Parameters parameters) {
             this.scope = scope;
             this.parameters = parameters;
-            this.outStream = scope.outStream();
             this.localVariableToType = new HashMap<String,String>();
             this.replacementsMap = new HashMap<String,CodeStream>();
         }
@@ -110,9 +108,9 @@ public final class Template implements CodeGenerator {
 
         public void addCodeForVariable(String name) {
             int id = parameters.instantiationID;
-            outStream.addCodeToLine(name);
-            outStream.addCodeToLine("_");
-            outStream.addCodeToLine(Integer.toString(id));
+            scope.stream.addCodeToLine(name);
+            scope.stream.addCodeToLine("_");
+            scope.stream.addCodeToLine(Integer.toString(id));
         }
 
         public void handleGeneratorCall(String name,
@@ -131,19 +129,18 @@ public final class Template implements CodeGenerator {
                                                      ". Got " + templated);
             }
 
-            NestedScope nestedScope = new NestedScope(scope);
+            Scope nestedScope = new Scope(scope);
             Parameters parameters = new Parameters(argumentsMap);
             generator.instantiate(nestedScope, parameters);
             nestedScope.close();
-            CodeStream generatorStream = nestedScope.outStream();
 
             // Map replacement for later repeats.
             if (!name.equals("")) {
-                replacementsMap.put(name, generatorStream);
+                replacementsMap.put(name, nestedScope.stream);
             }
 
             // Add all generated code to the outer scope's stream.
-            outStream.addCodeStream(generatorStream);
+            scope.stream.addCodeStream(nestedScope.stream);
         }
 
         public void repeatReplacement(String name, String templated) {
@@ -156,7 +153,7 @@ public final class Template implements CodeGenerator {
             }
 
             // Fetch earlier stream generated with the generator, and push it again.
-            outStream.addCodeStream(replacementsMap.get(name));
+            scope.stream.addCodeStream(replacementsMap.get(name));
         }
     }
 
@@ -177,7 +174,7 @@ public final class Template implements CodeGenerator {
             pos = end;
 
             // The nonTemplated code segment can simply be added.
-            state.outStream.addCode(nonTemplated);
+            scope.stream.addCode(nonTemplated);
 
             // The templated code needs to be analyzed and transformed or recursively generated.
             handleTemplated(state, templated);
@@ -185,7 +182,7 @@ public final class Template implements CodeGenerator {
 
         // Cleanup: part after the last templated segments.
         String nonTemplated = templateString.substring(pos);
-        state.outStream.addCode(nonTemplated);
+        scope.stream.addCode(nonTemplated);
     }
 
     private void handleTemplated(InstantiationState state, String templated) {
@@ -234,7 +231,7 @@ public final class Template implements CodeGenerator {
                                                              "parameter with value " + parameterValue + ", so we " +
                                                              "cannot also define a generator. Got " + templated);
                     }
-                    state.outStream.addCode(parameterValue);
+                    state.scope.stream.addCode(parameterValue);
                     return;
                 }
             }

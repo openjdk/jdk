@@ -26,10 +26,31 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public interface Scope {
-    // TODO nesting
-    // TODO available variables
+public class Scope {
+    public final Scope parent;
+    public final CodeStream stream;
 
-    public abstract CodeStream outStream();
-    public abstract CodeGeneratorLibrary library();
+    public Scope(Scope parent) {
+        this.parent = parent;
+        this.stream = new CodeStream();
+    }
+
+    public String sampleVariable(String type) {
+        return null;
+    }
+
+    public CodeGeneratorLibrary library() {
+        return this.parent.library();
+    }
+
+    public void close() {
+        stream.close();
+    }
+
+    /**
+     * Collect all the generated code and return it as a String.
+     */
+    public String toString() {
+        return stream.toString();
+    }
 }
