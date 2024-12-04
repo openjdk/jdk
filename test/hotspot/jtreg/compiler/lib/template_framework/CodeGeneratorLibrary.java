@@ -63,6 +63,7 @@ public class CodeGeneratorLibrary {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
         // TODO implement the cases properly!
         codeGenerators.put("int_con", (Scope scope, Parameters parameters) -> { scope.stream.addCode("123"); });
+        codeGenerators.put("code", new SelectorCodeGenerator("int_code"));
         return new CodeGeneratorLibrary(null, codeGenerators);
     }
 }
