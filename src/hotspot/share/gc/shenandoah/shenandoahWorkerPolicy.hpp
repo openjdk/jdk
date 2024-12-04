@@ -35,6 +35,9 @@ public:
   // Calculate the number of workers for concurrent marking
   static uint calc_workers_for_conc_marking();
 
+  // Calculate the number of workers for remembered set scanning
+  static uint calc_workers_for_rs_scanning();
+
   // Calculate the number of workers for final marking
   static uint calc_workers_for_final_marking();
 

@@ -88,7 +88,7 @@ public class AnnotationDefaultTest extends TestResult {
                 checkEquals(countNumberOfAttributes(method.attributes()),
                         1L,
                         "Number of AnnotationDefault attribute");
-                checkEquals(attr.attributeName(),
+                checkEquals(attr.attributeName().stringValue(),
                         "AnnotationDefault", "attribute_name_index");
 
                 ExpectedValues expectedValue = expectedValues.get(methodName);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 
 package sun.util.logging.internal;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ResourceBundle;
 import java.util.function.Supplier;
 import java.lang.System.LoggerFinder;
@@ -35,7 +33,6 @@ import java.lang.System.Logger;
 import java.util.Objects;
 import java.util.logging.LogManager;
 import jdk.internal.logger.DefaultLoggerFinder;
-import java.util.logging.LoggingPermission;
 import sun.util.logging.PlatformLogger;
 import sun.util.logging.PlatformLogger.ConfigurableBridge.LoggerConfiguration;
 
@@ -77,15 +74,9 @@ import sun.util.logging.PlatformLogger.ConfigurableBridge.LoggerConfiguration;
  *
  */
 public final class LoggingProviderImpl extends DefaultLoggerFinder {
-    static final RuntimePermission LOGGERFINDER_PERMISSION =
-                new RuntimePermission("loggerFinder");
-    private static final LoggingPermission LOGGING_CONTROL_PERMISSION =
-            new LoggingPermission("control", null);
 
     /**
      * Creates a new instance of LoggingProviderImpl.
-     * @throws SecurityException if the calling code does not have the
-     * {@code RuntimePermission("loggerFinder")}.
      */
     public LoggingProviderImpl() {
     }
@@ -147,13 +138,13 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
         }
 
         @Override
-        public void log(sun.util.logging.PlatformLogger.Level level, Supplier<String> msgSuppier) {
-            julLogger.log(toJUL(level), msgSuppier);
+        public void log(sun.util.logging.PlatformLogger.Level level, Supplier<String> msgSupplier) {
+            julLogger.log(toJUL(level), msgSupplier);
         }
 
         @Override
-        public void log(sun.util.logging.PlatformLogger.Level level, Throwable thrown, Supplier<String> msgSuppier) {
-            julLogger.log(toJUL(level), thrown, msgSuppier);
+        public void log(sun.util.logging.PlatformLogger.Level level, Throwable thrown, Supplier<String> msgSupplier) {
+            julLogger.log(toJUL(level), thrown, msgSupplier);
         }
 
         @Override
@@ -403,18 +394,10 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
      * @param module the module for which the logger should be created.
      * @return a Logger suitable for use in the given module.
      */
-    @SuppressWarnings("removal")
     private static java.util.logging.Logger demandJULLoggerFor(final String name,
                                                                Module module) {
         final LogManager manager = LogManager.getLogManager();
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm == null) {
-            return logManagerAccess.demandLoggerFor(manager, name, module);
-        } else {
-            final PrivilegedAction<java.util.logging.Logger> pa =
-                    () -> logManagerAccess.demandLoggerFor(manager, name, module);
-            return AccessController.doPrivileged(pa, null, LOGGING_CONTROL_PERMISSION);
-        }
+        return logManagerAccess.demandLoggerFor(manager, name, module);
     }
 
     /**
@@ -425,16 +408,9 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
      * corresponding java.util.logging.Logger backend}.
      *
      * @return {@inheritDoc}
-     * @throws SecurityException if the calling code doesn't have the
-     * {@code RuntimePermission("loggerFinder")}.
      */
     @Override
     protected Logger demandLoggerFor(String name, Module module) {
-        @SuppressWarnings("removal")
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(LOGGERFINDER_PERMISSION);
-        }
         return JULWrapper.of(demandJULLoggerFor(name,module));
     }
 
@@ -445,25 +421,17 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
 
     // Hook for tests
     public static LogManagerAccess getLogManagerAccess() {
-        @SuppressWarnings("removal")
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(LOGGING_CONTROL_PERMISSION);
-        }
-        // Triggers initialization of accessJulLogger if not set.
+        // Triggers initialization of logManagerAccess if not set.
+        LogManagerAccess logManagerAccess = LoggingProviderImpl.logManagerAccess;
         if (logManagerAccess == null) LogManager.getLogManager();
+        logManagerAccess = LoggingProviderImpl.logManagerAccess;
         return logManagerAccess;
     }
 
 
     private static volatile LogManagerAccess logManagerAccess;
-    public static void setLogManagerAccess(LogManagerAccess accesLoggers) {
-        @SuppressWarnings("removal")
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(LOGGING_CONTROL_PERMISSION);
-        }
-        logManagerAccess = accesLoggers;
+    public static void setLogManagerAccess(LogManagerAccess accessLoggers) {
+        logManagerAccess = accessLoggers;
     }
 
 }

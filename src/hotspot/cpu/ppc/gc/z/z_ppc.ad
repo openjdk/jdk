@@ -143,7 +143,7 @@ instruct zLoadP(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
   effect(TEMP_DEF dst, KILL cr0);
   ins_cost(MEMORY_REF_COST);
 
-  predicate((UseZGC && ZGenerational && n->as_Load()->barrier_data() != 0)
+  predicate((UseZGC && n->as_Load()->barrier_data() != 0)
             && (n->as_Load()->is_unordered() || followed_by_acquire(n)));
 
   format %{ "LD $dst, $mem" %}
@@ -163,7 +163,7 @@ instruct zLoadP_acq(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
   ins_cost(3 * MEMORY_REF_COST);
 
   // Predicate on instruction order is implicitly present due to the predicate of the cheaper zLoadP operation
-  predicate(UseZGC && ZGenerational && n->as_Load()->barrier_data() != 0);
+  predicate(UseZGC && n->as_Load()->barrier_data() != 0);
 
   format %{ "LD acq $dst, $mem" %}
   ins_encode %{
@@ -181,7 +181,7 @@ instruct zLoadP_acq(iRegPdst dst, memoryAlg4 mem, flagsRegCR0 cr0)
 // Store Pointer
 instruct zStoreP(memoryAlg4 mem, iRegPsrc src, iRegPdst tmp, flagsRegCR0 cr0)
 %{
-  predicate(UseZGC && ZGenerational && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem src));
   effect(TEMP tmp, KILL cr0);
   ins_cost(2 * MEMORY_REF_COST);
@@ -195,7 +195,7 @@ instruct zStoreP(memoryAlg4 mem, iRegPsrc src, iRegPdst tmp, flagsRegCR0 cr0)
 
 instruct zStorePNull(memoryAlg4 mem, immP_0 zero, iRegPdst tmp, flagsRegCR0 cr0)
 %{
-  predicate(UseZGC && ZGenerational && n->as_Store()->barrier_data() != 0);
+  predicate(UseZGC && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreP mem zero));
   effect(TEMP tmp, KILL cr0);
   ins_cost(MEMORY_REF_COST);
@@ -213,7 +213,7 @@ instruct zCompareAndSwapP(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegPsrc 
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr0);
 
-  predicate((UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0)
+  predicate((UseZGC && n->as_LoadStore()->barrier_data() != 0)
             && (((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*) n)->order() != MemNode::seqcst));
 
   format %{ "CMPXCHG $res, $mem, $oldval, $newval; as bool; ptr" %}
@@ -232,7 +232,7 @@ instruct zCompareAndSwapP_acq(iRegIdst res, iRegPdst mem, iRegPsrc oldval, iRegP
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp1, TEMP tmp2, KILL cr0);
 
-  predicate((UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0)
+  predicate((UseZGC && n->as_LoadStore()->barrier_data() != 0)
             && (((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*) n)->order() == MemNode::seqcst));
 
   format %{ "CMPXCHG acq $res, $mem, $oldval, $newval; as bool; ptr" %}
@@ -250,7 +250,7 @@ instruct zCompareAndExchangeP(iRegPdst res, iRegPdst mem, iRegPsrc oldval, iRegP
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
 
-  predicate((UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0)
+  predicate((UseZGC && n->as_LoadStore()->barrier_data() != 0)
             && (
               ((CompareAndSwapNode*)n)->order() != MemNode::acquire
               && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst
@@ -270,7 +270,7 @@ instruct zCompareAndExchangeP_acq(iRegPdst res, iRegPdst mem, iRegPsrc oldval, i
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
 
-  predicate((UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0)
+  predicate((UseZGC && n->as_LoadStore()->barrier_data() != 0)
             && (
               ((CompareAndSwapNode*)n)->order() == MemNode::acquire
               || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst
@@ -289,7 +289,7 @@ instruct zGetAndSetP(iRegPdst res, iRegPdst mem, iRegPsrc newval, iRegPdst tmp, 
   match(Set res (GetAndSetP mem newval));
   effect(TEMP_DEF res, TEMP tmp, KILL cr0);
 
-  predicate(UseZGC && ZGenerational && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseZGC && n->as_LoadStore()->barrier_data() != 0);
 
   format %{ "GetAndSetP $res, $mem, $newval" %}
   ins_encode %{

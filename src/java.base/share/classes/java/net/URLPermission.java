@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,12 +142,11 @@ import java.util.Objects;
  * method names to upper-case and header names to the form defines in RFC2616 (lower case
  * with initial letter of each word capitalized). Either list can contain a wild-card '*'
  * character which signifies all request methods or headers respectively.
- * <p>
- * Note. Depending on the context of use, some request methods and headers may be permitted
- * at all times, and others may not be permitted at any time. For example, the
- * HTTP protocol handler might disallow certain headers such as Content-Length
- * from being set by application code, regardless of whether the security policy
- * in force, permits it.
+ *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources
+ * as the Security Manager is no longer supported.
+ *
  *
  * @spec https://www.rfc-editor.org/info/rfc2296
  *      RFC 2296: HTTP Remote Variant Selection Algorithm -- RVSA/1.0

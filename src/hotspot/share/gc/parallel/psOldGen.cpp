@@ -31,6 +31,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"

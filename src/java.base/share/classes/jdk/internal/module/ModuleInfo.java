@@ -31,6 +31,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
 import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Builder;
@@ -189,6 +190,7 @@ public final class ModuleInfo {
 
         int minor_version = in.readUnsignedShort();
         int major_version = in.readUnsignedShort();
+        boolean isPreview = minor_version == ClassFile.PREVIEW_MINOR_VERSION;
         if (!VM.isSupportedModuleDescriptorVersion(major_version, minor_version)) {
             throw invalidModuleDescriptor("Unsupported major.minor version "
                                           + major_version + "." + minor_version);
@@ -248,7 +250,7 @@ public final class ModuleInfo {
 
             switch (attribute_name) {
                 case MODULE :
-                    builder = readModuleAttribute(in, cpool, major_version);
+                    builder = readModuleAttribute(in, cpool, major_version, isPreview);
                     break;
 
                 case MODULE_PACKAGES :
@@ -344,7 +346,8 @@ public final class ModuleInfo {
      * Reads the Module attribute, returning the ModuleDescriptor.Builder to
      * build the corresponding ModuleDescriptor.
      */
-    private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major)
+    private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major,
+                                        boolean isPreview)
         throws IOException
     {
         // module_name
@@ -405,14 +408,23 @@ public final class ModuleInfo {
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has ACC_SYNTHETIC set");
                 }
+                // requires transitive java.base is illegal unless:
+                // - the major version is 53 (JDK 9), or:
+                // - the classfile is a preview classfile, or:
+                // - the module is deemed to be participating in preview
+                //   (i.e. the module is a java.* module)
+                // requires static java.base is illegal unless:
+                // - the major version is 53 (JDK 9), or:
                 if (major >= 54
-                    && (mods.contains(Requires.Modifier.TRANSITIVE)
+                    && ((mods.contains(Requires.Modifier.TRANSITIVE)
+                         && !isPreview
+                         && !"java.se".equals(mn))
                         || mods.contains(Requires.Modifier.STATIC))) {
                     String flagName;
-                    if (mods.contains(Requires.Modifier.TRANSITIVE)) {
-                        flagName = "ACC_TRANSITIVE";
-                    } else {
+                    if (mods.contains(Requires.Modifier.STATIC)) {
                         flagName = "ACC_STATIC_PHASE";
+                    } else {
+                        flagName = "ACC_TRANSITIVE";
                     }
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has " + flagName + " set");

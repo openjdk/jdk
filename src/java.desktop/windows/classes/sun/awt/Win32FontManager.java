@@ -29,13 +29,12 @@ package sun.awt;
 import java.awt.FontFormatException;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import java.util.function.Supplier;
 
 import sun.awt.windows.WFontConfiguration;
 import sun.font.FontManager;
@@ -47,24 +46,21 @@ import sun.font.TrueTypeFont;
  */
 public final class Win32FontManager extends SunFontManager {
 
-    @SuppressWarnings("removal")
     private static final TrueTypeFont eudcFont =
-            AccessController.doPrivileged(new PrivilegedAction<TrueTypeFont>() {
-                public TrueTypeFont run() {
-                    String eudcFile = getEUDCFontFile();
-                    if (eudcFile != null) {
-                        try {
-                            /* Must use Java rasteriser since GDI doesn't
-                             * enumerate (allow direct use) of EUDC fonts.
-                             */
-                            return new TrueTypeFont(eudcFile, null, 0,
-                                                        true, false);
-                        } catch (FontFormatException e) {
-                        }
+            ((Supplier<TrueTypeFont>) () -> {
+                String eudcFile = getEUDCFontFile();
+                if (eudcFile != null) {
+                    try {
+                        /* Must use Java rasteriser since GDI doesn't
+                         * enumerate (allow direct use) of EUDC fonts.
+                         */
+                        return new TrueTypeFont(eudcFile, null, 0,
+                                                    true, false);
+                    } catch (FontFormatException e) {
                     }
-                    return null;
                 }
-            });
+                return null;
+            }).get();
 
     /* Used on Windows to obtain from the windows registry the name
      * of a file containing the system EUFC font. If running in one of
@@ -78,20 +74,14 @@ public final class Win32FontManager extends SunFontManager {
         return eudcFont;
     }
 
-    @SuppressWarnings("removal")
     public Win32FontManager() {
         super();
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                public Object run() {
 
-                    /* Register the JRE fonts so that the native platform can
-                     * access them. This is used only on Windows so that when
-                     * printing the printer driver can access the fonts.
-                     */
-                    registerJREFontsWithPlatform(jreFontDirName);
-                    return null;
-                }
-            });
+        /* Register the JRE fonts so that the native platform can
+         * access them. This is used only on Windows so that when
+         * printing the printer driver can access the fonts.
+         */
+        registerJREFontsWithPlatform(jreFontDirName);
     }
 
     /**
@@ -213,21 +203,15 @@ public final class Win32FontManager extends SunFontManager {
         info[1] = "c:\\windows\\fonts";
         final String[] dirs = getPlatformFontDirs(true);
         if (dirs.length > 1) {
-            @SuppressWarnings("removal")
-            String dir = (String)
-                AccessController.doPrivileged(new PrivilegedAction<Object>() {
-                        public Object run() {
-                            for (int i=0; i<dirs.length; i++) {
-                                String path =
-                                    dirs[i] + File.separator + "arial.ttf";
-                                File file = new File(path);
-                                if (file.exists()) {
-                                    return dirs[i];
-                                }
-                            }
-                            return null;
-                        }
-                    });
+            String dir = null;
+            for (int i=0; i<dirs.length; i++) {
+                String path = dirs[i] + File.separator + "arial.ttf";
+                File file = new File(path);
+                if (file.exists()) {
+                    dir = dirs[i];
+                    break;
+                }
+            }
             if (dir != null) {
                 info[1] = dir;
             }
@@ -248,7 +232,6 @@ public final class Win32FontManager extends SunFontManager {
         fontsForPrinting = pathName;
     }
 
-    @SuppressWarnings("removal")
     public static void registerJREFontsForPrinting() {
         final String pathName;
         synchronized (Win32GraphicsEnvironment.class) {
@@ -259,22 +242,15 @@ public final class Win32FontManager extends SunFontManager {
             pathName = fontsForPrinting;
             fontsForPrinting = null;
         }
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Object>() {
-                public Object run() {
-                    File f1 = new File(pathName);
-                    String[] ls = f1.list(SunFontManager.getInstance().
-                            getTrueTypeFilter());
-                    if (ls == null) {
-                        return null;
-                    }
-                    for (int i=0; i <ls.length; i++ ) {
-                        File fontFile = new File(f1, ls[i]);
-                        registerFontWithPlatform(fontFile.getAbsolutePath());
-                    }
-                    return null;
-                }
-         });
+        File f1 = new File(pathName);
+        String[] ls = f1.list(SunFontManager.getInstance().
+                              getTrueTypeFilter());
+        if (ls != null) {
+            for (int i=0; i <ls.length; i++ ) {
+                File fontFile = new File(f1, ls[i]);
+                registerFontWithPlatform(fontFile.getAbsolutePath());
+            }
+        }
     }
 
     private static native void registerFontWithPlatform(String fontName);

@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "macroAssembler_x86.hpp"
 #include "stubGenerator_x86_64.hpp"
+#include "oops/arrayOop.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
 
@@ -159,6 +160,9 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
                                          Register haystack_len, Register needle,
                                          Register needle_len, XMMRegister XMM0, XMMRegister XMM1,
                                          Register mask, Register tmp, MacroAssembler *_masm);
+
+static void copy_to_stack(Register haystack, Register haystack_len, bool isU, Register tmp,
+                          XMMRegister xtmp, MacroAssembler *_masm);
 
 static void setup_jump_tables(StrIntrinsicNode::ArgEncoding ae, Label &L_error, Label &L_checkRange,
                               Label &L_fixup, address *big_jump_table, address *small_jump_table,
@@ -395,41 +399,21 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
 
   // Do "big switch" if haystack size > 32
   __ cmpq(haystack_len, 0x20);
-  __ ja_b(L_bigSwitchTop);
+  __ ja(L_bigSwitchTop);
 
   // Copy the small (< 32 byte) haystack to the stack.  Allows for vector reads without page fault
   // Only done for small haystacks
   //
   // NOTE: This code assumes that the haystack points to a java array type AND there are
-  //       at least 16 bytes of header preceeding the haystack pointer.
+  //       at least 8 bytes of header preceeding the haystack pointer.
   //
-  // This means that we're copying up to 15 bytes of the header onto the stack along
+  // This means that we're copying up to 7 bytes of the header onto the stack along
   // with the haystack bytes.  After the copy completes, we adjust the haystack pointer
   // to the valid haystack bytes on the stack.
   {
-    Label L_moreThan16, L_adjustHaystack;
-
-    const Register index = rax;
+    const Register tmp = rax;
     const Register haystack = rbx;
-
-    // Only a single vector load/store of either 16 or 32 bytes
-    __ cmpq(haystack_len, 0x10);
-    __ ja_b(L_moreThan16);
-
-    __ movq(index, COPIED_HAYSTACK_STACK_OFFSET + 0x10);
-    __ movdqu(XMM_TMP1, Address(haystack, haystack_len, Address::times_1, -0x10));
-    __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM_TMP1);
-    __ jmpb(L_adjustHaystack);
-
-    __ bind(L_moreThan16);
-    __ movq(index, COPIED_HAYSTACK_STACK_OFFSET + 0x20);
-    __ vmovdqu(XMM_TMP1, Address(haystack, haystack_len, Address::times_1, -0x20));
-    __ vmovdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM_TMP1);
-
-    // Point the haystack at the correct location of the first byte of the "real" haystack on the stack
-    __ bind(L_adjustHaystack);
-    __ subq(index, haystack_len);
-    __ leaq(haystack, Address(rsp, index, Address::times_1));
+    copy_to_stack(haystack, haystack_len, false, tmp, XMM_TMP1, _masm);
   }
 
   // Dispatch to handlers for small needle and small haystack
@@ -760,39 +744,39 @@ static void generate_string_indexof_stubs(StubGenerator *stubgen, address *fnptr
     __ ja(L_wideNoExpand);
 
     //
-    // Reads of existing needle are 16-byte chunks
-    // Writes to copied needle are 32-byte chunks
+    // Reads of existing needle are 8-byte chunks
+    // Writes to copied needle are 16-byte chunks
     // Don't read past the end of the existing needle
     //
-    // Start first read at [((ndlLen % 16) - 16) & 0xf]
-    // outndx += 32
-    // inndx += 16
+    // Start first read at [((ndlLen % 8) - 8) & 0x7]
+    // outndx += 16
+    // inndx += 8
     // cmp nndx, ndlLen
     // jae done
     //
-    // Final index of start of needle at ((16 - (ndlLen %16)) & 0xf) << 1
+    // Final index of start of needle at ((8 - (ndlLen % 8)) & 0x7) << 1
     //
-    // Starting read for needle at -(16 - (nLen % 16))
-    // Offset of needle in stack should be (16 - (nLen % 16)) * 2
+    // Starting read for needle at -(8 - (nLen % 8))
+    // Offset of needle in stack should be (8 - (nLen % 8)) * 2
 
     __ movq(index, needle_len);
-    __ andq(index, 0xf);  // nLen % 16
-    __ movq(offset, 0x10);
-    __ subq(offset, index);  // 16 - (nLen % 16)
+    __ andq(index, 0x7);  // nLen % 8
+    __ movq(offset, 0x8);
+    __ subq(offset, index);  // 8 - (nLen % 8)
     __ movq(index, offset);
     __ shlq(offset, 1);  // * 2
-    __ negq(index);      // -(16 - (nLen % 16))
+    __ negq(index);      // -(8 - (nLen % 8))
     __ xorq(wr_index, wr_index);
 
     __ bind(L_top);
     // load needle and expand
-    __ vpmovzxbw(xmm0, Address(needle, index, Address::times_1), Assembler::AVX_256bit);
+    __ vpmovzxbw(xmm0, Address(needle, index, Address::times_1), Assembler::AVX_128bit);
     // store expanded needle to stack
-    __ vmovdqu(Address(rsp, wr_index, Address::times_1, EXPANDED_NEEDLE_STACK_OFFSET), xmm0);
-    __ addq(index, 0x10);
+    __ movdqu(Address(rsp, wr_index, Address::times_1, EXPANDED_NEEDLE_STACK_OFFSET), xmm0);
+    __ addq(index, 0x8);
     __ cmpq(index, needle_len);
     __ jae(L_finished);
-    __ addq(wr_index, 32);
+    __ addq(wr_index, 16);
     __ jmpb(L_top);
 
     // adjust pointer and length of needle
@@ -1582,35 +1566,9 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
   assert((COPIED_HAYSTACK_STACK_OFFSET == 0), "Must be zero!");
   assert((COPIED_HAYSTACK_STACK_SIZE == 64), "Must be 64!");
 
-  // Copy incoming haystack onto stack
-  {
-    Label L_adjustHaystack, L_moreThan16;
-
-    // Copy haystack to stack (haystack <= 32 bytes)
-    __ subptr(rsp, COPIED_HAYSTACK_STACK_SIZE);
-    __ cmpq(haystack_len, isU ? 0x8 : 0x10);
-    __ ja_b(L_moreThan16);
-
-    __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 0x10);
-    __ movdqu(XMM0, Address(haystack, haystack_len, isU ? Address::times_2 : Address::times_1, -0x10));
-    __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM0);
-    __ jmpb(L_adjustHaystack);
-
-    __ bind(L_moreThan16);
-    __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 0x20);
-    __ vmovdqu(XMM0, Address(haystack, haystack_len, isU ? Address::times_2 : Address::times_1, -0x20));
-    __ vmovdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), XMM0);
-
-    __ bind(L_adjustHaystack);
-    __ subptr(tmp, haystack_len);
-
-    if (isU) {
-      // For UTF-16, lengths are half
-      __ subptr(tmp, haystack_len);
-    }
-    // Point the haystack to the stack
-    __ leaq(haystack, Address(rsp, tmp, Address::times_1));
-  }
+  // Copy incoming haystack onto stack (haystack <= 32 bytes)
+  __ subptr(rsp, COPIED_HAYSTACK_STACK_SIZE);
+  copy_to_stack(haystack, haystack_len, isU, tmp, XMM0, _masm);
 
   // Creates a mask of (n - k + 1) ones.  This prevents recognizing any false-positives
   // past the end of the valid haystack.
@@ -1670,6 +1628,86 @@ static void highly_optimized_short_cases(StrIntrinsicNode::ArgEncoding ae, Regis
   __ bind(L_noMatch);
   __ movq(rax, -1);
   __ jmpb(L_out);
+}
+
+
+
+// Copy the small (<= 32 byte) haystack to the stack.  Allows for vector reads without page fault
+// Only done for small haystacks
+// NOTE: This code assumes that the haystack points to a java array type AND there are
+//       at least 8 bytes of header preceeding the haystack pointer.
+// We're copying up to 7 bytes of the header onto the stack along with the haystack bytes.
+// After the copy completes, we adjust the haystack pointer
+// to the valid haystack bytes on the stack.
+//
+// Copy haystack array elements to stack at region
+// (COPIED_HAYSTACK_STACK_OFFSET - COPIED_HAYSTACK_STACK_OFFSET+63) with the following conditions:
+//   It may copy up to 7 bytes that precede the array
+//   It doesn't read beyond the end of the array
+//   There are atleast 31 bytes of stack region beyond the end of array
+// Inputs:
+//   haystack - Address of haystack
+//   haystack_len - Number of elements in haystack
+//   isU - Boolean indicating if each element is Latin1 or UTF16
+//   tmp, xtmp - Scratch registers
+// Output:
+//   haystack - Address of copied string on stack
+
+static void copy_to_stack(Register haystack, Register haystack_len, bool isU,
+                          Register tmp, XMMRegister xtmp, MacroAssembler *_masm) {
+  Label L_moreThan8, L_moreThan16, L_moreThan24, L_adjustHaystack;
+
+  assert(arrayOopDesc::base_offset_in_bytes(isU ? T_CHAR : T_BYTE) >= 8,
+         "Needs at least 8 bytes preceding the array body");
+
+  // Copy haystack to stack (haystack <= 32 bytes)
+  int scale = isU ? 2 : 1; // bytes per char
+  Address::ScaleFactor addrScale = isU ? Address::times_2 : Address::times_1;
+
+  __ cmpq(haystack_len, 16/scale);
+  __ ja_b(L_moreThan16);
+
+  __ cmpq(haystack_len, 8/scale);
+  __ ja_b(L_moreThan8);
+  // haystack length <= 8 bytes, copy 8 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 8);
+  __ movq(xtmp, Address(haystack, haystack_len, addrScale, -8));
+  __ movq(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+  __ jmpb(L_adjustHaystack);
+
+  __ bind(L_moreThan8);
+  // haystack length > 8 and <=16 bytes, copy 16 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 16);
+  __ movdqu(xtmp, Address(haystack, haystack_len, addrScale, -16));
+  __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+  __ jmpb(L_adjustHaystack);
+
+  __ bind(L_moreThan16);
+  __ cmpq(haystack_len, 24/scale);
+  __ ja_b(L_moreThan24);
+  // haystack length > 16 and <=24 bytes, copy 24 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 24);
+  __ movdqu(xtmp, Address(haystack, haystack_len, addrScale, -24));
+  __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+  __ movq(xtmp, Address(haystack, haystack_len, addrScale, -8));
+  __ movq(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET + 16), xtmp);
+  __ jmpb(L_adjustHaystack);
+
+  __ bind(L_moreThan24);
+  // haystack length > 24 and < 32 bytes, copy 32 bytes upto haystack end reading at most 7 bytes into the header
+  __ movq(tmp, COPIED_HAYSTACK_STACK_OFFSET + 32);
+  __ vmovdqu(xtmp, Address(haystack, haystack_len, addrScale, -32));
+  __ vmovdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xtmp);
+
+  __ bind(L_adjustHaystack);
+  __ subptr(tmp, haystack_len);
+
+  if (isU) {
+    __ subptr(tmp, haystack_len);
+  }
+
+  // Point the haystack to the stack
+  __ leaq(haystack, Address(rsp, tmp, Address::times_1));
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////

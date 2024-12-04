@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,31 +26,44 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.Test;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
-import static org.junit.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class ApplicationLayoutTest {
 
-    @Rule
-    public final TemporaryFolder tempFolder = new TemporaryFolder();
+    private Path newFolder(Path folderName, String ... extraFolderNames) throws IOException {
+        var path = tempFolder.resolve(folderName);
+        Files.createDirectories(path);
+        for (var extraFolderName : extraFolderNames) {
+            path = path.resolve(extraFolderName);
+            Files.createDirectories(path);
+        }
+        return path;
+    }
+
+    private Path newFile(Path fileName) throws IOException {
+        var path = tempFolder.resolve(fileName);
+        Files.createDirectories(path.getParent());
+        Files.createFile(path);
+        return path;
+    }
 
     private void fillLinuxAppImage() throws IOException {
-        appImage = tempFolder.newFolder("Foo").toPath();
+        appImage = newFolder(Path.of("Foo"));
 
         Path base = appImage.getFileName();
 
-        tempFolder.newFolder(base.toString(), "bin");
-        tempFolder.newFolder(base.toString(), "lib", "app", "mods");
-        tempFolder.newFolder(base.toString(), "lib", "runtime", "bin");
-        tempFolder.newFile(base.resolve("bin/Foo").toString());
-        tempFolder.newFile(base.resolve("lib/app/Foo.cfg").toString());
-        tempFolder.newFile(base.resolve("lib/app/hello.jar").toString());
-        tempFolder.newFile(base.resolve("lib/Foo.png").toString());
-        tempFolder.newFile(base.resolve("lib/libapplauncher.so").toString());
-        tempFolder.newFile(base.resolve("lib/runtime/bin/java").toString());
+        newFolder(base, "bin");
+        newFolder(base, "lib", "app", "mods");
+        newFolder(base, "lib", "runtime", "bin");
+        newFile(base.resolve("bin/Foo"));
+        newFile(base.resolve("lib/app/Foo.cfg"));
+        newFile(base.resolve("lib/app/hello.jar"));
+        newFile(base.resolve("lib/Foo.png"));
+        newFile(base.resolve("lib/libapplauncher.so"));
+        newFile(base.resolve("lib/runtime/bin/java"));
     }
 
     @Test
@@ -84,5 +97,7 @@ public class ApplicationLayoutTest {
         assertTrue(Files.isRegularFile(layout.runtimeDirectory().resolve("bin/java")));
     }
 
+    @TempDir
+    private Path tempFolder;
     private Path appImage;
 }

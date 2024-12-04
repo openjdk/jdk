@@ -42,17 +42,13 @@ non-sealed class GlobalSession extends MemorySessionImpl {
 
     public GlobalSession() {
         super(null, null);
+        this.state = NONCLOSEABLE;
     }
 
     @Override
     @ForceInline
     public void release0() {
         // do nothing
-    }
-
-    @Override
-    public boolean isCloseable() {
-        return false;
     }
 
     @Override

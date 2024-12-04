@@ -32,6 +32,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE_USE)
 @interface A {}
 
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE_USE)
+@interface B {}
+
 public class Test {
     static class StaticNested {
         static class InnerMostStaticNested {}
@@ -41,8 +45,8 @@ public class Test {
         class InnerMost {}
     }
 
-    @ExpectedToString("p.Test.@p.A StaticNested")
-    @A StaticNested i;
+    @ExpectedToString("p.Test.@p.A @p.B StaticNested")
+    @A @B StaticNested i;
 
     @ExpectedToString("p.Test.StaticNested.@p.A InnerMostStaticNested")
     StaticNested.@A InnerMostStaticNested j;

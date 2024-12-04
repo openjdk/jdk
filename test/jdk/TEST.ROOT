@@ -84,8 +84,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.graal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
@@ -104,7 +102,9 @@ requires.properties= \
     systemd.support \
     release.implementor \
     jdk.containerized \
-    jdk.foreign.linker
+    jdk.foreign.linker \
+    jlink.runtime.linkable \
+    jlink.packagedModules
 
 # Minimum jtreg version
 requiredVersion=7.4+1

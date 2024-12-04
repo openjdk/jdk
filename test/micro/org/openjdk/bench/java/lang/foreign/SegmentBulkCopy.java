@@ -84,25 +84,25 @@ public class SegmentBulkCopy {
         dstBuffer.put(srcBuffer);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
     @Benchmark
     public void heapSegmentCopyJava() {
         MemorySegment.copy(heapSrcSegment, 0, heapDstSegment, 0, ELEM_SIZE);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
     @Benchmark
     public void heapSegmentCopyUnsafe() {
         MemorySegment.copy(heapSrcSegment, 0, heapDstSegment, 0, ELEM_SIZE);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
     @Benchmark
     public void nativeSegmentCopyJava() {
         MemorySegment.copy(nativeSrcSegment, 0, nativeDstSegment, 0, ELEM_SIZE);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
+    @Fork(value = 3, jvmArgs = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
     @Benchmark
     public void nativeSegmentCopyUnsafe() {
         MemorySegment.copy(nativeSrcSegment, 0, nativeDstSegment, 0, ELEM_SIZE);

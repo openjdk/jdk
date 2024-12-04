@@ -114,7 +114,7 @@ void JfrCheckpointThreadClosure::do_thread(Thread* t) {
 
 void JfrThreadConstantSet::serialize(JfrCheckpointWriter& writer) {
   JfrCheckpointThreadClosure tc(writer);
-  JfrJavaThreadIterator javathreads(false); // include not yet live threads (_thread_new)
+  JfrJavaThreadIterator javathreads;
   while (javathreads.has_next()) {
     tc.do_thread(javathreads.next());
   }

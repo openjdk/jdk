@@ -39,16 +39,17 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE, Assembler::LMUL lmul);
 
-  void compress_bits_v(Register dst, Register src, Register mask, bool is_long);
-  void expand_bits_v(Register dst, Register src, Register mask, bool is_long);
-
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  void fast_lock(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
+  void fast_lock(Register object, Register box,
+                 Register tmp1, Register tmp2, Register tmp3, Register tmp4);
   void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
+
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
-  void fast_lock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
-  void fast_unlock_lightweight(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
+  void fast_lock_lightweight(Register object, Register box,
+                             Register tmp1, Register tmp2, Register tmp3, Register tmp4);
+  void fast_unlock_lightweight(Register object, Register box,
+                               Register tmp1, Register tmp2, Register tmp3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -97,7 +98,6 @@
 
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
-  static const int neg_cond_bits = 2;
   static const int unsigned_branch_mask = 1 << bool_test_bits;
   static const int double_branch_mask = 1 << bool_test_bits;
 
@@ -179,13 +179,6 @@
 
 
   // intrinsic methods implemented by rvv instructions
-
-  // compress bits, i.e. j.l.Integer/Long::compress.
-  void compress_bits_i_v(Register dst, Register src, Register mask);
-  void compress_bits_l_v(Register dst, Register src, Register mask);
-  // expand bits, i.e. j.l.Integer/Long::expand.
-  void expand_bits_i_v(Register dst, Register src, Register mask);
-  void expand_bits_l_v(Register dst, Register src, Register mask);
 
   void java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
   void java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp, BasicType bt, uint vector_length);
