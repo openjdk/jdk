@@ -151,12 +151,8 @@ public final class ML_KEM_Impls {
 
             ML_KEM mlKem = new ML_KEM(name);
             var kpkeCipherText = new ML_KEM.K_PKE_CipherText(cipherText);
-
-            byte[] decapsulateResult;
-            decapsulateResult = mlKem.decapsulate(new ML_KEM.ML_KEM_DecapsulationKey(
+            return mlKem.decapsulate(new ML_KEM.ML_KEM_DecapsulationKey(
                     decapsulationKey), kpkeCipherText);
-
-            return decapsulateResult;
         }
 
         @Override
