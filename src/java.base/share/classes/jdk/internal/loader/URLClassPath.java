@@ -659,10 +659,7 @@ public class URLClassPath {
          * is not found starting at byte 0 of the given jar.
          */
         static JarFile checkJar(JarFile jar) throws IOException {
-            if (!JAR_CHECKING_ENABLED) {
-                return jar;
-            }
-            if (!zipAccess.startsWithLocHeader(jar)) {
+            if (JAR_CHECKING_ENABLED && !zipAccess.startsWithLocHeader(jar)) {
                 IOException x = new IOException("Invalid Jar file");
                 try {
                     jar.close();
