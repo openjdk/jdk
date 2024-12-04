@@ -5299,9 +5299,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base, int shift, const size_t range) {
   assert(UseCompressedClassPointers, "not using compressed class pointers");
 
-  if (_klass_decode_mode != KlassDecodeNone) {
-    return _klass_decode_mode;
-  }
+  // KlassDecodeMode could change with final calculation, so recalculate.
 
   if (base == nullptr) {
     return (_klass_decode_mode = KlassDecodeZero);
