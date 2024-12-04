@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodHandleDesc;
