@@ -886,21 +886,19 @@ size_t ShenandoahGeneration::increment_affiliated_region_count() {
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count() {
-  // Assertions only hold true for Java threads since they call this method under heap lock.
-  bool const is_java_thread = Thread::current()->is_Java_thread();
-  if (is_java_thread) {
-    shenandoah_assert_heaplocked_or_safepoint();
-  }
+  shenandoah_assert_heaplocked_or_safepoint();
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
   auto affiliated_region_count = Atomic::sub(&_affiliated_region_count, (size_t) 1);
-  if (is_java_thread) {
-    assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
-           (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
-           "used + humongous cannot exceed regions");
-  }
+  assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+         (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
+         "used + humongous cannot exceed regions");
   return affiliated_region_count;
+}
+
+size_t ShenandoahGeneration::decrement_affiliated_region_count_without_lock() {
+  return Atomic::sub(&_affiliated_region_count, (size_t) 1);
 }
 
 size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {

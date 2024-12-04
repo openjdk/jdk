@@ -219,6 +219,8 @@ private:
 
   // Return the updated value of affiliated_region_count
   size_t decrement_affiliated_region_count();
+  // Same as decrement_affiliated_region_count, but w/o the need to hold heap lock before being called.
+  size_t decrement_affiliated_region_count_without_lock();
 
   // Return the updated value of affiliated_region_count
   size_t increase_affiliated_region_count(size_t delta);

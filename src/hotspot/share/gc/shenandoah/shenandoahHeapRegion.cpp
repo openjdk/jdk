@@ -619,7 +619,7 @@ void ShenandoahHeapRegion::try_recycle() {
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       ShenandoahGeneration* generation = heap->generation_for(affiliation());
       heap->decrease_used(generation, used());
-      generation->decrement_affiliated_region_count();
+      generation->decrement_affiliated_region_count_without_lock();
 
       recycle_internal();
     }
