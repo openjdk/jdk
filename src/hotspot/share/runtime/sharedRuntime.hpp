@@ -146,7 +146,7 @@ class SharedRuntime: AllStatic {
   // 8342769 it was discovered that Windows ARM64
   // now needs the workaround, so this is now used
   // for Windows ARM64
-  static double fmod_win64(double x, double y);
+  static double fmod_winarm64(double x, double y);
 #endif
 
 #ifdef __SOFTFP__
