@@ -931,6 +931,11 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
         __ bind(is_secondary);
 
         __ load_klass(obj, obj);
+
+        // This is necessary because I am never in my own secondary_super list.
+        __ cmp(obj, klass);
+        __ br(Assembler::EQ, success); // Klass is a secondary superclass
+
         __ lookup_secondary_supers_table_var(obj, klass,
                                              /*temps*/r3, r4, r5, v0,
                                              result,
