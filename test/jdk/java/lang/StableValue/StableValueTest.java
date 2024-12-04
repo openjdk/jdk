@@ -160,7 +160,7 @@ final class StableValueTest {
         StableValue<StableValue<?>> stable = StableValue.unset();
         stable.trySet(stable);
         String toString = stable.toString();
-        assertEquals(toString, "(this StableValue)");
+        assertEquals("(this StableValue)", toString);
         assertDoesNotThrow(stable::hashCode);
         assertDoesNotThrow((() -> stable.equals(stable)));
     }
@@ -184,7 +184,6 @@ final class StableValueTest {
     void raceSetOrThrow() {
         race(SET_OR_THROW);
     }
-
 
     @Test
     void raceMixed() {

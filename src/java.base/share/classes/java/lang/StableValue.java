@@ -161,10 +161,10 @@ import java.util.function.Supplier;
  *
  *         private static final IntFunction<Double> SQRT =
  *                 // @link substring="ofIntFunction" target="#ofIntFunction(int,IntFunction)" :
- *                 StableValue.ofIntFunction(10, Math::sqrt);
+ *                 StableValue.ofIntFunction(10, StrictMath::sqrt);
  *
  *         double sqrt9() {
- *             return SQRT.apply(9); // Constant folds to 3.0
+ *             return SQRT.apply(9); // Eventually constant folds to 3.0 at runtime
  *         }
  *
  *     }
@@ -183,10 +183,10 @@ import java.util.function.Supplier;
  *
  *         private static final Function<Integer, Double> SQRT =
  *                 // @link substring="ofFunction" target="#ofFunction(Set,Function)" :
- *                 StableValue.ofFunction(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
+ *                 StableValue.ofFunction(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
  *         double sqrt16() {
- *             return SQRT.apply(16); // Constant folds to 4.0
+ *             return SQRT.apply(16); // Eventually constant folds to 4.0 at runtime
  *         }
  *
  *     }
@@ -203,10 +203,10 @@ import java.util.function.Supplier;
  *
  *         private static final List<Double> SQRT =
  *                 // @link substring="ofList" target="#ofList(int,IntFunction)" :
- *                 StableValue.ofList(10, Math::sqrt);
+ *                 StableValue.ofList(10, StrictMath::sqrt);
  *
  *         double sqrt9() {
- *             return SQRT.apply(9); // Constant folds to 3.0
+ *             return SQRT.apply(9); // Eventually constant folds to 3.0 at runtime
  *         }
  *
  *     }
@@ -224,10 +224,10 @@ import java.util.function.Supplier;
  *
  *         private static final Map<Integer, Double> SQRT =
  *                 // @link substring="ofMap" target="#ofMap(Set,Function)" :
- *                 StableValue.ofMap(Set.of(1, 2, 4, 8, 16, 32), Math::sqrt);
+ *                 StableValue.ofMap(Set.of(1, 2, 4, 8, 16, 32), StrictMath::sqrt);
  *
  *         double sqrt16() {
- *             return SQRT.apply(16); // Constant folds to 4.0
+ *             return SQRT.apply(16); // Eventually constant folds to 4.0 at runtime
  *         }
  *
  *     }
@@ -254,6 +254,13 @@ import java.util.function.Supplier;
  * Stable functions and collections are not {@link Serializable} as this would require
  * {@linkplain #ofList(int, IntFunction) mappers} to be {@link Serializable} as well,
  * which would introduce security vulnerabilities.
+ * <p>
+ * As objects can be set via stable values but never removed, this can be a source
+ * of unintended memory leaks. Clients are advised that live stable values will hold set
+ * values perpetually.
+ * <p>
+ * A {@linkplain StableValue} may hold a reference to itself. Stable functions and
+ * collections may hold self-references.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
@@ -362,6 +369,19 @@ public sealed interface StableValue<T>
      * @throws IllegalStateException if the holder value was already set
      */
     void setOrThrow(T value);
+
+    /**
+     * {@return {@code true} if {@code this == obj}, {@code false} otherwise}
+     *
+     * @param obj to check for equality
+     */
+    boolean equals(Object obj);
+
+    /**
+     * {@return the {@linkplain System#identityHashCode(Object) identity hash code} of
+     *          {@code this} object}
+     */
+    int hashCode();
 
     // Factories
 
