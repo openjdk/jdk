@@ -1254,11 +1254,11 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   return _heap->get_region(beg)->bottom();
 }
 
-class ShenandoahRecycleTrashedRegionTask : public WorkerTask {
+class ShenandoahRecycleTrashedRegionsTask final : public WorkerTask {
 private:
   ShenandoahRegionIterator _regions;
 public:
-  ShenandoahRecycleTrashedRegionTask() :
+  ShenandoahRecycleTrashedRegionsTask() :
     WorkerTask("Shenandoah Recycle Trashed Regions") {}
 
   void work(uint worker_id) {
@@ -1279,7 +1279,7 @@ void ShenandoahFreeSet::recycle_trash() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
-  ShenandoahRecycleTrashedRegionTask task;
+  ShenandoahRecycleTrashedRegionsTask task;
   heap->workers()->run_task(&task);
 }
 
