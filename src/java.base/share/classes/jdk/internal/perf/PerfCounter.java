@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.internal.perf;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.LongBuffer;
-import java.security.AccessController;
 
 /**
  * Performance counter support for internal JRE classes.
@@ -48,9 +47,7 @@ import java.security.AccessController;
  *
  */
 public class PerfCounter {
-    @SuppressWarnings("removal")
-    private static final Perf perf =
-        AccessController.doPrivileged(new Perf.GetPerfAction());
+    private static final Perf perf = Perf.getPerf();
 
     // Must match values defined in hotspot/src/share/vm/runtime/perfdata.hpp
     private static final int V_Constant  = 1;

@@ -27,9 +27,9 @@ package jdk.internal.platform.cgroupv1;
 
 import java.lang.System.Logger.Level;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
-import jdk.internal.platform.CgroupUtil;
 
 public class CgroupV1SubsystemController implements CgroupSubsystemController {
 
@@ -67,7 +67,7 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
                         int nameCount = cgp.getNameCount();
                         for (int i=0; i<nameCount; ++i) {
                             Path dir = Path.of(mountPoint, cgp.toString());
-                            if (CgroupUtil.isDirectory(dir)) {
+                            if (Files.isDirectory(dir)) {
                                 path = dir.toString();
                                 if (i > 0) {
                                     System.getLogger("jdk.internal.platform").log(Level.DEBUG, String.format(

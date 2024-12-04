@@ -181,6 +181,9 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVFH)) {
     VM_Version::ext_Zvfh.enable_feature();
   }
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
+    VM_Version::ext_Zicond.enable_feature();
+  }
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_access.enable_feature(
        query[RISCV_HWPROBE_KEY_CPUPERF_0].value & RISCV_HWPROBE_MISALIGNED_MASK);
