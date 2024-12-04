@@ -158,10 +158,6 @@ Monitor* JVMCIRuntime_lock            = nullptr;
 // Only one RecursiveMutex
 RecursiveMutex* MultiArray_lock       = nullptr;
 
-#define MAX_NUM_MUTEX 128
-static Mutex* _mutex_array[MAX_NUM_MUTEX];
-static int _num_mutex;
-
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
   if (DebuggingContext::is_enabled() || VMError::is_error_reported()) return;
@@ -182,18 +178,13 @@ void assert_lock_strong(const Mutex* lock) {
 }
 #endif
 
-static void add_mutex(Mutex* var) {
-  assert(_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");
-  _mutex_array[_num_mutex++] = var;
-}
-
 #define MUTEX_STORAGE_NAME(name) name##_storage
 #define MUTEX_STORAGE(name, type) alignas(type) static uint8_t MUTEX_STORAGE_NAME(name)[sizeof(type)]
 #define MUTEX_DEF(name, type, pri, ...) {                                                       \
   assert(name == nullptr, "Mutex/Monitor initialized twice");                                   \
   MUTEX_STORAGE(name, type);                                                                    \
   name = ::new(static_cast<void*>(MUTEX_STORAGE_NAME(name))) type((pri), #name, ##__VA_ARGS__); \
-  add_mutex(name);                                                                              \
+  Mutex::add_mutex(name);                                                                       \
 }
 #define MUTEX_DEFN(name, type, pri, ...) MUTEX_DEF(name, type, Mutex::pri, ##__VA_ARGS__)
 
@@ -371,7 +362,7 @@ void MutexLockerImpl::post_initialize() {
   if (lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
-    print_lock_ranks(&ls);
+    Mutex::print_lock_ranks(&ls);
   }
 }
 
@@ -385,58 +376,3 @@ GCMutexLocker::GCMutexLocker(Mutex* mutex) {
   }
 }
 
-// Print all mutexes/monitors that are currently owned by a thread; called
-// by fatal error handler.
-void print_owned_locks_on_error(outputStream* st) {
-  st->print("VM Mutex/Monitor currently owned by a thread: ");
-  bool none = true;
-  for (int i = 0; i < _num_mutex; i++) {
-     // see if it has an owner
-     if (_mutex_array[i]->owner() != nullptr) {
-       if (none) {
-          // print format used by Mutex::print_on_error()
-          st->print_cr(" ([mutex/lock_event])");
-          none = false;
-       }
-       _mutex_array[i]->print_on_error(st);
-       st->cr();
-     }
-  }
-  if (none) st->print_cr("None");
-}
-
-void print_lock_ranks(outputStream* st) {
-  st->print_cr("VM Mutex/Monitor ranks: ");
-
-#ifdef ASSERT
-  // Be extra defensive and figure out the bounds on
-  // ranks right here. This also saves a bit of time
-  // in the #ranks*#mutexes loop below.
-  int min_rank = INT_MAX;
-  int max_rank = INT_MIN;
-  for (int i = 0; i < _num_mutex; i++) {
-    Mutex* m = _mutex_array[i];
-    int r = (int) m->rank();
-    if (min_rank > r) min_rank = r;
-    if (max_rank < r) max_rank = r;
-  }
-
-  // Print the listings rank by rank
-  for (int r = min_rank; r <= max_rank; r++) {
-    bool first = true;
-    for (int i = 0; i < _num_mutex; i++) {
-      Mutex* m = _mutex_array[i];
-      if (r != (int) m->rank()) continue;
-
-      if (first) {
-        st->cr();
-        st->print_cr("Rank \"%s\":", m->rank_name());
-        first = false;
-      }
-      st->print_cr("  %s", m->name());
-    }
-  }
-#else
-  st->print_cr("  Only known in debug builds.");
-#endif // ASSERT
-}

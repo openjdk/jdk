@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,22 +233,29 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract String getProtocol();
 
     /**
-     * {@link Filter} modules may store arbitrary objects with {@code HttpExchange}
-     * instances as an out-of-band communication mechanism. Other filters
+     * Returns the attribute's value from this exchange's
+     * {@linkplain HttpContext#getAttributes() context attributes}.
+     *
+     * @apiNote {@link Filter} modules may store arbitrary objects as attributes through
+     * {@code HttpExchange} instances as an out-of-band communication mechanism. Other filters
      * or the exchange handler may then access these objects.
      *
      * <p> Each {@code Filter} class will document the attributes which they make
      * available.
      *
      * @param name the name of the attribute to retrieve
-     * @return the attribute object, or {@code null} if it does not exist
+     * @return the attribute's value or {@code null} if either the attribute isn't set
+     *         or the attribute value is {@code null}
      * @throws NullPointerException if name is {@code null}
      */
     public abstract Object getAttribute(String name);
 
     /**
-     * {@link Filter} modules may store arbitrary objects with {@code HttpExchange}
-     * instances as an out-of-band communication mechanism. Other filters
+     * Sets an attribute with the given {@code name} and {@code value} in this exchange's
+     * {@linkplain HttpContext#getAttributes() context attributes}.
+     *
+     * @apiNote {@link Filter} modules may store arbitrary objects as attributes through
+     * {@code HttpExchange} instances as an out-of-band communication mechanism. Other filters
      * or the exchange handler may then access these objects.
      *
      * <p> Each {@code Filter} class will document the attributes which they make

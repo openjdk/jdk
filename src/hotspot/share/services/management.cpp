@@ -160,7 +160,6 @@ void Management::initialize(TRAPS) {
     Handle loader = Handle(THREAD, SystemDictionary::java_system_loader());
     Klass* k = SystemDictionary::resolve_or_null(vmSymbols::jdk_internal_agent_Agent(),
                                                    loader,
-                                                   Handle(),
                                                    THREAD);
     if (k == nullptr) {
       vm_exit_during_initialization("Management agent initialization failure: "
@@ -2014,10 +2013,6 @@ JVM_ENTRY(void, jmm_GetDiagnosticCommandInfo(JNIEnv *env, jobjectArray cmds,
     infoArray[i].name = info->name();
     infoArray[i].description = info->description();
     infoArray[i].impact = info->impact();
-    JavaPermission p = info->permission();
-    infoArray[i].permission_class = p._class;
-    infoArray[i].permission_name = p._name;
-    infoArray[i].permission_action = p._action;
     infoArray[i].num_arguments = info->num_arguments();
     infoArray[i].enabled = info->is_enabled();
   }

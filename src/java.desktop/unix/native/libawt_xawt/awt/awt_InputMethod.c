@@ -1328,7 +1328,7 @@ static void DestroyXIMCallback(XIM im, XPointer client_data, XPointer call_data)
                 x11InputMethodGRefListHead->inputMethodGRef) == NULL) {
             /* Clear possible exceptions
              */
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionDescribe(env);
                 (*env)->ExceptionClear(env);
             }

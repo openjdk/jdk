@@ -30,7 +30,6 @@ import java.lang.reflect.Constructor;
 import java.util.Map.Entry;
 
 import com.sun.beans.introspect.PropertyInfo;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * A PropertyDescriptor describes one property that a Java Bean
@@ -467,8 +466,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
         Object editor = null;
 
         final Class<?> cls = getPropertyEditorClass();
-        if (cls != null && PropertyEditor.class.isAssignableFrom(cls)
-                && ReflectUtil.isPackageAccessible(cls)) {
+        if (cls != null && PropertyEditor.class.isAssignableFrom(cls)) {
             Constructor<?> ctor = null;
             if (bean != null) {
                 try {

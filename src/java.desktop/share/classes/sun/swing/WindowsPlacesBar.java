@@ -36,8 +36,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
 import java.io.File;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import javax.swing.JToolBar;
 import javax.swing.JFileChooser;

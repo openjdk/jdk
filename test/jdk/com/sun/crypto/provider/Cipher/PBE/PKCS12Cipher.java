@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,8 @@ public class PKCS12Cipher {
         new SecureRandom().nextBytes(input);
         char[] PASSWD = { 'p','a','s','s','w','o','r','d' };
         long start = System.currentTimeMillis();
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(
+                            System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + p.getName() + "...");
         runTest("PBEWithSHA1AndDESede", input, PASSWD, p);
         runTest("PBEWithSHA1AndRC2_40", input, PASSWD, p);

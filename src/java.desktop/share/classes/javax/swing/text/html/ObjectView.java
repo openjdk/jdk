@@ -31,7 +31,6 @@ import java.beans.*;
 import java.lang.reflect.*;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Component decorator that implements the view interface
@@ -100,7 +99,6 @@ public class ObjectView extends ComponentView  {
         AttributeSet attr = getElement().getAttributes();
         String classname = (String) attr.getAttribute(HTML.Attribute.CLASSID);
         try {
-            ReflectUtil.checkPackageAccess(classname);
             Class<?> c = Class.forName(classname, false,Thread.currentThread().
                                        getContextClassLoader());
             if (Component.class.isAssignableFrom(c)) {

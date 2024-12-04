@@ -55,11 +55,10 @@ import static jdk.jpackage.test.TKit.assertFalse;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest == null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=1400 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest
@@ -68,11 +67,10 @@ import static jdk.jpackage.test.TKit.assertFalse;
 /*
  * @test
  * @summary jpackage with --runtime-image
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @key jpackagePlatformPackage
  * @build jdk.jpackage.test.*
  * @requires (jpackage.test.SQETest != null)
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile RuntimePackageTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=RuntimePackageTest.test
