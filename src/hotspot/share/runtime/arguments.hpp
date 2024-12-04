@@ -209,7 +209,6 @@ class Arguments : AllStatic {
   static SystemProperty *_java_class_path;
   static SystemProperty *_jdk_boot_class_path_append;
   static SystemProperty *_vm_info;
-  static SystemProperty *_vm_vendor;
 
   // --patch-module=module=<file>(<pathsep><file>)*
   // Each element contains the associated module name, path
@@ -446,9 +445,6 @@ class Arguments : AllStatic {
 
   // Update/Initialize System properties after JDK version number is known
   static void init_version_specific_system_properties();
-  static void update_vm_vendor(const char* vm_vendor) {
-    _vm_vendor->set_value(vm_vendor);
-  }
 
   // Update VM info property - called after argument parsing
   static void update_vm_info_property(const char* vm_info) {

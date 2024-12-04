@@ -273,16 +273,7 @@ VERSION_CFLAGS = \
     #
 
 ifneq ($(COMPANY_NAME), )
-  # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
-  # but can be customized with the '--with-vendor-name' configure option.
-  # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
-  # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
-  # and "java.vm.vendor" properties is hard-coded into the source code (i.e. in
-  # VersionProps.java.template in the jdk for "java.vendor" and
-  # vm_version.cpp in the VM for "java.vm.vendor")
-  ifneq ($(COMPANY_NAME), N/A)
-    VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"'
-  endif
+  VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"'
 endif
 
 # Only export VENDOR_URL, VENDOR_URL_BUG and VENDOR_VM_URL_BUG to the build if

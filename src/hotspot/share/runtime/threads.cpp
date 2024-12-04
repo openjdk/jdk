@@ -669,8 +669,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   initialize_java_lang_classes(main_thread, CHECK_JNI_ERR);
-  // Update the java.vm.vendor property with java.lang.VersionProps.VM_VENDOR
-  Arguments::update_vm_vendor(VM_Version::vm_vendor());
 
   quicken_jni_functions();
 

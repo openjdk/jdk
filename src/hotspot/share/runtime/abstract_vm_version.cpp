@@ -136,21 +136,11 @@ const char* Abstract_VM_Version::vm_vendor() {
 }
 
 void Abstract_VM_Version::override_vm_vendor(const char* vendor_override) {
-  if (vendor_override == nullptr) {
-    _vendor_branding_override = nullptr;
-    return;
-  }
-
-  // Default value "N/A" is a nop
-  if (strcmp(vendor_override, "N/A") == 0) {
-    return;
-  }
-
   if (_vendor_branding_override != nullptr) {
     os::free((void *)_vendor_branding_override);
   }
 
-  _vendor_branding_override = os::strdup(vendor_override);
+  _vendor_branding_override = (vendor_override == nullptr) ? nullptr : os::strdup(vendor_override);
 }
 
 const char* Abstract_VM_Version::vm_info_string() {
