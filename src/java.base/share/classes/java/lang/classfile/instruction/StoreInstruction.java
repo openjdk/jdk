@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * A local variable store instruction can be viewed as a record:
+ * A local variable store instruction is composite:
  * {@snippet lang=text :
  * // @link substring="StoreInstruction" target="#of(TypeKind, int)" :
  * StoreInstruction(

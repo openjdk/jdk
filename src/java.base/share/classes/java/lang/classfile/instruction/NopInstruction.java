@@ -37,11 +37,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * A no-op instruction can be viewed as a record:
- * {@snippet lang=text :
- * // @link substring="NopInstruction" target="#of" :
- * NopInstruction()
- * }
+ * A no-op instruction has no visible state.
  *
  * @see CodeBuilder#nop CodeBuilder::nop
  * @jvms 6.5.nop <em>nop</em>

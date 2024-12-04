@@ -43,7 +43,7 @@ import jdk.internal.classfile.impl.LineNumberImpl;
  * elements of a {@link CodeModel}, according to the setting of the {@link
  * ClassFile.LineNumbersOption} option.
  * <p>
- * A line number entry can be viewed as a record:
+ * A line number entry is composite:
  * {@snippet lang=text :
  * // @link substring="LineNumber" target="#of" :
  * LineNumber(int line) // @link substring="int line" target="#line"

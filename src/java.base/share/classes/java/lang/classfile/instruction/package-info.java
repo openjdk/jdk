@@ -27,6 +27,7 @@
  * <h2>Provides interfaces describing code instructions for the {@link java.lang.classfile} library.</h2>
  *
  * The {@code java.lang.classfile.instruction} package contains interfaces describing code instructions.
+ * Implementations of these interfaces are immutable.
  * <p>
  * Unless otherwise specified, passing {@code null} or an array or collection containing a {@code null} element as an
  * argument to a constructor or method of any Class-File API class or interface will cause a {@link NullPointerException}

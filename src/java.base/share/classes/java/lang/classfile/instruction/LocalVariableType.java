@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * as a {@link CodeElement} during traversal of the elements of a {@link CodeModel},
  * according to the setting of the {@link ClassFile.DebugElementsOption} option.
  * <p>
- * A local variable type entry can be viewed as a record:
+ * A local variable type entry is composite:
  * {@snippet lang=text :
  * // @link substring="LocalVariableType" target="#of(int, String, Signature, Label, Label)" :
  * LocalVariableType(

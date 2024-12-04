@@ -45,7 +45,7 @@ import jdk.internal.classfile.impl.Util;
  * of {@link Opcode.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * A field access instruction can be viewed as a record:
+ * A field access instruction is composite:
  * {@snippet lang=text :
  * // @link substring="FieldInstruction" target="#of(Opcode, FieldRefEntry)" :
  * FieldInstruction(

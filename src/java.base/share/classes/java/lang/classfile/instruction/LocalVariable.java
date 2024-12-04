@@ -46,7 +46,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link CodeElement} during traversal of the elements of a {@link CodeModel},
  * according to the setting of the {@link ClassFile.DebugElementsOption} option.
  * <p>
- * A local variable entry can be viewed a record:
+ * A local variable entry is composite:
  * {@snippet lang=text :
  * // @link substring="LocalVariable" target="#of(int, String, ClassDesc, Label, Label)" :
  * LocalVariable(

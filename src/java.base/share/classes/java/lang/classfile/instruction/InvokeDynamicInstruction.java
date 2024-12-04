@@ -47,8 +47,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode#INVOKEDYNAMIC invokedynamic}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * A dynamically-computed call site invocation instruction can be viewed as a
- * record:
+ * A dynamically-computed call site invocation instruction is composite:
  * {@snippet lang=text :
  * // @link substring="InvokeDynamicInstruction" target="#of" :
  * InvokeDynamicInstruction(InvokeDynamicEntry invokedynamic) // @link substring="invokedynamic" target="#invokedynamic()"

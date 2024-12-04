@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * kind} of {@link Opcode.Kind#INCREMENT}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * A local variable increment instruction can be viewed as a record:
+ * A local variable increment instruction is composite:
  * {@snippet lang=text :
  * // @link substring="IncrementInstruction" target="#of" :
  * IncrementInstruction(

@@ -55,7 +55,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * Delivered as a {@link CodeElement} when traversing the elements of a
      * {@link CodeModel}.
      * <p>
-     * A jump subroutine instruction can be viewed as a record:
+     * A jump subroutine instruction is composite:
      * {@snippet lang=text :
      * // @link substring="JsrInstruction" target="#of(Label)" :
      * JsrInstruction(Label target) // @link substring="target" target="#target()"
@@ -119,7 +119,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      * <p>
-     * A return from subroutine instruction can be viewed as a record:
+     * A return from subroutine instruction is composite:
      * {@snippet lang=text :
      * // @link substring="RetInstruction" target="#of(int)" :
      * RetInstruction(int slot) // @link substring="slot" target="#slot()"

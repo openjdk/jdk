@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#RETURN}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * A return-from-method instruction can be viewed a record:
+ * A return-from-method instruction is composite:
  * {@snippet lang=text :
  * // @link substring="ReturnInstruction" target="#of(TypeKind)" :
  * ReturnInstruction(TypeKind typeKind) // @link substring="typeKind" target="#typeKind()"

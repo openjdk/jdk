@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * attribute.  Delivered as a {@link CodeElement} when traversing the elements
  * of a {@link CodeModel}.
  * <p>
- * A new object instruction can be viewed as a record:
+ * A new object instruction is composite:
  * {@snippet lang=text :
  * // @link substring="NewObjectInstruction" target="#of" :
  * NewObjectInstruction(ClassEntry className) // @link substring="className" target="#className"

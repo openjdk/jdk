@@ -41,7 +41,7 @@ import jdk.internal.classfile.impl.Util;
  * Opcode#kind() kind} of {@link Opcode.Kind#LOAD}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * A local variable load instruction can be viewed as a record:
+ * A local variable load instruction is composite:
  * {@snippet lang=text :
  * // @link substring="LoadInstruction" target="#of(TypeKind, int)" :
  * LoadInstruction(

@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * Models a single case in a {@link LookupSwitchInstruction lookupswitch} or
  * {@link TableSwitchInstruction tableswitch} instruction.
  * <p>
- * A switch case can be viewed as a record:
+ * A switch case is composite:
  * {@snippet lang=text :
  * // @link substring="SwitchCase" target="#of" :
  * SwitchCase(

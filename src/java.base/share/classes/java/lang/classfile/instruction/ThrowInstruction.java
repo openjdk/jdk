@@ -37,11 +37,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  * <p>
- * A throw instruction can be viewed as a record:
- * {@snippet lang=text :
- * // @link substring="ThrowInstruction" target="#of" :
- * ThrowInstruction()
- * }
+ * A throw instruction has no visible state.
  *
  * @see Opcode.Kind#THROW_EXCEPTION
  * @see CodeBuilder#athrow CodeBuiler::athrow

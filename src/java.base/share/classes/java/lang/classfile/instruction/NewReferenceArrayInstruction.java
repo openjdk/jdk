@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * A new reference array instruction can be viewed as a record:
+ * A new reference array instruction is composite:
  * {@snippet lang=text :
  * // @link substring="NewReferenceArrayInstruction" target="#of" :
  * NewReferenceArrayInstruction(ClassEntry componentType) // @link substring="componentType" target="#componentType"

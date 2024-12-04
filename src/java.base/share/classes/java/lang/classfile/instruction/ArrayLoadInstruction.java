@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.Util;
  * of {@link Opcode.Kind#ARRAY_LOAD}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * An array load instruction can be viewed as a record:
+ * An array load instruction is composite:
  * {@snippet lang=text :
  * // @link substring="ArrayLoadInstruction" target="CodeBuilder#arrayLoad(TypeKind)" :
  * ArrayLoadInstruction(TypeKind typeKind) // @link substring="typeKind" target="#typeKind"

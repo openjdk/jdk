@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#STACK}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * A stack manipulation instruction can be viewed as a record:
+ * A stack manipulation instruction is composite:
  * {@snippet lang=text :
  * // @link substring="StackInstruction" target="#of" :
  * StackInstruction(Opcode opcode) // @link substring="opcode" target="#opcode()"

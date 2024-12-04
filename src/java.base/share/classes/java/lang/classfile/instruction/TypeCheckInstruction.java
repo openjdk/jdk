@@ -41,11 +41,12 @@ import jdk.internal.classfile.impl.Util;
  * opcodes have a {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#TYPE_CHECK}.
  * Delivered as a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * An {@code instanceof} checks the type and pushes a value to the operand stack.
+ * An {@code instanceof} checks the type and pushes an integer to the operand stack.
  * A {@code checkcast} checks the type and throws a {@link ClassCastException} if
- * the check fails.
+ * the check fails.  {@code instanceof} treat the {@code null} reference as a
+ * failure, while {@code checkcast} treat the {@code null} reference as a success.
  * <p>
- * A type check instruction can be viewed as a record:
+ * A type check instruction is composite:
  * {@snippet lang=text :
  * // @link substring="TypeCheckInstruction" target="#of(Opcode, ClassEntry)" :
  * TypeCheckInstruction(

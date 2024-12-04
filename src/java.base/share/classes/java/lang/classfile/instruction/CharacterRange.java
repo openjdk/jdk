@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.BoundCharacterRange;
  * {@link CodeElement} during traversal of the elements of a {@link CodeModel},
  * according to the setting of the {@link ClassFile.DebugElementsOption} option.
  * <p>
- * A character range entry can be viewed a record:
+ * A character range entry is composite:
  * {@snippet lang=text :
  * // @link substring="CharacterRange" target="#of":
  * CharacterRange(

@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * A new primitive array instruction can be viewed as a record:
+ * A new primitive array instruction is composite:
  * {@snippet lang=text :
  * // @link substring="NewPrimitiveArrayInstruction" target="#of" :
  * NewPrimitiveArrayInstruction(TypeKind typeKind) // @link substring="typeKind" target="#typeKind"

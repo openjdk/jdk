@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * A lookup switch instruction can be viewed as a record:
+ * A lookup switch instruction is composite:
  * {@snippet lang=text :
  * // @link substring="LookupSwitchInstruction" target="#of" :
  * LookupSwitchInstruction(

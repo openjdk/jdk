@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
  * table entries.  Delivered as a {@link CodeElement} when traversing the
  * contents of a {@link CodeModel}.
  * <p>
- * An exception table entry can be viewed as a record:
+ * An exception table entry is composite:
  * {@snippet lang=text :
  * // @link substring="ExceptionCatch" target="#of(Label, Label, Label, Optional)" :
  * ExceptionCatch(

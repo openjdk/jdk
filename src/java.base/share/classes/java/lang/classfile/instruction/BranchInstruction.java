@@ -35,12 +35,12 @@ import jdk.internal.classfile.impl.Util;
  * {@linkplain Opcode#kind() kind} of {@link Opcode.Kind#BRANCH}.  Delivered as
  * a {@link CodeElement} when traversing the elements of a {@link CodeModel}.
  * <p>
- * A branch instruction can be viewed as a record:
+ * A branch instruction is composite:
  * {@snippet lang=text :
  * // @link substring="BranchInstruction" target="#of":
  * BranchInstruction(
- *     Opcode opcode, // @link substring="Opcode" target="#opcode()"
- *     Label target // @link substring="Label" target="#target()"
+ *     Opcode opcode, // @link substring="opcode" target="#opcode()"
+ *     Label target // @link substring="target" target="#target()"
  * )
  * }
  * <p>

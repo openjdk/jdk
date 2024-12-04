@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.Util;
  * {@link Opcode.Kind#OPERATOR}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * An operator instruction can be viewed as a record:
+ * An operator instruction is composite:
  * {@snippet lang=text :
  * // @link substring="OperatorInstruction" target="#of" :
  * OperatorInstruction(Opcode opcode) // @link substring="opcode" target="#opcode()"

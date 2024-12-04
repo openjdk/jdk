@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.Util;
  * of {@link Opcode.Kind#ARRAY_STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  * <p>
- * An array store instruction can be viewed as a record:
+ * An array store instruction is composite:
  * {@snippet lang=text :
  * // @link substring="ArrayStoreInstruction" target="CodeBuilder#arrayStore(TypeKind)" :
  * ArrayStoreInstruction(TypeKind typeKind) // @link substring="typeKind" target="#typeKind"

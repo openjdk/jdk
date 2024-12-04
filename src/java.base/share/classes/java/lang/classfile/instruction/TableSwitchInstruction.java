@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.AbstractInstruction;
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  * <p>
- * A table switch instruction can be viewed a record:
+ * A table switch instruction is composite:
  * {@snippet lang=text :
  * // @link substring="TableSwitchInstruction" target="#of" :
  * TableSwitchInstruction(

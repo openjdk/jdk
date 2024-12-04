@@ -46,7 +46,7 @@ import jdk.internal.classfile.impl.Util;
  * Opcode.Kind#CONSTANT}.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  * <p>
- * A constant-load instruction can be viewed as a record:
+ * The loaded constant value is symbolically represented as a {@link ConstantDesc}:
  * {@snippet lang=text :
  * // @link substring="ConstantInstruction" target="CodeBuilder#loadConstant(ConstantDesc)" :
  * ConstantInstruction(ConstantDesc constantValue) // @link substring="constantValue" target="#constantValue()"
@@ -76,7 +76,7 @@ public sealed interface ConstantInstruction extends Instruction {
      * Opcode#ACONST_NULL aconst_null} and {@link
      * Opcode#ICONST_0 iconst_0}.
      * <p>
-     * An intrinsic constant instruction can be viewed as a record:
+     * An intrinsic constant instruction is composite:
      * {@snippet lang=text :
      * // @link substring="IntrinsicConstantInstruction" target="#ofIntrinsic" :
      * IntrinsicConstantInstruction(Opcode opcode) // @link substring="opcode" target="#opcode()"
@@ -106,7 +106,7 @@ public sealed interface ConstantInstruction extends Instruction {
      * constant value in the instruction directly. Includes {@link
      * Opcode#BIPUSH bipush} and {@link Opcode#SIPUSH sipush} instructions.
      * <p>
-     * An argument constant instruction can be viewed a record:
+     * An argument constant instruction is composite:
      * {@snippet lang=text :
      * // @link substring="ArgumentConstantInstruction" target="#ofArgument" :
      * ArgumentConstantInstruction(
@@ -143,21 +143,20 @@ public sealed interface ConstantInstruction extends Instruction {
     }
 
     /**
-     * Models a "load constant" instruction, which encodes the  constant value
+     * Models a "load constant" instruction, which encodes the constant value
      * in the constant pool.  Includes {@link Opcode#LDC ldc} and {@link
      * Opcode#LDC_W ldc_w}, and {@link Opcode#LDC2_W ldc2_w} instructions.
      * <p>
-     * A load constant instruction can be viewed as one of these records:
+     * A load constant instruction is composite:
      * {@snippet lang=text :
-     * // @link substring="LoadConstantInstruction" target="CodeBuilder#ldc(ConstantDesc)" :
-     * LoadConstantInstruction(ConstantDesc constantValue) // @link substring="constantValue" target="#constantValue()"
      * // @link substring="LoadConstantInstruction" target="CodeBuilder#ldc(LoadableConstantEntry)" :
      * LoadConstantInstruction(LoadableConstantEntry constantEntry) // @link substring="constantEntry" target="#constantEntry()"
      * }
      * <p>
-     * Though the generic constant-load model and the "load constant" model both
-     * hold a {@code constantValue}, the generic instruction may be more optimized,
-     * avoiding extra constant pool entries and using smaller-sized instructions.
+     * A "load constant" instruction can load any constant value supported by
+     * other constant-load instructions.  However, other instructions are
+     * usually more optimized, avoiding extra constant pool entries and being
+     * smaller.
      *
      * @see Opcode.Kind#CONSTANT
      * @see ConstantInstruction#ofLoad ConstantInstruction::ofLoad
@@ -198,7 +197,7 @@ public sealed interface ConstantInstruction extends Instruction {
      * {@return an argument constant instruction}
      * <p>
      * {@code value} must be in the range of {@code byte}, {@code [-128, 127]},
-     * for {@link Opcode#BIPUSH},  and in the range of {@code short}, {@code
+     * for {@link Opcode#BIPUSH}, and in the range of {@code short}, {@code
      * [-32768, 32767]}, for {@link Opcode#SIPUSH}.
      *
      * @param op the opcode for the specific type of argument constant instruction,

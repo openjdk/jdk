@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.BytecodeHelpers;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  * <p>
- * A new multi-dimensional array instruction can be viewed as a record:
+ * A new multi-dimensional array instruction is composite:
  * {@snippet lang=text :
  * // @link substring="NewMultiArrayInstruction" target="#of" :
  * NewMultiArrayInstruction(
