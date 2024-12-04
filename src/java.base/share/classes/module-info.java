@@ -81,7 +81,6 @@ module java.base {
     exports java.lang.annotation;
     exports java.lang.classfile;
     exports java.lang.classfile.attribute;
-    exports java.lang.classfile.components;
     exports java.lang.classfile.constantpool;
     exports java.lang.classfile.instruction;
     exports java.lang.constant;
@@ -177,6 +176,8 @@ module java.base {
         jdk.net,
         jdk.sctp,
         jdk.crypto.cryptoki;
+    exports jdk.internal.classfile.components to
+        jdk.jfr;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to
