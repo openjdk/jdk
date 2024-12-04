@@ -125,11 +125,10 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
     if (ShenandoahCardBarrier) {
       bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
       bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
-      bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
+      bool obj_int = type == T_OBJECT && UseCompressedOops;
 
       // We need to save the original element count because the array copy stub
       // will destroy the value and we need it for the card marking barrier.
-#ifdef _LP64
       if (!checkcast) {
         if (!obj_int) {
           // Save count for barrier
@@ -139,11 +138,6 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
           __ movq(r11, dst);
         }
       }
-#else
-      if (disjoint) {
-        __ mov(rdx, dst);          // save 'to'
-      }
-#endif
     }
 
     if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahLoadRefBarrier) {
@@ -192,10 +186,9 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
   if (ShenandoahCardBarrier && is_reference_type(type)) {
     bool checkcast = (decorators & ARRAYCOPY_CHECKCAST) != 0;
     bool disjoint = (decorators & ARRAYCOPY_DISJOINT) != 0;
-    bool obj_int = type == T_OBJECT LP64_ONLY(&& UseCompressedOops);
+    bool obj_int = type == T_OBJECT && UseCompressedOops;
     Register tmp = rax;
 
-#ifdef _LP64
     if (!checkcast) {
       if (!obj_int) {
         // Save count for barrier
@@ -207,11 +200,6 @@ void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, Dec
     } else {
       tmp = rscratch1;
     }
-#else
-    if (disjoint) {
-      __ mov(dst, rdx); // restore 'to'
-    }
-#endif
     gen_write_ref_array_post_barrier(masm, decorators, dst, count, tmp);
   }
 }
@@ -816,7 +804,6 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   __ testl(count, count);
   __ jccb(Assembler::zero, L_done);
 
-#ifdef _LP64
   __ leaq(end, Address(addr, count, TIMES_OOP, 0));  // end == addr+count*oop_size
   __ subptr(end, BytesPerHeapOop); // end - 1 to make inclusive
   __ shrptr(addr, CardTable::card_shift());
@@ -830,18 +817,6 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
   __ movb(Address(addr, count, Address::times_1), 0);
   __ decrement(count);
   __ jccb(Assembler::greaterEqual, L_loop);
-#else
-  __ lea(end, Address(addr, count, Address::times_ptr, -wordSize));
-  __ shrptr(addr, CardTable::card_shift());
-  __ shrptr(end,  CardTable::card_shift());
-  __ subptr(end, addr); // end --> count
-
-  __ BIND(L_loop);
-  Address cardtable(addr, count, Address::times_1, disp);
-  __ movb(cardtable, 0);
-  __ decrement(count);
-  __ jccb(Assembler::greaterEqual, L_loop);
-#endif
 
   __ BIND(L_done);
 }
