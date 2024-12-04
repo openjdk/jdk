@@ -747,6 +747,12 @@ class SerializeClosure;
   /* Stable Values */                                                                                             \
   template(java_lang_StableValue_signature,        "Ljava/lang/StableValue;")                                     \
   template(java_lang_StableValue_array_signature,  "[Ljava/lang/StableValue;")                                    \
+                                                                                                                  \
+  /* jcmd Thread.vthread_scheduler and Thread.vthread_pollers */                                                  \
+  template(jdk_internal_vm_JcmdVThreadCommands,    "jdk/internal/vm/JcmdVThreadCommands")                         \
+  template(printScheduler_name,                    "printScheduler")                                              \
+  template(printPollers_name,                      "printPollers")                                                \
+
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]
