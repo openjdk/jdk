@@ -169,9 +169,9 @@ class JavaThread: public Thread {
   int64_t _monitor_owner_id;
 
  public:
-  void set_monitor_owner_id(int64_t val) {
-    assert(val >= ThreadIdentifier::initial() && val < ThreadIdentifier::current(), "");
-    _monitor_owner_id = val;
+  void set_monitor_owner_id(int64_t id) {
+    assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "");
+    _monitor_owner_id = id;
   }
   int64_t monitor_owner_id() const { return _monitor_owner_id; }
 
