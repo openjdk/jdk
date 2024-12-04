@@ -153,7 +153,7 @@ public class SystemMapTestBase {
     private static class MacOSPatterns implements MapPatterns {
 
         // macOS:
-        static final String macprot =  "[\\-rwx]*";
+        static final String macprot =  "[\\-rwx]*/[\\-rwx]*";
 
         static final String macow = "cow";
         static final String macprivate = "pvt";

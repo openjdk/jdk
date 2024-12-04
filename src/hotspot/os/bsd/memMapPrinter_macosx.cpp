@@ -46,103 +46,6 @@
 /* maximum number of mapping records returned */
 static const int MAX_REGIONS_RETURNED = 1000000;
 
-
-class DllEntry {
-  public:
-
-  const char* _address;
-  const char* _dll_name;
-  DllEntry* _next;
-
-  void free() {
-    if (_next != nullptr) {
-      _next->free();
-      ::free(_next);
-      _next = nullptr;
-    }
-    ::free((void*)_dll_name);
-    _dll_name = nullptr;
-  }
-
-  static DllEntry* build(const char* addr, const char* dll_name) {
-    DllEntry* e = (DllEntry*)::malloc(sizeof(DllEntry));
-    assert(e != nullptr, "malloc failure");
-    assert(dll_name != nullptr, "null dll name");
-    e->_address = addr;
-    e->_dll_name = ::strdup(dll_name);
-    e->_next = nullptr;
-    return e;
-  }
-
-  /* append to list in sorted order, return first element of list */
-  DllEntry* append(DllEntry* entry) {
-    DllEntry* first = this;
-    if (entry->_address < _address) {
-      entry->_next = this;
-      first = entry;
-    } else if (_next == nullptr) {
-      _next = entry;
-    } else {
-      _next = _next->append(entry);
-    }
-    return first;
-  }
-};
-
-class DllList {
-  DllEntry* _dll_list;
-  DllEntry* _dll_cursor;
-
-  public:
-
-  DllList() : _dll_list(nullptr), _dll_cursor(nullptr) {}
-  ~DllList() {
-    /* free any held resources */
-    if (_dll_list != nullptr) {
-      _dll_list->free();
-      ::free(_dll_list);
-    }
-  }
-
-  DllEntry* cursor_rewind() {
-    _dll_cursor = _dll_list;
-    return _dll_cursor;
-  }
-
-  DllEntry* cursor_current() {
-    return _dll_cursor;
-  }
-
-  DllEntry* cursor_next() {
-    if (_dll_cursor != nullptr) {
-      _dll_cursor = _dll_cursor->_next;
-    }
-    return _dll_cursor;
-  }
-
-  void append(DllEntry* entry) {
-    if (_dll_list == nullptr) {
-      _dll_list = entry;
-    } else {
-      _dll_list = _dll_list->append(entry);
-    }
-  }
-
-  static int dll_cb(const char *dll_name, address low, address high, void* param) {
-    DllList* list = (DllList*)(param);
-    DllEntry* entry = DllEntry::build((const char*)low, dll_name);
-    list->append(entry);
-    return 0;
-  };
-
-  void add_all_dlls() {
-    os::get_loaded_modules_info(dll_cb, this);
-    cursor_rewind();
-  }
-};
-
-DllList dll_list;
-
 class MappingInfo {
 public:
   const char* _address;
@@ -171,23 +74,16 @@ public:
     _address = (const char*) rinfo.pri_address;
     _size = rinfo.pri_size;
 
-    const char* path = mem_info.prp_vip.vip_path;
-    if (path != nullptr) {
-      _file_name.print_raw(path);
-    } else {
-      char buf[PATH_MAX];
-      buf[0] = '\0';
-      proc_regionfilename(getpid(), (uint64_t) _address, buf, sizeof(buf));
-      if (buf[0] != 0) {
-        buf[sizeof(buf) - 1] = '\0';
-        _file_name.print_raw("-> ");
-        _file_name.print_raw(buf);
-      }
+    if (mem_info.prp_vip.vip_path[0] != '\0') {
+      _file_name.print_raw(mem_info.prp_vip.vip_path);
     }
+    // proc_regionfilename() seems to give bad results, so we don't use it here.
 
     char prot[4];
+    char maxprot[4];
     rwbits(rinfo.pri_protection, prot);
-    _protect_buffer.print("%s", prot);
+    rwbits(rinfo.pri_max_protection, maxprot);
+    _protect_buffer.print("%s/%s", prot, maxprot);
 
     get_share_mode(_share_buffer, rinfo);
     _tag_text = tagToStr(rinfo.pri_user_tag);
@@ -204,16 +100,6 @@ public:
     } else {
       out.print_cr("invalid pri_share_mode (%d)", rinfo.pri_share_mode);
       assert(valid_share_mode, "invalid pri_share_mode (%d)", rinfo.pri_share_mode);
-    }
-    if (rinfo.pri_flags & PROC_REGION_SHARED) {
-        out.print_raw("-shared");
-    }
-    if (rinfo.pri_flags & PROC_REGION_SUBMAP) {
-        out.print_raw("-submap");
-    }
-    if ((rinfo.pri_flags & (PROC_REGION_SHARED | PROC_REGION_SUBMAP)) != rinfo.pri_flags) {
-      out.print_cr("unhandled pri_flags = 0x%x", rinfo.pri_flags);
-      assert(false, "unhandled pri_flags = 0x%x", rinfo.pri_flags);
     }
   }
 
@@ -285,6 +171,7 @@ class ProcSmapsSummary {
   unsigned _num_mappings;
   size_t _private;
   size_t _committed;    // combined committed size
+  size_t _reserved;     // reserved but not committed
   size_t _shared;       // combined shared size
   size_t _swapped_out;  // combined amount of swapped-out memory
 public:
@@ -300,9 +187,18 @@ public:
                    || region_info.pri_share_mode == SM_SHARED_ALIASED
                    || region_info.pri_share_mode == SM_TRUESHARED
                    || region_info.pri_share_mode == SM_COW;
+    bool is_committed = region_info.pri_share_mode == SM_EMPTY 
+                   && region_info.pri_max_protection == VM_PROT_ALL
+                   && ((region_info.pri_protection & VM_PROT_DEFAULT) == VM_PROT_DEFAULT);
+    bool is_reserved = region_info.pri_share_mode == SM_EMPTY 
+                   && region_info.pri_max_protection == VM_PROT_ALL
+                   && region_info.pri_protection == VM_PROT_NONE;
+
     _private += is_private ? region_info.pri_size : 0;
     _shared += is_shared ? region_info.pri_size : 0;
     _swapped_out += region_info.pri_pages_swapped_out;
+    _committed += is_committed ? region_info.pri_size : 0;
+    _reserved += is_reserved ? region_info.pri_size : 0;
   }
 
   void print_on(const MappingPrintSession& session) const {
@@ -321,6 +217,8 @@ public:
     } else {
       st->print_cr("error getting vm_info %d", err);
     }
+    st->print_cr("          reserved: %zu (" PROPERFMT ")", _reserved, PROPERFMTARGS(_reserved));
+    st->print_cr("         committed: %zu (" PROPERFMT ")", _committed, PROPERFMTARGS(_committed));
     st->print_cr("           private: %zu (" PROPERFMT ")", _private, PROPERFMTARGS(_private));
     st->print_cr("            shared: %zu (" PROPERFMT ")", _shared, PROPERFMTARGS(_shared));
     st->print_cr("       swapped out: %zu (" PROPERFMT ")", _swapped_out * vm_info.page_size, PROPERFMTARGS(_swapped_out * vm_info.page_size));
@@ -340,17 +238,17 @@ public:
   if (st->fill_to(n) == 0) {  \
     st->print(" ");           \
   }
-    st->print("%#014.12llx-%#014.11llx", (uint64_t)(mapping_info._address), (uint64_t)(mapping_info._address + mapping_info._size));
+    st->print("%#014.12llx-%#014.12llx", (uint64_t)(mapping_info._address), (uint64_t)(mapping_info._address + mapping_info._size));
     INDENT_BY(38);
     st->print("%12ld", mapping_info._size);
     INDENT_BY(51);
     st->print("%s", mapping_info._protect_buffer.base());
-    INDENT_BY(56);
+    INDENT_BY(59);
     st->print("%s", mapping_info._share_buffer.base());
     st->print("%s", mapping_info._type_buffer.base());
-    INDENT_BY(61);
+    INDENT_BY(64);
     st->print("%#11llx", region_info.pri_offset);
-    INDENT_BY(73);
+    INDENT_BY(77);
     if (_session.print_nmt_info_for_region((const void*)mapping_info._address, (const void*)(mapping_info._address + mapping_info._size))) {
       st->print(" ");
     } else {
@@ -359,51 +257,10 @@ public:
         st->print("[%s] ", tag);
       }
     }
+
     st->print_raw(mapping_info._file_name.base());
-/*
-    st->print(" bh=%d ", region_info.pri_behavior);
-    st->print("fl=%d ", region_info.pri_flags);
-    st->print("uwc=%d ", region_info.pri_user_wired_count);
-    st->print("ut=%d ", region_info.pri_user_tag);
-    st->print("pr=%d ", region_info.pri_pages_resident);
-    st->print("snp=%d ", region_info.pri_pages_shared_now_private);
-    st->print("inh=%d ", region_info.pri_inheritance);
-    st->print("swo=%d ", region_info.pri_pages_swapped_out);
-    st->print("pd=%d ", region_info.pri_pages_dirtied);
-    st->print("rc=%d ", region_info.pri_ref_count);
-    st->print("sd=%d ", region_info.pri_shadow_depth);
-    st->print("sm=%d ", region_info.pri_share_mode);
-    st->print("ppr=%d ", region_info.pri_private_pages_resident);
-    st->print("spr=%d ", region_info.pri_shared_pages_resident);
-    st->print("dep=%d ", region_info.pri_depth);
-    //*/
     st->cr();
 
-  /*
-   * regarding the 'cursor':
-   * The dll_list is sorted by ascending start address,
-   * and the macOS region_info is also returned in ascending start address.
-   * When printing out a region_info, we skip ahead in the dll_list until we find
-   * dlls within the region, and print them out.  
-   * Then we leave the cursor pointing to the first dll above the current region.
-   * We do not print out any dll info for regions with an associated file_name,
-   * as that would be redundant.
-   */
-    if (mapping_info._file_name.count() == 0) {
-      for (; dll_list.cursor_current() != nullptr; dll_list.cursor_next()) {
-        DllEntry* e = dll_list.cursor_current();
-        if ((uint64_t)(e->_address) < region_info.pri_address) {
-          continue;
-        }
-        if ((uint64_t)(e->_address) >= (region_info.pri_address + region_info.pri_size)) {
-          break;
-        }
-        INDENT_BY(5);
-        st->print("%#014.12llx", (uint64_t)(e->_address));
-        INDENT_BY(73);
-        st->print_cr("%s", e->_dll_name);
-      }
-    }
 #undef INDENT_BY
   }
 
@@ -434,11 +291,19 @@ public:
     outputStream* st = _session.out();
     //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x00000001714a0000-0x000000017169c000      2080768 rw-/rwx  p/a       0xc000 STACK-28419-C2-CompilerThread0
-    st->print_cr("from               to                        vsize prot share     offset vminfo/file");
+    //            0x000102890000-0x000102898000                32768 r--/r-- cow       0xc000 /Users/simont/dev/openjdk/jdk/build/macos-aarch64-fastdebug-shenandoah/images/jdk/bin/java
+    st->print_cr("from               to                        vsize prot    share     offset  vminfo/file");
     st->print_cr("==================================================================================================");
   }
 };
+
+static bool is_interesting(const proc_regionwithpathinfo& info) {
+   return info.prp_prinfo.pri_share_mode != SM_EMPTY 
+          || info.prp_prinfo.pri_user_tag != 0
+          || info.prp_vip.vip_path[0] != '\0'
+          || info.prp_prinfo.pri_protection != 0
+          || info.prp_prinfo.pri_max_protection != 0;
+}
 
 void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
 
@@ -451,9 +316,7 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
   st->cr();
   printer.print_header();
 
-  dll_list.add_all_dlls();
-
-  proc_regionwithpathinfo region_info;
+  proc_regionwithpathinfo region_info_with_path;
   MappingInfo mapping_info;
   uint64_t address = 0;
   int region_count = 0;
@@ -462,20 +325,22 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
       st->print_cr("limit of %d regions reached (results inaccurate)", region_count);
       break;
     }
-    int retval = proc_pidinfo(pid, PROC_PIDREGIONPATHINFO, (uint64_t)address, &region_info, sizeof(region_info));
+    ::bzero(&region_info_with_path, sizeof(region_info_with_path));
+    int retval = proc_pidinfo(pid, PROC_PIDREGIONPATHINFO, (uint64_t)address, &region_info_with_path, sizeof(region_info_with_path));
     if (retval <= 0) {
       break;
-    } else if (retval < (int)sizeof(region_info)) {
+    } else if (retval < (int)sizeof(region_info_with_path)) {
       st->print_cr("proc_pidinfo() returned %d", retval);
       assert(false, "proc_pidinfo() returned %d", retval);
     }
-    if (region_info.prp_prinfo.pri_share_mode != SM_EMPTY || region_info.prp_prinfo.pri_user_tag != 0) {
-      mapping_info.process(region_info);
-      printer.print_single_mapping(region_info.prp_prinfo, mapping_info);
-      summary.add_mapping(region_info.prp_prinfo, mapping_info);
+    proc_regioninfo& region_info = region_info_with_path.prp_prinfo;
+    if (is_interesting(region_info_with_path)) {
+      mapping_info.process(region_info_with_path);
+      printer.print_single_mapping(region_info, mapping_info);
+      summary.add_mapping(region_info, mapping_info);
     }
-    assert(region_info.prp_prinfo.pri_size > 0, "size of region is 0");
-    address = region_info.prp_prinfo.pri_address + region_info.prp_prinfo.pri_size;
+    assert(region_info.pri_size > 0, "size of region is 0");
+    address = region_info.pri_address + region_info.pri_size;
   }
   st->cr();
   summary.print_on(session);
