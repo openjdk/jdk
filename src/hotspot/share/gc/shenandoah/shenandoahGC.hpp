@@ -50,6 +50,7 @@ public:
   enum ShenandoahDegenPoint {
     _degenerated_unset,
     _degenerated_outside_cycle,
+    _degenerated_roots,
     _degenerated_mark,
     _degenerated_evac,
     _degenerated_updaterefs,

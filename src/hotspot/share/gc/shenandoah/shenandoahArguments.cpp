@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +30,7 @@
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shenandoah/shenandoahArguments.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "runtime/globals_extension.hpp"
@@ -50,6 +52,7 @@ void ShenandoahArguments::initialize() {
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
+  FLAG_SET_DEFAULT(ShenandoahCardBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
 
   FLAG_SET_DEFAULT(ShenandoahVerifyOptoBarriers,     false);
@@ -67,6 +70,13 @@ void ShenandoahArguments::initialize() {
   // storage allocation code NUMA-aware.
   if (FLAG_IS_DEFAULT(UseNUMA)) {
     FLAG_SET_DEFAULT(UseNUMA, true);
+  }
+
+  // We use this as the time period for tracking minimum mutator utilization (MMU).
+  // In generational mode, the MMU is used as a signal to adjust the size of the
+  // young generation.
+  if (FLAG_IS_DEFAULT(GCPauseIntervalMillis)) {
+    FLAG_SET_DEFAULT(GCPauseIntervalMillis, 5000);
   }
 
   // Set up default number of concurrent threads. We want to have cycles complete fast
@@ -189,6 +199,8 @@ size_t ShenandoahArguments::conservative_max_heap_alignment() {
 }
 
 void ShenandoahArguments::initialize_alignments() {
+  CardTable::initialize_card_size();
+
   // Need to setup sizes early to get correct alignments.
   MaxHeapSize = ShenandoahHeapRegion::setup_sizes(MaxHeapSize);
 
@@ -202,5 +214,10 @@ void ShenandoahArguments::initialize_alignments() {
 }
 
 CollectedHeap* ShenandoahArguments::create_heap() {
-  return new ShenandoahHeap(new ShenandoahCollectorPolicy());
+  if (strcmp(ShenandoahGCMode, "generational") != 0) {
+    // Not generational
+    return new ShenandoahHeap(new ShenandoahCollectorPolicy());
+  } else {
+    return new ShenandoahGenerationalHeap(new ShenandoahCollectorPolicy());
+  }
 }

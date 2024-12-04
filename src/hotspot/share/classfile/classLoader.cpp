@@ -949,16 +949,35 @@ void* ClassLoader::dll_lookup(void* lib, const char* name, const char* path) {
 
 void ClassLoader::load_java_library() {
   assert(CanonicalizeEntry == nullptr, "should not load java library twice");
+  if (is_vm_statically_linked()) {
+    CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, os::lookup_function("JDK_Canonicalize"));
+    assert(CanonicalizeEntry != nullptr, "could not lookup JDK_Canonicalize");
+    return;
+  }
+
   void *javalib_handle = os::native_java_library();
   if (javalib_handle == nullptr) {
     vm_exit_during_initialization("Unable to load java library", nullptr);
   }
 
   CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, dll_lookup(javalib_handle, "JDK_Canonicalize", nullptr));
+  assert(CanonicalizeEntry != nullptr, "could not lookup JDK_Canonicalize in java library");
 }
 
 void ClassLoader::load_jimage_library() {
   assert(JImageOpen == nullptr, "should not load jimage library twice");
+
+  if (is_vm_statically_linked()) {
+      JImageOpen = CAST_TO_FN_PTR(JImageOpen_t, os::lookup_function("JIMAGE_Open"));
+      JImageClose = CAST_TO_FN_PTR(JImageClose_t, os::lookup_function("JIMAGE_Close"));
+      JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, os::lookup_function("JIMAGE_FindResource"));
+      JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, os::lookup_function("JIMAGE_GetResource"));
+      assert(JImageOpen != nullptr && JImageClose != nullptr &&
+            JImageFindResource != nullptr && JImageGetResource != nullptr,
+            "could not lookup all jimage library functions");
+      return;
+    }
+
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
   void* handle = nullptr;
@@ -973,6 +992,9 @@ void ClassLoader::load_jimage_library() {
   JImageClose = CAST_TO_FN_PTR(JImageClose_t, dll_lookup(handle, "JIMAGE_Close", path));
   JImageFindResource = CAST_TO_FN_PTR(JImageFindResource_t, dll_lookup(handle, "JIMAGE_FindResource", path));
   JImageGetResource = CAST_TO_FN_PTR(JImageGetResource_t, dll_lookup(handle, "JIMAGE_GetResource", path));
+  assert(JImageOpen != nullptr && JImageClose != nullptr &&
+        JImageFindResource != nullptr && JImageGetResource != nullptr,
+        "could not lookup all jimage library functions in jimage library");
 }
 
 int ClassLoader::crc32(int crc, const char* buf, int len) {

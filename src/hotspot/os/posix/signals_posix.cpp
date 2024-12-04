@@ -960,10 +960,6 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGILL,  ILL_PRVREG,   "ILL_PRVREG",   "Privileged register." },
     { SIGILL,  ILL_COPROC,   "ILL_COPROC",   "Coprocessor error." },
     { SIGILL,  ILL_BADSTK,   "ILL_BADSTK",   "Internal stack error." },
-#if defined(IA64) && defined(LINUX)
-    { SIGILL,  ILL_BADIADDR, "ILL_BADIADDR", "Unimplemented instruction address" },
-    { SIGILL,  ILL_BREAK,    "ILL_BREAK",    "Application Break instruction" },
-#endif
     { SIGFPE,  FPE_INTDIV,   "FPE_INTDIV",   "Integer divide by zero." },
     { SIGFPE,  FPE_INTOVF,   "FPE_INTOVF",   "Integer overflow." },
     { SIGFPE,  FPE_FLTDIV,   "FPE_FLTDIV",   "Floating-point divide by zero." },
@@ -977,9 +973,6 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
 #if defined(AIX)
     // no explanation found what keyerr would be
     { SIGSEGV, SEGV_KEYERR,  "SEGV_KEYERR",  "key error" },
-#endif
-#if defined(IA64) && !defined(AIX)
-    { SIGSEGV, SEGV_PSTKOVF, "SEGV_PSTKOVF", "Paragraph stack overflow" },
 #endif
     { SIGBUS,  BUS_ADRALN,   "BUS_ADRALN",   "Invalid address alignment." },
     { SIGBUS,  BUS_ADRERR,   "BUS_ADRERR",   "Nonexistent physical address." },

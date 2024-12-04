@@ -383,7 +383,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
 bool PhaseOutput::need_register_stack_bang() const {
   // Determine if we need to generate a register stack overflow check.
   // This is only used on architectures which have split register
-  // and memory stacks (ie. IA64).
+  // and memory stacks.
   // Bang if the method is not a stub function and has java calls
   return (C->stub_function() == nullptr && C->has_java_calls());
 }
