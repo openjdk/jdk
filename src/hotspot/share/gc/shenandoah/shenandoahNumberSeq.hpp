@@ -49,7 +49,9 @@ public:
   ~HdrSeq();
 
   virtual void add(double val);
+  void add(const HdrSeq& other);
   double percentile(double level) const;
+  void clear();
 };
 
 // Binary magnitude sequence stores the power-of-two histogram.

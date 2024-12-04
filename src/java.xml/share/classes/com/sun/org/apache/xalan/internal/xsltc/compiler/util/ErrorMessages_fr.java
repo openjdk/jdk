@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -979,8 +979,6 @@ public class ErrorMessages_fr extends ListResourceBundle {
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
          "Erreur XSLTC interne : une m\u00E9thode dans le translet d\u00E9passe la limite de la JVM concernant la longueur d'une m\u00E9thode de 64 kilo-octets. En g\u00E9n\u00E9ral, ceci est d\u00FB \u00E0 de tr\u00E8s grands mod\u00E8les dans une feuille de style. Essayez de restructurer la feuille de style pour utiliser des mod\u00E8les plus petits."
         },
-
-         {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Lorsque la s\u00E9curit\u00E9 Java est activ\u00E9e, la prise en charge de la d\u00E9s\u00E9rialisation de TemplatesImpl est d\u00E9sactiv\u00E9e. La d\u00E9finition de la propri\u00E9t\u00E9 syst\u00E8me jdk.xml.enableTemplatesImplDeserialization sur True permet de remplacer ce param\u00E8tre."}
 
     };
 

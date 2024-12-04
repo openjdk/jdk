@@ -1208,11 +1208,7 @@ abstract class MethodHandleImpl {
 
         private static boolean checkInjectedInvoker(Class<?> hostClass, Class<?> invokerClass) {
             assert (hostClass.getClassLoader() == invokerClass.getClassLoader()) : hostClass.getName()+" (CL)";
-            try {
-                assert (hostClass.getProtectionDomain() == invokerClass.getProtectionDomain()) : hostClass.getName()+" (PD)";
-            } catch (SecurityException ex) {
-                // Self-check was blocked by security manager. This is OK.
-            }
+            assert (hostClass.getProtectionDomain() == invokerClass.getProtectionDomain()) : hostClass.getName()+" (PD)";
             try {
                 // Test the invoker to ensure that it really injects into the right place.
                 MethodHandle invoker = IMPL_LOOKUP.findStatic(invokerClass, "invoke_V", INVOKER_MT);

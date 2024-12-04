@@ -383,7 +383,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
 bool PhaseOutput::need_register_stack_bang() const {
   // Determine if we need to generate a register stack overflow check.
   // This is only used on architectures which have split register
-  // and memory stacks (ie. IA64).
+  // and memory stacks.
   // Bang if the method is not a stub function and has java calls
   return (C->stub_function() == nullptr && C->has_java_calls());
 }
@@ -437,7 +437,7 @@ void PhaseOutput::compute_loop_first_inst_sizes() {
 // branch instructions. Replace eligible long branches with short branches.
 void PhaseOutput::shorten_branches(uint* blk_starts) {
 
-  Compile::TracePhase tp("shorten branches", &timers[_t_shortenBranches]);
+  Compile::TracePhase tp(_t_shortenBranches);
 
   // Compute size of each block, method size, and relocation information size
   uint nblocks  = C->cfg()->number_of_blocks();
@@ -792,7 +792,14 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
       for (uint i = 1; i < smerge->req(); i++) {
         Node* obj_node = smerge->in(i);
-        (void)FillLocArray(mv->possible_objects()->length(), sfpt, obj_node, mv->possible_objects(), objs);
+        int idx = mv->possible_objects()->length();
+        (void)FillLocArray(idx, sfpt, obj_node, mv->possible_objects(), objs);
+
+        // By default ObjectValues that are in 'possible_objects' are not root objects.
+        // They will be marked as root later if they are directly referenced in a JVMS.
+        assert(mv->possible_objects()->length() > idx, "Didn't add entry to possible_objects?!");
+        assert(mv->possible_objects()->at(idx)->is_object(), "Entries in possible_objects should be ObjectValue.");
+        mv->possible_objects()->at(idx)->as_ObjectValue()->set_root(false);
       }
     }
     array->append(mv);
@@ -1127,7 +1134,14 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
           for (uint i = 1; i < smerge->req(); i++) {
             Node* obj_node = smerge->in(i);
-            FillLocArray(mv->possible_objects()->length(), sfn, obj_node, mv->possible_objects(), objs);
+            int idx = mv->possible_objects()->length();
+            (void)FillLocArray(idx, sfn, obj_node, mv->possible_objects(), objs);
+
+            // By default ObjectValues that are in 'possible_objects' are not root objects.
+            // They will be marked as root later if they are directly referenced in a JVMS.
+            assert(mv->possible_objects()->length() > idx, "Didn't add entry to possible_objects?!");
+            assert(mv->possible_objects()->at(idx)->is_object(), "Entries in possible_objects should be ObjectValue.");
+            mv->possible_objects()->at(idx)->as_ObjectValue()->set_root(false);
           }
         }
         scval = mv;
@@ -1158,11 +1172,17 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
         for (int j = 0; j< merge->possible_objects()->length(); j++) {
           ObjectValue* ov = merge->possible_objects()->at(j)->as_ObjectValue();
-          bool is_root = locarray->contains(ov) ||
-                         exparray->contains(ov) ||
-                         contains_as_owner(monarray, ov) ||
-                         contains_as_scalarized_obj(jvms, sfn, objs, ov);
-          ov->set_root(is_root);
+          if (ov->is_root()) {
+            // Already flagged as 'root' by something else. We shouldn't change it
+            // to non-root in a younger JVMS because it may need to be alive in
+            // a younger JVMS.
+          } else {
+            bool is_root = locarray->contains(ov) ||
+                           exparray->contains(ov) ||
+                           contains_as_owner(monarray, ov) ||
+                           contains_as_scalarized_obj(jvms, sfn, objs, ov);
+            ov->set_root(is_root);
+          }
         }
       }
     }
@@ -1398,7 +1418,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
   // Compute the size of first NumberOfLoopInstrToAlign instructions at head
   // of a loop. It is used to determine the padding for loop alignment.
-  Compile::TracePhase tp("fill buffer", &timers[_t_fillBuffer]);
+  Compile::TracePhase tp(_t_fillBuffer);
 
   compute_loop_first_inst_sizes();
 
@@ -2142,7 +2162,7 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
   }
 
-  Compile::TracePhase tp("isched", &timers[_t_instrSched]);
+  Compile::TracePhase tp(_t_instrSched);
 
   // Create a data structure for all the scheduling information
   Scheduling scheduling(Thread::current()->resource_area(), *C);
@@ -3408,7 +3428,7 @@ void PhaseOutput::install_code(ciMethod*         target,
       return;
     }
 #endif
-    Compile::TracePhase tp("install_code", &timers[_t_registerMethod]);
+    Compile::TracePhase tp(_t_registerMethod);
 
     if (C->is_osr_compilation()) {
       _code_offsets.set_value(CodeOffsets::Verified_Entry, 0);

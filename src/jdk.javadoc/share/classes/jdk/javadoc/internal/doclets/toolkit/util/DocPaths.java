@@ -175,6 +175,9 @@ public class DocPaths {
     /** The name of the file for search page. */
     public static final DocPath SEARCH_PAGE = DocPath.create("search.html");
 
+    /** The name of the file for search tags index page. */
+    public static final DocPath SEARCH_TAGS = DocPath.create("search-tags.html");
+
     /** The name of the file for all system properties. */
     public static final DocPath SYSTEM_PROPERTIES = DocPath.create("system-properties.html");
 

@@ -1362,8 +1362,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
                        _class_defs[i].class_byte_count,
-                       "__VM_RedefineClasses__",
-                       ClassFileStream::verify);
+                       "__VM_RedefineClasses__");
 
     // Set redefined class handle in JvmtiThreadState class.
     // This redefined class is sent to agent event handler for class file

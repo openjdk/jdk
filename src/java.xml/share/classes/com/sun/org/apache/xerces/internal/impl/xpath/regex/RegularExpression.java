@@ -23,6 +23,7 @@ package com.sun.org.apache.xerces.internal.impl.xpath.regex;
 import java.text.CharacterIterator;
 import java.util.Locale;
 import java.util.Stack;
+import java.util.concurrent.Semaphore;
 
 import com.sun.org.apache.xerces.internal.util.IntStack;
 
@@ -710,11 +711,11 @@ public class RegularExpression implements java.io.Serializable {
             if (this.context == null)
                 this.context = new Context();
         }
-        Context con = null;
-        synchronized (this.context) {
-            con = this.context.inuse ? new Context() : this.context;
-            con.reset(target, start, end, this.numberOfClosures);
+        Context con = this.context;
+        if (!con.claim()) {
+            con = new Context();
         }
+        con.reset(target, start, end, this.numberOfClosures);
         if (match != null) {
             match.setNumberOfGroups(this.nofparen);
             match.setSource(target);
@@ -734,7 +735,7 @@ public class RegularExpression implements java.io.Serializable {
                     con.match.setBeginning(0, con.start);
                     con.match.setEnd(0, matchEnd);
                 }
-                con.setInUse(false);
+                con.release();
                 return true;
             }
             return false;
@@ -752,10 +753,10 @@ public class RegularExpression implements java.io.Serializable {
                     con.match.setBeginning(0, o);
                     con.match.setEnd(0, o+this.fixedString.length());
                 }
-                con.setInUse(false);
+                con.release();
                 return true;
             }
-            con.setInUse(false);
+            con.release();
             return false;
         }
 
@@ -768,7 +769,7 @@ public class RegularExpression implements java.io.Serializable {
             int o = this.fixedStringTable.matches(target, con.start, con.limit);
             if (o < 0) {
                 //System.err.println("Non-match in fixed-string search.");
-                con.setInUse(false);
+                con.release();
                 return false;
             }
         }
@@ -839,10 +840,10 @@ public class RegularExpression implements java.io.Serializable {
                 con.match.setBeginning(0, matchStart);
                 con.match.setEnd(0, matchEnd);
             }
-            con.setInUse(false);
+            con.release();
             return true;
         } else {
-            con.setInUse(false);
+            con.release();
             return false;
         }
     }
@@ -895,11 +896,11 @@ public class RegularExpression implements java.io.Serializable {
             if (this.context == null)
                 this.context = new Context();
         }
-        Context con = null;
-        synchronized (this.context) {
-            con = this.context.inuse ? new Context() : this.context;
-            con.reset(target, start, end, this.numberOfClosures);
+        Context con = this.context;
+        if (!con.claim()) {
+            con = new Context();
         }
+        con.reset(target, start, end, this.numberOfClosures);
         if (match != null) {
             match.setNumberOfGroups(this.nofparen);
             match.setSource(target);
@@ -925,7 +926,7 @@ public class RegularExpression implements java.io.Serializable {
                     con.match.setBeginning(0, con.start);
                     con.match.setEnd(0, matchEnd);
                 }
-                con.setInUse(false);
+                con.release();
                 return true;
             }
             return false;
@@ -943,10 +944,10 @@ public class RegularExpression implements java.io.Serializable {
                     con.match.setBeginning(0, o);
                     con.match.setEnd(0, o+this.fixedString.length());
                 }
-                con.setInUse(false);
+                con.release();
                 return true;
             }
-            con.setInUse(false);
+            con.release();
             return false;
         }
 
@@ -959,7 +960,7 @@ public class RegularExpression implements java.io.Serializable {
             int o = this.fixedStringTable.matches(target, con.start, con.limit);
             if (o < 0) {
                 //System.err.println("Non-match in fixed-string search.");
-                con.setInUse(false);
+                con.release();
                 return false;
             }
         }
@@ -1030,10 +1031,10 @@ public class RegularExpression implements java.io.Serializable {
                 con.match.setBeginning(0, matchStart);
                 con.match.setEnd(0, matchEnd);
             }
-            con.setInUse(false);
+            con.release();
             return true;
         } else {
-            con.setInUse(false);
+            con.release();
             return false;
         }
     }
@@ -1575,11 +1576,11 @@ public class RegularExpression implements java.io.Serializable {
             if (this.context == null)
                 this.context = new Context();
         }
-        Context con = null;
-        synchronized (this.context) {
-            con = this.context.inuse ? new Context() : this.context;
-            con.reset(target, start, end, this.numberOfClosures);
+        Context con = this.context;
+        if (!con.claim()) {
+            con = new Context();
         }
+        con.reset(target, start, end, this.numberOfClosures);
         if (match != null) {
             match.setNumberOfGroups(this.nofparen);
             match.setSource(target);
@@ -1599,7 +1600,7 @@ public class RegularExpression implements java.io.Serializable {
                     con.match.setBeginning(0, con.start);
                     con.match.setEnd(0, matchEnd);
                 }
-                con.setInUse(false);
+                con.release();
                 return true;
             }
             return false;
@@ -1617,10 +1618,10 @@ public class RegularExpression implements java.io.Serializable {
                     con.match.setBeginning(0, o);
                     con.match.setEnd(0, o+this.fixedString.length());
                 }
-                con.setInUse(false);
+                con.release();
                 return true;
             }
-            con.setInUse(false);
+            con.release();
             return false;
         }
 
@@ -1633,7 +1634,7 @@ public class RegularExpression implements java.io.Serializable {
             int o = this.fixedStringTable.matches(target, con.start, con.limit);
             if (o < 0) {
                 //System.err.println("Non-match in fixed-string search.");
-                con.setInUse(false);
+                con.release();
                 return false;
             }
         }
@@ -1704,10 +1705,10 @@ public class RegularExpression implements java.io.Serializable {
                 con.match.setBeginning(0, matchStart);
                 con.match.setEnd(0, matchEnd);
             }
-            con.setInUse(false);
+            con.release();
             return true;
         } else {
-            con.setInUse(false);
+            con.release();
             return false;
         }
     }
@@ -2015,7 +2016,7 @@ public class RegularExpression implements java.io.Serializable {
         int limit;
         int length;
         Match match;
-        boolean inuse = false;
+        private final Semaphore inuse = new Semaphore(1);
         ClosureContext[] closureContexts;
 
         private StringTarget stringTarget;
@@ -2029,7 +2030,6 @@ public class RegularExpression implements java.io.Serializable {
 
         private void resetCommon(int nofclosures) {
             this.length = this.limit-this.start;
-            setInUse(true);
             this.match = null;
             if (this.closureContexts == null || this.closureContexts.length != nofclosures) {
                 this.closureContexts = new ClosureContext[nofclosures];
@@ -2082,8 +2082,13 @@ public class RegularExpression implements java.io.Serializable {
             this.limit = limit;
             this.resetCommon(nofclosures);
         }
-        synchronized void setInUse(boolean inUse) {
-            this.inuse = inUse;
+
+        boolean claim() {
+            return inuse.tryAcquire();
+        }
+
+        void release() {
+            inuse.release();
         }
     }
 

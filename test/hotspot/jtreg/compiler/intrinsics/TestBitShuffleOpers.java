@@ -30,8 +30,7 @@
  * @requires (((os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64") &
  *            (vm.cpu.features ~= ".*bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
  *             vm.cpu.features ~= ".*sse2.*")) |
- *            (os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*") |
- *            (os.arch=="riscv64" & vm.cpu.features ~= ".*rvv.*"))
+ *            (os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*"))
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestBitShuffleOpers
  */

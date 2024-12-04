@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,8 @@ class Arguments : AllStatic {
   static int    _num_jvm_args;
   // string containing all java command (class/jarfile name and app args)
   static char* _java_command;
+  // number of unique modules specified in the --add-modules option
+  static unsigned int _addmods_count;
 
   // Property list
   static SystemProperty* _system_properties;
@@ -261,8 +263,8 @@ class Arguments : AllStatic {
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
-  static void set_use_compressed_klass_ptrs();
   static jint set_ergonomics_flags();
+  static void set_compact_headers_flags();
   // Limits the given heap size by the maximum amount of virtual
   // memory this process is currently allowed to use. It also takes
   // the virtual-to-physical ratio of the current GC into account.
@@ -363,6 +365,8 @@ class Arguments : AllStatic {
   static const char* handle_aliases_and_deprecation(const char* arg);
   static size_t _default_SharedBaseAddress; // The default value specified in globals.hpp
 
+  static bool internal_module_property_helper(const char* property, bool check_for_cds);
+
  public:
   // Parses the arguments, first phase
   static jint parse(const JavaVMInitArgs* args);
@@ -461,7 +465,7 @@ class Arguments : AllStatic {
   static int  PropertyList_readable_count(SystemProperty* pl);
 
   static bool is_internal_module_property(const char* option);
-  static bool is_module_path_property(const char* key);
+  static bool is_incompatible_cds_internal_module_property(const char* property);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }

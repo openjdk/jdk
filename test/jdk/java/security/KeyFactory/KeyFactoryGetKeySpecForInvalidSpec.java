@@ -69,7 +69,8 @@ public class KeyFactoryGetKeySpecForInvalidSpec {
     }
 
     public static void main(String[] args) throws Exception {
-        KeyPairGenerator kg = KeyPairGenerator.getInstance("RSA", "SunRsaSign");
+        KeyPairGenerator kg = KeyPairGenerator.getInstance("RSA",
+                System.getProperty("test.provider.name", "SunRsaSign"));
         kg.initialize(2048);
         KeyPair pair = kg.generateKeyPair();
 

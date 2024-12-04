@@ -30,6 +30,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -560,13 +561,56 @@ void Modules::verify_archived_modules() {
 }
 
 char* Modules::_archived_main_module_name = nullptr;
+char* Modules::_archived_addmods_names = nullptr;
+char* Modules::_archived_native_access_flags = nullptr;
 
 void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");
   if (module_name != nullptr) {
     _archived_main_module_name = ArchiveBuilder::current()->ro_strdup(module_name);
   }
-  ArchivePtrMarker::mark_pointer(&_archived_main_module_name);
+}
+
+void Modules::check_archived_flag_consistency(char* archived_flag, const char* runtime_flag, const char* property) {
+  log_info(cds)("%s %s", property,
+    archived_flag != nullptr ? archived_flag : "(null)");
+  bool disable = false;
+  if (runtime_flag == nullptr) {
+    if (archived_flag != nullptr) {
+      log_info(cds)("Mismatched values for property %s: %s specified during dump time but not during runtime", property, archived_flag);
+      disable = true;
+    }
+  } else {
+    if (archived_flag == nullptr) {
+      log_info(cds)("Mismatched values for property %s: %s specified during runtime but not during dump time", property, runtime_flag);
+      disable = true;
+    } else if (strcmp(runtime_flag, archived_flag) != 0) {
+      log_info(cds)("Mismatched values for property %s: runtime %s dump time %s", property, runtime_flag, archived_flag);
+      disable = true;
+    }
+  }
+
+  if (disable) {
+    log_info(cds)("Disabling optimized module handling");
+    CDSConfig::stop_using_optimized_module_handling();
+  }
+  log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
+  log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+}
+
+void Modules::dump_archived_module_info() {
+  // Write module name into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_main_module_name();)
+  // Write module names from --add-modules into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_addmods_names();)
+  // Write native enable-native-access flag into archive
+  CDS_JAVA_HEAP_ONLY(Modules::dump_native_access_flag());
+}
+
+void Modules::serialize_archived_module_info(SerializeClosure* soc) {
+  CDS_JAVA_HEAP_ONLY(Modules::serialize(soc);)
+  CDS_JAVA_HEAP_ONLY(Modules::serialize_addmods_names(soc);)
+  CDS_JAVA_HEAP_ONLY(Modules::serialize_native_access_flags(soc);)
 }
 
 void Modules::serialize(SerializeClosure* soc) {
@@ -575,29 +619,112 @@ void Modules::serialize(SerializeClosure* soc) {
     const char* runtime_main_module = Arguments::get_property("jdk.module.main");
     log_info(cds)("_archived_main_module_name %s",
       _archived_main_module_name != nullptr ? _archived_main_module_name : "(null)");
-    bool disable = false;
-    if (runtime_main_module == nullptr) {
-      if (_archived_main_module_name != nullptr) {
-        log_info(cds)("Module %s specified during dump time but not during runtime", _archived_main_module_name);
-        disable = true;
-      }
-    } else {
-      if (_archived_main_module_name == nullptr) {
-        log_info(cds)("Module %s specified during runtime but not during dump time", runtime_main_module);
-        disable = true;
-      } else if (strcmp(runtime_main_module, _archived_main_module_name) != 0) {
-        log_info(cds)("Mismatched modules: runtime %s dump time %s", runtime_main_module, _archived_main_module_name);
-        disable = true;
-      }
-    }
 
-    if (disable) {
-      log_info(cds)("Disabling optimized module handling");
-      CDSConfig::stop_using_optimized_module_handling();
-    }
-    log_info(cds)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
-    log_info(cds)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
+    check_archived_flag_consistency(_archived_main_module_name, runtime_main_module, "jdk.module.main");
+
+    // Don't hold onto the pointer, in case we might decide to unmap the archive.
+    _archived_main_module_name = nullptr;
   }
+}
+
+void Modules::dump_native_access_flag() {
+  const char* native_access_names = get_native_access_flags_as_sorted_string();
+  if (native_access_names != nullptr) {
+    _archived_native_access_flags = ArchiveBuilder::current()->ro_strdup(native_access_names);
+  }
+}
+
+const char* Modules::get_native_access_flags_as_sorted_string() {
+  return get_numbered_property_as_sorted_string("jdk.module.enable.native.access");
+}
+
+void Modules::serialize_native_access_flags(SerializeClosure* soc) {
+  soc->do_ptr(&_archived_native_access_flags);
+  if (soc->reading()) {
+    check_archived_flag_consistency(_archived_native_access_flags, get_native_access_flags_as_sorted_string(), "jdk.module.enable.native.access");
+
+    // Don't hold onto the pointer, in case we might decide to unmap the archive.
+    _archived_native_access_flags = nullptr;
+  }
+}
+
+void Modules::dump_addmods_names() {
+  const char* addmods_names = get_addmods_names_as_sorted_string();
+  if (addmods_names != nullptr) {
+    _archived_addmods_names = ArchiveBuilder::current()->ro_strdup(addmods_names);
+  }
+}
+
+const char* Modules::get_addmods_names_as_sorted_string() {
+  return get_numbered_property_as_sorted_string("jdk.module.addmods");
+}
+
+void Modules::serialize_addmods_names(SerializeClosure* soc) {
+  soc->do_ptr(&_archived_addmods_names);
+  if (soc->reading()) {
+    check_archived_flag_consistency(_archived_addmods_names, get_addmods_names_as_sorted_string(), "jdk.module.addmods");
+
+    // Don't hold onto the pointer, in case we might decide to unmap the archive.
+    _archived_addmods_names = nullptr;
+  }
+}
+
+const char* Modules::get_numbered_property_as_sorted_string(const char* property) {
+  ResourceMark rm;
+  // theoretical string size limit for decimal int, but the following loop will end much sooner due to
+  // OS command-line size limit.
+  const int max_digits = 10;
+  const int extra_symbols_count = 2; // includes '.', '\0'
+  size_t prop_len = strlen(property) + max_digits + extra_symbols_count;
+  char* prop_name = resource_allocate_bytes(prop_len);
+  GrowableArray<const char*> list;
+  for (unsigned int i = 0;; i++) {
+    jio_snprintf(prop_name, prop_len, "%s.%d", property, i);
+    const char* prop_value = Arguments::get_property(prop_name);
+    if (prop_value == nullptr) {
+      break;
+    }
+    char* p = resource_allocate_bytes(strlen(prop_value) + 1);
+    strcpy(p, prop_value);
+    while (*p == ',') p++; // skip leading commas
+    while (*p) {
+      char* next = strchr(p, ',');
+      if (next == nullptr) {
+        // no more commas, p is the last element
+        list.append(p);
+        break;
+      } else {
+        *next = 0;
+        list.append(p);
+        p = next + 1;
+      }
+    }
+  }
+
+  // Example:
+  // --add-modules=java.compiler --add-modules=java.base,java.base,,
+  //
+  // list[0] = "java.compiler"
+  // list[1] = "java.base"
+  // list[2] = "java.base"
+  // list[3] = ""
+  // list[4] = ""
+  list.sort(ClassLoaderExt::compare_module_names);
+
+  const char* prefix = "";
+  stringStream st;
+  const char* last_string = ""; // This also filters out all empty strings
+  for (int i = 0; i < list.length(); i++) {
+    const char* m = list.at(i);
+    if (strcmp(m, last_string) != 0) { // filter out duplicates
+      st.print("%s%s", prefix, m);
+      last_string = m;
+      prefix = ",";
+    }
+  }
+
+  const char* result = (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
+  return strcmp(result, "") != 0 ? result : nullptr;
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {

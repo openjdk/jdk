@@ -60,14 +60,13 @@ typedef struct _jmetadata *jmetadata;
 class CompilerThreadCanCallJava : StackObj {
  private:
   CompilerThread* _current; // Only non-null if state of thread changed
-  bool _reset_state;        // Value prior to state change, undefined
-                            // if no state change.
 public:
-  // Enters a scope in which the ability of the current CompilerThread
-  // to call Java is specified by `new_state`. This call only makes a
-  // change if the current thread is a CompilerThread associated with
-  // a JVMCI compiler whose CompilerThread::_can_call_java is not
-  // currently `new_state`.
+  // If the current thread is a CompilerThread associated with
+  // a JVMCI compiler where CompilerThread::_can_call_java != new_state,
+  // then _can_call_java is set to `new_state`
+  // Returns nullptr if no change was made, otherwise the current CompilerThread
+  static CompilerThread* update(JavaThread* current, bool new_state);
+
   CompilerThreadCanCallJava(JavaThread* current, bool new_state);
 
   // Resets CompilerThread::_can_call_java of the current thread if the

@@ -85,15 +85,20 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
   if (_verify_byte_codes_fn != nullptr)
     return _verify_byte_codes_fn;
 
+  void *lib_handle = nullptr;
   // Load verify dll
-  char buffer[JVM_MAXPATHLEN];
-  char ebuf[1024];
-  if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
-    return nullptr; // Caller will throw VerifyError
+  if (is_vm_statically_linked()) {
+    lib_handle = os::get_default_process_handle();
+  } else {
+    char buffer[JVM_MAXPATHLEN];
+    char ebuf[1024];
+    if (!os::dll_locate_lib(buffer, sizeof(buffer), Arguments::get_dll_dir(), "verify"))
+      return nullptr; // Caller will throw VerifyError
 
-  void *lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
-  if (lib_handle == nullptr)
-    return nullptr; // Caller will throw VerifyError
+    lib_handle = os::dll_load(buffer, ebuf, sizeof(ebuf));
+    if (lib_handle == nullptr)
+      return nullptr; // Caller will throw VerifyError
+  }
 
   void *fn = os::dll_lookup(lib_handle, "VerifyClassForMajorVersion");
   if (fn == nullptr)
@@ -105,11 +110,13 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
 // Methods in Verifier
 
-bool Verifier::should_verify_for(oop class_loader, bool should_verify_class) {
-  return (class_loader == nullptr || !should_verify_class) ?
+// This method determines whether we run the verifier and class file format checking code.
+bool Verifier::should_verify_for(oop class_loader) {
+  return class_loader == nullptr ?
     BytecodeVerificationLocal : BytecodeVerificationRemote;
 }
 
+// This method determines whether we allow package access in access checks in reflection.
 bool Verifier::relax_access_for(oop loader) {
   bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
   bool need_verify =
@@ -118,6 +125,21 @@ bool Verifier::relax_access_for(oop loader) {
     // verifyRemote
     (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
   return !need_verify;
+}
+
+// Callers will pass should_verify_class as true, depending on the results of should_verify_for() above,
+// or pass true for redefinition of any class.
+static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
+  Symbol* name = klass->name();
+
+  return (should_verify_class &&
+    // Can not verify the bytecodes for shared classes because they have
+    // already been rewritten to contain constant pool cache indices,
+    // which the verifier can't understand.
+    // Shared classes shouldn't have stackmaps either.
+    // However, bytecodes for shared old classes can be verified because
+    // they have not been rewritten.
+    !(klass->is_shared() && klass->is_rewritten()));
 }
 
 void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class) {
@@ -271,27 +293,6 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
     assert(exception_message != nullptr, "");
     THROW_MSG_(exception_name, exception_message, false);
   }
-}
-
-bool Verifier::is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class) {
-  Symbol* name = klass->name();
-
-  return (should_verify_for(klass->class_loader(), should_verify_class) &&
-    // return if the class is a bootstrapping class
-    // or defineClass specified not to verify by default (flags override passed arg)
-    // We need to skip the following four for bootstraping
-    name != vmSymbols::java_lang_Object() &&
-    name != vmSymbols::java_lang_Class() &&
-    name != vmSymbols::java_lang_String() &&
-    name != vmSymbols::java_lang_Throwable() &&
-
-    // Can not verify the bytecodes for shared classes because they have
-    // already been rewritten to contain constant pool cache indices,
-    // which the verifier can't understand.
-    // Shared classes shouldn't have stackmaps either.
-    // However, bytecodes for shared old classes can be verified because
-    // they have not been rewritten.
-    !(klass->is_shared() && klass->is_rewritten()));
 }
 
 Symbol* Verifier::inference_verify(
@@ -2092,15 +2093,13 @@ void ClassVerifier::class_format_error(const char* msg, ...) {
 
 Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
   HandleMark hm(THREAD);
-  // Get current loader and protection domain first.
+  // Get current loader first.
   oop loader = current_class()->class_loader();
-  oop protection_domain = current_class()->protection_domain();
 
   assert(name_in_supers(name, current_class()), "name should be a super class");
 
   Klass* kls = SystemDictionary::resolve_or_fail(
-    name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
-    true, THREAD);
+    name, Handle(THREAD, loader), true, THREAD);
 
   if (kls != nullptr) {
     if (log_is_enabled(Debug, class, resolve)) {

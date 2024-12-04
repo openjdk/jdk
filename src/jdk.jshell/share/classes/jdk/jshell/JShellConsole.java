@@ -28,6 +28,7 @@ import java.io.IOError;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * An interface providing functionality for {@link java.io.Console} in the user's snippet.
@@ -74,6 +75,21 @@ public interface JShellConsole {
      * @see java.io.Console#readLine()
      */
     public String readLine(String prompt) throws IOError;
+
+    /**
+     * Reads a single line of text from the console.
+     *
+     * @throws IOError
+     *         If an I/O error occurs.
+     *
+     * @return  A string containing the line read from the console, not
+     *          including any line-termination characters, or {@code null}
+     *          if an end of stream has been reached.
+     * @see java.io.Console#readLine()
+     * @since 24
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.IMPLICIT_CLASSES)
+    public String readLine() throws IOError;
 
     /**
      * Provides a prompt, then reads a password or passphrase from

@@ -38,8 +38,6 @@ import java.io.ObjectStreamClass;
 import java.io.OutputStream;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -111,28 +109,14 @@ final class ClassLoaderObjectOutputStream extends ObjectOutputStream {
     }
 
     protected void annotateClass(final Class<?> cl) throws IOException {
-        @SuppressWarnings("removal")
-        ClassLoader classLoader = AccessController.doPrivileged(
-            new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return cl.getClassLoader();
-                }
-            });
-
+        ClassLoader classLoader = cl.getClassLoader();
         Set<String> s = new HashSet<String>(1);
         s.add(cl.getName());
 
         map.put(s, classLoader);
     }
     protected void annotateProxyClass(final Class<?> cl) throws IOException {
-        @SuppressWarnings("removal")
-        ClassLoader classLoader = AccessController.doPrivileged(
-            new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return cl.getClassLoader();
-                }
-            });
-
+        ClassLoader classLoader = cl.getClassLoader();
         Class<?>[] interfaces = cl.getInterfaces();
         Set<String> s = new HashSet<String>(interfaces.length);
         for (int i = 0; i < interfaces.length; i++) {

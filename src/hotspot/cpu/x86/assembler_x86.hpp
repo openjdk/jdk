@@ -954,20 +954,13 @@ private:
   // the product flag UseIncDec value.
 
   void decl(Register dst);
-  void edecl(Register dst, Register src, bool no_flags);
   void decl(Address dst);
-  void edecl(Register dst, Address src, bool no_flags);
   void decq(Address dst);
-  void edecq(Register dst, Address src, bool no_flags);
 
   void incl(Register dst);
-  void eincl(Register dst, Register src, bool no_flags);
   void incl(Address dst);
-  void eincl(Register dst, Address src, bool no_flags);
   void incq(Register dst);
-  void eincq(Register dst, Register src, bool no_flags);
   void incq(Address dst);
-  void eincq(Register dst, Address src, bool no_flags);
 
   // New cpus require use of movsd and movss to avoid partial register stall
   // when loading from memory. But for old Opteron use movlpd instead of movsd.
@@ -1116,6 +1109,14 @@ private:
   void eaddq(Register dst, Register src1, Address src2, bool no_flags);
   void addq(Register dst, Register src);
   void eaddq(Register dst, Register src1, Register src2, bool no_flags);
+
+  void edecl(Register dst, Register src, bool no_flags);
+  void edecl(Register dst, Address src, bool no_flags);
+  void edecq(Register dst, Address src, bool no_flags);
+  void eincl(Register dst, Register src, bool no_flags);
+  void eincl(Register dst, Address src, bool no_flags);
+  void eincq(Register dst, Register src, bool no_flags);
+  void eincq(Register dst, Address src, bool no_flags);
 
 #ifdef _LP64
  //Add Unsigned Integers with Carry Flag
@@ -1625,6 +1626,10 @@ private:
 
   void leaq(Register dst, Address src);
 
+#ifdef _LP64
+  void lea(Register dst, Label& L);
+#endif
+
   void lfence();
 
   void lock();
@@ -1757,6 +1762,7 @@ private:
   void evmovdqub(XMMRegister dst, KRegister mask, Address src, bool merge, int vector_len);
   void evmovdqub(Address dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
+  void evmovdquw(XMMRegister dst, XMMRegister src, int vector_len);
   void evmovdquw(XMMRegister dst, Address src, int vector_len);
   void evmovdquw(Address dst, XMMRegister src, int vector_len);
   void evmovdquw(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
@@ -1970,6 +1976,9 @@ private:
   void evpermi2ps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpermi2pd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpermt2b(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermt2w(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermt2d(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpermt2q(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void pause();
 
@@ -2741,6 +2750,7 @@ private:
   void evsubps(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
   void evsubpd(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evsubpd(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
+  void evpmulhw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evpmullw(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
   void evpmullw(XMMRegister dst, KRegister mask, XMMRegister nds, Address src, bool merge, int vector_len);
   void evpmulld(XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len);
@@ -2876,6 +2886,7 @@ private:
   void vpmulld(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpmullq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmuludq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpmuldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpmulld(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evpmullq(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
