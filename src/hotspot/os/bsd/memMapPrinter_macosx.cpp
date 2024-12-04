@@ -187,10 +187,10 @@ public:
                    || region_info.pri_share_mode == SM_SHARED_ALIASED
                    || region_info.pri_share_mode == SM_TRUESHARED
                    || region_info.pri_share_mode == SM_COW;
-    bool is_committed = region_info.pri_share_mode == SM_EMPTY 
+    bool is_committed = region_info.pri_share_mode == SM_EMPTY
                    && region_info.pri_max_protection == VM_PROT_ALL
                    && ((region_info.pri_protection & VM_PROT_DEFAULT) == VM_PROT_DEFAULT);
-    bool is_reserved = region_info.pri_share_mode == SM_EMPTY 
+    bool is_reserved = region_info.pri_share_mode == SM_EMPTY
                    && region_info.pri_max_protection == VM_PROT_ALL
                    && region_info.pri_protection == VM_PROT_NONE;
 
@@ -298,7 +298,7 @@ public:
 };
 
 static bool is_interesting(const proc_regionwithpathinfo& info) {
-   return info.prp_prinfo.pri_share_mode != SM_EMPTY 
+   return info.prp_prinfo.pri_share_mode != SM_EMPTY
           || info.prp_prinfo.pri_user_tag != 0
           || info.prp_vip.vip_path[0] != '\0'
           || info.prp_prinfo.pri_protection != 0
