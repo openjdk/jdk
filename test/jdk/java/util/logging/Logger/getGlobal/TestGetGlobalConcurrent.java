@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,17 +30,11 @@ import java.util.logging.Logger;
  * @summary Test that the global logger can log with no configuration when accessed from multiple threads.
  * @build TestGetGlobalConcurrent testgetglobal.HandlerImpl testgetglobal.LogManagerImpl1 testgetglobal.LogManagerImpl2 testgetglobal.LogManagerImpl3 testgetglobal.BadLogManagerImpl testgetglobal.DummyLogManagerImpl
  * @run main/othervm TestGetGlobalConcurrent
- * @run main/othervm/policy=policy -Djava.security.manager TestGetGlobalConcurrent
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl1 TestGetGlobalConcurrent
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl2 TestGetGlobalConcurrent
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobalConcurrent
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.LogManagerImpl3 TestGetGlobalConcurrent
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobalConcurrent
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.BadLogManagerImpl TestGetGlobalConcurrent
  * @run main/othervm -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobalConcurrent
- * @run main/othervm/policy=policy -Djava.security.manager -Djava.util.logging.manager=testgetglobal.DummyLogManagerImpl TestGetGlobalConcurrent
  * @author danielfuchs
  */
 public class TestGetGlobalConcurrent {
@@ -155,8 +148,6 @@ public class TestGetGlobalConcurrent {
         final String manager = System.getProperty("java.util.logging.manager", null);
 
         description = "TestGetGlobalConcurrent"
-            + (System.getSecurityManager() == null ? " " :
-               " -Djava.security.manager ")
             + (manager == null ? "" : "-Djava.util.logging.manager=" + manager);
 
         final Thread t1 = new Thread(new WaitAndRun(new Run1()), "test1");

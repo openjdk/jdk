@@ -96,6 +96,10 @@ JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" ||
 JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
 JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
+ifeq ($(JLINK_PRODUCE_LINKABLE_RUNTIME), true)
+  JLINK_JDK_EXTRA_OPTS += --generate-linkable-runtime
+endif
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
     DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \
@@ -276,27 +280,6 @@ else
   LIBS_TARGET_SUBDIR := lib
 endif
 CMDS_TARGET_SUBDIR := bin
-
-# Param 1 - dir to find debuginfo files in
-FindDebuginfoFiles = \
-    $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
-
-# Pick the correct debug info files to copy, either zipped or not.
-ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-  DEBUGINFO_SUFFIXES += .diz
-else
-  DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
-  # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
-  # dirs.
-  ifeq ($(call isTargetOs, macosx), true)
-    $(call FillFindCache, \
-        $(SUPPORT_OUTPUTDIR)/modules_libs $(SUPPORT_OUTPUTDIR)/modules_cmds)
-    FindDebuginfoFiles = \
-        $(if $(wildcard $1), $(call containing, .dSYM/, $(call FindFiles, $1)))
-  endif
-endif
 
 # Param 1 - either JDK or JRE
 SetupCopyDebuginfo = \

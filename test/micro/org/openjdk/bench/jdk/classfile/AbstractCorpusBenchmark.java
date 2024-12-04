@@ -47,6 +47,7 @@ import org.openjdk.jmh.annotations.Warmup;
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
         "--enable-preview",
+        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 @State(Scope.Benchmark)
 public class AbstractCorpusBenchmark {

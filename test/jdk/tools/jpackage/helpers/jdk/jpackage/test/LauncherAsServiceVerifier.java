@@ -35,8 +35,10 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.IOUtils;
-import static jdk.jpackage.test.Functional.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+import jdk.jpackage.internal.util.function.ThrowingRunnable;
 import static jdk.jpackage.test.PackageType.LINUX;
 import static jdk.jpackage.test.PackageType.MAC_PKG;
 import static jdk.jpackage.test.PackageType.WINDOWS;
@@ -187,7 +189,7 @@ public final class LauncherAsServiceVerifier {
         }
 
         AdditionalLauncher.forEachAdditionalLauncher(cmd,
-                Functional.ThrowingBiConsumer.toBiConsumer(
+                ThrowingBiConsumer.toBiConsumer(
                         (launcherName, propFilePath) -> {
                             if (Files.readAllLines(propFilePath).stream().anyMatch(
                                     line -> {
@@ -335,14 +337,14 @@ public final class LauncherAsServiceVerifier {
         TKit.assertEquals(installedLauncherPath.toString(), args.get(0),
                 "Check path to launcher in 'ProgramArguments' property in the property file");
 
-        var expectedLabel = IOUtils.replaceSuffix(servicePlistFile.getFileName(), "").toString();
+        var expectedLabel = PathUtils.replaceSuffix(servicePlistFile.getFileName(), "").toString();
         TKit.assertEquals(expectedLabel, servicePlist.queryValue("Label"),
                 "Check value of 'Label' property in the property file");
     }
 
     private static void delayInstallVerify() {
         // Sleep a bit to let system launch the service
-        Functional.ThrowingRunnable.toRunnable(() -> Thread.sleep(5 * 1000)).run();
+        ThrowingRunnable.toRunnable(() -> Thread.sleep(5 * 1000)).run();
     }
 
     private Path appOutputFilePathInitialize() {

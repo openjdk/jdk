@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,25 +106,7 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
      */
     public static <E> ReferencedKeySet<E>
     create(boolean isSoft, Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
-        return create(isSoft, false, supplier);
-    }
-
-    /**
-     * Create a new {@link ReferencedKeySet} elements.
-     *
-     * @param isSoft          true if {@link SoftReference} elements are to
-     *                        be used, {@link WeakReference} otherwise.
-     * @param useNativeQueue  true if uses NativeReferenceQueue
-     *                        otherwise use {@link ReferenceQueue}.
-     * @param supplier        {@link Supplier} of the backing map
-     *
-     * @return a new set with {@link Reference} elements
-     *
-     * @param <E> the type of elements maintained by this set
-     */
-    public static <E> ReferencedKeySet<E>
-    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
-         return new ReferencedKeySet<>(ReferencedKeyMap.create(isSoft, useNativeQueue, supplier));
+        return new ReferencedKeySet<>(ReferencedKeyMap.create(isSoft, supplier));
     }
 
     /**

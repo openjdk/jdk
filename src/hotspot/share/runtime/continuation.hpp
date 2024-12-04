@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,25 @@ void continuations_init();
 class javaVFrame;
 class JavaThread;
 
+// should match Continuation.pinnedReason() in Continuation.java
+enum freeze_result {
+  freeze_ok = 0,
+  freeze_ok_bottom = 1,
+  freeze_pinned_cs = 2,
+  freeze_pinned_native = 3,
+  freeze_pinned_monitor = 4,
+  freeze_exception = 5,
+  freeze_not_mounted = 6,
+  freeze_unsupported = 7
+};
+
 class Continuation : AllStatic {
 public:
+
+  enum preempt_kind {
+    freeze_on_monitorenter,
+    freeze_on_wait
+  };
 
   enum thaw_kind {
     thaw_top = 0,
@@ -69,8 +86,11 @@ public:
   static void init();
 
   static address freeze_entry();
+  static address freeze_preempt_entry();
   static int prepare_thaw(JavaThread* thread, bool return_barrier);
   static address thaw_entry();
+
+  static freeze_result try_preempt(JavaThread* target, oop continuation);
 
   static ContinuationEntry* get_continuation_entry_for_continuation(JavaThread* thread, oop continuation);
   static ContinuationEntry* get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp);

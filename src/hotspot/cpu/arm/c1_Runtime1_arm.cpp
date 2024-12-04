@@ -251,6 +251,10 @@ void StubAssembler::restore_live_registers_without_return() {
 void Runtime1::initialize_pd() {
 }
 
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  Unimplemented();
+  return 0;
+}
 
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   OopMap* oop_map = save_live_registers(sasm);
