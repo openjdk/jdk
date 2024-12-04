@@ -200,15 +200,7 @@ public final class Template implements CodeGenerator {
                 if (spaces % 4 != 0) {
                     throw new TemplateFrameworkException("Template non factor-of-4 indentation: " + spaces);
                 }
-                int localIndentation = spaces / 4;
-                while (indentation < localIndentation) {
-                    indentation++;
-                    scope.stream.indent();
-                }
-                while (indentation > localIndentation) {
-                    indentation--;
-                    scope.stream.outdent();
-                }
+                scope.stream.setIndentation(spaces / 4);
                 scope.stream.addNewline();
             } else {
                 // The templated code needs to be analyzed and transformed or recursively generated.
@@ -220,10 +212,8 @@ public final class Template implements CodeGenerator {
         String nonTemplated = templateString.substring(pos);
         scope.stream.addCodeToLine(nonTemplated);
 
-        while (indentation > 0) {
-            indentation--;
-            scope.stream.outdent();
-        }
+        // Cleanup: revert any indentation
+        scope.stream.setIndentation(0);
     }
 
     private void handleTemplated(InstantiationState state, String templated) {

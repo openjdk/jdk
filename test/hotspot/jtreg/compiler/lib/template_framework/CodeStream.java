@@ -31,11 +31,12 @@ import java.util.ArrayList;
  */
 public class CodeStream {
 
-    private sealed interface Token permits CodeSegment, Newline, Indent, Outdent, NestedCodeStream {}
+    private sealed interface Token permits CodeSegment, Newline, Indent, Outdent, MultiIndent, NestedCodeStream {}
     private record CodeSegment(String code) implements Token {}
     private record Newline() implements Token {}
     private record Indent() implements Token {}
     private record Outdent() implements Token {}
+    private record MultiIndent(int difference) implements Token {}
     private record NestedCodeStream(CodeStream stream) implements Token {}
 
     // To avoid allocating repeatedly.
@@ -101,6 +102,25 @@ public class CodeStream {
         }
     }
 
+    public void setIndentation(int i) {
+        checkOpen();
+        if (i < 0 || i > 100) {
+            throw new TemplateFrameworkException("Indentation unreasonable: " + i);
+        }
+        if (i == indentCount) {
+            // Nothing
+        } else if (i == indentCount + 1) {
+            stream.add(INDENT);
+            indentCount++;
+        } else if (i == indentCount - 1) {
+            stream.add(OUTDENT);
+            indentCount--;
+        } else {
+            stream.add(new MultiIndent(i - indentCount));
+            indentCount = i;
+        }
+    }
+
     public void addCodeStream(CodeStream nestedStream) {
         checkOpen();
         nestedStream.checkClosed();
@@ -146,6 +166,10 @@ public class CodeStream {
             indentation--;
         }
 
+        public void multiIndent(int difference) {
+            indentation += difference;
+        }
+
         public String toString() {
             return stringBuilder.toString();
         }
@@ -165,6 +189,7 @@ public class CodeStream {
                 case Newline()                           -> { state.addNewline();  }
                 case Indent()                            -> { state.indent(); }
                 case Outdent()                           -> { state.outdent(); }
+                case MultiIndent(int difference)         -> { state.multiIndent(difference); }
                 case NestedCodeStream(CodeStream stream) -> { stream.collect(state); }
             }
         }
