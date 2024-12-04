@@ -52,7 +52,7 @@ private:
 
   ShenandoahReferenceProcessor* const _ref_processor;
 
-  size_t _affiliated_region_count;
+  volatile size_t _affiliated_region_count;
 
   // How much free memory is left in the last region of humongous objects.
   // This is _not_ included in used, but it _is_ deducted from available,
@@ -131,7 +131,7 @@ private:
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override { return _used; }
+  size_t used() const override { return Atomic::load(&_used); }
   size_t available() const override;
   size_t available_with_reserve() const;
   size_t used_including_humongous_waste() const {

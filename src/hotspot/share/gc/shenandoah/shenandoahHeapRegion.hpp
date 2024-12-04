@@ -384,7 +384,7 @@ public:
 
   void recycle_under_lock();
 
-  void try_recycle(volatile size_t* recycled_heap_space, volatile size_t* recycled_regions);
+  void try_recycle();
 
   inline void begin_preemptible_coalesce_and_fill() {
     _coalesce_and_fill_boundary = _bottom;

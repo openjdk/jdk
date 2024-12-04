@@ -611,15 +611,15 @@ void ShenandoahHeapRegion::recycle_under_lock() {
   }
 }
 
-void ShenandoahHeapRegion::try_recycle(volatile size_t* recycled_heap_space, volatile size_t* recycled_regions) {
+void ShenandoahHeapRegion::try_recycle() {
   shenandoah_assert_not_heaplocked();
   if (is_trash() && _recycling.try_set()) {
     // Double check region state after win the race to set recycling flag
     if (is_trash()) {
-      Atomic::add(recycled_heap_space, used());
-      Atomic::inc(recycled_regions);
-
-      OrderAccess::fence();
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
+      ShenandoahGeneration* generation = heap->generation_for(affiliation());
+      heap->decrease_used(generation, used());
+      generation->decrement_affiliated_region_count();
 
       recycle_internal();
     }

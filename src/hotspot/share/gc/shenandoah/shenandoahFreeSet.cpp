@@ -1255,20 +1255,10 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   return _heap->get_region(beg)->bottom();
 }
 
-struct ShenandoahRecycleStats {
-  volatile size_t recycled_heap_space = 0;
-  volatile size_t recycled_regions = 0;
-};
-
 class ShenandoahRecycleTrashedRegionTask : public WorkerTask {
 private:
   ShenandoahRegionIterator _regions;
-
 public:
-  ShenandoahRecycleStats   _young_recycle_stats;
-  ShenandoahRecycleStats   _old_recycle_stats;
-  ShenandoahRecycleStats   _global_recycle_stats;
-
   ShenandoahRecycleTrashedRegionTask() :
     WorkerTask("Shenandoah Recycle trashed region.") {}
 
@@ -1279,12 +1269,7 @@ public:
       if (!region->is_trash()) {
         continue;
       }
-      ShenandoahAffiliation affiliation = region->affiliation();
-      ShenandoahGeneration* generation = heap->generation_for(affiliation);
-      ShenandoahRecycleStats* recycle_stats =
-        generation->is_global() ? &_global_recycle_stats
-                                : (generation->is_young() ? &_young_recycle_stats : &_old_recycle_stats);
-      region->try_recycle(&(recycle_stats->recycled_heap_space), &(recycle_stats->recycled_regions));
+      region->try_recycle();
     }
   }
 };
@@ -1298,18 +1283,6 @@ void ShenandoahFreeSet::recycle_trash() {
 
   ShenandoahRecycleTrashedRegionTask task;
   heap->workers()->run_task(&task);
-
-  ShenandoahHeapLocker locker(_heap->lock());
-  if (!heap->mode()->is_generational()) {
-    heap->decrease_used(heap->global_generation(), task._global_recycle_stats.recycled_heap_space);
-    heap->global_generation()->decrease_affiliated_region_count(task._global_recycle_stats.recycled_regions);
-  } else {
-    heap->decrease_used(heap->young_generation(), task._young_recycle_stats.recycled_heap_space);
-    heap->young_generation()->decrease_affiliated_region_count(task._young_recycle_stats.recycled_regions);
-
-    heap->decrease_used(heap->old_generation(), task._old_recycle_stats.recycled_heap_space);
-    heap->old_generation()->decrease_affiliated_region_count(task._old_recycle_stats.recycled_regions);
-  }
 }
 
 void ShenandoahFreeSet::flip_to_old_gc(ShenandoahHeapRegion* r) {
