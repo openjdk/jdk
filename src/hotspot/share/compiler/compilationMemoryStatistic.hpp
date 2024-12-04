@@ -30,6 +30,9 @@
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/arena.hpp"
+#ifdef COMPILER2
+#include "opto/phase.hpp"
+#endif
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -60,8 +63,10 @@ public:
   }
 };
 
-// Counters for allocations from arenas during compilation
-class ArenaStatCounter : public CHeapObj<mtCompiler> {
+// Holds all memory statistic data for the current compilation.
+// Attached to the Compiler Thread.
+class ArenaState : public CHeapObj<mtCompiler> {
+
   // Current bytes, total
   size_t _current;
   // bytes at last peak, total
@@ -87,7 +92,7 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   void reset();
 
 public:
-  ArenaStatCounter();
+  ArenaState();
 
   // Size of peak since last compilation
   size_t peak() const { return _peak; }
@@ -99,10 +104,6 @@ public:
   // Mark the start and end of a compilation.
   void start(size_t limit);
   void end();
-
-  // Mark the start and end of a phase.
-  void c2_start_phase(const char* phase_name);
-  void c2_end_phase(const char* phase_name);
 
   // Account an arena allocation or de-allocation.
   // Returns true if new peak reached
@@ -117,14 +118,16 @@ public:
   bool   limit_in_process() const     { return _limit_in_process; }
   void   set_limit_in_process(bool v) { _limit_in_process = v; }
   bool   is_active() const          { return _active; }
+
+#ifdef COMPILER2
+  // C2 only: inform statistic about start and end of a compilation phase
+  void on_c2_phase_start(Phase::PhaseTraceId id);
+  void on_c2_phase_end();
+#endif
 };
 
 class CompilationMemoryStatistic : public AllStatic {
   static bool _enabled;
-
-  // C2 only: inform statistic about start and end of a compilation phase
-  static void on_c2_phase_start_0(const char* phase_name);
-  static void on_c2_phase_end_0(const char* phase_name);
 
 public:
   static void initialize();
@@ -137,9 +140,15 @@ public:
   // must be set at this point (so place CompilationMemoryStatisticMark correctly).
   static void on_end_compilation();
 
+#ifdef COMPILER2
   // C2 only: inform statistic about start and end of a compilation phase
-  static inline void on_c2_phase_start(const char* phase_name);
-  static inline void on_c2_phase_end(const char* phase_name);
+private:
+  static void on_c2_phase_start_0(Phase::PhaseTraceId id);
+  static void on_c2_phase_end_0();
+public:
+  static inline void on_c2_phase_start(Phase::PhaseTraceId id);
+  static inline void on_c2_phase_end();
+#endif
 
   static void on_arena_change(ssize_t diff, const Arena* arena);
   static void print_all_by_size(outputStream* st, bool human_readable, size_t minsize);

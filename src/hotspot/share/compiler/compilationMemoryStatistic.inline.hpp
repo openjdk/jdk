@@ -28,17 +28,19 @@
 
 #include "compiler/compilationMemoryStatistic.hpp"
 
+#ifdef COMPILER2
 // C2 only: inform statistic about start and end of a compilation phase
-inline void CompilationMemoryStatistic::on_c2_phase_start(const char* phase_name) {
+inline void CompilationMemoryStatistic::on_c2_phase_start(Phase::PhaseTraceId id) {
   if (enabled()) {
-    on_c2_phase_start_0(phase_name);
+    on_c2_phase_start_0(id);
   }
 }
 
-inline void CompilationMemoryStatistic::on_c2_phase_end(const char* phase_name) {
+inline void CompilationMemoryStatistic::on_c2_phase_end() {
   if (enabled()) {
-    on_c2_phase_end_0(phase_name);
+    on_c2_phase_end_0();
   }
 }
+#endif // COMPILER2
 
 #endif // SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_INLINE_HPP

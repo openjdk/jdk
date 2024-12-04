@@ -50,11 +50,11 @@
 #include "utilities/quickSort.hpp"
 #include "utilities/resourceHash.hpp"
 
-ArenaStatCounter::ArenaStatCounter() {
+ArenaState::ArenaState() {
   reset();
 }
 
-void ArenaStatCounter::reset() {
+void ArenaState::reset() {
   _current = 0;
   _peak = 0;
   _current_by_tag.clear();
@@ -66,19 +66,19 @@ void ArenaStatCounter::reset() {
   _active = false;
 }
 
-void ArenaStatCounter::start(size_t limit) {
+void ArenaState::start(size_t limit) {
   reset();
   _active = true;
   _limit = limit;
 }
 
-void ArenaStatCounter::end() {
+void ArenaState::end() {
   _limit = 0;
   _hit_limit = false;
   _active = false;
 }
 
-void ArenaStatCounter::update_c2_node_count() {
+void ArenaState::update_c2_node_count() {
   assert(_active, "compilaton has not yet started");
 #ifdef COMPILER2
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
@@ -94,17 +94,19 @@ void ArenaStatCounter::update_c2_node_count() {
 #endif
 }
 
+#ifdef COMPILER2
 // Mark the start and end of a phase.
-void ArenaStatCounter::c2_start_phase(const char* phase_name) {
+void ArenaState::on_c2_phase_start(Phase::PhaseTraceId id) {
 
 }
 
-void ArenaStatCounter::c2_end_phase(const char* phase_name) {
+void ArenaState::on_c2_phase_end() {
 
 }
+#endif // COMPILER2
 
 // Account an arena allocation or de-allocation.
-bool ArenaStatCounter::account(ssize_t delta, int tag) {
+bool ArenaState::account(ssize_t delta, int tag) {
   assert(_active, "compilaton has not yet started");
   bool rc = false;
 #ifdef ASSERT
@@ -126,10 +128,6 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
       CompileTask* const task = th->task();
       const CompilerType ct = task->compiler()->type();
       const int comp_id = task->compile_id();
-
-      tty->print_cr("(%d ) peaked at %zu", comp_id, _current);
-
-
     }
 
     _peak = _current;
@@ -145,7 +143,7 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
   return rc;
 }
 
-void ArenaStatCounter::print_on(outputStream* st) const {
+void ArenaState::print_on(outputStream* st) const {
   st->print("%zu [", _peak);
   bool printed = false;
   for (int tag = 0; tag < _peak_by_tag.element_count(); tag++) {
@@ -454,19 +452,13 @@ void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* direct
   assert(enabled(), "Not enabled?");
   const size_t limit = directive->mem_limit();
   Thread::current()->as_Compiler_thread()->arena_stat()->start(limit);
-
-
-  if (UseNewCode) {
-    tty->print_cr("-> start compilation ");
-  }
-
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
   assert(enabled(), "Not enabled?");
   ResourceMark rm;
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaStatCounter* const arena_stat = th->arena_stat();
+  ArenaState* const arena_stat = th->arena_stat();
   CompileTask* const task = th->task();
   const CompilerType ct = task->compiler()->type();
   const int comp_id = task->compile_id();
@@ -505,10 +497,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
                     arena_stat->live_nodes_at_peak(),
                     arena_stat->limit(),
                     result);
-  }
-
-  if (UseNewCode) {
-    tty->print_cr("<- end compilation ");
   }
 
   if (print) {
@@ -565,7 +553,7 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
 
-  ArenaStatCounter* const arena_stat = th->arena_stat();
+  ArenaState* const arena_stat = th->arena_stat();
   if (arena_stat->limit_in_process()) {
     return; // avoid recursion on limit hit
   }
@@ -627,22 +615,24 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
   }
 }
 
+#ifdef COMPILER2
 // C2 only: inform statistic about start and end of a compilation phase
-void CompilationMemoryStatistic::on_c2_phase_start_0(const char* phase_name) {
+void CompilationMemoryStatistic::on_c2_phase_start_0(Phase::PhaseTraceId id) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaStatCounter* const arena_stat = th->arena_stat();
+  ArenaState* const arena_stat = th->arena_stat();
   assert(arena_stat != nullptr, "A compilation should be in process?");
-  arena_stat->c2_start_phase(phase_name);
+  arena_stat->on_c2_phase_start(id);
 }
 
-void CompilationMemoryStatistic::on_c2_phase_end_0(DEBUG_ONLY(const char* phase_name)) {
+void CompilationMemoryStatistic::on_c2_phase_end_0() {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
-  ArenaStatCounter* const arena_stat = th->arena_stat();
+  ArenaState* const arena_stat = th->arena_stat();
   assert(arena_stat != nullptr, "A compilation should be in process?");
-  arena_stat->c2_end_phase(phase_name);
+  arena_stat->on_c2_phase_end();
 }
+#endif
 
 static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
   return e1->compare_by_size(e2);

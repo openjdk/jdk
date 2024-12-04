@@ -31,6 +31,8 @@ class IfNode;
 class MergeMemNode;
 class Node;
 class PhaseGVN;
+class Compile;
+class ciMethod;
 
 //------------------------------Phase------------------------------------------
 // Most optimizations are done in Phases.  Creating a phase does any long
