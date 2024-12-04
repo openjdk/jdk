@@ -24,11 +24,16 @@
 package compiler.lib.template_framework;
 
 import java.util.HashMap;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
 
 /**
  * TODO
  */
 public class CodeGeneratorLibrary {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     private CodeGeneratorLibrary parent;
     private HashMap<String,CodeGenerator> library;
 
@@ -36,7 +41,6 @@ public class CodeGeneratorLibrary {
         this.parent = parent;
         if (parent != null) {
             for (String name : library.keySet()) {
-                System.out.println("cg name: " + name);
                 if (parent.find(name) != null) {
                     throw new TemplateFrameworkException("Code library already has a generator for name " + name);
                 }
@@ -62,8 +66,12 @@ public class CodeGeneratorLibrary {
     public static CodeGeneratorLibrary standard() {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
 
-        // Constants.
-        codeGenerators.put("int_con", new Template("123"));
+        // Random Constants.
+        codeGenerators.put("int_con", new ProgrammaticCodeGenerator(
+            (Scope scope, Parameters parameters) -> {
+                int v = RANDOM.nextInt();
+                scope.stream.addCodeToLine(String.valueOf(v));
+            }, 0));
 
         // Code blocks.
         codeGenerators.put("empty", new Template(

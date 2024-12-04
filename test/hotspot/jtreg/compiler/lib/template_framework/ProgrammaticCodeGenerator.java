@@ -26,28 +26,24 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public class BaseScope extends Scope {
-    public static final int DEFAULT_FUEL = 100;
-    private final CodeGeneratorLibrary codeGeneratorLibrary;
-
-    public BaseScope(long fuel, CodeGeneratorLibrary codeGeneratorLibrary) {
-        super(null, fuel);
-        this.codeGeneratorLibrary = codeGeneratorLibrary;
+public class ProgrammaticCodeGenerator implements CodeGenerator {
+    public interface Instantiator {
+        public void call(Scope scope, Parameters parameters);
     }
 
-    public BaseScope() {
-        this(DEFAULT_FUEL, CodeGeneratorLibrary.standard());
+    private final int generatorFuelCost;
+    private final Instantiator instantiator;
+
+    public ProgrammaticCodeGenerator(Instantiator instantiator, int fuelCost) {
+        this.generatorFuelCost = fuelCost;
+        this.instantiator = instantiator;
     }
 
-    @Override
-    public CodeGeneratorLibrary library() {
-        return codeGeneratorLibrary;
+    public int fuelCost() {
+        return generatorFuelCost;
     }
 
-    /**
-     * Collect all the generated code and return it as a String.
-     */
-    public String toString() {
-        return stream.toString();
-    }
+    public void instantiate(Scope scope, Parameters parameters) {
+        instantiator.call(scope, parameters);
+    };
 }

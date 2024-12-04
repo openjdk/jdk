@@ -23,6 +23,9 @@
 
 package compiler.lib.template_framework;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 /**
  * TODO public?
  */
@@ -31,14 +34,32 @@ public class Scope {
     public final long fuel;
     public final CodeStream stream;
 
+    private class VariableSet {
+        public final VariableSet parent;
+        public final HashMap<String,ArrayList<String>> variables;
+        public final HashMap<String,Integer> totalVariables;
+
+        public VariableSet(VariableSet parent) {
+            this.parent = parent;
+            this.variables = new HashMap<String,ArrayList<String>>();
+            this.totalVariables = new HashMap<String,Integer>();
+        }
+
+        public String sample(String type) {
+            return null;
+        }
+    }
+
+    public final VariableSet allVariables;
+    public final VariableSet mutableVariables;
+
     public Scope(Scope parent, long fuel) {
         this.parent = parent;
         this.fuel = fuel;
         this.stream = new CodeStream();
-    }
 
-    public String sampleVariable(String type) {
-        return null;
+        this.allVariables     = new VariableSet(this.parent != null ? this.parent.allVariables : null);
+        this.mutableVariables = new VariableSet(this.parent != null ? this.parent.mutableVariables : null);
     }
 
     public CodeGeneratorLibrary library() {
@@ -47,5 +68,9 @@ public class Scope {
 
     public void close() {
         stream.close();
+    }
+
+    public String sampleVariable(String type, boolean mutable) {
+        return mutable ? mutableVariables.sample(type) : allVariables.sample(type);
     }
 }
