@@ -1636,7 +1636,7 @@ bool PhaseIdealLoop::try_convert_to_counted_loop(Node* loop_head, IdealLoopTree*
 //  } else {
 //    trap: loop_limit_check
 //  }
-bool PhaseIdealLoop::convert_to_counted_loop_with_speculative_long_limit(Node* loop_head, IdealLoopTree*&loop,
+bool PhaseIdealLoop::convert_to_counted_loop_with_speculative_long_limit(Node* loop_head, IdealLoopTree*& loop,
                                                                          BasicType iv_bt) {
   if (iv_bt != T_INT) {
     return false;
