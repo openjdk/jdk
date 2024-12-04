@@ -73,6 +73,21 @@ public class CodeGeneratorLibrary {
                 scope.stream.addCodeToLine(String.valueOf(v));
             }, 0));
 
+        // Variable.
+        codeGenerators.put("var", new ProgrammaticCodeGenerator(
+            (Scope scope, Parameters parameters) -> {
+                String type = parameters.get("type");
+                if (type == null) {
+                    throw new TemplateFrameworkException("Generator call to 'var' missing parameter 'type'.");
+                }
+                // TODO handle mutable, default argument - default mutable or not?
+                String name = scope.sampleVariable(type, false);
+                if (name == null) {
+                    throw new TemplateFrameworkException("Generator call to 'var' cannot find variable of type: " + type);
+                }
+                scope.stream.addCodeToLine(String.valueOf(name));
+            }, 0));
+
         // Code blocks.
         codeGenerators.put("empty", new Template(
             """
@@ -96,11 +111,19 @@ public class CodeGeneratorLibrary {
             // end   $prefix
             """
         ));
+        codeGenerators.put("foo", new Template(
+            """
+            // start $foo
+                #{v1:var(type=int)} = #{v1};
+            // end   $foo
+            """
+        ));
 
         // Selector for code blocks.
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("empty");
         selectorForCode.add("split",  100);
         selectorForCode.add("prefix", 100);
+        selectorForCode.add("foo", 100);
         codeGenerators.put("code", selectorForCode);
 
         return new CodeGeneratorLibrary(null, codeGenerators);

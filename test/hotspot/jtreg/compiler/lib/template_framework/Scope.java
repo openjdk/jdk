@@ -46,7 +46,7 @@ public class Scope {
         }
 
         public String sample(String type) {
-            return null;
+            return "TODO_" + type;
         }
     }
 
