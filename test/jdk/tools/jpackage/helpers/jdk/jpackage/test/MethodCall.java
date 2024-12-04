@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,33 @@
  */
 package jdk.jpackage.test;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.TestInstance.TestDesc;
 
 class MethodCall implements ThrowingConsumer {
 
-    MethodCall(Object[] instanceCtorArgs, Method method) {
-        this.ctorArgs = Optional.ofNullable(instanceCtorArgs).orElse(
-                DEFAULT_CTOR_ARGS);
-        this.method = method;
-        this.methodArgs = new Object[0];
-    }
+    MethodCall(Object[] instanceCtorArgs, Method method, Object ... args) {
+        Objects.requireNonNull(instanceCtorArgs);
+        Objects.requireNonNull(method);
 
-    MethodCall(Object[] instanceCtorArgs, Method method, Object arg) {
-        this.ctorArgs = Optional.ofNullable(instanceCtorArgs).orElse(
-                DEFAULT_CTOR_ARGS);
+        this.ctorArgs = instanceCtorArgs;
         this.method = method;
-        this.methodArgs = new Object[]{arg};
+        this.methodArgs = args;
     }
 
     TestDesc createDescription() {
@@ -76,68 +75,35 @@ class MethodCall implements ThrowingConsumer {
             return null;
         }
 
-        Constructor ctor = findRequiredConstructor(method.getDeclaringClass(),
-                ctorArgs);
-        if (ctor.isVarArgs()) {
-            // Assume constructor doesn't have fixed, only variable parameters.
-            return ctor.newInstance(new Object[]{ctorArgs});
-        }
+        var ctor = findMatchingConstructor(method.getDeclaringClass(), ctorArgs);
 
-        return ctor.newInstance(ctorArgs);
+        return ctor.newInstance(mapArgs(ctor, ctorArgs));
+    }
+
+    static Object[] mapArgs(Executable executable, final Object ... args) {
+        return mapPrimitiveTypeArgs(executable, mapVarArgs(executable, args));
     }
 
     void checkRequiredConstructor() throws NoSuchMethodException {
         if ((method.getModifiers() & Modifier.STATIC) == 0) {
-            findRequiredConstructor(method.getDeclaringClass(), ctorArgs);
+            findMatchingConstructor(method.getDeclaringClass(), ctorArgs);
         }
     }
 
-    private static Constructor findVarArgConstructor(Class type) {
-        return Stream.of(type.getConstructors()).filter(
-                Constructor::isVarArgs).findFirst().orElse(null);
-    }
-
-    private Constructor findRequiredConstructor(Class type, Object... ctorArgs)
+    private static Constructor findMatchingConstructor(Class type, Object... ctorArgs)
             throws NoSuchMethodException {
 
-        Supplier<NoSuchMethodException> notFoundException = () -> {
-            return new NoSuchMethodException(String.format(
+        var ctors = filterMatchingExecutablesForParameterValues(Stream.of(
+                type.getConstructors()), ctorArgs).toList();
+
+        if (ctors.size() != 1) {
+            // No public constructors that can handle the given arguments.
+            throw new NoSuchMethodException(String.format(
                     "No public contructor in %s for %s arguments", type,
                     Arrays.deepToString(ctorArgs)));
-        };
-
-        if (Stream.of(ctorArgs).allMatch(Objects::nonNull)) {
-            // No `null` in constructor args, take easy path
-            try {
-                return type.getConstructor(Stream.of(ctorArgs).map(
-                        Object::getClass).collect(Collectors.toList()).toArray(
-                        Class[]::new));
-            } catch (NoSuchMethodException ex) {
-                // Failed to find ctor that can take the given arguments.
-                Constructor varArgCtor = findVarArgConstructor(type);
-                if (varArgCtor != null) {
-                    // There is one with variable number of arguments. Use it.
-                    return varArgCtor;
-                }
-                throw notFoundException.get();
-            }
         }
 
-        List<Constructor> ctors = Stream.of(type.getConstructors())
-                .filter(ctor -> ctor.getParameterCount() == ctorArgs.length)
-                .collect(Collectors.toList());
-
-        if (ctors.isEmpty()) {
-            // No public constructors that can handle the given arguments.
-            throw notFoundException.get();
-        }
-
-        if (ctors.size() == 1) {
-            return ctors.iterator().next();
-        }
-
-        // Revisit this tricky case when it will start bothering.
-        throw notFoundException.get();
+        return ctors.get(0);
     }
 
     @Override
@@ -145,9 +111,159 @@ class MethodCall implements ThrowingConsumer {
         method.invoke(thiz, methodArgs);
     }
 
+    private static Object[] mapVarArgs(Executable executable, final Object ... args) {
+        if (executable.isVarArgs()) {
+            var paramTypes = executable.getParameterTypes();
+            Class varArgParamType = paramTypes[paramTypes.length - 1];
+
+            Object[] newArgs;
+            if (paramTypes.length - args.length == 1) {
+                // Empty var args
+
+                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
+                newArgs = Arrays.copyOf(args, args.length + 1, Object[].class);
+                newArgs[newArgs.length - 1] = Array.newInstance(varArgParamType.componentType(), 0);
+            } else {
+                var varArgs = Arrays.copyOfRange(args, paramTypes.length - 1,
+                        args.length, varArgParamType);
+
+                // "args" can be of type String[] if the "executable" is "foo(String ... str)"
+                newArgs = Arrays.copyOfRange(args, 0, paramTypes.length, Object[].class);
+                newArgs[newArgs.length - 1] = varArgs;
+            }
+            return newArgs;
+        }
+
+        return args;
+    }
+
+    private static Object[] mapPrimitiveTypeArgs(Executable executable, final Object ... args) {
+        var paramTypes = executable.getParameterTypes();
+        if (paramTypes.length != args.length) {
+            throw new IllegalArgumentException(
+                    "The number of arguments must be equal to the number of parameters of the executable");
+        }
+
+        if (IntStream.range(0, args.length).allMatch(idx -> {
+            return Optional.ofNullable(args[idx]).map(Object::getClass).map(paramTypes[idx]::isAssignableFrom).orElse(true);
+        })) {
+            return args;
+        } else {
+            final var newArgs = Arrays.copyOf(args, args.length, Object[].class);
+            for (var idx = 0; idx != args.length; ++idx) {
+                final var paramType = paramTypes[idx];
+                final var argValue = args[idx];
+                newArgs[idx] = Optional.ofNullable(argValue).map(Object::getClass).map(argType -> {
+                    if(argType.isArray() && !paramType.isAssignableFrom(argType)) {
+                        var length = Array.getLength(argValue);
+                        var newArray = Array.newInstance(paramType.getComponentType(), length);
+                        for (var arrayIdx = 0; arrayIdx != length; ++arrayIdx) {
+                            Array.set(newArray, arrayIdx, Array.get(argValue, arrayIdx));
+                        }
+                        return newArray;
+                    } else {
+                        return argValue;
+                    }
+                }).orElse(argValue);
+            }
+
+            return newArgs;
+        }
+    }
+
+    private static <T extends Executable> Stream<T> filterMatchingExecutablesForParameterValues(
+            Stream<T> executables, Object... args) {
+        return filterMatchingExecutablesForParameterTypes(
+                executables,
+                Stream.of(args)
+                        .map(arg -> arg != null ? arg.getClass() : null)
+                        .toArray(Class[]::new));
+    }
+
+    private static <T extends Executable> Stream<T> filterMatchingExecutablesForParameterTypes(
+            Stream<T> executables, Class<?>... argTypes) {
+        return executables.filter(executable -> {
+            var parameterTypes = executable.getParameterTypes();
+
+            final int checkArgTypeCount;
+            if (parameterTypes.length <= argTypes.length) {
+                checkArgTypeCount = parameterTypes.length;
+            } else if (parameterTypes.length - argTypes.length == 1 && executable.isVarArgs()) {
+                // Empty optional arguments.
+                checkArgTypeCount = argTypes.length;
+            } else {
+                // Not enough mandatory arguments.
+                return false;
+            }
+
+            var unmatched = IntStream.range(0, checkArgTypeCount).dropWhile(idx -> {
+                return new ParameterTypeMatcher(parameterTypes[idx]).test(argTypes[idx]);
+            }).toArray();
+
+            if (argTypes.length == parameterTypes.length && unmatched.length == 0) {
+                // Number of argument types equals to the number of parameters
+                // of the executable and all types match.
+                return true;
+            }
+
+            if (executable.isVarArgs()) {
+                var varArgType = parameterTypes[parameterTypes.length - 1].componentType();
+                return IntStream.of(unmatched).allMatch(idx -> {
+                    return new ParameterTypeMatcher(varArgType).test(argTypes[idx]);
+                });
+            }
+
+            return false;
+        });
+    }
+
+    private static final class ParameterTypeMatcher implements Predicate<Class<?>> {
+        ParameterTypeMatcher(Class<?> parameterType) {
+            Objects.requireNonNull(parameterType);
+            this.parameterType = NORM_TYPES.getOrDefault(parameterType, parameterType);
+        }
+
+        @Override
+        public boolean test(Class<?> paramaterValueType) {
+            if (paramaterValueType == null) {
+                return true;
+            }
+
+            paramaterValueType = NORM_TYPES.getOrDefault(paramaterValueType, paramaterValueType);
+            return parameterType.isAssignableFrom(paramaterValueType);
+        }
+
+        private final Class<?> parameterType;
+    }
+
     private final Object[] methodArgs;
     private final Method method;
     private final Object[] ctorArgs;
 
-    final static Object[] DEFAULT_CTOR_ARGS = new Object[0];
+    private static final Map<Class<?>, Class<?>> NORM_TYPES;
+
+    static {
+        Map<Class<?>, Class<?>> primitives = Map.of(
+            boolean.class, Boolean.class,
+            byte.class, Byte.class,
+            short.class, Short.class,
+            int.class, Integer.class,
+            long.class, Long.class,
+            float.class, Float.class,
+            double.class, Double.class);
+
+        Map<Class<?>, Class<?>> primitiveArrays = Map.of(
+            boolean[].class, Boolean[].class,
+            byte[].class, Byte[].class,
+            short[].class, Short[].class,
+            int[].class, Integer[].class,
+            long[].class, Long[].class,
+            float[].class, Float[].class,
+            double[].class, Double[].class);
+
+        Map<Class<?>, Class<?>> combined = new HashMap<>(primitives);
+        combined.putAll(primitiveArrays);
+
+        NORM_TYPES = Collections.unmodifiableMap(combined);
+    }
 }

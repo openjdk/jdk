@@ -870,6 +870,7 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
   }
 }
 
+// Consider using cmov (Zicond)
 void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type,
                           LIR_Opr cmp_opr1, LIR_Opr cmp_opr2) {
   Label label;
@@ -1346,7 +1347,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());
@@ -1356,7 +1357,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
-    bailout("trampoline stub overflow");
+    bailout("reloc call address stub overflow");
     return;
   }
   add_call_info(code_offset(), op->info());

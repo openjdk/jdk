@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import java.net.URLConnection;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -208,21 +206,7 @@ public final class SystemModuleFinders {
         Path dir = Path.of(home, "modules");
         if (!Files.isDirectory(dir))
             throw new InternalError("Unable to detect the run-time image");
-        ModuleFinder f = ModulePath.of(ModuleBootstrap.patcher(), dir);
-        return new ModuleFinder() {
-            @SuppressWarnings("removal")
-            @Override
-            public Optional<ModuleReference> find(String name) {
-                PrivilegedAction<Optional<ModuleReference>> pa = () -> f.find(name);
-                return AccessController.doPrivileged(pa);
-            }
-            @SuppressWarnings("removal")
-            @Override
-            public Set<ModuleReference> findAll() {
-                PrivilegedAction<Set<ModuleReference>> pa = f::findAll;
-                return AccessController.doPrivileged(pa);
-            }
-        };
+        return ModulePath.of(ModuleBootstrap.patcher(), dir);
     }
 
     /**
@@ -314,7 +298,7 @@ public final class SystemModuleFinders {
         Supplier<ModuleReader> readerSupplier = new Supplier<>() {
             @Override
             public ModuleReader get() {
-                return new SystemModuleReader(mn, uri);
+                return new SystemModuleReader(mn);
             }
         };
 
@@ -377,9 +361,7 @@ public final class SystemModuleFinders {
     }
 
     /**
-     * Holder class for the ImageReader
-     *
-     * @apiNote This class must be loaded before a security manager is set.
+     * Holder class for the ImageReader.
      */
     private static class SystemImage {
         static final ImageReader READER = ImageReaderFactory.getImageReader();
@@ -396,25 +378,7 @@ public final class SystemModuleFinders {
         private final String module;
         private volatile boolean closed;
 
-        /**
-         * If there is a security manager set then check permission to
-         * connect to the run-time image.
-         */
-        private static void checkPermissionToConnect(URI uri) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                try {
-                    URLConnection uc = uri.toURL().openConnection();
-                    sm.checkPermission(uc.getPermission());
-                } catch (IOException ioe) {
-                    throw new UncheckedIOException(ioe);
-                }
-            }
-        }
-
-        SystemModuleReader(String module, URI uri) {
-            checkPermissionToConnect(uri);
+        SystemModuleReader(String module) {
             this.module = module;
         }
 

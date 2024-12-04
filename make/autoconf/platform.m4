@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -666,11 +666,14 @@ AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
 [
   AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
-  if test "x$OPENJDK_TARGET_OS" = xwindows && test "x$OPENJDK_TARGET_CPU" = xx86; then
+  # Unfortunately, variants have not been parsed yet, so we have to check the configure option
+  # directly. Allow only the directly specified Zero variant, treat any other mix as containing
+  # something non-Zero.
+  if test "x$OPENJDK_TARGET_CPU" = xx86 && test "x$with_jvm_variants" != xzero; then
     if test "x$enable_deprecated_ports" = "xyes"; then
-      AC_MSG_WARN([The Windows 32-bit x86 port is deprecated and may be removed in a future release.])
+      AC_MSG_WARN([The 32-bit x86 port is deprecated and may be removed in a future release.])
     else
-      AC_MSG_ERROR(m4_normalize([The Windows 32-bit x86 port is deprecated and may be removed in a future release.
+      AC_MSG_ERROR(m4_normalize([The 32-bit x86 port is deprecated and may be removed in a future release.
         Use --enable-deprecated-ports=yes to suppress this error.]))
     fi
   fi

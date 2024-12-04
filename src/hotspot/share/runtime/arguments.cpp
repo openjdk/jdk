@@ -46,6 +46,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/objLayout.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -319,31 +320,38 @@ static bool matches_property_suffix(const char* option, const char* property, si
 // any of the reserved module properties.
 // property should be passed without the leading "-D".
 bool Arguments::is_internal_module_property(const char* property) {
-  if  (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
+  return internal_module_property_helper(property, false);
+}
+
+// Returns true if property is one of those recognized by is_internal_module_property() but
+// is not supported by CDS archived full module graph.
+bool Arguments::is_incompatible_cds_internal_module_property(const char* property) {
+  return internal_module_property_helper(property, true);
+}
+
+bool Arguments::internal_module_property_helper(const char* property, bool check_for_cds) {
+  if (strncmp(property, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
     const char* property_suffix = property + MODULE_PROPERTY_PREFIX_LEN;
     if (matches_property_suffix(property_suffix, ADDEXPORTS, ADDEXPORTS_LEN) ||
         matches_property_suffix(property_suffix, ADDREADS, ADDREADS_LEN) ||
         matches_property_suffix(property_suffix, ADDOPENS, ADDOPENS_LEN) ||
         matches_property_suffix(property_suffix, PATCH, PATCH_LEN) ||
-        matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
         matches_property_suffix(property_suffix, LIMITMODS, LIMITMODS_LEN) ||
-        matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
         matches_property_suffix(property_suffix, UPGRADE_PATH, UPGRADE_PATH_LEN) ||
-        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN) ||
-        matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
+        matches_property_suffix(property_suffix, ILLEGAL_NATIVE_ACCESS, ILLEGAL_NATIVE_ACCESS_LEN)) {
       return true;
+    }
+
+    if (!check_for_cds) {
+      // CDS notes: these properties are supported by CDS archived full module graph.
+      if (matches_property_suffix(property_suffix, PATH, PATH_LEN) ||
+          matches_property_suffix(property_suffix, ADDMODS, ADDMODS_LEN) ||
+          matches_property_suffix(property_suffix, ENABLE_NATIVE_ACCESS, ENABLE_NATIVE_ACCESS_LEN)) {
+        return true;
+      }
     }
   }
   return false;
-}
-
-bool Arguments::is_add_modules_property(const char* key) {
-  return (strcmp(key, MODULE_PROPERTY_PREFIX ADDMODS) == 0);
-}
-
-// Return true if the key matches the --module-path property name ("jdk.module.path").
-bool Arguments::is_module_path_property(const char* key) {
-  return (strcmp(key, MODULE_PROPERTY_PREFIX PATH) == 0);
 }
 
 // Process java launcher properties.
@@ -2533,19 +2541,23 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xshare:dump
     } else if (match_option(option, "-Xshare:dump")) {
       CDSConfig::enable_dumping_static_archive();
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:on
     } else if (match_option(option, "-Xshare:on")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:auto || -XX:ArchiveClassesAtExit=<archive file>
     } else if (match_option(option, "-Xshare:auto")) {
       UseSharedSpaces = true;
       RequireSharedSpaces = false;
       xshare_auto_cmd_line = true;
+      CDSConfig::set_old_cds_flags_used();
     // -Xshare:off
     } else if (match_option(option, "-Xshare:off")) {
       UseSharedSpaces = false;
       RequireSharedSpaces = false;
+      CDSConfig::set_old_cds_flags_used();
     // -Xverify
     } else if (match_option(option, "-Xverify", &tail)) {
       if (strcmp(tail, ":all") == 0 || strcmp(tail, "") == 0) {
@@ -3649,33 +3661,35 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     Arguments::print_on(&st);
   }
 
+  return JNI_OK;
+}
+
+void Arguments::set_compact_headers_flags() {
 #ifdef _LP64
   if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
     warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
     FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-  }
-  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
-    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
     // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
     if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
 
-    // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
+      // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
     } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
       FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-    // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
+      // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
     } else {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
     }
+  }
+  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
+    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
 #endif
-
-  return JNI_OK;
 }
 
 jint Arguments::apply_ergo() {
@@ -3687,6 +3701,8 @@ jint Arguments::apply_ergo() {
   set_heap_size();
 
   GCConfig::arguments()->initialize();
+
+  set_compact_headers_flags();
 
   if (UseCompressedClassPointers) {
     CompressedKlassPointers::pre_initialize();
