@@ -241,7 +241,7 @@ var getJibProfilesCommon = function (input, data) {
     // List of the main profile names used for iteration
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "macosx-aarch64",
-        "windows-x64", "windows-x86", "windows-aarch64",
+        "windows-x64", "windows-aarch64",
         "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x",
         "linux-riscv64"
     ];
@@ -253,6 +253,7 @@ var getJibProfilesCommon = function (input, data) {
         configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-jvm-feature-shenandoahgc",
+            "--disable-cds-archive-coh",
             versionArgs(input, common))
     };
 
@@ -462,15 +463,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x64",
             dependencies: ["devkit", "gtest", "pandoc"],
             configure_args: concat(common.configure_args_64bit),
-        },
-
-        "windows-x86": {
-            target_os: "windows",
-            target_cpu: "x86",
-            build_cpu: "x64",
-            dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit,
-                "--enable-deprecated-ports"),
         },
 
         "windows-aarch64": {
@@ -713,10 +705,6 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
         "windows-x64": {
             platform: "windows-x64",
-            jdk_suffix: "zip",
-        },
-        "windows-x86": {
-            platform: "windows-x86",
             jdk_suffix: "zip",
         },
         "windows-aarch64": {

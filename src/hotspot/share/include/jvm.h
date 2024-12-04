@@ -1147,13 +1147,6 @@ JVM_GetClassFileVersion(JNIEnv *env, jclass current);
 JNIEXPORT jboolean JNICALL
 JVM_PrintWarningAtDynamicAgentLoad(void);
 
-#define JNI_ONLOAD_SYMBOLS   {"JNI_OnLoad"}
-#define JNI_ONUNLOAD_SYMBOLS {"JNI_OnUnload"}
-#define JVM_ONLOAD_SYMBOLS      {"JVM_OnLoad"}
-#define AGENT_ONLOAD_SYMBOLS    {"Agent_OnLoad"}
-#define AGENT_ONUNLOAD_SYMBOLS  {"Agent_OnUnload"}
-#define AGENT_ONATTACH_SYMBOLS  {"Agent_OnAttach"}
-
 /*
  * This structure is used by the launcher to get the default thread
  * stack size from the VM using JNI_GetDefaultJavaVMInitArgs() with a

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@ package javax.xml.transform;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
-import java.security.AccessControlContext;
-import java.security.AccessController;
 import java.security.CodeSigner;
 import java.security.CodeSource;
 import java.security.PermissionCollection;
 import java.security.Permissions;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Objects;
 
@@ -230,19 +227,11 @@ public class TransformerException extends Exception {
      * @return A string with location info, or null
      * if there is no location information.
      */
-    @SuppressWarnings("removal")
     public String getLocationAsString() {
         if (locator == null) {
             return null;
         }
-
-        if (System.getSecurityManager() == null) {
-            return getLocationString();
-        } else {
-            return AccessController.doPrivileged((PrivilegedAction<String>) () ->
-                getLocationString(),
-                new AccessControlContext(new ProtectionDomain[] {getNonPrivDomain()}));
-        }
+        return getLocationString();
     }
 
     /**

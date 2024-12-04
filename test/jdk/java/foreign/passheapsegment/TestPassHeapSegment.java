@@ -31,8 +31,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
@@ -49,6 +48,19 @@ public class TestPassHeapSegment extends UpcallTestHelper  {
         MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS));
         MemorySegment segment = MemorySegment.ofArray(new byte[]{ 0, 1, 2 });
         handle.invoke(segment); // should throw
+    }
+
+    @Test(expectedExceptions = IllegalArgumentException.class,
+            expectedExceptionsMessageRegExp = ".*Heap segment not allowed.*")
+    public void testNoHeapCaptureCallState() throws Throwable {
+        MethodHandle handle = downcallHandle("test_args", FunctionDescriptor.ofVoid(ADDRESS),
+                Linker.Option.captureCallState("errno"));
+        try (Arena arena = Arena.ofConfined()) {
+            assert Linker.Option.captureStateLayout().byteAlignment() % 4 == 0;
+            MemorySegment captureHeap = MemorySegment.ofArray(new int[(int) Linker.Option.captureStateLayout().byteSize() / 4]);
+            MemorySegment segment = arena.allocateFrom(C_CHAR, new byte[]{ 0, 1, 2 });
+            handle.invoke(captureHeap, segment); // should throw for captureHeap
+        }
     }
 
     @Test(dataProvider = "specs")

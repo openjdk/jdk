@@ -179,7 +179,6 @@ class TimerQueue implements Runnable
 
                         // Allow run other threads on systems without kernel threads
                         timer.getLock().newCondition().awaitNanos(1);
-                    } catch (SecurityException ignore) {
                     } finally {
                         timer.getLock().unlock();
                     }

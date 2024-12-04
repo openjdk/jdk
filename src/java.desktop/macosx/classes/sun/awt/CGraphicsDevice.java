@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.awt.AWTPermission;
 import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -61,8 +60,6 @@ public final class CGraphicsDevice extends GraphicsDevice
     private static boolean metalPipelineEnabled = false;
     private static boolean oglPipelineEnabled = false;
 
-
-    private static AWTPermission fullScreenExclusivePermission;
 
     // Save/restore DisplayMode for the Full Screen mode
     private DisplayMode originalMode;
@@ -260,23 +257,6 @@ public final class CGraphicsDevice extends GraphicsDevice
      */
     @Override
     public boolean isFullScreenSupported() {
-        return isFSExclusiveModeAllowed();
-    }
-
-    private static boolean isFSExclusiveModeAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (fullScreenExclusivePermission == null) {
-                fullScreenExclusivePermission =
-                    new AWTPermission("fullScreenExclusive");
-            }
-            try {
-                security.checkPermission(fullScreenExclusivePermission);
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
         return true;
     }
 

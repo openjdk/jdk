@@ -441,11 +441,6 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #if INCLUDE_CDS
   ClassListWriter::write_resolved_constants();
-
-  // Initiate Archive Workers shutdown. These workers are likely already
-  // shut down, but we need to make sure they really are. Otherwise, workers
-  // would fail hard on broken semaphores.
-  ArchiveWorkers::workers()->shutdown();
 #endif
 
   // Hang forever on exit if we're reporting an error.

@@ -276,6 +276,13 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jdkroot[], jint so_jdkroot,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
+    if (JLI_IsStaticallyLinked()) {
+        // With static builds, all JDK and VM natives are statically linked
+        // with the launcher executable. No need to manipulate LD_LIBRARY_PATH
+        // by adding <jdk_path>/lib and etc. The 'jrepath', 'jvmpath' and
+        // 'jvmcfg' are not used by the caller for static builds. Simply return.
+        return;
+    }
 
     char * jvmtype = NULL;
     char **argv = *pargv;
@@ -318,6 +325,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
         JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
         exit(4);
     }
+
     /*
      * we seem to have everything we need, so without further ado
      * we return back, otherwise proceed to set the environment.
@@ -519,11 +527,15 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
-    libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
-    if (libjvm == NULL) {
-        JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
-        JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
-        return JNI_FALSE;
+    if (JLI_IsStaticallyLinked()) {
+        libjvm = dlopen(NULL, RTLD_NOW + RTLD_GLOBAL);
+    } else {
+        libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
+        if (libjvm == NULL) {
+            JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
+            JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
+            return JNI_FALSE;
+        }
     }
 
     ifn->CreateJavaVM = (CreateJavaVM_t)
@@ -600,22 +612,26 @@ void* SplashProcAddress(const char* name) {
         char jdkRoot[MAXPATHLEN];
         char splashPath[MAXPATHLEN];
 
-        if (!GetJDKInstallRoot(jdkRoot, sizeof(jdkRoot), JNI_FALSE)) {
-            JLI_ReportErrorMessage(LAUNCHER_ERROR1);
-            return NULL;
-        }
-        ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s",
+        if (JLI_IsStaticallyLinked()) {
+            hSplashLib = dlopen(NULL, RTLD_LAZY);
+        } else {
+            if (!GetJDKInstallRoot(jdkRoot, sizeof(jdkRoot), JNI_FALSE)) {
+                JLI_ReportErrorMessage(LAUNCHER_ERROR1);
+                return NULL;
+            }
+            ret = JLI_Snprintf(splashPath, sizeof(splashPath), "%s/lib/%s",
                            jdkRoot, SPLASHSCREEN_SO);
 
-        if (ret >= (int) sizeof(splashPath)) {
-            JLI_ReportErrorMessage(LAUNCHER_ERROR3);
-            return NULL;
+            if (ret >= (int) sizeof(splashPath)) {
+                JLI_ReportErrorMessage(LAUNCHER_ERROR3);
+                return NULL;
+            }
+            if (ret < 0) {
+                JLI_ReportErrorMessage(LAUNCHER_ERROR5);
+                return NULL;
+            }
+            hSplashLib = dlopen(splashPath, RTLD_LAZY | RTLD_GLOBAL);
         }
-        if (ret < 0) {
-            JLI_ReportErrorMessage(LAUNCHER_ERROR5);
-            return NULL;
-        }
-        hSplashLib = dlopen(splashPath, RTLD_LAZY | RTLD_GLOBAL);
         JLI_TraceLauncher("Info: loaded %s\n", splashPath);
     }
     if (hSplashLib) {

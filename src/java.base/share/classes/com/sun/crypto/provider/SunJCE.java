@@ -76,6 +76,8 @@ import static sun.security.util.SecurityProviderConstants.*;
  *
  * - DHKEM
  *
+ * - ML-KEM
+ *
  */
 
 public final class SunJCE extends Provider {
@@ -85,7 +87,7 @@ public final class SunJCE extends Provider {
 
     private static final String info = "SunJCE Provider " +
     "(implements RSA, DES, Triple DES, AES, Blowfish, ARCFOUR, RC2, PBE, "
-    + "Diffie-Hellman, HMAC, ChaCha20)";
+    + "Diffie-Hellman, HMAC, ChaCha20, DHKEM, and ML-KEM)";
 
     /* Are we debugging? -- for developers */
     static final boolean debug = false;
@@ -751,6 +753,23 @@ public final class SunJCE extends Provider {
         attrs.put("SupportedKeyClasses", "java.security.interfaces.ECKey" +
                 "|java.security.interfaces.XECKey");
         ps("KEM", "DHKEM", "com.sun.crypto.provider.DHKEM", null, attrs);
+
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        ps("KEM", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Impls$K", null, attrs);
+        psA("KEM", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Impls$K2", attrs);
+        psA("KEM", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Impls$K3", attrs);
+        psA("KEM", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$K5",attrs);
+
+        ps("KeyPairGenerator", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Impls$KPG", null, attrs);
+        psA("KeyPairGenerator", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Impls$KPG2", attrs);
+        psA("KeyPairGenerator", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Impls$KPG3", attrs);
+        psA("KeyPairGenerator", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$KPG5", attrs);
+
+        ps("KeyFactory", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Impls$KF", null, attrs);
+        psA("KeyFactory", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Impls$KF2", attrs);
+        psA("KeyFactory", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Impls$KF3", attrs);
+        psA("KeyFactory", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Impls$KF5", attrs);
 
         /*
          * SSL/TLS mechanisms

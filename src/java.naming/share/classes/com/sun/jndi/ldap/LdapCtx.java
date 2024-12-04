@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,6 @@ import javax.naming.ldap.*;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Locale;
@@ -220,7 +218,7 @@ public final class LdapCtx extends ComponentDirContext
 
     // System property value
     private static final String ALLOWED_MECHS_SP_VALUE =
-            getMechsAllowedToSendCredentials();
+            System.getProperty(ALLOWED_MECHS_SP);
 
     // Set of authentication mechanisms allowed by the system property
     private static final Set<String> MECHS_ALLOWED_BY_SP =
@@ -2704,13 +2702,6 @@ public final class LdapCtx extends ComponentDirContext
 
         sharable = false;  // can't share with existing contexts
         ensureOpen();      // open or reauthenticated
-    }
-
-    // Load 'mechsAllowedToSendCredentials' system property value
-    @SuppressWarnings("removal")
-    private static String getMechsAllowedToSendCredentials() {
-        PrivilegedAction<String> pa = () -> System.getProperty(ALLOWED_MECHS_SP);
-        return System.getSecurityManager() == null ? pa.run() : AccessController.doPrivileged(pa);
     }
 
     // Get set of allowed authentication mechanism names from the property value

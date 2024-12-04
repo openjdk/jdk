@@ -3654,33 +3654,35 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     Arguments::print_on(&st);
   }
 
+  return JNI_OK;
+}
+
+void Arguments::set_compact_headers_flags() {
 #ifdef _LP64
   if (UseCompactObjectHeaders && FLAG_IS_CMDLINE(UseCompressedClassPointers) && !UseCompressedClassPointers) {
     warning("Compact object headers require compressed class pointers. Disabling compact object headers.");
     FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-  }
-  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
-    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
   if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
     // If UseCompactObjectHeaders is on the command line, turn on UseObjectMonitorTable.
     if (FLAG_IS_CMDLINE(UseCompactObjectHeaders)) {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
 
-    // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
+      // If UseObjectMonitorTable is on the command line, turn off UseCompactObjectHeaders.
     } else if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
       FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
-    // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
+      // If neither on the command line, the defaults are incompatible, but turn on UseObjectMonitorTable.
     } else {
       FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
     }
+  }
+  if (UseCompactObjectHeaders && LockingMode != LM_LIGHTWEIGHT) {
+    FLAG_SET_DEFAULT(LockingMode, LM_LIGHTWEIGHT);
   }
   if (UseCompactObjectHeaders && !UseCompressedClassPointers) {
     FLAG_SET_DEFAULT(UseCompressedClassPointers, true);
   }
 #endif
-
-  return JNI_OK;
 }
 
 jint Arguments::apply_ergo() {
@@ -3692,6 +3694,8 @@ jint Arguments::apply_ergo() {
   set_heap_size();
 
   GCConfig::arguments()->initialize();
+
+  set_compact_headers_flags();
 
   if (UseCompressedClassPointers) {
     CompressedKlassPointers::pre_initialize();

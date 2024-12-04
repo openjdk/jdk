@@ -315,7 +315,7 @@ static GrowableArrayCHeap<OopHandle, mtClassShared>* _extra_interned_strings = n
 // Extra Symbols to be added to the archive
 static GrowableArrayCHeap<Symbol*, mtClassShared>* _extra_symbols = nullptr;
 // Methods managed by SystemDictionary::find_method_handle_intrinsic() to be added to the archive
-static GrowableArray<Method*>* _pending_method_handle_intrinsics = NULL;
+static GrowableArray<Method*>* _pending_method_handle_intrinsics = nullptr;
 
 void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename) {
   _extra_interned_strings = new GrowableArrayCHeap<OopHandle, mtClassShared>(10000);
@@ -1014,9 +1014,7 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects(GrowableArray<Klass*>* k
     Klass* k = klasses->at(i);
     if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (ik->is_linked()) {
-        ik->constants()->add_dumped_interned_strings();
-      }
+      ik->constants()->add_dumped_interned_strings();
     }
   }
   if (_extra_interned_strings != nullptr) {
@@ -1087,9 +1085,6 @@ void MetaspaceShared::writing_error(const char* message) {
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   assert(CDSConfig::is_using_archive(), "Must be called when UseSharedSpaces is enabled");
   MapArchiveResult result = MAP_ARCHIVE_OTHER_FAILURE;
-
-  // We are about to open the archives. Initialize workers now.
-  ArchiveWorkers::workers()->initialize();
 
   FileMapInfo* static_mapinfo = open_static_archive();
   FileMapInfo* dynamic_mapinfo = nullptr;
@@ -1681,9 +1676,6 @@ void MetaspaceShared::initialize_shared_spaces() {
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
-
-  // Archive was fully read. Workers are no longer needed.
-  ArchiveWorkers::workers()->shutdown();
 
   LogStreamHandle(Info, cds) lsh;
   if (lsh.is_enabled()) {

@@ -84,7 +84,8 @@ public class DowncallLinker {
             leafType,
             callingSequence.needsReturnBuffer(),
             callingSequence.capturedStateMask(),
-            callingSequence.needsTransition()
+            callingSequence.needsTransition(),
+            callingSequence.usingAddressPairs()
         );
         MethodHandle handle = JLIA.nativeMethodHandle(nep);
 

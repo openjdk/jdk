@@ -87,7 +87,7 @@ final class TestFill {
     @MethodSource("sizes")
     void testReadOnly(int len) {
         try (var arena = Arena.ofConfined()) {
-            var segment = arena.allocate(10).asReadOnly();
+            var segment = arena.allocate(len).asReadOnly();
             assertThrows(IllegalArgumentException.class, () -> segment.fill(VALUE));
         }
     }
@@ -96,7 +96,7 @@ final class TestFill {
     @MethodSource("sizes")
     void testConfinement(int len) {
         try (var arena = Arena.ofConfined()) {
-            var segment = arena.allocate(10);
+            var segment = arena.allocate(len);
             AtomicReference<RuntimeException> ex = new AtomicReference<>();
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
