@@ -42,6 +42,7 @@ import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
 
 /*
@@ -312,6 +313,14 @@ public final class BasicTest {
     @Parameter("java.desktop,jdk.jartool")
     @Parameter({ "java.desktop", "jdk.jartool" })
     public void testAddModules(String... addModulesArg) {
+        if (addModulesArg.length == 1 && addModulesArg[0].equals("ALL-MODULE-PATH")) {
+            Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+            boolean noJmods = Files.notExists(jmods);
+            if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
+               System.out.println("ALL-MODULE-PATH test skipped for linkable run-time image");
+               return;
+            }
+        }
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage("goodbye.jar:com.other/com.other.Hello")
                 .ignoreDefaultRuntime(true); // because of --add-modules

@@ -111,7 +111,7 @@ public class RuntimePackageTest {
                 .dumpOutput()
                 .addArguments(
                         "--output", runtimeImageDir.toString(),
-                        "--add-modules", "ALL-MODULE-PATH",
+                        "--add-modules", "java.desktop",
                         "--strip-debug",
                         "--no-header-files",
                         "--no-man-pages")
