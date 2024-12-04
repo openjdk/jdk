@@ -25,10 +25,10 @@
 package java.lang.classfile.components.snippets;
 
 import java.lang.classfile.*;
-import java.lang.classfile.components.ClassPrinter;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.classfile.components.CodeLocalsShifter;
-import java.lang.classfile.components.CodeRelabeler;
+import jdk.internal.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassRemapper;
+import jdk.internal.classfile.components.CodeLocalsShifter;
+import jdk.internal.classfile.components.CodeRelabeler;
 import java.lang.classfile.instruction.InvokeInstruction;
 import java.lang.classfile.instruction.ReturnInstruction;
 import java.lang.classfile.instruction.StoreInstruction;
