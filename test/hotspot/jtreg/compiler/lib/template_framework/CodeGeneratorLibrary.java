@@ -80,11 +80,19 @@ public class CodeGeneratorLibrary {
             // end   $split
             """
         ));
+        codeGenerators.put("prefix", new Template(
+            """
+            // start $prefix
+            // ... prefix code ...
+                #{:code}
+            // end   $prefix
+            """
+        ));
 
         // Selector for code blocks.
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("empty");
-        selectorForCode.add("empty", 0.2f); // TODO rm
-        selectorForCode.add("split", 100);
+        selectorForCode.add("split",  100);
+        selectorForCode.add("prefix", 100);
         codeGenerators.put("code", selectorForCode);
 
         return new CodeGeneratorLibrary(null, codeGenerators);
