@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.components;
+package jdk.internal.classfile.components;
 
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.CodeTransform;
@@ -37,8 +37,6 @@ import jdk.internal.classfile.impl.CodeLocalsShifterImpl;
  * newly allocated positions to avoid conflicts during code injection.
  * Locals pointing to the receiver or to method arguments slots are never shifted.
  * All locals pointing beyond the method arguments are re-indexed in order of appearance.
- *
- * @since 24
  */
 public sealed interface CodeLocalsShifter extends CodeTransform permits CodeLocalsShifterImpl {
 

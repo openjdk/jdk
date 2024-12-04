@@ -657,7 +657,7 @@ void MacroAssembler::add2reg(Register r1, int64_t imm, Register r2) {
         z_aghik(r1, r2, imm);
         return;
       }
-      z_lgr(r1, r2);
+      lgr_if_needed(r1, r2);
       z_aghi(r1, imm);
       return;
     }
@@ -679,6 +679,37 @@ void MacroAssembler::add2reg(Register r1, int64_t imm, Register r2) {
   // Can handle it (all possible values) with long immediates.
   lgr_if_needed(r1, r2);
   z_agfi(r1, imm);
+}
+
+void MacroAssembler::add2reg_32(Register r1, int64_t imm, Register r2) {
+  assert(Immediate::is_simm32(imm), "probably an implicit conversion went wrong");
+
+  if (r2 == noreg) { r2 = r1; }
+
+  // Handle special case imm == 0.
+  if (imm == 0) {
+    lr_if_needed(r1, r2);
+    // Nothing else to do.
+    return;
+  }
+
+  if (Immediate::is_simm16(imm)) {
+    if (r1 == r2){
+      z_ahi(r1, imm);
+      return;
+    }
+    if (VM_Version::has_DistinctOpnds()) {
+      z_ahik(r1, r2, imm);
+      return;
+    }
+    lr_if_needed(r1, r2);
+    z_ahi(r1, imm);
+    return;
+  }
+
+  // imm is simm32
+  lr_if_needed(r1, r2);
+  z_afi(r1, imm);
 }
 
 // Generic operation r := b + x + d
