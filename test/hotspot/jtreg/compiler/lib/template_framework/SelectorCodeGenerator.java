@@ -24,11 +24,17 @@
 package compiler.lib.template_framework;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
 
 /**
  * TODO desc
  */
 public final class SelectorCodeGenerator implements CodeGenerator {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     private HashMap<String,Float> choiceWeights;
     private String defaultGeneratorName;
 
@@ -38,15 +44,60 @@ public final class SelectorCodeGenerator implements CodeGenerator {
     }
 
     public void add(String name, float weight) {
-        if (!(0 < weight && weight < 10_000)) {
+        if (!(0.1 < weight && weight < 10_000)) {
             throw new TemplateFrameworkException("Unreasonable weight " + weight + " for " + name);
 	}
         if (choiceWeights.containsKey(name)) {
-            throw new TemplateFrameworkException("Unreasonable weight " + weight + " for " + name);
+            throw new TemplateFrameworkException("Already added before: " + name);
 	}
         choiceWeights.put(name, weight);
     }
 
+    private String choose(Scope scope) {
+        // TODO maybe cache the generators, so we can more quickly iterate?
+        // Total weight of allowed choices
+        double total = 0;
+        for (Map.Entry<String,Float> entry : choiceWeights.entrySet()) {
+            String name = entry.getKey();
+            float weight = entry.getValue().floatValue();
+            CodeGenerator codeGenerator = scope.library().find(name);
+            if (codeGenerator == null) {
+                throw new TemplateFrameworkException("CodeGenerator not found in library: " + name);
+            }
+            // TODO check fuel
+            total += weight;
+        }
+
+        if (total == 0) {
+            return defaultGeneratorName;
+        }
+
+        double r = RANDOM.nextDouble() * total;
+
+        double total2 = 0;
+        for (Map.Entry<String,Float> entry : choiceWeights.entrySet()) {
+            String name = entry.getKey();
+            float weight = entry.getValue().floatValue();
+            CodeGenerator codeGenerator = scope.library().find(name);
+            // TODO check fuel
+            total2 += weight;
+            if (r <= total2) {
+                return name;
+            }
+        }
+        throw new TemplateFrameworkException("Failed to select total=" + total + ", r=" + r);
+    }
+
     public void instantiate(Scope scope, Parameters parameters) {
+        // Sample a generator.
+	String generatorName = choose(scope);
+
+        CodeGenerator generator = scope.library().find(generatorName);
+        if (generator == null) {
+            throw new TemplateFrameworkException("Template generator not found: " + generatorName);
+        }
+
+        // Dispatch via same scope and parameters.
+        generator.instantiate(scope, parameters);
     }
 } 

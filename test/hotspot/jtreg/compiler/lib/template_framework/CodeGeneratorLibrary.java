@@ -42,7 +42,7 @@ public class CodeGeneratorLibrary {
                 }
             }
         }
-	this.library = new HashMap<String,CodeGenerator>(library);
+        this.library = new HashMap<String,CodeGenerator>(library);
     }
 
     /**
@@ -61,9 +61,32 @@ public class CodeGeneratorLibrary {
 
     public static CodeGeneratorLibrary standard() {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
-        // TODO implement the cases properly!
+
+        // Constants.
         codeGenerators.put("int_con", (Scope scope, Parameters parameters) -> { scope.stream.addCode("123"); });
-        codeGenerators.put("code", new SelectorCodeGenerator("int_code"));
+
+        // Code blocks.
+        codeGenerators.put("empty", new Template(
+            """
+            // $empty
+            """
+        ));
+        codeGenerators.put("split", new Template(
+            """
+            // start $split
+                #{:code}
+            // mid   $split
+                #{:code}
+            // end   $split
+            """
+        ));
+
+        // Selector for code blocks.
+        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("empty");
+        selectorForCode.add("empty", 1); // TODO rm
+        selectorForCode.add("split", 1);
+        codeGenerators.put("code", selectorForCode);
+
         return new CodeGeneratorLibrary(null, codeGenerators);
     }
 }
