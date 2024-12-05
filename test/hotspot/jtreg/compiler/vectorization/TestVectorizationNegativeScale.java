@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8332827
- * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs 
+ * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
  *
  * @library /test/lib /
  * @requires vm.compiler2.enabled

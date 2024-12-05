@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8332827
- * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs 
+ * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestRangeCheckCastIISplitThruPhi
  *
@@ -71,14 +71,8 @@ public class TestRangeCheckCastIISplitThruPhi {
         }
         int stride = k / 2;
         do {
-            // i in 3, 2, 1, 0
-            // j in 4, 3, 2, 1 -- type is [0..4]
-            // cast in [1..100] -- cast in [1..4]
-            // cast in [2..3]
             synchronized (new Object()) {
             }
-            // j - 1 in [0..99] -> j in [1..100]
-            // j + 1 in [0..max] -> j in [-1...max-1]
             array2[j-1] = 42;
             array[j+1] = 42;
             j = i;
