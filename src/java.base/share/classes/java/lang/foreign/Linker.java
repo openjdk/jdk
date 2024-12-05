@@ -852,8 +852,6 @@ public sealed interface Linker permits AbstractLinker {
          *     // use errno
          * }
          * }
-         * <p>
-         * This linker option can not be combined with {@link #critical}.
          *
          * @param capturedState the names of the values to save
          * @throws IllegalArgumentException if at least one of the provided

@@ -35,7 +35,7 @@ import jdk.jfr.internal.LogTag;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 
 /**
  * Helper class when working with bytecode.

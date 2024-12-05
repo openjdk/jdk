@@ -46,8 +46,8 @@ public class Basic {
     };
 
     protected void finalize() {
-        Basic.finalized = true;
         System.err.println("Finalized " + this);
+        Basic.finalized = true;
     }
 
     public static class Sub { };

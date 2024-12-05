@@ -3428,7 +3428,7 @@ public class JavacParser implements Parser {
                 case GTGT: typeDepth--;
                 case GT:
                     typeDepth--;
-                    if (typeDepth == 0) {
+                    if (typeDepth == 0 && !peekToken(lookahead, DOT)) {
                          return peekToken(lookahead, LAX_IDENTIFIER) ||
                                 peekToken(lookahead, tk -> tk == LPAREN) ? PatternResult.PATTERN
                                                                          : PatternResult.EXPRESSION;
@@ -4208,15 +4208,15 @@ public class JavacParser implements Parser {
                 while (true) {
                     switch (token.kind) {
                         case IDENTIFIER:
-                            if (token.name() == names.transitive && !isTransitive) {
+                            if (token.name() == names.transitive) {
                                 Token t1 = S.token(1);
                                 if (t1.kind == SEMI || t1.kind == DOT) {
                                     break loop;
                                 }
+                                if (isTransitive) {
+                                    log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.RepeatedModifier);
+                                }
                                 isTransitive = true;
-                                break;
-                            } else if (token.name() == names.transitive && isTransitive) {
-                                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.RepeatedModifier);
                                 break;
                             } else {
                                 break loop;
