@@ -37,6 +37,12 @@ import java.util.regex.Pattern;
  *   - Integrate with IR Framework
  *   - Wrap whole class in Template
  * - Easy generation of programmatic CodeGenerator
+ *   - improve API for recursive calls, parameter checks/load, etc
+ *
+ * Tests:
+ * - List of ops, test with any inputs
+ * - Example test / library that generates random classes, generates objects, loads / stores fields
+ *   - Good for: Valhalla, escape analysis, maybe type system, maybe method inlining etc.
  *
  */
 public final class Template implements CodeGenerator {
