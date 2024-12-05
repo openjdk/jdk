@@ -53,7 +53,21 @@ public class Scope {
         }
 
         public void add(String name, String type) {
-            // TODO
+            // TODO verify that it does not exist yet
+            // Fetch list of variables - if non-existant create a new one.
+            ArrayList<String> variablesWithType = variables.get(type);
+            if (variablesWithType == null) {
+                variablesWithType = new ArrayList<String>();
+                variables.put(type, variablesWithType);
+            }
+            variablesWithType.add(name);
+
+            // Increment count.
+            Integer count = totalVariables.get(type);
+            if (count == null) {
+                count = 0;
+            }
+            totalVariables.put(type, count + 1);
         }
     }
 
@@ -75,6 +89,13 @@ public class Scope {
 
     public void close() {
         stream.close();
+    }
+
+    public void addVariable(String name, String type, boolean mutable) {
+        allVariables.add(name, type);
+        if (mutable) {
+            mutableVariables.add(name, type);
+        }
     }
 
     public String sampleVariable(String type, boolean mutable) {
