@@ -47,7 +47,7 @@
 static const int MAX_REGIONS_RETURNED = 1000000;
 
 class MappingInfo {
-  proc_regioninfo rinfo;
+  proc_regioninfo _rinfo;
 public:
   const char* _address;
   size_t _size;
@@ -69,12 +69,12 @@ public:
 
   bool canCombine(const proc_regionwithpathinfo& mem_info) {
     const proc_regioninfo& n = mem_info.prp_prinfo;
-    bool cc = rinfo.pri_size == 128 * M
-              && n.pri_address == (rinfo.pri_address + _size)
-              && n.pri_protection == rinfo.pri_protection
-              && n.pri_max_protection == rinfo.pri_max_protection
-              && n.pri_user_tag == rinfo.pri_user_tag
-              && n.pri_share_mode == rinfo.pri_share_mode
+    bool cc = _rinfo.pri_size == 128 * M
+              && n.pri_address == (_rinfo.pri_address + _size)
+              && n.pri_protection == _rinfo.pri_protection
+              && n.pri_max_protection == _rinfo.pri_max_protection
+              && n.pri_user_tag == _rinfo.pri_user_tag
+              && n.pri_share_mode == _rinfo.pri_share_mode
               && n.pri_offset == 0;
     return cc;
   }
@@ -82,14 +82,14 @@ public:
   void combineWithFollowing(const proc_regionwithpathinfo& mem_info) {
     _size += mem_info.prp_prinfo.pri_size;
   }
-  
+
   void process(const proc_regionwithpathinfo& mem_info) {
     reset();
 
-    rinfo = mem_info.prp_prinfo;
+    _rinfo = mem_info.prp_prinfo;
 
-    _address = (const char*) rinfo.pri_address;
-    _size = rinfo.pri_size;
+    _address = (const char*) _rinfo.pri_address;
+    _size = _rinfo.pri_size;
 
     if (mem_info.prp_vip.vip_path[0] != '\0') {
       _file_name.print_raw(mem_info.prp_vip.vip_path);
@@ -98,12 +98,12 @@ public:
 
     char prot[4];
     char maxprot[4];
-    rwbits(rinfo.pri_protection, prot);
-    rwbits(rinfo.pri_max_protection, maxprot);
+    rwbits(_rinfo.pri_protection, prot);
+    rwbits(_rinfo.pri_max_protection, maxprot);
     _protect_buffer.print("%s/%s", prot, maxprot);
 
-    get_share_mode(_share_buffer, rinfo);
-    _tag_text = tagToStr(rinfo.pri_user_tag);
+    get_share_mode(_share_buffer, _rinfo);
+    _tag_text = tagToStr(_rinfo.pri_user_tag);
   }
 
   static void get_share_mode(outputStream& out, const proc_regioninfo& rinfo) {
