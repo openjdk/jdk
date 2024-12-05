@@ -97,49 +97,49 @@
 
     <g id="the">
         <rect x="3.5" y="119.5" width="20" height="20"/>
-        <text x="13" y="129">T</text>
+        <text x="13.5" y="129.5">T</text>
         <rect x="27.5" y="119.5" width="20" height="20"/>
-        <text x="37" y="129">h</text>
+        <text x="37.5" y="129.5">h</text>
         <rect x="51.5" y="119.5" width="20" height="20"/>
-        <text x="61" y="129">e</text>
+        <text x="61.5" y="129.5">e</text>
         <rect x="75.5" y="119.5" width="20" height="20"/>
-        <text x="85" y="129"> </text>
+        <text x="85.5" y="129.5"> </text>
     </g>
 
     <g id="quick">
         <rect x="99.5" y="119.5" width="20" height="20"/>
-        <text x="109" y="129">q</text>
+        <text x="109.5" y="129.5">q</text>
         <rect x="123.5" y="119.5" width="20" height="20"/>
-        <text x="133" y="129">u</text>
+        <text x="133.5" y="129.5">u</text>
         <rect x="147.5" y="119.5" width="20" height="20"/>
-        <text x="157" y="129">i</text>
+        <text x="157.5" y="129.5">i</text>
         <rect x="171.5" y="119.5" width="20" height="20"/>
-        <text x="181" y="129">c</text>
+        <text x="181.5" y="129.5">c</text>
         <rect x="195.5" y="119.5" width="20" height="20"/>
-        <text x="205" y="129">k</text>
+        <text x="205.5" y="129.5">k</text>
         <rect x="219.5" y="119.5" width="20" height="20"/>
-        <text x="229" y="129"> </text>
+        <text x="229.5" y="129.5"> </text>
     </g>
 
     <g id="brownFox">
         <rect x="243.5" y="119.5" width="20" height="20"/>
-        <text x="253" y="129">b</text>
+        <text x="253.5" y="129.5">b</text>
         <rect x="267.5" y="119.5" width="20" height="20"/>
-        <text x="277" y="129">r</text>
+        <text x="277.5" y="129.5">r</text>
         <rect x="291.5" y="119.5" width="20" height="20"/>
-        <text x="301" y="129">o</text>
+        <text x="301.5" y="129.5">o</text>
         <rect x="315.5" y="119.5" width="20" height="20"/>
-        <text x="325" y="129">w</text>
+        <text x="325.5" y="129.5">w</text>
         <rect x="339.5" y="119.5" width="20" height="20"/>
-        <text x="349" y="129">n</text>
+        <text x="349.5" y="129.5">n</text>
         <rect x="363.5" y="119.5" width="20" height="20"/>
-        <text x="373" y="129"> </text>
+        <text x="373.5" y="129.5"> </text>
         <rect x="387.5" y="119.5" width="20" height="20"/>
-        <text x="397" y="129">f</text>
+        <text x="397.5" y="129.5">f</text>
         <rect x="411.5" y="119.5" width="20" height="20"/>
-        <text x="421" y="129">o</text>
+        <text x="421.5" y="129.5">o</text>
         <rect x="435.5" y="119.5" width="20" height="20"/>
-        <text x="445" y="129">x</text>
+        <text x="445.5" y="129.5">x</text>
     </g>
 
     <path d="M  97.5,71 L 241.5,114" marker-end="url(#arrow)"/>

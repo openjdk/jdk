@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.components;
+package jdk.internal.classfile.components;
 
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
@@ -53,8 +53,6 @@ import static java.util.Objects.requireNonNull;
  * <p>
  * Arrays of reference types are always decomposed, mapped as the base reference
  * types and composed back to arrays.
- *
- * @since 24
  */
 public sealed interface ClassRemapper extends ClassTransform permits ClassRemapperImpl {
 

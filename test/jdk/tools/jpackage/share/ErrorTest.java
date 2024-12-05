@@ -31,7 +31,10 @@ import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.RunnablePackageTest;
 import jdk.jpackage.test.TKit;
+import static jdk.internal.util.OperatingSystem.WINDOWS;
 
 /*
  * @test
@@ -113,14 +116,9 @@ public final class ErrorTest {
     public static void test(String javaAppDesc, String[] jpackageArgs,
             String[] removeArgs, CannedFormattedString... expectedErrors) {
         // Init default jpackage test command line.
-        var cmd = JPackageCommand.helloAppImage(javaAppDesc)
-                // Disable default logic adding `--verbose` option
-                // to jpackage command line.
-                // It will affect jpackage error messages if the command line is malformed.
-                .ignoreDefaultVerbose(true)
-                // Ignore external runtime as it will interfer
-                // with jpackage arguments in this test.
-                .ignoreDefaultRuntime(true);
+        var cmd = JPackageCommand.helloAppImage(javaAppDesc);
+
+        defaultInit(cmd, expectedErrors);
 
         // Add arguments if requested.
         Optional.ofNullable(jpackageArgs).ifPresent(cmd::addArguments);
@@ -129,13 +127,42 @@ public final class ErrorTest {
         Optional.ofNullable(removeArgs).map(List::of).ifPresent(
                 args -> args.forEach(cmd::removeArgumentWithValue));
 
+        cmd.execute(1);
+    }
+
+    @Test(ifOS = WINDOWS)
+    public static void testWinService() {
+
+        CannedFormattedString[] expectedErrors = new CannedFormattedString[] {
+            JPackageStringBundle.MAIN.cannedFormattedString("error.missing-service-installer"),
+            JPackageStringBundle.MAIN.cannedFormattedString("error.missing-service-installer.advice")
+        };
+
+        new PackageTest().configureHelloApp()
+                .addInitializer(cmd -> {
+                    defaultInit(cmd, expectedErrors);
+                    cmd.addArgument("--launcher-as-service");
+                })
+                .setExpectedExitCode(1)
+                .run(RunnablePackageTest.Action.CREATE);
+    }
+
+    private static void defaultInit(JPackageCommand cmd, CannedFormattedString... expectedErrors) {
+
+        // Disable default logic adding `--verbose` option
+        // to jpackage command line.
+        // It will affect jpackage error messages if the command line is malformed.
+        cmd.ignoreDefaultVerbose(true);
+
+        // Ignore external runtime as it will interfer
+        // with jpackage arguments in this test.
+        cmd.ignoreDefaultRuntime(true);
+
         // Configure jpackage output verifier to look up the list of provided
-        // errors in the order they specified.
+        // errors in the order they are specified.
         cmd.validateOutput(Stream.of(expectedErrors)
                 .map(CannedFormattedString::getValue)
                 .map(TKit::assertTextStream)
                 .reduce(TKit.TextStreamVerifier::andThen).get());
-
-        cmd.execute(1);
     }
 }

@@ -200,7 +200,7 @@ class VMManagementImpl implements VMManagement {
     public native int getAvailableProcessors();
 
     // Compilation Subsystem
-    public String   getCompilerName() {
+    public String getCompilerName() {
         return System.getProperty("sun.management.compiler");
     }
     public native long getTotalCompileTime();
