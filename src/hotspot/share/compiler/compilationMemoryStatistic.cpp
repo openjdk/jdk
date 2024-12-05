@@ -105,13 +105,28 @@ void ArenaState::update_c2_node_count() {
 }
 
 #ifdef COMPILER2
+
+CountersPerC2Phase::CountersPerC2Phase() {
+  reset();
+}
+
+void CountersPerC2Phase::reset() {
+  memset(_v, 0, sizeof(_v));
+}
+
+void CountersPerC2Phase::print_on(outputStream* st) {
+  for (int phaseid = 0; phaseid < (int)Phase::PhaseTraceId::max_phase_timers; phaseid++) {
+    // todo
+  }
+}
+
 // Mark the start and end of a phase.
 void ArenaState::on_c2_phase_start(Phase::PhaseTraceId id) {
-
+  _phase_id_stack.push(id);
 }
 
 void ArenaState::on_c2_phase_end() {
-
+  _phase_id_stack.pop();
 }
 #endif // COMPILER2
 
@@ -139,7 +154,7 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp
   chunkstamp_t cs;
   cs.tracked = 1;
   cs.arena_tag = tag;
-  cs.phase_id = 0; // todo
+  cs.phase_id = (uint16_t)_phase_id_stack.top();
   *stamp = cs.raw;
 
   return rc;

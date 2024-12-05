@@ -41,6 +41,42 @@ inline void CompilationMemoryStatistic::on_c2_phase_end() {
     on_c2_phase_end_0();
   }
 }
+
+PhaseIdStack::PhaseIdStack() : _depth(0) {
+  // Let Stack never be empty to also catch allocations that happen outside a TracePhase scope
+  push(Phase::PhaseTraceId::_t_none);
+}
+
+void PhaseIdStack::push(Phase::PhaseTraceId id) {
+  assert(_depth < max_depth, "Sanity");
+  _stack[_depth++] = id;
+}
+
+void PhaseIdStack::pop() {
+  assert(_depth > 1, "Sanity");
+  _depth --;
+}
+
+Phase::PhaseTraceId PhaseIdStack::`top() const {
+  assert(_depth > 0, "Sanity");
+  return _stack[_depth - 1];
+}
+
+void CountersPerC2Phase::add(size_t size, int arena_tag, Phase::PhaseTraceId id) {
+  assert(arena_tag >= 0 && arena_tag < Arena::tag_count(), "sanity");
+  int phaseid = (int)id;
+  assert(phaseid >= 0 && phaseid < (int)Phase::PhaseTraceId::max_phase_timers, "sanity");
+  _v[arena_tag][phaseid] += size;
+}
+
+void CountersPerC2Phase::sub(size_t size, int arena_tag, Phase::PhaseTraceId id) {
+  assert(arena_tag >= 0 && arena_tag < Arena::tag_count(), "sanity");
+  int phaseid = (int)id;
+  assert(phaseid >= 0 && phaseid < (int)Phase::PhaseTraceId::max_phase_timers, "sanity");
+  assert(_v[arena_tag][phaseid] >= size, "overflow");
+  _v[arena_tag][phaseid] -= size;
+}
+
 #endif // COMPILER2
 
 #endif // SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_INLINE_HPP

@@ -69,6 +69,30 @@ public:
   }
 };
 
+#ifdef COMPILER2
+class PhaseIdStack {
+  static constexpr int max_depth = 32;
+  int _depth;
+  Phase::PhaseTraceId _stack[max_depth];
+public:
+  PhaseIdStack();
+  inline void push(Phase::PhaseTraceId id);
+  inline void pop();
+  inline Phase::PhaseTraceId top() const;
+};
+
+// A table containing a counter per arena tag and per phase id
+class CountersPerC2Phase {
+  size_t _v[Arena::tag_count()][Phase::PhaseTraceId::max_phase_timers];
+public:
+  CountersPerC2Phase();
+  void add(size_t size, int arena_tag, Phase::PhaseTraceId id);
+  void sub(size_t size, int arena_tag, Phase::PhaseTraceId id);
+  void reset();
+  void print_on(outputStream* ss);
+};
+#endif // COMPILER2
+
 // Holds all memory statistic data for the current compilation.
 // Attached to the Compiler Thread.
 class ArenaState : public CHeapObj<mtCompiler> {
@@ -92,6 +116,12 @@ class ArenaState : public CHeapObj<mtCompiler> {
 
   // Number of live nodes when total peaked (c2 only)
   unsigned _live_nodes_at_peak;
+
+#ifdef COMPILER2
+  PhaseIdStack _phase_id_stack;
+  CountersPerC2Phase _current_phase_counters;
+  CountersPerC2Phase _peak_phase_counters;
+#endif
 
   void update_c2_node_count();
 

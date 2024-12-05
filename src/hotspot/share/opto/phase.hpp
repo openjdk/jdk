@@ -67,6 +67,7 @@ public:
   };
 
 #define ALL_PHASE_TRACE_IDS(f)                                   \
+    f( _t_none,                      "none")                     \
     f(   _t_parser,                  "parse")                    \
     f(   _t_optimizer,               "optimizer")                \
     f(     _t_escapeAnalysis,        "escapeAnalysis")           \
