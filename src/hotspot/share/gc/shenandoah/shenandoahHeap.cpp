@@ -798,7 +798,11 @@ bool ShenandoahHeap::is_in(const void* p) const {
     }
     // Now check if we point to a live section in active region.
     ShenandoahHeapRegion* r = heap_region_containing(p);
-    return (r->is_active() && p < r->top());
+    if (p >= r->top()) {
+      return false;
+    }
+
+    return (r->is_active() || (r->is_trash() && ShenandoahThreadLocalData::is_gc_state(WEAK_ROOTS)));
   } else {
     return false;
   }
