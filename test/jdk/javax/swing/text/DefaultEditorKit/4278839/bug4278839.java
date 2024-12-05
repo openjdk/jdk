@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,20 @@
  * @key headful
  * @bug 4278839 8233634
  * @summary Incorrect cursor movement between words at the end of line
- * @author Anton Nashatyrev
  * @library ../../../regtesthelpers
  * @build Util
  * @run main bug4278839
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.KeyEvent;
+import java.awt.event.InputEvent;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class bug4278839 {
 
@@ -106,11 +111,8 @@ public class bug4278839 {
     private static void clickMouse() throws Exception {
         final Rectangle result[] = new Rectangle[1];
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                result[0] = new Rectangle(area.getLocationOnScreen(), area.getSize());
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            result[0] = new Rectangle(area.getLocationOnScreen(), area.getSize());
         });
 
         Rectangle rect = result[0];
