@@ -29,7 +29,6 @@
 #include "classfile/compactHashtable.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
-#include "memory/virtualspace.hpp"
 #include "oops/array.hpp"
 #include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"

@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_PSVIRTUALSPACE_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 
 // VirtualSpace for the parallel scavenge collector.

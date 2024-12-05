@@ -25,8 +25,10 @@
 #ifndef SHARE_GC_SHARED_GENERATIONCOUNTERS_HPP
 #define SHARE_GC_SHARED_GENERATIONCOUNTERS_HPP
 
-#include "memory/virtualspace.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/perfDataTypes.hpp"
+
+class VirtualSpace;
 
 // A GenerationCounter is a holder class for performance counters
 // that track a generation

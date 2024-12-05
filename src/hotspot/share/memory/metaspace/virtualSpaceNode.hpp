@@ -32,7 +32,7 @@
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/rootChunkArea.hpp"
-#include "memory/virtualspace.hpp"
+#include "memory/reservedSpace.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

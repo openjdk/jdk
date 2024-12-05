@@ -26,10 +26,10 @@
 #define SHARE_GC_G1_G1PAGEBASEDVIRTUALSPACE_HPP
 
 #include "memory/memRegion.hpp"
-#include "memory/virtualspace.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.hpp"
 
+class ReservedSpace;
 class WorkerThreads;
 
 // Virtual space management helper for a virtual space with an OS page allocation

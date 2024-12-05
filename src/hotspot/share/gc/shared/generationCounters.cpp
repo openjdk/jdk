@@ -26,6 +26,7 @@
 #include "gc/shared/generationCounters.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/virtualspace.hpp"
 #include "runtime/perfData.hpp"
 
 void GenerationCounters::initialize(const char* name, int ordinal, int spaces,

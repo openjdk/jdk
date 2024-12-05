@@ -49,6 +49,7 @@ class ClassFileStream;
 class ClassLoaderData;
 class ClassPathEntry;
 class outputStream;
+class ReservedSpace;
 
 class SharedClassPathEntry : public MetaspaceObj {
   enum {
@@ -479,7 +480,6 @@ public:
   void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
-  ReservedSpace reserve_shared_memory();
 
   // JVM/TI RedefineClasses() support:
   // Remap the shared readonly space to shared readwrite, private.
