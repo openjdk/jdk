@@ -279,7 +279,8 @@ contain whitespace characters. All content between the open quote and the
 first matching close quote are preserved by simply removing the pair of quotes.
 In case a matching quote is not found, the launcher will abort with an error
 message. `@`-files are supported as they are specified in the command line.
-However, as in `@`-files, use of a wildcard is not supported. In order to
+Any wildcard literal `*` in the `JDK_JAVA_OPTIONS` environment variable
+content isn't expanded and is passed as-is to the starting VM. In order to
 mitigate potential misuse of `JDK_JAVA_OPTIONS` behavior, options that specify
 the main class (such as `-jar`) or cause the `java` launcher to exit without
 executing the main class (such as `-h`) are disallowed in the environment
@@ -3073,9 +3074,9 @@ The following items describe the syntax of `java` argument files:
 -   The argument file size must not exceed MAXINT (2,147,483,647) bytes.
 
 -   The launcher doesn't expand wildcards that are present within an argument
-    file. That means, an asterisk  `*` is passed on as-is to the starting VM.
-    For example `*.java` stays `*.java` and is not expanded to `Foo.java`,
-    `Bar.java`, etc. like on some command line shell.
+    file. That means an asterisk (`*`) is passed on as-is to the starting VM.
+    For example `*.java` stays `*.java` and is not expanded to
+    `Foo.java Bar.java ...`, as would happen with some command line shells.
 
 -   Use white space or new line characters to separate arguments included in
     the file.
@@ -3117,8 +3118,6 @@ The following items describe the syntax of `java` argument files:
 
 -   An open quote stops at end-of-line unless `\` is the last character, which
     then joins the next line by removing all leading white space characters.
-
--   Wildcards (\*) aren't allowed in these lists (such as specifying `*.java`).
 
 -   Use of the at sign (`@`) to recursively interpret files isn't supported.
 
