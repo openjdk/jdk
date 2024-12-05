@@ -1076,7 +1076,7 @@ final class TextLine {
                     pos = chunkLimit;
 
                     ++numComponents;
-                    if (numComponents >= tempComponents.length) {
+                    if (numComponents > tempComponents.length) {
                         tempComponents = expandArray(tempComponents);
                     }
 
