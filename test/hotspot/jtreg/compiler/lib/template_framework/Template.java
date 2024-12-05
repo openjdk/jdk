@@ -67,7 +67,14 @@ public final class Template implements CodeGenerator {
     // Match newline + indentation:
     private static final String NEWLINE_AND_INDENTATION_PATTERN = "(\\n *)";
 
-    // Match either variable or replacement or newline.
+    // Scopes:
+    //   #open(class)
+    //   #close(class)
+    //   #open(method)
+    //   #close(method)
+    private static final String SCOPE_PATTERN = "(#\\w+\\(\\w+\\))";
+
+    // Match either variable or replacement or newline or scopes.
     private static final String ALL_PATTERNS = "" +
                                                VARIABLE_PATTERN +
                                                "|" +
@@ -76,6 +83,8 @@ public final class Template implements CodeGenerator {
                                                REPLACEMENT_PATTERN +
                                                "|" +
                                                NEWLINE_AND_INDENTATION_PATTERN +
+                                               "|" +
+                                               SCOPE_PATTERN +
                                                "";
     private static final Pattern PATTERNS = Pattern.compile(ALL_PATTERNS);
 
@@ -335,6 +344,12 @@ public final class Template implements CodeGenerator {
 
             // Default case: Repeat an earlier replacement.
             state.repeatReplacement(name, templated);
+        //} else if (templated.startsWith("#")) {
+        //    // Scope: #open(method)
+        //    String[] parts = templated.substring(1,templated.length()-1).split("(");
+        //    String scopeAction = parts[0];
+        //    String scopeKind = parts[1];
+        //    System.out.println("Scope " + scopeAction + " " + scopeKind);
         } else {
             throw new TemplateFrameworkException("Template pattern not handled: " + templated);
         }
