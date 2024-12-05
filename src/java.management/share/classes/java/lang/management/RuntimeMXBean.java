@@ -25,9 +25,6 @@
 
 package java.lang.management;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 /**
  * The management interface for the runtime system of
  * the Java virtual machine.
@@ -76,8 +73,7 @@ public interface RuntimeMXBean extends PlatformManagedObject {
      */
     @SuppressWarnings("removal")
     public default long getPid() {
-        return AccessController.doPrivileged((PrivilegedAction<Long>)
-                () -> ProcessHandle.current().pid());
+        return ProcessHandle.current().pid();
     }
 
     /**

@@ -1618,6 +1618,9 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      */
     public static InetAddress ofLiteral(String ipAddressLiteral) {
         Objects.requireNonNull(ipAddressLiteral);
+        if (ipAddressLiteral.isEmpty()) {
+            throw IPAddressUtil.invalidIpAddressLiteral(ipAddressLiteral);
+        }
         InetAddress inetAddress;
         try {
             // First try to parse the input as an IPv4 address literal

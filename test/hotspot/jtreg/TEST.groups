@@ -55,11 +55,7 @@ hotspot_runtime_no_cds = \
 
 hotspot_runtime_non_cds_mode = \
   runtime \
-  -runtime/cds/CheckSharingWithDefaultArchive.java \
-  -runtime/cds/appcds/aotClassLinking/BulkLoaderTest.java \
-  -runtime/cds/appcds/dynamicArchive/DynamicSharedSymbols.java \
-  -runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchive.java \
-  -runtime/cds/appcds/jcmd
+  -runtime/cds
 
 hotspot_handshake = \
   runtime/handshake
@@ -397,6 +393,8 @@ tier1_runtime = \
  -runtime/Metaspace/FragmentMetaspace.java \
  -runtime/Metaspace/FragmentMetaspaceSimple.java \
  -runtime/MirrorFrame/Test8003720.java \
+ -runtime/Monitor/StressWrapper_TestRecursiveLocking_36M.java \
+ -runtime/Monitor/TestRecursiveLocking.java \
  -runtime/modules/LoadUnloadModuleStress.java \
  -runtime/modules/ModuleStress/ExportModuleStressTest.java \
  -runtime/modules/ModuleStress/ModuleStressGC.java \
@@ -491,6 +489,7 @@ hotspot_cds_relocation = \
   runtime/modules/PatchModule/PatchModuleClassList.java \
   runtime/NMT \
   serviceability/sa \
+ -serviceability/sa/TestJhsdbJstackPrintVMLocks.java \
  -runtime/cds/DeterministicDump.java
 
 hotspot_cds_verify_shared_spaces = \
@@ -663,6 +662,7 @@ hotspot_tier2_runtime = \
  -runtime/CommandLine/OptionsValidation/TestOptionsWithRanges.java \
  -runtime/CompressedOops/UseCompressedOops.java \
  -runtime/InvocationTests \
+ -runtime/Monitor/StressWrapper_TestRecursiveLocking_36M.java \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -:tier1_runtime \
  -:hotspot_tier2_runtime_platform_agnostic \

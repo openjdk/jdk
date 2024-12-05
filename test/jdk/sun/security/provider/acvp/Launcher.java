@@ -32,6 +32,7 @@ import java.security.Security;
  * @test
  * @bug 8342442 8345057
  * @library /test/lib
+ * @modules java.base/sun.security.provider
  */
 
 /// This test runs on `internalProjection.json`-style files generated

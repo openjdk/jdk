@@ -55,8 +55,7 @@ static size_t scan_default_hugepagesize() {
 
   // large_page_size on Linux is used to round up heap size. x86 uses either
   // 2M or 4M page, depending on whether PAE (Physical Address Extensions)
-  // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode. IA64 can use
-  // page as large as 1G.
+  // mode is enabled. AMD64/EM64T uses 2M page in 64bit mode.
   //
   // Here we try to figure out page size by parsing /proc/meminfo and looking
   // for a line with the following format:
