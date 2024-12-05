@@ -377,5 +377,47 @@ final class JepTest {
         }
     }
 
+    static
+    class Dependency {
+
+        public static class Foo {
+            // ...
+        }
+
+        public static class Bar {
+            public Bar(Foo foo) {
+                // ...
+            }
+        }
+
+        private static final Supplier<Foo> FOO = StableValue.ofSupplier(Foo::new);
+        private static final Supplier<Bar> BAR = StableValue.ofSupplier(() -> new Bar(FOO.get()));
+
+        public static Foo foo() {
+            return FOO.get();
+        }
+
+        public static Bar bar() {
+            return BAR.get();
+        }
+
+    }
+
+    static
+    class Fibonacci {
+
+        private static final int MAX_SIZE_INT = 46;
+
+        private static final IntFunction<Integer> FIB =
+                StableValue.ofIntFunction(MAX_SIZE_INT, Fibonacci::fib);
+
+        public static int fib(int n) {
+            return n < 2
+                    ? n
+                    : FIB.apply(n - 1) + FIB.apply(n - 2);
+        }
+
+    }
+
 
 }

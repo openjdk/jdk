@@ -232,6 +232,69 @@ import java.util.function.Supplier;
  *
  *     }
  *}
+ *
+ * <h2 id="composition">Composition</h2>
+ * A stable value can depend on other stable values, thereby creating a dependency tree
+ * that can be lazily computed but where the individual tree branches still provide
+ * as-final performance. In the following example, a single `Foo` and a `Bar` instance
+ * (that is dependent on the`Foo` instance) are lazily created, both of which are held
+ * by stable values:
+ * {@snippet lang = java:
+ *     class Dependency {
+ *
+ *         public static class Foo {
+ *              // ...
+ *          }
+ *
+ *         public static class Bar {
+ *             public Bar(Foo foo) {
+ *                  // ...
+ *             }
+ *         }
+ *
+ *         private static final Supplier<Foo> FOO = StableValue.ofSupplier(Foo::new);
+ *         private static final Supplier<Bar> BAR = StableValue.ofSupplier(() ->  new Bar(FOO.get()));
+ *
+ *         public static Foo foo() {
+ *             return FOO.get();
+ *         }
+ *
+ *         public static Bar bar() {
+ *             return BAR.get();
+ *         }
+ *
+ *     }
+ *}
+ * Calling {@code bar()} will create the {@code Bar} singleton if needed and will also
+ * first create the {@code Bar} (which it depends on) if needed.
+ * <p>
+ * A {@linkplain StableValue} may hold a reference to itself. Stable functions and
+ * collections may hold self-references.
+ * <p>
+ * Here is another example where a more complex dependency tree is created in which
+ * integers in the Fibonacci delta series are lazily computed:
+ * {@snippet lang = java:
+ *     class Fibonacci {
+ *
+ *         private static final int MAX_SIZE_INT = 46;
+ *
+ *         private static final IntFunction<Integer> FIB =
+ *                 StableValue.ofIntFunction(MAX_SIZE_INT, Fibonacci::fib);
+ *
+ *         public static int fib(int n) {
+ *             return n < 2
+ *                     ? n
+ *                     : FIB.apply(n - 1) + FIB.apply(n - 2);
+ *         }
+ *
+ *     }
+ * }
+ * Both {@code FIB} and {@code Fibonacci::fib} recurses into each other. Because the
+ * stable int function {@code FIB} internalizes intermediate results, the initial
+ * computational complexity is reduced from exponential to linear compared to a
+ * traditional non-internalizing recursive fibonacci method. Once computed, the VM
+ * can constant-fold expressions like {@code Fibonacci.fib(10)}.
+ *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A holder value is guaranteed to be set at most once. If competing threads are
  * racing to set a stable value, only one update succeeds, while other updates are
@@ -258,9 +321,6 @@ import java.util.function.Supplier;
  * As objects can be set via stable values but never removed, this can be a source
  * of unintended memory leaks. Clients are advised that live stable values will hold set
  * values perpetually.
- * <p>
- * A {@linkplain StableValue} may hold a reference to itself. Stable functions and
- * collections may hold self-references.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
