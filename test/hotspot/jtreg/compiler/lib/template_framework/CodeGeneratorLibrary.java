@@ -114,7 +114,13 @@ public class CodeGeneratorLibrary {
         codeGenerators.put("foo", new Template(
             """
             // start $foo
+            {
                 #{v1:var(type=int)} = #{v1};
+                #{v2:var(type=int)} = #{v2};
+                #{v3:var(type=int)} = #{v3};
+                #{v4:var(type=int)} = #{v4};
+                #{v5:var(type=int)} = #{v5};
+            }
             // end   $foo
             """
         ));
