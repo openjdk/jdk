@@ -250,7 +250,7 @@ public final class Template implements CodeGenerator {
                 return;
             }
             String type = parts[1];
-            boolean mutable = parts.length == 2; // thrid position is "final" qualifier.
+            boolean mutable = parts.length == 2; // third position is "final" qualifier.
             state.registerVariable(name, type, mutable);
             state.scope.stream.addCodeToLine(name);
         } else if (templated.startsWith("$")) {

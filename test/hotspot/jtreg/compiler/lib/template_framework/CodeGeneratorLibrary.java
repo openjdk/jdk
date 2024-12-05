@@ -25,6 +25,7 @@ package compiler.lib.template_framework;
 
 import java.util.HashMap;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import jdk.test.lib.Utils;
 
@@ -63,6 +64,20 @@ public class CodeGeneratorLibrary {
         }
     }
 
+    public static CodeGenerator factoryLoadStore(boolean mutable) {
+        return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
+            String type = parameters.get("type");
+            if (type == null) {
+                throw new TemplateFrameworkException("Generator call to 'var' missing parameter 'type'.");
+            }
+            String name = scope.sampleVariable(type, mutable);
+            if (name == null) {
+                throw new TemplateFrameworkException("Generator call to 'var' cannot find variable of type: " + type);
+            }
+            scope.stream.addCodeToLine(String.valueOf(name));
+        }, 0);
+    }
+
     public static CodeGeneratorLibrary standard() {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
 
@@ -73,20 +88,9 @@ public class CodeGeneratorLibrary {
                 scope.stream.addCodeToLine(String.valueOf(v));
             }, 0));
 
-        // Variable.
-        codeGenerators.put("var", new ProgrammaticCodeGenerator(
-            (Scope scope, Parameters parameters) -> {
-                String type = parameters.get("type");
-                if (type == null) {
-                    throw new TemplateFrameworkException("Generator call to 'var' missing parameter 'type'.");
-                }
-                // TODO handle mutable, default argument - default mutable or not?
-                String name = scope.sampleVariable(type, false);
-                if (name == null) {
-                    throw new TemplateFrameworkException("Generator call to 'var' cannot find variable of type: " + type);
-                }
-                scope.stream.addCodeToLine(String.valueOf(name));
-            }, 0));
+        // Variable load/store.
+        codeGenerators.put("load",  factoryLoadStore(false));
+        codeGenerators.put("store", factoryLoadStore(true));
 
         // Code blocks.
         codeGenerators.put("empty", new Template(
@@ -115,11 +119,11 @@ public class CodeGeneratorLibrary {
             """
             // start $foo
             {
-                #{v1:var(type=int)} = #{v1};
-                #{v2:var(type=int)} = #{v2};
-                #{v3:var(type=int)} = #{v3};
-                #{v4:var(type=int)} = #{v4};
-                #{v5:var(type=int)} = #{v5};
+                #{v1:store(type=int)} = #{v11:load(type=int)};
+                #{v2:store(type=int)} = #{v12:load(type=int)};
+                #{v3:store(type=int)} = #{v13:load(type=int)};
+                #{v4:store(type=int)} = #{v14:load(type=int)};
+                #{v5:store(type=int)} = #{v15:load(type=int)};
             }
             // end   $foo
             """
