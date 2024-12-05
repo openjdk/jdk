@@ -566,6 +566,9 @@ const jshort one_jfloat16 = 15360;
 const jshort pos_inf_jfloat16 = 31744;
 const jshort neg_inf_jfloat16 = -1024;
 
+// A named constant for the integral representation of a Java null.
+const intptr_t NULL_WORD = 0;
+
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
 

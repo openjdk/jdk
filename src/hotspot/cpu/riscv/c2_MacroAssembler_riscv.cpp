@@ -2003,10 +2003,48 @@ void C2_MacroAssembler::enc_cmpEqNe_imm0_branch(int cmpFlag, Register op1, Label
 }
 
 void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Register dst, Register src) {
-  Label L;
-  cmp_branch(cmpFlag ^ (1 << neg_cond_bits), op1, op2, L);
-  mv(dst, src);
-  bind(L);
+  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+  int op_select = cmpFlag & (~unsigned_branch_mask);
+
+  switch (op_select) {
+    case BoolTest::eq:
+      cmov_eq(op1, op2, dst, src);
+      break;
+    case BoolTest::ne:
+      cmov_ne(op1, op2, dst, src);
+      break;
+    case BoolTest::le:
+      if (is_unsigned) {
+        cmov_leu(op1, op2, dst, src);
+      } else {
+        cmov_le(op1, op2, dst, src);
+      }
+      break;
+    case BoolTest::ge:
+      if (is_unsigned) {
+        cmov_geu(op1, op2, dst, src);
+      } else {
+        cmov_ge(op1, op2, dst, src);
+      }
+      break;
+    case BoolTest::lt:
+      if (is_unsigned) {
+        cmov_ltu(op1, op2, dst, src);
+      } else {
+        cmov_lt(op1, op2, dst, src);
+      }
+      break;
+    case BoolTest::gt:
+      if (is_unsigned) {
+        cmov_gtu(op1, op2, dst, src);
+      } else {
+        cmov_gt(op1, op2, dst, src);
+      }
+      break;
+    default:
+      assert(false, "unsupported compare condition");
+      ShouldNotReachHere();
+  }
 }
 
 // Set dst to NaN if any NaN input.
@@ -2337,83 +2375,6 @@ void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, Basi
 
   // use floating-point 1.0 with a sign of input
   vfsgnj_vv(dst, one, dst, v0_t);
-}
-
-void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
-  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
-  // intrinsic is enabled when MaxVectorSize >= 16
-  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
-  long len = is_long ? 64 : 32;
-
-  // load the src data(in bits) to be compressed.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, src);
-  // reset the src data(in bytes) to zero.
-  mv(t0, len);
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  vmv_v_i(v4, 0);
-  // convert the src data from bits to bytes.
-  vmerge_vim(v4, v4, 1); // v0 as the implicit mask register
-  // reset the dst data(in bytes) to zero.
-  vmv_v_i(v8, 0);
-  // load the mask data(in bits).
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, mask);
-  // compress the src data(in bytes) to dst(in bytes).
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  vcompress_vm(v8, v4, v0);
-  // convert the dst data from bytes to bits.
-  vmseq_vi(v0, v8, 1);
-  // store result back.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_x_s(dst, v0);
-}
-
-void C2_MacroAssembler::compress_bits_i_v(Register dst, Register src, Register mask) {
-  compress_bits_v(dst, src, mask, /* is_long */ false);
-}
-
-void C2_MacroAssembler::compress_bits_l_v(Register dst, Register src, Register mask) {
-  compress_bits_v(dst, src, mask, /* is_long */ true);
-}
-
-void C2_MacroAssembler::expand_bits_v(Register dst, Register src, Register mask, bool is_long) {
-  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
-  // intrinsic is enabled when MaxVectorSize >= 16
-  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
-  long len = is_long ? 64 : 32;
-
-  // load the src data(in bits) to be expanded.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, src);
-  // reset the src data(in bytes) to zero.
-  mv(t0, len);
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  vmv_v_i(v4, 0);
-  // convert the src data from bits to bytes.
-  vmerge_vim(v4, v4, 1); // v0 as implicit mask register
-  // reset the dst data(in bytes) to zero.
-  vmv_v_i(v12, 0);
-  // load the mask data(in bits).
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, mask);
-  // expand the src data(in bytes) to dst(in bytes).
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  viota_m(v8, v0);
-  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask register
-  // convert the dst data from bytes to bits.
-  vmseq_vi(v0, v12, 1);
-  // store result back.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_x_s(dst, v0);
-}
-
-void C2_MacroAssembler::expand_bits_i_v(Register dst, Register src, Register mask) {
-  expand_bits_v(dst, src, mask, /* is_long */ false);
-}
-
-void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mask) {
-  expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
 // j.l.Math.round(float)
@@ -3123,14 +3084,4 @@ void C2_MacroAssembler::extract_fp_v(FloatRegister dst, VectorRegister src, Basi
     vslidedown_vx(tmp, src, t0);
     vfmv_f_s(dst, tmp);
   }
-}
-
-void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) {
-  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
-  // obj-start, so that we can load from the object's mark-word instead. Usually the address
-  // comes as obj-start in obj and klass_offset_in_bytes in disp.
-  assert(UseCompactObjectHeaders, "must");
-  int offset = oopDesc::mark_offset_in_bytes() - oopDesc::klass_offset_in_bytes();
-  ld(dst, Address(src.base(), src.offset() + offset));
-  srli(dst, dst, markWord::klass_shift);
 }

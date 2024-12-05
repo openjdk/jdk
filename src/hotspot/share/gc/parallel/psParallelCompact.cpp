@@ -362,8 +362,9 @@ HeapWord* ParallelCompactData::summarize_split_space(size_t src_region,
 
     split_info.record(split_region, overflowing_obj, preceding_live_words);
 
-    HeapWord* src_region_start = region_to_addr(src_region);
-    HeapWord* new_top = destination - pointer_delta(src_region_start, overflowing_obj);
+    // The [overflowing_obj, src_region_start) part has been accounted for, so
+    // must move back the new_top, now that this overflowing obj is deferred.
+    HeapWord* new_top = destination - pointer_delta(region_to_addr(src_region), overflowing_obj);
 
     // If the overflowing obj was relocated to its original destination,
     // those destination regions would have their source_region set. Now that
@@ -890,7 +891,7 @@ void PSParallelCompact::summary_phase()
       _summary_data.summarize_dense_prefix(old_space->bottom(), dense_prefix_end);
     }
 
-    // Compacting objs inn [dense_prefix_end, old_space->top())
+    // Compacting objs in [dense_prefix_end, old_space->top())
     _summary_data.summarize(_space_info[id].split_info(),
                             dense_prefix_end, old_space->top(), nullptr,
                             dense_prefix_end, old_space->end(),
@@ -1596,9 +1597,9 @@ void PSParallelCompact::forward_to_new_addr() {
                                  &start_region, &end_region);
         for (size_t cur_region = start_region; cur_region < end_region; ++cur_region) {
           RegionData* region_ptr = _summary_data.region(cur_region);
-          size_t live_words = region_ptr->partial_obj_size();
+          size_t partial_obj_size = region_ptr->partial_obj_size();
 
-          if (live_words == ParallelCompactData::RegionSize) {
+          if (partial_obj_size == ParallelCompactData::RegionSize) {
             // No obj-start
             continue;
           }
@@ -1606,19 +1607,18 @@ void PSParallelCompact::forward_to_new_addr() {
           HeapWord* region_start = _summary_data.region_to_addr(cur_region);
           HeapWord* region_end = region_start + ParallelCompactData::RegionSize;
 
-
           if (split_info.is_split(cur_region)) {
             // Part 1: will be relocated to space-1
             HeapWord* preceding_destination = split_info.preceding_destination();
             HeapWord* split_point = split_info.split_point();
-            forward_objs_in_range(cm, region_start + live_words, split_point, preceding_destination + live_words);
+            forward_objs_in_range(cm, region_start + partial_obj_size, split_point, preceding_destination + partial_obj_size);
 
             // Part 2: will be relocated to space-2
             HeapWord* destination = region_ptr->destination();
             forward_objs_in_range(cm, split_point, region_end, destination);
           } else {
             HeapWord* destination = region_ptr->destination();
-            forward_objs_in_range(cm, region_start + live_words, region_end, destination + live_words);
+            forward_objs_in_range(cm, region_start + partial_obj_size, region_end, destination + partial_obj_size);
           }
         }
       }
@@ -1984,11 +1984,11 @@ HeapWord* PSParallelCompact::skip_live_words(HeapWord* beg, HeapWord* end, size_
   }
 }
 
-// On filling a destination region (dest-region), we need to know the location
-// of the word that will be at the start of the dest-region after compaction.
-// A dest-region can have one or more source regions, but only the first
-// source-region contains this location. This location is retrieved by calling
-// `first_src_addr` on a dest-region.
+// On starting to fill a destination region (dest-region), we need to know the
+// location of the word that will be at the start of the dest-region after
+// compaction. A dest-region can have one or more source regions, but only the
+// first source-region contains this location. This location is retrieved by
+// calling `first_src_addr` on a dest-region.
 // Conversely, a source-region has a dest-region which holds the destination of
 // the first live word on this source-region, based on which the destination
 // for the rest of live words can be derived.
@@ -2017,9 +2017,9 @@ HeapWord* PSParallelCompact::skip_live_words(HeapWord* beg, HeapWord* end, size_
 //              ^                  ^
 //              | old-space-end    | eden-space-start
 //
-// Therefore, in this example, region-n will have two dest-regions, one for
-// the final region in old-space and the other for the first region in
-// eden-space.
+// Therefore, in this example, region-n will have two dest-regions:
+// 1. the final region in old-space
+// 2. the first region in eden-space.
 // To handle this special case, we introduce the concept of split-region, whose
 // contents are relocated to two spaces. `SplitInfo` captures all necessary
 // info about the split, the first part, spliting-point, and the second part.
