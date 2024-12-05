@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -59,15 +59,25 @@ public:
   static void define_archived_modules(Handle h_platform_loader, Handle h_system_loader,
                                       TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void verify_archived_modules() NOT_CDS_JAVA_HEAP_RETURN;
+  static void dump_archived_module_info() NOT_CDS_JAVA_HEAP_RETURN;
+  static void serialize_archived_module_info(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
   static void dump_main_module_name() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
-  static void dump_addmods_names() NOT_CDS_JAVA_HEAP_RETURN;
-  static void serialize_addmods_names(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
-  static const char* get_addmods_names_as_sorted_string() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void check_archived_flag_consistency(char* archived_flag, const char* runtime_flag, const char* property) NOT_CDS_JAVA_HEAP_RETURN;
 
+  static void dump_native_access_flag() NOT_CDS_JAVA_HEAP_RETURN;
+  static const char* get_native_access_flags_as_sorted_string() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void serialize_native_access_flags(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void dump_addmods_names() NOT_CDS_JAVA_HEAP_RETURN;
+  static const char* get_addmods_names_as_sorted_string() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void serialize_addmods_names(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static const char* get_numbered_property_as_sorted_string(const char* property) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 #if INCLUDE_CDS_JAVA_HEAP
   static char* _archived_main_module_name;
   static char* _archived_addmods_names;
+  static char* _archived_native_access_flags;
 #endif
 
   // Provides the java.lang.Module for the unnamed module defined

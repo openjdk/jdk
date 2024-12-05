@@ -941,51 +941,6 @@ void os::naked_yield() {
   sched_yield();
 }
 
-// Builds a platform dependent Agent_OnLoad_<lib_name> function name
-// which is used to find statically linked in agents.
-// Parameters:
-//            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, null for shared libs.
-//            is_absolute_path == true if lib_name is absolute path to agent
-//                                     such as "/a/b/libL.so"
-//            == false if only the base name of the library is passed in
-//               such as "L"
-char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
-                                    bool is_absolute_path) {
-  char *agent_entry_name;
-  size_t len;
-  size_t name_len;
-  size_t prefix_len = strlen(JNI_LIB_PREFIX);
-  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
-  const char *start;
-
-  if (lib_name != nullptr) {
-    name_len = strlen(lib_name);
-    if (is_absolute_path) {
-      // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
-        lib_name = ++start;
-      }
-      if (strlen(lib_name) <= (prefix_len + suffix_len)) {
-        return nullptr;
-      }
-      lib_name += prefix_len;
-      name_len = strlen(lib_name) - suffix_len;
-    }
-  }
-  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
-  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == nullptr) {
-    return nullptr;
-  }
-  strcpy(agent_entry_name, sym_name);
-  if (lib_name != nullptr) {
-    strcat(agent_entry_name, "_");
-    strncat(agent_entry_name, lib_name, name_len);
-  }
-  return agent_entry_name;
-}
-
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
 void os::infinite_sleep() {
   while (true) {    // sleep forever ...
@@ -2231,4 +2186,3 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   *sigInfo = nullptr;
   return nullptr;
 }
-

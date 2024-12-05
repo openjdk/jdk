@@ -1169,6 +1169,26 @@ public class IRNode {
         beforeMatchingNameRegex(MOD_L, "ModL");
     }
 
+    public static final String MOV_F2I = PREFIX + "MOV_F2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_F2I, "MoveF2I");
+    }
+
+    public static final String MOV_I2F = PREFIX + "MOV_I2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_I2F, "MoveI2F");
+    }
+
+    public static final String MOV_D2L = PREFIX + "MOV_D2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_D2L, "MoveD2L");
+    }
+
+    public static final String MOV_L2D = PREFIX + "MOD_L2D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_L2D, "MoveL2D");
+    }
+
     public static final String MUL = PREFIX + "MUL" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL, "Mul(I|L|F|D)");
