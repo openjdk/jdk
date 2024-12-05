@@ -55,11 +55,7 @@ hotspot_runtime_no_cds = \
 
 hotspot_runtime_non_cds_mode = \
   runtime \
-  -runtime/cds/CheckSharingWithDefaultArchive.java \
-  -runtime/cds/appcds/aotClassLinking/BulkLoaderTest.java \
-  -runtime/cds/appcds/dynamicArchive/DynamicSharedSymbols.java \
-  -runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchive.java \
-  -runtime/cds/appcds/jcmd
+  -runtime/cds
 
 hotspot_handshake = \
   runtime/handshake
