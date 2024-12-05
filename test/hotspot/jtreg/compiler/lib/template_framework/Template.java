@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
  *
  * - Extend library
  * - Placeholders for variables / fields, to be added in inner scope - maybe requires artificial scopes?
+ *   - way to call additional generator into the class/method scopes, and affect variables
+ *
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
  *   - Integrate with IR Framework
