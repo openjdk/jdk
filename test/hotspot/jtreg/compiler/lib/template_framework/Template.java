@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
  * TODO
  *
  * - Extend library
- * - Implement variable sampling
  * - Placeholders for variables / fields, to be added in inner scope - maybe requires artificial scopes?
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
@@ -112,8 +111,10 @@ public final class Template implements CodeGenerator {
             this.replacementsMap = new HashMap<String,CodeStream>();
         }
 
-        public String wrapVariable(String name) {
-            // TODO check for empty strings
+        public String wrapVariable(String name, String templated) {
+            if (name.equals("")) {
+                throw new TemplateFrameworkException("Template local variable cannot be empty string. Got: " + templated);
+            }
             int id = parameters.instantiationID;
             return name + "_" + id;
         }
@@ -156,7 +157,7 @@ public final class Template implements CodeGenerator {
             // Create nested scope, and add the new variables to it.
             Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost());
             for (String variable : variableList) {
-                variable = wrapVariable(variable);
+                variable = wrapVariable(variable, templated);
                 TypeAndMutability typeAndMutability = getVariable(variable);
                 if (typeAndMutability == null) {
                     throw new TemplateFrameworkException("Template generator call error. Variable type declaration not found" +
@@ -243,7 +244,7 @@ public final class Template implements CodeGenerator {
                 throw new TemplateFrameworkException("Template local variable with type declaration should have format " +
                                                      "$name or ${name} or ${name:type} or ${name:type:final}, but got " + templated);
             }
-            String name = state.wrapVariable(parts[0]);
+            String name = state.wrapVariable(parts[0], templated);
             if (parts.length == 1) {
                 state.registerVariable(name);
                 state.scope.stream.addCodeToLine(name);
@@ -255,7 +256,7 @@ public final class Template implements CodeGenerator {
             state.scope.stream.addCodeToLine(name);
         } else if (templated.startsWith("$")) {
             // Local variable: $name
-            String name = state.wrapVariable(templated.substring(1));
+            String name = state.wrapVariable(templated.substring(1), templated);
             state.registerVariable(name);
             state.scope.stream.addCodeToLine(name);
         } else if (templated.startsWith("#{")) {
