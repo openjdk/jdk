@@ -110,8 +110,6 @@
  * CodeLocalsShifter} and {@link CodeRelabeler} into fully functional class
  * instrumenting transformation:
  * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
- *
- * @since 24
  */
-package java.lang.classfile.components;
+package jdk.internal.classfile.components;
 

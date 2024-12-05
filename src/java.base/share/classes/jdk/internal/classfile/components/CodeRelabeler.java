@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.components;
+package jdk.internal.classfile.components;
 
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeTransform;
@@ -44,8 +44,6 @@ import static java.util.Objects.requireNonNull;
  * Primary purpose of CodeRelabeler is for repeated injections of the same code blocks.
  * Repeated injection of the same code block must be relabeled, so each instance of
  * {@link java.lang.classfile.Label} is bound in the target bytecode exactly once.
- *
- * @since 24
  */
 public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabelerImpl {
 

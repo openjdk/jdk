@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,19 @@
  * questions.
  */
 
-/* @test
- * @bug 8004502
- * @summary Sanity check that specifying the APPLET property when creating an
- *   InitialContext behaves as expected when java.awt.Applet is not present
- */
+package jdk.internal.ref;
 
-import javax.naming.*;
-import java.util.Hashtable;
+import java.lang.ref.Cleaner;
 
-public class NoApplet {
-    @SuppressWarnings("deprecation")
-    public static void main(String[] args) throws NamingException {
-        Hashtable<Object,Object> env = new Hashtable<>();
-        env.put(Context.APPLET, new Object());
-        Context ctxt = new InitialContext(env);
-        ctxt.close();
+public class TestCleanable extends PhantomCleanable<Object> {
+    static final Object TARGET = new Object();
+
+    public TestCleanable(Cleaner cleaner) {
+        super(TARGET, cleaner);
+    }
+
+    @Override
+    protected void performCleanup() {
+        // no action
     }
 }
