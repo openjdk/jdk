@@ -79,6 +79,9 @@ class VersionProps {
     private static String VENDOR =
         "@@VENDOR@@";
 
+    private static String VENDOR_VM =
+        "@@VENDOR@@";
+
     private static String VENDOR_URL =
         "@@VENDOR_URL@@";
 
@@ -93,9 +96,6 @@ class VersionProps {
     @SuppressWarnings("unused")
     private static String VENDOR_URL_VM_BUG =
         "@@VENDOR_URL_VM_BUG@@";
-
-    private static String VENDOR_VM =
-        "@@VENDOR@@";
 
     /**
      * Initialize system properties using build provided values.
@@ -121,11 +121,9 @@ class VersionProps {
         props.put("java.specification.vendor", "Oracle Corporation");
 
         props.put("java.vendor", VENDOR);
+        props.put("java.vm.vendor", VENDOR_VM);
         props.put("java.vendor.url", VENDOR_URL);
         props.put("java.vendor.url.bug", VENDOR_URL_BUG);
-
-        // In case VM is not yet set this property
-        props.putIfAbsent("java.vm.vendor", VENDOR_VM);
     }
 
     private static int parseVersionNumber(String version, int prevIndex, int index) {

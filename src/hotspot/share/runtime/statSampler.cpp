@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,7 +258,7 @@ void StatSampler::create_system_property_instrumentation(TRAPS) {
   add_property_constant(JAVA_PROPERTY, "java.version", JDK_Version::java_version(), CHECK);
   add_property_constant(JAVA_PROPERTY, "java.vm.version", VM_Version::vm_release(), CHECK);
   add_property_constant(JAVA_PROPERTY, "java.vm.name", VM_Version::vm_name(), CHECK);
-  add_property_constant(JAVA_PROPERTY, "java.vm.vendor", VM_Version::vm_vendor(), CHECK);
+  add_property_constant(JAVA_PROPERTY, "java.vm.vendor", JDK_Version::runtime_vendor_vm(), CHECK);
   add_property_constant(JAVA_PROPERTY, "jdk.debug", VM_Version::jdk_debug_level(), CHECK);
 
   // Get remaining property constants via Arguments::get_property,

@@ -78,6 +78,7 @@ class JDK_Version {
   static const char* _runtime_name;
   static const char* _runtime_version;
   static const char* _runtime_vendor_version;
+  static const char* _runtime_vendor_vm;
   static const char* _runtime_vendor_vm_bug_url;
 
   int _major;
@@ -157,6 +158,13 @@ class JDK_Version {
   }
   static void set_runtime_vendor_version(const char* vendor_version) {
     _runtime_vendor_version = os::strdup(vendor_version);
+  }
+
+  static const char* runtime_vendor_vm() {
+    return _runtime_vendor_vm;
+  }
+  static void set_runtime_vendor_vm(const char* vendor_vm) {
+    _runtime_vendor_vm = os::strdup(vendor_vm);
   }
 
   static const char* runtime_vendor_vm_bug_url() {

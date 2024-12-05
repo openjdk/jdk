@@ -27,7 +27,6 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
-#include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -119,24 +118,6 @@ int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
 
 const char* Abstract_VM_Version::vm_name() {
   return VMNAME;
-}
-
-#ifndef VENDOR_PADDING
-# define VENDOR_PADDING 64
-#endif
-#ifndef VENDOR
-# define VENDOR  "Oracle Corporation"
-#endif
-
-static const char vm_vendor_string[sizeof(VENDOR) < VENDOR_PADDING ? VENDOR_PADDING : sizeof(VENDOR)] = VENDOR;
-const char* Abstract_VM_Version::_vm_vendor = vm_vendor_string;
-
-const char* Abstract_VM_Version::vm_vendor() {
-  return _vm_vendor;
-}
-
-void Abstract_VM_Version::set_vm_vendor(const char* vm_vendor) {
-  _vm_vendor = os::strdup(vm_vendor);
 }
 
 const char* Abstract_VM_Version::vm_info_string() {

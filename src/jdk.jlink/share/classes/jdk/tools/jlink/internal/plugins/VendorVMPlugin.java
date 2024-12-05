@@ -26,8 +26,8 @@
 package jdk.tools.jlink.internal.plugins;
 
 /**
- * Plugin to set the vendor, by redefining the static field
- * java.lang.VersionProps.VENDOR
+ * Plugin to set the vendor for the VM, by redefining the static field
+ * java.lang.VersionProps.VENDOR_VM
  */
 public final class VendorVMPlugin extends VersionPropsPlugin {
 

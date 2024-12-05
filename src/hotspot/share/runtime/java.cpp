@@ -710,6 +710,7 @@ const char* JDK_Version::_java_version;
 const char* JDK_Version::_runtime_name;
 const char* JDK_Version::_runtime_version;
 const char* JDK_Version::_runtime_vendor_version;
+const char* JDK_Version::_runtime_vendor_vm;
 const char* JDK_Version::_runtime_vendor_vm_bug_url;
 
 void JDK_Version::initialize() {
