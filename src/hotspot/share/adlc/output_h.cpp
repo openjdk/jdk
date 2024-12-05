@@ -1626,6 +1626,8 @@ void ArchDesc::declareClasses(FILE *fp) {
     while (attr != nullptr) {
       if (strcmp (attr->_ident, "ins_is_TrapBasedCheckNode") == 0) {
         fprintf(fp, "  virtual bool           is_TrapBasedCheckNode() const { return %s; }\n", attr->_val);
+      } else if (strcmp (attr->_ident, "ins_has_initial_implicit_null_check_candidate") == 0) {
+        fprintf(fp, "  virtual bool           has_initial_implicit_null_check_candidate() const { return %s; }\n", attr->_val);
       } else if (strcmp (attr->_ident, "ins_cost") != 0 &&
           strncmp(attr->_ident, "ins_field_", 10) != 0 &&
           // Must match function in node.hpp: return type bool, no prefix "ins_".

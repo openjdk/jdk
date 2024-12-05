@@ -386,6 +386,15 @@ public:
 
   // Returns true if this node is a check that can be implemented with a trap.
   virtual bool is_TrapBasedCheckNode() const { return false; }
+
+  // Whether the first instruction in the code emitted for this node is a
+  // candidate for implicit null check. This function is only defined for nodes
+  // with barrier data that are expanded late.
+  virtual bool has_initial_implicit_null_check_candidate() const {
+    assert(barrier_data() != 0, "undefined function");
+    return false;
+  }
+
   void set_removed() { add_flag(Flag_is_removed_by_peephole); }
   bool get_removed() { return (flags() & Flag_is_removed_by_peephole) != 0; }
 

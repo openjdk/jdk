@@ -76,6 +76,34 @@ static bool needs_explicit_null_check_for_read(Node *val) {
   return true;
 }
 
+void PhaseCFG::move_into(Node* n, Block* b) {
+  Block *old = get_block_for_node(n);
+  old->find_remove(n);
+  b->add_inst(n);
+  map_node_to_block(n, b);
+  // Check for Mach projections that also need to be moved.
+  for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+    Node* out = n->fast_out(i);
+    if (!out->is_MachProj()) {
+      continue;
+    }
+    assert(!n->is_MachProj(), "nested projections are not allowed");
+    move_into(out, b);
+  }
+}
+
+void PhaseCFG::maybe_hoist_into(Node* n, Block* b) {
+  Block* current = get_block_for_node(n);
+  if (current->dominates(b)) {
+    return;
+  }
+  assert(b->dominates(current), "sanity check: temp node placement");
+  // We only expect nodes without further inputs, like MachTemp or load Base.
+  assert(n->req() == 0 || (n->req() == 1 && n->in(0) == (Node*)C->root()),
+         "need for recursive hoisting not expected");
+  move_into(n, b);
+}
+
 //------------------------------implicit_null_check----------------------------
 // Detect implicit-null-check opportunities.  Basically, find null checks
 // with suitable memory ops nearby.  Use the memory op to do the null check.
@@ -160,14 +188,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *m = val->out(i);
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
-    if (mach->barrier_data() != 0) {
-      // Using memory accesses with barriers to perform implicit null checks is
-      // not supported. These operations might expand into multiple assembly
-      // instructions during code emission, including new memory accesses (e.g.
-      // in G1's pre-barrier), which would invalidate the implicit null
-      // exception table.
-      continue;
-    }
     was_store = false;
     int iop = mach->ideal_Opcode();
     switch( iop ) {
@@ -243,6 +263,16 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       }
       break;
     }
+
+    if (mach->barrier_data() != 0 && !mach->has_initial_implicit_null_check_candidate()) {
+      // TBD: update comment.
+      // TBD: default has_initial_implicit_null_check_candidate=false. Defined only for mach nodes with barrier data.
+      continue;
+    }
+
+    /*if (mach->barrier_data() != 0 && was_store) {
+      continue;
+      }*/
 
     // On some OSes (AIX) the page at address 0 is only write protected.
     // If so, only Store operations will trap.
@@ -321,6 +351,11 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         // Ignore DecodeN val which could be hoisted to where needed.
         if( is_decoden ) continue;
       }
+      if (mach->in(j)->is_MachTemp()) {
+        assert(mach->in(j)->outcnt() == 1, "MachTemp nodes should not be shared");
+        // Ignore MachTemp inputs, they can be safely hoisted with the candidate.
+        continue;
+      }
       // Block of memory-op input
       Block *inb = get_block_for_node(mach->in(j));
       Block *b = block;          // Start from nul check
@@ -388,38 +423,23 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       // Hoist it up to the end of the test block together with its inputs if they exist.
       for (uint i = 2; i < val->req(); i++) {
         // DecodeN has 2 regular inputs + optional MachTemp or load Base inputs.
-        Node *temp = val->in(i);
-        Block *tempb = get_block_for_node(temp);
-        if (!tempb->dominates(block)) {
-          assert(block->dominates(tempb), "sanity check: temp node placement");
-          // We only expect nodes without further inputs, like MachTemp or load Base.
-          assert(temp->req() == 0 || (temp->req() == 1 && temp->in(0) == (Node*)C->root()),
-                 "need for recursive hoisting not expected");
-          tempb->find_remove(temp);
-          block->add_inst(temp);
-          map_node_to_block(temp, block);
-        }
+        maybe_hoist_into(val->in(i), block);
       }
-      valb->find_remove(val);
-      block->add_inst(val);
-      map_node_to_block(val, block);
-      // DecodeN on x86 may kill flags. Check for flag-killing projections
-      // that also need to be hoisted.
-      for (DUIterator_Fast jmax, j = val->fast_outs(jmax); j < jmax; j++) {
-        Node* n = val->fast_out(j);
-        if( n->is_MachProj() ) {
-          get_block_for_node(n)->find_remove(n);
-          block->add_inst(n);
-          map_node_to_block(n, block);
-        }
-      }
+      move_into(val, block);
     }
   }
+
+  // Move any MachTemp inputs to the end of the test block.
+  for (uint i = 0; i < best->req(); i++) {
+    Node* n = best->in(i);
+    if (n == nullptr || !n->is_MachTemp()) {
+      continue;
+    }
+    maybe_hoist_into(n, block);
+  }
+
   // Hoist the memory candidate up to the end of the test block.
-  Block *old_block = get_block_for_node(best);
-  old_block->find_remove(best);
-  block->add_inst(best);
-  map_node_to_block(best, block);
+  move_into(best, block);
 
   // Move the control dependence if it is pinned to not-null block.
   // Don't change it in other cases: null or dominating control.
@@ -427,17 +447,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   if (ctrl != nullptr && get_block_for_node(ctrl) == not_null_block) {
     // Set it to control edge of null check.
     best->set_req(0, proj->in(0)->in(0));
-  }
-
-  // Check for flag-killing projections that also need to be hoisted
-  // Should be DU safe because no edge updates.
-  for (DUIterator_Fast jmax, j = best->fast_outs(jmax); j < jmax; j++) {
-    Node* n = best->fast_out(j);
-    if( n->is_MachProj() ) {
-      get_block_for_node(n)->find_remove(n);
-      block->add_inst(n);
-      map_node_to_block(n, block);
-    }
   }
 
   // proj==Op_True --> ne test; proj==Op_False --> eq test.

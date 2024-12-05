@@ -508,11 +508,11 @@ public:
   }
 
   // Find out of current node that matches opcode.
-  Node* find_out_with(int opcode);
+  Node* find_out_with(int opcode) const;
   // Return true if the current node has an out that matches opcode.
-  bool has_out_with(int opcode);
+  bool has_out_with(int opcode) const;
   // Return true if the current node has an out that matches any of the opcodes.
-  bool has_out_with(int opcode1, int opcode2, int opcode3, int opcode4);
+  bool has_out_with(int opcode1, int opcode2, int opcode3, int opcode4) const;
 
 private:
   static Node* uncast_helper(const Node* n, bool keep_deps);

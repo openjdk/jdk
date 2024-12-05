@@ -464,6 +464,12 @@ class PhaseCFG : public Phase {
   Node* catch_cleanup_find_cloned_def(Block* use_blk, Node* def, Block* def_blk, int n_clone_idx);
   void  catch_cleanup_inter_block(Node *use, Block *use_blk, Node *def, Block *def_blk, int n_clone_idx);
 
+  // If necessary, hoist orphan node n into the end of block b.
+  void maybe_hoist_into(Node* n, Block* b);
+
+  // Move node n from its current placement into the end of block b.
+  void move_into(Node* n, Block* b);
+
   // Detect implicit-null-check opportunities.  Basically, find null checks
   // with suitable memory ops nearby.  Use the memory op to do the null check.
   // I can generate a memory op if there is not one nearby.
