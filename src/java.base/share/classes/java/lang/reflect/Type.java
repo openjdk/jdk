@@ -43,9 +43,9 @@ package java.lang.reflect;
  * <tr><td colspan="3">Primitive Types (JLS {@jls 4.2})
  *     <td>{@code int}
  *     <td rowspan="3">{@link ##alone Type}
- * <tr><td rowspan="9">Reference<br>Types<br>(JLS {@jls 4.3})
- *     <td rowspan="3">Classes<br>and<br>Interfaces
- *     <td>Non-generic Classes and<br>Interfaces
+ * <tr><td rowspan="7">Reference<br>Types<br>(JLS {@jls 4.3})
+ *     <td rowspan="3">Class and<br>Interface Types
+ *     <td>Non-generic Class and Interface<br>Types
  *         (JLS {@jls 8.1.3}, {@jls 9.1.3})
  *     <td>{@code String}
  * <tr><td>Raw Types (JLS {@jls 4.8})
@@ -56,24 +56,26 @@ package java.lang.reflect;
  * <tr><td colspan="2">Type Variables (JLS {@jls 4.4})
  *     <td>{@code T}
  *     <td>{@link TypeVariable}
- * <tr><td rowspan="5">Array<br>Types<br>(JLS {@jls 10.1})
- *     <td>Primitive Type Elements
- *     <td>{@code int[]}
- *     <td rowspan="3">{@link ##alone Type}
- * <tr><td>Non-generic Class or<br>Interface Elements
- *     <td>{@code String[]}
- * <tr><td>Raw Type Elements
- *     <td>{@code List[]}
- * <tr><td>Parameterized Type Elements
- *     <td>{@code List<String>[][]}
+ * <tr><td rowspan="3">Array Types<br>(JLS {@jls 10.1})
+ *     <td>Parameterized Type Elements
+ *     <td>{@code List<String>[]}
  *     <td rowspan="2">{@link GenericArrayType}
  * <tr><td>Types Variable Elements
- *     <td>{@code T[][][]}
+ *     <td>{@code T[]}
+ * <tr><td>Other Elements
+ *     <td>{@code int[]}, {@code String[]}
+ *     <td>{@link ##alone Type}
  * <tr><td colspan="3">Wildcard Type Arguments (JLS {@jls 4.5.1})
  *     <td>{@code ? extends String}
  *     <td>{@link WildcardType}
  * </tbody>
  * </table>
+ * <p>
+ * Class and Interface Types may be members of other classes and interfaces.
+ * The class or interface that declares a class or interface is accessible via
+ * {@link Class#getDeclaringClass() Class::getDeclaringClass}.  The possibly
+ * generic class or interface that declares a parameterized type is accessible
+ * via {@link ParameterizedType#getOwnerType() ParameterizedType::getOwnerType}.
  * <p>
  * Two {@code Type} objects should be compared using the {@link Object#equals
  * equals} method.

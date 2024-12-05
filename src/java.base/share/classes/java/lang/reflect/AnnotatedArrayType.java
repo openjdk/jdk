@@ -57,7 +57,7 @@ public interface AnnotatedArrayType extends AnnotatedType {
     AnnotatedType getAnnotatedGenericComponentType();
 
     /**
-     * {@return {@code null}}  An array type is not an inner member class.
+     * {@return {@code null}}  An array type is not a member class or interface.
      *
      * @since 9
      */

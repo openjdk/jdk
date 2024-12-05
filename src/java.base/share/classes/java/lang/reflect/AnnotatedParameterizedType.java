@@ -53,23 +53,19 @@ public interface AnnotatedParameterizedType extends AnnotatedType {
      * <p>
      * This method does not return the potentially annotated use of type
      * arguments of the {@linkplain #getAnnotatedOwnerType() enclosing classes}
-     * of the parameterized type, if the parameterized type is an {@linkplain
-     * ParameterizedType##inner-member-class inner member class}.  For example,
-     * if this use is {@code @TA O<T>.I<S>}, this method returns an array
-     * containing exactly the use of {@code S}.  In particular, if this inner
-     * member class is non-generic but an enclosing class of it is, this method
-     * returns an empty array.
+     * of the parameterized type, if the parameterized type is nested.  For
+     * example, if this use is {@code @TB O<@TC T>.@TA I<@TB S>}, this method
+     * returns an array containing exactly the use of {@code @TB S}.  In
+     * particular, if this nested type is a non-generic class in a generic
+     * enclosing class, such as in the use {@code @TB O<@TC T>.@TA I}, this
+     * method returns an empty array.
      *
      * @see ParameterizedType#getActualTypeArguments()
      */
     AnnotatedType[] getAnnotatedActualTypeArguments();
 
     /**
-     * {@return the potentially annotated use of the immediately enclosing class
-     * of the parameterized type, or {@code null} if and only if the
-     * parameterized type is not an inner member class}  For example, if this
-     * use is {@code Outer<@TC Long>.@TA Inner<@TB String>}, this method returns
-     * a representation of {@code Outer<@TC Long>}.
+     * {@inheritDoc}
      *
      * @throws TypeNotPresentException {@inheritDoc}
      * @throws MalformedParameterizedTypeException {@inheritDoc}

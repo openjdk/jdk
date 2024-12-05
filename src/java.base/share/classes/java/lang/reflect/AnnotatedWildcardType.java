@@ -77,8 +77,8 @@ public interface AnnotatedWildcardType extends AnnotatedType {
     AnnotatedType[] getAnnotatedUpperBounds();
 
     /**
-     * {@return {@code null}}  A wildcard type argument is not an inner member
-     * class.
+     * {@return {@code null}}  A wildcard type argument is not a member class or
+     * interface.
      *
      * @since 9
      */

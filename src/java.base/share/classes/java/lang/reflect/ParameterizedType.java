@@ -49,12 +49,11 @@ public interface ParameterizedType extends Type {
      * {@return the type arguments of this type, as used in the source code}
      * <p>
      * This method does not return the type arguments of the {@linkplain
-     * #getOwnerType() enclosing classes} of this type, if this is an
-     * {@linkplain ##inner-member-class inner member class}.  For example, if
-     * this type is {@code O<T>.I<S>}, this method returns an array containing
-     * exactly {@code S}.  In particular, if this inner member class is
-     * non-generic but an enclosing class is, this method returns an empty
-     * array.
+     * #getOwnerType() enclosing classes} of this type, if this type is nested.
+     * For example, if this type is {@code O<T>.I<S>}, this method returns an
+     * array containing exactly {@code S}.  In particular, if this is a
+     * non-generic class in a generic enclosing class, such as the type {@code
+     * O<T>.I}, this method returns an empty array.
      *
      * @throws TypeNotPresentException if any of the actual type arguments
      *     refers to a non-existent class or interface declaration
@@ -67,12 +66,12 @@ public interface ParameterizedType extends Type {
     /**
      * {@return the raw type of this type}  This is the generic class or
      * interface that defines this parameterized type, and applies recursively
-     * to the {@linkplain #getOwnerType() immediately enclosing class} of this
-     * type if there is one.  For example, if this type is {@code O<T>.I<S>},
-     * this method returns a representation of {@code O.I}.
+     * to the {@linkplain #getOwnerType() type that this type is a member of} if
+     * such a type exists.  For example, if this type is {@code O<T>.I<S>}, this
+     * method returns a representation of {@code O.I}.
      * <p>
-     * The returned object is not an instance of {@link GenericArrayType},
-     * {@link ParameterizedType}, {@link TypeVariable}, or {@link WildcardType}.
+     * The returned object implements {@link Type##alone Type} without any other
+     * subinterface.
      * <p>
      * This method performs type erasure (JLS {@jls 4.6}) for parameterized
      * types.
@@ -83,47 +82,36 @@ public interface ParameterizedType extends Type {
     Type getRawType();
 
     /**
-     * {@return the immediately enclosing class of this type, or {@code null} if
-     * and only if this type is not an inner member class}  For example, if this
-     * type is {@code O<T>.I<S>}, this method returns a representation of {@code
-     * O<T>}.
+     * {@return the type that this type is a member of, or {@code null} if this
+     * type is not a nested type}  The returned type is the immediately enclosing
+     * class or interface of this type.
+     * <p>
+     * Top-level classes and interfaces, local classes and interfaces, and
+     * anonymous classes are not members of other classes or interfaces.  For
+     * example, if this type is {@code Map<K, V>}, this method returns {@code
+     * null}.
+     * <p>
+     * If this type is explicitly or implicitly {@code static}, the class or
+     * interface that declared this type is always represented by a {@link
+     * Type##alone Type} without any other subinterface.  For example, if this
+     * type is {@code Map.Entry<K, V>}, this method returns the raw type {@code
+     * Map}.
+     * <p>
+     * If this type is not {@code static}, the class or interface that declared
+     * this type may be a {@code ParameterizedType} that has more type arguments
+     * in one of the enclosing classes and interfaces, or a {@link Type##alone
+     * Type} without any other subinterface if there is no more type argument.
+     * For example, if this type is {@code O<T>.I<S>}, this method returns the
+     * parameterized type {@code O<T>}.
      *
-     * <h4 id="inner-member-class">Inner member classes</h4>
-     * An inner member class is both an inner class (JLS {@jls 8.1.3}) and a
-     * member class (JLS {@jls 8.5}).  Any object of an inner member class
-     * {@code C} has an immediately enclosing instance (JLS {@jls 15.9.2}) of
-     * the {@linkplain Class#getDeclaringClass() immediately enclosing class} of
-     * {@code C}.
-     * <p>
-     * A type is not an inner member class if it is not an inner class, such as
-     * any interface, top-level class, or static nested class, or is not a
-     * member class, such as any local or anonymous class.
-     * <p>
-     * Nested interfaces (JLS {@jls 9.1.1.3}) and interface members (JLS {@jls
-     * 9.5}) are all implicitly {@code static}, so there is no inner member
-     * interface, and the immediately enclosing class or interface for an inner
-     * member class must be a class.
-     * <p>
-     * To check if a {@link Class} is an inner member class:
-     * {@snippet lang=java :
-     * // @replace substring="int.class" replacement=... :
-     * Class<?> clazz = int.class;
-     * // @link substring="getDeclaringClass" target="Class#getDeclaringClass()" :
-     * return clazz.getDeclaringClass() != null &&
-     * // @link region substring="isStatic" target="Modifier#isStatic(int)"
-     * // @link substring="getModifiers" target="Class#getModifiers()":
-     *         !Modifier.isStatic(clazz.getModifiers());
-     * // @end
-     * }
-     *
-     * @throws TypeNotPresentException if the immediately enclosing class refers
-     *     to a non-existent class or interface declaration
+     * @throws TypeNotPresentException if the immediately enclosing class or
+     *     interface refers to a non-existent class or interface declaration
      * @throws MalformedParameterizedTypeException if the immediately enclosing
-     *     class refers to a parameterized type that cannot be instantiated for
-     *     any reason
-     * @jls 8.1.3 Inner Classes and Enclosing Instances
+     *     class or interface refers to a parameterized type that cannot be
+     *     instantiated for any reason
+     * @see Class#getDeclaringClass() Class::getDeclaringClass
      * @jls 8.5 Member Class and Interface Declarations
-     * @jls 15.9.2 Determining Enclosing Instances
+     * @jls 9.5 Member Class and Interface Declarations
      */
     Type getOwnerType();
 

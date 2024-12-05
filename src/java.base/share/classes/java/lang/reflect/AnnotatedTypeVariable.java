@@ -63,7 +63,7 @@ public interface AnnotatedTypeVariable extends AnnotatedType {
     AnnotatedType[] getAnnotatedBounds();
 
     /**
-     * {@return {@code null}}  A type variable is not an inner member class.
+     * {@return {@code null}}  A type variable is not a member class or interface.
      *
      * @since 9
      */
