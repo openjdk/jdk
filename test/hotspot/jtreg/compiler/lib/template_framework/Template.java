@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
  *
  * - Extend library
  * - Implement variable sampling
+ * - Placeholders for variables / fields, to be added in inner scope - maybe requires artificial scopes?
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
  *   - Integrate with IR Framework
@@ -112,11 +113,13 @@ public final class Template implements CodeGenerator {
         }
 
         public String wrapVariable(String name) {
+            // TODO check for empty strings
             int id = parameters.instantiationID;
             return name + "_" + id;
         }
 
         public void registerVariable(String name, String type, boolean mutable) {
+            System.out.println("register " + name + " " + type + " " + mutable);
             if (localVariables.containsKey(name)) {
                 throw new TemplateFrameworkException("Template local variable with type declaration " +
                                                      "${" + name + ":" + type + "} was not the first use of the variable.");
@@ -234,16 +237,21 @@ public final class Template implements CodeGenerator {
 
     private void handleTemplated(InstantiationState state, String templated) {
         if (templated.startsWith("${")) {
-            // Local variable with type declaration: ${name:type}
-            int pos = templated.indexOf(':');
-            String name = state.wrapVariable(templated.substring(2, pos));
-            String type = templated.substring(pos+1, templated.length() - 1);
-            if (type.contains(":")) {
+            // Local variable with type declaration: ${name} or ${name:type} or ${name:type:final}
+            String[] parts = templated.substring(2, templated.length() - 1).split(":");
+            if (parts.length > 3 || (parts.length == 3 && !parts[2].equals("final"))) {
                 throw new TemplateFrameworkException("Template local variable with type declaration should have format " +
-                                                     "${name:type}, but got " + templated);
+                                                     "$name or ${name} or ${name:type} or ${name:type:final}, but got " + templated);
             }
-            // TODO parse mutability
-            state.registerVariable(name, type, true);
+            String name = state.wrapVariable(parts[0]);
+            if (parts.length == 1) {
+                state.registerVariable(name);
+                state.scope.stream.addCodeToLine(name);
+                return;
+            }
+            String type = parts[1];
+            boolean mutable = parts.length == 2; // thrid position is "final" qualifier.
+            state.registerVariable(name, type, mutable);
             state.scope.stream.addCodeToLine(name);
         } else if (templated.startsWith("$")) {
             // Local variable: $name

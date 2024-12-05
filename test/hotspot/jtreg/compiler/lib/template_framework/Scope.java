@@ -100,8 +100,6 @@ public class Scope {
         }
 
         public void add(String name, String type) {
-            System.out.println("add: " + name + " " + type);
-            // TODO verify that it does not exist yet
             // Fetch list of variables - if non-existant create a new one.
             ArrayList<String> variablesWithType = variables.get(type);
             if (variablesWithType == null) {
@@ -163,6 +161,9 @@ public class Scope {
     }
 
     public String sampleVariable(String type, boolean mutable) {
+        System.out.println("sample " + type + " " + mutable);
+        allVariables.print(0);
+        mutableVariables.print(0);
         return mutable ? mutableVariables.sample(type) : allVariables.sample(type);
     }
 }
