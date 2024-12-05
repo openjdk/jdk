@@ -5290,10 +5290,6 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
 
 MacroAssembler::KlassDecodeMode MacroAssembler::_klass_decode_mode(KlassDecodeNone);
 
-int ceil_log2(int x) {
-    return std::ceil(std::log2(x));
-}
-
 MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
   assert(UseCompressedClassPointers, "not using compressed class pointers");
   assert(Metaspace::initialized(), "metaspace not initialized yet");
@@ -5309,7 +5305,7 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
   if (operand_valid_for_logical_immediate(
         /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
     const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
-    const uint64_t range_mask = right_n_bits(ceil_log2(range));
+    const uint64_t range_mask = right_n_bits(log2i_ceil(range));
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
       return (_klass_decode_mode = KlassDecodeXor);
     }
