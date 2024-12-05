@@ -382,7 +382,7 @@ public:
 
   void print_on(outputStream* st) const;
 
-  void recycle_under_lock();
+  void try_recycle_under_lock();
 
   void try_recycle();
 

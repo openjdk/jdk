@@ -1001,7 +1001,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     return nullptr;
   }
   HeapWord* result = nullptr;
-  r->recycle_under_lock();
+  r->try_recycle_under_lock();
   in_new_region = r->is_empty();
 
   if (in_new_region) {
@@ -1212,7 +1212,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   // Initialize regions:
   for (idx_t i = beg; i <= end; i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    r->recycle_under_lock();
+    r->try_recycle_under_lock();
 
     assert(i == beg || _heap->get_region(i - 1)->index() + 1 == r->index(), "Should be contiguous");
     assert(r->is_empty(), "Should be empty");

@@ -587,7 +587,7 @@ void ShenandoahHeapRegion::recycle_internal() {
   set_affiliation(FREE);
 }
 
-void ShenandoahHeapRegion::recycle_under_lock() {
+void ShenandoahHeapRegion::try_recycle_under_lock() {
   shenandoah_assert_heaplocked();
   if (is_trash() && _recycling.try_set()) {
     if (is_trash()) {
@@ -625,10 +625,6 @@ void ShenandoahHeapRegion::try_recycle() {
       recycle_internal();
     }
     _recycling.unset();
-  } else {
-    while (_recycling.is_set()) {
-      os::naked_yield();
-    }
   }
 }
 
