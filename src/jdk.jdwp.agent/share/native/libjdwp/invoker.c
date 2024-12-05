@@ -561,7 +561,6 @@ invokeNonvirtual(JNIEnv *env, InvokeRequest *request)
                                        request->arguments);
         request->returnValue.l = NULL;
         if (object != NULL) {
-            JDI_ASSERT_MSG(JNI_FALSE, "invokeNonvirtual with Object returned type");
             saveGlobalRefHelper(env, object, &(request->returnValue.l));
         }
         return;
