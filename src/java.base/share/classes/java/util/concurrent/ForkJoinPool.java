@@ -610,12 +610,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * it tries to deactivate()), giving up (and rescanning) on "ctl"
      * contention. To avoid missed signals during deactivation, the
      * method rescans and reactivates if there may have been a missed
-     * (external) signal during deactivation. To reduce false-alarm
-     * reactivations while doing so, we scan multiple times
-     * (analogously to method quiescent()) before trying to
-     * reactivate.  Because idle workers are often not yet blocked
-     * (parked), we use a WorkQueue field to advertise that a waiter
-     * actually needs unparking upon signal.
+     * signal during deactivation. To reduce false-alarm reactivations
+     * while doing so, we scan multiple times (analogously to method
+     * quiescent()) before trying to reactivate.  Because idle workers
+     * are often not yet blocked (parked), we use a WorkQueue field to
+     * advertise that a waiter actually needs unparking upon signal.
      *
      * Quiescence. Workers scan looking for work, giving up when they
      * don't find any, without being sure that none are available.
@@ -1996,7 +1995,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             return IDLE;
         int p = phase | IDLE, activePhase = phase + (IDLE << 1);
         long pc = ctl, qc = (activePhase & LMASK) | ((pc - RC_UNIT) & UMASK);
-        w.stackPred = (int)pc;                // set ctl stack link
+        int sp = w.stackPred = (int)pc;       // set ctl stack link
         w.phase = p;
         if (!compareAndSetCtl(pc, qc))        // try to enqueue
             return w.phase = phase;           // back out on possible signal
@@ -2006,18 +2005,18 @@ public class ForkJoinPool extends AbstractExecutorService {
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
         int prechecks = Math.min(ac, 2);      // reactivation threshold
-        for (int k = Math.max(n + (n << 1), SPIN_WAITS << 1);;) {
-            WorkQueue q; int cap; ForkJoinTask<?>[] a;
+        for (int k = Math.max(n << 2, SPIN_WAITS << 1);;) {
+            WorkQueue q; int cap; ForkJoinTask<?>[] a; long c;
             if (w.phase == activePhase)
                 return activePhase;
             if (--k < 0)
                 return awaitWork(w, p);       // block, drop, or exit
-            if ((k & 1) != 0)
-                Thread.onSpinWait();          // interleave spins and rechecks
-            else if ((q = qs[k & (n - 1)]) != null &&
-                     (a = q.array) != null && (cap = a.length) > 0 &&
+            if ((q = qs[k & (n - 1)]) == null)
+                Thread.onSpinWait();
+            else if ((a = q.array) != null && (cap = a.length) > 0 &&
                      a[q.base & (cap - 1)] != null && --prechecks < 0 &&
-                     ctl == qc && compareAndSetCtl(qc, pc))
+                     (int)(c = ctl) == activePhase &&
+                     compareAndSetCtl(c, (sp & LMASK) | ((c + RC_UNIT) & UMASK)))
                 return w.phase = activePhase; // reactivate
         }
     }
