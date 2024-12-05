@@ -357,8 +357,10 @@ void VM_Version::c2_initialize() {
 
   // UseZvbc (depends on RVV).
   if (UseZvbc && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvbc)) {
+      warning("Cannot enable UseZvbc on cpu without RVV support.");
+    }
     FLAG_SET_DEFAULT(UseZvbc, false);
-    warning("Cannot enable UseZvbc on cpu without RVV support.");
   }
 
   // SHA's
