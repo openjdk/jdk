@@ -58,7 +58,6 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/mallocSiteTable.hpp"
-#include "nmt/memTracker.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/constantPool.inline.hpp"
@@ -720,7 +719,6 @@ WB_END
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
   os::commit_memory((char *)(uintptr_t)addr, size, !ExecMem);
-  MemTracker::record_virtual_memory_tag((address)(uintptr_t)addr, mtTest);
 WB_END
 
 WB_ENTRY(void, WB_NMTUncommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
