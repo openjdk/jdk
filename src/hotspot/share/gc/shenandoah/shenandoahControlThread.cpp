@@ -56,14 +56,7 @@ void ShenandoahControlThread::run_service() {
   const GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
   int sleep = ShenandoahControlIntervalMin;
 
-  double last_shrink_time = os::elapsedTime();
   double last_sleep_adjust_time = os::elapsedTime();
-
-  // Shrink period avoids constantly polling regions for shrinking.
-  // Having a period 10x lower than the delay would mean we hit the
-  // shrinking with lag of less than 1/10-th of true delay.
-  // ShenandoahUncommitDelay is in msecs, but shrink_period is in seconds.
-  const double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
 
   ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
   ShenandoahHeuristics* const heuristics = heap->heuristics();
@@ -75,9 +68,6 @@ void ShenandoahControlThread::run_service() {
 
     // This control loop iteration has seen this much allocation.
     const size_t allocs_seen = reset_allocs_seen();
-
-    // Check if we have seen a new target for soft max heap size.
-    const bool soft_max_changed = heap->check_soft_max_changed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -136,6 +126,9 @@ void ShenandoahControlThread::run_service() {
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
+      // Cannot uncommit bitmap slices during concurrent reset
+      ShenandoahNoUncommitMark forbid_region_uncommit(heap);
+
       // GC is starting, bump the internal ID
       update_gc_id();
 
@@ -238,29 +231,20 @@ void ShenandoahControlThread::run_service() {
       }
     }
 
-    const double current = os::elapsedTime();
-
-    if (ShenandoahUncommit && (is_gc_requested || soft_max_changed || (current - last_shrink_time > shrink_period))) {
-      // Explicit GC tries to uncommit everything down to min capacity.
-      // Soft max change tries to uncommit everything down to target capacity.
-      // Periodic uncommit tries to uncommit suitable regions down to min capacity.
-
-      double shrink_before = (is_gc_requested || soft_max_changed) ?
-                             current :
-                             current - (ShenandoahUncommitDelay / 1000.0);
-
-      size_t shrink_until = soft_max_changed ?
-                             heap->soft_max_capacity() :
-                             heap->min_capacity();
-
-      heap->maybe_uncommit(shrink_before, shrink_until);
-      heap->phase_timings()->flush_cycle_to_global();
-      last_shrink_time = current;
+    // Check if we have seen a new target for soft max heap size or if a gc was requested.
+    // Either of these conditions will attempt to uncommit regions.
+    if (ShenandoahUncommit) {
+      if (heap->check_soft_max_changed()) {
+        heap->notify_soft_max_changed();
+      } else if (is_gc_requested) {
+        heap->notify_explicit_gc_requested();
+      }
     }
 
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
+    const double current = os::elapsedTime();
     if (heap->has_changed()) {
       sleep = ShenandoahControlIntervalMin;
     } else if ((current - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
