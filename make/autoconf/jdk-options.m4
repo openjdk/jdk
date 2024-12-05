@@ -121,7 +121,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$DOT" != "x"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
@@ -129,7 +129,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   if test "x$ENABLE_PANDOC" = "xtrue"; then
     AC_MSG_RESULT([yes])
   else
-    AC_MSG_RESULT([no, cannot generate full docs])
+    AC_MSG_RESULT([no, cannot generate full docs or man pages])
     FULL_DOCS_AVAILABLE=false
   fi
 
