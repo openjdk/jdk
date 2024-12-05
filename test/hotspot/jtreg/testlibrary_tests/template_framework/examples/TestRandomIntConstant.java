@@ -74,7 +74,7 @@ public class TestRandomIntConstant {
                     int $con1 = #{conx:int_con};
                     int ${con2:int} = #{cony:int_con};
                     $con2 = #{conz:int_con(lo=3,hi=11):con2};
-                    #{:code:}
+                    #{:code:con2}
                     return $con1 + $con2 + #{param1};
                 }
             }

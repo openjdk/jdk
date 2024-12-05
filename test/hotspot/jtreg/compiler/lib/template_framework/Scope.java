@@ -25,11 +25,18 @@ package compiler.lib.template_framework;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
+
 
 /**
  * TODO public?
  */
 public class Scope {
+    private static final Random RANDOM = Utils.getRandomInstance();
+
     public final Scope parent;
     public final long fuel;
     public final CodeStream stream;
@@ -48,11 +55,52 @@ public class Scope {
                                                    : new HashMap<String,Integer>(parent.totalVariables);
         }
 
+        public int count(String type) {
+            Integer c = totalVariables.get(type);
+            if (c == null) {
+                if (parent != null) {
+                    int pc = parent.count(type);
+                    if (pc > 0) {
+                        throw new TemplateFrameworkException("parent has vars and we do not");
+                    }
+                }
+                return 0;
+            }
+            if (parent != null) {
+                int pc = parent.count(type);
+                if (pc > c) {
+                    throw new TemplateFrameworkException("count mismatch: " + c + " " + pc);
+                }
+            }
+            return c;
+        }
+
         public String sample(String type) {
-            return "TODO_" + type;
+            int c = count(type);
+            System.out.println("Sample count: " + c);
+            if (c == 0) {
+                // No variable of this type
+                return null;
+            }
+
+            // Maybe sample from parent.
+            if (parent != null) {
+                int pc = parent.count(type);
+                int r = RANDOM.nextInt(c);
+                if (r < pc) {
+                    System.out.println("Sample parent: " + pc + " " + r);
+                    return parent.sample(type);
+                }
+            }
+
+            System.out.println("Sample local");
+            ArrayList<String> locals = variables.get(type);
+            int r = RANDOM.nextInt(locals.size());
+            return locals.get(r);
         }
 
         public void add(String name, String type) {
+            System.out.println("add: " + name + " " + type);
             // TODO verify that it does not exist yet
             // Fetch list of variables - if non-existant create a new one.
             ArrayList<String> variablesWithType = variables.get(type);
@@ -68,6 +116,22 @@ public class Scope {
                 count = 0;
             }
             totalVariables.put(type, count + 1);
+            System.out.println("Count after add: " + count(type));
+        }
+
+        public void print(int i) {
+            System.out.println("print " + i);
+            for (Map.Entry<String,ArrayList<String>> e : variables.entrySet()) {
+                String type = e.getKey();
+                ArrayList<String> locals = e.getValue();
+                System.out.println("  type: " + type + " - " + count(type));
+                for (String v : locals) {
+                  System.out.println("    " + v);
+                }
+            }
+            if (parent != null) {
+                parent.print(i+1);
+            }
         }
     }
 

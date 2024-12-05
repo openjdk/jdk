@@ -111,6 +111,11 @@ public final class Template implements CodeGenerator {
             this.replacementsMap = new HashMap<String,CodeStream>();
         }
 
+        public String wrapVariable(String name) {
+            int id = parameters.instantiationID;
+            return name + "_" + id;
+        }
+
         public void registerVariable(String name, String type, boolean mutable) {
             if (localVariables.containsKey(name)) {
                 throw new TemplateFrameworkException("Template local variable with type declaration " +
@@ -127,13 +132,6 @@ public final class Template implements CodeGenerator {
 
         public TypeAndMutability getVariable(String name) {
             return localVariables.get(name);
-        }
-
-        public void addCodeForVariable(String name) {
-            int id = parameters.instantiationID;
-            scope.stream.addCodeToLine(name);
-            scope.stream.addCodeToLine("_");
-            scope.stream.addCodeToLine(Integer.toString(id));
         }
 
         public void handleGeneratorCall(String name,
@@ -155,6 +153,7 @@ public final class Template implements CodeGenerator {
             // Create nested scope, and add the new variables to it.
             Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost());
             for (String variable : variableList) {
+                variable = wrapVariable(variable);
                 TypeAndMutability typeAndMutability = getVariable(variable);
                 if (typeAndMutability == null) {
                     throw new TemplateFrameworkException("Template generator call error. Variable type declaration not found" +
@@ -237,7 +236,7 @@ public final class Template implements CodeGenerator {
         if (templated.startsWith("${")) {
             // Local variable with type declaration: ${name:type}
             int pos = templated.indexOf(':');
-            String name = templated.substring(2, pos);
+            String name = state.wrapVariable(templated.substring(2, pos));
             String type = templated.substring(pos+1, templated.length() - 1);
             if (type.contains(":")) {
                 throw new TemplateFrameworkException("Template local variable with type declaration should have format " +
@@ -245,12 +244,12 @@ public final class Template implements CodeGenerator {
             }
             // TODO parse mutability
             state.registerVariable(name, type, true);
-            state.addCodeForVariable(name);
+            state.scope.stream.addCodeToLine(name);
         } else if (templated.startsWith("$")) {
             // Local variable: $name
-            String name = templated.substring(1);
+            String name = state.wrapVariable(templated.substring(1));
             state.registerVariable(name);
-            state.addCodeForVariable(name);
+            state.scope.stream.addCodeToLine(name);
         } else if (templated.startsWith("#{")) {
             // Replacement: #{name:generator:variables}
             String replacement = templated.substring(2, templated.length() - 1);
