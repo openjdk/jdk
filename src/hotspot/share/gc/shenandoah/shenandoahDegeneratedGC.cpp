@@ -367,10 +367,6 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
         heap->verifier()->verify_after_concmark();
       }
     }
-
-    if (VerifyAfterGC) {
-      Universe::verify();
-    }
   }
 }
 
