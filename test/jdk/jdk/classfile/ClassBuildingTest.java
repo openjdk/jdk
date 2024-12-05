@@ -35,7 +35,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.MethodTransform;
 import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.lang.classfile.attribute.SignatureAttribute;
-import java.lang.classfile.components.ClassRemapper;
+import jdk.internal.classfile.components.ClassRemapper;
 import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;
