@@ -47,6 +47,7 @@
 static const int MAX_REGIONS_RETURNED = 1000000;
 
 class MappingInfo {
+  proc_regioninfo rinfo;
 public:
   const char* _address;
   size_t _size;
@@ -66,10 +67,26 @@ public:
     _tag_text = "";
   }
 
+  bool canCombine(const proc_regionwithpathinfo& mem_info) {
+    const proc_regioninfo& n = mem_info.prp_prinfo;
+    bool cc = rinfo.pri_size == 128 * M
+              && n.pri_address == (rinfo.pri_address + _size)
+              && n.pri_protection == rinfo.pri_protection
+              && n.pri_max_protection == rinfo.pri_max_protection
+              && n.pri_user_tag == rinfo.pri_user_tag
+              && n.pri_share_mode == rinfo.pri_share_mode
+              && n.pri_offset == 0;
+    return cc;
+  }
+
+  void combineWithFollowing(const proc_regionwithpathinfo& mem_info) {
+    _size += mem_info.prp_prinfo.pri_size;
+  }
+  
   void process(const proc_regionwithpathinfo& mem_info) {
     reset();
 
-    const proc_regioninfo& rinfo = mem_info.prp_prinfo;
+    rinfo = mem_info.prp_prinfo;
 
     _address = (const char*) rinfo.pri_address;
     _size = rinfo.pri_size;
@@ -77,7 +94,7 @@ public:
     if (mem_info.prp_vip.vip_path[0] != '\0') {
       _file_name.print_raw(mem_info.prp_vip.vip_path);
     }
-    // proc_regionfilename() seems to give bad results, so we don't use it here.
+    /* proc_regionfilename() seems to give bad results, so we don't try to use it here. */
 
     char prot[4];
     char maxprot[4];
@@ -93,6 +110,7 @@ public:
     static const char* share_strings[] = {
       "cow", "pvt", "---", "shr", "tsh", "p/a", "s/a", "lpg"
     };
+    assert(SM_COW == 1 && SM_LARGE_PAGE == 8, "share_mode contants are out of range");
     const bool valid_share_mode = rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE;
     if (valid_share_mode) {
       int share_mode = rinfo.pri_share_mode;
@@ -104,7 +122,6 @@ public:
   }
 
 #define X1(TAG, DESCR) X2(TAG, DESCR)
-//#define X1(TAG) case VM_MEMORY_ ## TAG: return # TAG;
 #define X2(TAG, DESCRIPTION) case VM_MEMORY_ ## TAG: return # DESCRIPTION;
   static const char* tagToStr(uint32_t user_tag) {
     switch (user_tag) {
@@ -178,7 +195,7 @@ public:
   ProcSmapsSummary() : _num_mappings(0), _private(0),
                        _committed(0), _shared(0), _swapped_out(0) {}
 
-  void add_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) {
+  void add_mapping(const proc_regioninfo& region_info) {
     _num_mappings++;
 
     bool is_private = region_info.pri_share_mode == SM_PRIVATE
@@ -335,13 +352,23 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
     }
     proc_regioninfo& region_info = region_info_with_path.prp_prinfo;
     if (is_interesting(region_info_with_path)) {
-      mapping_info.process(region_info_with_path);
-      printer.print_single_mapping(region_info, mapping_info);
-      summary.add_mapping(region_info, mapping_info);
+      if (mapping_info.canCombine(region_info_with_path)) {
+        mapping_info.combineWithFollowing(region_info_with_path);
+      } else {
+        /* print previous mapping info */
+        /* avoid printing the empty info at the start */
+        if (mapping_info._size != 0) {
+          printer.print_single_mapping(region_info, mapping_info);
+        }
+        summary.add_mapping(region_info);
+        mapping_info.process(region_info_with_path);
+      }
     }
     assert(region_info.pri_size > 0, "size of region is 0");
     address = region_info.pri_address + region_info.pri_size;
   }
+  printer.print_single_mapping(region_info_with_path.prp_prinfo, mapping_info);
+  summary.add_mapping(region_info_with_path.prp_prinfo);
   st->cr();
   summary.print_on(session);
   st->cr();
