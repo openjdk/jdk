@@ -44,6 +44,9 @@ class Chunk {
  private:
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
+  // Used for Compilation Memory Statistic
+  uint64_t _stamp;
+
 public:
   NONCOPYABLE(Chunk);
 
@@ -81,6 +84,9 @@ public:
   char* bottom() const          { return ((char*) this) + aligned_overhead_size();  }
   char* top()    const          { return bottom() + _len; }
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
+
+  void set_stamp(uint64_t v) { _stamp = v; }
+  uint64_t stamp() const     { return _stamp; }
 };
 
 #define DO_ARENA_TAG(FN) \

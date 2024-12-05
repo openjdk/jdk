@@ -118,11 +118,11 @@ public:
   }
 
   // Returns an initialized and null-terminated Chunk of requested size
-  static Chunk* allocate_chunk(size_t length, AllocFailType alloc_failmode);
+  static Chunk* allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
 };
 
-Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
+Chunk* ChunkPool::allocate_chunk(Arena* arena, size_t length, AllocFailType alloc_failmode) {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
   // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
@@ -200,8 +200,8 @@ void Arena::start_chunk_pool_cleaner_task() {
   cleaner->enroll();
 }
 
-Chunk::Chunk(size_t length) : _len(length) {
-  _next = nullptr;         // Chain on the linked list
+Chunk::Chunk(size_t length) :
+    _next(nullptr), _len(length), _stamp(0) {
 }
 
 void Chunk::chop(Chunk* k) {
@@ -227,7 +227,7 @@ Arena::Arena(MemTag mem_tag, Tag tag, size_t init_size) :
   _hwm(nullptr), _max(nullptr)
 {
   init_size = ARENA_ALIGN(init_size);
-  _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
+  _chunk = ChunkPool::allocate_chunk(this, init_size, AllocFailStrategy::EXIT_OOM);
   _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
@@ -289,7 +289,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   }
 
   Chunk* k = _chunk;            // Get filled-up chunk address
-  _chunk = ChunkPool::allocate_chunk(len, alloc_failmode);
+  _chunk = ChunkPool::allocate_chunk(this, len, alloc_failmode);
 
   if (_chunk == nullptr) {
     _chunk = k;                 // restore the previous value of _chunk
