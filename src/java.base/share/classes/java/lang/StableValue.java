@@ -266,7 +266,7 @@ import java.util.function.Supplier;
  *     }
  *}
  * Calling {@code bar()} will create the {@code Bar} singleton if needed and will also
- * first create the {@code Bar} (which it depends on) if needed.
+ * first create the {@code Foo} (which it depends on) if needed.
  * <p>
  * A {@linkplain StableValue} may hold a reference to itself. Stable functions and
  * collections may hold self-references.
