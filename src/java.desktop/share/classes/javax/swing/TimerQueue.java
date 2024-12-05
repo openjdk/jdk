@@ -25,8 +25,6 @@
 
 package javax.swing;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -83,7 +81,6 @@ class TimerQueue implements Runnable
     }
 
 
-    @SuppressWarnings("removal")
     void startIfNeeded() {
         if (! running) {
             runningLock.lock();
@@ -92,15 +89,11 @@ class TimerQueue implements Runnable
             }
             try {
                 final ThreadGroup threadGroup = AppContext.getAppContext().getThreadGroup();
-                AccessController.doPrivileged((PrivilegedAction<Object>) () -> {
-                    String name = "TimerQueue";
-                    Thread timerThread =
-                        new Thread(threadGroup, this, name, 0, false);
-                    timerThread.setDaemon(true);
-                    timerThread.setPriority(Thread.NORM_PRIORITY);
-                    timerThread.start();
-                    return null;
-                });
+                String name = "TimerQueue";
+                Thread timerThread = new Thread(threadGroup, this, name, 0, false);
+                timerThread.setDaemon(true);
+                timerThread.setPriority(Thread.NORM_PRIORITY);
+                timerThread.start();
                 running = true;
             } finally {
                 runningLock.unlock();
@@ -186,7 +179,6 @@ class TimerQueue implements Runnable
 
                         // Allow run other threads on systems without kernel threads
                         timer.getLock().newCondition().awaitNanos(1);
-                    } catch (SecurityException ignore) {
                     } finally {
                         timer.getLock().unlock();
                     }

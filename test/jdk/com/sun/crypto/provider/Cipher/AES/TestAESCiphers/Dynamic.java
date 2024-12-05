@@ -46,7 +46,7 @@ public class Dynamic {
     static final String[] PADDING = {
         "NoPadding", "PKCS5Padding", "ISO10126Padding"
     };
-    static final String SUNJCE = "SunJCE";
+    static final String PROVIDER = System.getProperty("test.provider.name", "SunJCE");
 
     Cipher ci = null;
     byte[] iv = null;
@@ -128,8 +128,8 @@ public class Dynamic {
             new Random().nextBytes(plainText);
 
             String transformation = algo + "/" + mo + "/" + pad;
-            ci = Cipher.getInstance(transformation, SUNJCE);
-            KeyGenerator kg = KeyGenerator.getInstance(algo, SUNJCE);
+            ci = Cipher.getInstance(transformation, PROVIDER);
+            KeyGenerator kg = KeyGenerator.getInstance(algo, PROVIDER);
             if (keyStrength > Cipher.getMaxAllowedKeyLength(transformation)) {
                 // skip if this key length is larger than what's
                 // configured in the jce jurisdiction policy files

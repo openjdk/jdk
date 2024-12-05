@@ -156,7 +156,9 @@ class MacroAssembler: public Assembler {
   unsigned int mul_reg64_const16(Register rval, Register work, int cval);
 
   // Generic operation r1 := r2 + imm.
-  void add2reg(Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg   (Register r1, int64_t imm, Register r2 = noreg);
+  void add2reg_32(Register r1, int64_t imm, Register r2 = noreg);
+
   // Generic operation r := b + x + d.
   void add2reg_with_index(Register r, int64_t d, Register x, Register b = noreg);
 
@@ -694,7 +696,7 @@ class MacroAssembler: public Assembler {
                                      Label*   L_success,
                                      Label*   L_failure,
                                      Label*   L_slow_path,
-                                     RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     Register super_check_offset = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -706,25 +708,62 @@ class MacroAssembler: public Assembler {
                                      Register Rarray_ptr, // tmp
                                      Register Rlength,    // tmp
                                      Label* L_success,
-                                     Label* L_failure);
+                                     Label* L_failure,
+                                     bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_linear(Register sub_klass,
+                                            Register super_klass,
+                                            Register temp_reg,
+                                            Register temp2_reg,
+                                            Label* L_success,
+                                            Label* L_failure,
+                                            bool set_cond_codes = false);
+
+  void check_klass_subtype_slow_path_table(Register sub_klass,
+                                           Register super_klass,
+                                           Register temp_reg,
+                                           Register temp2_reg,
+                                           Register temp3_reg,
+                                           Register temp4_reg,
+                                           Register result_reg,
+                                           Label* L_success,
+                                           Label* L_failure,
+                                           bool set_cond_codes = false);
+
+  // If r is valid, return r.
+  // If r is invalid, remove a register r2 from available_regs, add r2
+  // to regs_to_push, then return r2.
+  Register allocate_if_noreg(const Register r,
+                             RegSetIterator<Register> &available_regs,
+                             RegSet &regs_to_push);
 
   void repne_scan(Register r_addr, Register r_value, Register r_count, Register r_scratch);
 
-  void lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register r_temp1,
-                                     Register r_temp2,
-                                     Register r_temp3,
-                                     Register r_temp4,
-                                     Register r_result,
-                                     u1 super_klass_slot);
+  // Secondary subtype checking
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         Register temp4,
+                                         Register result);
+
+  void lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register r_temp1,
+                                           Register r_temp2,
+                                           Register r_temp3,
+                                           Register r_temp4,
+                                           Register r_result,
+                                           u1 super_klass_slot);
 
   void lookup_secondary_supers_table_slow_path(Register r_super_klass,
                                                Register r_array_base,
                                                Register r_array_index,
                                                Register r_bitmap,
+                                               Register r_temp,
                                                Register r_result,
-                                               Register r_temp1);
+                                               bool is_stub);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,
@@ -803,6 +842,13 @@ class MacroAssembler: public Assembler {
   void load_klass(Register klass, Register src_oop);
   void store_klass(Register klass, Register dst_oop, Register ck = noreg); // Klass will get compressed if ck not provided.
   void store_klass_gap(Register s, Register dst_oop);
+  void load_narrow_klass_compact(Register dst, Register src);
+  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
+  // depending on UseCompressedClassPointers).
+  void cmp_klass(Register klass, Register obj, Register tmp);
+  // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
+  // Uses tmp1 and tmp2 as temporary registers.
+  void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
 
   // This function calculates the size of the code generated by
   //   decode_klass_not_null(register dst)

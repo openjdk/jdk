@@ -98,7 +98,6 @@ import sun.print.PrintServiceLookupProvider;
 import sun.print.ServiceDialog;
 
 import java.awt.Frame;
-import java.io.FilePermission;
 
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
@@ -1906,23 +1905,6 @@ public final class WPrinterJob extends RasterPrinterJob
         return mAttMediaTray;
     }
 
-
-
-    private boolean getPrintToFileEnabled() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            FilePermission printToFilePermission =
-                new FilePermission("<<ALL FILES>>", "read,write");
-            try {
-                security.checkPermission(printToFilePermission);
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private void setNativeAttributes(int flags, int fields, int values) {
         if (attributes == null) {
             return;
@@ -1931,16 +1913,7 @@ public final class WPrinterJob extends RasterPrinterJob
             Destination destPrn = (Destination)attributes.get(
                                                  Destination.class);
             if (destPrn == null) {
-                try {
-                    attributes.add(new Destination(
-                                               new File("./out.prn").toURI()));
-                } catch (SecurityException se) {
-                    try {
-                        attributes.add(new Destination(
-                                                new URI("file:out.prn")));
-                    } catch (URISyntaxException e) {
-                    }
-                }
+                attributes.add(new Destination(new File("./out.prn").toURI()));
             }
         } else {
             attributes.remove(Destination.class);

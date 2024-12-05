@@ -144,7 +144,7 @@ final class QueryResolver {
             field.aggregator = expression.aggregator();
             FieldBuilder.configureAggregator(field);
             expression.alias().ifPresent(alias -> fieldAliases.put(alias, field));
-            if (field.name.equals("*") && field.aggregator != Aggregator.COUNT) {
+            if (expression.name().equals("*") && field.aggregator != Aggregator.COUNT) {
                 throw new QuerySyntaxException("Wildcard ('*') can only be used with aggregator function COUNT");
             }
         }
@@ -259,7 +259,7 @@ final class QueryResolver {
         List<Field> fields = new ArrayList<>();
 
         if (name.equals("*")) {
-            // Used with COUNT(*) and UNIQUE(*)
+            // Used with COUNT(*)
             // All events should have a start time
             name = "startTime";
         }

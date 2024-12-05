@@ -36,7 +36,7 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86-hs, linux-x64-variants, linux-cross-compile, alpine-linux-x64, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'linux-x64, linux-x64-variants, linux-cross-compile, alpine-linux-x64, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -62,7 +62,6 @@ jobs:
       EXCLUDED_PLATFORMS: 'alpine-linux-x64'
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
-      linux-x86-hs: ${{ steps.include.outputs.linux-x86-hs }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
       linux-cross-compile: ${{ steps.include.outputs.linux-cross-compile }}
       alpine-linux-x64: ${{ steps.include.outputs.alpine-linux-x64 }}
@@ -145,7 +144,6 @@ jobs:
           }
 
           echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
-          echo "linux-x86-hs=$(check_platform linux-x86-hs linux x86)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
           echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
           echo "alpine-linux-x64=$(check_platform alpine-linux-x64 alpine-linux x64)" >> $GITHUB_OUTPUT
@@ -169,24 +167,6 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.linux-x64 == 'true'
-
-  build-linux-x86-hs:
-    name: linux-x86-hs
-    needs: prepare
-    uses: ./.github/workflows/build-linux.yml
-    with:
-      platform: linux-x86
-      make-target: 'hotspot'
-      gcc-major-version: '10'
-      gcc-package-suffix: '-multilib'
-      apt-architecture: 'i386'
-      # Some multilib libraries do not have proper inter-dependencies, so we have to
-      # install their dependencies manually.
-      apt-extra-packages: 'libfreetype-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libffi-dev:i386'
-      extra-conf-options: '--with-target-bits=32 --enable-fallback-linker --enable-libffi-bundling'
-      configure-arguments: ${{ github.event.inputs.configure-arguments }}
-      make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.prepare.outputs.linux-x86-hs == 'true'
 
   build-linux-x64-hs-nopch:
     name: linux-x64-hs-nopch
@@ -284,7 +264,7 @@ jobs:
     with:
       platform: macos-aarch64
       runs-on: 'macos-14'
-      xcode-toolset-version: '14.3.1'
+      xcode-toolset-version: '15.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.prepare.outputs.macos-aarch64 == 'true'
@@ -354,6 +334,7 @@ jobs:
       platform: macos-x64
       bootjdk-platform: macos-x64
       runs-on: macos-13
+      xcode-toolset-version: '14.3.1'
 
   test-macos-aarch64:
     name: macos-aarch64
@@ -364,6 +345,7 @@ jobs:
       platform: macos-aarch64
       bootjdk-platform: macos-aarch64
       runs-on: macos-14
+      xcode-toolset-version: '15.4'
 
   test-windows-x64:
     name: windows-x64
@@ -374,48 +356,3 @@ jobs:
       platform: windows-x64
       bootjdk-platform: windows-x64
       runs-on: windows-2019
-
-  # Remove bundles so they are not misconstrued as binary distributions from the JDK project
-  remove-bundles:
-    name: 'Remove bundle artifacts'
-    runs-on: ubuntu-22.04
-    if: always()
-    needs:
-      - build-linux-x64
-      - build-linux-x86-hs
-      - build-linux-x64-hs-nopch
-      - build-linux-x64-hs-zero
-      - build-linux-x64-hs-minimal
-      - build-linux-x64-hs-optimized
-      - build-linux-cross-compile
-      - build-alpine-linux-x64
-      - build-macos-x64
-      - build-macos-aarch64
-      - build-windows-x64
-      - build-windows-aarch64
-      - test-linux-x64
-      - test-macos-x64
-      - test-macos-aarch64
-      - test-windows-x64
-
-    steps:
-      - name: 'Remove bundle artifacts'
-        run: |
-          # Find and remove all bundle artifacts
-          # See: https://docs.github.com/en/rest/actions/artifacts?apiVersion=2022-11-28
-          ALL_ARTIFACT_IDS="$(curl -sL \
-              -H 'Accept: application/vnd.github+json' \
-              -H 'Authorization: Bearer ${{ github.token }}' \
-              -H 'X-GitHub-Api-Version: 2022-11-28' \
-              '${{ github.api_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts?per_page=100')"
-          BUNDLE_ARTIFACT_IDS="$(echo "$ALL_ARTIFACT_IDS" | jq -r -c '.artifacts | map(select(.name|startswith("bundles-"))) | .[].id')"
-          for id in $BUNDLE_ARTIFACT_IDS; do
-            echo "Removing $id"
-            curl -sL \
-                -X DELETE \
-                -H 'Accept: application/vnd.github+json' \
-                -H 'Authorization: Bearer ${{ github.token }}' \
-                -H 'X-GitHub-Api-Version: 2022-11-28' \
-                "${{ github.api_url }}/repos/${{ github.repository }}/actions/artifacts/$id" \
-            || echo "Failed to remove bundle"
-          done

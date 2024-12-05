@@ -61,8 +61,6 @@ requires.properties= \
     vm.gc.Shenandoah \
     vm.gc.Epsilon \
     vm.gc.Z \
-    vm.gc.ZGenerational \
-    vm.gc.ZSinglegen \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.emulatedClient \
@@ -76,6 +74,7 @@ requires.properties= \
     vm.rtm.compiler \
     vm.cds \
     vm.cds.custom.loaders \
+    vm.cds.supports.aot.class.linking \
     vm.cds.write.archived.java.heap \
     vm.continuations \
     vm.jvmti \
@@ -88,7 +87,9 @@ requires.properties= \
     vm.flagless \
     container.support \
     systemd.support \
-    jdk.containerized
+    jdk.containerized \
+    jlink.runtime.linkable \
+    jlink.packagedModules
 
 # Minimum jtreg version
 requiredVersion=7.4+1

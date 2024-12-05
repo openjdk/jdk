@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,23 @@ TARGETS :=
 
 # Include the file being wrapped.
 include $(MAKEFILE_PREFIX).gmk
+
+ifeq ($(MAKEFILE_PREFIX), Lib)
+  # We need to keep track of what libraries are generated/needed by this
+  # module. This information is required when doing static linking, to know
+  # which static library files to include. The variable $(MODULE)_INCLUDED_LIBS is
+  # added to for each call to SetupJdkLibrary. The file module-included-libs.txt is then
+  # read in StaticLibs.gmk.
+  ifneq ($($(MODULE)_INCLUDED_LIBS), )
+    LIBLIST := $(SUPPORT_OUTPUTDIR)/modules_static-libs/$(MODULE)/module-included-libs.txt
+
+    $(LIBLIST): $(TARGETS)
+	$(call MakeDir, $(@D))
+	$(ECHO) $($(MODULE)_INCLUDED_LIBS) > $@
+
+    TARGETS += $(LIBLIST)
+  endif
+endif
 
 # Setup copy rules from the modules directories to the jdk image directory.
 ifeq ($(call isTargetOs, windows), true)

@@ -12,6 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<languages>
+			<language type="aa" draft="unconfirmed">ᱚᱯᱷᱚᱨ</language>
 			<language type="ab">ᱟᱹᱵᱠᱷᱟᱡᱤᱭᱟᱹᱱ</language>
 			<language type="ace">ᱟᱠᱷᱤᱱᱤᱡᱽ</language>
 			<language type="ada">ᱟᱹᱰᱟᱱᱜᱽᱢᱮ</language>
@@ -53,12 +54,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bi" draft="unconfirmed">ᱵᱤᱥᱞᱟᱢᱟ</language>
 			<language type="bin" draft="unconfirmed">ᱵᱤᱱᱤ</language>
 			<language type="bla" draft="unconfirmed">ᱥᱤᱠᱥᱤᱠᱟ</language>
+			<language type="blo" draft="unconfirmed">ᱟᱱᱤ</language>
 			<language type="bm" draft="unconfirmed">ᱵᱟᱢᱵᱟᱨᱟ</language>
 			<language type="bn" draft="unconfirmed">ᱵᱟᱝᱞᱟ</language>
 			<language type="bo" draft="unconfirmed">ᱛᱤᱵᱮᱛᱟᱱ</language>
 			<language type="br" draft="unconfirmed">ᱵᱽᱨᱚᱴᱚᱱ</language>
 			<language type="brx" draft="unconfirmed">ᱵᱳᱰᱳ</language>
 			<language type="bs" draft="unconfirmed">ᱵᱚᱥᱱᱤᱭᱟᱹᱱ</language>
+			<language type="bss" draft="unconfirmed">ᱟᱠᱩᱥ</language>
 			<language type="bug" draft="unconfirmed">ᱵᱩᱜᱤᱱᱤᱡᱽ</language>
 			<language type="byn" draft="unconfirmed">ᱵᱞᱤᱱ</language>
 			<language type="ca" draft="unconfirmed">ᱠᱟᱴᱟᱞᱟᱱ</language>
@@ -1218,7 +1221,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1" alt="variant" draft="unconfirmed">ᱥᱟᱫ ᱥᱮᱨᱢᱟ ᱥᱚᱱ</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">ᱥᱮᱨᱢᱟ ᱞᱟᱦᱟ</era>
+						<era type="0">ᱵᱤ ᱥᱤ</era>
+						<era type="0" alt="variant">ᱵᱤ ᱥᱤ ᱤ</era>
 						<era type="1">ᱤᱥᱣᱤ</era>
 					</eraAbbr>
 					<eraNarrow>
@@ -1903,9 +1907,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000" count="other">¤ 000 ᱜᱮᱞᱥᱟᱭ</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="two">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="BMD">

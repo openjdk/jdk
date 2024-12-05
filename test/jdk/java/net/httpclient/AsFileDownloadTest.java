@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,6 @@ import static org.testng.Assert.fail;
  *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
  *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm AsFileDownloadTest
- * @run testng/othervm/java.security.policy=AsFileDownloadTest.policy AsFileDownloadTest
  */
 public class AsFileDownloadTest {
 
@@ -353,8 +352,8 @@ public class AsFileDownloadTest {
         http2TestServer.stop();
         https2TestServer.stop();
 
-        if (System.getSecurityManager() == null && Files.exists(tempDir)) {
-            // clean up before next run with security manager
+        if (Files.exists(tempDir)) {
+            // clean up
             FileUtils.deleteFileTreeWithRetry(tempDir);
         }
     }

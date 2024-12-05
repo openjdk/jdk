@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,6 @@ public final class AnnotationData {
      * @throws NullPointerException if any of the above parameters is null or any entry in
      *             {@code elements} is null
      */
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public AnnotationData(JavaType type, Map.Entry<String, Object>[] elements) {
         this.type = Objects.requireNonNull(type);
         for (Map.Entry<String, Object> e : elements) {
@@ -125,7 +124,6 @@ public final class AnnotationData {
      *             there was an error parsing or creating the element value
      */
     // @formatter:on
-    @SuppressWarnings("unchecked")
     public <V> V get(String name, Class<V> elementType) {
         Object val = elements.get(name);
         if (val == null) {

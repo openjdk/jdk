@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,8 @@ public class ClhsdbInspect {
             tokensMap.put("(a java.lang.Class for LingeredAppWithLock)",
                           "instance of Oop for java/lang/Class");
             tokensMap.put("Method*=", "Type is Method");
-            tokensMap.put("(a java/util/concurrent/locks/AbstractQueuedSynchronizer$ConditionObject)",
-                          "instance of Oop for java/util/concurrent/locks/AbstractQueuedSynchronizer\\$ConditionObject");
+            tokensMap.put("(a java.lang.ref.ReferenceQueue$Lock)",
+                          "instance of Oop for java/lang/ref/ReferenceQueue\\$Lock");
 
             String[] lines = jstackOutput.split("\\R");
 

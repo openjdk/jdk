@@ -22,12 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.foreign.abi;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.invoke.MhUtil;
-import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
@@ -52,7 +52,7 @@ import static java.lang.invoke.MethodType.methodType;
 
 public class DowncallLinker {
     private static final boolean USE_SPEC = Boolean.parseBoolean(
-        GetPropertyAction.privilegedGetProperty("jdk.internal.foreign.DowncallLinker.USE_SPEC", "true"));
+            System.getProperty("jdk.internal.foreign.DowncallLinker.USE_SPEC", "true"));
 
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
@@ -84,7 +84,8 @@ public class DowncallLinker {
             leafType,
             callingSequence.needsReturnBuffer(),
             callingSequence.capturedStateMask(),
-            callingSequence.needsTransition()
+            callingSequence.needsTransition(),
+            callingSequence.usingAddressPairs()
         );
         MethodHandle handle = JLIA.nativeMethodHandle(nep);
 
