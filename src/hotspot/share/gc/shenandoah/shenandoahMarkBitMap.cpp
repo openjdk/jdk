@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 ShenandoahMarkBitMap::ShenandoahMarkBitMap(MemRegion heap, MemRegion storage) :
@@ -37,7 +38,7 @@ ShenandoahMarkBitMap::ShenandoahMarkBitMap(MemRegion heap, MemRegion storage) :
 }
 
 size_t ShenandoahMarkBitMap::compute_size(size_t heap_size) {
-  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
+  return os::align_up_vm_allocation_granularity(heap_size / mark_distance());
 }
 
 size_t ShenandoahMarkBitMap::mark_distance() {

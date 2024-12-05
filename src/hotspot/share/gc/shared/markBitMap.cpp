@@ -25,14 +25,13 @@
 #include "precompiled.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "memory/universe.hpp"
-#include "memory/virtualspace.hpp"
 
 void MarkBitMap::print_on_error(outputStream* st, const char* prefix) const {
   _bm.print_on_error(st, prefix);
 }
 
 size_t MarkBitMap::compute_size(size_t heap_size) {
-  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
+  return os::align_up_vm_allocation_granularity(heap_size / mark_distance());
 }
 
 size_t MarkBitMap::mark_distance() {
