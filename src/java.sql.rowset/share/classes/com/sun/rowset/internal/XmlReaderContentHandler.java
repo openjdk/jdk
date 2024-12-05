@@ -659,13 +659,12 @@ public class XmlReaderContentHandler extends DefaultHandler {
                  case PropClassTag:
                      //Added the handling for Class tags to take care of maps
                      //Makes an entry into the map upon end of class tag
-                     try{
-                          typeMap.put(Key_map,sun.reflect.misc.ReflectUtil.forName(Value_map));
-
-                        }catch(ClassNotFoundException ex) {
-                          throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errmap").toString(), ex.getMessage()));
-                        }
-                      break;
+                     try {
+                         typeMap.put(Key_map, Class.forName(Value_map, true, null));
+                     } catch (ClassNotFoundException ex) {
+                         throw new SAXException(MessageFormat.format(resBundle.handleGetObject("xmlrch.errmap").toString(), ex.getMessage()));
+                     }
+                     break;
 
                  case MapTag:
                       //Added the handling for Map to take set the typeMap
