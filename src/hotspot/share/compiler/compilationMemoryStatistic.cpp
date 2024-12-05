@@ -50,6 +50,16 @@
 #include "utilities/quickSort.hpp"
 #include "utilities/resourceHash.hpp"
 
+union chunkstamp_t {
+  uint64_t raw;
+  struct {
+    uint32_t tracked;
+    uint16_t arena_tag;
+    uint16_t phase_id;
+  };
+};
+STATIC_ASSERT(sizeof(chunkstamp_t) == sizeof(chunkstamp_t::raw));
+
 ArenaState::ArenaState() {
   reset();
 }
@@ -105,33 +115,17 @@ void ArenaState::on_c2_phase_end() {
 }
 #endif // COMPILER2
 
-// Account an arena allocation or de-allocation.
-bool ArenaState::account(ssize_t delta, int tag) {
+// Account an arena allocation. Returns true if new peak reached.
+bool ArenaState::on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp) {
   assert(_active, "compilaton has not yet started");
   bool rc = false;
-#ifdef ASSERT
-  // Note: if this fires, we free more arena memory under the scope of the
-  // CompilationMemoryHistoryMark than we allocate. This cannot be since we
-  // assume arena allocations in CompilerThread to be stack bound and symmetric.
-  assert(delta >= 0 || ((ssize_t)_current + delta) >= 0,
-         "Negative overflow (d=%zd %zu %zu)", delta, _current, _peak);
-#endif
   // Update totals
-  _current += delta;
-  _current_by_tag.add(tag, delta);
+  _current += size;
+  _current_by_tag.add(tag, size);
+
   // Did we reach a peak?
   if (_current > _peak) {
-
-    if (UseNewCode) {
-      CompilerThread* const th = Thread::current()->as_Compiler_thread();
-
-      CompileTask* const task = th->task();
-      const CompilerType ct = task->compiler()->type();
-      const int comp_id = task->compile_id();
-    }
-
     _peak = _current;
-    assert(delta > 0, "Sanity (%zu %zu)", _current, _peak);
     update_c2_node_count();
     _peak_by_tag = _current_by_tag;
     rc = true;
@@ -140,7 +134,26 @@ bool ArenaState::account(ssize_t delta, int tag) {
       _hit_limit = true;
     }
   }
+
+  // calc stamp
+  chunkstamp_t cs;
+  cs.tracked = 1;
+  cs.arena_tag = tag;
+  cs.phase_id = 0; // todo
+  *stamp = cs.raw;
+
   return rc;
+}
+
+// Account an arena deallocation.
+void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
+  assert(_active, "compilaton has not yet started");
+  assert(_current >= size, "Negative overflow (d=%zd %zu %zu)", size, _current, _peak);
+  _current -= size;
+  chunkstamp_t cs;
+  cs.raw = stamp;
+  assert(cs.tracked == 1, "Sanity");
+  _current_by_tag.sub(cs.arena_tag, size);
 }
 
 void ArenaState::print_on(outputStream* st) const {
@@ -549,18 +562,23 @@ static void inform_compilation_about_oom(CompilerType ct) {
   }
 }
 
-void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* arena) {
+void CompilationMemoryStatistic::on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
 
+  (*stamp) = 0; // defaults to "not tracked"
+
   ArenaState* const arena_stat = th->arena_stat();
+  if (!arena_stat->is_active()) {
+    return;
+  }
   if (arena_stat->limit_in_process()) {
     return; // avoid recursion on limit hit
   }
 
   bool hit_limit_before = arena_stat->hit_limit();
 
-  if (arena_stat->is_active() && arena_stat->account(diff, (int)arena->get_tag())) { // new peak?
+  if (arena_stat->on_arena_chunk_allocation(size, tag, stamp)) { // new peak?
 
     // Limit handling
     if (arena_stat->hit_limit()) {
@@ -613,6 +631,21 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
       arena_stat->set_limit_in_process(false);
     }
   }
+}
+
+void CompilationMemoryStatistic::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
+  assert(enabled(), "Not enabled?");
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+
+  ArenaState* const arena_stat = th->arena_stat();
+  if (!arena_stat->is_active()) {
+    return;
+  }
+  if (arena_stat->limit_in_process()) {
+    return; // avoid recursion on limit hit
+  }
+
+  arena_stat->on_arena_chunk_deallocation(size, stamp);
 }
 
 #ifdef COMPILER2

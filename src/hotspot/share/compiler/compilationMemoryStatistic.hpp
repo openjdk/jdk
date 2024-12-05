@@ -58,6 +58,12 @@ public:
     _counter[tag] += value;
   }
 
+  void sub(int tag, size_t value) {
+    assert(tag < element_count(), "invalid tag %d", tag);
+    assert(_counter[tag] >= value, "Overflow");
+    _counter[tag] -= value;
+  }
+
   void clear() {
     memset(_counter, 0, sizeof(size_t) * element_count());
   }
@@ -105,9 +111,11 @@ public:
   void start(size_t limit);
   void end();
 
-  // Account an arena allocation or de-allocation.
-  // Returns true if new peak reached
-  bool account(ssize_t delta, int tag);
+  // Account an arena allocation. Returns true if new peak reached.
+  bool on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp);
+
+  // Account an arena deallocation.
+  void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
 
   void set_live_nodes_at_peak(unsigned i) { _live_nodes_at_peak = i; }
 
@@ -150,7 +158,12 @@ public:
   static inline void on_c2_phase_end();
 #endif
 
-  static void on_arena_change(ssize_t diff, const Arena* arena);
+  // Account an arena allocation.
+  static void on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp);
+
+  // Account an arena deallocation.
+  static void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
+
   static void print_all_by_size(outputStream* st, bool human_readable, size_t minsize);
   // For compilers
   static const char* failure_reason_memlimit();

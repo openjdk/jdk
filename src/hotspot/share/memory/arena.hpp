@@ -198,6 +198,7 @@ protected:
   size_t size_in_bytes() const         {  return _size_in_bytes; };
   void set_size_in_bytes(size_t size);
 
+  MemTag get_mem_tag() const { return _mem_tag; }
   Tag get_tag() const { return _tag; }
 
 private:
