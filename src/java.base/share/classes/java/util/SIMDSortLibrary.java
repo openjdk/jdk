@@ -132,30 +132,30 @@ class SIMDSortLibrary {
         }
     }
 
+    @ForceInline
+    private static int[] partitionInvoker(MethodHandle mh, MemorySegment a, int low, int high, int pivotIndex1, int pivotIndex2) {
+        int[] pivotIndices = new int[2];
+        try {
+            mh.invokeExact(a, low, high, pivotIndices, pivotIndex1, pivotIndex2);
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
+        return pivotIndices;
+    }
+
     private static MethodHandle preparePartition(Class<?> cls, MethodHandle mh) {
         if (mh != null) {
             try {
                 MethodHandle ofArray = MethodHandles.lookup().findStatic(MemorySegment.class, "ofArray",
                         MethodType.methodType(MemorySegment.class, cls));
+
+                MethodHandle invoker = MethodHandles.lookup().findStatic(SIMDSortLibrary.class, "partitionInvoker",
+                        MethodType.methodType(int[].class, MethodHandle.class, MemorySegment.class,
+                                int.class, int.class, int.class, int.class));
+
+                mh = invoker.bindTo(mh);
+
                 mh = MethodHandles.filterArguments(mh, 0, ofArray);
-
-                MethodHandle ofIntArray = MethodHandles.lookup().findStatic(MemorySegment.class, "ofArray",
-                        MethodType.methodType(MemorySegment.class, int[].class));
-                mh = MethodHandles.filterArguments(mh, 3, ofIntArray);
-
-                MethodHandle allocArray = MethodHandles.insertArguments(
-                        MethodHandles.arrayConstructor(int[].class), 0, 2);
-
-                MethodHandle tmp = MethodHandles.identity(int[].class);
-                tmp = MethodHandles.dropArguments(tmp, 1, int.class, int.class); // append
-                tmp = MethodHandles.dropArguments(tmp, 0, cls, int.class, int.class); // prepend
-
-                assert tmp.type().changeReturnType(void.class) == mh.type();
-
-                mh = MethodHandles.foldArguments(tmp, mh);
-
-                mh = MethodHandles.collectArguments(mh, 3, allocArray);
-
                 return mh;
             } catch (NoSuchMethodException | IllegalAccessException e) {
                 throw new InternalError(e);
