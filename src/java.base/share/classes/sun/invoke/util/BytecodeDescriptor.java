@@ -38,8 +38,25 @@ public class BytecodeDescriptor {
     private BytecodeDescriptor() { }  // cannot instantiate
 
     /**
+     * @throws IllegalArgumentException if the descriptor is invalid
+     * @throws TypeNotPresentException if the descriptor is valid, but
+     * the class cannot be found by the loader
+     */
+    public static Class<?> parseClass(String descriptor, ClassLoader loader) {
+        int[] i = {0};
+        var ret = parseSig(descriptor, i, descriptor.length(), loader);
+        if (i[0] != descriptor.length() || ret == null) {
+            parseError("not a class descriptor", descriptor);
+        }
+        return ret;
+    }
+
+    /**
      * @param loader the class loader in which to look up the types (null means
      *               bootstrap class loader)
+     * @throws IllegalArgumentException if the descriptor is invalid
+     * @throws TypeNotPresentException if the descriptor is valid, but
+     * a reference type cannot be found by the loader
      */
     public static List<Class<?>> parseMethod(String bytecodeSignature, ClassLoader loader) {
         return parseMethod(bytecodeSignature, 0, bytecodeSignature.length(), loader);

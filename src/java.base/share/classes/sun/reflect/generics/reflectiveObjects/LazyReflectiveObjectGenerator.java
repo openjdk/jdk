@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 
 package sun.reflect.generics.reflectiveObjects;
 
+import java.lang.classfile.Signature;
 import java.lang.reflect.Type;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.tree.FieldTypeSignature;
-import sun.reflect.generics.visitor.Reifier;
+import sun.reflect.generics.info.GenericInfo;
 
 
 /**
@@ -42,28 +41,18 @@ import sun.reflect.generics.visitor.Reifier;
  *
 */
 public abstract class LazyReflectiveObjectGenerator {
-    private final GenericsFactory factory; // cached factory
+    private final GenericInfo<?> factory; // cached factory
 
-    protected LazyReflectiveObjectGenerator(GenericsFactory f) {
+    protected LazyReflectiveObjectGenerator(GenericInfo<?> f) {
         factory = f;
     }
 
-    // accessor for factory
-    private GenericsFactory getFactory() {
-        return factory;
-    }
-
-    // produce a reifying visitor (could this be typed as a TypeTreeVisitor?
-    protected Reifier getReifier(){return Reifier.make(getFactory());}
-
-    Type[] reifyBounds(FieldTypeSignature[] boundASTs) {
+    Type[] reifyBounds(Signature[] boundASTs) {
         final int length = boundASTs.length;
         final Type[] bounds = new Type[length];
         // iterate over bound trees, reifying each in turn
         for (int i = 0; i < length; i++) {
-            Reifier r = getReifier();
-            boundASTs[i].accept(r);
-            bounds[i] = r.getResult();
+            bounds[i] = factory.resolve(boundASTs[i]);
         }
         return bounds;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,21 @@
  * @bug 6832374 7052898
  * @summary Test bad signatures get a GenericSignatureFormatError thrown.
  * @author Joseph D. Darcy
- * @modules java.base/sun.reflect.generics.parser
+ * @library /test/lib
  */
 
+import jdk.test.lib.ByteCodeLoader;
+
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.*;
-import sun.reflect.generics.parser.SignatureParser;
+
+import static java.lang.constant.ConstantDescs.MTD_void;
 
 public class TestBadSignatures {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         String[] badSignatures = {
             // Missing ":" after first type bound
             "<T:Lfoo/tools/nsc/symtab/Names;Lfoo/tools/nsc/symtab/Symbols;",
@@ -42,9 +49,18 @@ public class TestBadSignatures {
             "<E:Ljava/lang/Exception;>(TE;[Ljava/lang/RuntimeException;)V^[TE;",
         };
 
+        int i = 0;
         for(String badSig : badSignatures) {
+            var className = "BadSignature" + i;
+            var bytes = ClassFile.of().build(ClassDesc.of(className), clb ->
+                    clb.withMethod("test", MTD_void, 0, mb -> mb
+                            .withCode(CodeBuilder::return_)
+                            .with(SignatureAttribute.of(clb.constantPool().utf8Entry(badSig)))));
+
+            var cl = ByteCodeLoader.load(className, bytes);
+            var method = cl.getDeclaredMethod("test");
             try {
-                SignatureParser.make().parseMethodSig(badSig);
+                method.getGenericParameterTypes();
                 throw new RuntimeException("Expected GenericSignatureFormatError for " +
                                            badSig);
             } catch(GenericSignatureFormatError gsfe) {

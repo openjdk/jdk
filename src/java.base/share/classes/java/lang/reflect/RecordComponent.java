@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,7 @@ import jdk.internal.access.SharedSecrets;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeAnnotationParser;
-import sun.reflect.generics.factory.CoreReflectionFactory;
-import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.repository.FieldRepository;
-import sun.reflect.generics.scope.ClassScope;
+import sun.reflect.generics.info.FieldGenericInfo;
 import java.lang.annotation.Annotation;
 import java.util.Map;
 import java.util.Objects;
@@ -54,7 +51,7 @@ public final class RecordComponent implements AnnotatedElement {
     private Method accessor;
     private String signature;
     // generic info repository; lazily initialized
-    private transient volatile FieldRepository genericInfo;
+    private transient volatile FieldGenericInfo genericInfo;
     private byte[] annotations;
     private byte[] typeAnnotations;
     private RecordComponent root;
@@ -120,28 +117,21 @@ public final class RecordComponent implements AnnotatedElement {
      */
     public Type getGenericType() {
         if (getGenericSignature() != null)
-            return getGenericInfo().getGenericType();
+            return getGenericInfo().getType();
         else
             return getType();
     }
 
     // Accessor for generic info repository
-    private FieldRepository getGenericInfo() {
+    private FieldGenericInfo getGenericInfo() {
         var genericInfo = this.genericInfo;
         // lazily initialize repository if necessary
         if (genericInfo == null) {
             // create and cache generic info repository
-            genericInfo = FieldRepository.make(getGenericSignature(), getFactory());
+            genericInfo = new FieldGenericInfo(getDeclaringRecord(), getGenericSignature());
             this.genericInfo = genericInfo;
         }
         return genericInfo; //return cached repository
-    }
-
-    // Accessor for factory
-    private GenericsFactory getFactory() {
-        Class<?> c = getDeclaringRecord();
-        // create scope and factory
-        return CoreReflectionFactory.make(c, ClassScope.make(c));
     }
 
     /**

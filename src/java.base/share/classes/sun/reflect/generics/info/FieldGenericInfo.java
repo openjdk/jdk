@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,33 @@
  * questions.
  */
 
-package sun.reflect.generics.visitor;
+package sun.reflect.generics.info;
 
-import sun.reflect.generics.tree.*;
+import jdk.internal.vm.annotation.Stable;
 
-public interface Visitor<T> extends TypeTreeVisitor<T> {
+import java.lang.classfile.Signature;
+import java.lang.reflect.GenericSignatureFormatError;
+import java.lang.reflect.Type;
 
-    void visitClassSignature(ClassSignature cs);
-    void visitMethodTypeSignature(MethodTypeSignature ms);
+public final class FieldGenericInfo extends GenericInfo<Class<?>> {
+    private final Signature signature;
+    private volatile @Stable Type type;
+
+    public FieldGenericInfo(Class<?> closestDecl, String signatureString) {
+        super(closestDecl);
+        Signature signature;
+        try {
+            signature = Signature.parseFrom(signatureString);
+        } catch (IllegalArgumentException ex) {
+            throw new GenericSignatureFormatError(ex.getMessage());
+        }
+        this.signature = signature;
+    }
+
+    public Type getType() {
+        var type = this.type;
+        if (type != null)
+            return type;
+        return this.type = resolve(signature);
+    }
 }
