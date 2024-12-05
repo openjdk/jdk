@@ -525,6 +525,6 @@ public abstract class BaseFileManager implements JavaFileManager {
 
         // Check whether we've already opened this file for output
         if (!outputFilesWritten.add(realPath))
-            log.warning(LintWarnings.OutputFileClash(path)); // @@@: shouldn't we check for suppression?
+            log.warning(LintWarnings.OutputFileClash(path));
     }
 }

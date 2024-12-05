@@ -96,7 +96,6 @@ public class Lint
         return l;
     }
 
-    private final Log log;
     private final AugmentVisitor augmentor;
 
     private final EnumSet<LintCategory> values;
@@ -150,14 +149,12 @@ public class Lint
 
         context.put(lintKey, this);
         augmentor = new AugmentVisitor(context);
-        log = Log.instance(context);
     }
 
     protected Lint(Lint other) {
         this.augmentor = other.augmentor;
         this.values = other.values.clone();
         this.suppressedValues = other.suppressedValues.clone();
-        this.log = other.log;
     }
 
     @Override
@@ -394,7 +391,7 @@ public class Lint
     /**
      * Helper method. Log a lint warning if its lint category is enabled.
      */
-    public void logIfEnabled(DiagnosticPosition pos, LintWarning warning) {
+    public void logIfEnabled(Log log, DiagnosticPosition pos, LintWarning warning) {
         if (isEnabled(warning.getLintCategory())) {
             log.warning(pos, warning);
         }
