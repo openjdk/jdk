@@ -233,8 +233,14 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract String getProtocol();
 
     /**
-     * Returns the attribute's value from this exchange's
-     * {@linkplain HttpContext#getAttributes() context attributes}.
+     * Returns the value for the given attribute {@code name}.
+     *
+     * @implSpec The JDK built-in implementation of this method returns
+     * the attribute value from this exchange's
+     * {@linkplain HttpContext#getAttributes() context attributes}. The attribute
+     * may have been {@linkplain HttpExchange#setAttribute(String, Object) set}
+     * either through this {@code HttpExchange} instance or some
+     * other {@code HttpExchange} belonging to the same {@link HttpContext}.
      *
      * @apiNote {@link Filter} modules may store arbitrary objects as attributes through
      * {@code HttpExchange} instances as an out-of-band communication mechanism. Other filters
@@ -251,8 +257,13 @@ public abstract class HttpExchange implements AutoCloseable, Request {
     public abstract Object getAttribute(String name);
 
     /**
-     * Sets an attribute with the given {@code name} and {@code value} in this exchange's
-     * {@linkplain HttpContext#getAttributes() context attributes}.
+     * Sets an attribute with the given {@code name} and {@code value}.
+     *
+     * @implSpec The JDK built-in implementation of this method sets
+     * the attribute in this exchange's
+     * {@linkplain HttpContext#getAttributes() context attributes}. The attribute
+     * will be {@linkplain HttpExchange#getAttribute(String) available} to all
+     * other {@code HttpExchange}s that belong to the same {@link HttpContext}.
      *
      * @apiNote {@link Filter} modules may store arbitrary objects as attributes through
      * {@code HttpExchange} instances as an out-of-band communication mechanism. Other filters
