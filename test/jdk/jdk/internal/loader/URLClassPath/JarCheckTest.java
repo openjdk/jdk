@@ -117,8 +117,8 @@ public class JarCheckTest {
     public void testLocateResource() throws Exception {
         System.out.println("JAR check enabled=" + jarCheckEnabled);
         final URL[] classpath = new URL[]{
-                new URI("jar:file:" + normalJar.toString() + "!/").toURL(),
-                new URI("jar:file:" + notJustAJar.toString() + "!/").toURL()
+                new URI("jar:" + normalJar.toUri() + "!/").toURL(),
+                new URI("jar:" + notJustAJar.toUri() + "!/").toURL()
         };
         final URLClassPath urlc = new URLClassPath(classpath);
         try {
