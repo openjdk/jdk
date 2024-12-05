@@ -36,7 +36,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-public class bug4278839 extends JFrame {
+public class bug4278839 {
 
     private static boolean passed = true;
     private static JTextArea area;
@@ -47,16 +47,12 @@ public class bug4278839 extends JFrame {
         try {
 
             robo = new Robot();
-            robo.setAutoDelay(200);
+            robo.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
             robo.waitForIdle();
+            robo.delay(1000);
 
             clickMouse();
             robo.waitForIdle();
@@ -100,16 +96,11 @@ public class bug4278839 extends JFrame {
 
         final int[] result = new int[1];
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            @Override
-            public void run() {
-                result[0] = area.getCaretPosition();
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            result[0] = area.getCaretPosition();
         });
 
-        int pos = result[0];
-        return pos;
+        return result[0];
     }
 
     private static void clickMouse() throws Exception {
@@ -125,8 +116,10 @@ public class bug4278839 extends JFrame {
         Rectangle rect = result[0];
 
         robo.mouseMove(rect.x + rect.width / 2, rect.y + rect.width / 2);
-        robo.mousePress(InputEvent.BUTTON1_MASK);
-        robo.mouseRelease(InputEvent.BUTTON1_MASK);
+        robo.waitForIdle();
+        robo.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robo.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        robo.waitForIdle();
     }
 
     /**
