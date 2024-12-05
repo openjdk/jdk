@@ -2884,6 +2884,23 @@ REPLICATE_INT(L, iRegL)
 REPLICATE_FP(F, S, T_FLOAT )
 REPLICATE_FP(D, D, T_DOUBLE)
 
+// Replicate a half-precision float value held in a floating point register
+instruct replicateHF(vReg dst, vRegF src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (Replicate src));
+  format %{ "replicateHF $dst, $src\t# replicate half-precision float" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ dup($dst$$FloatRegister, __ T8H, $src$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_cpy($dst$$FloatRegister, __ H, ptrue, $src$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // replicate from imm
 
 instruct replicateI_imm_le128b(vReg dst, immI con) %{
@@ -2953,10 +2970,9 @@ instruct replicateL_imm8_gt128b(vReg dst, immL8_shift8 con) %{
 %}
 
 // Replicate a 16-bit half precision float value
-
-instruct replicateH(vReg dst, immH con) %{
+instruct replicateH_imm(vReg dst, immH con) %{
   match(Set dst (Replicate con));
-  format %{ "replicateH $dst, $con\t# replicate half-precision float" %}
+  format %{ "replicateH_imm $dst, $con\t# replicate immediate half-precision float" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     if (VM_Version::use_neon_for_vector(length_in_bytes)) {

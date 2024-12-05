@@ -17281,6 +17281,16 @@ instruct reinterpretS2HF(vRegF dst, iRegINoSp src) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct convF2HFAndS2HF(vRegF dst, vRegF src)
+%{
+  match(Set dst (ReinterpretS2HF (ConvF2HF src)));
+  format %{ "convF2HFAndS2HF $dst, $src" %}
+  ins_encode %{
+    __ fcvtsh($dst$$FloatRegister, $src$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ============================================================================
 // This name is KNOWN by the ADLC and cannot be changed.
 // The ADLC forces a 'TypeRawPtr::BOTTOM' output type
