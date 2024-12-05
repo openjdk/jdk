@@ -93,7 +93,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
 
 void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
   stringStream ss;
-  ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(_state), method);
+  ss.print("Illegal region state transition from \"%s\", at %s\n  ", region_state_to_string(state()), method);
   print_on(&ss);
   fatal("%s", ss.freeze());
 }
@@ -101,7 +101,7 @@ void ShenandoahHeapRegion::report_illegal_transition(const char *method) {
 void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affiliation) {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
@@ -121,7 +121,7 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
 void ShenandoahHeapRegion::make_affiliated_maybe() {
   shenandoah_assert_heaplocked();
   assert(!ShenandoahHeap::heap()->mode()->is_generational(), "Only call if non-generational");
-  switch (_state) {
+  switch (state()) {
    case _empty_uncommitted:
    case _empty_committed:
    case _cset:
@@ -147,14 +147,15 @@ void ShenandoahHeapRegion::make_regular_bypass() {
           ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
           "Only for STW GC or when Universe is initializing (CDS)");
   reset_age();
-  switch (_state) {
+  auto cur_state = state();
+  switch (cur_state) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
     case _cset:
     case _humongous_start:
     case _humongous_cont:
-      if (_state == _humongous_start || _state == _humongous_cont) {
+      if (cur_state == _humongous_start || cur_state == _humongous_cont) {
         // CDS allocates chunks of the heap to fill with regular objects. The allocator
         // will dutifully track any waste in the unused portion of the last region. Once
         // CDS has finished initializing the objects, it will convert these regions to
@@ -178,7 +179,7 @@ void ShenandoahHeapRegion::make_regular_bypass() {
 void ShenandoahHeapRegion::make_humongous_start() {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
@@ -195,7 +196,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   set_affiliation(affiliation);
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
@@ -210,7 +211,7 @@ void ShenandoahHeapRegion::make_humongous_start_bypass(ShenandoahAffiliation aff
 void ShenandoahHeapRegion::make_humongous_cont() {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
     case _empty_committed:
@@ -227,7 +228,7 @@ void ShenandoahHeapRegion::make_humongous_cont_bypass(ShenandoahAffiliation affi
   set_affiliation(affiliation);
   // Don't bother to account for affiliated regions during Full GC.  We recompute totals at end.
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _empty_committed:
     case _regular:
     case _humongous_start:
@@ -243,7 +244,7 @@ void ShenandoahHeapRegion::make_pinned() {
   shenandoah_assert_heaplocked();
   assert(pin_count() > 0, "Should have pins: " SIZE_FORMAT, pin_count());
 
-  switch (_state) {
+  switch (state()) {
     case _regular:
       set_state(_pinned);
     case _pinned_cset:
@@ -254,7 +255,7 @@ void ShenandoahHeapRegion::make_pinned() {
     case _pinned_humongous_start:
       return;
     case _cset:
-      _state = _pinned_cset;
+      set_state(_pinned_cset);
       return;
     default:
       report_illegal_transition("pinning");
@@ -265,7 +266,7 @@ void ShenandoahHeapRegion::make_unpinned() {
   shenandoah_assert_heaplocked();
   assert(pin_count() == 0, "Should not have pins: " SIZE_FORMAT, pin_count());
 
-  switch (_state) {
+  switch (state()) {
     case _pinned:
       assert(is_affiliated(), "Pinned region should be affiliated");
       set_state(_regular);
@@ -287,7 +288,7 @@ void ShenandoahHeapRegion::make_unpinned() {
 void ShenandoahHeapRegion::make_cset() {
   shenandoah_assert_heaplocked();
   // Leave age untouched.  We need to consult the age when we are deciding whether to promote evacuated objects.
-  switch (_state) {
+  switch (state()) {
     case _regular:
       set_state(_cset);
     case _cset:
@@ -300,7 +301,7 @@ void ShenandoahHeapRegion::make_cset() {
 void ShenandoahHeapRegion::make_trash() {
   shenandoah_assert_heaplocked();
   reset_age();
-  switch (_state) {
+  switch (state()) {
     case _humongous_start:
     case _humongous_cont:
     {
@@ -332,7 +333,7 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 void ShenandoahHeapRegion::make_empty() {
   reset_age();
   CENSUS_NOISE(clear_youth();)
-  switch (_state) {
+  switch (state()) {
     case _trash:
       set_state(_empty_committed);
       _empty_time = os::elapsedTime();
@@ -344,7 +345,7 @@ void ShenandoahHeapRegion::make_empty() {
 
 void ShenandoahHeapRegion::make_uncommitted() {
   shenandoah_assert_heaplocked();
-  switch (_state) {
+  switch (state()) {
     case _empty_committed:
       do_uncommit();
       set_state(_empty_uncommitted);
@@ -358,7 +359,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
   shenandoah_assert_heaplocked();
   assert (ShenandoahHeap::heap()->is_full_gc_in_progress(), "only for full GC");
 
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       do_commit();
       set_state(_empty_committed);
@@ -399,7 +400,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
   st->print("|");
   st->print(SIZE_FORMAT_W(5), this->_index);
 
-  switch (_state) {
+  switch (state()) {
     case _empty_uncommitted:
       st->print("|EU ");
       break;
@@ -624,6 +625,10 @@ void ShenandoahHeapRegion::try_recycle() {
       recycle_internal();
     }
     _recycling.unset();
+  } else {
+    while (_recycling.is_set()) {
+      os::naked_yield();
+    }
   }
 }
 
