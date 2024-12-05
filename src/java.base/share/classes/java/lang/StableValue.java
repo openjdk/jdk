@@ -233,12 +233,12 @@ import java.util.function.Supplier;
  *     }
  *}
  *
- * <h2 id="composition">Composition</h2>
+ * <h2 id="composition">Composing stable values</h2>
  * A stable value can depend on other stable values, thereby creating a dependency tree
  * that can be lazily computed but where the individual tree branches still provide
- * as-final performance. In the following example, a single `Foo` and a `Bar` instance
- * (that is dependent on the`Foo` instance) are lazily created, both of which are held
- * by stable values:
+ * as-final performance. In the following example, a single {@code Foo} and a {@code Bar}
+ * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
+ * which are held by stable values:
  * {@snippet lang = java:
  *     class Dependency {
  *
@@ -294,6 +294,11 @@ import java.util.function.Supplier;
  * computational complexity is reduced from exponential to linear compared to a
  * traditional non-internalizing recursive fibonacci method. Once computed, the VM
  * can constant-fold expressions like {@code Fibonacci.fib(10)}.
+ * <p>
+ * The fibonacci example above is a dependency tree with no circular dependencies.
+ * In a more general dependency graph, a stable value will throw a
+ * {@linkplain StackOverflowError} if there is a circular dependency and elements in
+ * said circle are referenced.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A holder value is guaranteed to be set at most once. If competing threads are
@@ -319,8 +324,10 @@ import java.util.function.Supplier;
  * which would introduce security vulnerabilities.
  * <p>
  * As objects can be set via stable values but never removed, this can be a source
- * of unintended memory leaks. Clients are advised that live stable values will hold set
- * values perpetually.
+ * of unintended memory leaks. A stable value's set values are
+ * {@linkplain java.lang.ref##reachability strongly reachable}. Clients are advised that
+ * {@linkplain java.lang.ref##reachability reachable} stable values will hold set values
+ * perpetually.
  *
  * @implSpec Implementing classes of {@linkplain StableValue} are free to synchronize on
  *           {@code this} and consequently, care should be taken whenever
