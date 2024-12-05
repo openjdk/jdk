@@ -344,12 +344,12 @@ public final class Template implements CodeGenerator {
 
             // Default case: Repeat an earlier replacement.
             state.repeatReplacement(name, templated);
-        //} else if (templated.startsWith("#")) {
-        //    // Scope: #open(method)
-        //    String[] parts = templated.substring(1,templated.length()-1).split("(");
-        //    String scopeAction = parts[0];
-        //    String scopeKind = parts[1];
-        //    System.out.println("Scope " + scopeAction + " " + scopeKind);
+        } else if (templated.startsWith("#")) {
+            // Scope: #open(method)
+            String[] parts = templated.substring(1,templated.length()-1).split("\\(");
+            String scopeAction = parts[0];
+            String scopeKind = parts[1];
+            System.out.println("Scope " + scopeAction + " " + scopeKind);
         } else {
             throw new TemplateFrameworkException("Template pattern not handled: " + templated);
         }

@@ -30,7 +30,6 @@ import java.util.Random;
 
 import jdk.test.lib.Utils;
 
-
 /**
  * TODO public?
  */
@@ -165,5 +164,32 @@ public class Scope {
         allVariables.print(0);
         mutableVariables.print(0);
         return mutable ? mutableVariables.sample(type) : allVariables.sample(type);
+    }
+
+
+    /**
+     * Next outer Scope (not this) that is a ClassScope.
+     */
+    public ClassScope classScope() {
+        if (parent == null) {
+            return null;
+        } else if (parent instanceof ClassScope cs) {
+            return cs;
+        } else {
+            return parent.classScope();
+        }
+    }
+
+    /**
+     * Next outer Scope (not this) that is a MethodScope.
+     */
+    public MethodScope methodScope() {
+        if (parent == null) {
+            return null;
+        } else if (parent instanceof MethodScope ms) {
+            return ms;
+        } else {
+            return parent.methodScope();
+        }
     }
 }
