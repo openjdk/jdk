@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/* @test
- * @bug 8004502
- * @summary Sanity check that specifying the APPLET property when creating an
- *   InitialContext behaves as expected when java.awt.Applet is not present
+/*
+ * @test
+ * @bug 8345438
+ * @summary Verify 'return' allowed in a lambda declared in an early construction context
+ * @enablePreview
  */
+public class EarlyLambdaReturn {
 
-import javax.naming.*;
-import java.util.Hashtable;
+    public EarlyLambdaReturn() {
+        Runnable r = () -> {
+            return;
+        };
+        super();
+        r.run();
+    }
 
-public class NoApplet {
-    @SuppressWarnings("deprecation")
-    public static void main(String[] args) throws NamingException {
-        Hashtable<Object,Object> env = new Hashtable<>();
-        env.put(Context.APPLET, new Object());
-        Context ctxt = new InitialContext(env);
-        ctxt.close();
+    public static void main(String[] args) {
+        new EarlyLambdaReturn();
     }
 }
