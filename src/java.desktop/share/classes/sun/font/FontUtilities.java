@@ -28,9 +28,7 @@ package sun.font;
 import java.awt.Font;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
-import java.security.AccessController;
 
-import java.security.PrivilegedAction;
 import javax.swing.plaf.FontUIResource;
 
 import sun.awt.OSInfo;
@@ -59,65 +57,57 @@ public final class FontUtilities {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
     private static void initStatic() {
-        AccessController.doPrivileged(new PrivilegedAction<Object>() {
-            @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
-            @Override
-            public Object run() {
 
-                isLinux = OSInfo.getOSType() == OSInfo.OSType.LINUX;
+        isLinux = OSInfo.getOSType() == OSInfo.OSType.LINUX;
 
-                isMacOSX = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
-                if (isMacOSX) {
-                    // os.version has values like 10.13.6, 10.14.6
-                    // If it is not positively recognised as 10.13 or less,
-                    // assume it means 10.14 or some later version.
-                    isMacOSX14 = true;
-                    String version = System.getProperty("os.version", "");
-                    if (version.startsWith("10.")) {
-                        version = version.substring(3);
-                        int periodIndex = version.indexOf('.');
-                        if (periodIndex != -1) {
-                            version = version.substring(0, periodIndex);
-                        }
-                        try {
-                            int v = Integer.parseInt(version);
-                            isMacOSX14 = (v >= 14);
-                        } catch (NumberFormatException e) {
-                        }
-                     }
-                 }
-                /* If set to "jdk", use the JDK's scaler rather than
-                 * the platform one. This may be a no-op on platforms where
-                 * JDK has been configured so that it always relies on the
-                 * platform scaler. The principal case where it has an
-                 * effect is that on Windows, 2D will never use GDI.
-                 */
-                String scalerStr = System.getProperty("sun.java2d.font.scaler");
-                if (scalerStr != null) {
-                    useJDKScaler = "jdk".equals(scalerStr);
-                } else {
-                    useJDKScaler = false;
+        isMacOSX = OSInfo.getOSType() == OSInfo.OSType.MACOSX;
+        if (isMacOSX) {
+            // os.version has values like 10.13.6, 10.14.6
+            // If it is not positively recognised as 10.13 or less,
+            // assume it means 10.14 or some later version.
+            isMacOSX14 = true;
+            String version = System.getProperty("os.version", "");
+            if (version.startsWith("10.")) {
+                version = version.substring(3);
+                int periodIndex = version.indexOf('.');
+                if (periodIndex != -1) {
+                    version = version.substring(0, periodIndex);
                 }
-                isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
-                String debugLevel =
-                    System.getProperty("sun.java2d.debugfonts");
-
-                if (debugLevel != null && !debugLevel.equals("false")) {
-                    debugFonts = true;
-                    logger = PlatformLogger.getLogger("sun.java2d");
-                    if (debugLevel.equals("warning")) {
-                        logger.setLevel(PlatformLogger.Level.WARNING);
-                    } else if (debugLevel.equals("severe")) {
-                        logger.setLevel(PlatformLogger.Level.SEVERE);
-                    }
-                    logging = logger.isEnabled();
+                try {
+                    int v = Integer.parseInt(version);
+                    isMacOSX14 = (v >= 14);
+                } catch (NumberFormatException e) {
                 }
+             }
+         }
+        /* If set to "jdk", use the JDK's scaler rather than
+         * the platform one. This may be a no-op on platforms where
+         * JDK has been configured so that it always relies on the
+         * platform scaler. The principal case where it has an
+         * effect is that on Windows, 2D will never use GDI.
+         */
+        String scalerStr = System.getProperty("sun.java2d.font.scaler");
+        if (scalerStr != null) {
+            useJDKScaler = "jdk".equals(scalerStr);
+        } else {
+            useJDKScaler = false;
+        }
+        isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
+        String debugLevel =
+            System.getProperty("sun.java2d.debugfonts");
 
-                return null;
+        if (debugLevel != null && !debugLevel.equals("false")) {
+            debugFonts = true;
+            logger = PlatformLogger.getLogger("sun.java2d");
+            if (debugLevel.equals("warning")) {
+                logger.setLevel(PlatformLogger.Level.WARNING);
+            } else if (debugLevel.equals("severe")) {
+                logger.setLevel(PlatformLogger.Level.SEVERE);
             }
-        });
+            logging = logger.isEnabled();
+        }
     }
 
     /**

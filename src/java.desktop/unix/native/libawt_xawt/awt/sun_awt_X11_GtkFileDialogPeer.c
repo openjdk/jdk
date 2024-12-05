@@ -85,7 +85,7 @@ static gboolean filenameFilterCallback(const GtkFileFilterInfo * filter_info, gp
 static void quit(JNIEnv * env, jobject jpeer, gboolean isSignalHandler)
 {
     jthrowable pendingException;
-    if (pendingException = (*env)->ExceptionOccurred(env)) {
+    if ((pendingException = (*env)->ExceptionOccurred(env)) != NULL) {
          (*env)->ExceptionClear(env);
     }
 

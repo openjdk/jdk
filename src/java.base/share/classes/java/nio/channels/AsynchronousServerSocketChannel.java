@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,6 @@ public abstract class AsynchronousServerSocketChannel
      *
      * @throws  AlreadyBoundException               {@inheritDoc}
      * @throws  UnsupportedAddressTypeException     {@inheritDoc}
-     * @throws  SecurityException                   {@inheritDoc}
      * @throws  ClosedChannelException              {@inheritDoc}
      * @throws  IOException                         {@inheritDoc}
      */
@@ -225,9 +224,6 @@ public abstract class AsynchronousServerSocketChannel
      *          If the socket is already bound
      * @throws  UnsupportedAddressTypeException
      *          If the type of the given address is not supported
-     * @throws  SecurityException
-     *          If a security manager has been installed and its {@link
-     *          SecurityManager#checkListen checkListen} method denies the operation
      * @throws  ClosedChannelException
      *          If the channel is closed
      * @throws  IOException
@@ -264,14 +260,6 @@ public abstract class AsynchronousServerSocketChannel
      * handler is not invoked directly by the initiating thread when a new
      * connection is accepted immediately (see <a
      * href="AsynchronousChannelGroup.html#threading">Threading</a>).
-     *
-     * <p> If a security manager has been installed then it verifies that the
-     * address and port number of the connection's remote endpoint are permitted
-     * by the security manager's {@link SecurityManager#checkAccept checkAccept}
-     * method. The permission check is performed with privileges that are restricted
-     * by the calling context of this method. If the permission check fails then
-     * the connection is closed and the operation completes with a {@link
-     * SecurityException}.
      *
      * @param   <A>
      *          The type of the attachment
@@ -312,18 +300,9 @@ public abstract class AsynchronousServerSocketChannel
 
     /**
      * {@inheritDoc}
-     * <p>
-     * If there is a security manager set, its {@code checkConnect} method is
-     * called with the local address and {@code -1} as its arguments to see
-     * if the operation is allowed. If the operation is not allowed,
-     * a {@code SocketAddress} representing the
-     * {@link java.net.InetAddress#getLoopbackAddress loopback} address and the
-     * local port of the channel's socket is returned.
      *
-     * @return  The {@code SocketAddress} that the socket is bound to, or the
-     *          {@code SocketAddress} representing the loopback address if
-     *          denied by the security manager, or {@code null} if the
-     *          channel's socket is not bound
+     * @return  The {@code SocketAddress} that the socket is bound to; {@code null}
+     *          if the channel's socket is not bound
      *
      * @throws  ClosedChannelException     {@inheritDoc}
      * @throws  IOException                {@inheritDoc}

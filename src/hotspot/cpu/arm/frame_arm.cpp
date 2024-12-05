@@ -325,6 +325,11 @@ bool frame::upcall_stub_frame_is_first() const {
   return false;
 }
 
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
+}
+
 //------------------------------------------------------------------------------
 // frame::verify_deopt_original_pc
 //

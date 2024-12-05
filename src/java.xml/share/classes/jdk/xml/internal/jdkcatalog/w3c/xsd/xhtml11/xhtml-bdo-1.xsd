@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+          Bidirectional Override (bdo) Element
+          This is the XML Schema BDO Element module for XHTML
+
+          This modules declares the element 'bdo' and 'dir' attributes,
+          Used to override the  Unicode bidirectional algorithm for selected
+          fragments of text.
+          Bidirectional text support includes both the bdo element and
+          the 'dir' attribute.
+
+          $Id: xhtml-bdo-1.xsd,v 1.6 2009/11/18 17:59:51 ahby Exp $
+      </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_bdomodule"/>
+    </xs:annotation>
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace"
+             schemaLocation="http://www.w3.org/2001/xml.xsd">
+        <xs:annotation>
+            <xs:documentation>
+           This import brings in the XML namespace attributes
+           The module itself does not provide the schemaLocation
+           and expects the driver schema to provide the
+           actual SchemaLocation.
+         </xs:documentation>
+        </xs:annotation>
+    </xs:import>
+    <xs:attributeGroup name="xhtml.bdo.attlist">
+        <xs:attributeGroup ref="xhtml.Core.attrib"/>
+        <xs:attributeGroup ref="xhtml.I18n.extra.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.bdo.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.bdo.type" mixed="true">
+        <xs:group ref="xhtml.bdo.content"/>
+        <xs:attributeGroup ref="xhtml.bdo.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.dir.attrib">
+        <xs:attribute name="dir">
+            <xs:simpleType>
+                <xs:restriction base="xs:NMTOKEN">
+                    <xs:enumeration value="ltr"/>
+                    <xs:enumeration value="rtl"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:attributeGroup>
+    <!-- Global dir attribute -->
+    <xs:attribute name="dir">
+        <xs:simpleType>
+            <xs:restriction base="xs:NMTOKEN">
+                <xs:enumeration value="ltr"/>
+                <xs:enumeration value="rtl"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    <xs:attributeGroup name="xhtml.Global.bdo.attrib">
+        <xs:attribute ref="dir"/>
+    </xs:attributeGroup>
+</xs:schema>
