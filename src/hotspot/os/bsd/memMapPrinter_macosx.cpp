@@ -46,6 +46,14 @@
 /* maximum number of mapping records returned */
 static const int MAX_REGIONS_RETURNED = 1000000;
 
+/* 
+ * ::mmap() on MacOS is a layer ontop of Mach system calls, and will allocate in 128MB chunks.
+ * This code will coalesce a series of identical 128GB chunks (maybe followed by one smaller chunk
+ * with identical flags) into one.
+ */
+
+static const int MACOS_PARTIAL_ALLOCATION_SIZE = 128 * M;
+
 class MappingInfo {
   proc_regioninfo _rinfo;
 public:
@@ -69,7 +77,7 @@ public:
 
   bool canCombine(const proc_regionwithpathinfo& mem_info) {
     const proc_regioninfo& n = mem_info.prp_prinfo;
-    bool cc = _rinfo.pri_size == 128 * M
+    bool cc = _rinfo.pri_size == MACOS_PARTIAL_ALLOCATION_SIZE
               && n.pri_address == (_rinfo.pri_address + _size)
               && n.pri_protection == _rinfo.pri_protection
               && n.pri_max_protection == _rinfo.pri_max_protection
