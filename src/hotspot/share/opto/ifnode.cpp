@@ -50,12 +50,11 @@ extern uint explicit_null_checks_elided;
 IfNode::IfNode(Node* control, Node* bol, float p, float fcnt)
     : MultiBranchNode(2),
       _prob(p),
-      _fcnt(fcnt)
-      NOT_PRODUCT(COMMA _assertion_predicate_type(AssertionPredicateType::None)) {
+      _fcnt(fcnt),
+      _assertion_predicate_type(AssertionPredicateType::None) {
   init_node(control, bol);
 }
 
-#ifndef PRODUCT
 IfNode::IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type)
     : MultiBranchNode(2),
       _prob(p),
@@ -63,7 +62,6 @@ IfNode::IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicate
       _assertion_predicate_type(assertion_predicate_type) {
   init_node(control, bol);
 }
-#endif // NOT_PRODUCT
 
 //=============================================================================
 //------------------------------Value------------------------------------------
@@ -2214,10 +2212,10 @@ void ParsePredicateNode::dump_spec(outputStream* st) const {
       st->print("Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      st->print("Profiled_Loop ");
+      st->print("Profiled Loop ");
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      st->print("Loop_Limit_Check ");
+      st->print("Loop Limit Check ");
       break;
     default:
       fatal("unknown kind");

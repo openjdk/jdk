@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -75,7 +75,6 @@ import jdk.xml.internal.JdkXmlFeatures;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
 import jdk.xml.internal.JdkProperty.State;
-import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.TransformErrorListener;
 import jdk.xml.internal.XMLSecurityManager;
 import org.xml.sax.InputSource;
@@ -88,7 +87,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: July 2023
+ * @LastModified: Dec 2024
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader
@@ -216,7 +215,7 @@ public class TransformerFactoryImpl
     /**
      * <p>State of secure processing feature.</p>
      */
-    private boolean _isNotSecureProcessing = true;
+    private boolean _isNotSecureProcessing = false;
     /**
      * <p>State of secure mode.</p>
      */
@@ -265,14 +264,7 @@ public class TransformerFactoryImpl
     /**
      * javax.xml.transform.sax.TransformerFactory implementation.
      */
-    @SuppressWarnings("removal")
     public TransformerFactoryImpl() {
-
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            _isNotSecureProcessing = false;
-        }
-
         _xmlFeatures = new JdkXmlFeatures(!_isNotSecureProcessing);
         _overrideDefaultParser = _xmlFeatures.getFeature(
                 JdkXmlFeatures.XmlFeature.JDK_OVERRIDE_PARSER);
@@ -1392,7 +1384,7 @@ public class TransformerFactoryImpl
         // Find the parent directory of the translet.
         String transletParentDir = transletFile.getParent();
         if (transletParentDir == null)
-            transletParentDir = SecuritySupport.getSystemProperty("user.dir");
+            transletParentDir = System.getProperty("user.dir");
 
         File transletParentFile = new File(transletParentDir);
 

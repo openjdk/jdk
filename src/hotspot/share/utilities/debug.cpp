@@ -74,8 +74,8 @@
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
 char* g_assert_poison = &g_dummy;
+const char* g_assert_poison_read_only = &g_dummy;
 static intx g_asserting_thread = 0;
-static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
 int DebuggingContext::_enabled = 0; // Initially disabled.
@@ -181,16 +181,21 @@ void report_vm_error(const char* file, int line, const char* error_msg, const ch
 {
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  void* context = nullptr;
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (g_assertion_context != nullptr && os::current_thread_id() == g_asserting_thread) {
-    context = g_assertion_context;
-  }
-#endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
   print_error_for_unit_test(error_msg, detail_fmt, detail_args);
 
-  VMError::report_and_die(Thread::current_or_null(), context, file, line, error_msg, detail_fmt, detail_args);
+  const void* context = nullptr;
+  const void* siginfo = nullptr;
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (os::current_thread_id() == g_asserting_thread) {
+    context = os::get_saved_assert_context(&siginfo);
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+  VMError::report_and_die(INTERNAL_ERROR, error_msg, detail_fmt, detail_args,
+                          Thread::current_or_null(), nullptr, siginfo, context,
+                          file, line, 0);
   va_end(detail_args);
 }
 
@@ -202,17 +207,21 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  void* context = nullptr;
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-  if (g_assertion_context != nullptr && os::current_thread_id() == g_asserting_thread) {
-    context = g_assertion_context;
-  }
-#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
 
   print_error_for_unit_test("fatal error", detail_fmt, detail_args);
 
+  const void* context = nullptr;
+  const void* siginfo = nullptr;
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (os::current_thread_id() == g_asserting_thread) {
+    context = os::get_saved_assert_context(&siginfo);
+  }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
   VMError::report_and_die(error_type, "fatal error", detail_fmt, detail_args,
-                          Thread::current_or_null(), nullptr, nullptr, context,
+                          Thread::current_or_null(), nullptr, siginfo, context,
                           file, line, 0);
   va_end(detail_args);
 }
@@ -705,16 +714,13 @@ struct TestMultipleStaticAssertFormsInClassScope {
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-
-static ucontext_t g_stored_assertion_context;
-
 void initialize_assert_poison() {
-  char* page = os::reserve_memory(os::vm_page_size());
+  char* page = os::reserve_memory(os::vm_page_size(), !ExecMem, mtInternal);
   if (page) {
-    MemTracker::record_virtual_memory_tag(page, mtInternal);
-    if (os::commit_memory(page, os::vm_page_size(), false) &&
+    if (os::commit_memory(page, os::vm_page_size(), !ExecMem) &&
         os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {
       g_assert_poison = page;
+      g_assert_poison_read_only = page;
     }
   }
 }
@@ -723,48 +729,29 @@ void disarm_assert_poison() {
   g_assert_poison = &g_dummy;
 }
 
-static void store_context(const void* context) {
-  memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t));
-#if defined(LINUX)
-  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
-  //  after copying the context (see comment in sys/ucontext.h):
-#if defined(PPC64)
-  *((void**) &g_stored_assertion_context.uc_mcontext.regs) = &(g_stored_assertion_context.uc_mcontext.gp_regs);
-#elif defined(AMD64)
-  // In the copied version, fpregs should point to the copied contents.
-  // Sanity check: fpregs should point into the context.
-  if ((address)((const ucontext_t*)context)->uc_mcontext.fpregs > (address)context) {
-    size_t fpregs_offset = pointer_delta(((const ucontext_t*)context)->uc_mcontext.fpregs, context, 1);
-    if (fpregs_offset < sizeof(ucontext_t)) {
-      // Preserve the offset.
-      *((void**) &g_stored_assertion_context.uc_mcontext.fpregs) = (void*)((address)(void*)&g_stored_assertion_context + fpregs_offset);
-    }
-  }
-#endif
-#endif
-}
-
-bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address) {
-  if (faulting_address == g_assert_poison) {
-    // Disarm poison page.
-    if (os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX) == false) {
 #ifdef ASSERT
-      fprintf(stderr, "Assertion poison page cannot be unprotected - mprotect failed with %d (%s)",
-              errno, os::strerror(errno));
-      fflush(stderr);
+static void print_unprotect_error() {
+  fprintf(stderr, "Assertion poison page cannot be unprotected - mprotect failed with %d (%s)",
+          errno, os::strerror(errno));
+  fflush(stderr);
+}
 #endif
-      return false; // unprotecting memory may fail in OOM situations, as surprising as this sounds.
-    }
-    // Store Context away.
-    if (ucVoid) {
-      const intx my_tid = os::current_thread_id();
-      if (Atomic::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
-        store_context(ucVoid);
-        g_assertion_context = &g_stored_assertion_context;
-      }
-    }
-    return true;
+
+// TOUCH_ASSERT_POISON writes to the protected g_assert_poison page, which faults
+// and enters platform signal handlers which in turn invokes this routine.
+bool handle_assert_poison_fault(const void* ucVoid) {
+  // Disarm poison page.
+  if (!os::protect_memory((char*)g_assert_poison, os::vm_page_size(), os::MEM_PROT_RWX)) {
+    DEBUG_ONLY(print_unprotect_error();)
+    return false; // unprotecting memory may fail in OOM situations, as surprising as this sounds.
   }
-  return false;
+  if (ucVoid != nullptr) {
+    // Save context.
+    const intx my_tid = os::current_thread_id();
+    if (Atomic::cmpxchg(&g_asserting_thread, (intx)0, my_tid) == 0) {
+      os::save_assert_context(ucVoid);
+    }
+  }
+  return true;
 }
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT

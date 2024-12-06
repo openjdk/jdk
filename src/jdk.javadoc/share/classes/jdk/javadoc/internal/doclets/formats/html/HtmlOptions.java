@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,13 +143,6 @@ public class HtmlOptions extends BaseOptions {
      * false.
      */
     private boolean noDeprecatedList = false;
-
-    /**
-     * Argument for command-line option {@code --no-external-spec-page}.
-     * True if command-line option "--no-external-spec-page" is used. Default value is
-     * false.
-     */
-    private boolean noExternalSpecsPage = false;
 
     /**
      * Argument for command-line option {@code -nohelp}.
@@ -370,14 +363,6 @@ public class HtmlOptions extends BaseOptions {
                             messages.error("doclet.Option_conflict", "-nooverview", "-overview");
                             return false;
                         }
-                        return true;
-                    }
-                },
-
-                new Hidden(resources, "--no-external-specs-page") {
-                    @Override
-                    public boolean process(String opt, List<String> args) {
-                        noExternalSpecsPage = true;
                         return true;
                     }
                 },
@@ -747,15 +732,6 @@ public class HtmlOptions extends BaseOptions {
      */
     public boolean noDeprecatedList() {
         return noDeprecatedList;
-    }
-
-    /**
-     * Argument for command-line option {@code --no-external-specs-page}.
-     * True if command-line option "--no-external-specs-page" is used. Default value is
-     * false.
-     */
-    public boolean noExternalSpecsPage() {
-        return noExternalSpecsPage;
     }
 
     /**

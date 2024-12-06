@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8345248
  * @summary tests for "requires transitive"
  * @library /tools/lib
  * @modules
@@ -34,6 +35,8 @@
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Objects;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -220,5 +223,140 @@ public class RequiresTransitiveTest extends ModuleTestBase {
                     public class C7 { }""");
 
         return src;
+    }
+
+    @Test
+    public void testRepeatedModifiers(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1");
+        tb.writeJavaFiles(src_m1,
+                """
+                module m1 {
+                    requires static static java.sql;
+                    requires transitive transitive java.desktop;
+                }
+                """
+        );
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "--module-source-path", src.toString())
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        String[] expect = {
+                "module-info.java:2:21: compiler.err.repeated.modifier",
+                "module-info.java:3:25: compiler.err.repeated.modifier"
+        };
+
+        for (String e: expect) {
+            if (!log.contains(e))
+                throw new Exception("expected output not found: " + e);
+        }
+    }
+
+    @Test //JDK-8345248:
+    public void testTransitiveModuleName(Path base) throws Exception {
+        Path lib = base.resolve("lib");
+        Path libSrc = lib.resolve("src");
+        Path transitive = libSrc.resolve("transitive");
+        tb.writeJavaFiles(transitive,
+                """
+                module transitive {
+                }
+                """
+        );
+        Path transitiveA = libSrc.resolve("transitive.a");
+        tb.writeJavaFiles(transitiveA,
+                """
+                module transitive.a {
+                }
+                """
+        );
+
+        Path libClasses = lib.resolve("classes");
+        Files.createDirectories(libClasses);
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-source-path", libSrc.toString())
+                .files(findJavaFiles(libSrc))
+                .outdir(libClasses)
+                .run()
+                .writeAll();
+
+        Path src = base.resolve("src");
+        Path classes = base.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        tb.writeJavaFiles(src,
+                """
+                module m {
+                    requires transitive;
+                    requires transitive.a;
+                }
+                """
+        );
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-path", libClasses.toString())
+                .sourcepath(src)
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run()
+                .writeAll();
+
+        tb.writeJavaFiles(src,
+                """
+                module m {
+                    requires transitive transitive;
+                    requires transitive transitive.a;
+                }
+                """
+        );
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-path", libClasses.toString())
+                .sourcepath(src)
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run()
+                .writeAll();
+
+        tb.writeJavaFiles(src,
+                """
+                module m {
+                    requires transitive transitive transitive;
+                    requires transitive transitive transitive.a;
+                }
+                """
+        );
+
+        List<String> log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("--module-path", libClasses.toString(),
+                         "-XDrawDiagnostics")
+                .sourcepath(src)
+                .files(findJavaFiles(src))
+                .outdir(classes)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+
+        List<String> expected = List.of(
+                "module-info.java:2:25: compiler.err.repeated.modifier",
+                "module-info.java:3:25: compiler.err.repeated.modifier",
+                "2 errors"
+        );
+
+        if (!Objects.equals(expected, log)) {
+            throw new Exception("expected: " + expected +
+                                ", but got: " + log);
+        }
     }
 }

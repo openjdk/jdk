@@ -1466,6 +1466,9 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
   if (is_java_primitive(dst_type) &&
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
+      // In rare case, the input to the VectorCast could be a Replicate node. We need to make sure creating is supported:
+      // check the src_type:
+      VectorNode::vector_size_supported_auto_vectorization(src_type, vlen) &&
       VectorNode::vector_size_supported_auto_vectorization(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(opc, src_type);
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
@@ -2084,6 +2087,55 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
   return this;
+}
+static bool is_replicate_uint_constant(const Node* n) {
+  return n->Opcode() == Op_Replicate &&
+         n->in(1)->is_Con() &&
+         n->in(1)->bottom_type()->isa_long() &&
+         n->in(1)->bottom_type()->is_long()->get_con() <= 0xFFFFFFFFL;
+}
+
+static bool has_vector_elements_fit_uint(Node* n) {
+  auto is_lower_doubleword_mask_pattern = [](const Node* n) {
+    return n->Opcode() == Op_AndV &&
+           (is_replicate_uint_constant(n->in(1)) ||
+            is_replicate_uint_constant(n->in(2)));
+  };
+
+  auto is_clear_upper_doubleword_uright_shift_pattern = [](const Node* n) {
+    return n->Opcode() == Op_URShiftVL &&
+           n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
+           n->in(2)->in(1)->bottom_type()->isa_int() &&
+           n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
+  };
+  return is_lower_doubleword_mask_pattern(n) ||             // (AndV     SRC (Replicate C)) where C <= 0xFFFFFFFF
+         is_clear_upper_doubleword_uright_shift_pattern(n); // (URShiftV SRC S) where S >= 32
+}
+
+static bool has_vector_elements_fit_int(Node* n) {
+  auto is_cast_integer_to_long_pattern = [](const Node* n) {
+    return n->Opcode() == Op_VectorCastI2X && Matcher::vector_element_basic_type(n) == T_LONG;
+  };
+
+  auto is_clear_upper_doubleword_right_shift_pattern = [](const Node* n) {
+    return n->Opcode() == Op_RShiftVL &&
+           n->in(2)->Opcode() == Op_RShiftCntV && n->in(2)->in(1)->is_Con() &&
+           n->in(2)->in(1)->bottom_type()->isa_int() &&
+           n->in(2)->in(1)->bottom_type()->is_int()->get_con() >= 32;
+  };
+
+  return is_cast_integer_to_long_pattern(n) ||             // (VectorCastI2X SRC)
+         is_clear_upper_doubleword_right_shift_pattern(n); // (RShiftV SRC S) where S >= 32
+}
+
+bool MulVLNode::has_int_inputs() const {
+  return has_vector_elements_fit_int(in(1)) &&
+         has_vector_elements_fit_int(in(2));
+}
+
+bool MulVLNode::has_uint_inputs() const {
+  return has_vector_elements_fit_uint(in(1)) &&
+         has_vector_elements_fit_uint(in(2));
 }
 
 #ifndef PRODUCT

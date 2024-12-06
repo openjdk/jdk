@@ -789,7 +789,6 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   assert(!bol->is_OpaqueInitializedAssertionPredicate(), "Initialized Assertion Predicates cannot form a diamond with Halt");
   if (bol->is_OpaqueTemplateAssertionPredicate()) {
     // Ignore Template Assertion Predicates with OpaqueTemplateAssertionPredicate nodes.
-    assert(assertion_predicate_has_loop_opaque_node(iff), "must find OpaqueLoop* nodes");
     return nullptr;
   }
   assert(bol->Opcode() == Op_Bool, "Unexpected node");

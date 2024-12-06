@@ -191,8 +191,18 @@ inline void MacroAssembler::set_oop(AddressLiteral obj_addr, Register d) {
 }
 
 inline void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
-  jint& stub_inst = *(jint*) branch;
-  stub_inst = patched_branch(target - branch, stub_inst, 0);
+  if (is_branch(branch)) {
+    jint& stub_inst = *(jint*) branch;
+    stub_inst = patched_branch(target - branch, stub_inst, 0);
+  } else if (is_calculate_address_from_global_toc_at(branch + BytesPerInstWord, branch)) {
+    const address inst1_addr = branch;
+    const address inst2_addr = branch + BytesPerInstWord;
+    patch_calculate_address_from_global_toc_at(inst2_addr, inst1_addr, target);
+  } else if (is_load_const_at(branch)) {
+    patch_const(branch, (long)target);
+  } else {
+    assert(false, "instruction at " PTR_FORMAT " not recognized", p2i(branch));
+  }
 }
 
 // Relocation of conditional far branches.
@@ -285,6 +295,20 @@ inline void MacroAssembler::normalize_bool(Register dst, Register temp, bool is_
       srwi(dst, temp, 31);
     }
   }
+}
+
+inline void MacroAssembler::f2hf(Register dst, FloatRegister src, FloatRegister tmp) {
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  xscvdphp(tmp->to_vsr(), src->to_vsr());
+  mffprd(dst, tmp);
+  // Make it a proper short (sign-extended).
+  extsh(dst, dst);
+}
+
+inline void MacroAssembler::hf2f(FloatRegister dst, Register src) {
+  mtfprd(dst, src);
+  // Single precision values in FloatRegisters use double precision format on PPC64.
+  xscvhpdp(dst->to_vsr(), dst->to_vsr());
 }
 
 // Convenience bc_far versions

@@ -94,7 +94,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: Feb 2024
+ * @LastModified: Nov 2024
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -1209,11 +1209,12 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         // Step 1: custom Entity resolver
         XMLInputSource xmlInputSource = null;
-
+        boolean resolveByResolver = false;
         if (fEntityResolver != null) {
             resourceIdentifier.setBaseSystemId(baseSystemId);
             resourceIdentifier.setExpandedSystemId(expandedSystemId);
             xmlInputSource = fEntityResolver.resolveEntity(resourceIdentifier);
+            resolveByResolver = xmlInputSource != null;
         }
 
         // Step 2: custom catalog if specified
@@ -1229,7 +1230,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         }
 
         // Step 3: use the default JDK Catalog Resolver if Step 2's resolve is continue
-        if (xmlInputSource == null
+        if ((xmlInputSource == null || (!resolveByResolver && xmlInputSource.getSystemId() != null
+                && xmlInputSource.getSystemId().equals(literalSystemId)))
                 && (publicId != null || literalSystemId != null)
                 && JdkXmlUtils.isResolveContinue(fCatalogFeatures)) {
             initJdkCatalogResolver();
@@ -1462,7 +1464,8 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
         if( fSecurityManager != null && fSecurityManager.isOverLimit(entityExpansionIndex, fLimitAnalyzer)){
             fSecurityManager.debugPrint(fLimitAnalyzer);
             fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,"EntityExpansionLimit",
-                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex)},
+                    new Object[]{fSecurityManager.getLimitValueByIndex(entityExpansionIndex),
+                    Limit.ENTITY_EXPANSION_LIMIT.systemProperty()},
                     XMLErrorReporter.SEVERITY_FATAL_ERROR );
             // is there anything better to do than reset the counter?
             // at least one can envision debugging applications where this might
@@ -2010,12 +2013,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
     // which encoding to use. Leave them for now.
     private static synchronized URI getUserDir() throws URI.MalformedURIException {
         // get the user.dir property
-        String userDir = "";
-        try {
-            userDir = SecuritySupport.getSystemProperty("user.dir");
-        }
-        catch (SecurityException se) {
-        }
+        String userDir = System.getProperty("user.dir");
 
         // return empty string if property value is empty string.
         if (userDir.length() == 0)

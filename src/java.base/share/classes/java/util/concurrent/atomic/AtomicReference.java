@@ -279,6 +279,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @return the value
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     public final V getPlain() {
         return (V)VALUE.get(this);
     }
@@ -302,6 +303,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @return the value
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     public final V getOpaque() {
         return (V)VALUE.getOpaque(this);
     }
@@ -324,6 +326,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * @return the value
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     public final V getAcquire() {
         return (V)VALUE.getAcquire(this);
     }
@@ -351,6 +354,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * expected value if successful
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     public final V compareAndExchange(V expectedValue, V newValue) {
         return (V)VALUE.compareAndExchange(this, expectedValue, newValue);
     }
@@ -367,6 +371,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * expected value if successful
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     public final V compareAndExchangeAcquire(V expectedValue, V newValue) {
         return (V)VALUE.compareAndExchangeAcquire(this, expectedValue, newValue);
     }
@@ -383,6 +388,7 @@ public class AtomicReference<V> implements java.io.Serializable {
      * expected value if successful
      * @since 9
      */
+    @SuppressWarnings("unchecked")
     public final V compareAndExchangeRelease(V expectedValue, V newValue) {
         return (V)VALUE.compareAndExchangeRelease(this, expectedValue, newValue);
     }
