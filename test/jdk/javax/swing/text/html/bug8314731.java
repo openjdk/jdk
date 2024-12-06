@@ -25,8 +25,8 @@
  * @test
  * @bug 8314731
  * @summary FormView doesn't support the alt attribute
- * @library /java/swing/text/html
-*/
+ * @key headful
+ */
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -45,11 +45,13 @@ import javax.swing.text.html.StyleSheet;
 
 public class bug8314731 {
 
-    private static boolean testFailed = true;
+    private static boolean testPassed;
+    private static JFrame jf;
+    private static JEditorPane jEditorPane;
 
     public static void main(String[] args) throws Exception {
         new bug8314731();
-        if (testFailed) {
+        if (testPassed) {
             System.out.println("ok");
         } else {
             throw new RuntimeException("FormView doesn't support the alt attribute, see JDK-8314731.");
@@ -57,9 +59,23 @@ public class bug8314731 {
     }
 
     public bug8314731() throws Exception {
-        JEditorPane jEditorPane = new JEditorPane();
+        try {
+            SwingUtilities.invokeAndWait(bug8314731::createAndSetVisibleUI);
+            testPassed = ContainsAlt(jEditorPane);
+        } finally {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    jf.dispose();
+                }
+            });
+        }
+    }
+
+    private static void createAndSetVisibleUI() {
+
+        jEditorPane = new JEditorPane();
         jEditorPane.setEditable(false);
-        JFrame jf = new JFrame("alt attribute test in HTML image type input");
+        jf = new JFrame("alt attribute test in HTML image type input");
 
         JScrollPane scrollPane = new JScrollPane(jEditorPane);
         HTMLEditorKit kit = new HTMLEditorKit();
@@ -77,7 +93,6 @@ public class bug8314731 {
                     <body>
                         <input type=image
                                name=point
-                               src="file:logo.jpeg"
                                alt="Logo">
                     </body>
                 </html>
@@ -90,23 +105,7 @@ public class bug8314731 {
         jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         jf.setSize(new Dimension(400, 200));
         jf.setLocationRelativeTo(null);
-
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                jf.setVisible(true);
-            }
-        });
-
-        testFailed = ContainsAlt(jEditorPane);
-
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                jf.dispose();
-            }
-        });
-
+        jf.setVisible(true);
     }
 
     private boolean ContainsAlt(Container container) {
