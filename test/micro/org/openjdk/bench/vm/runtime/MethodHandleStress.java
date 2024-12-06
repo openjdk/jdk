@@ -45,7 +45,6 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
 import org.openjdk.bench.util.InMemoryJavaCompiler;
 
@@ -67,79 +66,54 @@ public class MethodHandleStress {
     @Param({"100"})
     public int instances;
 
-    byte[][] compiledClasses;
-    Class[] loadedClasses;
-    String[] classNames;
-
-    int index = 0;
-    Map<Class, Object[]> instancesOfClassMap = new HashMap<>();
-
-    Map<Class, Map<Object, MethodHandle>> prebindMethods = new ConcurrentHashMap<>();
-
-    static final String methodNames[] = {
-            "get"
-    };
-
-    static String B(int count) {
-        return "public class B" + count + " {"
-            + " "
-            + "    int instA" +  " = 0;"
-            + " "
-            + "    int getA() {"
-            + "        return instA;"
-            + "    }"
-            + " "
-            + "    public Integer get( Integer depth) throws Throwable {"
-            + "        return  getA();"
-            + "    }"
-            + "}";
+    @Benchmark
+    public Integer executeOne() throws Throwable {
+        Class c = chooseClass();
+        Object r = chooseInstance(c);
+        MethodHandle m = prebindMethods.get(c).get(r);
+        assert m != null;
+        return callTheMethod(m, r);
     }
 
+    private Map<Class, Object[]> instancesOfClassMap = new HashMap<>();
+    private Map<Class, Map<Object, MethodHandle>> prebindMethods = new ConcurrentHashMap<>();
 
-    class BenchLoader extends ClassLoader {
+    private Class[] loadedClasses;
 
-        BenchLoader() {
-            super();
+    private class BenchLoader extends ClassLoader {
+
+        private static String classString(String name) {
+            return "public class " + name + " {"
+                    + "    int instA = 0;"
+                    + "    int getA() {"
+                    + "        return instA;"
+                    + "    }"
+                    + "    public Integer get(Integer depth) throws Throwable {"
+                    + "        return getA();"
+                    + "    }"
+                    + "}";
         }
 
-        BenchLoader(ClassLoader parent) {
-            super(parent);
-        }
-
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.equals(classNames[index])) {
-                assert compiledClasses[index] != null;
-                return defineClass(name, compiledClasses[index],
-                        0,
-                        (compiledClasses[index]).length);
-            } else {
-                return super.findClass(name);
-            }
+        private Class<?> generateClass(String name) {
+            byte[] classBytes = InMemoryJavaCompiler.compile(name, classString(name));
+            return defineClass(name, classBytes, 0, classBytes.length);
         }
     }
-
-    MethodHandleStress.BenchLoader loader1 = new MethodHandleStress.BenchLoader();
-    static  MethodType generatedGetType = MethodType.methodType(Integer.class, Integer.class);
 
     @Setup(Level.Trial)
     public void setupClasses() throws Exception {
+        MethodHandleStress.BenchLoader loader = new MethodHandleStress.BenchLoader();
+
         Object[] receivers1;
 
-        compiledClasses = new byte[classes][];
         loadedClasses = new Class[classes];
-        classNames = new String[classes];
 
         MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
+        MethodType generatedGetType = MethodType.methodType(Integer.class, Integer.class);
 
         for (int i = 0; i < classes; i++) {
-            classNames[i] = "B" + i;
-            compiledClasses[i] = InMemoryJavaCompiler.compile(classNames[i], B(i));
-        }
-
-        for (index = 0; index < compiledClasses.length; index++) {
-            Class<?> c = loader1.findClass(classNames[index]);
-            loadedClasses[index] = c;
+            Class<?> c = loader.generateClass("B" + i);
+            loadedClasses[i] = c;
 
             Constructor<?>[] ca = c.getConstructors();
             assert ca.length == 1;
@@ -151,32 +125,29 @@ public class MethodHandleStress {
             for (int j = 0; j < instances; j++) {
                 Object inst= ca[0].newInstance();
                 receivers1[j] = inst;
-                MethodHandle mh = publicLookup.findVirtual(c, methodNames[0], generatedGetType);
+                MethodHandle mh = publicLookup.findVirtual(c, "get", generatedGetType);
                 mh = mh.bindTo(inst);
                 prebinds.put(inst, mh);
-
             }
             instancesOfClassMap.put(c, receivers1);
             prebindMethods.put(c, prebinds);
         }
 
         // Warm up the methods
-        IntStream.range(0, compiledClasses.length).forEach(n -> {
-                    IntStream.range(0, methodNames.length).forEach(m -> {
-                        try {
-                            IntStream.range(0, 5000).parallel().forEach(x -> {
-                                try {
-                                    executeOne();
-                                } catch (Throwable e) {
-                                }
-                            });
-                        } catch (Throwable e) {
-                            System.out.println("Exception = " + e);
-                            e.printStackTrace();
-                            System.exit(-1);
-                        }
-                    });
+        for (int n = 0; n < classes; n++) {
+            try {
+                IntStream.range(0, 5000).parallel().forEach(x -> {
+                    try {
+                        executeOne();
+                    } catch (Throwable e) {
+                    }
                 });
+            } catch (Throwable e) {
+                System.out.println("Exception = " + e);
+                e.printStackTrace();
+                System.exit(-1);
+            }
+        }
 
         System.gc();
     }
@@ -195,30 +166,10 @@ public class MethodHandleStress {
         return ((Object[]) instancesOfClassMap.get(c))[whichInst];
     }
 
-    static final Integer recurse = new Integer(1);
+    static final Integer recurse = 1;
 
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    Integer callTheMethod(MethodHandle m, Object r) throws Throwable {
-        return (Integer) m.invokeExact( recurse );
+    int callTheMethod(MethodHandle m, Object r) throws Throwable {
+        return (Integer) m.invokeExact(recurse);
     }
-
-    int executeOne() throws Throwable {
-        Class c = chooseClass();
-        Object r = chooseInstance(c);
-        MethodHandle m = prebindMethods.get(c).get(r);
-        assert m != null;
-        return callTheMethod(m, r);
-    }
-
-    @Benchmark
-    public void work(Blackhole bh) throws Exception {
-        // Call a method of a random instance of a random class
-        try {
-            bh.consume(executeOne());
-        } catch (Throwable e) {
-            System.out.println("Exception = " + e);
-            e.printStackTrace();
-        }
-    }
-
 }
