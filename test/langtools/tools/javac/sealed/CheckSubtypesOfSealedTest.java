@@ -25,9 +25,7 @@
  * @test
  * @summary check subtypes of sealed classes
  * @library /tools/lib /tools/javac/lib /tools/javac/classfiles/attributes/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.code
+ * @modules jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
@@ -76,7 +74,7 @@ public class CheckSubtypesOfSealedTest extends TestBase {
             void check(ClassModel classFile) throws Exception {
                 boolean found = false;
                 for (Attribute<?> attr: classFile.attributes()) {
-                    if (attr.attributeName().equals("PermittedSubclasses")) {
+                    if (attr.attributeName().equalsString("PermittedSubclasses")) {
                         PermittedSubclassesAttribute permittedSubclasses = (PermittedSubclassesAttribute)attr;
                         found = true;
                         if (permittedSubclasses.permittedSubclasses().isEmpty()) {
@@ -99,7 +97,7 @@ public class CheckSubtypesOfSealedTest extends TestBase {
         NOT_SEALED {
             void check(ClassModel classFile) throws Exception {
                 for (Attribute<?> attr: classFile.attributes()) {
-                    if (attr.attributeName().equals("PermittedSubclasses")) {
+                    if (attr.attributeName().equalsString("PermittedSubclasses")) {
                         throw new AssertionError(classFile.thisClass().name() + " should not be sealed");
                     }
                 }

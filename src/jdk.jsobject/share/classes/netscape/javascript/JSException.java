@@ -33,7 +33,6 @@ package netscape.javascript;
  * @deprecated The jdk.jsobject module will be delivered with JavaFX.
  */
 @Deprecated(since = "24", forRemoval = true)
-@SuppressWarnings("removal")
 public class JSException extends RuntimeException {
     private static final long serialVersionUID = 2778103758223661489L;
 

@@ -25,8 +25,6 @@
  * @test
  * @bug 8005931
  * @summary javac doesn't set ACC_STRICT for classes with package access
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main CheckACC_STRICTFlagOnPkgAccessClassTest
  */
 

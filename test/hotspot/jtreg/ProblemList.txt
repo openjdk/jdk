@@ -58,7 +58,7 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
-compiler/vectorapi/VectorRebracket128Test.java#Z 8330538 generic-all
+compiler/vectorapi/VectorRebracket128Test.java 8330538 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java 8331704 linux-riscv64
@@ -95,6 +95,7 @@ gc/TestAlwaysPreTouchBehavior.java#G1 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Z 8334513 generic-all
 gc/TestAlwaysPreTouchBehavior.java#Epsilon 8334513 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
+gc/shenandoah/oom/TestAllocOutOfMemory.java#large 8344312 linux-ppc64le
 
 #############################################################################
 
@@ -113,6 +114,11 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
+runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
+
+# Fails with +UseCompactObjectHeaders on aarch64
+runtime/cds/appcds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
+runtime/cds/SharedBaseAddress.java 8340212 linux-aarch64,macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8013416
  * @summary Tests public synthetic methods
- * @run main/othervm -Djava.security.manager=allow Test8013416
+ * @run main/othervm Test8013416
  * @author Sergey Malenkov
  */
 
@@ -40,7 +40,7 @@ import java.util.Set;
 
 public class Test8013416 extends AbstractTest {
     public static void main(String[] args) {
-        new Test8013416().test(true);
+        new Test8013416().test();
     }
 
     protected Object getObject() {

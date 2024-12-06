@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 package compiler.ciReplay;
 
 import jdk.test.lib.Asserts;
+import jdk.test.whitebox.WhiteBox;
+
+import jtreg.SkippedException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -51,6 +54,11 @@ public abstract class InliningBase extends DumpReplayBase {
     }
 
     protected void runTest() {
+        // The CiReplay tests don't work properly when CDS is disabled
+        boolean cdsEnabled = WhiteBox.getWhiteBox().isSharingEnabled();
+        if (!cdsEnabled) {
+            throw new SkippedException("CDS is not available for this JDK.");
+        }
         runTest(commandLineNormal.toArray(new String[0]));
     }
 

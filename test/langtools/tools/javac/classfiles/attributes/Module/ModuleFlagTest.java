@@ -26,11 +26,9 @@
  * @bug 8080878
  * @summary Checking ACC_MODULE flag is generated for module-info.
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.ToolBox
  * @run main ModuleFlagTest
  */

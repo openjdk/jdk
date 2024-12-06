@@ -43,7 +43,6 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -62,11 +61,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
-import java.security.ProtectionDomain;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -760,7 +754,7 @@ search:
             (String.class.equals(flavor.getRepresentationClass()) &&
              DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format))) {
 
-            String str = removeSuspectedData(flavor, contents, (String)obj);
+            String str = (String)obj;
 
             return translateTransferableString(
                 str,
@@ -873,9 +867,7 @@ search:
 
             final List<?> list = (List<?>)obj;
 
-            final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
-
-            final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
+            final ArrayList<String> fileList = castToFiles(list);
 
             try (ByteArrayOutputStream bos = convertFileListToBytes(fileList)) {
                 theByteArray = bos.toByteArray();
@@ -900,8 +892,7 @@ search:
                 targetCharset = "UTF-8";
             }
             final List<?> list = (List<?>)obj;
-            final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
-            final ArrayList<String> fileList = castToFiles(list, userProtectionDomain);
+            final ArrayList<String> fileList = castToFiles(list);
             final ArrayList<String> uriList = new ArrayList<>(fileList.size());
             for (String fileObject : fileList) {
                 final URI uri = new File(fileObject).toURI();
@@ -983,89 +974,16 @@ search:
 
     protected abstract ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList) throws IOException;
 
-    @SuppressWarnings("removal")
-    private String removeSuspectedData(DataFlavor flavor, final Transferable contents, final String str)
-            throws IOException
-    {
-        if (null == System.getSecurityManager()
-            || !flavor.isMimeTypeEqual("text/uri-list"))
+    private ArrayList<String> castToFiles(final List<?> files) throws IOException {
+        ArrayList<String> fileList = new ArrayList<>();
+        for (Object fileObject : files)
         {
-            return str;
-        }
-
-        final ProtectionDomain userProtectionDomain = getUserProtectionDomain(contents);
-
-        try {
-            return AccessController.doPrivileged((PrivilegedExceptionAction<String>) () -> {
-
-                StringBuilder allowedFiles = new StringBuilder(str.length());
-                String [] uriArray = str.split("(\\s)+");
-
-                for (String fileName : uriArray)
-                {
-                    File file = new File(fileName);
-                    if (file.exists() &&
-                        !(isFileInWebstartedCache(file) ||
-                        isForbiddenToRead(file, userProtectionDomain)))
-                    {
-                        if (0 != allowedFiles.length())
-                        {
-                            allowedFiles.append("\\r\\n");
-                        }
-
-                        allowedFiles.append(fileName);
-                    }
-                }
-
-                return allowedFiles.toString();
-            });
-        } catch (PrivilegedActionException pae) {
-            throw new IOException(pae.getMessage(), pae);
-        }
-    }
-
-    private static ProtectionDomain getUserProtectionDomain(Transferable contents) {
-        return contents.getClass().getProtectionDomain();
-    }
-
-    private boolean isForbiddenToRead (File file, ProtectionDomain protectionDomain)
-    {
-        if (null == protectionDomain) {
-            return false;
-        }
-        try {
-            FilePermission filePermission =
-                    new FilePermission(file.getCanonicalPath(), "read, delete");
-            if (protectionDomain.implies(filePermission)) {
-                return false;
+            File file = castToFile(fileObject);
+            if (file != null) {
+                fileList.add(file.getCanonicalPath());
             }
-        } catch (IOException e) {}
-
-        return true;
-    }
-
-    @SuppressWarnings("removal")
-    private ArrayList<String> castToFiles(final List<?> files,
-                                          final ProtectionDomain userProtectionDomain) throws IOException {
-        try {
-            return AccessController.doPrivileged((PrivilegedExceptionAction<ArrayList<String>>) () -> {
-                ArrayList<String> fileList = new ArrayList<>();
-                for (Object fileObject : files)
-                {
-                    File file = castToFile(fileObject);
-                    if (file != null &&
-                        (null == System.getSecurityManager() ||
-                        !(isFileInWebstartedCache(file) ||
-                        isForbiddenToRead(file, userProtectionDomain))))
-                    {
-                        fileList.add(file.getCanonicalPath());
-                    }
-                }
-                return fileList;
-            });
-        } catch (PrivilegedActionException pae) {
-            throw new IOException(pae.getMessage());
         }
+        return fileList;
     }
 
     // It is important do not use user's successors
@@ -1081,43 +999,6 @@ search:
         }
         return new File(filePath);
     }
-
-    private static final String[] DEPLOYMENT_CACHE_PROPERTIES = {
-        "deployment.system.cachedir",
-        "deployment.user.cachedir",
-        "deployment.javaws.cachedir",
-        "deployment.javapi.cachedir"
-    };
-
-    private static final ArrayList <File> deploymentCacheDirectoryList = new ArrayList<>();
-
-    private static boolean isFileInWebstartedCache(File f) {
-
-        if (deploymentCacheDirectoryList.isEmpty()) {
-            for (String cacheDirectoryProperty : DEPLOYMENT_CACHE_PROPERTIES) {
-                String cacheDirectoryPath = System.getProperty(cacheDirectoryProperty);
-                if (cacheDirectoryPath != null) {
-                    try {
-                        File cacheDirectory = (new File(cacheDirectoryPath)).getCanonicalFile();
-                        if (cacheDirectory != null) {
-                            deploymentCacheDirectoryList.add(cacheDirectory);
-                        }
-                    } catch (IOException ioe) {}
-                }
-            }
-        }
-
-        for (File deploymentCacheDirectory : deploymentCacheDirectoryList) {
-            for (File dir = f; dir != null; dir = dir.getParentFile()) {
-                if (dir.equals(deploymentCacheDirectory)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
 
     public Object translateBytes(byte[] bytes, DataFlavor flavor,
                                  long format, Transferable localeTransferable)
@@ -1419,7 +1300,6 @@ search:
      * and also arbitrary Objects which have a constructor which takes an
      * instance of the Class as its sole parameter.
      */
-    @SuppressWarnings("removal")
     private Object constructFlavoredObject(Object arg, DataFlavor flavor,
                                            Class<?> clazz)
         throws IOException
@@ -1429,15 +1309,7 @@ search:
         if (clazz.equals(dfrc)) {
             return arg; // simple case
         } else {
-            Constructor<?>[] constructors;
-
-            try {
-                constructors = AccessController.doPrivileged(
-                        (PrivilegedAction<Constructor<?>[]>) dfrc::getConstructors);
-            } catch (SecurityException se) {
-                throw new IOException(se.getMessage());
-            }
-
+            Constructor<?>[] constructors = dfrc.getConstructors();
             Constructor<?> constructor = Stream.of(constructors)
                     .filter(c -> Modifier.isPublic(c.getModifiers()))
                     .filter(c -> {
