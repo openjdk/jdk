@@ -110,7 +110,8 @@ public final class Template implements CodeGenerator {
     }
 
     private class InstantiationState {
-        public Scope scope;
+        public final Scope templateScope;
+        public Scope currentScope;
         public final Parameters parameters;
 
         record TypeAndMutability(String type, boolean mutable) {}
@@ -122,16 +123,12 @@ public final class Template implements CodeGenerator {
         // them if/when we need to repeat a replacement (i.e. same name).
         private HashMap<String,CodeStream> replacementsMap;
 
-        public int indentationBase;
-        private ArrayDeque<Integer> indentationStack;
-
         public InstantiationState(Scope scope, Parameters parameters) {
-            this.scope = scope;
+            this.templateScope = scope;
+            this.currentScope = scope;
             this.parameters = parameters;
             this.localVariables = new HashMap<String,TypeAndMutability>();
             this.replacementsMap = new HashMap<String,CodeStream>();
-            this.indentationBase = 0;
-            this.indentationStack = new ArrayDeque<Integer>();
         }
 
         public String wrapVariable(String name, String templated) {
@@ -171,14 +168,14 @@ public final class Template implements CodeGenerator {
                                                      ". Got " + templated);
             }
 
-            CodeGenerator generator = scope.library().find(generatorName);
+            CodeGenerator generator = templateScope.library().find(generatorName);
             if (generator == null) {
                 throw new TemplateFrameworkException("Template generator not found: " + generatorName +
                                                      ". Got " + templated);
             }
 
             // Create nested scope, and add the new variables to it.
-            Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost());
+            Scope nestedScope = new Scope(currentScope, currentScope.fuel - generator.fuelCost());
             for (String variable : variableList) {
                 variable = wrapVariable(variable, templated);
                 TypeAndMutability typeAndMutability = getVariable(variable);
@@ -200,7 +197,7 @@ public final class Template implements CodeGenerator {
             }
 
             // Add all generated code to the outer scope's stream.
-            scope.stream.addCodeStream(nestedScope.stream);
+            currentScope.stream.addCodeStream(nestedScope.stream);
         }
 
         public void repeatReplacement(String name, String templated) {
@@ -213,45 +210,39 @@ public final class Template implements CodeGenerator {
             }
 
             // Fetch earlier stream generated with the generator, and push it again.
-            scope.stream.addCodeStream(replacementsMap.get(name));
+            currentScope.stream.addCodeStream(replacementsMap.get(name));
         }
 
         public void openClassScope() {
-            indentationStack.addLast(indentationBase);
-            indentationBase += scope.stream.getIndentation();
-            ClassScope classScope = new ClassScope(scope, scope.fuel);
-            scope = classScope;
+            ClassScope classScope = new ClassScope(currentScope, currentScope.fuel);
+            currentScope = classScope;
         }
 
         public void closeClassScope() {
-            if (!(scope instanceof ClassScope)) {
+            if (!(currentScope instanceof ClassScope)) {
                 throw new TemplateFrameworkException("Template scope mismatch.");
             }
-            Scope classScope = scope;
-            scope = classScope.parent;
+            Scope classScope = currentScope;
+            currentScope = classScope.parent;
             classScope.stream.setIndentation(0);
             classScope.close();
-            indentationBase = indentationStack.removeLast();
-            scope.stream.addCodeStream(classScope.stream);
+            currentScope.stream.addCodeStream(classScope.stream);
         }
 
         public void openMethodScope() {
-            indentationStack.addLast(indentationBase);
-            indentationBase += scope.stream.getIndentation();
-            MethodScope methodScope = new MethodScope(scope, scope.fuel);
-            scope = methodScope;
+            MethodScope methodScope = new MethodScope(currentScope, currentScope.fuel);
+            currentScope = methodScope;
         }
 
         public void closeMethodScope() {
-            if (!(scope instanceof MethodScope)) {
+            if (!(currentScope instanceof MethodScope)) {
                 throw new TemplateFrameworkException("Template scope mismatch.");
             }
-            Scope methodScope = scope;
-            scope = methodScope.parent;
+            Scope methodScope = currentScope;
+            currentScope = methodScope.parent;
             methodScope.stream.setIndentation(0);
             methodScope.close();
-            indentationBase = indentationStack.removeLast();
-            scope.stream.addCodeStream(methodScope.stream);
+            currentScope.stream.addCodeStream(methodScope.stream);
         }
     }
 
@@ -272,7 +263,7 @@ public final class Template implements CodeGenerator {
             pos = end;
 
             // The nonTemplated code segment can simply be added.
-            state.scope.stream.addCodeToLine(nonTemplated);
+            state.currentScope.stream.addCodeToLine(nonTemplated);
 
             if (templated.startsWith("\n")) {
                 // Newline with indentation
@@ -280,9 +271,12 @@ public final class Template implements CodeGenerator {
                 if (spaces % 4 != 0) {
                     throw new TemplateFrameworkException("Template non factor-of-4 indentation: " + spaces);
                 }
-                int indentation = Math.max(0, spaces / 4 - state.indentationBase);
-                state.scope.stream.setIndentation(indentation);
-                state.scope.stream.addNewline();
+                // Compute indentation relative to templateScope from spaces.
+                int indentation = spaces / 4 - state.currentScope.indentationFrom(state.templateScope);
+                // Empty lines can have zero spaces -> would lead to negative local indentation.
+                indentation = Math.max(0, indentation);
+                state.currentScope.stream.setIndentation(indentation);
+                state.currentScope.stream.addNewline();
             } else {
                 // The templated code needs to be analyzed and transformed or recursively generated.
                 handleTemplated(state, templated);
@@ -291,10 +285,10 @@ public final class Template implements CodeGenerator {
 
         // Cleanup: part after the last templated segments.
         String nonTemplated = templateString.substring(pos);
-        state.scope.stream.addCodeToLine(nonTemplated);
+        state.currentScope.stream.addCodeToLine(nonTemplated);
 
         // Cleanup: revert any indentation
-        state.scope.stream.setIndentation(0);
+        state.currentScope.stream.setIndentation(0);
     }
 
     private void handleTemplated(InstantiationState state, String templated) {
@@ -308,18 +302,18 @@ public final class Template implements CodeGenerator {
             String name = state.wrapVariable(parts[0], templated);
             if (parts.length == 1) {
                 state.registerVariable(name);
-                state.scope.stream.addCodeToLine(name);
+                state.currentScope.stream.addCodeToLine(name);
                 return;
             }
             String type = parts[1];
             boolean mutable = parts.length == 2; // third position is "final" qualifier.
             state.registerVariable(name, type, mutable);
-            state.scope.stream.addCodeToLine(name);
+            state.currentScope.stream.addCodeToLine(name);
         } else if (templated.startsWith("$")) {
             // Local variable: $name
             String name = state.wrapVariable(templated.substring(1), templated);
             state.registerVariable(name);
-            state.scope.stream.addCodeToLine(name);
+            state.currentScope.stream.addCodeToLine(name);
         } else if (templated.startsWith("#{")) {
             // Replacement: #{name:generator:variables}
             String replacement = templated.substring(2, templated.length() - 1);
@@ -349,7 +343,7 @@ public final class Template implements CodeGenerator {
                                                              "parameter with value " + parameterValue + ", so we " +
                                                              "cannot also define a generator. Got " + templated);
                     }
-                    state.scope.stream.addCodeToLine(parameterValue);
+                    state.currentScope.stream.addCodeToLine(parameterValue);
                     return;
                 }
             }

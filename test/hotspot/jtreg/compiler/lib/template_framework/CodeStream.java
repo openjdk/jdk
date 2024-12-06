@@ -87,7 +87,6 @@ public class CodeStream {
         return indentCount;
     }
 
-    // TODO check balance and zero indent at end
     public void indent() {
         checkOpen();
         stream.add(INDENT);

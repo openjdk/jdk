@@ -170,7 +170,7 @@ public class Scope {
     /**
      * Next outer Scope (not this) that is a ClassScope.
      */
-    public ClassScope classScope() {
+    public final ClassScope classScope() {
         if (parent == null) {
             return null;
         } else if (parent instanceof ClassScope cs) {
@@ -183,7 +183,7 @@ public class Scope {
     /**
      * Next outer Scope (not this) that is a MethodScope.
      */
-    public MethodScope methodScope() {
+    public final MethodScope methodScope() {
         if (parent == null) {
             return null;
         } else if (parent instanceof MethodScope ms) {
@@ -191,5 +191,21 @@ public class Scope {
         } else {
             return parent.methodScope();
         }
+    }
+
+    /**
+     * Compute the relative indentation to an outer (recursive parent) Scope.
+     */
+    public final int indentationFrom(Scope outer) {
+        int difference = 0;
+        Scope current = this;
+        while (current != null && current != outer) {
+            current = current.parent;
+            difference += current.stream.getIndentation();
+        }
+        if (current == null) {
+            throw new TemplateFrameworkException("Outer scope not found.");
+        }
+        return difference;
     }
 }
