@@ -37,8 +37,7 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Fork(value = 1, jvmArgs = {
-        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
-        "--enable-preview"})
+        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED"})
 @Warmup(iterations = 3)
 @Measurement(iterations = 4)
 public class RepeatedModelTraversal {

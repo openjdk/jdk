@@ -34,7 +34,6 @@ import java.util.List;
  * @test
  * @bug     8151223
  * @summary String concatenation fails with implicit toString() on package-private class
- * @enablePreview
  *
  * @clean *
  * @compile -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
