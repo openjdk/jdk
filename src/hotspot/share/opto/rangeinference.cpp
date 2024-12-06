@@ -497,7 +497,7 @@ const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, const Ty
   if (i1 == t2 || t2 == Type::TOP) {
     return i1;
   }
-  const CT* i2 = CT::try_cast(t2);
+  const CT* i2 = t2->try_cast<CT>();
   if (i2 != nullptr) {
     if (!dual) {
     // meet

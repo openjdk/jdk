@@ -285,6 +285,9 @@ public:
   float getf() const;
   double getd() const;
 
+  template <typename TypeClass>
+  const TypeClass* try_cast() const;
+
   const TypeInt    *is_int() const;
   const TypeInt    *isa_int() const;             // Returns null if not an Int
   const TypeInteger* is_integer(BasicType bt) const;
@@ -711,7 +714,6 @@ public:
   const juint _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
   const KnownBits<juint> _bits;
 
-  static const TypeInt* try_cast(const Type* t) { return t->isa_int(); }
   static const TypeInt* make(jint lo);
   // must always specify w
   static const TypeInt* make(jint lo, jint hi, int w);
@@ -789,7 +791,6 @@ public:
   const julong _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
   const KnownBits<julong> _bits;
 
-  static const TypeLong* try_cast(const Type* t) { return t->isa_long(); }
   static const TypeLong* make(jlong lo);
   // must always specify w
   static const TypeLong* make(jlong lo, jlong hi, int w);
@@ -2085,6 +2086,16 @@ inline float Type::getf() const {
 inline double Type::getd() const {
   assert( _base == DoubleCon, "Not a DoubleCon" );
   return ((TypeD*)this)->_d;
+}
+
+template <>
+inline const TypeInt* Type::try_cast<TypeInt>() const {
+  return isa_int();
+}
+
+template <>
+inline const TypeLong* Type::try_cast<TypeLong>() const {
+  return isa_long();
 }
 
 inline const TypeInteger *Type::is_integer(BasicType bt) const {
