@@ -104,7 +104,7 @@ public class TestChaCha20 {
             // Riscv64 intrinsics require the vector instructions
             if (containsFuzzy(cpuFeatures, "rvv")) {
                 System.out.println("Setting up vector worker");
-                configs.add(List.of("-XX:+UseRVV"));
+                configs.add(List.of());
             }
         } else {
             // We only have ChaCha20 intrinsics on x64, aarch64 and riscv64

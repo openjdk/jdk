@@ -31,7 +31,7 @@
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  * @bug 8337753
  *
- * @run testng/othervm/timeout=3200
+ * @run testng/native/othervm/timeout=3200
  *   -Xcheck:jni
  *   -XX:+IgnoreUnrecognizedVMOptions
  *   -XX:-VerifyDependencies

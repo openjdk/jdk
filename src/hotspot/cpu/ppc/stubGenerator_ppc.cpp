@@ -3451,6 +3451,24 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    address start = __ function_entry();
+    __ f2hf(R3_RET, F1_ARG1, F0);
+    __ blr();
+    return start;
+  }
+
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    address start = __ function_entry();
+    __ hf2f(F1_RET, R3_ARG1);
+    __ blr();
+    return start;
+  }
+
   address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
@@ -4483,6 +4501,10 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
 
     address start = __ pc();
 
+    if (kind == Continuation::thaw_top) {
+      __ clobber_nonvolatile_registers(); // Except R16_thread and R29_TOC
+    }
+
     if (return_barrier) {
       __ mr(nvtmp, R3_RET); __ fmr(nvftmp, F1_RET); // preserve possible return value from a method returning to the return barrier
       DEBUG_ONLY(__ ld_ptr(tmp1, _abi0(callers_sp), R1_SP);)
@@ -4571,6 +4593,41 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
   }
 
+  address generate_cont_preempt_stub() {
+    if (!Continuations::enabled()) return nullptr;
+    StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+    address start = __ pc();
+
+    __ clobber_nonvolatile_registers(); // Except R16_thread and R29_TOC
+
+    __ reset_last_Java_frame(false /*check_last_java_sp*/);
+
+    // Set sp to enterSpecial frame, i.e. remove all frames copied into the heap.
+    __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
+
+    Label preemption_cancelled;
+    __ lbz(R11_scratch1, in_bytes(JavaThread::preemption_cancelled_offset()), R16_thread);
+    __ cmpwi(CCR0, R11_scratch1, 0);
+    __ bne(CCR0, preemption_cancelled);
+
+    // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+    SharedRuntime::continuation_enter_cleanup(_masm);
+    __ pop_frame();
+    __ restore_LR(R11_scratch1);
+    __ blr();
+
+    // We acquired the monitor after freezing the frames so call thaw to continue execution.
+    __ bind(preemption_cancelled);
+    __ li(R11_scratch1, 0); // false
+    __ stb(R11_scratch1, in_bytes(JavaThread::preemption_cancelled_offset()), R16_thread);
+    int simm16_offs = __ load_const_optimized(R11_scratch1, ContinuationEntry::thaw_call_pc_address(), R0, true);
+    __ ld(R11_scratch1, simm16_offs, R11_scratch1);
+    __ mtctr(R11_scratch1);
+    __ bctr();
+
+    return start;
+  }
+
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
@@ -4639,6 +4696,12 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
       StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(true);
     }
+
+    if (VM_Version::supports_float16()) {
+      // For results consistency both intrinsics should be enabled.
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
+    }
   }
 
   void generate_continuation_stubs() {
@@ -4646,6 +4709,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_preempt_stub  = generate_cont_preempt_stub();
   }
 
   void generate_final_stubs() {

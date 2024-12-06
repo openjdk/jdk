@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ import javax.xml.transform.stream.StreamResult;
 import org.testng.Assert;
 import org.testng.AssertJUnit;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -72,12 +71,10 @@ import transform.util.TransformerTestTemplate;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow transform.TransformerTest
  * @run testng/othervm transform.TransformerTest
  * @summary Transformer Tests
  * @bug 6272879 6305029 6505031 8150704 8162598 8169112 8169631 8169772
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class TransformerTest {
 
     // some global constants

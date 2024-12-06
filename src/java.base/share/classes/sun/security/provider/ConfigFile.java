@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,10 @@ import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.security.Security;
 import java.security.URIParameter;
 import java.text.MessageFormat;
 import java.util.*;
-import javax.security.auth.AuthPermission;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag;
 import javax.security.auth.login.Configuration;
@@ -159,34 +154,18 @@ public final class ConfigFile extends Configuration {
             }
         }
 
-        @SuppressWarnings("removal")
         public Spi(final Configuration.Parameters params) throws IOException {
 
-            // call in a doPrivileged
-            //
-            // We have already passed the Configuration.getInstance
-            // security check.  Also, this class is not freely accessible
-            // (it is in the "sun" package).
-
-            try {
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                    public Void run() throws IOException {
-                        if (params == null) {
-                            init();
-                        } else {
-                            if (!(params instanceof URIParameter)) {
-                                throw new IllegalArgumentException
-                                        ("Unrecognized parameter: " + params);
-                            }
-                            URIParameter uriParam = (URIParameter)params;
-                            url = uriParam.getURI().toURL();
-                            init();
-                        }
-                        return null;
-                    }
-                });
-            } catch (PrivilegedActionException pae) {
-                throw (IOException)pae.getException();
+            if (params == null) {
+                init();
+            } else {
+                if (!(params instanceof URIParameter)) {
+                    throw new IllegalArgumentException
+                            ("Unrecognized parameter: " + params);
+                }
+                URIParameter uriParam = (URIParameter)params;
+                url = uriParam.getURI().toURL();
+                init();
             }
 
             // if init() throws some other RuntimeException,
@@ -198,8 +177,6 @@ public final class ConfigFile extends Configuration {
          * configured URL.
          *
          * @throws IOException if the Configuration can not be initialized
-         * @throws SecurityException if the caller does not have permission
-         *                           to initialize the Configuration
          */
         private void init() throws IOException {
 
@@ -377,31 +354,15 @@ public final class ConfigFile extends Configuration {
         /**
          * Refresh and reload the Configuration by re-reading all the
          * login configurations.
-         *
-         * @throws SecurityException if the caller does not have permission
-         *                           to refresh the Configuration.
          */
-        @SuppressWarnings("removal")
         @Override
         public synchronized void engineRefresh() {
 
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(
-                    new AuthPermission("refreshLoginConfiguration"));
+            try {
+                init();
+            } catch (IOException ioe) {
+                throw new SecurityException(ioe.getLocalizedMessage(), ioe);
             }
-
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    try {
-                        init();
-                    } catch (IOException ioe) {
-                        throw new SecurityException(ioe.getLocalizedMessage(),
-                                                    ioe);
-                    }
-                    return null;
-                }
-            });
         }
 
         private void readConfig(Reader reader,

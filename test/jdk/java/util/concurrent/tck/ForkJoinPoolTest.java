@@ -510,7 +510,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -529,7 +529,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**
@@ -553,7 +553,7 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             }
         }};
 
-        runWithPermissions(r, new RuntimePermission("modifyThread"));
+        r.run();
     }
 
     /**

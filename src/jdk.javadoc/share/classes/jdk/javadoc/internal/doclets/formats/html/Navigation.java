@@ -87,8 +87,9 @@ public class Navigation {
         PACKAGE,
         PREVIEW,
         RESTRICTED,
-        SERIALIZED_FORM,
         SEARCH,
+        SEARCH_TAGS,
+        SERIALIZED_FORM,
         SYSTEM_PROPERTIES,
         TREE,
         USE
@@ -274,6 +275,7 @@ public class Navigation {
             case CONSTANT_VALUES:
             case EXTERNAL_SPECS:
             case RESTRICTED:
+            case SEARCH_TAGS:
             case SERIALIZED_FORM:
             case SYSTEM_PROPERTIES:
                 addOverviewLink(target);

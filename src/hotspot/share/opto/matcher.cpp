@@ -434,7 +434,7 @@ void Matcher::match( ) {
   Fixup_Save_On_Entry( );
 
   { // Cleanup mach IR after selection phase is over.
-    Compile::TracePhase tp("postselect_cleanup", &timers[_t_postselect_cleanup]);
+    Compile::TracePhase tp(_t_postselect_cleanup);
     do_postselect_cleanup();
     if (C->failing())  return;
     assert(verify_after_postselect_cleanup(), "");
