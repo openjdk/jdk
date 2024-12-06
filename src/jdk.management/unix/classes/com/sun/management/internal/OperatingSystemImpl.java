@@ -274,8 +274,11 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
     }
 
     private boolean isCpuSetSameAsHostCpuSet() {
-        if (containerMetrics != null && containerMetrics.getCpuSetCpus() != null) {
-            return containerMetrics.getCpuSetCpus().length == getHostOnlineCpuCount0();
+        if (containerMetrics != null) {
+            int[] cpuSetCpus = containerMetrics.getCpuSetCpus();
+            if (cpuSetCpus != null) {
+                return cpuSetCpus.length == getHostOnlineCpuCount0();
+            }
         }
         return false;
     }
