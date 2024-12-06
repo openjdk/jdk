@@ -43,33 +43,21 @@ public class Scope {
     private class VariableSet {
         public final VariableSet parent;
         public final HashMap<String,ArrayList<String>> variables;
-        public final HashMap<String,Integer> totalVariables;
 
         public VariableSet(VariableSet parent) {
             this.parent = parent;
             this.variables = new HashMap<String,ArrayList<String>>();
+        }
 
-            // Initize counts to parent, or zero.
-            this.totalVariables = (parent == null) ? new HashMap<String,Integer>()
-                                                   : new HashMap<String,Integer>(parent.totalVariables);
+        public int countLocal(String type) {
+            ArrayList<String> locals = variables.get(type);
+            return (locals == null) ? 0 : locals.size();
         }
 
         public int count(String type) {
-            Integer c = totalVariables.get(type);
-            if (c == null) {
-                if (parent != null) {
-                    int pc = parent.count(type);
-                    if (pc > 0) {
-                        throw new TemplateFrameworkException("parent has vars and we do not");
-                    }
-                }
-                return 0;
-            }
+            int c = countLocal(type);
             if (parent != null) {
-                int pc = parent.count(type);
-                if (pc > c) {
-                    throw new TemplateFrameworkException("count mismatch: " + c + " " + pc);
-                }
+                return c + parent.count(type);
             }
             return c;
         }
@@ -106,13 +94,6 @@ public class Scope {
                 variables.put(type, variablesWithType);
             }
             variablesWithType.add(name);
-
-            // Increment count.
-            Integer count = totalVariables.get(type);
-            if (count == null) {
-                count = 0;
-            }
-            totalVariables.put(type, count + 1);
             System.out.println("Count after add: " + count(type));
         }
 

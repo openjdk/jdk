@@ -197,7 +197,7 @@ public class CodeGeneratorLibrary {
         selectorForCode.add("split",  100);
         selectorForCode.add("prefix", 100);
         selectorForCode.add("foo", 100);
-        selectorForCode.add("bar", 1000);
+        selectorForCode.add("bar", 100);
         codeGenerators.put("code", selectorForCode);
 
         return new CodeGeneratorLibrary(null, codeGenerators);
