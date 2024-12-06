@@ -36,11 +36,8 @@
 import java.io.*;
 import java.net.*;
 import java.net.http.HttpClient;
-import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
 import javax.net.ssl.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,15 +45,12 @@ import java.util.regex.*;
 import java.util.*;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
-import jdk.test.lib.net.IPSupport;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import com.sun.net.httpserver.BasicAuthenticator;
-
-import jdk.test.lib.net.URIBuilder;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
@@ -85,164 +79,102 @@ public class UserAuthWithAuthenticator {
         String authValue() {return authValue;}
     }
 
-    // if useHeader is true, we expect the Authenticator was not called
-    // and the user set header used. If false, Authenticator must
-    // be called and the user set header not used.
-
-    // If rightPassword is true we expect the authentication to succeed and 200 OK
-    // If false, then an error should be returned.
-
-    static void h2Test(final boolean useHeader, boolean rightPassword) throws Exception {
-        SSLContext ctx;
-        HttpTestServer h2s = null;
-        HttpClient client = null;
-        ExecutorService ex=null;
-        try {
-            ctx = new SimpleSSLContext().get();
-            ex = Executors.newCachedThreadPool();
-            InetAddress addr = InetAddress.getLoopbackAddress();
-
-            h2s = HttpTestServer.of(new Http2TestServer(addr, "::1", true, 0, ex,
-                    10, null, ctx, false));
-            AuthTestHandler h = new AuthTestHandler();
-            var context = h2s.addHandler(h, "/test1");
-            context.setAuthenticator(new BasicAuthenticator("realm") {
-                public boolean checkCredentials(String username, String password) {
-                    if (useHeader) {
-                        return username.equals("user") && password.equals("pwd");
-                    } else {
-                        return username.equals("serverUser") && password.equals("serverPwd");
-                    }
-                }
-            });
-            h2s.start();
-
-            int port = h2s.getAddress().getPort();
-            ServerAuth sa = new ServerAuth();
-            var plainCreds = rightPassword? "user:pwd" : "user:wrongPwd";
-            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
-
-            URI uri = URIBuilder.newBuilder()
-                 .scheme("https")
-                 .host(addr.getHostAddress())
-                 .port(port)
-                 .path("/test1/foo.txt")
-                 .build();
-
-            HttpClient.Builder builder = HttpClient.newBuilder()
-                    .sslContext(ctx)
-                    .executor(ex);
-
-            builder.authenticator(sa);
-            client = builder.build();
-
-            HttpRequest req = HttpRequest.newBuilder(uri)
-                    .version(HttpClient.Version.HTTP_2)
-                    .header(useHeader ? "Authorization" : "X-Ignore", AUTH_PREFIX + encoded)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-            if (!useHeader) {
-                assertTrue(resp.statusCode() == 200, "Expected 200 response");
-                assertTrue(!h.authValue().equals(encoded), "Expected user set header to not be set");
-                assertTrue(h.authValue().equals(sa.authValue()), "Expected auth value from Authenticator");
-                assertTrue(sa.wasCalled(), "Expected authenticator to be called");
-                System.out.println("h2Test: using authenticator OK");
-            } else if (rightPassword) {
-                assertTrue(resp.statusCode() == 200, "Expected 200 response");
-                assertTrue(h.authValue().equals(encoded), "Expected user set header to be set");
-                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
-                System.out.println("h2Test: using user set header OK");
-            } else {
-                assertTrue(resp.statusCode() == 401, "Expected 401 response");
-                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
-                System.out.println("h2Test: using user set header with wrong password OK");
-            }
-        } finally {
-            if (h2s != null)
-                h2s.stop();
-            if (client != null)
-                client.close();
-            if (ex != null)
-                ex.shutdown();
+    private static void h2Test(final boolean useHeader, boolean rightPassword) throws Exception {
+        SSLContext sslContext = new SimpleSSLContext().get();
+        try (ExecutorService executor = Executors.newCachedThreadPool();
+             HttpTestServer server = HttpTestServer.of(new Http2TestServer(
+                     InetAddress.getLoopbackAddress(),
+                     "::1",
+                     true,
+                     0,
+                     executor,
+                     10,
+                     null,
+                     sslContext,
+                     false));
+             HttpClient client = HttpClient.newBuilder()
+                     .sslContext(sslContext)
+                     .executor(executor)
+                     .authenticator(new ServerAuth())
+                     .build()) {
+            hXTest(useHeader, rightPassword, server, client, HttpClient.Version.HTTP_2);
         }
     }
 
-    static void h3Test(final boolean useHeader, boolean rightPassword) throws Exception {
-        SSLContext ctx;
-        HttpTestServer h3s = null;
-        HttpClient client = null;
-        ExecutorService ex=null;
-        try {
-            ctx = new SimpleSSLContext().get();
-            ex = Executors.newCachedThreadPool();
-            InetAddress addr = InetAddress.getLoopbackAddress();
-
-            h3s = HttpTestServer.create(HttpRequest.H3DiscoveryMode.HTTP_3_ONLY, ctx, ex);
-            AuthTestHandler h = new AuthTestHandler();
-            var context = h3s.addHandler(h, "/test1");
-            context.setAuthenticator(new BasicAuthenticator("realm") {
-                public boolean checkCredentials(String username, String password) {
-                    if (useHeader) {
-                        return username.equals("user") && password.equals("pwd");
-                    } else {
-                        return username.equals("serverUser") && password.equals("serverPwd");
-                    }
-                }
-            });
-            h3s.start();
-
-            int port = h3s.getAddress().getPort();
-            ServerAuth sa = new ServerAuth();
-            var plainCreds = rightPassword? "user:pwd" : "user:wrongPwd";
-            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
-
-            URI uri = URIBuilder.newBuilder()
-                    .scheme("https")
-                    .host(addr.getHostAddress())
-                    .port(port)
-                    .path("/test1/foo.txt")
-                    .build();
-
-            HttpClient.Builder builder = HttpServerAdapters.createClientBuilderForH3()
-                    .sslContext(ctx)
-                    .executor(ex);
-
-            builder.authenticator(sa);
-            client = builder.build();
-
-            HttpRequest req = HttpRequest.newBuilder(uri)
-                    .version(HttpClient.Version.HTTP_3)
-                    .header(useHeader ? "Authorization" : "X-Ignore", AUTH_PREFIX + encoded)
-                    .GET()
-                    .build();
-
-            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
-            if (!useHeader) {
-                assertTrue(resp.statusCode() == 200, "Expected 200 response");
-                assertTrue(!h.authValue().equals(encoded), "Expected user set header to not be set");
-                assertTrue(h.authValue().equals(sa.authValue()), "Expected auth value from Authenticator");
-                assertTrue(sa.wasCalled(), "Expected authenticator to be called");
-                System.out.println("h3Test: using authenticator OK");
-            } else if (rightPassword) {
-                assertTrue(resp.statusCode() == 200, "Expected 200 response");
-                assertTrue(h.authValue().equals(encoded), "Expected user set header to be set");
-                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
-                System.out.println("h3Test: using user set header OK");
-            } else {
-                assertTrue(resp.statusCode() == 401, "Expected 401 response");
-                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
-                System.out.println("h3Test: using user set header with wrong password OK");
-            }
-        } finally {
-            if (h3s != null)
-                h3s.stop();
-            if (client != null)
-                client.close();
-            if (ex != null)
-                ex.shutdown();
+    private static void h3Test(final boolean useHeader, boolean rightPassword) throws Exception {
+        SSLContext sslContext = new SimpleSSLContext().get();
+        try (ExecutorService executor = Executors.newCachedThreadPool();
+             HttpTestServer server = HttpTestServer.create(HttpRequest.H3DiscoveryMode.HTTP_3_ONLY, sslContext, executor);
+             HttpClient client = HttpServerAdapters.createClientBuilderForH3()
+                     .sslContext(sslContext)
+                     .executor(executor)
+                     .authenticator(new ServerAuth())
+                     .build()) {
+            hXTest(useHeader, rightPassword, server, client, HttpClient.Version.HTTP_3);
         }
+    }
+
+    /**
+     * @param useHeader If {@code true}, we expect the authenticator was not called and the user set header used.
+     *                  If {@code false}, authenticator must be called and the user set header discarded.
+     * @param rightPassword If {@code true}, we expect the authentication to succeed with {@code 200 OK}.
+     *                      If {@code false}, then an error should be returned.
+     */
+    private static void hXTest(
+            final boolean useHeader,
+            boolean rightPassword,
+            HttpTestServer server,
+            HttpClient client,
+            HttpClient.Version version)
+            throws Exception {
+
+        AuthTestHandler handler = new AuthTestHandler();
+        var context = server.addHandler(handler, "/test1");
+        context.setAuthenticator(new BasicAuthenticator("realm") {
+            public boolean checkCredentials(String username, String password) {
+                if (useHeader) {
+                    return username.equals("user") && password.equals("pwd");
+                } else {
+                    return username.equals("serverUser") && password.equals("serverPwd");
+                }
+            }
+        });
+        server.start();
+
+        URI uri = URIBuilder.newBuilder()
+                .scheme("https")
+                .host(server.getAddress().getAddress())
+                .port(server.getAddress().getPort())
+                .path("/test1/foo.txt")
+                .build();
+
+        var plainCreds = rightPassword? "user:pwd" : "user:wrongPwd";
+        var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+        HttpRequest req = HttpRequest.newBuilder(uri)
+                .version(version)
+                .header(useHeader ? "Authorization" : "X-Ignore", AUTH_PREFIX + encoded)
+                .GET()
+                .build();
+
+        HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+        var sa = (ServerAuth) client.authenticator().orElseThrow();
+        if (!useHeader) {
+            assertTrue(resp.statusCode() == 200, "Expected 200 response");
+            assertTrue(!handler.authValue().equals(encoded), "Expected user set header to not be set");
+            assertTrue(handler.authValue().equals(sa.authValue()), "Expected auth value from Authenticator");
+            assertTrue(sa.wasCalled(), "Expected authenticator to be called");
+            System.out.format("hXTest(%s) using authenticator OK%n", version);
+        } else if (rightPassword) {
+            assertTrue(resp.statusCode() == 200, "Expected 200 response");
+            assertTrue(handler.authValue().equals(encoded), "Expected user set header to be set");
+            assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
+            System.out.format("hXTest(%s): using user set header OK%n", version);
+        } else {
+            assertTrue(resp.statusCode() == 401, "Expected 401 response");
+            assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
+            System.out.format("hXTest(%s): using user set header with wrong password OK%n", version);
+        }
+
     }
 
     static final String data = "0123456789";
