@@ -26,7 +26,7 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public class ClassScope extends Scope {
+public class ClassScope extends DispatchScope {
     public ClassScope(Scope parent, long fuel) {
         super(parent, fuel);
     }

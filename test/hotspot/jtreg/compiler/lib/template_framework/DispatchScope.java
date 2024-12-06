@@ -26,8 +26,19 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public class MethodScope extends DispatchScope {
-    public MethodScope(Scope parent, long fuel) {
+public class DispatchScope extends Scope {
+    public DispatchScope(Scope parent, long fuel) {
         super(parent, fuel);
+    }
+
+    public void dispatch(Scope sourceScope, CodeGenerator generator) {
+        Scope dispatchScope = new Scope(this, this.fuel - generator.fuelCost());
+        Parameters parameters = new Parameters();
+        // TODO parameters from dispatch?
+        generator.instantiate(dispatchScope, parameters);
+        dispatchScope.close();
+        stream.prependCodeStream(dispatchScope.stream);
+
+        sourceScope.stream.addCodeToLine("/* dispatch_" + parameters.instantiationID + " */");
     }
 }

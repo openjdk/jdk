@@ -75,7 +75,9 @@ public class CodeStream {
         if (code.contains("\n")) {
             throw new TemplateFrameworkException("No newline allowed. Got: " + code);
         }
-        stream.add(new CodeSegment(code));
+        if (!code.equals("")) {
+            stream.add(new CodeSegment(code));
+        }
     }
 
     public void addNewline() {
@@ -128,6 +130,12 @@ public class CodeStream {
         checkOpen();
         nestedStream.checkClosed();
         stream.add(new NestedCodeStream(nestedStream));
+    }
+
+    public void prependCodeStream(CodeStream nestedStream) {
+        checkOpen();
+        nestedStream.checkClosed();
+        stream.addFirst(new NestedCodeStream(nestedStream));
     }
 
     public void close() {

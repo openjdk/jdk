@@ -87,20 +87,20 @@ public class CodeGeneratorLibrary {
         return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
             String scopeKind = parameters.get("scope", " for generator call to 'dispatch'");
             String generatorName = parameters.get("call", " for generator call to 'dispatch'");
-            System.out.println("Dispatch " + generatorName + " to " + scopeKind);
-
             CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
+
+            System.out.println("Dispatch " + generatorName + " to " + scopeKind);
 
             switch(scopeKind) {
                 case "class" -> {
-                    ClassScope classScope = scope.classScope();
-                    if (classScope == null) {
-                        throw new TemplateFrameworkException("Generator dispatch did not find an outer class scope" +
-                                                             " to dispatch " + generatorName);
-                    }
-
+                    ClassScope classScope = scope.classScope(" in dispatch for " + generatorName);
+                    classScope.dispatch(scope, generator);
+                    // TODO parameters from dispatch?
                 }
                 case "method" -> {
+                    MethodScope methodScope = scope.methodScope(" in dispatch for " + generatorName);
+                    methodScope.dispatch(scope, generator);
+                    // TODO parameters from dispatch?
                 }
                 default -> {
                     throw new TemplateFrameworkException("Generator dispatch got: scope=" + scopeKind +
@@ -136,6 +136,14 @@ public class CodeGeneratorLibrary {
             """
         ));
 
+        // MethodScope generators.
+        codeGenerators.put("new_var", new Template(
+            """
+            // start $new_var
+            int ${varI:int} = #{:int_con};
+            // end   $new_var
+            """
+        ));
 
         // Code blocks.
         codeGenerators.put("empty", new Template(
@@ -178,6 +186,7 @@ public class CodeGeneratorLibrary {
             // start $bar
             {
                 #{:dispatch(scope=class,call=new_field)}
+                #{:dispatch(scope=method,call=new_var)}
             }
             // end   $bar
             """

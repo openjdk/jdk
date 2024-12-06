@@ -170,26 +170,27 @@ public class Scope {
     /**
      * Next outer Scope (not this) that is a ClassScope.
      */
-    public final ClassScope classScope() {
+    public final ClassScope classScope(String errorMessage) {
+        // TODO refactor to loop
         if (parent == null) {
-            return null;
+            throw new TemplateFrameworkException("Could not find ClassScope / '#open(class)' " + errorMessage);
         } else if (parent instanceof ClassScope cs) {
             return cs;
         } else {
-            return parent.classScope();
+            return parent.classScope(errorMessage);
         }
     }
 
     /**
      * Next outer Scope (not this) that is a MethodScope.
      */
-    public final MethodScope methodScope() {
+    public final MethodScope methodScope(String errorMessage) {
         if (parent == null) {
-            return null;
+            throw new TemplateFrameworkException("Could not find MethodScope / '#open(method)' " + errorMessage);
         } else if (parent instanceof MethodScope ms) {
             return ms;
         } else {
-            return parent.methodScope();
+            return parent.methodScope(errorMessage);
         }
     }
 
