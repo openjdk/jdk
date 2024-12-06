@@ -35,8 +35,13 @@
  * @run main RedefineClassHelper
  * @run main/othervm/timeout=180
  *         -javaagent:redefineagent.jar
- *         -Xlog:class+init,exceptions
+ *         -Xlog:exceptions
  *         RedefineVerifyError
+ * @run main/othervm/timeout=180
+ *         -javaagent:redefineagent.jar
+ *         -Xlog:exceptions
+ *         -Xverify:none
+ *         RedefineVerifyError nothrow
  */
 
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
@@ -91,10 +96,14 @@ public class RedefineVerifyError implements Opcodes {
         try {
             // The Verifier is called for the redefinition, which will fail because of the broken <init> method above.
             RedefineClassHelper.redefineClass(verifyErrorMirror, dump());
-            throw new RuntimeException("This should throw VerifyError");
+            if (args.length == 0) {
+                throw new RuntimeException("This should throw VerifyError");
+            } else {
+                System.out.println("Passed: noverify");
+            }
         } catch (VerifyError e) {
             // JVMTI recreates the VerifyError so the verification message is lost.
-            System.out.println("Passed");
+            System.out.println("Passed: default verify");
         }
     }
 }

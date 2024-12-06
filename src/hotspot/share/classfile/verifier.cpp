@@ -133,6 +133,8 @@ static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verif
   Symbol* name = klass->name();
 
   return (should_verify_class &&
+    // Override parameter (return false) if -Xverify:none
+    BytecodeVerificationRemote &&
     // Can not verify the bytecodes for shared classes because they have
     // already been rewritten to contain constant pool cache indices,
     // which the verifier can't understand.
