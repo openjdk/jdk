@@ -144,6 +144,8 @@ public:
   };
 
   static bool current_thread_is_vm_or_dumper() NOT_CDS_RETURN_(false);
+
+  static void print_dumping_config();
 };
 
 #endif // SHARE_CDS_CDSCONFIG_HPP

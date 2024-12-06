@@ -88,6 +88,9 @@ abstract public class CDSAppTester {
         public boolean isProductionRun() {
             return this == PRODUCTION;
         }
+        public boolean isDumping() {
+          return this == DUMP_STATIC || this == DUMP_DYNAMIC;
+        }
     }
 
     public final String name() {

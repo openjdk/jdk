@@ -57,6 +57,7 @@ import java.util.Set;
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
 public class BulkLoaderTest {
     static final String appJar = ClassFileInstaller.getJarPath("BulkLoaderTestApp.jar");
@@ -115,6 +116,13 @@ public class BulkLoaderTest {
             return new String[] {
                 mainClass,
             };
+        }
+
+        @Override
+        public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
+            if (runMode.isDumping() && out.firstMatch("is_dumping_aot_linked_classes * = false") != null) {
+                throw new SkippedException("VM options are not compatible with -XX:+AOTClassLinking");
+            }
         }
     }
 }

@@ -180,6 +180,7 @@ ArchiveBuilder::ArchiveBuilder() :
   _entropy_seed = 0x12345678;
   assert(_current == nullptr, "must be");
   _current = this;
+  CDSConfig::print_dumping_config();
 }
 
 ArchiveBuilder::~ArchiveBuilder() {

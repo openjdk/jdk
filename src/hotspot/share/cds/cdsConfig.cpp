@@ -611,4 +611,16 @@ bool CDSConfig::is_loading_invokedynamic() {
   return UseSharedSpaces && is_using_full_module_graph() && _has_archived_invokedynamic;
 }
 
+void CDSConfig::print_dumping_config() {
+#define _PRINT_CONFIG(x) log_info(cds)("%-35s = %s", #x, x() ? "true" : "false");
+  _PRINT_CONFIG(is_dumping_static_archive);
+  _PRINT_CONFIG(is_dumping_dynamic_archive);
+  _PRINT_CONFIG(is_dumping_aot_linked_classes);
+  _PRINT_CONFIG(is_dumping_heap);
+  _PRINT_CONFIG(is_dumping_invokedynamic);
+  _PRINT_CONFIG(is_dumping_full_module_graph);
+  _PRINT_CONFIG(is_initing_classes_at_dump_time);
+#undef _PRINT_CONFIG
+}
+
 #endif // INCLUDE_CDS_JAVA_HEAP
