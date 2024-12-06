@@ -36,8 +36,7 @@ import java.util.stream.Collectors;
  * TODO
  *
  * - Extend library
- * - Placeholders for variables / fields, to be added in inner scope - maybe requires artificial scopes?
- *   - way to call additional generator into the class/method scopes, and affect variables
+ * - Way to add variable to method/class scope
  *
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
