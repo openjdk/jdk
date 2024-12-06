@@ -1094,6 +1094,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     if (req.is_mutator_alloc()) {
       assert(req.is_young(), "Mutator allocations always come from young generation.");
       _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, req.actual_size() * HeapWordSize);
+      increase_mutator_allocations(req.actual_size());
     } else {
       assert(req.is_gc_alloc(), "Should be gc_alloc since req wasn't mutator alloc");
 
@@ -1125,6 +1126,8 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     ShenandoahFreeSetPartitionId orig_partition;
     if (req.is_mutator_alloc()) {
       orig_partition = ShenandoahFreeSetPartitionId::Mutator;
+      // Count retired waste as mutator allocation
+      increase_mutator_allocations(alloc_capacity(r) / HeapWordSize);
     } else if (req.type() == ShenandoahAllocRequest::_alloc_gclab) {
       orig_partition = ShenandoahFreeSetPartitionId::Collector;
     } else if (req.type() == ShenandoahAllocRequest::_alloc_plab) {
@@ -1247,6 +1250,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
   size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
   _partitions.increase_used(ShenandoahFreeSetPartitionId::Mutator, total_humongous_size);
+  increase_mutator_allocations(num * ShenandoahHeapRegion::region_size_words());
   _partitions.assert_bounds();
   req.set_actual_size(words_size);
   if (remainder != 0) {

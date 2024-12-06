@@ -288,6 +288,11 @@ private:
   ShenandoahRegionPartitions _partitions;
   ShenandoahHeapRegion** _trash_regions;
 
+  // How many words have been allocated by the mutator, since the beginning of time?
+  // Even if this size_t value wraps around, the difference between two measurements effectively represents words allocated between two checkpoints.
+  // This value is modified only under HeapLock.  This is fetched concurrently by the regulator thread to determine allocation rate.
+  size_t _total_mutator_words_allocated;
+
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
   // Return the address of memory allocated, setting in_new_region to true iff the allocation is taken
@@ -301,6 +306,12 @@ private:
   ssize_t _alloc_bias_weight;
 
   const ssize_t INITIAL_ALLOC_BIAS_WEIGHT = 256;
+
+  // Record that delta words of memory have been allocated by the mutator.
+  inline void increase_mutator_allocations(size_t delta_words) {
+    shenandoah_assert_heaplocked();
+    _total_mutator_words_allocated += delta_words;
+  }
 
   // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
   // if this is the first allocation in the region.
@@ -388,6 +399,12 @@ public:
   inline size_t alloc_capacity(size_t idx) const;
 
   void clear();
+
+  inline size_t get_mutator_allocations() {
+    shenandoah_assert_not_heaplocked();
+    ShenandoahHeapLocker locker(_heap->lock());
+    return _total_mutator_words_allocated;
+  }
 
   // Examine the existing free set representation, capturing the current state into var arguments:
   //
