@@ -57,11 +57,6 @@ public class ExtendedRobot extends Robot {
 
     private final int syncDelay = DEFAULT_SYNC_DELAY;
 
-    //TODO: uncomment three lines below after moving functionality to java.awt.Robot
-    //{
-    //    syncDelay = AccessController.doPrivileged(new GetIntegerAction("java.awt.robotdelay", DEFAULT_SYNC_DELAY));
-    //}
-
     /**
      * Constructs an ExtendedRobot object in the coordinate system of the primary screen.
      *

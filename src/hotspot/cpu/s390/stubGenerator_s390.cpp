@@ -635,9 +635,9 @@ class StubGenerator: public StubCodeGenerator {
         r_result       = Z_R11;
     address start = __ pc();
 
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     r_bitmap, r_result, super_klass_index);
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           r_array_base, r_array_length, r_array_index,
+                                           r_bitmap, r_result, super_klass_index);
 
     __ z_br(Z_R14);
 
@@ -659,7 +659,7 @@ class StubGenerator: public StubCodeGenerator {
         r_result       = Z_R11;
 
     __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base,
-                                               r_array_index, r_bitmap, r_result, r_temp1);
+                                               r_array_index, r_bitmap, r_temp1, r_result, /* is_stub */ true);
 
     __ z_br(Z_R14);
 

@@ -232,7 +232,7 @@ public abstract class ShellFolder extends File {
                 managerClass = null;
             }
         // swallow the exceptions below and use default shell folder
-        } catch (ClassNotFoundException | SecurityException | NullPointerException e) {
+        } catch (ClassNotFoundException | NullPointerException e) {
         }
 
         if (managerClass == null) {
