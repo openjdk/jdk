@@ -23,6 +23,7 @@
 
 package compiler.lib.template_framework;
 
+import java.util.Map;
 import java.util.HashMap;
 
 /**
@@ -49,7 +50,7 @@ public class Parameters {
         this(new HashMap<String,String>());
     }
 
-    public Parameters(HashMap<String,String> argumentsMap) {
+    public Parameters(Map<String,String> argumentsMap) {
         this.argumentsMap = new HashMap<String,String>(argumentsMap);
         this.instantiationID = instantiationIDCounter++;
     }
@@ -72,6 +73,17 @@ public class Parameters {
             throw new TemplateFrameworkException("Missing parameter '" + name + "' " + errorMessage);
         }
         return param;
+    }
+
+    public HashMap<String,String> getArguments() {
+        return argumentsMap;
+    }
+
+    public void print() {
+        System.out.println("Parameters ID=" + instantiationID);
+        for (Map.Entry<String,String> e : argumentsMap.entrySet()) {
+            System.out.println("  " + e.getKey() + "=" + e.getValue());
+        }
     }
 
     // TODO verify that we have exactly the names we expect, and no different.

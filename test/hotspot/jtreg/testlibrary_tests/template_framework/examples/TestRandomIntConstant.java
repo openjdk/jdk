@@ -85,6 +85,16 @@ public class TestRandomIntConstant {
                     return $con1 + $con2 + #{param1};
                     #close(method)
                 }
+
+                public static int test2() {
+                    #open(method)
+                    ${fieldI:int} += #{:int_con};
+                    #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI)}
+                    ${varI:int} += #{:int_con};
+                    #{:dispatch(scope=method,call=new_var_in_method,name=$varI)}
+                    return $fieldI + $varI;
+                    #close(method)
+                }
                 #close(class)
             }
             """

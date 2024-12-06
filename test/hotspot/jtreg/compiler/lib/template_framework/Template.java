@@ -26,9 +26,11 @@ package compiler.lib.template_framework;
 import java.util.Arrays;
 import java.util.ArrayDeque;
 import java.util.List;
+import java.util.Map;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * TODO
@@ -196,7 +198,7 @@ public final class Template implements CodeGenerator {
 
         public void handleGeneratorCall(String name,
                                         String generatorName,
-                                        HashMap<String,String> argumentsMap,
+                                        Map<String,String> argumentsMap,
                                         List<String> variableList,
                                         String templated) {
             if (!name.equals("") && replacementsMap.containsKey(name)) {
@@ -237,7 +239,8 @@ public final class Template implements CodeGenerator {
                 throw new TemplateFrameworkException("Template syntax error. Got: " + templated);
             }
             if (!replacementsMap.containsKey(name)) {
-                throw new TemplateFrameworkException("Template replacement error. Was neither parameter nor" +
+                parameters.print();
+                throw new TemplateFrameworkException("Template replacement error. Was neither parameter nor " +
                                                      "repeat of previous generator call: " + templated);
             }
 
@@ -408,7 +411,24 @@ public final class Template implements CodeGenerator {
                                                          "Found in: " + templated);
                 }
 
-                HashMap<String,String> argumentsMap = parseKeyValuePairs(generatorArguments);
+                // Arguments:
+                //   arg=text
+                //   arg=$var
+                //   arg=#param
+                Map<String,String> argumentsMap = parseKeyValuePairs(generatorArguments);
+                argumentsMap = argumentsMap.entrySet().stream().collect(Collectors.toMap(
+                    e -> e.getKey(),
+                    e -> {
+                        String val = e.getValue();
+                        if (val.startsWith("$")) {
+                            return state.wrapVariable(val.substring(1), e.getKey() + "=" + val + " in " + templated);
+                        } else if (val.startsWith("#")) {
+                            return state.parameters.get(name, e.getKey() + "=" + " in " + templated);
+                        }
+                        return val;
+                    }
+                ));
+
                 // Pattern: "$v1,$v2,$v3" -> v1 v2 v3
                 String[] variableArray = variables.equals("") ? new String[0] : variables.split(",");
                 List<String> variableList = Arrays.stream(variableArray).map(s -> s.substring(1)).toList();

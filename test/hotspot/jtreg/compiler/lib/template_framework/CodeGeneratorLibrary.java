@@ -91,16 +91,19 @@ public class CodeGeneratorLibrary {
 
             System.out.println("Dispatch " + generatorName + " to " + scopeKind);
 
+            // Copy arguments, and remove the 2 args we just used. Forward the other args to the dispatch.
+            HashMap<String,String> argumentsMap = new HashMap<String,String>(parameters.getArguments());
+            argumentsMap.remove("scope");
+            argumentsMap.remove("call");
+
             switch(scopeKind) {
                 case "class" -> {
                     ClassScope classScope = scope.classScope(" in dispatch for " + generatorName);
-                    classScope.dispatch(scope, generator);
-                    // TODO parameters from dispatch?
+                    classScope.dispatch(scope, generator, argumentsMap);
                 }
                 case "method" -> {
                     MethodScope methodScope = scope.methodScope(" in dispatch for " + generatorName);
-                    methodScope.dispatch(scope, generator);
-                    // TODO parameters from dispatch?
+                    methodScope.dispatch(scope, generator, argumentsMap);
                 }
                 default -> {
                     throw new TemplateFrameworkException("Generator dispatch got: scope=" + scopeKind +
@@ -131,7 +134,7 @@ public class CodeGeneratorLibrary {
         codeGenerators.put("new_field_in_class", new Template(
             """
             // start $new_field_in_class
-            public int ${fieldI:int} = #{:int_con};
+            public static int #{name} = #{:int_con};
             // end   $new_field_in_class
             """
         ));
@@ -140,7 +143,7 @@ public class CodeGeneratorLibrary {
         codeGenerators.put("new_var_in_method", new Template(
             """
             // start $new_var_in_method
-            int ${varI:int} = #{:int_con};
+            int #{name} = #{:int_con};
             // end   $new_var_in_method
             """
         ));
@@ -185,8 +188,10 @@ public class CodeGeneratorLibrary {
             """
             // start $bar
             {
-                #{:dispatch(scope=class,call=new_field_in_class)}
-                #{:dispatch(scope=method,call=new_var_in_method)}
+                ${fieldI} += 42;
+                #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI)}
+                ${varI} += 42;
+                #{:dispatch(scope=method,call=new_var_in_method,name=$varI)}
             }
             // end   $bar
             """

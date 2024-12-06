@@ -23,6 +23,8 @@
 
 package compiler.lib.template_framework;
 
+import java.util.HashMap;
+
 /**
  * TODO public?
  */
@@ -31,9 +33,9 @@ public class DispatchScope extends Scope {
         super(parent, fuel);
     }
 
-    public void dispatch(Scope sourceScope, CodeGenerator generator) {
+    public void dispatch(Scope sourceScope, CodeGenerator generator, HashMap<String,String> argumentsMap) {
         Scope dispatchScope = new Scope(this, this.fuel - generator.fuelCost());
-        Parameters parameters = new Parameters();
+        Parameters parameters = new Parameters(argumentsMap);
         // TODO parameters from dispatch?
         generator.instantiate(dispatchScope, parameters);
         dispatchScope.stream.addNewline();
