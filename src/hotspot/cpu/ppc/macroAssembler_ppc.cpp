@@ -2664,10 +2664,10 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  // Try to CAS owner (no owner => current thread's _lock_id).
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
   addi(temp, displaced_header, in_bytes(ObjectMonitor::owner_offset()) - markWord::monitor_value);
   Register thread_id = displaced_header;
-  ld(thread_id, in_bytes(JavaThread::lock_id_offset()), R16_thread);
+  ld(thread_id, in_bytes(JavaThread::monitor_owner_id_offset()), R16_thread);
   cmpxchgd(/*flag=*/flag,
            /*current_value=*/current_header,
            /*compare_value=*/(intptr_t)0,
@@ -2944,9 +2944,9 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
       addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
     }
 
-    // Try to CAS owner (no owner => current thread's _lock_id).
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     assert_different_registers(thread_id, monitor, owner_addr, box, R0);
-    ld(thread_id, in_bytes(JavaThread::lock_id_offset()), R16_thread);
+    ld(thread_id, in_bytes(JavaThread::monitor_owner_id_offset()), R16_thread);
     cmpxchgd(/*flag=*/CCR0,
             /*current_value=*/R0,
             /*compare_value=*/(intptr_t)0,

@@ -70,6 +70,6 @@ public class ModifiedFilesWarningTest extends ModifiedFilesTest {
         // verify we get the warning message
         out.stdoutShouldMatch("Warning: .* has been modified");
         out.stdoutShouldNotContain("java.lang.IllegalArgumentException");
-        out.stdoutShouldNotContain("jdk.tools.jlink.internal.RunImageLinkException");
+        out.stdoutShouldNotContain("IOException");
     }
 }
