@@ -192,9 +192,7 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
   MAN_FILES_MD := $(wildcard $(addsuffix /*.md, $(call FindModuleManDirs, $(MODULE))))
 
   ifneq ($(MAN_FILES_MD), )
-    ifeq ($(ENABLE_PANDOC), false)
-      $(info Warning: pandoc not found. Not generating man pages)
-    else
+    ifeq ($(ENABLE_PANDOC), true)
       # Create dynamic man pages from markdown using pandoc. We need
       # PANDOC_TROFF_MANPAGE_FILTER, a wrapper around
       # PANDOC_TROFF_MANPAGE_FILTER_JAVASCRIPT. This is created by buildtools-jdk.

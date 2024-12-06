@@ -51,7 +51,7 @@ PSPromotionManager::PSScannerTasksQueueSet* PSPromotionManager::_stack_array_dep
 PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = nullptr;
 PSOldGen*                      PSPromotionManager::_old_gen = nullptr;
 MutableSpace*                  PSPromotionManager::_young_space = nullptr;
-PartialArrayStateAllocator*    PSPromotionManager::_partial_array_state_allocator = nullptr;
+PartialArrayStateManager*      PSPromotionManager::_partial_array_state_manager = nullptr;
 
 void PSPromotionManager::initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -61,21 +61,20 @@ void PSPromotionManager::initialize() {
 
   const uint promotion_manager_num = ParallelGCThreads;
 
+  assert(_partial_array_state_manager == nullptr, "Attempt to initialize twice");
+  _partial_array_state_manager
+    = new PartialArrayStateManager(promotion_manager_num);
+
   // To prevent false sharing, we pad the PSPromotionManagers
   // and make sure that the first instance starts at a cache line.
   assert(_manager_array == nullptr, "Attempt to initialize twice");
   _manager_array = PaddedArray<PSPromotionManager, mtGC>::create_unfreeable(promotion_manager_num);
 
-  assert(_partial_array_state_allocator == nullptr, "Attempt to initialize twice");
-  _partial_array_state_allocator
-    = new PartialArrayStateAllocator(ParallelGCThreads);
-
-  _stack_array_depth = new PSScannerTasksQueueSet(ParallelGCThreads);
+  _stack_array_depth = new PSScannerTasksQueueSet(promotion_manager_num);
 
   // Create and register the PSPromotionManager(s) for the worker threads.
   for(uint i=0; i<ParallelGCThreads; i++) {
     stack_array_depth()->register_queue(i, _manager_array[i].claimed_stack_depth());
-    _manager_array[i]._partial_array_state_allocator_index = i;
   }
   // The VMThread gets its own PSPromotionManager, which is not available
   // for work stealing.
@@ -187,7 +186,8 @@ void PSPromotionManager::reset_stats() {
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
-  : _partial_array_stepper(ParallelGCThreads, ParGCArrayScanChunk)
+  : _partial_array_state_allocator(_partial_array_state_manager),
+    _partial_array_stepper(ParallelGCThreads, ParGCArrayScanChunk)
 {
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
@@ -197,9 +197,6 @@ PSPromotionManager::PSPromotionManager()
   } else {
     _target_stack_size = GCDrainStackTargetSize;
   }
-
-  // Initialize to a bad value; fixed by initialize().
-  _partial_array_state_allocator_index = UINT_MAX;
 
   // let's choose 1.5x the chunk size
   _min_array_size_for_chunking = (3 * ParGCArrayScanChunk / 2);
@@ -317,7 +314,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayState* state) {
     process_array_chunk_work<oop>(state->destination(), start, end);
   }
   // Release reference to state, now that we're done with it.
-  _partial_array_state_allocator->release(_partial_array_state_allocator_index, state);
+  _partial_array_state_allocator.release(state);
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
@@ -331,11 +328,10 @@ void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   if (step._ncreate > 0) {
     TASKQUEUE_STATS_ONLY(++_arrays_chunked);
     PartialArrayState* state =
-      _partial_array_state_allocator->allocate(_partial_array_state_allocator_index,
-                                               old_obj, new_obj,
-                                               step._index,
-                                               array_length,
-                                               step._ncreate);
+      _partial_array_state_allocator.allocate(old_obj, new_obj,
+                                              step._index,
+                                              array_length,
+                                              step._ncreate);
     for (uint i = 0; i < step._ncreate; ++i) {
       push_depth(ScannerTask(state));
     }
