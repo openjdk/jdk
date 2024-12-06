@@ -785,7 +785,7 @@ void MacroAssembler::emit_static_call_stub() {
 
   // Jump to the entry point of the c2i stub.
   int32_t offset = 0;
-  movptr(t1, 0, offset, t0); // lui + lui + slli + add
+  movptr2(t1, 0, offset, t0); // lui + lui + slli + add
   jr(t1, offset);
 }
 
