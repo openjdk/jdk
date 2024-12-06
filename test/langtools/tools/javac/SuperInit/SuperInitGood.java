@@ -454,6 +454,41 @@ public class SuperInitGood {
         }
     }
 
+    // Lambdas within constructors
+    public static class Test22 {
+        public Test22() {
+            Runnable r = () -> System.out.println();
+            super();
+            r.run();
+        }
+        public Test22(int x) {
+            Runnable r = () -> System.out.println();
+            r.run();
+            super();
+        }
+        public Test22(char x) {
+            Runnable r = () -> {
+                class A {
+                    A() {
+                        return;
+                    }
+                    A(int x) {
+                        Runnable r2 = () -> {
+                            return;
+                        };
+                        this();
+                        r2.run();
+                    }
+                    A(char x) {
+                        this(0);
+                    }
+                }
+                return;
+            };
+            r.run();
+            super();
+        }
+    }
 
     public static void main(String[] args) {
         new Test0();
@@ -499,5 +534,6 @@ public class SuperInitGood {
         new Test20(123);
         new Test21((int)123);
         new Test21((float)123);
+        new Test22('x');
     }
 }

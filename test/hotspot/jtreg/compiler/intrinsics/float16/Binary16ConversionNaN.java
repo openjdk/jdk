@@ -27,6 +27,7 @@
  * @summary Verify NaN sign and significand bits are preserved across conversions
  * @requires (vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*") | os.arch=="aarch64"
  *           | (os.arch == "riscv64" & vm.cpu.features ~= ".*zfh.*")
+ *           | ((os.arch == "ppc64" | os.arch == "ppc64le") & vm.cpu.features ~= ".*darn.*")
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires vm.compMode != "Xcomp"
  * @library /test/lib /
