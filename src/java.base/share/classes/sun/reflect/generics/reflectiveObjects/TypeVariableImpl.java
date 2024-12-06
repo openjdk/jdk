@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.annotation.*;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -41,7 +40,6 @@ import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.AnnotationType;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
-import sun.reflect.misc.ReflectUtil;
 
 /**
  * Implementation of {@code java.lang.reflect.TypeVariable} interface
@@ -135,13 +133,9 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      * @since 1.5
      */
     public D getGenericDeclaration() {
-        if (genericDeclaration instanceof Class<?> c)
-            ReflectUtil.checkPackageAccess(c);
-        else if ((genericDeclaration instanceof Method) ||
-                (genericDeclaration instanceof Constructor))
-            ReflectUtil.conservativeCheckMemberAccess((Member)genericDeclaration);
-        else
-            throw new AssertionError("Unexpected kind of GenericDeclaration");
+        assert genericDeclaration instanceof Class<?> ||
+                genericDeclaration instanceof Method ||
+                genericDeclaration instanceof Constructor : "Unexpected kind of GenericDeclaration";
         return genericDeclaration;
     }
 

@@ -657,7 +657,7 @@ void MacroAssembler::add2reg(Register r1, int64_t imm, Register r2) {
         z_aghik(r1, r2, imm);
         return;
       }
-      z_lgr(r1, r2);
+      lgr_if_needed(r1, r2);
       z_aghi(r1, imm);
       return;
     }
@@ -679,6 +679,37 @@ void MacroAssembler::add2reg(Register r1, int64_t imm, Register r2) {
   // Can handle it (all possible values) with long immediates.
   lgr_if_needed(r1, r2);
   z_agfi(r1, imm);
+}
+
+void MacroAssembler::add2reg_32(Register r1, int64_t imm, Register r2) {
+  assert(Immediate::is_simm32(imm), "probably an implicit conversion went wrong");
+
+  if (r2 == noreg) { r2 = r1; }
+
+  // Handle special case imm == 0.
+  if (imm == 0) {
+    lr_if_needed(r1, r2);
+    // Nothing else to do.
+    return;
+  }
+
+  if (Immediate::is_simm16(imm)) {
+    if (r1 == r2){
+      z_ahi(r1, imm);
+      return;
+    }
+    if (VM_Version::has_DistinctOpnds()) {
+      z_ahik(r1, r2, imm);
+      return;
+    }
+    lr_if_needed(r1, r2);
+    z_ahi(r1, imm);
+    return;
+  }
+
+  // imm is simm32
+  lr_if_needed(r1, r2);
+  z_afi(r1, imm);
 }
 
 // Generic operation r := b + x + d
@@ -3794,11 +3825,11 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   Register zero = temp;
   Register monitor_tagged = displacedHeader; // Tagged with markWord::monitor_value.
 
-  // Try to CAS owner (no owner => current thread's _lock_id).
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
   // If csg succeeds then CR=EQ, otherwise, register zero is filled
   // with the current owner.
   z_lghi(zero, 0);
-  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
   z_csg(zero, Z_R0_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
 
   // Store a non-null value into the box.
@@ -3873,7 +3904,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+  z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
   z_cg(Z_R0_scratch, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   z_brne(done);
 
@@ -6577,11 +6608,11 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
 
 
-    // Try to CAS owner (no owner => current thread's _lock_id).
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     // If csg succeeds then CR=EQ, otherwise, register zero is filled
     // with the current owner.
     z_lghi(zero, 0);
-    z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::lock_id_offset()));
+    z_lg(Z_R0_scratch, Address(Z_thread, JavaThread::monitor_owner_id_offset()));
     z_csg(zero, Z_R0_scratch, owner_address);
     z_bre(monitor_locked);
 

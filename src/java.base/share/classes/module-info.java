@@ -81,7 +81,6 @@ module java.base {
     exports java.lang.annotation;
     exports java.lang.classfile;
     exports java.lang.classfile.attribute;
-    exports java.lang.classfile.components;
     exports java.lang.classfile.constantpool;
     exports java.lang.classfile.instruction;
     exports java.lang.constant;
@@ -177,6 +176,8 @@ module java.base {
         jdk.net,
         jdk.sctp,
         jdk.crypto.cryptoki;
+    exports jdk.internal.classfile.components to
+        jdk.jfr;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to
@@ -315,7 +316,6 @@ module java.base {
     exports sun.reflect.misc to
         java.desktop,
         java.management,
-        java.rmi,
         java.sql.rowset;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
@@ -328,7 +328,6 @@ module java.base {
     exports sun.security.pkcs to
         jdk.jartool;
     exports sun.security.provider to
-        java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
         jdk.security.auth;
@@ -343,7 +342,6 @@ module java.base {
         jdk.jartool;
     exports sun.security.util to
         java.naming,
-        java.rmi,
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,
