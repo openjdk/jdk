@@ -29,8 +29,11 @@ import java.util.HashMap;
  * TODO public?
  */
 public class DispatchScope extends Scope {
+    public final CodeStream dispatchStream;
+
     public DispatchScope(Scope parent, long fuel) {
         super(parent, fuel);
+        this.dispatchStream = new CodeStream();
     }
 
     public void dispatch(Scope sourceScope, CodeGenerator generator, HashMap<String,String> argumentsMap) {
@@ -40,8 +43,13 @@ public class DispatchScope extends Scope {
         generator.instantiate(dispatchScope, parameters);
         dispatchScope.stream.addNewline();
         dispatchScope.close();
-        stream.prependCodeStream(dispatchScope.stream);
-
+        dispatchStream.addCodeStream(dispatchScope.stream);
         sourceScope.stream.addCodeToLine("/* dispatch_" + parameters.instantiationID + " */");
+    }
+
+    public void close() {
+        dispatchStream.close();
+        stream.prependCodeStream(dispatchStream);
+        stream.close();
     }
 }
