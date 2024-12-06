@@ -34,6 +34,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "sanitizers/ub.hpp"
 #include "utilities/align.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -435,6 +436,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
   }
 }
 
+ATTRIBUTE_NO_UBSAN
 void ReservedHeapSpace::try_reserve_range(char *highest_start,
                                           char *lowest_start,
                                           size_t attach_point_alignment,
