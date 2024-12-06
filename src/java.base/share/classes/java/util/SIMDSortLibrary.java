@@ -4,7 +4,6 @@ import jdk.internal.foreign.CABI;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.lang.annotation.Native;
 import java.lang.invoke.*;
 import java.lang.foreign.*;
 import java.util.stream.*;
@@ -23,21 +22,17 @@ class SIMDSortLibrary {
         // Should not be called directly
     }
 
-    private static final NativeSortingLibrary LIBRARY = loadLibrary();
-
-    public static NativeSortingLibrary getLibrary() {
-        return LIBRARY;
-    }
-
-    static NativeSortingLibrary loadLibrary() {
+    public static DualPivotQuicksort.SortingLibrary getLibrary(DualPivotQuicksort.SortingLibrary defaultImpl) {
         if (DISABLE) {
             info("library is disabled");
-            return new FallbackLibrary();
+            return defaultImpl;
         }
         if (isLinuxX64() && LinuxX64Library.isPresent()) {
-            return new LinuxX64Library();
+            info("libsimdsort for linux-x64 is used");
+            return LinuxX64Library.getLibrary(defaultImpl);
         }
-        return new FallbackLibrary();
+        info("no native library found");
+        return defaultImpl;
     }
 
     /**
@@ -74,30 +69,11 @@ class SIMDSortLibrary {
         int[] partition(A a, int low, int high, int pivotIndex1, int pivotIndex2);
     }
 
-    interface NativeSortingLibrary {
-        <A> SortOperation<A> wrapSort(Class<A> cls, SortOperation<A> defaultImpl);
-
-        <A> PartitionOperation<A> wrapPartition(Class<A> cls, PartitionOperation<A> defaultImpl);
-    }
-
-    static class FallbackLibrary implements NativeSortingLibrary {
-
-        @Override
-        public <A> SortOperation<A> wrapSort(Class<A> cls, SortOperation<A> defaultImpl) {
-            return defaultImpl;
-        }
-
-        @Override
-        public <A> PartitionOperation<A> wrapPartition(Class<A> cls, PartitionOperation<A> defaultImpl) {
-            return defaultImpl;
-        }
-    }
-
     private static boolean isLinuxX64() {
         return (CABI.current() == CABI.SYS_V);
     }
 
-    static class LinuxX64Library implements NativeSortingLibrary {
+    static class LinuxX64Library {
         public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
 
         public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
@@ -119,6 +95,11 @@ class SIMDSortLibrary {
             return SYMBOL_LOOKUP != null;
         }
 
+        private static final boolean USE_AVX512;
+        private static final boolean USE_AVX2;
+
+        static final SymbolLookup SYMBOL_LOOKUP;
+
         static {
             if (!isLinuxX64()) {
                 throw new InternalError("linux-x64 only");
@@ -128,13 +109,11 @@ class SIMDSortLibrary {
             USE_AVX2 = (VM.getCPUFeatures() & VM_AVX2) != 0L;
             USE_AVX512 = VM.isIntelCPU() && (VM.getCPUFeatures() & VM_AVX512DQ) != 0L;
 
+            debug("USE_AVX512=" + USE_AVX512);
+            debug("USE_AVX2=" + USE_AVX2);
+
             SYMBOL_LOOKUP = getLibraryLookup();
         }
-
-        private static final boolean USE_AVX512;
-        private static final boolean USE_AVX2;
-
-        static final SymbolLookup SYMBOL_LOOKUP;
 
         static SymbolLookup getLibraryLookup() {
             try {
@@ -146,20 +125,25 @@ class SIMDSortLibrary {
         }
 
         @SuppressWarnings("unchecked")
-        public <A> SortOperation<A> wrapSort(Class<A> cls, SortOperation<A> defaultImpl) {
+        private static <A> SortOperation<A> select(Class<A> cls, SortOperation<A> defaultImpl) {
             if (isPresent()) {
-                return (SortOperation<A>) wrap(cls, defaultImpl);
+                return (SortOperation<A>) dispatch(cls, defaultImpl);
             } else {
                 return defaultImpl;
             }
         }
 
-        @SuppressWarnings("unchecked")
-        public <A> PartitionOperation<A> wrapPartition(Class<A> cls, PartitionOperation<A> defaultImpl) {
-            if (isPresent()) {
-                return (PartitionOperation<A>) wrap(cls, defaultImpl);
+        private static <A> SortOperation<?> dispatch(Class<A> cls, SortOperation<A> defaultImpl) {
+            if (cls == int[].class) {
+                return select(avx512_sort_int::sort, avx2_sort_int::sort, defaultImpl);
+            } else if (cls == long[].class) {
+                return select(avx512_sort_long::sort, null, defaultImpl);
+            } else if (cls == float[].class) {
+                return select(avx512_sort_float::sort, avx2_sort_float::sort, defaultImpl);
+            } else if (cls == double[].class) {
+                return select(avx512_sort_double::sort, null, defaultImpl);
             } else {
-                return defaultImpl;
+                throw new InternalError("not supported: " + cls);
             }
         }
 
@@ -175,15 +159,24 @@ class SIMDSortLibrary {
             }
         }
 
-        private static <A> SortOperation<?> wrap(Class<A> cls, SortOperation<A> defaultImpl) {
+        @SuppressWarnings("unchecked")
+        private static <A> PartitionOperation<A> select(Class<A> cls, PartitionOperation<A> defaultImpl) {
+            if (isPresent()) {
+                return (PartitionOperation<A>) dispatch(cls, defaultImpl);
+            } else {
+                return defaultImpl;
+            }
+        }
+
+        private static <A> PartitionOperation<?> dispatch(Class<A> cls, PartitionOperation<A> defaultImpl) {
             if (cls == int[].class) {
-                return select(avx512_sort_int::sort, avx2_sort_int::sort, defaultImpl);
+                return select(avx512_partition_int::partition, avx2_partition_int::partition, defaultImpl);
             } else if (cls == long[].class) {
-                return select(avx512_sort_long::sort, null, defaultImpl);
+                return select(avx512_partition_long::partition, null, defaultImpl);
             } else if (cls == float[].class) {
-                return select(avx512_sort_float::sort, avx2_sort_float::sort, defaultImpl);
+                return select(avx512_partition_float::partition, avx2_partition_float::partition, defaultImpl);
             } else if (cls == double[].class) {
-                return select(avx512_sort_double::sort, null, defaultImpl);
+                return select(avx512_partition_double::partition, null, defaultImpl);
             } else {
                 throw new InternalError("not supported: " + cls);
             }
@@ -198,20 +191,6 @@ class SIMDSortLibrary {
                 return avx2Impl;
             } else {
                 return defaultImpl;
-            }
-        }
-
-        private static <A> PartitionOperation<?> wrap(Class<A> cls, PartitionOperation<A> defaultImpl) {
-            if (cls == int[].class) {
-                return select(avx512_partition_int::partition, avx2_partition_int::partition, defaultImpl);
-            } else if (cls == long[].class) {
-                return select(avx512_partition_long::partition, null, defaultImpl);
-            } else if (cls == float[].class) {
-                return select(avx512_partition_float::partition, avx2_partition_float::partition, defaultImpl);
-            } else if (cls == double[].class) {
-                return select(avx512_partition_double::partition, null, defaultImpl);
-            } else {
-                throw new InternalError("not supported: " + cls);
             }
         }
 
@@ -469,6 +448,110 @@ class SIMDSortLibrary {
                 handler = traceWrapper(symbol, handler);
             }
             return handler;
+        }
+
+        static DualPivotQuicksort.SortingLibrary getLibrary(DualPivotQuicksort.SortingLibrary defaultImpl) {
+            final SortOperation<int[]> insertionSortInt = select(int[].class, defaultImpl::insertionSort);
+            final SortOperation<long[]> insertionSortLong = select(long[].class, defaultImpl::insertionSort);
+            final SortOperation<float[]> insertionSortFloat = select(float[].class, defaultImpl::insertionSort);
+            final SortOperation<double[]> insertionSortDouble = select(double[].class, defaultImpl::insertionSort);
+
+            final SortOperation<int[]> mixedInsertionSortInt = select(int[].class, defaultImpl::mixedInsertionSort);
+            final SortOperation<long[]> mixedInsertionSortLong = select(long[].class, defaultImpl::mixedInsertionSort);
+            final SortOperation<float[]> mixedInsertionSortFloat = select(float[].class, defaultImpl::mixedInsertionSort);
+            final SortOperation<double[]> mixedInsertionSortDouble = select(double[].class, defaultImpl::mixedInsertionSort);
+
+            final PartitionOperation<int[]> partitionSinglePivotInt = select(int[].class, defaultImpl::partitionSinglePivot);
+            final PartitionOperation<long[]> partitionSinglePivotLong = select(long[].class, defaultImpl::partitionSinglePivot);
+            final PartitionOperation<float[]> partitionSinglePivotFloat = select(float[].class, defaultImpl::partitionSinglePivot);
+            final PartitionOperation<double[]> partitionSinglePivotDouble = select(double[].class, defaultImpl::partitionSinglePivot);
+
+            final PartitionOperation<int[]> partitionDualPivotInt = select(int[].class, defaultImpl::partitionDualPivot);
+            final PartitionOperation<long[]> partitionDualPivotLong = select(long[].class, defaultImpl::partitionDualPivot);
+            final PartitionOperation<float[]> partitionDualPivotFloat = select(float[].class, defaultImpl::partitionDualPivot);
+            final PartitionOperation<double[]> partitionDualPivotDouble = select(double[].class, defaultImpl::partitionDualPivot);
+
+            return new DualPivotQuicksort.SortingLibrary() {
+                @ForceInline
+                public void insertionSort(int[] array, int low, int high) {
+                    insertionSortInt.sort(array, low, high);
+                }
+
+                @ForceInline
+                public void insertionSort(long[] array, int low, int high) {
+                    insertionSortLong.sort(array, low, high);
+                }
+
+                @ForceInline
+                public void insertionSort(float[] array, int low, int high) {
+                    insertionSortFloat.sort(array, low, high);
+                }
+
+                @ForceInline
+                public void insertionSort(double[] array, int low, int high) {
+                    insertionSortDouble.sort(array, low, high);
+                }
+
+                @ForceInline
+                public void mixedInsertionSort(int[] array, int low, int high) {
+                    mixedInsertionSortInt.sort(array, low, high);
+                }
+
+                @ForceInline
+                public void mixedInsertionSort(long[] array, int low, int high) {
+                    mixedInsertionSortLong.sort(array, low, high);
+                }
+
+                @ForceInline
+                public void mixedInsertionSort(float[] array, int low, int high) {
+                    mixedInsertionSortFloat.sort(array, low, high);
+                }
+
+                @ForceInline
+                public void mixedInsertionSort(double[] array, int low, int high) {
+                    mixedInsertionSortDouble.sort(array, low, high);
+                }
+
+                @ForceInline
+                public int[] partitionSinglePivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionSinglePivotInt.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+
+                @ForceInline
+                public int[] partitionSinglePivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionSinglePivotLong.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+
+                @ForceInline
+                public int[] partitionSinglePivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionSinglePivotFloat.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+
+                @ForceInline
+                public int[] partitionSinglePivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionSinglePivotDouble.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+
+                @ForceInline
+                public int[] partitionDualPivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionDualPivotInt.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+
+                @ForceInline
+                public int[] partitionDualPivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionDualPivotLong.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+
+                @ForceInline
+                public int[] partitionDualPivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionDualPivotFloat.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+
+                @ForceInline
+                public int[] partitionDualPivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+                    return partitionDualPivotDouble.partition(a, low, high, pivotIndex1, pivotIndex2);
+                }
+            };
         }
     }
 

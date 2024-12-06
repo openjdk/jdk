@@ -121,25 +121,7 @@ final class DualPivotQuicksort {
      */
     private static final int MAX_RECURSION_DEPTH = 64 * DELTA;
 
-    private static final SIMDSortLibrary.SortOperation<int[]> insertionSortInt = SIMDSortLibrary.getLibrary().wrapSort(int[].class, DualPivotQuicksort::insertionSort);
-    private static final SIMDSortLibrary.SortOperation<long[]> insertionSortLong = SIMDSortLibrary.getLibrary().wrapSort(long[].class, DualPivotQuicksort::insertionSort);
-    private static final SIMDSortLibrary.SortOperation<float[]> insertionSortFloat = SIMDSortLibrary.getLibrary().wrapSort(float[].class, DualPivotQuicksort::insertionSort);
-    private static final SIMDSortLibrary.SortOperation<double[]> insertionSortDouble = SIMDSortLibrary.getLibrary().wrapSort(double[].class, DualPivotQuicksort::insertionSort);
-
-    private static final SIMDSortLibrary.SortOperation<int[]> mixedInsertionSortInt = SIMDSortLibrary.getLibrary().wrapSort(int[].class, DualPivotQuicksort::mixedInsertionSort);
-    private static final SIMDSortLibrary.SortOperation<long[]> mixedInsertionSortLong = SIMDSortLibrary.getLibrary().wrapSort(long[].class, DualPivotQuicksort::mixedInsertionSort);
-    private static final SIMDSortLibrary.SortOperation<float[]> mixedInsertionSortFloat = SIMDSortLibrary.getLibrary().wrapSort(float[].class, DualPivotQuicksort::mixedInsertionSort);
-    private static final SIMDSortLibrary.SortOperation<double[]> mixedInsertionSortDouble = SIMDSortLibrary.getLibrary().wrapSort(double[].class, DualPivotQuicksort::mixedInsertionSort);
-
-    private static final SIMDSortLibrary.PartitionOperation<int[]> partitionSinglePivotInt = SIMDSortLibrary.getLibrary().wrapPartition(int[].class, DualPivotQuicksort::partitionSinglePivot);
-    private static final SIMDSortLibrary.PartitionOperation<long[]> partitionSinglePivotLong = SIMDSortLibrary.getLibrary().wrapPartition(long[].class, DualPivotQuicksort::partitionSinglePivot);
-    private static final SIMDSortLibrary.PartitionOperation<float[]> partitionSinglePivotFloat = SIMDSortLibrary.getLibrary().wrapPartition(float[].class, DualPivotQuicksort::partitionSinglePivot);
-    private static final SIMDSortLibrary.PartitionOperation<double[]> partitionSinglePivotDouble = SIMDSortLibrary.getLibrary().wrapPartition(double[].class, DualPivotQuicksort::partitionSinglePivot);
-
-    private static final SIMDSortLibrary.PartitionOperation<int[]> partitionDualPivotInt = SIMDSortLibrary.getLibrary().wrapPartition(int[].class, DualPivotQuicksort::partitionDualPivot);
-    private static final SIMDSortLibrary.PartitionOperation<long[]> partitionDualPivotLong = SIMDSortLibrary.getLibrary().wrapPartition(long[].class, DualPivotQuicksort::partitionDualPivot);
-    private static final SIMDSortLibrary.PartitionOperation<float[]> partitionDualPivotFloat = SIMDSortLibrary.getLibrary().wrapPartition(float[].class, DualPivotQuicksort::partitionDualPivot);
-    private static final SIMDSortLibrary.PartitionOperation<double[]> partitionDualPivotDouble = SIMDSortLibrary.getLibrary().wrapPartition(double[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final SortingLibrary LIBRARY = SIMDSortLibrary.getLibrary(new SortingLibrary() {});
 
     /**
      * Calculates the double depth of parallel merging.
@@ -203,7 +185,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSortInt.sort(a, low, high);
+                LIBRARY.mixedInsertionSort(a, low, high);
                 return;
             }
 
@@ -211,7 +193,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSortInt.sort(a, low, high);
+                LIBRARY.insertionSort(a, low, high);
                 return;
             }
 
@@ -297,7 +279,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partitionDualPivotInt.partition(a, low, high, e1, e5);
+                int[] pivotIndices = LIBRARY.partitionDualPivot(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 
@@ -321,7 +303,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partitionSinglePivotInt.partition(a, low, high, e3, e3);
+                int[] pivotIndices = LIBRARY.partitionSinglePivot(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -336,310 +318,6 @@ final class DualPivotQuicksort {
                 }
             }
             high = lower; // Iterate along the left part
-        }
-    }
-
-    /**
-     * Partitions the specified range of the array using the two pivots provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
-     */
-    @ForceInline
-    private static int[] partitionDualPivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        int pivot1 = a[e1];
-        int pivot2 = a[e5];
-
-        /*
-         * The first and the last elements to be sorted are moved
-         * to the locations formerly occupied by the pivots. When
-         * partitioning is completed, the pivots are swapped back
-         * into their final positions, and excluded from the next
-         * subsequent sorting.
-         */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
-
-        /*
-         * Skip elements, which are less or greater than the pivots.
-         */
-        while (a[++lower] < pivot1);
-        while (a[--upper] > pivot2);
-
-        /*
-         * Backward 3-interval partitioning
-         *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int unused = --lower, k = ++upper; --k > lower; ) {
-            int ak = a[k];
-
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
-                }
-            } else if (ak > pivot2) { // Move a[k] to the right side
-                a[k] = a[--upper];
-                a[upper] = ak;
-            }
-        }
-
-        /*
-         * Swap the pivots into their final positions.
-         */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
-
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Partitions the specified range of the array using a single pivot provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
-     */
-    @ForceInline
-    private static int[] partitionSinglePivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-        int e3 = pivotIndex1;
-        int pivot = a[e3];
-
-        /*
-         * The first element to be sorted is moved to the
-         * location formerly occupied by the pivot. After
-         * completion of partitioning the pivot is swapped
-         * back into its final position, and excluded from
-         * the next subsequent sorting.
-         */
-        a[e3] = a[lower];
-
-        /*
-         * Traditional 3-way (Dutch National Flag) partitioning
-         *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int k = ++upper; --k > lower; ) {
-            int ak = a[k];
-
-            if (ak != pivot) {
-                a[k] = pivot;
-
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
-
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
-                }
-            }
-        }
-
-        /*
-         * Swap the pivot into its final position.
-         */
-        a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Sorts the specified range of the array using mixed insertion sort.
-     *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
-     *
-     * In the context of Dual-Pivot Quicksort, the pivot element
-     * from the left part plays the role of sentinel, because it
-     * is less than any elements from the given part. Therefore,
-     * expensive check of the left range can be skipped on each
-     * iteration unless it is the leftmost call.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void mixedInsertionSort(int[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
-
-            /*
-             * Invoke simple insertion sort on tiny array.
-             */
-            for (int i; ++low < end; ) {
-                int ai = a[i = low];
-
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
-        } else {
-
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            int pin = a[end];
-
-            for (int i, p = high; ++low < end; ) {
-                int ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-                }
-            }
-
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                int a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
-                }
-            }
-        }
-    }
-
-    /**
-     * Sorts the specified range of the array using insertion sort.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void insertionSort(int[] a, int low, int high) {
-        for (int i, k = low; ++k < high; ) {
-            int ai = a[i = k];
-
-            if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
         }
     }
 
@@ -1006,7 +684,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSortLong.sort(a, low, high);
+                LIBRARY.mixedInsertionSort(a, low, high);
                 return;
             }
 
@@ -1014,7 +692,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSortLong.sort(a, low, high);
+                LIBRARY.insertionSort(a, low, high);
                 return;
             }
 
@@ -1101,7 +779,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partitionDualPivotLong.partition(a, low, high, e1, e5);
+                int[] pivotIndices = LIBRARY.partitionDualPivot(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1122,7 +800,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partitionSinglePivotLong.partition(a, low, high, e3, e3);
+                int[] pivotIndices = LIBRARY.partitionSinglePivot(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -1137,311 +815,6 @@ final class DualPivotQuicksort {
                 }
             }
             high = lower; // Iterate along the left part
-        }
-    }
-
-    /**
-     * Partitions the specified range of the array using the two pivots provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
-     */
-    @ForceInline
-    private static int[] partitionDualPivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        long pivot1 = a[e1];
-        long pivot2 = a[e5];
-
-        /*
-         * The first and the last elements to be sorted are moved
-         * to the locations formerly occupied by the pivots. When
-         * partitioning is completed, the pivots are swapped back
-         * into their final positions, and excluded from the next
-         * subsequent sorting.
-         */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
-
-        /*
-         * Skip elements, which are less or greater than the pivots.
-         */
-        while (a[++lower] < pivot1);
-        while (a[--upper] > pivot2);
-
-        /*
-         * Backward 3-interval partitioning
-         *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int unused = --lower, k = ++upper; --k > lower; ) {
-            long ak = a[k];
-
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
-                }
-            } else if (ak > pivot2) { // Move a[k] to the right side
-                a[k] = a[--upper];
-                a[upper] = ak;
-            }
-        }
-
-        /*
-         * Swap the pivots into their final positions.
-         */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
-
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Partitions the specified range of the array using a single pivot provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
-     */
-    @ForceInline
-    private static int[] partitionSinglePivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-
-        int e3 = pivotIndex1;
-        long pivot = a[e3];
-
-        /*
-         * The first element to be sorted is moved to the
-         * location formerly occupied by the pivot. After
-         * completion of partitioning the pivot is swapped
-         * back into its final position, and excluded from
-         * the next subsequent sorting.
-         */
-        a[e3] = a[lower];
-
-        /*
-         * Traditional 3-way (Dutch National Flag) partitioning
-         *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int k = ++upper; --k > lower; ) {
-            long ak = a[k];
-
-            if (ak != pivot) {
-                a[k] = pivot;
-
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
-
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
-                }
-            }
-        }
-
-        /*
-         * Swap the pivot into its final position.
-         */
-        a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Sorts the specified range of the array using mixed insertion sort.
-     *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
-     *
-     * In the context of Dual-Pivot Quicksort, the pivot element
-     * from the left part plays the role of sentinel, because it
-     * is less than any elements from the given part. Therefore,
-     * expensive check of the left range can be skipped on each
-     * iteration unless it is the leftmost call.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void mixedInsertionSort(long[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
-
-            /*
-             * Invoke simple insertion sort on tiny array.
-             */
-            for (int i; ++low < end; ) {
-                long ai = a[i = low];
-
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
-        } else {
-
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            long pin = a[end];
-
-            for (int i, p = high; ++low < end; ) {
-                long ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-                }
-            }
-
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                long a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
-                }
-            }
-        }
-    }
-
-    /**
-     * Sorts the specified range of the array using insertion sort.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void insertionSort(long[] a, int low, int high) {
-        for (int i, k = low; ++k < high; ) {
-            long ai = a[i = k];
-
-            if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
         }
     }
 
@@ -2595,7 +1968,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSortFloat.sort(a, low, high);
+                LIBRARY.mixedInsertionSort(a, low, high);
                 return;
             }
 
@@ -2603,7 +1976,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSortFloat.sort(a, low, high);
+                LIBRARY.insertionSort(a, low, high);
                 return;
             }
 
@@ -2690,7 +2063,7 @@ final class DualPivotQuicksort {
                  * the pivots. These values are inexpensive approximation
                  * of tertiles. Note, that pivot1 < pivot2.
                  */
-                int[] pivotIndices = partitionDualPivotFloat.partition(a, low, high, e1, e5);
+                int[] pivotIndices = LIBRARY.partitionDualPivot(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2711,7 +2084,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partitionSinglePivotFloat.partition(a, low, high, e3, e3);
+                int[] pivotIndices = LIBRARY.partitionSinglePivot(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -2726,310 +2099,6 @@ final class DualPivotQuicksort {
                 }
             }
             high = lower; // Iterate along the left part
-        }
-    }
-
-    /**
-     * Partitions the specified range of the array using the two pivots provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
-     */
-    @ForceInline
-    private static int[] partitionDualPivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        float pivot1 = a[e1];
-        float pivot2 = a[e5];
-
-        /*
-         * The first and the last elements to be sorted are moved
-         * to the locations formerly occupied by the pivots. When
-         * partitioning is completed, the pivots are swapped back
-         * into their final positions, and excluded from the next
-         * subsequent sorting.
-         */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
-
-        /*
-         * Skip elements, which are less or greater than the pivots.
-         */
-        while (a[++lower] < pivot1);
-        while (a[--upper] > pivot2);
-
-        /*
-         * Backward 3-interval partitioning
-         *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int unused = --lower, k = ++upper; --k > lower; ) {
-            float ak = a[k];
-
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
-                }
-            } else if (ak > pivot2) { // Move a[k] to the right side
-                a[k] = a[--upper];
-                a[upper] = ak;
-            }
-        }
-
-        /*
-         * Swap the pivots into their final positions.
-         */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
-
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Partitions the specified range of the array using a single pivot provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
-     */
-    @ForceInline
-    private static int[] partitionSinglePivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-
-        int e3 = pivotIndex1;
-        float pivot = a[e3];
-
-        /*
-         * The first element to be sorted is moved to the
-         * location formerly occupied by the pivot. After
-         * completion of partitioning the pivot is swapped
-         * back into its final position, and excluded from
-         * the next subsequent sorting.
-         */
-        a[e3] = a[lower];
-
-        /*
-         * Traditional 3-way (Dutch National Flag) partitioning
-         *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int k = ++upper; --k > lower; ) {
-            float ak = a[k];
-
-            if (ak != pivot) {
-                a[k] = pivot;
-
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
-
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
-                }
-            }
-        }
-
-        /*
-         * Swap the pivot into its final position.
-         */
-        a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Sorts the specified range of the array using mixed insertion sort.
-     *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
-     *
-     * In the context of Dual-Pivot Quicksort, the pivot element
-     * from the left part plays the role of sentinel, because it
-     * is less than any elements from the given part. Therefore,
-     * expensive check of the left range can be skipped on each
-     * iteration unless it is the leftmost call.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void mixedInsertionSort(float[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
-
-            /*
-             * Invoke simple insertion sort on tiny array.
-             */
-            for (int i; ++low < end; ) {
-                float ai = a[i = low];
-
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
-        } else {
-
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            float pin = a[end];
-
-            for (int i, p = high; ++low < end; ) {
-                float ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-                }
-            }
-
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                float a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
-                }
-            }
-        }
-    }
-
-    /**
-     * Sorts the specified range of the array using insertion sort.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void insertionSort(float[] a, int low, int high) {
-        for (int i, k = low; ++k < high; ) {
-            float ai = a[i = k];
-
-            if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
         }
     }
 
@@ -3447,7 +2516,7 @@ final class DualPivotQuicksort {
              * Run mixed insertion sort on small non-leftmost parts.
              */
             if (size < MAX_MIXED_INSERTION_SORT_SIZE + bits && (bits & 1) > 0) {
-                mixedInsertionSortDouble.sort(a, low, high);
+                LIBRARY.mixedInsertionSort(a, low, high);
                 return;
             }
 
@@ -3455,7 +2524,7 @@ final class DualPivotQuicksort {
              * Invoke insertion sort on small leftmost part.
              */
             if (size < MAX_INSERTION_SORT_SIZE) {
-                insertionSortDouble.sort(a, low, high);
+                LIBRARY.insertionSort(a, low, high);
                 return;
             }
 
@@ -3542,7 +2611,7 @@ final class DualPivotQuicksort {
                 * the pivots. These values are inexpensive approximation
                 * of tertiles. Note, that pivot1 < pivot2.
                 */
-                int[] pivotIndices = partitionDualPivotDouble.partition(a, low, high, e1, e5);
+                int[] pivotIndices = LIBRARY.partitionDualPivot(a, low, high, e1, e5);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
                 /*
@@ -3563,7 +2632,7 @@ final class DualPivotQuicksort {
                  * Use the third of the five sorted elements as the pivot.
                  * This value is inexpensive approximation of the median.
                  */
-                int[] pivotIndices = partitionSinglePivotDouble.partition(a, low, high, e3, e3);
+                int[] pivotIndices = LIBRARY.partitionSinglePivot(a, low, high, e3, e3);
                 lower = pivotIndices[0];
                 upper = pivotIndices[1];
 
@@ -3579,310 +2648,6 @@ final class DualPivotQuicksort {
                 }
             }
             high = lower; // Iterate along the left part
-        }
-    }
-
-    /**
-     * Partitions the specified range of the array using the two pivots provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     *
-     */
-    @ForceInline
-    private static int[] partitionDualPivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-
-        int e1 = pivotIndex1;
-        int e5 = pivotIndex2;
-        double pivot1 = a[e1];
-        double pivot2 = a[e5];
-
-        /*
-        * The first and the last elements to be sorted are moved
-        * to the locations formerly occupied by the pivots. When
-        * partitioning is completed, the pivots are swapped back
-        * into their final positions, and excluded from the next
-        * subsequent sorting.
-        */
-        a[e1] = a[lower];
-        a[e5] = a[upper];
-
-        /*
-        * Skip elements, which are less or greater than the pivots.
-        */
-        while (a[++lower] < pivot1);
-        while (a[--upper] > pivot2);
-
-        /*
-         * Backward 3-interval partitioning
-         *
-         *   left part                 central part          right part
-         * +------------------------------------------------------------+
-                  * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
-         * +------------------------------------------------------------+
-         *             ^       ^                            ^
-         *             |       |                            |
-         *           lower     k                          upper
-         *
-         * Invariants:
-         *
-         *              all in (low, lower] < pivot1
-         *    pivot1 <= all in (k, upper)  <= pivot2
-         *              all in [upper, end) > pivot2
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int unused = --lower, k = ++upper; --k > lower; ) {
-            double ak = a[k];
-
-            if (ak < pivot1) { // Move a[k] to the left side
-                while (lower < k) {
-                    if (a[++lower] >= pivot1) {
-                        if (a[lower] > pivot2) {
-                            a[k] = a[--upper];
-                            a[upper] = a[lower];
-                        } else {
-                            a[k] = a[lower];
-                        }
-                        a[lower] = ak;
-                        break;
-                    }
-                }
-            } else if (ak > pivot2) { // Move a[k] to the right side
-                a[k] = a[--upper];
-                a[upper] = ak;
-            }
-        }
-
-        /*
-         * Swap the pivots into their final positions.
-         */
-        a[low] = a[lower]; a[lower] = pivot1;
-        a[end] = a[upper]; a[upper] = pivot2;
-
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Partitions the specified range of the array using a single pivot provided.
-     *
-     * @param a the array to be partitioned
-     * @param low the index of the first element, inclusive, for partitioning
-     * @param high the index of the last element, exclusive, for partitioning
-     * @param pivotIndex1 the index of pivot1, the first pivot
-     * @param pivotIndex2 the index of pivot2, the second pivot
-     */
-    @ForceInline
-    private static int[] partitionSinglePivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
-
-        int end = high - 1;
-        int lower = low;
-        int upper = end;
-
-        int e3 = pivotIndex1;
-        double pivot = a[e3];
-
-        /*
-        * The first element to be sorted is moved to the
-        * location formerly occupied by the pivot. After
-        * completion of partitioning the pivot is swapped
-        * back into its final position, and excluded from
-        * the next subsequent sorting.
-        */
-        a[e3] = a[lower];
-
-        /*
-         * Traditional 3-way (Dutch National Flag) partitioning
-         *
-         *   left part                 central part    right part
-         * +------------------------------------------------------+
-         * |   < pivot   |     ?     |   == pivot   |   > pivot   |
-         * +------------------------------------------------------+
-         *              ^           ^                ^
-         *              |           |                |
-         *            lower         k              upper
-         *
-         * Invariants:
-         *
-         *   all in (low, lower] < pivot
-         *   all in (k, upper)  == pivot
-         *   all in [upper, end] > pivot
-         *
-         * Pointer k is the last index of ?-part
-         */
-        for (int k = ++upper; --k > lower; ) {
-            double ak = a[k];
-
-            if (ak != pivot) {
-                a[k] = pivot;
-
-                if (ak < pivot) { // Move a[k] to the left side
-                    while (a[++lower] < pivot);
-
-                    if (a[lower] > pivot) {
-                        a[--upper] = a[lower];
-                    }
-                    a[lower] = ak;
-                } else { // ak > pivot - Move a[k] to the right side
-                    a[--upper] = ak;
-                }
-            }
-        }
-
-        /*
-         * Swap the pivot into its final position.
-         */
-        a[low] = a[lower]; a[lower] = pivot;
-        return new int[] {lower, upper};
-    }
-
-    /**
-     * Sorts the specified range of the array using mixed insertion sort.
-     *
-     * Mixed insertion sort is combination of simple insertion sort,
-     * pin insertion sort and pair insertion sort.
-     *
-     * In the context of Dual-Pivot Quicksort, the pivot element
-     * from the left part plays the role of sentinel, because it
-     * is less than any elements from the given part. Therefore,
-     * expensive check of the left range can be skipped on each
-     * iteration unless it is the leftmost call.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void mixedInsertionSort(double[] a, int low, int high) {
-        int size = high - low;
-        int end = high - 3 * ((size >> 5) << 3);
-        if (end == high) {
-
-            /*
-             * Invoke simple insertion sort on tiny array.
-             */
-            for (int i; ++low < end; ) {
-                double ai = a[i = low];
-
-                while (ai < a[--i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
-        } else {
-
-            /*
-             * Start with pin insertion sort on small part.
-             *
-             * Pin insertion sort is extended simple insertion sort.
-             * The main idea of this sort is to put elements larger
-             * than an element called pin to the end of array (the
-             * proper area for such elements). It avoids expensive
-             * movements of these elements through the whole array.
-             */
-            double pin = a[end];
-
-            for (int i, p = high; ++low < end; ) {
-                double ai = a[i = low];
-
-                if (ai < a[i - 1]) { // Small element
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    a[i] = a[--i];
-
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-
-                } else if (p > i && ai > pin) { // Large element
-
-                    /*
-                     * Find element smaller than pin.
-                     */
-                    while (a[--p] > pin);
-
-                    /*
-                     * Swap it with large element.
-                     */
-                    if (p > i) {
-                        ai = a[p];
-                        a[p] = a[i];
-                    }
-
-                    /*
-                     * Insert small element into sorted part.
-                     */
-                    while (ai < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = ai;
-                }
-            }
-
-            /*
-             * Continue with pair insertion sort on remain part.
-             */
-            for (int i; low < high; ++low) {
-                double a1 = a[i = low], a2 = a[++low];
-
-                /*
-                 * Insert two elements per iteration: at first, insert the
-                 * larger element and then insert the smaller element, but
-                 * from the position where the larger element was inserted.
-                 */
-                if (a1 > a2) {
-
-                    while (a1 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a1;
-
-                    while (a2 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a2;
-
-                } else if (a1 < a[i - 1]) {
-
-                    while (a2 < a[--i]) {
-                        a[i + 2] = a[i];
-                    }
-                    a[++i + 1] = a2;
-
-                    while (a1 < a[--i]) {
-                        a[i + 1] = a[i];
-                    }
-                    a[i + 1] = a1;
-                }
-            }
-        }
-    }
-
-    /**
-     * Sorts the specified range of the array using insertion sort.
-     *
-     * @param a the array to be sorted
-     * @param low the index of the first element, inclusive, to be sorted
-     * @param high the index of the last element, exclusive, to be sorted
-     */
-    private static void insertionSort(double[] a, int low, int high) {
-        for (int i, k = low; ++k < high; ) {
-            double ai = a[i = k];
-
-            if (ai < a[i - 1]) {
-                while (--i >= low && ai < a[i]) {
-                    a[i + 1] = a[i];
-                }
-                a[i + 1] = ai;
-            }
         }
     }
 
@@ -4370,6 +3135,1225 @@ final class DualPivotQuicksort {
         private Object getDestination() {
             join();
             return getRawResult();
+        }
+    }
+
+    interface SortingLibrary {
+        /**
+         * Sorts the specified range of the array using insertion sort.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void insertionSort(int[] a, int low, int high) {
+            for (int i, k = low; ++k < high; ) {
+                int ai = a[i = k];
+
+                if (ai < a[i - 1]) {
+                    while (--i >= low && ai < a[i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            }
+        }
+
+        /**
+         * Sorts the specified range of the array using insertion sort.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void insertionSort(long[] a, int low, int high) {
+            for (int i, k = low; ++k < high; ) {
+                long ai = a[i = k];
+
+                if (ai < a[i - 1]) {
+                    while (--i >= low && ai < a[i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            }
+        }
+
+        /**
+         * Sorts the specified range of the array using insertion sort.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void insertionSort(float[] a, int low, int high) {
+            for (int i, k = low; ++k < high; ) {
+                float ai = a[i = k];
+
+                if (ai < a[i - 1]) {
+                    while (--i >= low && ai < a[i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            }
+        }
+
+        /**
+         * Sorts the specified range of the array using insertion sort.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void insertionSort(double[] a, int low, int high) {
+            for (int i, k = low; ++k < high; ) {
+                double ai = a[i = k];
+
+                if (ai < a[i - 1]) {
+                    while (--i >= low && ai < a[i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            }
+        }
+
+        /**
+         * Sorts the specified range of the array using mixed insertion sort.
+         *
+         * Mixed insertion sort is combination of simple insertion sort,
+         * pin insertion sort and pair insertion sort.
+         *
+         * In the context of Dual-Pivot Quicksort, the pivot element
+         * from the left part plays the role of sentinel, because it
+         * is less than any elements from the given part. Therefore,
+         * expensive check of the left range can be skipped on each
+         * iteration unless it is the leftmost call.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void mixedInsertionSort(int[] a, int low, int high) {
+            int size = high - low;
+            int end = high - 3 * ((size >> 5) << 3);
+            if (end == high) {
+
+                /*
+                 * Invoke simple insertion sort on tiny array.
+                 */
+                for (int i; ++low < end; ) {
+                    int ai = a[i = low];
+
+                    while (ai < a[--i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            } else {
+
+                /*
+                 * Start with pin insertion sort on small part.
+                 *
+                 * Pin insertion sort is extended simple insertion sort.
+                 * The main idea of this sort is to put elements larger
+                 * than an element called pin to the end of array (the
+                 * proper area for such elements). It avoids expensive
+                 * movements of these elements through the whole array.
+                 */
+                int pin = a[end];
+
+                for (int i, p = high; ++low < end; ) {
+                    int ai = a[i = low];
+
+                    if (ai < a[i - 1]) { // Small element
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        a[i] = a[--i];
+
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+
+                    } else if (p > i && ai > pin) { // Large element
+
+                        /*
+                         * Find element smaller than pin.
+                         */
+                        while (a[--p] > pin);
+
+                        /*
+                         * Swap it with large element.
+                         */
+                        if (p > i) {
+                            ai = a[p];
+                            a[p] = a[i];
+                        }
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+                    }
+                }
+
+                /*
+                 * Continue with pair insertion sort on remain part.
+                 */
+                for (int i; low < high; ++low) {
+                    int a1 = a[i = low], a2 = a[++low];
+
+                    /*
+                     * Insert two elements per iteration: at first, insert the
+                     * larger element and then insert the smaller element, but
+                     * from the position where the larger element was inserted.
+                     */
+                    if (a1 > a2) {
+
+                        while (a1 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a1;
+
+                        while (a2 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a2;
+
+                    } else if (a1 < a[i - 1]) {
+
+                        while (a2 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a2;
+
+                        while (a1 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a1;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Sorts the specified range of the array using mixed insertion sort.
+         *
+         * Mixed insertion sort is combination of simple insertion sort,
+         * pin insertion sort and pair insertion sort.
+         *
+         * In the context of Dual-Pivot Quicksort, the pivot element
+         * from the left part plays the role of sentinel, because it
+         * is less than any elements from the given part. Therefore,
+         * expensive check of the left range can be skipped on each
+         * iteration unless it is the leftmost call.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void mixedInsertionSort(long[] a, int low, int high) {
+            int size = high - low;
+            int end = high - 3 * ((size >> 5) << 3);
+            if (end == high) {
+
+                /*
+                 * Invoke simple insertion sort on tiny array.
+                 */
+                for (int i; ++low < end; ) {
+                    long ai = a[i = low];
+
+                    while (ai < a[--i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            } else {
+
+                /*
+                 * Start with pin insertion sort on small part.
+                 *
+                 * Pin insertion sort is extended simple insertion sort.
+                 * The main idea of this sort is to put elements larger
+                 * than an element called pin to the end of array (the
+                 * proper area for such elements). It avoids expensive
+                 * movements of these elements through the whole array.
+                 */
+                long pin = a[end];
+
+                for (int i, p = high; ++low < end; ) {
+                    long ai = a[i = low];
+
+                    if (ai < a[i - 1]) { // Small element
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        a[i] = a[--i];
+
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+
+                    } else if (p > i && ai > pin) { // Large element
+
+                        /*
+                         * Find element smaller than pin.
+                         */
+                        while (a[--p] > pin);
+
+                        /*
+                         * Swap it with large element.
+                         */
+                        if (p > i) {
+                            ai = a[p];
+                            a[p] = a[i];
+                        }
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+                    }
+                }
+
+                /*
+                 * Continue with pair insertion sort on remain part.
+                 */
+                for (int i; low < high; ++low) {
+                    long a1 = a[i = low], a2 = a[++low];
+
+                    /*
+                     * Insert two elements per iteration: at first, insert the
+                     * larger element and then insert the smaller element, but
+                     * from the position where the larger element was inserted.
+                     */
+                    if (a1 > a2) {
+
+                        while (a1 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a1;
+
+                        while (a2 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a2;
+
+                    } else if (a1 < a[i - 1]) {
+
+                        while (a2 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a2;
+
+                        while (a1 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a1;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Sorts the specified range of the array using mixed insertion sort.
+         *
+         * Mixed insertion sort is combination of simple insertion sort,
+         * pin insertion sort and pair insertion sort.
+         *
+         * In the context of Dual-Pivot Quicksort, the pivot element
+         * from the left part plays the role of sentinel, because it
+         * is less than any elements from the given part. Therefore,
+         * expensive check of the left range can be skipped on each
+         * iteration unless it is the leftmost call.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void mixedInsertionSort(float[] a, int low, int high) {
+            int size = high - low;
+            int end = high - 3 * ((size >> 5) << 3);
+            if (end == high) {
+
+                /*
+                 * Invoke simple insertion sort on tiny array.
+                 */
+                for (int i; ++low < end; ) {
+                    float ai = a[i = low];
+
+                    while (ai < a[--i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            } else {
+
+                /*
+                 * Start with pin insertion sort on small part.
+                 *
+                 * Pin insertion sort is extended simple insertion sort.
+                 * The main idea of this sort is to put elements larger
+                 * than an element called pin to the end of array (the
+                 * proper area for such elements). It avoids expensive
+                 * movements of these elements through the whole array.
+                 */
+                float pin = a[end];
+
+                for (int i, p = high; ++low < end; ) {
+                    float ai = a[i = low];
+
+                    if (ai < a[i - 1]) { // Small element
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        a[i] = a[--i];
+
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+
+                    } else if (p > i && ai > pin) { // Large element
+
+                        /*
+                         * Find element smaller than pin.
+                         */
+                        while (a[--p] > pin);
+
+                        /*
+                         * Swap it with large element.
+                         */
+                        if (p > i) {
+                            ai = a[p];
+                            a[p] = a[i];
+                        }
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+                    }
+                }
+
+                /*
+                 * Continue with pair insertion sort on remain part.
+                 */
+                for (int i; low < high; ++low) {
+                    float a1 = a[i = low], a2 = a[++low];
+
+                    /*
+                     * Insert two elements per iteration: at first, insert the
+                     * larger element and then insert the smaller element, but
+                     * from the position where the larger element was inserted.
+                     */
+                    if (a1 > a2) {
+
+                        while (a1 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a1;
+
+                        while (a2 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a2;
+
+                    } else if (a1 < a[i - 1]) {
+
+                        while (a2 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a2;
+
+                        while (a1 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a1;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Sorts the specified range of the array using mixed insertion sort.
+         *
+         * Mixed insertion sort is combination of simple insertion sort,
+         * pin insertion sort and pair insertion sort.
+         *
+         * In the context of Dual-Pivot Quicksort, the pivot element
+         * from the left part plays the role of sentinel, because it
+         * is less than any elements from the given part. Therefore,
+         * expensive check of the left range can be skipped on each
+         * iteration unless it is the leftmost call.
+         *
+         * @param a the array to be sorted
+         * @param low the index of the first element, inclusive, to be sorted
+         * @param high the index of the last element, exclusive, to be sorted
+         */
+        default void mixedInsertionSort(double[] a, int low, int high) {
+            int size = high - low;
+            int end = high - 3 * ((size >> 5) << 3);
+            if (end == high) {
+
+                /*
+                 * Invoke simple insertion sort on tiny array.
+                 */
+                for (int i; ++low < end; ) {
+                    double ai = a[i = low];
+
+                    while (ai < a[--i]) {
+                        a[i + 1] = a[i];
+                    }
+                    a[i + 1] = ai;
+                }
+            } else {
+
+                /*
+                 * Start with pin insertion sort on small part.
+                 *
+                 * Pin insertion sort is extended simple insertion sort.
+                 * The main idea of this sort is to put elements larger
+                 * than an element called pin to the end of array (the
+                 * proper area for such elements). It avoids expensive
+                 * movements of these elements through the whole array.
+                 */
+                double pin = a[end];
+
+                for (int i, p = high; ++low < end; ) {
+                    double ai = a[i = low];
+
+                    if (ai < a[i - 1]) { // Small element
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        a[i] = a[--i];
+
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+
+                    } else if (p > i && ai > pin) { // Large element
+
+                        /*
+                         * Find element smaller than pin.
+                         */
+                        while (a[--p] > pin);
+
+                        /*
+                         * Swap it with large element.
+                         */
+                        if (p > i) {
+                            ai = a[p];
+                            a[p] = a[i];
+                        }
+
+                        /*
+                         * Insert small element into sorted part.
+                         */
+                        while (ai < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = ai;
+                    }
+                }
+
+                /*
+                 * Continue with pair insertion sort on remain part.
+                 */
+                for (int i; low < high; ++low) {
+                    double a1 = a[i = low], a2 = a[++low];
+
+                    /*
+                     * Insert two elements per iteration: at first, insert the
+                     * larger element and then insert the smaller element, but
+                     * from the position where the larger element was inserted.
+                     */
+                    if (a1 > a2) {
+
+                        while (a1 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a1;
+
+                        while (a2 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a2;
+
+                    } else if (a1 < a[i - 1]) {
+
+                        while (a2 < a[--i]) {
+                            a[i + 2] = a[i];
+                        }
+                        a[++i + 1] = a2;
+
+                        while (a1 < a[--i]) {
+                            a[i + 1] = a[i];
+                        }
+                        a[i + 1] = a1;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Partitions the specified range of the array using a single pivot provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         *
+         */
+        @ForceInline
+        default int[] partitionSinglePivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+            int e3 = pivotIndex1;
+            int pivot = a[e3];
+
+            /*
+             * The first element to be sorted is moved to the
+             * location formerly occupied by the pivot. After
+             * completion of partitioning the pivot is swapped
+             * back into its final position, and excluded from
+             * the next subsequent sorting.
+             */
+            a[e3] = a[lower];
+
+            /*
+             * Traditional 3-way (Dutch National Flag) partitioning
+             *
+             *   left part                 central part    right part
+             * +------------------------------------------------------+
+             * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+             * +------------------------------------------------------+
+             *              ^           ^                ^
+             *              |           |                |
+             *            lower         k              upper
+             *
+             * Invariants:
+             *
+             *   all in (low, lower] < pivot
+             *   all in (k, upper)  == pivot
+             *   all in [upper, end] > pivot
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int k = ++upper; --k > lower; ) {
+                int ak = a[k];
+
+                if (ak != pivot) {
+                    a[k] = pivot;
+
+                    if (ak < pivot) { // Move a[k] to the left side
+                        while (a[++lower] < pivot);
+
+                        if (a[lower] > pivot) {
+                            a[--upper] = a[lower];
+                        }
+                        a[lower] = ak;
+                    } else { // ak > pivot - Move a[k] to the right side
+                        a[--upper] = ak;
+                    }
+                }
+            }
+
+            /*
+             * Swap the pivot into its final position.
+             */
+            a[low] = a[lower]; a[lower] = pivot;
+            return new int[] {lower, upper};
+        }
+
+        /**
+         * Partitions the specified range of the array using a single pivot provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         *
+         */
+        @ForceInline
+        default int[] partitionSinglePivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+
+            int e3 = pivotIndex1;
+            long pivot = a[e3];
+
+            /*
+             * The first element to be sorted is moved to the
+             * location formerly occupied by the pivot. After
+             * completion of partitioning the pivot is swapped
+             * back into its final position, and excluded from
+             * the next subsequent sorting.
+             */
+            a[e3] = a[lower];
+
+            /*
+             * Traditional 3-way (Dutch National Flag) partitioning
+             *
+             *   left part                 central part    right part
+             * +------------------------------------------------------+
+             * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+             * +------------------------------------------------------+
+             *              ^           ^                ^
+             *              |           |                |
+             *            lower         k              upper
+             *
+             * Invariants:
+             *
+             *   all in (low, lower] < pivot
+             *   all in (k, upper)  == pivot
+             *   all in [upper, end] > pivot
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int k = ++upper; --k > lower; ) {
+                long ak = a[k];
+
+                if (ak != pivot) {
+                    a[k] = pivot;
+
+                    if (ak < pivot) { // Move a[k] to the left side
+                        while (a[++lower] < pivot);
+
+                        if (a[lower] > pivot) {
+                            a[--upper] = a[lower];
+                        }
+                        a[lower] = ak;
+                    } else { // ak > pivot - Move a[k] to the right side
+                        a[--upper] = ak;
+                    }
+                }
+            }
+
+            /*
+             * Swap the pivot into its final position.
+             */
+            a[low] = a[lower]; a[lower] = pivot;
+            return new int[] {lower, upper};
+        }
+
+        /**
+         * Partitions the specified range of the array using a single pivot provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         *
+         */
+        @ForceInline
+        default int[] partitionSinglePivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+
+            int e3 = pivotIndex1;
+            float pivot = a[e3];
+
+            /*
+             * The first element to be sorted is moved to the
+             * location formerly occupied by the pivot. After
+             * completion of partitioning the pivot is swapped
+             * back into its final position, and excluded from
+             * the next subsequent sorting.
+             */
+            a[e3] = a[lower];
+
+            /*
+             * Traditional 3-way (Dutch National Flag) partitioning
+             *
+             *   left part                 central part    right part
+             * +------------------------------------------------------+
+             * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+             * +------------------------------------------------------+
+             *              ^           ^                ^
+             *              |           |                |
+             *            lower         k              upper
+             *
+             * Invariants:
+             *
+             *   all in (low, lower] < pivot
+             *   all in (k, upper)  == pivot
+             *   all in [upper, end] > pivot
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int k = ++upper; --k > lower; ) {
+                float ak = a[k];
+
+                if (ak != pivot) {
+                    a[k] = pivot;
+
+                    if (ak < pivot) { // Move a[k] to the left side
+                        while (a[++lower] < pivot);
+
+                        if (a[lower] > pivot) {
+                            a[--upper] = a[lower];
+                        }
+                        a[lower] = ak;
+                    } else { // ak > pivot - Move a[k] to the right side
+                        a[--upper] = ak;
+                    }
+                }
+            }
+
+            /*
+             * Swap the pivot into its final position.
+             */
+            a[low] = a[lower]; a[lower] = pivot;
+            return new int[] {lower, upper};
+        }
+
+        /**
+         * Partitions the specified range of the array using a single pivot provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         */
+        @ForceInline
+        default int[] partitionSinglePivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+
+            int e3 = pivotIndex1;
+            double pivot = a[e3];
+
+            /*
+             * The first element to be sorted is moved to the
+             * location formerly occupied by the pivot. After
+             * completion of partitioning the pivot is swapped
+             * back into its final position, and excluded from
+             * the next subsequent sorting.
+             */
+            a[e3] = a[lower];
+
+            /*
+             * Traditional 3-way (Dutch National Flag) partitioning
+             *
+             *   left part                 central part    right part
+             * +------------------------------------------------------+
+             * |   < pivot   |     ?     |   == pivot   |   > pivot   |
+             * +------------------------------------------------------+
+             *              ^           ^                ^
+             *              |           |                |
+             *            lower         k              upper
+             *
+             * Invariants:
+             *
+             *   all in (low, lower] < pivot
+             *   all in (k, upper)  == pivot
+             *   all in [upper, end] > pivot
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int k = ++upper; --k > lower; ) {
+                double ak = a[k];
+
+                if (ak != pivot) {
+                    a[k] = pivot;
+
+                    if (ak < pivot) { // Move a[k] to the left side
+                        while (a[++lower] < pivot);
+
+                        if (a[lower] > pivot) {
+                            a[--upper] = a[lower];
+                        }
+                        a[lower] = ak;
+                    } else { // ak > pivot - Move a[k] to the right side
+                        a[--upper] = ak;
+                    }
+                }
+            }
+
+            /*
+             * Swap the pivot into its final position.
+             */
+            a[low] = a[lower]; a[lower] = pivot;
+            return new int[] {lower, upper};
+        }
+
+        /**
+         * Partitions the specified range of the array using the two pivots provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         *
+         */
+        @ForceInline
+        default int[] partitionDualPivot(int[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+
+            int e1 = pivotIndex1;
+            int e5 = pivotIndex2;
+            int pivot1 = a[e1];
+            int pivot2 = a[e5];
+
+            /*
+             * The first and the last elements to be sorted are moved
+             * to the locations formerly occupied by the pivots. When
+             * partitioning is completed, the pivots are swapped back
+             * into their final positions, and excluded from the next
+             * subsequent sorting.
+             */
+            a[e1] = a[lower];
+            a[e5] = a[upper];
+
+            /*
+             * Skip elements, which are less or greater than the pivots.
+             */
+            while (a[++lower] < pivot1);
+            while (a[--upper] > pivot2);
+
+            /*
+             * Backward 3-interval partitioning
+             *
+             *   left part                 central part          right part
+             * +------------------------------------------------------------+
+             * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+             * +------------------------------------------------------------+
+             *             ^       ^                            ^
+             *             |       |                            |
+             *           lower     k                          upper
+             *
+             * Invariants:
+             *
+             *              all in (low, lower] < pivot1
+             *    pivot1 <= all in (k, upper)  <= pivot2
+             *              all in [upper, end) > pivot2
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int unused = --lower, k = ++upper; --k > lower; ) {
+                int ak = a[k];
+
+                if (ak < pivot1) { // Move a[k] to the left side
+                    while (lower < k) {
+                        if (a[++lower] >= pivot1) {
+                            if (a[lower] > pivot2) {
+                                a[k] = a[--upper];
+                                a[upper] = a[lower];
+                            } else {
+                                a[k] = a[lower];
+                            }
+                            a[lower] = ak;
+                            break;
+                        }
+                    }
+                } else if (ak > pivot2) { // Move a[k] to the right side
+                    a[k] = a[--upper];
+                    a[upper] = ak;
+                }
+            }
+
+            /*
+             * Swap the pivots into their final positions.
+             */
+            a[low] = a[lower]; a[lower] = pivot1;
+            a[end] = a[upper]; a[upper] = pivot2;
+
+            return new int[] {lower, upper};
+        }
+
+        /**
+         * Partitions the specified range of the array using the two pivots provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         *
+         */
+        @ForceInline
+        default int[] partitionDualPivot(long[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+
+            int e1 = pivotIndex1;
+            int e5 = pivotIndex2;
+            long pivot1 = a[e1];
+            long pivot2 = a[e5];
+
+            /*
+             * The first and the last elements to be sorted are moved
+             * to the locations formerly occupied by the pivots. When
+             * partitioning is completed, the pivots are swapped back
+             * into their final positions, and excluded from the next
+             * subsequent sorting.
+             */
+            a[e1] = a[lower];
+            a[e5] = a[upper];
+
+            /*
+             * Skip elements, which are less or greater than the pivots.
+             */
+            while (a[++lower] < pivot1);
+            while (a[--upper] > pivot2);
+
+            /*
+             * Backward 3-interval partitioning
+             *
+             *   left part                 central part          right part
+             * +------------------------------------------------------------+
+             * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+             * +------------------------------------------------------------+
+             *             ^       ^                            ^
+             *             |       |                            |
+             *           lower     k                          upper
+             *
+             * Invariants:
+             *
+             *              all in (low, lower] < pivot1
+             *    pivot1 <= all in (k, upper)  <= pivot2
+             *              all in [upper, end) > pivot2
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int unused = --lower, k = ++upper; --k > lower; ) {
+                long ak = a[k];
+
+                if (ak < pivot1) { // Move a[k] to the left side
+                    while (lower < k) {
+                        if (a[++lower] >= pivot1) {
+                            if (a[lower] > pivot2) {
+                                a[k] = a[--upper];
+                                a[upper] = a[lower];
+                            } else {
+                                a[k] = a[lower];
+                            }
+                            a[lower] = ak;
+                            break;
+                        }
+                    }
+                } else if (ak > pivot2) { // Move a[k] to the right side
+                    a[k] = a[--upper];
+                    a[upper] = ak;
+                }
+            }
+
+            /*
+             * Swap the pivots into their final positions.
+             */
+            a[low] = a[lower]; a[lower] = pivot1;
+            a[end] = a[upper]; a[upper] = pivot2;
+
+            return new int[] {lower, upper};
+        }
+
+        /**
+         * Partitions the specified range of the array using the two pivots provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         *
+         */
+        @ForceInline
+        default int[] partitionDualPivot(float[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+
+            int e1 = pivotIndex1;
+            int e5 = pivotIndex2;
+            float pivot1 = a[e1];
+            float pivot2 = a[e5];
+
+            /*
+             * The first and the last elements to be sorted are moved
+             * to the locations formerly occupied by the pivots. When
+             * partitioning is completed, the pivots are swapped back
+             * into their final positions, and excluded from the next
+             * subsequent sorting.
+             */
+            a[e1] = a[lower];
+            a[e5] = a[upper];
+
+            /*
+             * Skip elements, which are less or greater than the pivots.
+             */
+            while (a[++lower] < pivot1);
+            while (a[--upper] > pivot2);
+
+            /*
+             * Backward 3-interval partitioning
+             *
+             *   left part                 central part          right part
+             * +------------------------------------------------------------+
+             * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+             * +------------------------------------------------------------+
+             *             ^       ^                            ^
+             *             |       |                            |
+             *           lower     k                          upper
+             *
+             * Invariants:
+             *
+             *              all in (low, lower] < pivot1
+             *    pivot1 <= all in (k, upper)  <= pivot2
+             *              all in [upper, end) > pivot2
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int unused = --lower, k = ++upper; --k > lower; ) {
+                float ak = a[k];
+
+                if (ak < pivot1) { // Move a[k] to the left side
+                    while (lower < k) {
+                        if (a[++lower] >= pivot1) {
+                            if (a[lower] > pivot2) {
+                                a[k] = a[--upper];
+                                a[upper] = a[lower];
+                            } else {
+                                a[k] = a[lower];
+                            }
+                            a[lower] = ak;
+                            break;
+                        }
+                    }
+                } else if (ak > pivot2) { // Move a[k] to the right side
+                    a[k] = a[--upper];
+                    a[upper] = ak;
+                }
+            }
+
+            /*
+             * Swap the pivots into their final positions.
+             */
+            a[low] = a[lower]; a[lower] = pivot1;
+            a[end] = a[upper]; a[upper] = pivot2;
+
+            return new int[] {lower, upper};
+        }
+
+        /**
+         * Partitions the specified range of the array using the two pivots provided.
+         *
+         * @param a the array to be partitioned
+         * @param low the index of the first element, inclusive, for partitioning
+         * @param high the index of the last element, exclusive, for partitioning
+         * @param pivotIndex1 the index of pivot1, the first pivot
+         * @param pivotIndex2 the index of pivot2, the second pivot
+         *
+         */
+        @ForceInline
+        default int[] partitionDualPivot(double[] a, int low, int high, int pivotIndex1, int pivotIndex2) {
+            int end = high - 1;
+            int lower = low;
+            int upper = end;
+
+            int e1 = pivotIndex1;
+            int e5 = pivotIndex2;
+            double pivot1 = a[e1];
+            double pivot2 = a[e5];
+
+            /*
+             * The first and the last elements to be sorted are moved
+             * to the locations formerly occupied by the pivots. When
+             * partitioning is completed, the pivots are swapped back
+             * into their final positions, and excluded from the next
+             * subsequent sorting.
+             */
+            a[e1] = a[lower];
+            a[e5] = a[upper];
+
+            /*
+             * Skip elements, which are less or greater than the pivots.
+             */
+            while (a[++lower] < pivot1);
+            while (a[--upper] > pivot2);
+
+            /*
+             * Backward 3-interval partitioning
+             *
+             *   left part                 central part          right part
+             * +------------------------------------------------------------+
+             * |  < pivot1  |   ?   |  pivot1 <= && <= pivot2  |  > pivot2  |
+             * +------------------------------------------------------------+
+             *             ^       ^                            ^
+             *             |       |                            |
+             *           lower     k                          upper
+             *
+             * Invariants:
+             *
+             *              all in (low, lower] < pivot1
+             *    pivot1 <= all in (k, upper)  <= pivot2
+             *              all in [upper, end) > pivot2
+             *
+             * Pointer k is the last index of ?-part
+             */
+            for (int unused = --lower, k = ++upper; --k > lower; ) {
+                double ak = a[k];
+
+                if (ak < pivot1) { // Move a[k] to the left side
+                    while (lower < k) {
+                        if (a[++lower] >= pivot1) {
+                            if (a[lower] > pivot2) {
+                                a[k] = a[--upper];
+                                a[upper] = a[lower];
+                            } else {
+                                a[k] = a[lower];
+                            }
+                            a[lower] = ak;
+                            break;
+                        }
+                    }
+                } else if (ak > pivot2) { // Move a[k] to the right side
+                    a[k] = a[--upper];
+                    a[upper] = ak;
+                }
+            }
+
+            /*
+             * Swap the pivots into their final positions.
+             */
+            a[low] = a[lower]; a[lower] = pivot1;
+            a[end] = a[upper]; a[upper] = pivot2;
+
+            return new int[] {lower, upper};
         }
     }
 }
