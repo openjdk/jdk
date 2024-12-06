@@ -258,12 +258,7 @@ esac
 echo -------------------------------
 echo ---  Applet Classpath Test  ---
 echo -------------------------------
-#
-# please note that we need to use "==" in setup of the java.security.policy
-# property in order to overwrite policies defined in the user policy file
-# For more details see:
-#  http://java.sun.com/j2se/1.5.0/docs/guide/security/PolicyFiles.html)
-#
+
 
 ${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ".${PATHSEP}${TEST_PLUGIN_JAR}" IIOPluginTest
 
