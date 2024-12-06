@@ -268,9 +268,6 @@ import java.util.function.Supplier;
  * Calling {@code bar()} will create the {@code Bar} singleton if needed and will also
  * first create the {@code Foo} (which it depends on) if needed.
  * <p>
- * A {@linkplain StableValue} may hold a reference to itself. Stable functions and
- * collections may hold self-references.
- * <p>
  * Here is another example where a more complex dependency tree is created in which
  * integers in the Fibonacci delta series are lazily computed:
  * {@snippet lang = java:
@@ -295,10 +292,10 @@ import java.util.function.Supplier;
  * traditional non-internalizing recursive fibonacci method. Once computed, the VM
  * can constant-fold expressions like {@code Fibonacci.fib(10)}.
  * <p>
- * The fibonacci example above is a dependency tree with no circular dependencies.
- * In a more general dependency graph, a stable value will throw a
- * {@linkplain StackOverflowError} if there is a circular dependency and elements in
- * said circle are referenced.
+ * The fibonacci example above is a dependency graph with no circular dependencies. If
+ * there are circular dependencies in a dependency graph, a stable value will
+ * eventually throw a {@linkplain StackOverflowError} upon referencing elements in
+ * a circularity.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A holder value is guaranteed to be set at most once. If competing threads are
