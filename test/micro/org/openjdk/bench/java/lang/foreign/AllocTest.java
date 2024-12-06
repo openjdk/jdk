@@ -23,27 +23,12 @@
 
 package org.openjdk.bench.java.lang.foreign;
 
-import org.openjdk.jmh.annotations.Benchmark;
-import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.Fork;
-import org.openjdk.jmh.annotations.Measurement;
-import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Setup;
-import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.TearDown;
-import org.openjdk.jmh.annotations.Warmup;
-
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
+import java.lang.foreign.*;
 import java.lang.foreign.MemorySegment.Scope;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -53,20 +38,13 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3, jvmArgs = { "--enable-native-access=ALL-UNNAMED", "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED" })
 public class AllocTest extends CLayouts {
 
-    Arena arena = Arena.ofConfined();
-
-    @Param({"5", "20", "100", "500", "1000"})
+    @Param({"5", "20", "100", "500", "2000", "8000"})
     public int size;
 
-    @TearDown
-    public void tearDown() {
-        arena.close();
-    }
-
     @Benchmark
-    public MemorySegment alloc_confined() {
+    public long alloc_confined() {
         try (Arena arena = Arena.ofConfined()) {
-            return arena.allocate(size);
+            return arena.allocate(size).address();
         }
     }
 
@@ -84,18 +62,51 @@ public class AllocTest extends CLayouts {
         }
     }
 
-    public static class CallocArena implements Arena {
+    private static class CallocArena implements Arena {
 
-        static final MethodHandle CALLOC = Linker.nativeLinker()
-                .downcallHandle(
-                        Linker.nativeLinker().defaultLookup().findOrThrow("calloc"),
-                        FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
+        static final MethodHandle CALLOC;
+        static final MethodHandle FREE;
+        static final long ADDRESS_SIZE;
+        static final Consumer<MemorySegment> CLEANUP;
 
-        static MemorySegment calloc(long size) {
+        static {
+            ADDRESS_SIZE = AddressLayout.ADDRESS.byteSize();
+            var linker = Linker.nativeLinker();
+            var lookup = linker.defaultLookup();
+            var callocAddr = lookup.findOrThrow("calloc");
+            var freeAddr = lookup.findOrThrow("free");
+            if (ADDRESS_SIZE == Long.BYTES) {
+                CALLOC = linker.downcallHandle(callocAddr, FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
+                FREE = linker.downcallHandle(freeAddr, FunctionDescriptor.ofVoid(ValueLayout.JAVA_LONG));
+                CLEANUP = ms -> {
+                    try {
+                        FREE.invokeExact(ms.address());
+                    } catch (Throwable e) {
+                        throw new AssertionError(e);
+                    }
+                };
+            } else {
+                CALLOC = linker.downcallHandle(callocAddr, FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT));
+                FREE = linker.downcallHandle(freeAddr, FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
+                CLEANUP = ms -> {
+                    try {
+                        FREE.invokeExact((int)ms.address());
+                    } catch (Throwable e) {
+                        throw new AssertionError(e);
+                    }
+                };
+            }
+        }
+
+        static long calloc(long size) {
             try {
-                return (MemorySegment)CALLOC.invokeExact(size, 1L);
-            } catch (Throwable ex) {
-                throw new IllegalStateException(ex);
+                if (ADDRESS_SIZE == Long.BYTES) {
+                    return (long)CALLOC.invokeExact(1L, size);
+                } else {
+                    return (int)CALLOC.invokeExact(1, (int)size);
+                }
+            } catch (Throwable e) {
+                throw new AssertionError(e);
             }
         }
 
@@ -113,12 +124,12 @@ public class AllocTest extends CLayouts {
 
         @Override
         public MemorySegment allocate(long byteSize, long byteAlignment) {
-            return calloc(byteSize)
-                    .reinterpret(byteSize, arena, CLayouts::freeMemory);
+            long address = calloc(byteSize);
+            return MemorySegment.ofAddress(address).reinterpret(byteSize, arena, CLEANUP);
         }
     }
 
-    public static class UnsafeArena implements Arena {
+    private static class UnsafeArena implements Arena {
 
         final Arena arena = Arena.ofConfined();
 
@@ -134,9 +145,9 @@ public class AllocTest extends CLayouts {
 
         @Override
         public MemorySegment allocate(long byteSize, long byteAlignment) {
-            MemorySegment segment = MemorySegment.ofAddress(Utils.unsafe.allocateMemory(byteSize));
-            Utils.unsafe.setMemory(segment.address(), byteSize, (byte)0);
-            return segment.reinterpret(byteSize, arena, ms -> Utils.unsafe.freeMemory(segment.address()));
+            long address = Utils.unsafe.allocateMemory(byteSize);
+            Utils.unsafe.setMemory(address, byteSize, (byte)0);
+            return MemorySegment.ofAddress(address).reinterpret(byteSize, arena, ms -> Utils.unsafe.freeMemory(ms.address()));
         }
     }
 }
