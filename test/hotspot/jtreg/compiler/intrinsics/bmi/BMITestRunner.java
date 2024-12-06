@@ -130,10 +130,14 @@ public class BMITestRunner {
         //setup mode-specific options
         switch (testVMMode) {
         case INT:
-            Collections.addAll(vmOpts, new String[] { "-Xint" });
+            Collections.addAll(vmOpts, new String[] {
+                    "-Xlog:cds=off",  // Work around JDK-8344556
+                    "-Xint"
+                });
             break;
         case COMP:
             Collections.addAll(vmOpts, new String[] {
+                    "-Xlog:cds=off",  // Work around JDK-8344556
                     "-Xcomp",
                     "-XX:-TieredCompilation",
                     String.format("-XX:CompileCommand=compileonly,%s::*",
