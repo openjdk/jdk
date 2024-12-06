@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -77,13 +78,15 @@ final class StableHeterogeneousContainerTest {
 
     @ParameterizedTest
     @MethodSource("nonEmptySets")
-    void trySet(Set<Value> inputs) {
+    void tryPut(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
         assertTrue(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
         assertFalse(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
         assertEquals(Value.INTEGER.value(), container.get(Integer.class));
-        assertThrows(IllegalArgumentException.class, () -> container.tryPut(Long.class, 8L));
-        assertThrows(NullPointerException.class, () -> container.tryPut(Short.class, null));
+        var iae = assertThrows(IllegalArgumentException.class, () -> container.tryPut(Long.class, 8L));
+        assertEquals("No such type: " + Long.class, iae.getMessage());
+        var npe = assertThrows(NullPointerException.class, () -> container.tryPut(Short.class, null));
+        assertEquals("The instance was null", npe.getMessage());
     }
 
     @ParameterizedTest
@@ -91,8 +94,10 @@ final class StableHeterogeneousContainerTest {
     void computeIfAbsent(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
         assertEquals(Value.INTEGER.value(), container.computeIfAbsent(Integer.class, Value.INTEGER::valueAs));
-        assertThrows(IllegalArgumentException.class, () -> container.computeIfAbsent(Long.class, _ -> 8L));
-        assertThrows(NullPointerException.class, () -> container.computeIfAbsent(Short.class, _ -> null));
+        var iae = assertThrows(IllegalArgumentException.class, () -> container.computeIfAbsent(Long.class, _ -> 8L));
+        assertEquals("No such type: " + Long.class, iae.getMessage());
+        var npe = assertThrows(NullPointerException.class, () -> container.computeIfAbsent(Short.class, _ -> null));
+        assertEquals("The constructor returned null", npe.getMessage());
     }
 
     @ParameterizedTest
@@ -102,6 +107,16 @@ final class StableHeterogeneousContainerTest {
         assertTrue(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
         assertEquals(Value.INTEGER.value(), container.get(Integer.class));
         assertNull(container.get(Value.SHORT.clazz()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("nonEmptySets")
+    void getOrThrow(Set<Value> inputs) {
+        var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
+        assertTrue(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
+        assertEquals(Value.INTEGER.value(), container.get(Integer.class));
+        var e = assertThrows(NoSuchElementException.class , () -> container.getOrThrow(Value.SHORT.clazz()));
+        assertEquals("No instance associated with " + Short.class, e.getMessage());
     }
 
     @ParameterizedTest

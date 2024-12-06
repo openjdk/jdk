@@ -1,8 +1,11 @@
 package jdk.internal.lang.stable;
 
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -45,6 +48,18 @@ public sealed interface StableHeterogeneousContainer {
      */
     <T> T get(Class<T> type);
 
+    /**
+     * {@return the instance associated with the provided {@code type}, or throws
+     *          NoSuchElementException}
+     * @param type used to retrieve an associated instance
+     * @param <T> type of the associated instance
+     * @throws IllegalArgumentException if the provided {@code type} is not a type
+     *         specified at creation
+     * @throws java.util.NoSuchElementException if the provided {@code type} is not
+     *         associated with an instance
+     */
+    <T> T getOrThrow(Class<T> type);
+
     final class Impl implements StableHeterogeneousContainer {
 
         @Stable
@@ -54,10 +69,11 @@ public sealed interface StableHeterogeneousContainer {
             this.map = StableValueFactories.ofMap(types);
         }
 
+        @ForceInline
         @Override
         public <T> boolean tryPut(Class<T> type, T instance) {
             Objects.requireNonNull(type);
-            Objects.requireNonNull(instance);
+            Objects.requireNonNull(instance, "The instance was null");
             return of(type)
                     .trySet(
                             type.cast(instance)
@@ -65,21 +81,35 @@ public sealed interface StableHeterogeneousContainer {
         }
 
         @SuppressWarnings("unchecked")
+        @ForceInline
         @Override
         public <T> T computeIfAbsent(Class<T> type, Function<Class<T>, T> constructor) {
             Objects.requireNonNull(type);
             Objects.requireNonNull(constructor);
-            return (T) of(type).computeIfUnset(new Supplier<Object>() {
+            final StableValue<Object> stableValue = of(type);
+            if (stableValue.isSet()) {
+                return (T) stableValue.orElseThrow();
+            }
+            return computeIfAbsentSlowPath(type, constructor, stableValue);
+        }
+
+        @SuppressWarnings("unchecked")
+        @DontInline
+        public <T> T computeIfAbsentSlowPath(Class<T> type,
+                                             Function<Class<T>, T> constructor,
+                                             StableValue<Object> stableValue) {
+            return (T) stableValue.computeIfUnset(new Supplier<Object>() {
                 @Override
                 public Object get() {
                     return type.cast(
                             Objects.requireNonNull(
-                                    constructor.apply(type)
+                                    constructor.apply(type), "The constructor returned null"
                             ));
                 }
             });
         }
 
+        @ForceInline
         @Override
         public <T> T get(Class<T> type) {
             return type.cast(
@@ -88,6 +118,17 @@ public sealed interface StableHeterogeneousContainer {
             );
         }
 
+        @ForceInline
+        @Override
+        public <T> T getOrThrow(Class<T> type) {
+            final T t = get(type);
+            if (t == null) {
+                throw new NoSuchElementException("No instance associated with " + type);
+            }
+            return t;
+        }
+
+        @ForceInline
         private StableValue<Object> of(Class<?> type) {
             final StableValue<Object> stableValue = map.get(type);
             if (stableValue == null) {
