@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ public class BindServices {
     private static String[] modules = new String[] {"m1", "m2", "m3"};
 
 
-    private static boolean isTestApplicable() {
+    private static boolean isApplicable() {
         if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
             if (!LINKABLE_RUNTIME) {
                 System.err.println("Test skipped. Not a linkable runtime and no JMODs");
@@ -84,7 +84,7 @@ public class BindServices {
      */
     @BeforeTest
     public void compileAll() throws Throwable {
-        if (!isTestApplicable()) return;
+        if (!isApplicable()) return;
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
@@ -95,7 +95,7 @@ public class BindServices {
 
     @Test
     public void noServiceBinding() throws Throwable {
-        if (!isTestApplicable()) return;
+        if (!isApplicable()) return;
 
         Path dir = Paths.get("noServiceBinding");
 
@@ -109,7 +109,7 @@ public class BindServices {
 
     @Test
     public void fullServiceBinding() throws Throwable {
-        if (!isTestApplicable()) return;
+        if (!isApplicable()) return;
 
         Path dir = Paths.get("fullServiceBinding");
 
@@ -128,7 +128,7 @@ public class BindServices {
 
     @Test
     public void testVerbose() throws Throwable {
-        if (!isTestApplicable()) return;
+        if (!isApplicable()) return;
 
         Path dir = Paths.get("verbose");
 
@@ -159,7 +159,7 @@ public class BindServices {
 
     @Test
     public void testVerboseAndNoBindServices() throws Throwable {
-        if (!isTestApplicable()) return;
+        if (!isApplicable()) return;
 
         Path dir = Paths.get("verboseNoBind");
 
