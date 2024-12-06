@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
  *
  * - Extend library
  * - Way to add variable to method/class scope
+ * - Need better error messages when exception is hit - too difficult to debug now
  *
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
@@ -420,9 +421,9 @@ public final class Template implements CodeGenerator {
                     e -> {
                         String val = e.getValue();
                         if (val.startsWith("$")) {
-                            return state.wrapVariable(val.substring(1), e.getKey() + "=" + val + " in " + templated);
+                            return state.wrapVariable(val.substring(1), e.getKey() + "=$" + val + " in " + templated);
                         } else if (val.startsWith("#")) {
-                            return state.parameters.get(name, e.getKey() + "=" + " in " + templated);
+                            return state.parameters.get(val.substring(1), e.getKey() + "=#" + e.getKey() + " in " + templated);
                         }
                         return val;
                     }

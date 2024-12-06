@@ -113,6 +113,38 @@ public class CodeGeneratorLibrary {
         }, 0);
     }
 
+    public static CodeGenerator factoryAddVariable() {
+        return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
+            String scopeKind = parameters.get("scope", " for generator call to 'add_variable'");
+            String name = parameters.get("name", " for generator call to 'add_variable'");
+            String type = parameters.get("type", " for generator call to 'add_variable'");
+            String isFinal = parameters.getOrNull("final");
+
+            if (isFinal != null && !isFinal.equals("true") && !isFinal.equals("false")) {
+                throw new TemplateFrameworkException("Generator 'add_variable' got: final=" + isFinal +
+                                                     "but should be final=true or final=false");
+            }
+            boolean mutable = isFinal.equals("false");
+
+            switch(scopeKind) {
+                case "class" -> {
+                    ClassScope classScope = scope.classScope(" in 'add_variable' for " + name);
+                    classScope.addVariable(name, type, mutable);
+                }
+                case "method" -> {
+                    MethodScope methodScope = scope.methodScope(" in 'add_variable' for " + name);
+                    methodScope.addVariable(name, type, mutable);
+                }
+                default -> {
+                    throw new TemplateFrameworkException("Generator dispatch got: scope=" + scopeKind +
+                                                         "but should be scope=class or scope=method");
+                }
+            }
+        }, 0);
+    }
+
+
+
     public static CodeGeneratorLibrary standard() {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
 
@@ -130,11 +162,15 @@ public class CodeGeneratorLibrary {
         // Dispatch generator call to a ClassScope or MethodScope
         codeGenerators.put("dispatch", factoryDispatch());
 
+        // Add variable to ClassScope or MethodScope.
+        codeGenerators.put("add_variable", factoryAddVariable());
+
         // ClassScope generators.
         codeGenerators.put("new_field_in_class", new Template(
             """
             // start $new_field_in_class
             public static int #{name} = #{:int_con};
+            #{:add_variable(scope=class,type=int,name=#name,final=#final):}
             // end   $new_field_in_class
             """
         ));
@@ -144,6 +180,7 @@ public class CodeGeneratorLibrary {
             """
             // start $new_var_in_method
             int #{name} = #{:int_con};
+            #{:add_variable(scope=method,type=int,name=#name,final=#final):}
             // end   $new_var_in_method
             """
         ));
@@ -189,9 +226,9 @@ public class CodeGeneratorLibrary {
             // start $bar
             {
                 ${fieldI} += 42;
-                #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI)}
+                #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI,final=false)}
                 ${varI} += 42;
-                #{:dispatch(scope=method,call=new_var_in_method,name=$varI)}
+                #{:dispatch(scope=method,call=new_var_in_method,name=$varI,final=false)}
             }
             // end   $bar
             """

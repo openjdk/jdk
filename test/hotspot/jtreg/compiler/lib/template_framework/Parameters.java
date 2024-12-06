@@ -70,6 +70,7 @@ public class Parameters {
     public String get(String name, String errorMessage) {
         String param = getOrNull(name);
         if (param == null) {
+            print();
             throw new TemplateFrameworkException("Missing parameter '" + name + "' " + errorMessage);
         }
         return param;

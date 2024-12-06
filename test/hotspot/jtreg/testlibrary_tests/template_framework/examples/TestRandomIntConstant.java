@@ -89,9 +89,9 @@ public class TestRandomIntConstant {
                 public static int test2() {
                     #open(method)
                     ${fieldI:int} += #{:int_con};
-                    #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI)}
+                    #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI,final=false)}
                     ${varI:int} += #{:int_con};
-                    #{:dispatch(scope=method,call=new_var_in_method,name=$varI)}
+                    #{:dispatch(scope=method,call=new_var_in_method,name=$varI,final=false)}
                     return $fieldI + $varI;
                     #close(method)
                 }
