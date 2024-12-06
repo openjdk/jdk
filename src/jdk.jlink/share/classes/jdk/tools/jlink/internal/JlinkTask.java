@@ -49,7 +49,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -378,41 +377,35 @@ public class JlinkTask {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
+        ModuleFinder initialFinder = createFinderFromPath(options.modulePath);
+        boolean isLinkFromRuntime = determineLinkFromRuntime(initialFinder, options.modulePath);
+        ModuleFinder rootsFinder = isLinkFromRuntime ? ModuleFinder.compose(ModuleFinder.ofSystem(),
+                                                                            initialFinder) :
+                                                       initialFinder;
+
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH) && options.modulePath.size() > 0) {
-                ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, Set.of());
+                ModuleFinder mf = newModuleFinder(rootsFinder, options.limitMods, Set.of(), isLinkFromRuntime);
                 // all observable modules are roots
-                finder.findAll()
-                      .stream()
-                      .map(ModuleReference::descriptor)
-                      .map(ModuleDescriptor::name)
-                      .forEach(mn -> roots.add(mn));
+                mf.findAll()
+                  .stream()
+                  .map(ModuleReference::descriptor)
+                  .map(ModuleDescriptor::name)
+                  .forEach(mn -> roots.add(mn));
             } else {
                 roots.add(mod);
             }
         }
 
-        ModuleFinder finder = newModuleFinder(options.modulePath, options.limitMods, roots);
+        ModuleFinder finder = newModuleFinder(rootsFinder, options.limitMods, roots, isLinkFromRuntime);
         if (finder.find("java.base").isEmpty()) {
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
                 options.modulePath.add(defModPath);
+                ModuleFinder updatedRootsFinder = createFinderFromPath(options.modulePath);
+                finder = newModuleFinder(updatedRootsFinder, options.limitMods, roots, isLinkFromRuntime);
             }
-            finder = newModuleFinder(options.modulePath, options.limitMods, roots);
-        }
-
-        boolean isLinkFromRuntime = options.modulePath.isEmpty();
-        // In case of custom modules outside the JDK we may
-        // have a non-empty module path, which must not include
-        // java.base. If it did, we link using packaged modules from that
-        // module path. If the module path does not include java.base, we have
-        // the case where we link from the run-time image. In that case, we take
-        // the JDK modules from the run-time image (ModuleFinder.ofSystem()).
-        if (finder.find("java.base").isEmpty()) {
-            isLinkFromRuntime = true;
-            ModuleFinder runtimeImageFinder = ModuleFinder.ofSystem();
-            finder = combinedFinders(runtimeImageFinder, finder, options.limitMods, roots);
         }
 
         // --keep-packaged-modules doesn't make sense as we are not linking
@@ -429,48 +422,26 @@ public class JlinkTask {
                                       options.generateLinkableRuntime);
     }
 
-    /**
-     * Creates a combined module finder of {@code finder} and
-     * {@code runtimeImageFinder} that first looks-up modules in the
-     * {@code runtimeImageFinder} and if not present in {@code finder}.
-     *
-     * @param runtimeImageFinder A system modules finder.
-     * @param finder A module finder based on packaged modules.
-     * @param limitMods The set of limited modules for the resulting
-     *                  finder (if any).
-     * @param roots All module roots.
-     *
-     * @return A combined finder, or the input finder, potentially applying
-     *         module limits.
-     */
-    private ModuleFinder combinedFinders(ModuleFinder runtimeImageFinder,
-                                         ModuleFinder finder,
-                                         Set<String> limitMods,
-                                         Set<String> roots) {
-        ModuleFinder combined = new ModuleFinder() {
 
-            @Override
-            public Optional<ModuleReference> find(String name) {
-                Optional<ModuleReference> mref = runtimeImageFinder.find(name);
-                if (mref.isEmpty()) {
-                    return finder.find(name);
-                }
-                return mref;
-            }
-
-            @Override
-            public Set<ModuleReference> findAll() {
-                Set<ModuleReference> all = new HashSet<>();
-                all.addAll(runtimeImageFinder.findAll());
-                all.addAll(finder.findAll());
-                return Collections.unmodifiableSet(all);
-            }
-        };
-        // if limitmods is specified then limit the universe
-        if (limitMods != null && !limitMods.isEmpty()) {
-            return limitFinder(combined, limitMods, Objects.requireNonNull(roots));
+    private static boolean determineLinkFromRuntime(ModuleFinder initialFinder,
+                                                    List<Path> modulePath) {
+        if (getDefaultModulePath() != null) {
+            // We have JMODs present which take precendence
+            return false;
         }
-        return combined;
+        if (modulePath.isEmpty()) {
+            // No explicit module path and no JMODs
+            return true;
+        }
+        // We link from the run-time image when the module path
+        // doesn't include java.base
+        return !initialFinder.find("java.base").isPresent();
+    }
+
+    public static ModuleFinder createFinderFromPath(List<Path> paths) {
+        Runtime.Version version = Runtime.version();
+        Path[] entries = paths.toArray(new Path[0]);
+        return ModulePath.of(version, true, entries);
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {
@@ -510,23 +481,23 @@ public class JlinkTask {
     }
 
     /*
-     * Returns a module finder of the given module path or the system modules
-     * if the module path is empty that limits the observable modules to those
-     * in the transitive closure of the modules specified in {@code limitMods}
-     * plus other modules specified in the {@code roots} set.
+     * Returns a module finder of the given module finder that limits the
+     * observable modules to those in the transitive closure of the modules
+     * specified in {@code limitMods} plus other modules specified in the
+     * {@code roots} set.
      *
      * @throws IllegalArgumentException if java.base module is present
-     * but its descriptor has no version
+     * but its descriptor has no version or the java.base version is not the
+     * same as the current runtime.
      */
-    public static ModuleFinder newModuleFinder(List<Path> paths,
+    public static ModuleFinder newModuleFinder(ModuleFinder original,
                                                Set<String> limitMods,
-                                               Set<String> roots)
+                                               Set<String> roots,
+                                               boolean isRuntimeLink)
     {
         Runtime.Version version = Runtime.version();
-        Path[] entries = paths.toArray(new Path[0]);
-        ModuleFinder finder = paths.isEmpty() ? ModuleFinder.ofSystem()
-                                              : ModulePath.of(version, true, entries);
-        if (finder.find("java.base").isPresent()) {
+        ModuleFinder finder = original;
+        if (!isRuntimeLink && finder.find("java.base").isPresent()) {
             // use the version of java.base module, if present, as
             // the release version for multi-release JAR files
             ModuleDescriptor.Version v = finder.find("java.base").get()
