@@ -30,14 +30,6 @@
  *        jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.IPSupport
  *
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
- *
  * @run main/othervm UserAuthWithAuthenticator
  */
 
@@ -177,6 +169,82 @@ public class UserAuthWithAuthenticator {
         }
     }
 
+    static void h3Test(final boolean useHeader, boolean rightPassword) throws Exception {
+        SSLContext ctx;
+        HttpTestServer h3s = null;
+        HttpClient client = null;
+        ExecutorService ex=null;
+        try {
+            ctx = new SimpleSSLContext().get();
+            ex = Executors.newCachedThreadPool();
+            InetAddress addr = InetAddress.getLoopbackAddress();
+
+            h3s = HttpTestServer.create(HttpRequest.H3DiscoveryMode.HTTP_3_ONLY, ctx, ex);
+            AuthTestHandler h = new AuthTestHandler();
+            var context = h3s.addHandler(h, "/test1");
+            context.setAuthenticator(new BasicAuthenticator("realm") {
+                public boolean checkCredentials(String username, String password) {
+                    if (useHeader) {
+                        return username.equals("user") && password.equals("pwd");
+                    } else {
+                        return username.equals("serverUser") && password.equals("serverPwd");
+                    }
+                }
+            });
+            h3s.start();
+
+            int port = h3s.getAddress().getPort();
+            ServerAuth sa = new ServerAuth();
+            var plainCreds = rightPassword? "user:pwd" : "user:wrongPwd";
+            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+
+            URI uri = URIBuilder.newBuilder()
+                    .scheme("https")
+                    .host(addr.getHostAddress())
+                    .port(port)
+                    .path("/test1/foo.txt")
+                    .build();
+
+            HttpClient.Builder builder = HttpServerAdapters.createClientBuilderForH3()
+                    .sslContext(ctx)
+                    .executor(ex);
+
+            builder.authenticator(sa);
+            client = builder.build();
+
+            HttpRequest req = HttpRequest.newBuilder(uri)
+                    .version(HttpClient.Version.HTTP_3)
+                    .header(useHeader ? "Authorization" : "X-Ignore", AUTH_PREFIX + encoded)
+                    .GET()
+                    .build();
+
+            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+            if (!useHeader) {
+                assertTrue(resp.statusCode() == 200, "Expected 200 response");
+                assertTrue(!h.authValue().equals(encoded), "Expected user set header to not be set");
+                assertTrue(h.authValue().equals(sa.authValue()), "Expected auth value from Authenticator");
+                assertTrue(sa.wasCalled(), "Expected authenticator to be called");
+                System.out.println("h3Test: using authenticator OK");
+            } else if (rightPassword) {
+                assertTrue(resp.statusCode() == 200, "Expected 200 response");
+                assertTrue(h.authValue().equals(encoded), "Expected user set header to be set");
+                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
+                System.out.println("h3Test: using user set header OK");
+            } else {
+                assertTrue(resp.statusCode() == 401, "Expected 401 response");
+                assertTrue(!sa.wasCalled(), "Expected authenticator not to be called");
+                System.out.println("h3Test: using user set header with wrong password OK");
+            }
+        } finally {
+            if (h3s != null)
+                h3s.stop();
+            if (client != null)
+                client.close();
+            if (ex != null)
+                ex.shutdown();
+        }
+    }
+
     static final String data = "0123456789";
 
     static final String data1 = "ABCDEFGHIJKL";
@@ -228,6 +296,9 @@ public class UserAuthWithAuthenticator {
         h2Test(true, true);
         h2Test(false, true);
         h2Test(true, false);
+        h3Test(true, true);
+        h3Test(false, true);
+        h3Test(true, false);
     }
 
     static void testServerWithProxy() throws IOException, InterruptedException {
