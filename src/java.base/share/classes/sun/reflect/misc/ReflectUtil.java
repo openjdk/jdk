@@ -32,10 +32,6 @@ public final class ReflectUtil {
     private ReflectUtil() {
     }
 
-    public static Class<?> forName(String name) throws ClassNotFoundException {
-        return Class.forName(name);
-    }
-
     /**
      * Ensures that access to a method or field is granted and throws
      * IllegalAccessException if not. This method is not suitable for checking
