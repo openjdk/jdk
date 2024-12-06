@@ -128,20 +128,20 @@ public class CodeGeneratorLibrary {
         codeGenerators.put("dispatch", factoryDispatch());
 
         // ClassScope generators.
-        codeGenerators.put("new_field", new Template(
+        codeGenerators.put("new_field_in_class", new Template(
             """
-            // start $new_field
+            // start $new_field_in_class
             public int ${fieldI:int} = #{:int_con};
-            // end   $new_field
+            // end   $new_field_in_class
             """
         ));
 
         // MethodScope generators.
-        codeGenerators.put("new_var", new Template(
+        codeGenerators.put("new_var_in_method", new Template(
             """
-            // start $new_var
+            // start $new_var_in_method
             int ${varI:int} = #{:int_con};
-            // end   $new_var
+            // end   $new_var_in_method
             """
         ));
 
@@ -185,8 +185,8 @@ public class CodeGeneratorLibrary {
             """
             // start $bar
             {
-                #{:dispatch(scope=class,call=new_field)}
-                #{:dispatch(scope=method,call=new_var)}
+                #{:dispatch(scope=class,call=new_field_in_class)}
+                #{:dispatch(scope=method,call=new_var_in_method)}
             }
             // end   $bar
             """

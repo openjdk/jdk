@@ -23,7 +23,9 @@
 
 package compiler.lib.template_framework;
 
+import java.util.Arrays;
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,9 +65,43 @@ public final class Template implements CodeGenerator {
     //   #{name}
     //   #{name:generator}
     //   #{name:generator(arg1=v1,arg2=v2)}
+    //   #{name:generator(arg1=$var,arg2=v2)}
+    //   #{name:generator(arg1=#param,arg2=v2)}
     //   #{:generator}
-    private static final String REPLACEMENT_CHARS = "\\w:\\(\\),=";
-    private static final String REPLACEMENT_PATTERN = "(#\\{[" + REPLACEMENT_CHARS + "]+\\})";
+    private static final String KEY_VALUE_PATTERN = "\\w+=[\\$#]?\\w*";
+    private static final String KEY_VALUE_LIST_PATTERN = "(?:" + // open non-capturing group 1
+                                                             KEY_VALUE_PATTERN +
+                                                             "(?:" + // open non-capturing group 1
+                                                                 "," + KEY_VALUE_PATTERN +
+                                                             ")*" +  // Do 0.. times
+                                                         ")?";   // Do 0 or 1 times.
+    private static final String GENERATOR_PATTERN = "(?:" + // open non-capturing group 1
+                                                        "\\w+" + // generator name
+                                                        "(?:" + // open non-capturing group 2: "(args)"
+                                                            "\\(" +
+                                                                KEY_VALUE_LIST_PATTERN +
+                                                            "\\)" +
+                                                        ")?" +
+                                                    ")?";   // Do 0 or 1 times.
+    private static final String VARIABLE_LIST_PATTERN = "(?:" + // open non-capturing group 1
+                                                            "\\$\\w+" +
+                                                            "(?:" + // open non-capturing group 1
+                                                                ",\\$\\w+" +
+                                                            ")*" +  // Do 0.. times
+                                                        ")?";   // Do 0 or 1 times.
+    private static final String REPLACEMENT_PATTERN = "(" + // capturing group
+                                                          "#\\{" +
+                                                              "\\w*" +
+                                                              "(?:" +
+                                                                  ":" +
+                                                                  GENERATOR_PATTERN +
+                                                                  "(?:" +
+                                                                      ":" +
+                                                                      VARIABLE_LIST_PATTERN +
+                                                                  ")?" +
+                                                              ")?" +
+                                                          "\\}" +
+                                                      ")";
 
     // Match newline + indentation:
     private static final String NEWLINE_AND_INDENTATION_PATTERN = "(\\n *)";
@@ -161,7 +197,7 @@ public final class Template implements CodeGenerator {
         public void handleGeneratorCall(String name,
                                         String generatorName,
                                         HashMap<String,String> argumentsMap,
-                                        String[] variableList,
+                                        List<String> variableList,
                                         String templated) {
             if (!name.equals("") && replacementsMap.containsKey(name)) {
                 throw new TemplateFrameworkException("Template generator call is not the first use of " + name +
@@ -373,7 +409,9 @@ public final class Template implements CodeGenerator {
                 }
 
                 HashMap<String,String> argumentsMap = parseKeyValuePairs(generatorArguments);
-                String[] variableList = variables.equals("") ? new String[0] : variables.split(",");
+                // Pattern: "$v1,$v2,$v3" -> v1 v2 v3
+                String[] variableArray = variables.equals("") ? new String[0] : variables.split(",");
+                List<String> variableList = Arrays.stream(variableArray).map(s -> s.substring(1)).toList();
                 state.handleGeneratorCall(name, generatorName, argumentsMap, variableList, templated);
                 return;
             }

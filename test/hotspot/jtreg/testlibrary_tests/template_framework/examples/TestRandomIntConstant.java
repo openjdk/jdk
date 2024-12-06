@@ -78,8 +78,10 @@ public class TestRandomIntConstant {
                     int $con3 = #{:int_con};
                     int ${con4} = 123;
                     final int ${con5:int:final} = ${con4};
-                    $con2 = #{conz:int_con(lo=3,hi=11):con2,con2};
-                    #{:code:con1,con2,con5}
+                    $con2 = #{conz:int_con(lo=3,hi=11):$con2,$con2};
+                    #{:code:$con1,$con2,$con5}
+                    int ${xxx:int} = 0;
+                    #{:code(var=$xxx):$xxx,$con5};
                     return $con1 + $con2 + #{param1};
                     #close(method)
                 }

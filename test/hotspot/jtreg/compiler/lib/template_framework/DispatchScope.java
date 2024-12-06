@@ -36,6 +36,7 @@ public class DispatchScope extends Scope {
         Parameters parameters = new Parameters();
         // TODO parameters from dispatch?
         generator.instantiate(dispatchScope, parameters);
+        dispatchScope.stream.addNewline();
         dispatchScope.close();
         stream.prependCodeStream(dispatchScope.stream);
 
