@@ -873,8 +873,8 @@ final class ByteMaxVector extends ByteVector {
         @ForceInline
         @Override
         public final ByteMaxShuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (ByteMaxShuffle) toBitsVector().rearrange(((ByteMaxShuffle) shuffle)
-                    .cast(ByteVector.SPECIES_MAX))
+            ByteMaxShuffle concreteShuffle = (ByteMaxShuffle) shuffle;
+            return (ByteMaxShuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

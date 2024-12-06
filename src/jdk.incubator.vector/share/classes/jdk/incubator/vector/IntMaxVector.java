@@ -871,8 +871,8 @@ final class IntMaxVector extends IntVector {
         @ForceInline
         @Override
         public final IntMaxShuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (IntMaxShuffle) toBitsVector().rearrange(((IntMaxShuffle) shuffle)
-                    .cast(IntVector.SPECIES_MAX))
+            IntMaxShuffle concreteShuffle = (IntMaxShuffle) shuffle;
+            return (IntMaxShuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

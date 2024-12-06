@@ -851,8 +851,8 @@ final class Float64Vector extends FloatVector {
         @ForceInline
         @Override
         public final Float64Shuffle rearrange(VectorShuffle<Float> shuffle) {
-            return (Float64Shuffle) toBitsVector().rearrange(((Float64Shuffle) shuffle)
-                    .cast(IntVector.SPECIES_64))
+            Float64Shuffle concreteShuffle = (Float64Shuffle) shuffle;
+            return (Float64Shuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_64))
                     .toShuffle(vspecies(), false);
         }
 

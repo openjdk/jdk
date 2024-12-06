@@ -874,8 +874,8 @@ final class Long64Vector extends LongVector {
         @ForceInline
         @Override
         public final Long64Shuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (Long64Shuffle) toBitsVector().rearrange(((Long64Shuffle) shuffle)
-                    .cast(LongVector.SPECIES_64))
+            Long64Shuffle concreteShuffle = (Long64Shuffle) shuffle;
+            return (Long64Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

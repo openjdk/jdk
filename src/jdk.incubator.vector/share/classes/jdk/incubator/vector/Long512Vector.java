@@ -888,8 +888,8 @@ final class Long512Vector extends LongVector {
         @ForceInline
         @Override
         public final Long512Shuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (Long512Shuffle) toBitsVector().rearrange(((Long512Shuffle) shuffle)
-                    .cast(LongVector.SPECIES_512))
+            Long512Shuffle concreteShuffle = (Long512Shuffle) shuffle;
+            return (Long512Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

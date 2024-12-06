@@ -999,8 +999,8 @@ final class Byte512Vector extends ByteVector {
         @ForceInline
         @Override
         public final Byte512Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (Byte512Shuffle) toBitsVector().rearrange(((Byte512Shuffle) shuffle)
-                    .cast(ByteVector.SPECIES_512))
+            Byte512Shuffle concreteShuffle = (Byte512Shuffle) shuffle;
+            return (Byte512Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

@@ -887,8 +887,8 @@ final class Byte64Vector extends ByteVector {
         @ForceInline
         @Override
         public final Byte64Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (Byte64Shuffle) toBitsVector().rearrange(((Byte64Shuffle) shuffle)
-                    .cast(ByteVector.SPECIES_64))
+            Byte64Shuffle concreteShuffle = (Byte64Shuffle) shuffle;
+            return (Byte64Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

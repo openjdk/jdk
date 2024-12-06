@@ -863,8 +863,8 @@ final class Float256Vector extends FloatVector {
         @ForceInline
         @Override
         public final Float256Shuffle rearrange(VectorShuffle<Float> shuffle) {
-            return (Float256Shuffle) toBitsVector().rearrange(((Float256Shuffle) shuffle)
-                    .cast(IntVector.SPECIES_256))
+            Float256Shuffle concreteShuffle = (Float256Shuffle) shuffle;
+            return (Float256Shuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_256))
                     .toShuffle(vspecies(), false);
         }
 

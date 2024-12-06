@@ -862,8 +862,8 @@ final class Int64Vector extends IntVector {
         @ForceInline
         @Override
         public final Int64Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (Int64Shuffle) toBitsVector().rearrange(((Int64Shuffle) shuffle)
-                    .cast(IntVector.SPECIES_64))
+            Int64Shuffle concreteShuffle = (Int64Shuffle) shuffle;
+            return (Int64Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

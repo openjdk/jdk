@@ -879,8 +879,8 @@ final class Float512Vector extends FloatVector {
         @ForceInline
         @Override
         public final Float512Shuffle rearrange(VectorShuffle<Float> shuffle) {
-            return (Float512Shuffle) toBitsVector().rearrange(((Float512Shuffle) shuffle)
-                    .cast(IntVector.SPECIES_512))
+            Float512Shuffle concreteShuffle = (Float512Shuffle) shuffle;
+            return (Float512Shuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_512))
                     .toShuffle(vspecies(), false);
         }
 

@@ -887,8 +887,8 @@ final class Double512Vector extends DoubleVector {
         @ForceInline
         @Override
         public final Double512Shuffle rearrange(VectorShuffle<Double> shuffle) {
-            return (Double512Shuffle) toBitsVector().rearrange(((Double512Shuffle) shuffle)
-                    .cast(LongVector.SPECIES_512))
+            Double512Shuffle concreteShuffle = (Double512Shuffle) shuffle;
+            return (Double512Shuffle) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_512))
                     .toShuffle(vspecies(), false);
         }
 

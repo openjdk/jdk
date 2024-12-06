@@ -872,8 +872,8 @@ final class DoubleMaxVector extends DoubleVector {
         @ForceInline
         @Override
         public final DoubleMaxShuffle rearrange(VectorShuffle<Double> shuffle) {
-            return (DoubleMaxShuffle) toBitsVector().rearrange(((DoubleMaxShuffle) shuffle)
-                    .cast(LongVector.SPECIES_MAX))
+            DoubleMaxShuffle concreteShuffle = (DoubleMaxShuffle) shuffle;
+            return (DoubleMaxShuffle) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_MAX))
                     .toShuffle(vspecies(), false);
         }
 

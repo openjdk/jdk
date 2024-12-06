@@ -890,8 +890,8 @@ final class Int512Vector extends IntVector {
         @ForceInline
         @Override
         public final Int512Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (Int512Shuffle) toBitsVector().rearrange(((Int512Shuffle) shuffle)
-                    .cast(IntVector.SPECIES_512))
+            Int512Shuffle concreteShuffle = (Int512Shuffle) shuffle;
+            return (Int512Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

@@ -929,8 +929,8 @@ final class Short512Vector extends ShortVector {
         @ForceInline
         @Override
         public final Short512Shuffle rearrange(VectorShuffle<Short> shuffle) {
-            return (Short512Shuffle) toBitsVector().rearrange(((Short512Shuffle) shuffle)
-                    .cast(ShortVector.SPECIES_512))
+            Short512Shuffle concreteShuffle = (Short512Shuffle) shuffle;
+            return (Short512Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

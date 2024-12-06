@@ -848,8 +848,8 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         @Override
         public final FloatMaxShuffle rearrange(VectorShuffle<Float> shuffle) {
-            return (FloatMaxShuffle) toBitsVector().rearrange(((FloatMaxShuffle) shuffle)
-                    .cast(IntVector.SPECIES_MAX))
+            FloatMaxShuffle concreteShuffle = (FloatMaxShuffle) shuffle;
+            return (FloatMaxShuffle) toBitsVector().rearrange(concreteShuffle.cast(IntVector.SPECIES_MAX))
                     .toShuffle(vspecies(), false);
         }
 

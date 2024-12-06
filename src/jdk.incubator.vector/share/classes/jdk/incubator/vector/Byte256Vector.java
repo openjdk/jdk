@@ -935,8 +935,8 @@ final class Byte256Vector extends ByteVector {
         @ForceInline
         @Override
         public final Byte256Shuffle rearrange(VectorShuffle<Byte> shuffle) {
-            return (Byte256Shuffle) toBitsVector().rearrange(((Byte256Shuffle) shuffle)
-                    .cast(ByteVector.SPECIES_256))
+            Byte256Shuffle concreteShuffle = (Byte256Shuffle) shuffle;
+            return (Byte256Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

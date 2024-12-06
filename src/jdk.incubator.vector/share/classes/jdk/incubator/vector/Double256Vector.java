@@ -879,8 +879,8 @@ final class Double256Vector extends DoubleVector {
         @ForceInline
         @Override
         public final Double256Shuffle rearrange(VectorShuffle<Double> shuffle) {
-            return (Double256Shuffle) toBitsVector().rearrange(((Double256Shuffle) shuffle)
-                    .cast(LongVector.SPECIES_256))
+            Double256Shuffle concreteShuffle = (Double256Shuffle) shuffle;
+            return (Double256Shuffle) toBitsVector().rearrange(concreteShuffle.cast(LongVector.SPECIES_256))
                     .toShuffle(vspecies(), false);
         }
 

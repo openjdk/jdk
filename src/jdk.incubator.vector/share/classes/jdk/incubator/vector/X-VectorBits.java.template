@@ -1223,9 +1223,14 @@ final class $vectortype$ extends $abstractvectortype$ {
         @ForceInline
         @Override
         public final $shuffletype$ rearrange(VectorShuffle<$Boxtype$> shuffle) {
-            return ($shuffletype$) toBitsVector().rearrange((($shuffletype$) shuffle)
-                    .cast($Bitstype$Vector.SPECIES_$BITS$))
+            $shuffletype$ concreteShuffle = ($shuffletype$) shuffle;
+#if[FP]
+            return ($shuffletype$) toBitsVector().rearrange(concreteShuffle.cast($Bitstype$Vector.SPECIES_$BITS$))
                     .toShuffle(vspecies(), false);
+#else[FP]
+            return ($shuffletype$) toBitsVector().rearrange(concreteShuffle)
+                    .toShuffle(vspecies(), false);
+#end[FP]
         }
 
         @ForceInline

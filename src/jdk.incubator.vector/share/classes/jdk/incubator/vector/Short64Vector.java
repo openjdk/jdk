@@ -873,8 +873,8 @@ final class Short64Vector extends ShortVector {
         @ForceInline
         @Override
         public final Short64Shuffle rearrange(VectorShuffle<Short> shuffle) {
-            return (Short64Shuffle) toBitsVector().rearrange(((Short64Shuffle) shuffle)
-                    .cast(ShortVector.SPECIES_64))
+            Short64Shuffle concreteShuffle = (Short64Shuffle) shuffle;
+            return (Short64Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

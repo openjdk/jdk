@@ -876,8 +876,8 @@ final class Long128Vector extends LongVector {
         @ForceInline
         @Override
         public final Long128Shuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (Long128Shuffle) toBitsVector().rearrange(((Long128Shuffle) shuffle)
-                    .cast(LongVector.SPECIES_128))
+            Long128Shuffle concreteShuffle = (Long128Shuffle) shuffle;
+            return (Long128Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

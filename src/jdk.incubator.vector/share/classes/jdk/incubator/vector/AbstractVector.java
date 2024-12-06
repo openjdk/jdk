@@ -221,6 +221,7 @@ abstract class AbstractVector<E> extends Vector<E> {
     @ForceInline
     final VectorShuffle<E> iotaShuffleTemplate(int start, int step, boolean wrap) {
         if ((length() & (length() - 1)) != 0) {
+            // Uncommon path, the length is not a power of 2
             return wrap ? shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i * step + start, length())))
                         : shuffleFromOp(i -> i * step + start);
         }

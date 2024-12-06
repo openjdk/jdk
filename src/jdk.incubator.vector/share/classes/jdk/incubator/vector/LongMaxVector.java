@@ -874,8 +874,8 @@ final class LongMaxVector extends LongVector {
         @ForceInline
         @Override
         public final LongMaxShuffle rearrange(VectorShuffle<Long> shuffle) {
-            return (LongMaxShuffle) toBitsVector().rearrange(((LongMaxShuffle) shuffle)
-                    .cast(LongVector.SPECIES_MAX))
+            LongMaxShuffle concreteShuffle = (LongMaxShuffle) shuffle;
+            return (LongMaxShuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

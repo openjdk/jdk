@@ -867,8 +867,8 @@ final class ShortMaxVector extends ShortVector {
         @ForceInline
         @Override
         public final ShortMaxShuffle rearrange(VectorShuffle<Short> shuffle) {
-            return (ShortMaxShuffle) toBitsVector().rearrange(((ShortMaxShuffle) shuffle)
-                    .cast(ShortVector.SPECIES_MAX))
+            ShortMaxShuffle concreteShuffle = (ShortMaxShuffle) shuffle;
+            return (ShortMaxShuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

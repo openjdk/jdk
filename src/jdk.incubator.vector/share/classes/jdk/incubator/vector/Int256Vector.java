@@ -874,8 +874,8 @@ final class Int256Vector extends IntVector {
         @ForceInline
         @Override
         public final Int256Shuffle rearrange(VectorShuffle<Integer> shuffle) {
-            return (Int256Shuffle) toBitsVector().rearrange(((Int256Shuffle) shuffle)
-                    .cast(IntVector.SPECIES_256))
+            Int256Shuffle concreteShuffle = (Int256Shuffle) shuffle;
+            return (Int256Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 

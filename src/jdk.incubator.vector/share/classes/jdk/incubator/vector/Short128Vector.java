@@ -881,8 +881,8 @@ final class Short128Vector extends ShortVector {
         @ForceInline
         @Override
         public final Short128Shuffle rearrange(VectorShuffle<Short> shuffle) {
-            return (Short128Shuffle) toBitsVector().rearrange(((Short128Shuffle) shuffle)
-                    .cast(ShortVector.SPECIES_128))
+            Short128Shuffle concreteShuffle = (Short128Shuffle) shuffle;
+            return (Short128Shuffle) toBitsVector().rearrange(concreteShuffle)
                     .toShuffle(vspecies(), false);
         }
 
