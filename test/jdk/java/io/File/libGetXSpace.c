@@ -45,11 +45,6 @@ extern "C" {
 #ifdef WINDOWS
 jboolean initialized = JNI_FALSE;
 BOOL(WINAPI * pfnGetDiskSpaceInformation)(LPCWSTR, LPVOID) = NULL;
-
-BOOL isCDROM(LPCWSTR path) {
-    UINT driveType = GetDriveTypeW(path);
-    return (driveType == DRIVE_CDROM);
-}
 #endif
 
 //
@@ -84,7 +79,7 @@ Java_GetXSpace_getSpace0
 
     LPCWSTR path = (LPCWSTR)strchars;
 
-    if (pfnGetDiskSpaceInformation != NULL && !isCDROM(path)) {
+    if (pfnGetDiskSpaceInformation != NULL) {
         // use GetDiskSpaceInformationW
         DISK_SPACE_INFORMATION diskSpaceInfo;
         BOOL hres = pfnGetDiskSpaceInformation(path, &diskSpaceInfo);
@@ -105,50 +100,6 @@ Java_GetXSpace_getSpace0
                            bytesPerAllocationUnit);
         array[3] = (jlong)(diskSpaceInfo.CallerAvailableAllocationUnits*
                            bytesPerAllocationUnit);
-    } else if (isCDROM(path)) {
-        // use df
-        char cmd[256];
-        snprintf(cmd, sizeof(cmd), "df -k -P %ls 2>&1", path);
-
-        FILE *fp = _popen(cmd, "r");
-        if (fp == NULL) {
-            (*env)->ReleaseStringChars(env, root, strchars);
-            JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
-                                         "popen");
-            return JNI_FALSE;
-        }
-
-        char buffer[1024];
-        int i = 0;
-        int found = 0;
-        while (fgets(buffer, sizeof(buffer), fp) != NULL) {
-            // skip header and error message containing "No such file or directory"
-            // meaning that the CD-ROM drive does not have a disk mounted
-            if (i++ == 0) continue;
-
-            char filesystem[256];
-            long blocks, used, available;
-            if (sscanf(buffer, "%s %ld %ld %ld", filesystem, &blocks, &used, &available) == 4) {
-                array[0] = (jlong)blocks * 1024;
-                array[1] = (jlong)used * 1024;
-                array[2] = array[0] - array[1];
-                array[3] = (jlong)available * 1024;
-                found = 1;
-                break;
-            }
-        }
-
-        _pclose(fp);
-
-        if (!found) {
-            // df did not produce output
-            array[0] = 0;
-            array[1] = 0;
-            array[2] = 0;
-            array[3] = 0;
-        }
-
-        (*env)->ReleaseStringChars(env, root, strchars);
     } else {
         totalSpaceIsEstimated = JNI_TRUE;
 
@@ -208,6 +159,30 @@ Java_GetXSpace_getSpace0
     (*env)->SetLongArrayRegion(env, sizes, 0, 4, array);
     return totalSpaceIsEstimated;
 }
+
+JNIEXPORT jboolean JNICALL
+Java_GetXSpace_isCDDrive
+    (JNIEnv *env, jclass cls, jstring root)
+{
+    const jchar* strchars = (*env)->GetStringChars(env, root, NULL);
+    if (strchars == NULL) {
+        JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
+                                     "GetStringChars");
+        return JNI_FALSE;
+    }
+
+    LPCWSTR path = (LPCWSTR)strchars;
+    UINT driveType = GetDriveTypeW(path);
+
+    (*env)->ReleaseStringChars(env, root, strchars);
+
+    if (driveType != DRIVE_CDROM) {
+        return JNI_FALSE;
+    }
+
+    return JNI_TRUE;
+}
+
 #ifdef __cplusplus
 }
 #endif
