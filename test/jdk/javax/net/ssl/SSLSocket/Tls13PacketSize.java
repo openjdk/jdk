@@ -72,6 +72,7 @@ public class Tls13PacketSize extends SSLSocketTemplate {
 
         sslOS.write(appData);
         sslOS.flush();
+        sslIS.read();
     }
 
     /*
