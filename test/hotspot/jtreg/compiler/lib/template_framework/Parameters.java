@@ -62,8 +62,16 @@ public class Parameters {
         argumentsMap.put(name, value);
     }
 
-    public String get(String name) {
+    public String getOrNull(String name) {
         return argumentsMap.get(name);
+    }
+
+    public String get(String name, String errorMessage) {
+        String param = getOrNull(name);
+        if (param == null) {
+            throw new TemplateFrameworkException("Missing parameter '" + name + "' " + errorMessage);
+        }
+        return param;
     }
 
     // TODO verify that we have exactly the names we expect, and no different.

@@ -60,10 +60,7 @@ public final class SelectorCodeGenerator implements CodeGenerator {
         for (Map.Entry<String,Float> entry : choiceWeights.entrySet()) {
             String name = entry.getKey();
             float weight = entry.getValue().floatValue();
-            CodeGenerator codeGenerator = scope.library().find(name);
-            if (codeGenerator == null) {
-                throw new TemplateFrameworkException("CodeGenerator not found in library: " + name);
-            }
+            CodeGenerator codeGenerator = scope.library().find(name, " in selector");
             if (scope.fuel < codeGenerator.fuelCost()) { continue; }
             total += weight;
         }
@@ -78,7 +75,7 @@ public final class SelectorCodeGenerator implements CodeGenerator {
         for (Map.Entry<String,Float> entry : choiceWeights.entrySet()) {
             String name = entry.getKey();
             float weight = entry.getValue().floatValue();
-            CodeGenerator codeGenerator = scope.library().find(name);
+            CodeGenerator codeGenerator = scope.library().find(name, " in selector");
             if (scope.fuel < codeGenerator.fuelCost()) { continue; }
             total2 += weight;
             if (r <= total2) {
@@ -95,11 +92,7 @@ public final class SelectorCodeGenerator implements CodeGenerator {
     public void instantiate(Scope scope, Parameters parameters) {
         // Sample a generator.
 	String generatorName = choose(scope);
-
-        CodeGenerator generator = scope.library().find(generatorName);
-        if (generator == null) {
-            throw new TemplateFrameworkException("Template generator not found: " + generatorName);
-        }
+        CodeGenerator generator = scope.library().find(generatorName, " in selector");
 
         // Dispatch via with new scope, but the same parameters.
         Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost());

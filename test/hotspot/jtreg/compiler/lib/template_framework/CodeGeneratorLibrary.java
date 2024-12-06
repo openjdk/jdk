@@ -42,7 +42,7 @@ public class CodeGeneratorLibrary {
         this.parent = parent;
         if (parent != null) {
             for (String name : library.keySet()) {
-                if (parent.find(name) != null) {
+                if (parent.findOrNull(name) != null) {
                     throw new TemplateFrameworkException("Code library already has a generator for name " + name);
                 }
             }
@@ -53,12 +53,20 @@ public class CodeGeneratorLibrary {
     /**
      * Recursively find CodeGenerator with given name in this library or parent library.
      */
-    public CodeGenerator find(String name) {
+    public CodeGenerator find(String name, String errorMessage) {
+        CodeGenerator codeGenerator = findOrNull(name);
+        if (codeGenerator == null) {
+            throw new TemplateFrameworkException("Template generator '" + name + "' not found " + errorMessage);
+        }
+        return codeGenerator;
+    }
+
+    public CodeGenerator findOrNull(String name) {
         CodeGenerator codeGenerator = library.get(name);
         if (codeGenerator != null) {
             return codeGenerator;
         } else if (parent != null){
-            return parent.find(name);
+            return parent.findOrNull(name);
         } else {
             return null;
         }
@@ -66,15 +74,39 @@ public class CodeGeneratorLibrary {
 
     public static CodeGenerator factoryLoadStore(boolean mutable) {
         return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
-            String type = parameters.get("type");
-            if (type == null) {
-                throw new TemplateFrameworkException("Generator call to 'var' missing parameter 'type'.");
-            }
+            String type = parameters.get("type", " for generator call to load/store");
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
-                throw new TemplateFrameworkException("Generator call to 'var' cannot find variable of type: " + type);
+                throw new TemplateFrameworkException("Generator call to load/store cannot find variable of type: " + type);
             }
             scope.stream.addCodeToLine(String.valueOf(name));
+        }, 0);
+    }
+
+    public static CodeGenerator factoryDispatch() {
+        return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
+            String scopeKind = parameters.get("scope", " for generator call to 'dispatch'");
+            String generatorName = parameters.get("call", " for generator call to 'dispatch'");
+            System.out.println("Dispatch " + generatorName + " to " + scopeKind);
+
+            CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
+
+            switch(scopeKind) {
+                case "class" -> {
+                    ClassScope classScope = scope.classScope();
+                    if (classScope == null) {
+                        throw new TemplateFrameworkException("Generator dispatch did not find an outer class scope" +
+                                                             " to dispatch " + generatorName);
+                    }
+
+                }
+                case "method" -> {
+                }
+                default -> {
+                    throw new TemplateFrameworkException("Generator dispatch got: scope=" + scopeKind +
+                                                         "but should be scope=class or scope=method");
+                }
+            }
         }, 0);
     }
 
@@ -91,6 +123,19 @@ public class CodeGeneratorLibrary {
         // Variable load/store.
         codeGenerators.put("load",  factoryLoadStore(false));
         codeGenerators.put("store", factoryLoadStore(true));
+
+        // Dispatch generator call to a ClassScope or MethodScope
+        codeGenerators.put("dispatch", factoryDispatch());
+
+        // ClassScope generators.
+        codeGenerators.put("new_field", new Template(
+            """
+            // start $new_field
+            public int ${fieldI:int} = #{:int_con};
+            // end   $new_field
+            """
+        ));
+
 
         // Code blocks.
         codeGenerators.put("empty", new Template(
@@ -128,12 +173,22 @@ public class CodeGeneratorLibrary {
             // end   $foo
             """
         ));
+        codeGenerators.put("bar", new Template(
+            """
+            // start $bar
+            {
+                #{:dispatch(scope=class,call=new_field)}
+            }
+            // end   $bar
+            """
+        ));
 
         // Selector for code blocks.
         SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("empty");
         selectorForCode.add("split",  100);
         selectorForCode.add("prefix", 100);
         selectorForCode.add("foo", 100);
+        selectorForCode.add("bar", 1000);
         codeGenerators.put("code", selectorForCode);
 
         return new CodeGeneratorLibrary(null, codeGenerators);

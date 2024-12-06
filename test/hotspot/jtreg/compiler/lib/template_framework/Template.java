@@ -168,11 +168,7 @@ public final class Template implements CodeGenerator {
                                                      ". Got " + templated);
             }
 
-            CodeGenerator generator = templateScope.library().find(generatorName);
-            if (generator == null) {
-                throw new TemplateFrameworkException("Template generator not found: " + generatorName +
-                                                     ". Got " + templated);
-            }
+            CodeGenerator generator = templateScope.library().find(generatorName, ", got " + templated);
 
             // Create nested scope, and add the new variables to it.
             Scope nestedScope = new Scope(currentScope, currentScope.fuel - generator.fuelCost());
@@ -335,7 +331,7 @@ public final class Template implements CodeGenerator {
 
             // Check if it is a parameter.
             if (!name.equals("")) {
-                String parameterValue = state.parameters.get(name);
+                String parameterValue = state.parameters.getOrNull(name);
                 if (parameterValue != null) {
                     // It is a parameter value.
                     if (!generator.equals("") || !variables.equals("")) {
