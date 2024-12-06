@@ -155,9 +155,10 @@ public class IntegrationTest {
         mods.add("java.management");
         Set<String> limits = new HashSet<>();
         limits.add("java.management");
+        boolean linkFromRuntime = false;
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
                 mods,
-                JlinkTask.newModuleFinder(modulePaths, limits, mods), false, false, false);
+                JlinkTask.newModuleFinder(JlinkTask.createFinderFromPath(modulePaths), limits, mods, linkFromRuntime), linkFromRuntime, false, false);
 
         List<Plugin> lst = new ArrayList<>();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  */
 
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,17 +35,18 @@ import java.util.List;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
 /**
  * @test
- * @bug 8174826
+ * @bug 8174826 8345573
  * @library /lib/testlibrary /test/lib
- * @modules jdk.charsets jdk.compiler jdk.jlink
+ * @modules jdk.charsets jdk.compiler jdk.jlink/jdk.tools.jlink.internal
  * @build SuggestProviders jdk.test.lib.compiler.CompilerUtils
  * @run testng SuggestProviders
  */
@@ -54,18 +58,23 @@ public class SuggestProviders {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
 
-    private static final String MODULE_PATH =
-        Paths.get(JAVA_HOME, "jmods").toString() +
-        File.pathSeparator + MODS_DIR.toString();
+    private static final boolean LINKABLE_RUNTIME = LinkableRuntimeImage.isLinkableRuntime();
+    private static final boolean JMODS_EXIST = Files.exists(Paths.get(JAVA_HOME, "jmods"));
+
+    private static final String MODULE_PATH = (JMODS_EXIST ? Paths.get(JAVA_HOME, "jmods").toString() +
+                                                             File.pathSeparator : "") +
+                                              MODS_DIR.toString();
 
     // the names of the modules in this test
     private static String[] modules = new String[] {"m1", "m2", "m3"};
 
 
-    private static boolean hasJmods() {
-        if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
-            System.err.println("Test skipped. NO jmods directory");
-            return false;
+    private static boolean isApplicable() {
+        if (!JMODS_EXIST) {
+            if (!LINKABLE_RUNTIME) {
+                System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+                return false;
+            }
         }
         return true;
     }
@@ -75,7 +84,7 @@ public class SuggestProviders {
      */
     @BeforeTest
     public void compileAll() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
@@ -125,7 +134,7 @@ public class SuggestProviders {
 
     @Test
     public void suggestProviders() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output = JLink.run("--module-path", MODULE_PATH,
                                         "--suggest-providers").output();
@@ -145,7 +154,7 @@ public class SuggestProviders {
      */
     @Test
     public void observableModules() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output = JLink.run("--module-path", MODULE_PATH,
                                         "--add-modules", "m1",
@@ -165,7 +174,7 @@ public class SuggestProviders {
      */
     @Test
     public void limitModules() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output = JLink.run("--module-path", MODULE_PATH,
                                         "--limit-modules", "m1",
@@ -184,7 +193,7 @@ public class SuggestProviders {
 
     @Test
     public void providersForServices() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -203,7 +212,7 @@ public class SuggestProviders {
 
     @Test
     public void unusedService() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -221,7 +230,7 @@ public class SuggestProviders {
 
     @Test
     public void nonExistentService() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -236,7 +245,7 @@ public class SuggestProviders {
 
     @Test
     public void noSuggestProviders() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -250,7 +259,7 @@ public class SuggestProviders {
 
     @Test
     public void suggestTypeNotRealProvider() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -268,7 +277,7 @@ public class SuggestProviders {
 
     @Test
     public void addNonObservableModule() throws Throwable {
-        if (!hasJmods()) return;
+        if (!isApplicable()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
