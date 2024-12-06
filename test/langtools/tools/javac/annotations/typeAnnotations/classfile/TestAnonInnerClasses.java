@@ -32,9 +32,6 @@
  *  annotation place on type of element (a FIELD&TYPE_USE element on a field
  *  results in 2). Elements with no annotations expect 0.
  *  Source template is read in from testanoninner.template
- *
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;

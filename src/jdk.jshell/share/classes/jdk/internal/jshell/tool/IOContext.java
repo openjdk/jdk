@@ -64,6 +64,12 @@ abstract class IOContext implements AutoCloseable {
     }
 
     public String readUserLine(String prompt) throws IOException {
+        userOutput().write(prompt);
+        userOutput().flush();
+        throw new UserInterruptException("");
+    }
+
+    public String readUserLine() throws IOException {
         throw new UserInterruptException("");
     }
 
@@ -72,6 +78,8 @@ abstract class IOContext implements AutoCloseable {
     }
 
     public char[] readPassword(String prompt) throws IOException {
+        userOutput().write(prompt);
+        userOutput().flush();
         throw new UserInterruptException("");
     }
 

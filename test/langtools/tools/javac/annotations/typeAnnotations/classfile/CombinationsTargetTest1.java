@@ -25,8 +25,6 @@
  * @test
  * @bug 8005085 8005877 8004829 8005681 8006734 8006775
  * @summary Combinations of Target ElementTypes on (repeated)type annotations.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.classfile.*;

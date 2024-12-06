@@ -26,10 +26,8 @@
  * @bug 8292755
  * @summary Verify error recovery related to method modifiers.
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main MethodModifiers
  */

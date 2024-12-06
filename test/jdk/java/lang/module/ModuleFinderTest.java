@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build ModuleFinderTest jdk.test.lib.util.ModuleInfoWriter

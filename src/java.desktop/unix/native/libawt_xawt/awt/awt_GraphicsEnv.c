@@ -1287,7 +1287,7 @@ Java_sun_awt_X11GraphicsDevice_pGetBounds(JNIEnv *env, jobject this, jint screen
                     xwa.width, xwa.height);
         }
 
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             return NULL;
         }
     }

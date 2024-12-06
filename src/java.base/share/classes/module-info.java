@@ -81,7 +81,6 @@ module java.base {
     exports java.lang.annotation;
     exports java.lang.classfile;
     exports java.lang.classfile.attribute;
-    exports java.lang.classfile.components;
     exports java.lang.classfile.constantpool;
     exports java.lang.classfile.instruction;
     exports java.lang.constant;
@@ -146,6 +145,8 @@ module java.base {
         jdk.compiler;
     exports com.sun.security.ntlm to
         java.security.sasl;
+    exports jdk.internal to
+        jdk.incubator.vector;
     // Note: all modules in the exported list participate in preview  features
     // and therefore if they use preview features they do not need to be
     // compiled with "--enable-preview".
@@ -154,6 +155,7 @@ module java.base {
     exports jdk.internal.javac to
         java.compiler,
         java.desktop, // for ScopedValue
+        java.se, // for ParticipatesInPreview
         jdk.compiler,
         jdk.incubator.vector, // participates in preview features
         jdk.jartool, // participates in preview features
@@ -165,8 +167,6 @@ module java.base {
         java.desktop,
         java.logging,
         java.management,
-        java.management.rmi,
-        java.naming,
         java.rmi,
         jdk.charsets,
         jdk.jartool,
@@ -176,6 +176,8 @@ module java.base {
         jdk.net,
         jdk.sctp,
         jdk.crypto.cryptoki;
+    exports jdk.internal.classfile.components to
+        jdk.jfr;
     exports jdk.internal.foreign to
         jdk.incubator.vector;
     exports jdk.internal.event to
@@ -290,7 +292,6 @@ module java.base {
         java.security.jgss,
         jdk.naming.dns;
     exports sun.net.util to
-        java.desktop,
         java.net.http,
         jdk.jconsole,
         jdk.sctp;
@@ -314,14 +315,8 @@ module java.base {
         java.desktop;
     exports sun.reflect.misc to
         java.desktop,
-        java.datatransfer,
         java.management,
-        java.management.rmi,
-        java.rmi,
         java.sql.rowset;
-    exports sun.security.action to
-        java.desktop,
-        java.security.jgss;
     exports sun.security.internal.interfaces to
         jdk.crypto.cryptoki;
     exports sun.security.internal.spec to
@@ -333,7 +328,6 @@ module java.base {
     exports sun.security.pkcs to
         jdk.jartool;
     exports sun.security.provider to
-        java.rmi,
         java.security.jgss,
         jdk.crypto.cryptoki,
         jdk.security.auth;
@@ -347,9 +341,7 @@ module java.base {
     exports sun.security.tools to
         jdk.jartool;
     exports sun.security.util to
-        java.desktop,
         java.naming,
-        java.rmi,
         java.security.jgss,
         java.security.sasl,
         java.smartcardio,

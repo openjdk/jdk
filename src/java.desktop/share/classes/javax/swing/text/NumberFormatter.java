@@ -33,7 +33,6 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Map;
 
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -437,12 +436,9 @@ public class NumberFormatter extends InternationalFormatter {
                         valueClass = value.getClass();
                     }
                     try {
-                        ReflectUtil.checkPackageAccess(valueClass);
-                        SwingUtilities2.checkAccess(valueClass.getModifiers());
                         Constructor<?> cons = valueClass.getConstructor(
                                               new Class<?>[] { String.class });
                         if (cons != null) {
-                            SwingUtilities2.checkAccess(cons.getModifiers());
                             return cons.newInstance(new Object[]{string});
                         }
                     } catch (Throwable ex) { }

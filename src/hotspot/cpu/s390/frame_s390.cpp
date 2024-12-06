@@ -246,6 +246,11 @@ frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
   return fr;
 }
 
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
+}
+
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers sender_sp as unextended_sp.
   return frame(sender_sp(), sender_pc(), (intptr_t*)(ijava_state()->sender_sp));

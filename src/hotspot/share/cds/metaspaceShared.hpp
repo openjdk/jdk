@@ -34,10 +34,12 @@
 class ArchiveBuilder;
 class ArchiveHeapInfo;
 class FileMapInfo;
+class Method;
 class outputStream;
 class SerializeClosure;
 class StaticArchiveBuilder;
 
+template<class E> class Array;
 template<class E> class GrowableArray;
 
 enum MapArchiveResult {
@@ -56,6 +58,7 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
+  static Array<Method*>* _archived_method_handle_intrinsics;
 
  public:
   enum {
@@ -111,6 +114,10 @@ public:
   static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
 
+  static void make_method_handle_intrinsics_shareable() NOT_CDS_RETURN;
+  static void write_method_handle_intrinsics() NOT_CDS_RETURN;
+  static Array<Method*>* archived_method_handle_intrinsics() { return _archived_method_handle_intrinsics; }
+  static void early_serialize(SerializeClosure* sc) NOT_CDS_RETURN;
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
   // JVM/TI RedefineClasses() support:
