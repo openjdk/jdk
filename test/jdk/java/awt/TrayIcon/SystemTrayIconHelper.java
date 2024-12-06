@@ -27,9 +27,6 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -154,17 +151,9 @@ public class SystemTrayIconHelper {
         return null;
     }
 
-    static Field getField(final Class clz, final String fieldName) {
-        Field res = null;
-        try {
-            res = (Field)AccessController.doPrivileged((PrivilegedExceptionAction) () -> {
-                Field f = clz.getDeclaredField(fieldName);
-                f.setAccessible(true);
-                return f;
-            });
-        } catch (PrivilegedActionException ex) {
-            ex.printStackTrace();
-        }
+    static Field getField(final Class clz, final String fieldName) throws NoSuchFieldException {
+        Field res = clz.getDeclaredField(fieldName);
+        res.setAccessible(true);
         return res;
     }
 

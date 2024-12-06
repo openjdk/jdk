@@ -319,7 +319,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
 
   // It's inflated and we use scrReg for ObjectMonitor* in this section.
-  movptr(boxReg, Address(r15_thread, JavaThread::lock_id_offset()));
+  movptr(boxReg, Address(r15_thread, JavaThread::monitor_owner_id_offset()));
   movq(scrReg, tmpReg);
   xorq(tmpReg, tmpReg);
   lock();
@@ -625,9 +625,9 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
       movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), monitor);
     }
 
-    // Try to CAS owner (no owner => current thread's _lock_id).
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     xorptr(rax_reg, rax_reg);
-    movptr(box, Address(thread, JavaThread::lock_id_offset()));
+    movptr(box, Address(thread, JavaThread::monitor_owner_id_offset()));
     lock(); cmpxchgptr(box, owner_address);
     jccb(Assembler::equal, monitor_locked);
 

@@ -642,6 +642,12 @@ public sealed interface ClassFile
     int JAVA_24_VERSION = 68;
 
     /**
+     * The class major version of JAVA_25.
+     * @since 25
+     */
+    int JAVA_25_VERSION = 69;
+
+    /**
      * A minor version number indicating a class uses preview features
      * of a Java SE version since 12, for major versions {@value
      * #JAVA_12_VERSION} and above.
@@ -652,7 +658,7 @@ public sealed interface ClassFile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_24_VERSION;
+        return JAVA_25_VERSION;
     }
 
     /**

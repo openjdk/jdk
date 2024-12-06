@@ -64,7 +64,7 @@ public final class ClassFinder {
                 return Class.forName(name, false, loader);
             }
 
-        } catch (ClassNotFoundException | SecurityException exception) {
+        } catch (ClassNotFoundException exception) {
             // use current class loader instead
         }
         return Class.forName(name);
@@ -95,7 +95,7 @@ public final class ClassFinder {
         if (loader != null) {
             try {
                 return Class.forName(name, false, loader);
-            } catch (ClassNotFoundException | SecurityException exception) {
+            } catch (ClassNotFoundException exception) {
                 // use default class loader instead
             }
         }

@@ -283,29 +283,23 @@ class ImageFetcher extends Thread {
        final AppContext appContext = AppContext.getAppContext();
        ThreadGroup threadGroup = appContext.getThreadGroup();
        ThreadGroup fetcherThreadGroup;
-       try {
-          if (threadGroup.getParent() != null) {
-             // threadGroup is not the root, so we proceed
-             fetcherThreadGroup = threadGroup;
-          } else {
-             // threadGroup is the root ("system") ThreadGroup.
-             // We instead want to use its child: the "main"
-             // ThreadGroup.  Thus, we start with the current
-             // ThreadGroup, and go up the tree until
-             // threadGroup.getParent().getParent() == null.
-             threadGroup = Thread.currentThread().getThreadGroup();
-             ThreadGroup parent = threadGroup.getParent();
-             while ((parent != null)
-                  && (parent.getParent() != null)) {
-                  threadGroup = parent;
-                  parent = threadGroup.getParent();
-             }
-             fetcherThreadGroup = threadGroup;
-         }
-       } catch (SecurityException e) {
-         // Not allowed access to parent ThreadGroup -- just use
-         // the AppContext's ThreadGroup
-         fetcherThreadGroup = appContext.getThreadGroup();
+       if (threadGroup.getParent() != null) {
+           // threadGroup is not the root, so we proceed
+           fetcherThreadGroup = threadGroup;
+       } else {
+           // threadGroup is the root ("system") ThreadGroup.
+           // We instead want to use its child: the "main"
+           // ThreadGroup.  Thus, we start with the current
+           // ThreadGroup, and go up the tree until
+           // threadGroup.getParent().getParent() == null.
+           threadGroup = Thread.currentThread().getThreadGroup();
+           ThreadGroup parent = threadGroup.getParent();
+           while ((parent != null)
+                && (parent.getParent() != null)) {
+                threadGroup = parent;
+                parent = threadGroup.getParent();
+           }
+           fetcherThreadGroup = threadGroup;
        }
        final ThreadGroup fetcherGroup = fetcherThreadGroup;
 

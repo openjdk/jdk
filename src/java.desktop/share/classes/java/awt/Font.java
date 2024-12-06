@@ -36,7 +36,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.peer.FontPeer;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
@@ -894,23 +893,8 @@ public class Font implements java.io.Serializable
      * If a thread can create temp files anyway, no point in counting
      * font bytes.
      */
-    @SuppressWarnings("removal")
     private static boolean hasTempPermission() {
-
-        if (System.getSecurityManager() == null) {
-            return true;
-        }
-        File f = null;
-        boolean hasPerm = false;
-        try {
-            f = Files.createTempFile("+~JT", ".tmp").toFile();
-            f.delete();
-            f = null;
-            hasPerm = true;
-        } catch (Throwable t) {
-            /* inc. any kind of SecurityException */
-        }
-        return hasPerm;
+        return true;
     }
 
 
@@ -1230,13 +1214,6 @@ public class Font implements java.io.Serializable
         if (fontFormat != Font.TRUETYPE_FONT &&
             fontFormat != Font.TYPE1_FONT) {
             throw new IllegalArgumentException ("font format not recognized");
-        }
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            FilePermission filePermission =
-                new FilePermission(fontFile.getPath(), "read");
-            sm.checkPermission(filePermission);
         }
         if (!fontFile.canRead()) {
             throw new IOException("Can't read " + fontFile);
@@ -1765,11 +1742,7 @@ public class Font implements java.io.Serializable
      * @see #decode(String)
      */
     public static Font getFont(String nm, Font font) {
-        String str = null;
-        try {
-            str =System.getProperty(nm);
-        } catch(SecurityException e) {
-        }
+        String str = System.getProperty(nm);
         if (str == null) {
             return font;
         }
