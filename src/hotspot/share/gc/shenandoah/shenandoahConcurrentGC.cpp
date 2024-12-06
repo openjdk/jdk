@@ -755,6 +755,10 @@ void ShenandoahConcurrentGC::op_final_mark() {
           heap->verifier()->verify_after_concmark();
         }
       }
+
+      if (VerifyAfterGC) {
+        Universe::verify();
+      }
     }
   }
 }
@@ -1160,12 +1164,8 @@ void ShenandoahConcurrentGC::op_final_roots() {
     }
 
     if (!_generation->is_old()) {
-      ShenandoahGenerationalHeap::cast(heap)->update_region_ages(_generation->complete_marking_context());
+      ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
     }
-  }
-
-  if (VerifyAfterGC) {
-    Universe::verify();
   }
 }
 
