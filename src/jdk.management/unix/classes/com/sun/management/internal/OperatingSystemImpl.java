@@ -275,6 +275,8 @@ class OperatingSystemImpl extends BaseOperatingSystemImpl
 
     private boolean isCpuSetSameAsHostCpuSet() {
         if (containerMetrics != null) {
+            // The return value may change (including from non-null to null) and
+            // the call may involve I/O, so keep the result in a local variable.
             int[] cpuSetCpus = containerMetrics.getCpuSetCpus();
             if (cpuSetCpus != null) {
                 return cpuSetCpus.length == getHostOnlineCpuCount0();
