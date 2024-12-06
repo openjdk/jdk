@@ -724,7 +724,12 @@ const char* Modules::get_numbered_property_as_sorted_string(const char* property
   }
 
   const char* result = (const char*)os::strdup(st.as_string()); // Example: "java.base,java.compiler"
-  return strcmp(result, "") != 0 ? result : nullptr;
+  if (strcmp(result, "") != 0) {
+    return result;
+  } else {
+    os::free((void*)result);
+    return nullptr;
+  }
 }
 
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
