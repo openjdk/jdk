@@ -107,7 +107,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
 
   // Prevent resurrection of unreachable phantom (i.e. weak-native) references.
   if ((decorators & ON_PHANTOM_OOP_REF) != 0 &&
-      ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::WEAK_ROOTS) &&
+      _heap->is_concurrent_weak_root_in_progress() &&
       _heap->is_in_active_generation(obj) &&
       !_heap->marking_context()->is_marked(obj)) {
     return nullptr;
@@ -115,7 +115,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
 
   // Prevent resurrection of unreachable weak references.
   if ((decorators & ON_WEAK_OOP_REF) != 0 &&
-      ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::WEAK_ROOTS) &&
+      _heap->is_concurrent_weak_root_in_progress() &&
       _heap->is_in_active_generation(obj) &&
       !_heap->marking_context()->is_marked_strong(obj)) {
     return nullptr;

@@ -499,7 +499,8 @@ inline bool ShenandoahHeap::is_concurrent_strong_root_in_progress() const {
 }
 
 inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
-  return _gc_state.is_set(WEAK_ROOTS);
+  return _gc_state.is_set(WEAK_ROOTS)
+      || ShenandoahThreadLocalData::is_gc_state(WEAK_ROOTS);
 }
 
 template<class T>

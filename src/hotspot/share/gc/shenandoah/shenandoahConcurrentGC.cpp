@@ -755,10 +755,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
           heap->verifier()->verify_after_concmark();
         }
       }
-
-      if (VerifyAfterGC) {
-        Universe::verify();
-      }
     }
   }
 }
@@ -927,8 +923,8 @@ public:
     }
 
     // If we are going to perform concurrent class unloading later on, we need to
-    // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
-    // can cleanup immediate garbage sooner.
+    // clean up the weak oops in CLD and determine nmethod's unloading state, so that we
+    // can clean up immediate garbage sooner.
     if (ShenandoahHeap::heap()->unload_classes()) {
       // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either null the
       // CLD's holder or evacuate it.
@@ -1166,6 +1162,10 @@ void ShenandoahConcurrentGC::op_final_roots() {
     if (!_generation->is_old()) {
       ShenandoahGenerationalHeap::heap()->update_region_ages(_generation->complete_marking_context());
     }
+  }
+
+  if (VerifyAfterGC) {
+    Universe::verify();
   }
 }
 
