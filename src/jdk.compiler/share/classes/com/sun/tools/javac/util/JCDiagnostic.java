@@ -593,7 +593,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
     }
 
     /**
-     * Class representing warning diagnostic keys.
+     * Class representing lint warning diagnostic keys.
      */
     public static final class LintWarning extends Warning {
         final LintCategory category;

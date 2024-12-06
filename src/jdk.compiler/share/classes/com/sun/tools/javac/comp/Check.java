@@ -2969,11 +2969,11 @@ public class Check {
                 if (isLambda) {
                     if (belongsToRestrictedPackage(sym)) {
                         log.warning(tree.pos(),
-                                    Warnings.AccessToMemberFromSerializableLambda(sym));
+                                    LintWarnings.AccessToMemberFromSerializableLambda(sym));
                     }
                 } else {
                     log.warning(tree.pos(),
-                                Warnings.AccessToMemberFromSerializableElement(sym));
+                                LintWarnings.AccessToMemberFromSerializableElement(sym));
                 }
             }
         }
