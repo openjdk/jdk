@@ -46,6 +46,10 @@ public final class StableValueFactories {
                 : StableFunction.of(inputs, original);
     }
 
+    public static StableHeterogeneousContainer ofHeterogeneousContainer(Set<Class<?>> types) {
+        return new StableHeterogeneousContainer.Impl(types);
+    }
+
     public static <E> List<E> ofList(int size, IntFunction<? extends E> mapper) {
         return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
     }
