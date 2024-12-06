@@ -121,59 +121,25 @@ final class DualPivotQuicksort {
      */
     private static final int MAX_RECURSION_DEPTH = 64 * DELTA;
 
-    /**
-     * Represents a function that accepts the array and sorts the specified range
-     * of the array into ascending order.
-     */
-    @FunctionalInterface
-    public interface SortOperation<A> {
-        /**
-         * Sorts the specified range of the array.
-         *
-         * @param a the array to be sorted
-         * @param low the index of the first element, inclusive, to be sorted
-         * @param high the index of the last element, exclusive, to be sorted
-         */
-        void sort(A a, int low, int high);
-    }
+    private static final SIMDSortLibrary.SortOperation<int[]> insertionSortInt = SIMDSortLibrary.getLibrary().wrapSort(int[].class, DualPivotQuicksort::insertionSort);
+    private static final SIMDSortLibrary.SortOperation<long[]> insertionSortLong = SIMDSortLibrary.getLibrary().wrapSort(long[].class, DualPivotQuicksort::insertionSort);
+    private static final SIMDSortLibrary.SortOperation<float[]> insertionSortFloat = SIMDSortLibrary.getLibrary().wrapSort(float[].class, DualPivotQuicksort::insertionSort);
+    private static final SIMDSortLibrary.SortOperation<double[]> insertionSortDouble = SIMDSortLibrary.getLibrary().wrapSort(double[].class, DualPivotQuicksort::insertionSort);
 
-    /**
-     * Represents a function that accepts the array and partitions the specified range
-     * of the array using the pivots provided.
-     */
-    @FunctionalInterface
-    public interface PartitionOperation<A> {
-        /**
-         * Partitions the specified range of the array using the given pivots.
-         *
-         * @param a the array to be partitioned
-         * @param low the index of the first element, inclusive, to be partitioned
-         * @param high the index of the last element, exclusive, to be partitioned
-         * @param pivotIndex1 the index of pivot1, the first pivot
-         * @param pivotIndex2 the index of pivot2, the second pivot
-         */
-        int[] partition(A a, int low, int high, int pivotIndex1, int pivotIndex2);
-    }
+    private static final SIMDSortLibrary.SortOperation<int[]> mixedInsertionSortInt = SIMDSortLibrary.getLibrary().wrapSort(int[].class, DualPivotQuicksort::mixedInsertionSort);
+    private static final SIMDSortLibrary.SortOperation<long[]> mixedInsertionSortLong = SIMDSortLibrary.getLibrary().wrapSort(long[].class, DualPivotQuicksort::mixedInsertionSort);
+    private static final SIMDSortLibrary.SortOperation<float[]> mixedInsertionSortFloat = SIMDSortLibrary.getLibrary().wrapSort(float[].class, DualPivotQuicksort::mixedInsertionSort);
+    private static final SIMDSortLibrary.SortOperation<double[]> mixedInsertionSortDouble = SIMDSortLibrary.getLibrary().wrapSort(double[].class, DualPivotQuicksort::mixedInsertionSort);
 
-    private static final SortOperation<int[]> insertionSortInt = SIMDSortLibrary.wrapSort(int[].class, DualPivotQuicksort::insertionSort);
-    private static final SortOperation<long[]> insertionSortLong = SIMDSortLibrary.wrapSort(long[].class, DualPivotQuicksort::insertionSort);
-    private static final SortOperation<float[]> insertionSortFloat = SIMDSortLibrary.wrapSort(float[].class, DualPivotQuicksort::insertionSort);
-    private static final SortOperation<double[]> insertionSortDouble = SIMDSortLibrary.wrapSort(double[].class, DualPivotQuicksort::insertionSort);
+    private static final SIMDSortLibrary.PartitionOperation<int[]> partitionSinglePivotInt = SIMDSortLibrary.getLibrary().wrapPartition(int[].class, DualPivotQuicksort::partitionSinglePivot);
+    private static final SIMDSortLibrary.PartitionOperation<long[]> partitionSinglePivotLong = SIMDSortLibrary.getLibrary().wrapPartition(long[].class, DualPivotQuicksort::partitionSinglePivot);
+    private static final SIMDSortLibrary.PartitionOperation<float[]> partitionSinglePivotFloat = SIMDSortLibrary.getLibrary().wrapPartition(float[].class, DualPivotQuicksort::partitionSinglePivot);
+    private static final SIMDSortLibrary.PartitionOperation<double[]> partitionSinglePivotDouble = SIMDSortLibrary.getLibrary().wrapPartition(double[].class, DualPivotQuicksort::partitionSinglePivot);
 
-    private static final SortOperation<int[]> mixedInsertionSortInt = SIMDSortLibrary.wrapSort(int[].class, DualPivotQuicksort::mixedInsertionSort);
-    private static final SortOperation<long[]> mixedInsertionSortLong = SIMDSortLibrary.wrapSort(long[].class, DualPivotQuicksort::mixedInsertionSort);
-    private static final SortOperation<float[]> mixedInsertionSortFloat = SIMDSortLibrary.wrapSort(float[].class, DualPivotQuicksort::mixedInsertionSort);
-    private static final SortOperation<double[]> mixedInsertionSortDouble = SIMDSortLibrary.wrapSort(double[].class, DualPivotQuicksort::mixedInsertionSort);
-
-    private static final PartitionOperation<int[]> partitionSinglePivotInt = SIMDSortLibrary.wrapPartition(int[].class, DualPivotQuicksort::partitionSinglePivot);
-    private static final PartitionOperation<long[]> partitionSinglePivotLong = SIMDSortLibrary.wrapPartition(long[].class, DualPivotQuicksort::partitionSinglePivot);
-    private static final PartitionOperation<float[]> partitionSinglePivotFloat = SIMDSortLibrary.wrapPartition(float[].class, DualPivotQuicksort::partitionSinglePivot);
-    private static final PartitionOperation<double[]> partitionSinglePivotDouble = SIMDSortLibrary.wrapPartition(double[].class, DualPivotQuicksort::partitionSinglePivot);
-
-    private static final PartitionOperation<int[]> partitionDualPivotInt = SIMDSortLibrary.wrapPartition(int[].class, DualPivotQuicksort::partitionDualPivot);
-    private static final PartitionOperation<long[]> partitionDualPivotLong = SIMDSortLibrary.wrapPartition(long[].class, DualPivotQuicksort::partitionDualPivot);
-    private static final PartitionOperation<float[]> partitionDualPivotFloat = SIMDSortLibrary.wrapPartition(float[].class, DualPivotQuicksort::partitionDualPivot);
-    private static final PartitionOperation<double[]> partitionDualPivotDouble = SIMDSortLibrary.wrapPartition(double[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final SIMDSortLibrary.PartitionOperation<int[]> partitionDualPivotInt = SIMDSortLibrary.getLibrary().wrapPartition(int[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final SIMDSortLibrary.PartitionOperation<long[]> partitionDualPivotLong = SIMDSortLibrary.getLibrary().wrapPartition(long[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final SIMDSortLibrary.PartitionOperation<float[]> partitionDualPivotFloat = SIMDSortLibrary.getLibrary().wrapPartition(float[].class, DualPivotQuicksort::partitionDualPivot);
+    private static final SIMDSortLibrary.PartitionOperation<double[]> partitionDualPivotDouble = SIMDSortLibrary.getLibrary().wrapPartition(double[].class, DualPivotQuicksort::partitionDualPivot);
 
     /**
      * Calculates the double depth of parallel merging.

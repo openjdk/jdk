@@ -24,14 +24,8 @@
 #include "simdsort-support.hpp"
 #ifdef __SIMDSORT_SUPPORTED_LINUX
 
-#include "library_entries.h"
-
+#include "simdsort.h"
 #include "avx2-32bit-qsort.hpp"
-
-//#define DLL_PUBLIC __attribute__((visibility("default")))
-#define DLL_PUBLIC
-#define INSERTION_SORT_THRESHOLD_32BIT 16
-#define INSERTION_SORT_THRESHOLD_64BIT 20
 
 DLL_PUBLIC
 void avx2_sort_int(int32_t* array, int32_t from_index, int32_t to_index) {
