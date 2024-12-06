@@ -453,7 +453,7 @@ public final class Subject implements java.io.Serializable {
     }
 
     /**
-     * Perform privileged work as a particular {@code Subject}.
+     * Perform work as a particular {@code Subject}.
      *
      * <p> This method launches {@code action} and binds {@code subject} to
      * the period of its execution.
@@ -513,7 +513,7 @@ public final class Subject implements java.io.Serializable {
     }
 
     /**
-     * Perform privileged work as a particular {@code Subject}.
+     * Perform work as a particular {@code Subject}.
      *
      * <p> This method launches {@code action} and binds {@code subject} to
      * the period of its execution.

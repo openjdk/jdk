@@ -25,21 +25,13 @@
 package java.lang.classfile.snippets;
 
 import java.lang.classfile.*;
-import java.lang.classfile.components.ClassRemapper;
-import java.lang.classfile.components.CodeLocalsShifter;
-import java.lang.classfile.components.CodeRelabeler;
 import java.lang.classfile.instruction.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.AccessFlag;
-import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toSet;
@@ -325,82 +317,6 @@ class PackageSnippets {
               });
         // @end
     }
-
-    void codeRelabeling(ClassModel classModel) {
-        // @start region="codeRelabeling"
-        byte[] newBytes = ClassFile.of().transformClass(classModel,
-                ClassTransform.transformingMethodBodies(
-                        CodeTransform.ofStateful(CodeRelabeler::of)));
-        // @end
-    }
-
-    // @start region="classInstrumentation"
-    byte[] classInstrumentation(ClassModel target, ClassModel instrumentor, Predicate<MethodModel> instrumentedMethodsFilter) {
-        var instrumentorCodeMap = instrumentor.methods().stream()
-                                              .filter(instrumentedMethodsFilter)
-                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElseThrow()));
-        var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
-        var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
-        var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return ClassFile.of().transformClass(target,
-                ClassTransform.transformingMethods(
-                        instrumentedMethodsFilter,
-                        (mb, me) -> {
-                            if (me instanceof CodeModel targetCodeModel) {
-                                var mm = targetCodeModel.parent().get();
-                                //instrumented methods code is taken from instrumentor
-                                mb.transformCode(instrumentorCodeMap.get(mm.methodName().stringValue() + mm.methodType().stringValue()),
-                                        //all references to the instrumentor class are remapped to target class
-                                        instrumentorClassRemapper.asCodeTransform()
-                                        .andThen((codeBuilder, instrumentorCodeElement) -> {
-                                            //all invocations of target methods from instrumentor are inlined
-                                            if (instrumentorCodeElement instanceof InvokeInstruction inv
-                                                && target.thisClass().asInternalName().equals(inv.owner().asInternalName())
-                                                && mm.methodName().stringValue().equals(inv.name().stringValue())
-                                                && mm.methodType().stringValue().equals(inv.type().stringValue())) {
-
-                                                //store stacked method parameters into locals
-                                                var storeStack = new ArrayDeque<StoreInstruction>();
-                                                int slot = 0;
-                                                if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.push(StoreInstruction.of(TypeKind.REFERENCE, slot++));
-                                                for (var pt : mm.methodTypeSymbol().parameterList()) {
-                                                    var tk = TypeKind.from(pt);
-                                                    storeStack.push(StoreInstruction.of(tk, slot));
-                                                    slot += tk.slotSize();
-                                                }
-                                                storeStack.forEach(codeBuilder::with);
-
-                                                //inlined target locals must be shifted based on the actual instrumentor locals
-                                                codeBuilder.block(inlinedBlockBuilder -> inlinedBlockBuilder
-                                                        .transform(targetCodeModel, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol())
-                                                        .andThen(CodeRelabeler.of())
-                                                        .andThen((innerBuilder, shiftedTargetCode) -> {
-                                                            //returns must be replaced with jump to the end of the inlined method
-                                                            if (shiftedTargetCode instanceof ReturnInstruction)
-                                                                innerBuilder.goto_(inlinedBlockBuilder.breakLabel());
-                                                            else
-                                                                innerBuilder.with(shiftedTargetCode);
-                                                        })));
-                                            } else
-                                                codeBuilder.with(instrumentorCodeElement);
-                                        }));
-                            } else
-                                mb.with(me);
-                        })
-                .andThen(ClassTransform.endHandler(clb ->
-                    //remaining instrumentor fields and methods are injected at the end
-                    clb.transform(instrumentor,
-                            ClassTransform.dropping(cle ->
-                                    !(cle instanceof FieldModel fm
-                                            && !targetFieldNames.contains(fm.fieldName().stringValue()))
-                                    && !(cle instanceof MethodModel mm
-                                            && !ConstantDescs.INIT_NAME.equals(mm.methodName().stringValue())
-                                            && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
-                            //and instrumentor class references remapped to target class
-                            .andThen(instrumentorClassRemapper)))));
-    }
-    // @end
 
     void resolverExample() {
         // @start region="lookup-class-hierarchy-resolver"

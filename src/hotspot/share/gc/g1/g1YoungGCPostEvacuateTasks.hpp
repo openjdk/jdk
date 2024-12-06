@@ -58,6 +58,7 @@ public:
 // - Redirty Logged Cards
 // - Free Collection Set
 // - Resize TLABs
+// - Reset the reusable PartialArrayStateManager.
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
 #if COMPILER2_OR_JVMCI
@@ -68,6 +69,7 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class RedirtyLoggedCardsTask;
   class FreeCollectionSetTask;
   class ResizeTLABsTask;
+  class ResetPartialArrayStateManagerTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
