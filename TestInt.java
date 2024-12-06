@@ -14,13 +14,83 @@ public class TestInt {
         return ans;
     }
 
+    public static int testTzcnt(int a, int b) {
+        return  Integer.numberOfTrailingZeros(a);
+    }
+
+    public static int testLzcnt(int a, int b) {
+        return  Integer.numberOfLeadingZeros(b);
+    }
+
+    public static int testPopcnt(int a, int b) {
+        return  Integer.bitCount(a);
+    }
+
+    public static int testRor(int a, int b) {
+        return  Integer.rotateRight(a, 8);
+    }
+
+    public static int testRol(int a, int b) {
+        return  Integer.rotateLeft(b, 7); // getting mapped to Ror 25
+    }
+
+
+    public static int testShrVar(int a, int b) {
+        return  a >>> (b >>> 28) ; // generates shrxl UseBMI2Instructions
+    }
+
+    public static int testShr(int a, int b) {
+        return  a >>> 6 ;
+    }
+
+    public static int testSal(int a, int b) {
+        return  a << 5 ;
+    }
+
+    public static int testSar(int a, int b) {
+        return  b >> 4 ;
+    }
+
+    public static int testDec(int a, int b) {
+        return  b - 1 ;
+    }
+
+    public static int testInc(int a, int b) {
+        return  a + 1 ;
+    }
+
+    public static int testNeg(int a, int b) {
+        return  -b;
+    }
+
+    public static int testXor(int a, int b) {
+        return a ^ b;
+    }
+
+    public static int testOr(int a, int b) {
+        return a | b;
+    }
+
+    public static int testAnd(int a, int b) {
+        return a & b;
+    }
+
     public static int testCount(int a, int b) {
         return Integer.bitCount(a) + Integer.numberOfLeadingZeros(b) + Integer.numberOfTrailingZeros(a-b);
+    }
+
+    public static int testMul(int a, int b) {
+        return a * b;
+    }
+
+    public static int testSub(int a, int b) {
+        return a - b;
     }
 
     public static int testAdd(int a, int b) {
         return a + b;
     }
+
     public static void main(String[] args) {
 
         try {
