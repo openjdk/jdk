@@ -50,7 +50,7 @@ import sun.security.validator.*;
  */
 final class X509TrustManagerImpl extends X509ExtendedTrustManager
         implements X509TrustManager {
-    
+
     private final String validatorType;
 
     /**
