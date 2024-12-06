@@ -25,8 +25,6 @@
  * @test
  * @bug 4241573
  * @summary SourceFile attribute includes full path
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.classfile.*;

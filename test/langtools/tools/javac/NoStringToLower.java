@@ -25,8 +25,6 @@
  * @test
  * @bug 8029800
  * @summary String.toLowerCase()/toUpperCase is generally dangerous, check it is not used in langtools
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.io.*;
@@ -63,6 +61,7 @@ public class NoStringToLower {
                 "javax.lang.model",
                 "javax.tools",
                 "com.sun.source",
+                "java.lang.classfile",
                 "jdk.internal.classfile",
                 "com.sun.tools.doclint",
                 "com.sun.tools.javac",

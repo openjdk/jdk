@@ -25,8 +25,6 @@
  * @test
  * @bug 7192246
  * @summary  check that javac does not generate bridge methods for defaults
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.classfile.*;

@@ -26,10 +26,8 @@
  * @bug 8044537 8200301 8238358
  * @summary Checking ACC_SYNTHETIC flag is generated for bridge method
  *          generated for lambda expressions and method references.
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build SyntheticTestDriver ExpectedClass ExpectedClasses

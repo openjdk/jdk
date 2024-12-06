@@ -53,8 +53,7 @@ public class SnippetsTest {
                     var compilationUnits = fileManager.getJavaFileObjectsFromFiles(List.of(src));
                     fileManager.setLocation(StandardLocation.CLASS_OUTPUT,
                             List.of(Paths.get(System.getProperty("test.classes", ".")).toFile()));
-                    List<String> flags = List.of(
-                            "--source", String.valueOf(Runtime.version().feature()));
+                    List<String> flags = List.of();
                     if (source.contains("jdk/internal/classfile/components")) {
                         flags = new ArrayList<>(flags);
                         flags.add("--add-exports");
