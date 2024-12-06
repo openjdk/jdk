@@ -147,7 +147,7 @@ public class BasicSliderUI extends SliderUI{
      * baseline.
      */
     private boolean sameLabelBaselines;
-    
+
     /**
      * Returns the shadow color.
      * @return the shadow color
