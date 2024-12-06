@@ -382,6 +382,17 @@ public class JlinkTask {
         ModuleFinder rootsFinder = isLinkFromRuntime ? ModuleFinder.compose(ModuleFinder.ofSystem(),
                                                                             initialFinder) :
                                                        initialFinder;
+        if (rootsFinder.find("java.base").isEmpty()) {
+            assert !isLinkFromRuntime : "Expected regular JMODs based link";
+            // External module linked into a custom runtime, but JDK modules
+            // not observable on the module path. Add the default module path
+            // if that exists.
+            Path defModPath = getDefaultModulePath();
+            if (defModPath != null) {
+                options.modulePath.add(defModPath);
+                rootsFinder = createFinderFromPath(options.modulePath);
+            }
+        }
 
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
@@ -399,14 +410,6 @@ public class JlinkTask {
         }
 
         ModuleFinder finder = newModuleFinder(rootsFinder, options.limitMods, roots, isLinkFromRuntime);
-        if (finder.find("java.base").isEmpty()) {
-            Path defModPath = getDefaultModulePath();
-            if (defModPath != null) {
-                options.modulePath.add(defModPath);
-                ModuleFinder updatedRootsFinder = createFinderFromPath(options.modulePath);
-                finder = newModuleFinder(updatedRootsFinder, options.limitMods, roots, isLinkFromRuntime);
-            }
-        }
 
         // --keep-packaged-modules doesn't make sense as we are not linking
         // from packaged modules to begin with.
@@ -422,22 +425,42 @@ public class JlinkTask {
                                       options.generateLinkableRuntime);
     }
 
-
+    /*
+     * Determine whether or not JDK modules should be resolved from the run-time
+     * image.
+     *
+     * @return {@code false} if JMODs including java.base are present on the
+     *         module path or in the default module path ('jmods'). {@code true}
+     *         otherwise.
+     */
     private static boolean determineLinkFromRuntime(ModuleFinder initialFinder,
                                                     List<Path> modulePath) {
-        if (getDefaultModulePath() != null) {
-            // We have JMODs present which take precendence
-            return false;
+        boolean linkFromRuntime = false;
+        if (!initialFinder.find("java.base").isPresent()) {
+            // If the initial finder doesn't contain the java.base module
+            // we have one of two cases:
+            // 1. A custom module is being linked into a runtime, but the JDK
+            //    modules have not been provided.
+            // 2. We have a run-time image based link.
+            //
+            // Distinguish case 2 by adding the default 'jmods' folder and try
+            // the look-up again. For case 1 this will now find java.base, but
+            // not for case 2, since the jmods folder is not there or doesn't
+            // include the java.base module.
+            List<Path> pathCopy = new ArrayList<>(modulePath);
+            Path defaultPath = getDefaultModulePath();
+            if (defaultPath != null) {
+                pathCopy.add(defaultPath);
+            }
+            ModuleFinder finder = createFinderFromPath(pathCopy);
+            linkFromRuntime = !finder.find("java.base").isPresent();
         }
-        if (modulePath.isEmpty()) {
-            // No explicit module path and no JMODs
-            return true;
-        }
-        // We link from the run-time image when the module path
-        // doesn't include java.base
-        return !initialFinder.find("java.base").isPresent();
+        return linkFromRuntime;
     }
 
+    /*
+     * Creates a ModuleFinder for the given module paths.
+     */
     public static ModuleFinder createFinderFromPath(List<Path> paths) {
         Runtime.Version version = Runtime.version();
         Path[] entries = paths.toArray(new Path[0]);

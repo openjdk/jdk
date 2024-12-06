@@ -59,18 +59,18 @@ public class BindServices {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mods");
     private static final boolean LINKABLE_RUNTIME = LinkableRuntimeImage.isLinkableRuntime();
+    private static final boolean JMODS_EXIST = Files.exists(Paths.get(JAVA_HOME, "jmods"));
 
-    private static final String MODULE_PATH = (LINKABLE_RUNTIME ? "" :
-                                               Paths.get(JAVA_HOME, "jmods").toString() +
-                                               File.pathSeparator) +
-                                MODS_DIR.toString();
+    private static final String MODULE_PATH = (JMODS_EXIST ? Paths.get(JAVA_HOME, "jmods").toString() +
+                                                             File.pathSeparator : "") +
+                                                 MODS_DIR.toString();
 
     // the names of the modules in this test
     private static String[] modules = new String[] {"m1", "m2", "m3"};
 
 
     private static boolean isApplicable() {
-        if (!Files.exists(Paths.get(JAVA_HOME, "jmods"))) {
+        if (!JMODS_EXIST) {
             if (!LINKABLE_RUNTIME) {
                 System.err.println("Test skipped. Not a linkable runtime and no JMODs");
                 return false;
