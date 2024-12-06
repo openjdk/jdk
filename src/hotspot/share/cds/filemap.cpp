@@ -53,15 +53,18 @@
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
+#include "oops/access.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/compressedKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
@@ -2038,8 +2041,9 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
                                 valid_new_base, valid_new_end, addr_delta);
 
     if (AOTCacheParallelRelocation) {
+      ArchiveWorkers workers;
       SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
-      ArchiveWorkers::workers()->run_task(&task);
+      workers.run_task(&task);
     } else {
       rw_ptrmap.iterate(&rw_patcher);
       ro_ptrmap.iterate(&ro_patcher);
@@ -2710,11 +2714,44 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
   const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  ClassFileStream* cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  ClassFileStream* cfs;
+  if (class_loader() != nullptr && !cpe->is_modules_image()) {
+    cfs = get_stream_from_class_loader(class_loader, cpe, file_name, CHECK_NULL);
+  } else {
+    cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
+  }
   assert(cfs != nullptr, "must be able to read the classfile data of shared classes for built-in loaders.");
   log_debug(cds, jvmti)("classfile data for %s [%d: %s] = %d bytes", class_name, path_index,
                         cfs->source(), cfs->length());
   return cfs;
 }
 
+ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
+                                                           ClassPathEntry* cpe,
+                                                           const char* file_name,
+                                                           TRAPS) {
+  JavaValue result(T_OBJECT);
+  oop class_name = java_lang_String::create_oop_from_str(file_name, THREAD);
+  Handle h_class_name = Handle(THREAD, class_name);
+
+  // byte[] ClassLoader.getResourceAsByteArray(String name)
+  JavaCalls::call_virtual(&result,
+                          class_loader,
+                          vmClasses::ClassLoader_klass(),
+                          vmSymbols::getResourceAsByteArray_name(),
+                          vmSymbols::getResourceAsByteArray_signature(),
+                          h_class_name,
+                          CHECK_NULL);
+  assert(result.get_type() == T_OBJECT, "just checking");
+  oop obj = result.get_oop();
+  assert(obj != nullptr, "ClassLoader.getResourceAsByteArray should not return null");
+
+  // copy from byte[] to a buffer
+  typeArrayOop ba = typeArrayOop(obj);
+  jint len = ba->length();
+  u1* buffer = NEW_RESOURCE_ARRAY(u1, len);
+  ArrayAccess<>::arraycopy_to_native<>(ba, typeArrayOopDesc::element_offset<jbyte>(0), buffer, len);
+
+  return new ClassFileStream(buffer, len, cpe->name());
+}
 #endif

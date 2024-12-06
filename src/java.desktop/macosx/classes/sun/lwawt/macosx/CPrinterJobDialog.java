@@ -32,12 +32,10 @@ import java.awt.print.*;
 @SuppressWarnings("serial") // JDK implementation class
 final class CPrinterJobDialog extends CPrinterDialog {
     private Pageable fPageable;
-    private boolean fAllowPrintToFile;
 
-    CPrinterJobDialog(Frame parent, CPrinterJob printerJob, Pageable doc, boolean allowPrintToFile) {
+    CPrinterJobDialog(Frame parent, CPrinterJob printerJob, Pageable doc) {
         super(parent, printerJob);
         fPageable = doc;
-        fAllowPrintToFile = allowPrintToFile;
     }
 
     @Override

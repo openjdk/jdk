@@ -60,7 +60,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import sun.rmi.runtime.Log;
-import sun.rmi.runtime.NewThreadAction;
+import sun.rmi.runtime.RuntimeUtil;
 import sun.rmi.transport.Connection;
 import sun.rmi.transport.DGCAckHandler;
 import sun.rmi.transport.Endpoint;
@@ -98,8 +98,7 @@ public class TCPTransport extends Transport {
             new SynchronousQueue<Runnable>(),
             new ThreadFactory() {
                 public Thread newThread(Runnable runnable) {
-                    return new NewThreadAction(
-                        runnable, "TCP Connection(idle)", true, true).run();
+                    return RuntimeUtil.newUserThread(runnable, "TCP Connection(idle)", true);
                 }
             });
 
@@ -303,8 +302,8 @@ public class TCPTransport extends Transport {
                  * "port in use" will cause export to hang if an
                  * RMIFailureHandler is not installed.
                  */
-                Thread t = new NewThreadAction(new AcceptLoop(server),
-                                        "TCP Accept-" + port, true).run();
+                Thread t = RuntimeUtil.newSystemThread(
+                    new AcceptLoop(server), "TCP Accept-" + port, true);
                 t.start();
             } catch (java.net.BindException e) {
                 throw new ExportException("Port already in use: " + port, e);

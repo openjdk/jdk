@@ -1002,25 +1002,6 @@ public abstract class SurfaceData
      */
     public abstract Rectangle getBounds();
 
-    static java.security.Permission compPermission;
-
-    /**
-     * Performs Security Permissions checks to see if a Custom
-     * Composite object should be allowed access to the pixels
-     * of this surface.
-     */
-    protected void checkCustomComposite() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (compPermission == null) {
-                compPermission =
-                    new java.awt.AWTPermission("readDisplayPixels");
-            }
-            sm.checkPermission(compPermission);
-        }
-    }
-
     /**
      * Fetches private field IndexColorModel.allgrayopaque
      * which is true when all palette entries in the color

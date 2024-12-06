@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,20 +75,14 @@ public final class AppleProvider extends Provider {
     }
 
 
-    @SuppressWarnings("removal")
     public AppleProvider() {
         /* We are the Apple provider */
         super("Apple", PROVIDER_VER, info);
 
         final Provider p = this;
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
-                putService(new ProviderService(p, "KeyStore",
-                           "KeychainStore", "apple.security.KeychainStore$USER"));
-                putService(new ProviderService(p, "KeyStore",
-                           "KeychainStore-ROOT", "apple.security.KeychainStore$ROOT"));
-                return null;
-            }
-        });
+        putService(new ProviderService(p, "KeyStore",
+                   "KeychainStore", "apple.security.KeychainStore$USER"));
+        putService(new ProviderService(p, "KeyStore",
+                   "KeychainStore-ROOT", "apple.security.KeychainStore$ROOT"));
     }
 }

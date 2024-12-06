@@ -64,7 +64,7 @@ public class OSInfo {
     private static final Map<String, WindowsVersion> windowsVersionMap = new HashMap<String, OSInfo.WindowsVersion>();
 
     // Cache the OSType for getOSType()
-    private static final OSType CURRENT_OSTYPE = getOSTypeImpl();  // No DoPriv needed
+    private static final OSType CURRENT_OSTYPE = getOSTypeImpl();
 
 
     static {
@@ -101,7 +101,7 @@ public class OSInfo {
         };
     }
 
-    public static WindowsVersion getWindowsVersion() throws SecurityException {
+    public static WindowsVersion getWindowsVersion() {
         String osVersion = System.getProperty(OS_VERSION);
 
         if (osVersion == null) {

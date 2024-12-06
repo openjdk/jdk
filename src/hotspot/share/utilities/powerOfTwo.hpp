@@ -79,6 +79,13 @@ inline int log2i_exact(T value) {
   return count_trailing_zeros(value);
 }
 
+// Ceiling of log2 of a positive, integral value, i.e., smallest i such that value <= 2^i.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline int log2i_ceil(T value) {
+  assert(value > 0, "Invalid value");
+  return log2i_graceful(value - 1) + 1;
+}
+
 // Preconditions: value != 0, and the unsigned representation of value is a power of two
 inline int exact_log2(intptr_t value) {
   return log2i_exact((uintptr_t)value);
@@ -118,13 +125,6 @@ template <typename T, ENABLE_IF(std::is_integral<T>::value)>
 inline T next_power_of_2(T value)  {
   assert(value < std::numeric_limits<T>::max(), "Overflow");
   return T(round_up_power_of_2(value + 1));
-}
-
-// Find log2 value greater than this input
-template <typename T, ENABLE_IF(std::is_integral<T>::value)>
-inline int ceil_log2(T value) {
-  assert(value > 0, "Invalid value");
-  return log2i_graceful(value - 1) + 1;
 }
 
 // Return the largest power of two that is a submultiple of the given value.

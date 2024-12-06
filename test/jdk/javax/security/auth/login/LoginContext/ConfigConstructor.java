@@ -31,12 +31,6 @@
  *
  */
 
-/**
- * This test shares the login config with ConfigConstructorNoPerm.
- * This test has all necessary permissions configured in the policy
- * (ConfigConstructorNoPerm has no perms and checks for SecurityExceptions).
- */
-
 import java.util.Map;
 import javax.security.auth.Subject;
 import javax.security.auth.login.AppConfigurationEntry;
@@ -209,8 +203,7 @@ public class ConfigConstructor {
         public void initialize(Subject s, CallbackHandler ch,
                 Map<String,?> state, Map<String,?> options) {
             if (s != ConfigConstructor.s ||
-                ch == null ||
-                ch == ConfigConstructor.ch) {
+                ch == null) {
                 throw new SecurityException("Module 3 failed");
             }
         }

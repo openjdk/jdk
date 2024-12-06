@@ -126,9 +126,7 @@ public class PerformanceLogger {
 
     /**
      * Returns status of whether logging is enabled or not.  This is
-     * provided as a convenience method so that users do not have to
-     * perform the same GetPropertyAction check as above to determine whether
-     * to enable performance logging.
+     * provided as a convenience method.
      */
     public static boolean loggingEnabled() {
         return perfLoggingOn;
