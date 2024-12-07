@@ -50,6 +50,7 @@ class outputStream;
 
 #define SHENANDOAH_PHASE_DO(f)                                                         \
   f(conc_reset,                                     "Concurrent Reset")                \
+  f(conc_reset_after_collect,                       "Concurrent Reset After Collect")  \
   f(conc_reset_old,                                 "Concurrent Reset (OLD)")          \
   f(init_mark_gross,                                "Pause Init Mark (G)")             \
   f(init_mark,                                      "Pause Init Mark (N)")             \

@@ -236,6 +236,11 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalHeap::heap()->complete_concurrent_cycle();
   }
+
+  // Instead of always reset before collect, some reset can be done after collect to save
+  // the time before before the cycle so the cycle can be started as soon as possible.
+  entry_reset_after_collect();
+
   return true;
 }
 
@@ -576,6 +581,16 @@ void ShenandoahConcurrentGC::entry_cleanup_complete() {
   // This phase does not use workers, no need for setup
   heap->try_inject_alloc_failure();
   op_cleanup_complete();
+}
+
+void ShenandoahConcurrentGC::entry_reset_after_collect() {
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
+  const char* msg = conc_reset_after_collect_event_message();
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset_after_collect);
+  EventMark em("%s", msg);
+
+  op_reset_after_collect();
 }
 
 void ShenandoahConcurrentGC::op_reset() {
@@ -1187,6 +1202,23 @@ void ShenandoahConcurrentGC::op_cleanup_complete() {
   ShenandoahHeap::heap()->recycle_trash();
 }
 
+void ShenandoahConcurrentGC::op_reset_after_collect() {
+  ShenandoahWorkerScope scope(ShenandoahHeap::heap()->workers(),
+                          ShenandoahWorkerPolicy::calc_workers_for_conc_reset(),
+                          "reset after collection.");
+
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  if (heap->mode()->is_generational()) {
+    if (!_do_old_gc_bootstrap) {
+      // Only reset for young generation, bitmap for old generation must be retained,
+      // except there is collection(global/old/degen/full) trigged to collect regions in old gen.
+      heap->young_generation()->reset_mark_bitmap(false, false);
+    }
+  } else {
+    _generation->reset_mark_bitmap(false, false);
+  }
+}
+
 bool ShenandoahConcurrentGC::check_cancellation_and_abort(ShenandoahDegenPoint point) {
   if (ShenandoahHeap::heap()->cancelled_gc()) {
     _degen_point = point;
@@ -1233,6 +1265,14 @@ const char* ShenandoahConcurrentGC::conc_reset_event_message() const {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", " (unload classes)");
   } else {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::conc_reset_after_collect_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset after collect", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset after collect", "");
   }
 }
 

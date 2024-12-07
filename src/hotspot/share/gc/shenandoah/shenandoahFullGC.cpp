@@ -193,7 +193,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     }
 
     // d. Reset the bitmaps for new marking
-    heap->global_generation()->reset_mark_bitmap();
+    heap->global_generation()->reset_mark_bitmap(true, false);
     assert(heap->marking_context()->is_bitmap_clear(), "sanity");
     assert(!heap->global_generation()->is_mark_complete(), "sanity");
 

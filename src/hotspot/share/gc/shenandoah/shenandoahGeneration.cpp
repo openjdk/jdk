@@ -63,29 +63,50 @@ public:
   bool is_thread_safe() override { return true; }
 };
 
-class ShenandoahResetBitmapTask : public WorkerTask {
+class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
-  ShenandoahRegionIterator _regions;
-  ShenandoahGeneration* _generation;
+  ShenandoahHeap*           _heap;
+  ShenandoahMarkingContext* _ctx;
+  ShenandoahGeneration*     _generation;
+  bool const                _reset_for_current_cycle;
+  bool const                _reset_update_region_state;
 
 public:
-  ShenandoahResetBitmapTask(ShenandoahGeneration* generation) :
-    WorkerTask("Shenandoah Reset Bitmap"), _generation(generation) {}
+  ShenandoahResetBitmapClosure(ShenandoahGeneration* generation,
+                               bool const reset_for_current_cycle,
+                               bool const reset_update_region_state) :
+    ShenandoahHeapRegionClosure(),
+    _heap(ShenandoahHeap::heap()),
+    _ctx(_heap->marking_context()),
+    _generation(generation),
+    _reset_for_current_cycle(reset_for_current_cycle),
+    _reset_update_region_state(reset_update_region_state) {}
 
-  void work(uint worker_id) {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    assert(!heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
-    ShenandoahHeapRegion* region = _regions.next();
-    ShenandoahMarkingContext* const ctx = heap->marking_context();
-    while (region != nullptr) {
-      auto const affiliation = region->affiliation();
-      bool needs_reset = affiliation == FREE || _generation->contains(affiliation);
-      if (needs_reset && heap->is_bitmap_slice_committed(region)) {
-        ctx->clear_bitmap(region);
+  void heap_region_do(ShenandoahHeapRegion* region) {
+    assert(!_heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
+    if (region->need_bitmap_reset()) {
+      if (_heap->is_bitmap_slice_committed(region)) {
+        _ctx->clear_bitmap(region);
+        if (!_reset_for_current_cycle) {
+          region->unset_need_bitmap_reset();
+        }
       }
-      region = _regions.next();
+    }
+
+    if (_reset_for_current_cycle) {
+      region->set_need_bitmap_reset();
+    }
+
+    // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
+    if (_reset_update_region_state && region->is_active()) {
+      // Reset live data and set TAMS optimistically. We would recheck these under the pause
+      // anyway to capture any updates that happened since now.
+      _ctx->capture_top_at_mark_start(region);
+      region->clear_live_data();
     }
   }
+
+  bool is_thread_safe() { return true; }
 };
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -222,14 +243,14 @@ void ShenandoahGeneration::log_status(const char *msg) const {
                    byte_size_in_proper_unit(v_available),         proper_unit_for_byte_size(v_available));
 }
 
-void ShenandoahGeneration::reset_mark_bitmap() {
+void ShenandoahGeneration::reset_mark_bitmap(bool const for_current_cycle, bool update_region_state) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
   set_mark_incomplete();
 
-  ShenandoahResetBitmapTask task(this);
-  heap->workers()->run_task(&task);
+  ShenandoahResetBitmapClosure closure(this, for_current_cycle, update_region_state);
+  parallel_heap_region_iterate_free(&closure);
 }
 
 // The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
@@ -262,12 +283,7 @@ void ShenandoahGeneration::merge_write_table() {
 }
 
 void ShenandoahGeneration::prepare_gc() {
-
-  reset_mark_bitmap();
-
-  // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
-  ShenandoahResetUpdateRegionStateClosure cl;
-  parallel_heap_region_iterate_free(&cl);
+  reset_mark_bitmap(true, true);
 }
 
 void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
