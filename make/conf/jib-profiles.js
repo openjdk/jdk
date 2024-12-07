@@ -1201,10 +1201,13 @@ var getJibProfilesDependencies = function (input, common) {
         },
 
         jcov: {
-            organization: common.organization,
-            revision: "3.0-17-jdk-asm+1.0",
-            ext: "zip",
-            environment_name: "JCOV_HOME",
+            server: "jpg",
+            product: "jcov",
+            version: "3.0",
+            build_number: "1",
+            file: "bundles/jcov-3.0+1.zip",
+            environment_name: "JCOV_HOME", 
+            configure_args: "--with-jcov=" + input.get("jcov", "home_path"),
         },
 
         gnumake: {
