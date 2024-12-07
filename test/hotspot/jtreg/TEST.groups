@@ -38,6 +38,9 @@ hotspot_all_no_apps = \
 hotspot_compiler = \
   compiler
 
+hotspot_compiler_resourcehogs = \
+  resourcehogs/compiler
+
 hotspot_gc = \
   gc
 
