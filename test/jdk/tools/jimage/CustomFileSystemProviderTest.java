@@ -63,107 +63,107 @@ public class CustomFileSystemProviderTest {
             import java.nio.file.spi.FileSystemProvider;
             import java.util.Map;
             import java.util.Set;
-                         
-                         
+                        \s
+                        \s
             public class NoOpFSProvider extends FileSystemProvider {
-                         
+                        \s
                 private final FileSystemProvider fileSystemProvider;
-                         
+                        \s
                 public NoOpFSProvider(FileSystemProvider fileSystemProvider) {
                     this.fileSystemProvider = fileSystemProvider;
                 }
-                         
+                        \s
                 @Override
                 public String getScheme() {
                     return fileSystemProvider.getScheme();
                 }
-                         
+                        \s
                 @Override
                 public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
                     return fileSystemProvider.newFileSystem(uri, env);
                 }
-                         
+                        \s
                 @Override
                 public FileSystem getFileSystem(URI uri) {
                     return fileSystemProvider.getFileSystem(uri);
                 }
-                         
+                        \s
                 @Override
                 public Path getPath(URI uri) {
                     return fileSystemProvider.getPath(uri);
                 }
-                         
+                        \s
                 @Override
                 public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
                     return fileSystemProvider.newByteChannel(path, options, attrs);
                 }
-                         
+                        \s
                 @Override
                 public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
                     return fileSystemProvider.newDirectoryStream(dir, filter);
                 }
-                         
+                        \s
                 @Override
                 public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
                     fileSystemProvider.createDirectory(dir, attrs);
                 }
-                         
+                        \s
                 @Override
                 public void delete(Path path) throws IOException {
                     fileSystemProvider.delete(path);
                 }
-                         
+                        \s
                 @Override
                 public void copy(Path source, Path target, CopyOption... options) throws IOException {
                     fileSystemProvider.copy(source, target, options);
                 }
-                         
+                        \s
                 @Override
                 public void move(Path source, Path target, CopyOption... options) throws IOException {
                     fileSystemProvider.move(source, target, options);
                 }
-                         
+                        \s
                 @Override
                 public boolean isSameFile(Path path, Path path2) throws IOException {
                     return fileSystemProvider.isSameFile(path, path2);
                 }
-                         
+                        \s
                 @Override
                 public boolean isHidden(Path path) throws IOException {
                     return fileSystemProvider.isHidden(path);
                 }
-                         
+                        \s
                 @Override
                 public FileStore getFileStore(Path path) throws IOException {
                     return fileSystemProvider.getFileStore(path);
                 }
-                         
+                        \s
                 @Override
                 public void checkAccess(Path path, AccessMode... modes) throws IOException {
                     fileSystemProvider.checkAccess(path, modes);
                 }
-                         
+                        \s
                 @Override
                 public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
                     return fileSystemProvider.getFileAttributeView(path, type, options);
                 }
-                         
+                        \s
                 @Override
                 public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
                     return fileSystemProvider.readAttributes(path, type, options);
                 }
-                         
+                        \s
                 @Override
                 public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
                     return fileSystemProvider.readAttributes(path, attributes, options);
                 }
-                         
+                        \s
                 @Override
                 public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
                     fileSystemProvider.setAttribute(path, attribute, value, options);
                 }
             }
-            """;
+           \s""";
     private static final String ACTUAL_TEST = """
             package foo;
             import java.io.IOException;
@@ -173,10 +173,10 @@ public class CustomFileSystemProviderTest {
             import java.nio.file.FileSystems;
             import java.nio.file.Path;
             import java.util.Collections;
-                                     
+                                    \s
             public class ActualTest {
                 public static void main(String[] args) throws IOException,ClassNotFoundException, IllegalAccessException{
-                   
+                  \s
                    //get the 'BOOT_MODULES_JIMAGE' field of local ImageReaderFactory
                    Field local_boot_modules_jimage_field = jdk.internal.jimage.ImageReaderFactory.class.getDeclaredFields()[1];
                    local_boot_modules_jimage_field.setAccessible(true);
@@ -184,7 +184,7 @@ public class CustomFileSystemProviderTest {
                    if(sun.nio.fs.DefaultFileSystemProvider.theFileSystem() != local_boot_modules_jimage.getFileSystem()){
                           throw new AssertionError("Creating local_boot_modules_jimage field should use sun.nio.fs.DefaultFileSystemProvider.theFileSystem() when ImageReaderFactory is loaded by boot classloader");
                    }
-                   
+                  \s
                    String targetJDK = System.getProperty("test.jdk",".");
                    System.out.println("test.jdk: "+targetJDK);
                    // set target jdk
@@ -198,12 +198,12 @@ public class CustomFileSystemProviderTest {
                           throw new AssertionError("Creating target_boot_modules_jimage field should use FileSystems.getDefault() when ImageReaderFactory is loaded by custom classloader");
                    }
                    jrtFs.close();
-                   
+                  \s
                    //If the -Djava.nio.file.spi.DefaultFileSystemProvider value was set and DefaultFileSystemProvider was loaded successfully within jimage
                    System.out.println("success");
                 }
             }
-            """;
+           \s""";
 
 
     public static void main(String[] args) throws Exception {
