@@ -42,31 +42,35 @@ class DirectiveSet;
 // Helper class to wrap the array of arena tags for easier processing
 class ArenaCountersByTag {
 private:
-  size_t _counter[Arena::tag_count()];
+  static constexpr int size = (int)Arena::Tag::tag_count;
+  size_t _counter[size];
+  static void check_tag(int tag) {
+    assert(tag >= 0 && tag < size, "invalid tag %d", tag);
+  }
 
 public:
-  int element_count() const { return Arena::tag_count(); }
   const char* tag_name(int tag) const { return Arena::tag_name[tag]; }
 
   size_t  counter(int tag) const {
-    assert(tag < element_count(), "invalid tag %d", tag);
+    check_tag(tag);
     return _counter[tag];
   }
 
   void add(int tag, size_t value) {
-    assert(tag < element_count(), "invalid tag %d", tag);
+    check_tag(tag);
     _counter[tag] += value;
   }
 
   void sub(int tag, size_t value) {
-    assert(tag < element_count(), "invalid tag %d", tag);
-    assert(_counter[tag] >= value, "Overflow");
+    assert(tag >= 0 && tag < size, "invalid tag %d", tag);
     _counter[tag] -= value;
   }
 
   void clear() {
-    memset(_counter, 0, sizeof(size_t) * element_count());
+    memset(_counter, 0, sizeof(size_t) * size);
   }
+
+  void print_on(outputStream* st) const;
 };
 
 #ifdef COMPILER2
@@ -149,7 +153,8 @@ public:
 
   void set_live_nodes_at_peak(unsigned i) { _live_nodes_at_peak = i; }
 
-  void print_on(outputStream* st) const;
+  void print_peak_state_on(outputStream* st) const;
+  void print_current_state_on(outputStream* st) const;
 
   size_t limit() const              { return _limit; }
   bool   hit_limit() const          { return _hit_limit; }

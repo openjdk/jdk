@@ -29,7 +29,7 @@
 #include "c1/c1_Compilation.hpp"
 #endif
 #include "compiler/abstractCompiler.hpp"
-#include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilationMemoryStatistic.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -59,6 +59,17 @@ union chunkstamp_t {
   };
 };
 STATIC_ASSERT(sizeof(chunkstamp_t) == sizeof(chunkstamp_t::raw));
+
+void ArenaCountersByTag::print_on(outputStream* st) const {
+  bool printed = false;
+  for (int tag = 0; tag < size; tag++) {
+    if (counter(tag) > 0) {
+      st->print("%s%s %zu", (printed ? ", " : ""), tag_name(tag), counter(tag));
+      printed = true;
+    }
+  }
+  st->print("]");
+}
 
 ArenaState::ArenaState() {
   reset();
@@ -171,20 +182,14 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   _current_by_tag.sub(cs.arena_tag, size);
 }
 
-void ArenaState::print_on(outputStream* st) const {
+void ArenaState::print_peak_state_on(outputStream* st) const {
   st->print("%zu [", _peak);
-  bool printed = false;
-  for (int tag = 0; tag < _peak_by_tag.element_count(); tag++) {
-    if (_peak_by_tag.counter(tag) > 0) {
-      st->print("%s%s %zu",
-          (printed ? ", " : ""), _peak_by_tag.tag_name(tag), _peak_by_tag.counter(tag));
-      printed = true;
-    }
-  }
-  st->print("]");
-#ifdef ASSERT
-  st->print(" (%zu->%zu)", _peak, _current);
-#endif
+  _peak_by_tag.print_on(st);
+}
+
+void ArenaState::print_current_state_on(outputStream* st) const {
+  st->print("%zu [", _current);
+  _current_by_tag.print_on(st);
 }
 
 //////////////////////////
@@ -534,7 +539,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
     ss.print("%s (%d) Arena usage", compilertype2name(ct), comp_id);
     fmn.print_on(&ss);
     ss.print_raw(": ");
-    arena_stat->print_on(&ss);
+    arena_stat->print_peak_state_on(&ss);
     ss.cr();
     tty->print_raw(buf);
   }
@@ -691,7 +696,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
   MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
 
   st->cr();
-  st->print_cr("Compilation memory statistics");
+  st->print_cr("Compilation memory statistics v2");
 
   if (!enabled()) {
     st->print_cr("(unavailable)");
