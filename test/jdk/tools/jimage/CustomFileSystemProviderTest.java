@@ -219,6 +219,7 @@ public class CustomFileSystemProviderTest {
         }
         System.out.println("launching main class with system-default FileSystemProvider");
         // launch with system-default FileSystemProvider
+        System.out.println("test.jdk: "+System.getProperty("test.jdk", "."));
         OutputAnalyzer oa = ProcessTools.executeCommand(
                 javaBinary.toString(),
                 "-Dtest.jdk=" + System.getProperty("test.jdk", "."),
