@@ -1,0 +1,298 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.spi.ToolProvider;
+
+import jdk.internal.util.OperatingSystem;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+/*
+ * @test
+ * @bug 8331467
+ * @summary verify that an application launches correctly when launched using an application
+ *          specific default file system provider that is packaged in a module
+ * @modules java.base/jdk.internal.util
+ * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools jdk.test.lib.process.OutputAnalyzer
+ * @run main CustomFileSystemProviderTest
+ */
+
+public class CustomFileSystemProviderTest {
+
+    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
+            .orElseThrow(() -> new RuntimeException("javac tool not found"));
+    private static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
+            .orElseThrow(() -> new RuntimeException("jmod tool not found"));
+    private static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
+            .orElseThrow(() -> new RuntimeException("jlink tool not found"));
+
+    private static final String SYS_PROP_DEF_FS_PRV = "java.nio.file.spi.DefaultFileSystemProvider";
+    private static final String CUSTOM_MODULE_NAME = "foo";
+    private static final String FS_PROVIDER_CLASS_SRC = """
+            package foo;
+            import java.io.IOException;
+            import java.net.URI;
+            import java.nio.channels.SeekableByteChannel;
+            import java.nio.file.*;
+            import java.nio.file.attribute.BasicFileAttributes;
+            import java.nio.file.attribute.FileAttribute;
+            import java.nio.file.attribute.FileAttributeView;
+            import java.nio.file.spi.FileSystemProvider;
+            import java.util.Map;
+            import java.util.Set;
+                         
+                         
+            public class NoOpFSProvider extends FileSystemProvider {
+                         
+                private final FileSystemProvider fileSystemProvider;
+                         
+                public NoOpFSProvider(FileSystemProvider fileSystemProvider) {
+                    this.fileSystemProvider = fileSystemProvider;
+                }
+                         
+                @Override
+                public String getScheme() {
+                    return fileSystemProvider.getScheme();
+                }
+                         
+                @Override
+                public FileSystem newFileSystem(URI uri, Map<String, ?> env) throws IOException {
+                    return fileSystemProvider.newFileSystem(uri, env);
+                }
+                         
+                @Override
+                public FileSystem getFileSystem(URI uri) {
+                    return fileSystemProvider.getFileSystem(uri);
+                }
+                         
+                @Override
+                public Path getPath(URI uri) {
+                    return fileSystemProvider.getPath(uri);
+                }
+                         
+                @Override
+                public SeekableByteChannel newByteChannel(Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs) throws IOException {
+                    return fileSystemProvider.newByteChannel(path, options, attrs);
+                }
+                         
+                @Override
+                public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
+                    return fileSystemProvider.newDirectoryStream(dir, filter);
+                }
+                         
+                @Override
+                public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
+                    fileSystemProvider.createDirectory(dir, attrs);
+                }
+                         
+                @Override
+                public void delete(Path path) throws IOException {
+                    fileSystemProvider.delete(path);
+                }
+                         
+                @Override
+                public void copy(Path source, Path target, CopyOption... options) throws IOException {
+                    fileSystemProvider.copy(source, target, options);
+                }
+                         
+                @Override
+                public void move(Path source, Path target, CopyOption... options) throws IOException {
+                    fileSystemProvider.move(source, target, options);
+                }
+                         
+                @Override
+                public boolean isSameFile(Path path, Path path2) throws IOException {
+                    return fileSystemProvider.isSameFile(path, path2);
+                }
+                         
+                @Override
+                public boolean isHidden(Path path) throws IOException {
+                    return fileSystemProvider.isHidden(path);
+                }
+                         
+                @Override
+                public FileStore getFileStore(Path path) throws IOException {
+                    return fileSystemProvider.getFileStore(path);
+                }
+                         
+                @Override
+                public void checkAccess(Path path, AccessMode... modes) throws IOException {
+                    fileSystemProvider.checkAccess(path, modes);
+                }
+                         
+                @Override
+                public <V extends FileAttributeView> V getFileAttributeView(Path path, Class<V> type, LinkOption... options) {
+                    return fileSystemProvider.getFileAttributeView(path, type, options);
+                }
+                         
+                @Override
+                public <A extends BasicFileAttributes> A readAttributes(Path path, Class<A> type, LinkOption... options) throws IOException {
+                    return fileSystemProvider.readAttributes(path, type, options);
+                }
+                         
+                @Override
+                public Map<String, Object> readAttributes(Path path, String attributes, LinkOption... options) throws IOException {
+                    return fileSystemProvider.readAttributes(path, attributes, options);
+                }
+                         
+                @Override
+                public void setAttribute(Path path, String attribute, Object value, LinkOption... options) throws IOException {
+                    fileSystemProvider.setAttribute(path, attribute, value, options);
+                }
+            }
+            """;
+    private static final String ACTUAL_TEST = """
+            package foo;
+            import java.io.IOException;
+            import java.lang.reflect.Field;
+            import java.net.URI;
+            import java.nio.file.FileSystem;
+            import java.nio.file.FileSystems;
+            import java.nio.file.Path;
+            import java.util.Collections;
+                                     
+            public class ActualTest {
+                public static void main(String[] args) throws IOException,ClassNotFoundException, IllegalAccessException{
+                   
+                   //get the 'BOOT_MODULES_JIMAGE' field of local ImageReaderFactory
+                   Field local_boot_modules_jimage_field = jdk.internal.jimage.ImageReaderFactory.class.getDeclaredFields()[1];
+                   local_boot_modules_jimage_field.setAccessible(true);
+                   Path local_boot_modules_jimage = (Path) local_boot_modules_jimage_field.get(null);
+                   if(sun.nio.fs.DefaultFileSystemProvider.theFileSystem() != local_boot_modules_jimage.getFileSystem()){
+                          throw new AssertionError("Creating local_boot_modules_jimage field should use sun.nio.fs.DefaultFileSystemProvider.theFileSystem() when ImageReaderFactory is loaded by boot classloader");
+                   }
+                   
+                   String targetJDK = System.getProperty("test.jdk",".");
+                   System.out.println("test.jdk: "+targetJDK);
+                   // set target jdk
+                   FileSystem jrtFs = FileSystems.newFileSystem(URI.create("jrt:/"), Collections.singletonMap("java.home",targetJDK));
+                   ClassLoader jrtFsLoader = jrtFs.getClass().getClassLoader();
+                   // get the 'BOOT_MODULES_JIMAGE' field of target ImageReaderFactory and verify the fileSystem which created the BOOT_MODULES_JIMAGE
+                   Field target_boot_modules_jimage_field = Class.forName("jdk.internal.jimage.ImageReaderFactory", true, jrtFsLoader).getDeclaredFields()[1];
+                   target_boot_modules_jimage_field.setAccessible(true);
+                   Path target_boot_modules_jimage = (Path) target_boot_modules_jimage_field.get(null);
+                   if(FileSystems.getDefault() != target_boot_modules_jimage.getFileSystem()){
+                          throw new AssertionError("Creating target_boot_modules_jimage field should use FileSystems.getDefault() when ImageReaderFactory is loaded by custom classloader");
+                   }
+                   jrtFs.close();
+                   
+                   //If the -Djava.nio.file.spi.DefaultFileSystemProvider value was set and DefaultFileSystemProvider was loaded successfully within jimage
+                   System.out.println("success");
+                }
+            }
+            """;
+
+
+    public static void main(String[] args) throws Exception {
+        Path fsProviderJmod = createCustomFSProviderModule();
+        System.out.println("jmod created at " + fsProviderJmod);
+        Path image = createImage(fsProviderJmod);
+        System.out.println("image created at " + image);
+        Path javaBinary = OperatingSystem.isWindows()
+                ? image.resolve("bin", "java.exe")
+                : image.resolve("bin", "java");
+        if ( Files.notExists(javaBinary) ) {
+            throw new AssertionError(javaBinary + " is missing");
+        }
+        System.out.println("launching main class with system-default FileSystemProvider");
+        // launch with system-default FileSystemProvider
+        OutputAnalyzer oa = ProcessTools.executeCommand(
+                javaBinary.toString(),
+                "-Dtest.jdk="+System.getProperty("test.jdk","."),
+                "--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
+                "--add-opens","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
+                "-m", CUSTOM_MODULE_NAME);
+        oa.shouldHaveExitValue(0);
+        oa.shouldContain("success");
+        // now launch with custom default FileSystemProvider
+        String sysProp = "-D" + SYS_PROP_DEF_FS_PRV + "=foo.NoOpFSProvider";
+        System.out.println("launching main class with custom FileSystemProvider");
+        oa = ProcessTools.executeCommand(
+                javaBinary.toString(),
+                "-Dtest.jdk="+System.getProperty("test.jdk","."),
+                "--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
+                "--add-opens","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
+                sysProp, "-m", CUSTOM_MODULE_NAME,"--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo");
+        oa.shouldHaveExitValue(0);
+        oa.shouldContain("success");
+
+    }
+
+    // creates a module which contains the custom implementation of a FileSystemProvider
+    private static Path createCustomFSProviderModule() throws Exception {
+        Path compileDestDir = compileModuleClasses();
+        Path fsProviderJmod = Path.of(CUSTOM_MODULE_NAME + ".jmod");
+        String[] cmd = {"create", "--class-path", compileDestDir.toString(),
+                "--main-class", "foo.ActualTest",
+                fsProviderJmod.getFileName().toString()};
+        System.out.println("creating module for custom FileSystemProvider: "
+                + Arrays.toString(cmd));
+        int exitCode = JMOD_TOOL.run(System.out, System.err, cmd);
+        if ( exitCode != 0 ) {
+            throw new AssertionError("Unexpected exit code: " + exitCode + " from jmod command");
+        }
+        return fsProviderJmod.toAbsolutePath();
+    }
+
+    // compiles the classes that we will be used for creating an application specific module
+    private static Path compileModuleClasses() throws Exception {
+        Path tmpSrcDir = Files.createTempDirectory(Path.of("."), "8331467-src");
+        String pkgName = "foo";
+        Files.createDirectories(tmpSrcDir.resolve(pkgName));
+        Path fsProviderJavaFile = Files.writeString(
+                tmpSrcDir.resolve(pkgName, "NoOpFSProvider.java"), FS_PROVIDER_CLASS_SRC);
+        Path moduleInfoJava = Files.writeString(tmpSrcDir.resolve("module-info.java"),
+                "module " + CUSTOM_MODULE_NAME + "{exports foo;}");
+        Path mainJavaFile = Files.writeString(tmpSrcDir.resolve(pkgName, "ActualTest.java"), ACTUAL_TEST);
+        Path compileDestDir = Files.createTempDirectory(Path.of("."), "8331467-");
+        String[] cmd = {"-d", compileDestDir.toString(),"--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",fsProviderJavaFile.toString(),
+                moduleInfoJava.toString(), mainJavaFile.toString()};
+        System.out.println("compiling classes: " + Arrays.toString(cmd));
+        int exitCode = JAVAC_TOOL.run(System.out, System.err, cmd);
+        if ( exitCode != 0 ) {
+            throw new AssertionError("Unexpected exit code: " + exitCode + " from javac command");
+        }
+        Path compiledClassFile = compileDestDir.resolve("foo", "NoOpFSProvider.class");
+        if ( !Files.isRegularFile(compiledClassFile) ) {
+            throw new AssertionError("compiled class file is missing at " + compiledClassFile);
+        }
+        return compileDestDir.toAbsolutePath();
+    }
+
+    // create a image which includes the application specific module
+    private static Path createImage(Path fsProviderJmod) {
+        Path image = Path.of("8331467-image");
+        String[] cmd = {"--output", image.getFileName().toString(),
+                "--add-modules", CUSTOM_MODULE_NAME,
+                "--module-path", fsProviderJmod.toString()};
+        int exitCode = JLINK_TOOL.run(System.out, System.err, cmd);
+        if ( exitCode != 0 ) {
+            throw new AssertionError("Unexpected exit code: " + exitCode + " from jlink command");
+        }
+        return image.toAbsolutePath();
+    }
+}
