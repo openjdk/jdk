@@ -21,15 +21,6 @@
  * questions.
  */
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.spi.ToolProvider;
-
-import jdk.internal.util.OperatingSystem;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 /*
  * @test
  * @bug 8331467
@@ -40,6 +31,14 @@ import jdk.test.lib.process.ProcessTools;
  * @build jdk.test.lib.process.ProcessTools jdk.test.lib.process.OutputAnalyzer
  * @run main CustomFileSystemProviderTest
  */
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.spi.ToolProvider;
+
+import jdk.internal.util.OperatingSystem;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class CustomFileSystemProviderTest {
 
@@ -222,9 +221,9 @@ public class CustomFileSystemProviderTest {
         // launch with system-default FileSystemProvider
         OutputAnalyzer oa = ProcessTools.executeCommand(
                 javaBinary.toString(),
-                "-Dtest.jdk="+System.getProperty("test.jdk","."),
-                "--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
-                "--add-opens","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
+                "-Dtest.jdk=" + System.getProperty("test.jdk", "."),
+                "--add-exports", "java.base/jdk.internal.jimage=foo", "--add-exports", "java.base/sun.nio.fs=foo",
+                "--add-opens", "java.base/jdk.internal.jimage=foo", "--add-exports", "java.base/sun.nio.fs=foo",
                 "-m", CUSTOM_MODULE_NAME);
         oa.shouldHaveExitValue(0);
         oa.shouldContain("success");
@@ -233,10 +232,10 @@ public class CustomFileSystemProviderTest {
         System.out.println("launching main class with custom FileSystemProvider");
         oa = ProcessTools.executeCommand(
                 javaBinary.toString(),
-                "-Dtest.jdk="+System.getProperty("test.jdk","."),
-                "--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
-                "--add-opens","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",
-                sysProp, "-m", CUSTOM_MODULE_NAME,"--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo");
+                "-Dtest.jdk=" + System.getProperty("test.jdk", "."),
+                "--add-exports", "java.base/jdk.internal.jimage=foo", "--add-exports", "java.base/sun.nio.fs=foo",
+                "--add-opens", "java.base/jdk.internal.jimage=foo", "--add-exports", "java.base/sun.nio.fs=foo",
+                sysProp, "-m", CUSTOM_MODULE_NAME, "--add-exports", "java.base/jdk.internal.jimage=foo", "--add-exports", "java.base/sun.nio.fs=foo");
         oa.shouldHaveExitValue(0);
         oa.shouldContain("success");
 
@@ -269,7 +268,7 @@ public class CustomFileSystemProviderTest {
                 "module " + CUSTOM_MODULE_NAME + "{exports foo;}");
         Path mainJavaFile = Files.writeString(tmpSrcDir.resolve(pkgName, "ActualTest.java"), ACTUAL_TEST);
         Path compileDestDir = Files.createTempDirectory(Path.of("."), "8331467-");
-        String[] cmd = {"-d", compileDestDir.toString(),"--add-exports","java.base/jdk.internal.jimage=foo","--add-exports","java.base/sun.nio.fs=foo",fsProviderJavaFile.toString(),
+        String[] cmd = {"-d", compileDestDir.toString(), "--add-exports", "java.base/jdk.internal.jimage=foo", "--add-exports", "java.base/sun.nio.fs=foo", fsProviderJavaFile.toString(),
                 moduleInfoJava.toString(), mainJavaFile.toString()};
         System.out.println("compiling classes: " + Arrays.toString(cmd));
         int exitCode = JAVAC_TOOL.run(System.out, System.err, cmd);
