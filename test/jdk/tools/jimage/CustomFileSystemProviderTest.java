@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.util
  * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools jdk.test.lib.process.OutputAnalyzer
- * @run main CustomFileSystemProviderTest
+ * @run driver CustomFileSystemProviderTest
  */
 import java.nio.file.Files;
 import java.nio.file.Path;
