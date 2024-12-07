@@ -7035,7 +7035,7 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 
   if (UseObjectMonitorTable) {
     // Clear cache in case fast locking succeeds.
-    str(zr, Address(basic_lock, 
+    str(zr, Address(basic_lock,
       create_imm_offset(BasicObjectLock, lock_offset) + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
   }
 
