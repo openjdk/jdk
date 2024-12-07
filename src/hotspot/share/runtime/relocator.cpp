@@ -200,7 +200,7 @@ bool Relocator::handle_code_changes() {
 bool Relocator::is_opcode_lookupswitch(Bytecodes::Code bc) {
   switch (bc) {
     case Bytecodes::_tableswitch:       return false;
-    case Bytecodes::_lookupswitch:                   // not rewritten on ia64
+    case Bytecodes::_lookupswitch:
     case Bytecodes::_fast_linearswitch:              // rewritten _lookupswitch
     case Bytecodes::_fast_binaryswitch: return true; // rewritten _lookupswitch
     default: ShouldNotReachHere();

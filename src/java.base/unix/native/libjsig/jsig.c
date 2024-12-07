@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,9 +95,9 @@ static sa_handler_t call_os_signal(int sig, sa_handler_t disp,
 
   if (os_signal == NULL) {
     // Deprecation warning first time through
-    printf(HOTSPOT_VM_DISTRO " VM warning: the use of signal() and sigset() "
-           "for signal chaining was deprecated in version 16.0 and will "
-           "be removed in a future release. Use sigaction() instead.\n");
+    fprintf(stderr, HOTSPOT_VM_DISTRO " VM warning: the use of signal() and sigset() "
+            "for signal chaining was deprecated in version 16.0 and will "
+            "be removed in a future release. Use sigaction() instead.\n");
     if (!is_sigset) {
       os_signal = (signal_function_t)dlsym(RTLD_NEXT, "signal");
     } else {

@@ -51,15 +51,11 @@ import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Arrays;
 
 import sun.awt.X11.XBaseWindow;
-import sun.security.action.GetIntegerAction;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
 import sun.java2d.opengl.OGLRenderQueue;
-import sun.security.action.GetPropertyAction;
 
 public abstract class UNIXToolkit extends SunToolkit
 {

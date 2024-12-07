@@ -2112,7 +2112,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Remaining count is less than 8 bytes. Fill it by a single store.
     // Note that the total length is no less than 8 bytes.
-    if (t == T_BYTE || t == T_SHORT) {
+    if (!AvoidUnalignedAccesses && (t == T_BYTE || t == T_SHORT)) {
       __ beqz(count, L_exit1);
       __ shadd(to, count, to, tmp_reg, shift); // points to the end
       __ sd(value, Address(to, -8)); // overwrite some elements

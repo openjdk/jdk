@@ -116,6 +116,8 @@ class VM_Version : public Abstract_VM_Version {
   //
   // Zfh Half-Precision Floating-Point instructions
   //
+  // Zicond Conditional operations
+  //
   // Zicsr Control and Status Register (CSR) Instructions
   // Zifencei Instruction-Fetch Fence
   // Zic64b Cache blocks must be 64 bytes in size, naturally aligned in the address space.
@@ -164,6 +166,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zvbb        , "Zvbb"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvbb))        \
   decl(ext_Zvfh        , "Zvfh"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvfh))        \
   decl(ext_Zvkn        , "Zvkn"        , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZvkn))        \
+  decl(ext_Zicond      , "Zicond"      , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZicond))      \
   decl(mvendorid       , "VendorId"    , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
   decl(marchid         , "ArchId"      , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
   decl(mimpid          , "ImpId"       , RV_NO_FLAG_BIT, false, NO_UPDATE_DEFAULT)              \
@@ -223,6 +226,7 @@ class VM_Version : public Abstract_VM_Version {
     RV_ENABLE_EXTENSION(UseZicbom)                  \
     RV_ENABLE_EXTENSION(UseZicbop)                  \
     RV_ENABLE_EXTENSION(UseZicboz)                  \
+    RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
 
   static void useRVA23U64Profile();

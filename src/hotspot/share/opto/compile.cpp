@@ -4348,6 +4348,9 @@ Compile::TracePhase::TracePhase(PhaseTraceId id)
 
 Compile::TracePhase::~TracePhase() {
   if (_compile->failing_internal()) {
+    if (_log != nullptr) {
+      _log->done("phase");
+    }
     return; // timing code, not stressing bailouts.
   }
 #ifdef ASSERT

@@ -37,7 +37,6 @@ import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.peer.RobotPeer;
 
-import sun.awt.AWTPermissions;
 import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 import sun.awt.image.SunWritableRaster;
@@ -163,7 +162,6 @@ public class Robot {
     }
 
     private void init(GraphicsDevice screen) throws AWTException {
-        checkRobotAllowed();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         if (toolkit instanceof ComponentFactory) {
             peer = ((ComponentFactory)toolkit).createRobot(screen);
@@ -191,15 +189,6 @@ public class Robot {
             InputEvent.BUTTON2_DOWN_MASK|
             InputEvent.BUTTON3_DOWN_MASK;
         LEGAL_BUTTON_MASK = tmpMask;
-    }
-
-    /* determine if the security policy allows Robot's to be created */
-    private static void checkRobotAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.CREATE_ROBOT_PERMISSION);
-        }
     }
 
     /**
@@ -437,7 +426,6 @@ public class Robot {
      * @return  Color of the pixel
      */
     public synchronized Color getPixelColor(int x, int y) {
-        checkScreenCaptureAllowed();
         Point point = peer.useAbsoluteCoordinates() ? toDeviceSpaceAbs(x, y)
                                                     : toDeviceSpace(x, y);
         return new Color(peer.getRGBPixel(point.x, point.y));
@@ -517,8 +505,6 @@ public class Robot {
 
     private synchronized BufferedImage[]
             createCompatibleImage(Rectangle screenRect, boolean isHiDPI) {
-
-        checkScreenCaptureAllowed();
 
         checkValidRect(screenRect);
 
@@ -632,14 +618,6 @@ public class Robot {
     private static void checkValidRect(Rectangle rect) {
         if (rect.width <= 0 || rect.height <= 0) {
             throw new IllegalArgumentException("Rectangle width and height must be > 0");
-        }
-    }
-
-    private static void checkScreenCaptureAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(AWTPermissions.READ_DISPLAY_PIXELS_PERMISSION);
         }
     }
 

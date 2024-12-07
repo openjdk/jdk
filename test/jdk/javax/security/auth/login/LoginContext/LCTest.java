@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,15 +287,9 @@ public class LCTest {
                 return false;
             }
             userPrincipal = new UnixPrincipal(username);
-            final Subject s = subject;
-            final UnixPrincipal up = userPrincipal;
-            java.security.AccessController.doPrivileged
-                    ((java.security.PrivilegedAction) () -> {
-                        if (!s.getPrincipals().contains(up)) {
-                            s.getPrincipals().add(up);
-                        }
-                        return null;
-                    });
+            if (!subject.getPrincipals().contains(userPrincipal)) {
+                subject.getPrincipals().add(userPrincipal);
+            }
             password = null;
             commitSucceeded = true;
             return true;
@@ -320,13 +314,7 @@ public class LCTest {
 
         private void clearState() {
             if (commitSucceeded) {
-                final Subject s = subject;
-                final UnixPrincipal up = userPrincipal;
-                java.security.AccessController.doPrivileged
-                        ((java.security.PrivilegedAction) () -> {
-                            s.getPrincipals().remove(up);
-                            return null;
-                        });
+                subject.getPrincipals().remove(userPrincipal);
             }
             username = null;
             password = null;

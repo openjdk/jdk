@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +27,10 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/numberSeq.hpp"
 
 #define SHENANDOAH_ERGO_DISABLE_FLAG(name)                                  \
   do {                                                                      \
@@ -69,23 +69,92 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
   static const intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
 
+#ifdef ASSERT
+  enum UnionTag {
+    is_uninitialized, is_garbage, is_live_data
+  };
+#endif
+
 protected:
-  typedef struct {
+  static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+
+  class RegionData {
+    private:
     ShenandoahHeapRegion* _region;
-    size_t _garbage;
-  } RegionData;
+    union {
+      size_t _garbage;          // Not used by old-gen heuristics.
+      size_t _live_data;        // Only used for old-gen heuristics, which prioritizes retention of _live_data over garbage reclaim
+    } _region_union;
+#ifdef ASSERT
+    UnionTag _union_tag;
+#endif
+    public:
+
+    inline void clear() {
+      _region = nullptr;
+      _region_union._garbage = 0;
+#ifdef ASSERT
+      _union_tag = is_uninitialized;
+#endif
+    }
+
+    inline void set_region_and_garbage(ShenandoahHeapRegion* region, size_t garbage) {
+      _region = region;
+      _region_union._garbage = garbage;
+#ifdef ASSERT
+      _union_tag = is_garbage;
+#endif
+    }
+
+    inline void set_region_and_livedata(ShenandoahHeapRegion* region, size_t live) {
+      _region = region;
+      _region_union._live_data = live;
+#ifdef ASSERT
+      _union_tag = is_live_data;
+#endif
+    }
+
+    inline ShenandoahHeapRegion* get_region() const {
+      assert(_union_tag != is_uninitialized, "Cannot fetch region from uninitialized RegionData");
+      return _region;
+    }
+
+    inline size_t get_garbage() const {
+      assert(_union_tag == is_garbage, "Invalid union fetch");
+      return _region_union._garbage;
+    }
+
+    inline size_t get_livedata() const {
+      assert(_union_tag == is_live_data, "Invalid union fetch");
+      return _region_union._live_data;
+    }
+  };
 
   // Source of information about the memory space managed by this heuristic
   ShenandoahSpaceInfo* _space_info;
 
+  // Depending on generation mode, region data represents the results of the relevant
+  // most recently completed marking pass:
+  //   - in GLOBAL mode, global marking pass
+  //   - in OLD mode,    old-gen marking pass
+  //   - in YOUNG mode,  young-gen marking pass
+  //
+  // Note that there is some redundancy represented in region data because
+  // each instance is an array large enough to hold all regions. However,
+  // any region in young-gen is not in old-gen. And any time we are
+  // making use of the GLOBAL data, there is no need to maintain the
+  // YOUNG or OLD data. Consider this redundancy of data structure to
+  // have negligible cost unless proven otherwise.
   RegionData* _region_data;
+
+  size_t _guaranteed_gc_interval;
 
   double _cycle_start;
   double _last_cycle_end;
 
   size_t _gc_times_learned;
   intx _gc_time_penalties;
-  TruncatedSeq* _gc_time_history;
+  TruncatedSeq* _gc_cycle_time_history;
 
   // There may be many threads that contend to set this flag
   ShenandoahSharedFlag _metaspace_oom;
@@ -105,6 +174,10 @@ public:
   void record_metaspace_oom()     { _metaspace_oom.set(); }
   void clear_metaspace_oom()      { _metaspace_oom.unset(); }
   bool has_metaspace_oom() const  { return _metaspace_oom.is_set(); }
+
+  void set_guaranteed_gc_interval(size_t guaranteed_gc_interval) {
+    _guaranteed_gc_interval = guaranteed_gc_interval;
+  }
 
   virtual void record_cycle_start();
 
@@ -127,6 +200,9 @@ public:
   virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
+
+  // This indicates whether or not the current cycle should unload classes.
+  // It does NOT indicate that a cycle should be started.
   virtual bool should_unload_classes();
 
   virtual const char* name() = 0;
@@ -134,7 +210,10 @@ public:
   virtual bool is_experimental() = 0;
   virtual void initialize();
 
-  double time_since_last_gc() const;
+  double elapsed_cycle_time() const;
+
+  // Format prefix and emit log message indicating a GC cycle hs been triggered
+  void log_trigger(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP

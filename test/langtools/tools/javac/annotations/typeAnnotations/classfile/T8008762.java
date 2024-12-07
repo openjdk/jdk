@@ -26,8 +26,6 @@
  * @bug 8008762
  * @summary Type annotation on inner class in anonymous class
  *          shows up as regular annotation
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;

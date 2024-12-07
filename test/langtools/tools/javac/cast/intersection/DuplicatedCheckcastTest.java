@@ -21,16 +21,14 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8263642 8268885
  * @summary javac should not emit duplicate checkcast for first bound of intersection type in cast
  *          duplicate checkcast when destination type is not first type of intersection type
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main DuplicatedCheckcastTest
  */

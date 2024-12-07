@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 package jdk.net;
 
 import java.net.SocketException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
 
 
-@SuppressWarnings({"removal", "restricted"})
+@SuppressWarnings("restricted")
 class WindowsSocketOptions extends PlatformSocketOptions {
 
     public WindowsSocketOptions() {
@@ -97,13 +95,6 @@ class WindowsSocketOptions extends PlatformSocketOptions {
     private static native int getTcpKeepAliveIntvl0(int fd) throws SocketException;
 
     static {
-        if (System.getSecurityManager() == null) {
-            System.loadLibrary("extnet");
-        } else {
-            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-                System.loadLibrary("extnet");
-                return null;
-            });
-        }
+        System.loadLibrary("extnet");
     }
 }
