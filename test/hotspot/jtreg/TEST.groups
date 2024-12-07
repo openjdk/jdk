@@ -160,7 +160,6 @@ hotspot_slow_compiler = \
   compiler/gcbarriers/PreserveFPRegistersTest.java \
   compiler/memoryinitialization/ZeroTLABTest.java \
   compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  resourcehogs/compiler \
   :hotspot_compiler_arraycopy
 
 tier1_compiler_1 = \
