@@ -1,4 +1,1 @@
-module foo
-{
-    exports jdk.test.foo;
-}
+module foo{    exports jdk.test.foo;}
