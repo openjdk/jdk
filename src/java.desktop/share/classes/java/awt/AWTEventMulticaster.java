@@ -1019,7 +1019,7 @@ public class AWTEventMulticaster implements
         if (index0 == index1 - 1) {
             return new AWTEventMulticaster(array[index0], array[index1]);
         }
-        int mid = (index0 + index1)/2;
+        int mid = (index0 + index1) / 2;
         return new AWTEventMulticaster(
                 rebalance(array, index0, mid),
                 rebalance(array, mid + 1, index1));
