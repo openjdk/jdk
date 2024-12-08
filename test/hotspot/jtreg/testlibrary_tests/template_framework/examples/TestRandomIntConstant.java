@@ -65,7 +65,7 @@ public class TestRandomIntConstant {
         parameters.add("param1", "1");
         parameters.add("param2", "2");
 
-        Template template = new Template(
+        Template template = new Template("my_int_example",
             """
             package p.xyz;
 

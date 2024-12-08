@@ -73,7 +73,8 @@ public class CodeGeneratorLibrary {
     }
 
     public static CodeGenerator factoryLoadStore(boolean mutable) {
-        return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
+        String generatorName = mutable ? "store" : "load";
+        return new ProgrammaticCodeGenerator(generatorName, (Scope scope, Parameters parameters) -> {
             String type = parameters.get("type", " for generator call to load/store");
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
@@ -84,7 +85,7 @@ public class CodeGeneratorLibrary {
     }
 
     public static CodeGenerator factoryDispatch() {
-        return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
+        return new ProgrammaticCodeGenerator("dispatch", (Scope scope, Parameters parameters) -> {
             String scopeKind = parameters.get("scope", " for generator call to 'dispatch'");
             String generatorName = parameters.get("call", " for generator call to 'dispatch'");
             CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
@@ -114,7 +115,7 @@ public class CodeGeneratorLibrary {
     }
 
     public static CodeGenerator factoryAddVariable() {
-        return new ProgrammaticCodeGenerator((Scope scope, Parameters parameters) -> {
+        return new ProgrammaticCodeGenerator("add_variable", (Scope scope, Parameters parameters) -> {
             String scopeKind = parameters.get("scope", " for generator call to 'add_variable'");
             String name = parameters.get("name", " for generator call to 'add_variable'");
             String type = parameters.get("type", " for generator call to 'add_variable'");
@@ -149,7 +150,7 @@ public class CodeGeneratorLibrary {
         HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
 
         // Random Constants.
-        codeGenerators.put("int_con", new ProgrammaticCodeGenerator(
+        codeGenerators.put("int_con", new ProgrammaticCodeGenerator("int_con",
             (Scope scope, Parameters parameters) -> {
                 int v = RANDOM.nextInt();
                 scope.stream.addCodeToLine(String.valueOf(v));
@@ -166,7 +167,7 @@ public class CodeGeneratorLibrary {
         codeGenerators.put("add_variable", factoryAddVariable());
 
         // ClassScope generators.
-        codeGenerators.put("new_field_in_class", new Template(
+        codeGenerators.put("new_field_in_class", new Template("new_field_in_class",
             """
             // start $new_field_in_class
             public static int #{name} = #{:int_con};
@@ -176,7 +177,7 @@ public class CodeGeneratorLibrary {
         ));
 
         // MethodScope generators.
-        codeGenerators.put("new_var_in_method", new Template(
+        codeGenerators.put("new_var_in_method", new Template("new_var_in_method",
             """
             // start $new_var_in_method
             int #{name} = #{:int_con};
@@ -186,12 +187,12 @@ public class CodeGeneratorLibrary {
         ));
 
         // Code blocks.
-        codeGenerators.put("empty", new Template(
+        codeGenerators.put("empty", new Template("empty",
             """
             // $empty
             """
         ));
-        codeGenerators.put("split", new Template(
+        codeGenerators.put("split", new Template("split",
             """
             // start $split
                 #{:code}
@@ -200,7 +201,7 @@ public class CodeGeneratorLibrary {
             // end   $split
             """
         ));
-        codeGenerators.put("prefix", new Template(
+        codeGenerators.put("prefix", new Template("prefix",
             """
             // start $prefix
             // ... prefix code ...
@@ -208,7 +209,7 @@ public class CodeGeneratorLibrary {
             // end   $prefix
             """
         ));
-        codeGenerators.put("foo", new Template(
+        codeGenerators.put("foo", new Template("foo",
             """
             // start $foo
             {
@@ -221,7 +222,7 @@ public class CodeGeneratorLibrary {
             // end   $foo
             """
         ));
-        codeGenerators.put("bar", new Template(
+        codeGenerators.put("bar", new Template("bar",
             """
             // start $bar
             {
@@ -235,7 +236,7 @@ public class CodeGeneratorLibrary {
         ));
 
         // Selector for code blocks.
-        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("empty");
+        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("code_selector", "empty");
         selectorForCode.add("split",  100);
         selectorForCode.add("prefix", 100);
         selectorForCode.add("foo", 100);

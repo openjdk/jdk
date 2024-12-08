@@ -30,4 +30,9 @@ public class ClassScope extends DispatchScope {
     public ClassScope(Scope parent, long fuel) {
         super(parent, fuel);
     }
+
+    @Override
+    public void printName() {
+        System.out.println("ClassScope:");
+    }
 }

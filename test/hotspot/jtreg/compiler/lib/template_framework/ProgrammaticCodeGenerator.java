@@ -31,12 +31,18 @@ public class ProgrammaticCodeGenerator implements CodeGenerator {
         public void call(Scope scope, Parameters parameters);
     }
 
+    private final String generatorName;
     private final int generatorFuelCost;
     private final Instantiator instantiator;
 
-    public ProgrammaticCodeGenerator(Instantiator instantiator, int fuelCost) {
+    public ProgrammaticCodeGenerator(String generatorName, Instantiator instantiator, int fuelCost) {
+        this.generatorName = generatorName;
         this.generatorFuelCost = fuelCost;
         this.instantiator = instantiator;
+    }
+
+    public String name() {
+        return generatorName;
     }
 
     public int fuelCost() {

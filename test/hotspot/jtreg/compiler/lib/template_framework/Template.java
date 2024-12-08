@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
  * - Extend library
  * - Way to add variable to method/class scope
  * - Need better error messages when exception is hit - too difficult to debug now
+ * - Separate parameter vs replacements?
+ * - Pass replacements as arguments - need to convert to string - what about newline?
  *
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
@@ -129,18 +131,24 @@ public final class Template implements CodeGenerator {
                                                "";
     private static final Pattern PATTERNS = Pattern.compile(ALL_PATTERNS);
 
+    private final String templateName;
     private final String templateString;
     private final int templateFuelCost;
 
 
-    public Template(String templateString, int fuelCost) {
+    public Template(String templateName, String templateString, int fuelCost) {
+        this.templateName = templateName;
         // Trim to remove the newline at the end of mutli-line strings.
         this.templateString = templateString.trim();
         this.templateFuelCost = fuelCost;
     }
 
-    public Template(String templateString) {
-        this(templateString, DEFAULT_FUEL_COST);
+    public String name() {
+        return templateName;
+    }
+
+    public Template(String templateName, String templateString) {
+        this(templateName, templateString, DEFAULT_FUEL_COST);
     }
 
     public int fuelCost() {

@@ -116,6 +116,19 @@ public class Scope {
     public final VariableSet allVariables;
     public final VariableSet mutableVariables;
 
+    record DebugContext(String description, Parameters parameters) {
+        public void print() {
+            System.out.println("  Description: " + description);
+            if (parameters == null) {
+                System.out.println("  No parameters.");
+            } else {
+                parameters.print();
+            }
+        }
+    }
+
+    DebugContext debugContext;
+
     public Scope(Scope parent, long fuel) {
         this.parent = parent;
         this.fuel = fuel;
@@ -125,11 +138,27 @@ public class Scope {
         this.mutableVariables = new VariableSet(this.parent != null ? this.parent.mutableVariables : null);
     }
 
+    public void setDebugContext(String description, Parameters parameters) {
+        DebugContext newDebugContext = new DebugContext(description, parameters);
+        if (this.debugContext != null) {
+            System.out.println("Setting debug context a second time. New context");
+            newDebugContext.print();
+            System.out.println("Old trace:");
+            print();
+            throw new TemplateFrameworkException("Duplicate setting debug context not allowed.");
+        }
+        this.debugContext = newDebugContext;
+    }
+
     public CodeGeneratorLibrary library() {
         return this.parent.library();
     }
 
     public void close() {
+        if (this.debugContext == null) {
+            print();
+            throw new TemplateFrameworkException("No debug context set until end of scope.");
+        }
         stream.close();
     }
 
@@ -189,5 +218,21 @@ public class Scope {
             throw new TemplateFrameworkException("Outer scope not found.");
         }
         return difference;
+    }
+
+    public final void print() {
+        printName();
+        if (debugContext != null) {
+            debugContext.print();
+        } else {
+            System.out.println("  No debug context set yet.");
+        }
+        if (parent != null) {
+            parent.print();
+        }
+    }
+
+    public void printName() {
+        System.out.println("Scope:");
     }
 }

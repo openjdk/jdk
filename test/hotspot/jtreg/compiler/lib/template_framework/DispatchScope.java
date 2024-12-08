@@ -28,7 +28,7 @@ import java.util.HashMap;
 /**
  * TODO public?
  */
-public class DispatchScope extends Scope {
+public abstract class DispatchScope extends Scope {
     public final CodeStream dispatchStream;
 
     public DispatchScope(Scope parent, long fuel) {
@@ -46,9 +46,10 @@ public class DispatchScope extends Scope {
         sourceScope.stream.addCodeToLine("/* dispatch_" + parameters.instantiationID + " */");
     }
 
+    @Override
     public void close() {
         dispatchStream.close();
         stream.prependCodeStream(dispatchStream);
-        stream.close();
+        super.close();
     }
 }

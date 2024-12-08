@@ -27,6 +27,7 @@ package compiler.lib.template_framework;
  * TODO public?
  */
 public interface CodeGenerator {
+    public abstract String name();
     public abstract int fuelCost();
     public abstract void instantiate(Scope scope, Parameters parameters);
 }

@@ -35,12 +35,18 @@ import jdk.test.lib.Utils;
 public final class SelectorCodeGenerator implements CodeGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    private final String generatorName;
     private HashMap<String,Float> choiceWeights;
     private String defaultGeneratorName;
 
-    public SelectorCodeGenerator(String defaultGeneratorName) {
+    public SelectorCodeGenerator(String generatorName, String defaultGeneratorName) {
+        this.generatorName = generatorName;
         this.defaultGeneratorName = defaultGeneratorName;
         this.choiceWeights = new HashMap<String,Float>();
+    }
+
+    public String name() {
+        return generatorName;
     }
 
     public void add(String name, float weight) {
