@@ -25,7 +25,6 @@
  * @test
  * @bug 8015927
  * @summary Class reference duplicates in constant pool
- * @enablePreview
  * @clean ClassRefDupInConstantPoolTest$Duplicates
  * @run main ClassRefDupInConstantPoolTest
  */

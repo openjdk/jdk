@@ -26,14 +26,12 @@
  * @bug 8226585 8250768
  * @summary Verify behavior w.r.t. preview feature API errors and warnings
  * @library /tools/lib /tools/javac/lib
- * @enablePreview
  * @modules
  *      java.base/jdk.internal.javac
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.file
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @build combo.ComboTestHelper
  * @run main PreviewErrors

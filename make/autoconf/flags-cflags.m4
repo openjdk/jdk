@@ -302,7 +302,7 @@ AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
 
 AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
 [
-  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     C_O_FLAG_HIGHEST_JVM="-O3"
     C_O_FLAG_HIGHEST="-O3"
     C_O_FLAG_HI="-O3"
@@ -311,6 +311,13 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG="-O0"
     C_O_FLAG_DEBUG_JVM="-O0"
     C_O_FLAG_NONE="-O0"
+
+    if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+      C_O_FLAG_HIGHEST_JVM="${C_O_FLAG_HIGHEST_JVM} -finline-functions"
+      C_O_FLAG_HIGHEST="${C_O_FLAG_HIGHEST} -finline-functions"
+      C_O_FLAG_HI="${C_O_FLAG_HI} -finline-functions"
+    fi
+
     # -D_FORTIFY_SOURCE=2 hardening option needs optimization (at least -O1) enabled
     # set for lower O-levels -U_FORTIFY_SOURCE to overwrite previous settings
     if test "x$OPENJDK_TARGET_OS" = xlinux -a "x$DEBUG_LEVEL" = "xfastdebug"; then
@@ -331,21 +338,6 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
       C_O_FLAG_DEBUG_JVM="${C_O_FLAG_DEBUG_JVM} ${DISABLE_FORTIFY_CFLAGS}"
       C_O_FLAG_NONE="${C_O_FLAG_NONE} ${DISABLE_FORTIFY_CFLAGS}"
     fi
-  elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    if test "x$OPENJDK_TARGET_OS" = xaix; then
-      C_O_FLAG_HIGHEST_JVM="-O3 -finline-functions"
-      C_O_FLAG_HIGHEST="-O3 -finline-functions"
-      C_O_FLAG_HI="-O3 -finline-functions"
-    else
-      C_O_FLAG_HIGHEST_JVM="-O3"
-      C_O_FLAG_HIGHEST="-O3"
-      C_O_FLAG_HI="-O3"
-    fi
-    C_O_FLAG_NORM="-O2"
-    C_O_FLAG_DEBUG_JVM="-O0"
-    C_O_FLAG_SIZE="-Os"
-    C_O_FLAG_DEBUG="-O0"
-    C_O_FLAG_NONE="-O0"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     C_O_FLAG_HIGHEST_JVM="-O2 -Oy-"
     C_O_FLAG_HIGHEST="-O2"

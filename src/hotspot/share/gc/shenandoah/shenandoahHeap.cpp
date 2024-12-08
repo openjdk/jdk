@@ -25,8 +25,10 @@
  */
 
 #include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "memory/universe.hpp"
+
+#include "cds/archiveHeapWriter.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
 
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
@@ -42,17 +44,16 @@
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
-#include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -65,13 +66,14 @@
 #include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
+#include "gc/shenandoah/shenandoahUncommitThread.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
@@ -79,17 +81,16 @@
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
-#include "cds/archiveHeapWriter.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
+
+#include "memory/allocation.hpp"
 #include "memory/classLoaderMetaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "memory/universe.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -102,6 +103,7 @@
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/vmThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/events.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -459,6 +461,10 @@ jint ShenandoahHeap::initialize() {
 
   initialize_controller();
 
+  if (ShenandoahUncommit) {
+    _uncommit_thread = new ShenandoahUncommitThread(this);
+  }
+
   print_init_logger();
 
   FullGCForwarding::initialize(_heap_region);
@@ -530,6 +536,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _update_refs_iterator(this),
   _global_generation(nullptr),
   _control_thread(nullptr),
+  _uncommit_thread(nullptr),
   _young_generation(nullptr),
   _old_generation(nullptr),
   _shenandoah_policy(policy),
@@ -800,60 +807,15 @@ bool ShenandoahHeap::is_in(const void* p) const {
   }
 }
 
-void ShenandoahHeap::maybe_uncommit(double shrink_before, size_t shrink_until) {
-  assert (ShenandoahUncommit, "should be enabled");
-
-  // Determine if there is work to do. This avoids taking heap lock if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
-
-  if (committed() <= shrink_until) return;
-
-  bool has_work = false;
-  for (size_t i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      has_work = true;
-      break;
-    }
-  }
-
-  if (has_work) {
-    static const char* msg = "Concurrent uncommit";
-    ShenandoahConcurrentPhase gcPhase(msg, ShenandoahPhaseTimings::conc_uncommit, true /* log_heap_usage */);
-    EventMark em("%s", msg);
-
-    op_uncommit(shrink_before, shrink_until);
+void ShenandoahHeap::notify_soft_max_changed() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->notify_soft_max_changed();
   }
 }
 
-void ShenandoahHeap::op_uncommit(double shrink_before, size_t shrink_until) {
-  assert (ShenandoahUncommit, "should be enabled");
-
-  // Application allocates from the beginning of the heap, and GC allocates at
-  // the end of it. It is more efficient to uncommit from the end, so that applications
-  // could enjoy the near committed regions. GC allocations are much less frequent,
-  // and therefore can accept the committing costs.
-
-  size_t count = 0;
-  for (size_t i = num_regions(); i > 0; i--) { // care about size_t underflow
-    ShenandoahHeapRegion* r = get_region(i - 1);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      ShenandoahHeapLocker locker(lock());
-      if (r->is_empty_committed()) {
-        if (committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
-          break;
-        }
-
-        r->make_uncommitted();
-        count++;
-      }
-    }
-    SpinPause(); // allow allocators to take the lock
-  }
-
-  if (count > 0) {
-    notify_heap_changed();
+void ShenandoahHeap::notify_explicit_gc_requested() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->notify_explicit_gc_requested();
   }
 }
 
@@ -1507,6 +1469,10 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
     tcl->do_thread(_control_thread);
   }
 
+  if (_uncommit_thread != nullptr) {
+    tcl->do_thread(_uncommit_thread);
+  }
+
   workers()->threads_do(tcl);
   if (_safepoint_workers != nullptr) {
     _safepoint_workers->threads_do(tcl);
@@ -2094,6 +2060,11 @@ void ShenandoahHeap::stop() {
 
   // Step 3. Wait until GC worker exits normally.
   control_thread()->stop();
+
+  // Stop 4. Shutdown uncommit thread.
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->stop();
+  }
 }
 
 void ShenandoahHeap::stw_unload_classes(bool full_gc) {
@@ -2521,7 +2492,7 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 
   if (is_bitmap_slice_committed(r, true)) {
     // Some other region from the group is still committed, meaning the bitmap
-    // slice is should stay committed, exit right away.
+    // slice should stay committed, exit right away.
     return true;
   }
 
@@ -2534,6 +2505,27 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
   }
   return true;
 }
+
+void ShenandoahHeap::forbid_uncommit() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->forbid_uncommit();
+  }
+}
+
+void ShenandoahHeap::allow_uncommit() {
+  if (_uncommit_thread != nullptr) {
+    _uncommit_thread->allow_uncommit();
+  }
+}
+
+#ifdef ASSERT
+bool ShenandoahHeap::is_uncommit_in_progress() {
+  if (_uncommit_thread != nullptr) {
+    return _uncommit_thread->is_uncommit_in_progress();
+  }
+  return false;
+}
+#endif
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
   StackWatermarkSet::safepoint_synchronize_begin();

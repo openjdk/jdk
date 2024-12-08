@@ -27,7 +27,6 @@
  * @summary Test bootstrap methods throwing an exception
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @enablePreview
  * @run testng CondyBSMException
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMException
  */

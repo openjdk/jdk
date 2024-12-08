@@ -26,8 +26,6 @@
  * @summary Repeated type-annotations on type parm of local variable
  *          are not written to classfile.
  * @bug 8008769
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.annotation.*;
 import static java.lang.annotation.RetentionPolicy.*;

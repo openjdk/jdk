@@ -24,7 +24,6 @@
 /*
  * @test
  * @library /test/lib
- * @enablePreview
  * @build  HiddenNestmateTest
  * @run testng/othervm HiddenNestmateTest
  */

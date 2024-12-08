@@ -70,6 +70,7 @@ class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
 class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
+class ShenandoahUncommitThread;
 class ShenandoahVerifier;
 class ShenandoahWorkerThreads;
 class VMStructs;
@@ -252,11 +253,14 @@ public:
 
 // ---------- Periodic Tasks
 //
-private:
+public:
+  // Notify heuristics and region state change logger that the state of the heap has changed
   void notify_heap_changed();
 
-public:
+  // Force counters to update
   void set_forced_counters_update(bool value);
+
+  // Update counters if forced flag is set
   void handle_force_counters_update();
 
 // ---------- Workers handling
@@ -440,11 +444,6 @@ public:
   void cancel_gc(GCCause::Cause cause);
 
 public:
-  // These will uncommit empty regions if heap::committed > shrink_until
-  // and there exists at least one region which was made empty before shrink_before.
-  void maybe_uncommit(double shrink_before, size_t shrink_until);
-  void op_uncommit(double shrink_before, size_t shrink_until);
-
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
@@ -478,13 +477,21 @@ public:
   void notify_gc_no_progress();
   size_t get_gc_no_progress_count() const;
 
-//
-// Mark support
+  // The uncommit thread targets soft max heap, notify this thread when that value has changed.
+  void notify_soft_max_changed();
+
+  // An explicit GC request may have freed regions, notify the uncommit thread.
+  void notify_explicit_gc_requested();
+
 private:
   ShenandoahGeneration*  _global_generation;
 
 protected:
+  // The control thread presides over concurrent collection cycles
   ShenandoahController*  _control_thread;
+
+  // The uncommit thread periodically attempts to uncommit regions that have been empty for longer than ShenandoahUncommitDelay
+  ShenandoahUncommitThread*  _uncommit_thread;
 
   ShenandoahYoungGeneration* _young_generation;
   ShenandoahOldGeneration*   _old_generation;
@@ -500,7 +507,7 @@ private:
   ShenandoahMmuTracker          _mmu_tracker;
 
 public:
-  ShenandoahController*   control_thread() { return _control_thread; }
+  ShenandoahController*   control_thread() const { return _control_thread; }
 
   ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahYoungGeneration* young_generation()  const {
@@ -725,6 +732,20 @@ public:
   bool commit_bitmap_slice(ShenandoahHeapRegion *r);
   bool uncommit_bitmap_slice(ShenandoahHeapRegion *r);
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
+
+  // During concurrent reset, the control thread will zero out the mark bitmaps for committed regions.
+  // This cannot happen when the uncommit thread is simultaneously trying to uncommit regions and their bitmaps.
+  // To prevent these threads from working at the same time, we provide these methods for the control thread to
+  // prevent the uncommit thread from working while a collection cycle is in progress.
+
+  // Forbid uncommits (will stop and wait if regions are being uncommitted)
+  void forbid_uncommit();
+
+  // Allow the uncommit thread to process regions
+  void allow_uncommit();
+#ifdef ASSERT
+  bool is_uncommit_in_progress();
+#endif
 
   // Liveness caching support
   ShenandoahLiveData* get_liveness_cache(uint worker_id);

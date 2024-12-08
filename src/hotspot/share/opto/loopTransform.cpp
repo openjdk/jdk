@@ -2463,7 +2463,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
 
 //------------------------------do_range_check---------------------------------
 // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print("Range Check Elimination ");
@@ -2526,8 +2526,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Range check elimination optimizes out conditions whose parameters are loop invariant in the main loop. They usually
   // have control above the pre loop, but there's no guarantee that they do. There's no guarantee either that the pre
   // loop limit has control that's out of loop (a previous round of range check elimination could have set a limit that's
-  // not loop invariant).
-  Node* new_limit_ctrl = dominated_node(pre_ctrl, pre_limit_ctrl);
+  // not loop invariant). new_limit_ctrl is used for both the pre and main loops. Early control for the main limit may be
+  // below the pre loop entry and the pre limit and must be taken into account when initializing new_limit_ctrl.
+  Node* new_limit_ctrl = dominated_node(pre_ctrl, pre_limit_ctrl, compute_early_ctrl(main_limit, main_limit_ctrl));
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
@@ -2778,8 +2779,10 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // new pre_limit can push Bool/Cmp/Opaque nodes down (when one of the eliminated condition has parameters that are not
   // loop invariant in the pre loop.
   set_ctrl(pre_opaq, new_limit_ctrl);
-  set_ctrl(pre_end->cmp_node(), new_limit_ctrl);
-  set_ctrl(pre_end->in(1), new_limit_ctrl);
+  // Can't use new_limit_ctrl for Bool/Cmp because it can be out of loop while they are loop variant. Conservatively set
+  // control to latest possible one.
+  set_ctrl(pre_end->cmp_node(), pre_end->in(0));
+  set_ctrl(pre_end->in(1), pre_end->in(0));
 
   _igvn.replace_input_of(pre_opaq, 1, pre_limit);
 
@@ -2819,11 +2822,12 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // The OpaqueNode is unshared by design
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
-  // new main_limit can push Bool/Cmp nodes down (when one of the eliminated condition has parameters that are not loop
-  // invariant in the pre loop.
+  // new main_limit can push opaque node for zero trip guard down (when one of the eliminated condition has parameters
+  // that are not loop invariant in the pre loop).
   set_ctrl(opqzm, new_limit_ctrl);
-  set_ctrl(iffm->in(1)->in(1), new_limit_ctrl);
-  set_ctrl(iffm->in(1), new_limit_ctrl);
+  // Bool/Cmp nodes for zero trip guard should have been assigned control between the main and pre loop (because zero
+  // trip guard depends on induction variable value out of pre loop) so shouldn't need to be adjusted
+  assert(is_dominator(new_limit_ctrl, get_ctrl(iffm->in(1)->in(1))), "control of cmp should be below control of updated input");
 
   C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
 }
@@ -3402,7 +3406,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     // with full checks, but the main-loop with no checks.  Remove said checks
     // from the main body.
     if (should_rce) {
-      phase->do_range_check(this, old_new);
+      phase->do_range_check(this);
     }
 
     // Double loop body for unrolling.  Adjust the minimum-trip test (will do
