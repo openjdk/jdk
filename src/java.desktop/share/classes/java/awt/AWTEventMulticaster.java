@@ -975,15 +975,14 @@ public class AWTEventMulticaster implements
 
     /**
      * Return true if the argument represents a binary tree that needs to be rebalanced.
-     * <p>
-     * The criteria for when we need a rebalance is subjective. For now this method
-     * checks up to 100 of the topmost nodes of a AWTEventMulticaster. If they all include
-     * one leaf node, then this method returns true. This criteria will be met after
-     * 100 iterations of {@link #addInternal(EventListener, EventListener)}.
      */
     private static boolean needsRebalance(AWTEventMulticaster l) {
         int level = 0;
         while (true) {
+            // The criteria for when we need a rebalance is subjective. This method checks
+            // up to a given threshold of the topmost nodes of a AWTEventMulticaster. If
+            // they all include one leaf node, then this method returns true. This criteria
+            // will be met after several consecutive iterations of `addInternal(a, b)`
             if (++level > MAX_UNBALANCED_TOP_NODES) {
                 return true;
             }
