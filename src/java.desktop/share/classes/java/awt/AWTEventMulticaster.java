@@ -110,6 +110,8 @@ public class AWTEventMulticaster implements
     TextListener, InputMethodListener, HierarchyListener,
     HierarchyBoundsListener, MouseWheelListener {
 
+    private static final int MAX_UNBALANCED_TOP_NODES = 500;
+
     /**
      * A variable in the event chain (listener-a)
      */
@@ -982,7 +984,7 @@ public class AWTEventMulticaster implements
     private static boolean needsRebalance(AWTEventMulticaster l) {
         int level = 0;
         while (true) {
-            if (++level > 500) {
+            if (++level > MAX_UNBALANCED_TOP_NODES) {
                 return true;
             }
             if (l.a instanceof AWTEventMulticaster aMulti) {
