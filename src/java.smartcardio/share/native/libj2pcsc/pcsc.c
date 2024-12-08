@@ -45,6 +45,7 @@
 #define dprintf2(s, p1, p2) printf(s, p1, p2)
 #define dprintf3(s, p1, p2, p3) printf(s, p1, p2, p3)
 #else
+#undef dprintf
 #define dprintf(s)
 #define dprintf1(s, p1)
 #define dprintf2(s, p1, p2)
