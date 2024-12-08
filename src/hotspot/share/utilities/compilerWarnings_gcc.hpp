@@ -70,7 +70,7 @@
 #define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wzero-as-null-pointer-constant")
 
-#if (__GNUC__ >= 10) && !defined(DISABLE_POISONING_STOPGAP)
+#if (__GNUC__ >= 10)
 // TODO: Re-enable warning attribute for Clang once
 // https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
 // || (defined(__clang_major__) && (__clang_major__ >= 14))
