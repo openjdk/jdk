@@ -26,9 +26,7 @@
  * @bug 8193717
  * @summary Check that code with a lot named imports can compile.
  * @library /tools/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask

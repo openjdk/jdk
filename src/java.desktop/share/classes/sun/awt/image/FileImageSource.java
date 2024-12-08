@@ -34,18 +34,7 @@ public class FileImageSource extends InputStreamImageSource {
     String imagefile;
 
     public FileImageSource(String filename) {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(filename);
-        }
         imagefile = filename;
-    }
-
-    final boolean checkSecurity(Object context, boolean quiet) {
-        // File based images only ever need to be checked statically
-        // when the image is retrieved from the cache.
-        return true;
     }
 
     protected ImageDecoder getDecoder() {

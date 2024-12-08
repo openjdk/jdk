@@ -31,8 +31,6 @@ import java.util.List;
 /*
  * @test ClassLiterals
  * @summary test that new type arguments are emitted to classfile
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 public class NewTypeArguments extends ClassfileTestHelper{

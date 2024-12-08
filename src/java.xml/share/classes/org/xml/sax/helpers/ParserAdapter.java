@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ public class ParserAdapter implements XMLReader, DocumentHandler
     {
         super();
 
-        String driver = SecuritySupport.getSystemProperty("org.xml.sax.parser");
+        String driver = System.getProperty("org.xml.sax.parser");
 
         try {
             setup(ParserFactory.makeParser());

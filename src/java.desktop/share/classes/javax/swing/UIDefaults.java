@@ -1141,7 +1141,6 @@ public class UIDefaults extends Hashtable<Object,Object>
                     }
                 }
                 c = Class.forName(className, true, (ClassLoader)cl);
-                SwingUtilities2.checkAccess(c.getModifiers());
                 if (methodName != null) {
                     Class<?>[] types = getClassArray(args);
                     Method m = c.getMethod(methodName, types);
@@ -1149,7 +1148,6 @@ public class UIDefaults extends Hashtable<Object,Object>
                 } else {
                     Class<?>[] types = getClassArray(args);
                     Constructor<?> constructor = c.getConstructor(types);
-                    SwingUtilities2.checkAccess(constructor.getModifiers());
                     return constructor.newInstance(args);
                 }
             } catch(Exception e) {

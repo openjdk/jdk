@@ -25,9 +25,7 @@
  * @test
  * @bug 8015499
  * @summary javac, Gen is generating extra checkcast instructions in some corner cases
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.util
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @run main DoubleCastTest
  */
 

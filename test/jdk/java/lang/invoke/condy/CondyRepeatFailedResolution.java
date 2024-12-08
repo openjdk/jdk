@@ -26,7 +26,6 @@
  * @bug 8186211
  * @summary Test basic invocation of multiple ldc's of the same dynamic constant that fail resolution
  * @library /java/lang/invoke/common
- * @enablePreview
  * @run testng CondyRepeatFailedResolution
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyRepeatFailedResolution
  */

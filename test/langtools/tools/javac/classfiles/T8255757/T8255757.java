@@ -26,10 +26,8 @@
  * @bug 8255757
  * @summary Javac shouldn't emit duplicate pool entries on array::clone
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main T8255757
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package jdk.internal.loader;
 
+import java.io.IOException;
 import java.net.URL;
 import java.io.File;
+
 import sun.net.www.ParseUtil;
 
 /**
@@ -53,8 +55,7 @@ public class FileURLMapper {
      *  so long as the URL does not contain a hostname in the authority field.
      */
 
- 
-        public String getPath() {
+    public String getPath() {
         if (path == null) {
             String host = url.getHost();
             if (host == null || host.isEmpty() || "localhost".equalsIgnoreCase(host)) {
@@ -64,12 +65,11 @@ public class FileURLMapper {
         return path;
     }
 
-
     /**
      * Checks whether the file identified by the URL exists.
      */
 
-        public boolean exists() {
+    public boolean exists() {
         String filePath = getPath();
         return filePath != null && new File(filePath).exists();
     }

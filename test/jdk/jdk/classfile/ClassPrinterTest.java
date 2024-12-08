@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodHandleDesc;
@@ -472,7 +472,7 @@ class ClassPrinterTest {
                     "source file": "Foo.java",
                     "inner classes": [
                         {"inner class": "Phee", "outer class": "Phoo", "inner name": "InnerName", "flags": ["PROTECTED"]},
-                        {"inner class": "Phoo", "outer class": "null", "inner name": "null", "flags": ["PRIVATE"]}],
+                        {"inner class": "Phoo", "outer class": null, "inner name": null, "flags": ["PRIVATE"]}],
                     "enclosing method": {"class": "Phee", "method name": "enclosingMethod", "method type": "(Ljava/util/Collection;)Ljava/lang/Double;"},
                     "signature": "LBoo;LPhee;LPhoo;",
                     "nest host": "Phee",
@@ -725,7 +725,7 @@ class ClassPrinterTest {
                     <source_file>Foo.java</source_file>
                     <inner_classes>
                         <cls><inner_class>Phee</inner_class><outer_class>Phoo</outer_class><inner_name>InnerName</inner_name><flags><flag>PROTECTED</flag></flags></cls>
-                        <cls><inner_class>Phoo</inner_class><outer_class>null</outer_class><inner_name>null</inner_name><flags><flag>PRIVATE</flag></flags></cls></inner_classes>
+                        <cls><inner_class>Phoo</inner_class><outer_class><null/></outer_class><inner_name><null/></inner_name><flags><flag>PRIVATE</flag></flags></cls></inner_classes>
                     <enclosing_method><class>Phee</class><method_name>enclosingMethod</method_name><method_type>(Ljava/util/Collection;)Ljava/lang/Double;</method_type></enclosing_method>
                     <signature>LBoo;LPhee;LPhoo;</signature>
                     <nest_host>Phee</nest_host>

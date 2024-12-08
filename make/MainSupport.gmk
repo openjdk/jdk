@@ -137,6 +137,15 @@ define CleanModule
   $(call Clean-include, $1)
 endef
 
+define AddTestDependency
+  test-$(strip $1): $2
+
+  exploded-test-$(strip $1): $2
+
+  ifneq ($(filter $(TEST), $1), )
+    TEST_DEPS += $2
+  endif
+endef
 
 ################################################################################
 
