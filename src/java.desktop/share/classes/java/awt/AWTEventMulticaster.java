@@ -110,7 +110,7 @@ public class AWTEventMulticaster implements
     TextListener, InputMethodListener, HierarchyListener,
     HierarchyBoundsListener, MouseWheelListener {
 
-    private static final int MAX_UNBALANCED_TOP_NODES = 500;
+    private static final int MAX_UNBALANCED_TOP_NODES = 100;
 
     /**
      * A variable in the event chain (listener-a)
@@ -977,9 +977,9 @@ public class AWTEventMulticaster implements
      * Return true if the argument represents a binary tree that needs to be rebalanced.
      * <p>
      * The criteria for when we need a rebalance is subjective. For now this method
-     * checks up to 500 of the topmost nodes of a AWTEventMulticaster. If they all include
+     * checks up to 100 of the topmost nodes of a AWTEventMulticaster. If they all include
      * one leaf node, then this method returns true. This criteria will be met after
-     * 500 iterations of {@link #addInternal(EventListener, EventListener)}.
+     * 100 iterations of {@link #addInternal(EventListener, EventListener)}.
      */
     private static boolean needsRebalance(AWTEventMulticaster l) {
         int level = 0;
