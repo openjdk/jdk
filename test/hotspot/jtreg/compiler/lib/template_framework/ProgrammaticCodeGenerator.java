@@ -50,6 +50,7 @@ public class ProgrammaticCodeGenerator implements CodeGenerator {
     }
 
     public void instantiate(Scope scope, Parameters parameters) {
+        scope.setDebugContext(name(), parameters);
         instantiator.call(scope, parameters);
     };
 }

@@ -258,6 +258,7 @@ public final class Template implements CodeGenerator {
 
         public void openClassScope() {
             ClassScope classScope = new ClassScope(currentScope, currentScope.fuel);
+            classScope.setDebugContext("inside template", null);
             currentScope = classScope;
         }
 
@@ -274,6 +275,7 @@ public final class Template implements CodeGenerator {
 
         public void openMethodScope() {
             MethodScope methodScope = new MethodScope(currentScope, currentScope.fuel);
+            methodScope.setDebugContext("inside template", null);
             currentScope = methodScope;
         }
 
@@ -290,6 +292,7 @@ public final class Template implements CodeGenerator {
     }
 
     public void instantiate(Scope scope, Parameters parameters) {
+        scope.setDebugContext(name(), parameters);
         InstantiationState state = new InstantiationState(scope, parameters);
 
         // Parse the templateString, detect templated and nonTemplated segments.

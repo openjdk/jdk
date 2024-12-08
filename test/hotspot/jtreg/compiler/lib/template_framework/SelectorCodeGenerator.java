@@ -96,6 +96,7 @@ public final class SelectorCodeGenerator implements CodeGenerator {
     }
 
     public void instantiate(Scope scope, Parameters parameters) {
+        scope.setDebugContext(name(), parameters);
         // Sample a generator.
 	String generatorName = choose(scope);
         CodeGenerator generator = scope.library().find(generatorName, " in selector");
