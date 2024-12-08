@@ -41,7 +41,7 @@ bool NativeStackPrinter::print_stack(outputStream* st, char* buf, int buf_size,
   }
 }
 
-void NativeStackPrinter::print_stack_from_frame(outputStream* st, frame& fr,
+void NativeStackPrinter::print_stack_from_frame(outputStream* st, frame fr,
                                                 char* buf, int buf_size,
                                                 bool print_source_info, int max_frames) {
   // see if it's a valid frame

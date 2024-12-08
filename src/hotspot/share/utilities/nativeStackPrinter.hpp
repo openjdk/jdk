@@ -87,7 +87,7 @@ class NativeStackPrinter : public StackObj {
   //                      misfunction in error situations)
   // - max_frames: the maximum number of frames to print. -1 means print all.
   //               However, StackPrintLimit sets a hard limit on the maximum.
-  void print_stack_from_frame(outputStream* st, frame& fr,
+  void print_stack_from_frame(outputStream* st, frame fr,
                               char* buf, int buf_size,
                               bool print_source_info, int max_frames);
 
