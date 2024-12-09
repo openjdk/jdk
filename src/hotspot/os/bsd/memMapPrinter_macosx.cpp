@@ -49,7 +49,7 @@ static const int MAX_REGIONS_RETURNED = 1000000;
 // ::mmap() on MacOS is a layer on top of Mach system calls, and will allocate in 128MB chunks.
 // This code will coalesce a series of identical 128GB chunks (maybe followed by one smaller chunk
 // with identical flags) into one.
-// Unfortunately, two or more identically allocated contiguous sections will appear as one, if the 
+// Unfortunately, two or more identically allocated contiguous sections will appear as one, if the
 // first section is size 128MB.  vmmap(1) has the same issue.
 static const int MACOS_PARTIAL_ALLOCATION_SIZE = 128 * M;
 
