@@ -345,7 +345,7 @@ protected:
   // The PhaseRenumberLive phase renumbers nodes based on liveness information.
   // Therefore, it updates the value of the _idx field. The parse-time _idx is
   // preserved in _parse_idx.
-  const node_idx_t _idx;
+  node_idx_t _idx;
   DEBUG_ONLY(const node_idx_t _parse_idx;)
   // IGV node identifier. Two nodes, possibly in different compilation phases,
   // have the same IGV identifier if (and only if) they are the very same node
