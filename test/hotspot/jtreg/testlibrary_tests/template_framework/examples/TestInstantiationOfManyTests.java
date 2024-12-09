@@ -31,6 +31,8 @@
 
 package template_framework.examples;
 
+import java.util.Arrays;
+
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
 
@@ -79,7 +81,15 @@ public class TestInstantiationOfManyTests {
             }
             """
         );
+
+        // 2 individual instantiations:
         instantiator.where("param1", "abc").where("param2", "xyz").add(staticsTemplate, mainTemplate, testTemplate);
+        instantiator.where("param1", "def").where("param2", "pqr").add(staticsTemplate, mainTemplate, testTemplate);
+
+        // Cross product with parameters, produces 9 individual instantiations:
+        instantiator.where("param1", Arrays.asList("aaa", "bbb", "ccc"))
+                    .where("param2", Arrays.asList("xxx", "yyy", "zzz"))
+                    .add(staticsTemplate, mainTemplate, testTemplate);
 
         return instantiator.instantiate();
     }

@@ -139,6 +139,7 @@ public final class TestClassInstantiator {
             Scope testScope = new Scope(classScope, classScope.fuel);
             testTemplate.instantiate(testScope, parameters);
             testScope.stream.addNewline();
+            testScope.stream.addNewline();
             testScope.close();
             classScope.stream.addCodeStream(testScope.stream);
         }
@@ -150,6 +151,14 @@ public final class TestClassInstantiator {
             argumentsMap.put(paramKey, Arrays.asList(paramValue));
             return this;
         }
+
+        public Instantiator where(String paramKey, List<String> paramValues) {
+            if (argumentsMap.containsKey(paramKey)) {
+                throw new TemplateFrameworkException("Duplicate parameter key: " + paramKey);
+            }
+            argumentsMap.put(paramKey, paramValues);
+            return this;
+        }
     }
 
     public void add(Template staticsTemplate, Template mainTemplate, Template testTemplate) {
@@ -158,6 +167,10 @@ public final class TestClassInstantiator {
 
     public Instantiator where(String paramKey, String paramValue) {
         return new Instantiator(this).where(paramKey, paramValue);
+    }
+
+    public Instantiator where(String paramKey, List<String> paramValues) {
+        return new Instantiator(this).where(paramKey, paramValues);
     }
 
     public String instantiate() {
@@ -180,7 +193,6 @@ public final class TestClassInstantiator {
         baseScope.stream.addCodeStream(classScope.stream);
 
         baseScope.stream.outdent();
-        baseScope.stream.addNewline();
         baseScope.stream.addCodeToLine("}");
         baseScope.close();
         return baseScope.toString();
