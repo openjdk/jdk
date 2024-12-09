@@ -101,13 +101,13 @@ public class Scope {
             for (Map.Entry<String,ArrayList<String>> e : variables.entrySet()) {
                 String type = e.getKey();
                 ArrayList<String> locals = e.getValue();
-                System.out.println("  type: " + type + " - " + count(type));
+                System.out.println("    type: " + type + " - " + count(type));
                 for (String v : locals) {
-                  System.out.println("    " + v);
+                  System.out.println("      " + v);
                 }
             }
             if (variables.isEmpty()) {
-                System.out.println("  empty");
+                System.out.println("    empty");
             }
         }
 

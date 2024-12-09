@@ -75,6 +75,7 @@ public class CodeGeneratorLibrary {
     public static CodeGenerator factoryLoadStore(boolean mutable) {
         String generatorName = mutable ? "store" : "load";
         return new ProgrammaticCodeGenerator(generatorName, (Scope scope, Parameters parameters) -> {
+            parameters.checkOnlyHas(scope, "type");
             String type = parameters.get("type", scope, " for generator call to load/store");
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
@@ -118,6 +119,7 @@ public class CodeGeneratorLibrary {
 
     public static CodeGenerator factoryAddVariable() {
         return new ProgrammaticCodeGenerator("add_variable", (Scope scope, Parameters parameters) -> {
+            parameters.checkOnlyHas(scope, "scope", "name", "type", "final");
             String scopeKind = parameters.get("scope", scope, " for generator call to 'add_variable'");
             String name = parameters.get("name", scope, " for generator call to 'add_variable'");
             String type = parameters.get("type", scope, " for generator call to 'add_variable'");
@@ -156,6 +158,7 @@ public class CodeGeneratorLibrary {
         // Random Constants.
         codeGenerators.put("int_con", new ProgrammaticCodeGenerator("int_con",
             (Scope scope, Parameters parameters) -> {
+                parameters.checkOnlyHas(scope, "lo", "hi");
                 String lo = parameters.getOrNull("lo");
                 String hi = parameters.getOrNull("hi");
 

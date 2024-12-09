@@ -25,6 +25,7 @@ package compiler.lib.template_framework;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Set;
 
 /**
  * Parameters is required to instantiate a CodeGenerator (e.g. Template).
@@ -95,11 +96,19 @@ public class Parameters {
     }
 
     public void print() {
-        System.out.println("Parameters ID=" + instantiationID);
+        System.out.println("  Parameters ID=" + instantiationID);
         for (Map.Entry<String,String> e : argumentsMap.entrySet()) {
-            System.out.println("  " + e.getKey() + "=" + e.getValue());
+            System.out.println("    " + e.getKey() + "=" + e.getValue());
         }
     }
 
-    // TODO verify that we have exactly the names we expect, and no different.
+    public void checkOnlyHas(Scope scope, String... names) {
+        Set<String> set = Set.of(names);
+        for (String key : argumentsMap.keySet()) {
+            if (!set.contains(key)) {
+                scope.print();
+                throw new TemplateFrameworkException("Parameters have unexpected entry: " + key);
+            }
+        }
+    }
 }
