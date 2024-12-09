@@ -29,7 +29,7 @@ import java.lang.constant.MethodTypeDesc;
 
 /**
  * The {@code ClassFileVisitor} reads a class file using the
- * {@code jdk.internal.classfile} library. It iterates over the methods
+ * {@code java.lang.classfile} library. It iterates over the methods
  * in a class, and checks MethodParameters attributes against JLS
  * requirements, as well as assumptions about the javac implementations.
  * <p>

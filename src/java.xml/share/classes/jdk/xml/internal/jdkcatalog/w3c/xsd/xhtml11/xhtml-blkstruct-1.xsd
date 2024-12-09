@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+      Block Structural
+
+        * div, p
+  
+      This module declares the elements and their attributes used to
+      support block-level structural markup.            
+          
+      This is the XML Schema Block Structural module for XHTML
+      $Id: xhtml-blkstruct-1.xsd,v 1.3 2005/09/26 22:54:53 ahby Exp $
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+    </xs:annotation>
+    <!-- div -->
+    <xs:attributeGroup name="xhtml.div.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.div.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Flow.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.div.type" mixed="true">
+        <xs:group ref="xhtml.div.content"/>
+        <xs:attributeGroup ref="xhtml.div.attlist"/>
+    </xs:complexType>
+    <!-- p -->
+    <xs:attributeGroup name="xhtml.p.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.p.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.p.type" mixed="true">
+        <xs:group ref="xhtml.p.content"/>
+        <xs:attributeGroup ref="xhtml.p.attlist"/>
+    </xs:complexType>
+</xs:schema>

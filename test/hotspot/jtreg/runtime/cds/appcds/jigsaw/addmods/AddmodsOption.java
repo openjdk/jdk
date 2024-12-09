@@ -80,8 +80,8 @@ public class AddmodsOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Mismatched --add-modules module name(s).")
-          .shouldContain("dump time: jdk.jconsole runtime: jdk.incubator.vector")
+          .shouldContain("Mismatched values for property jdk.module.addmods")
+          .shouldContain("runtime jdk.incubator.vector dump time jdk.jconsole")
           .shouldContain(subgraphCannotBeUsed);
 
         // no module specified during runtime
@@ -89,7 +89,7 @@ public class AddmodsOption {
             loggingOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("Module jdk.httpserver specified during dump time but not during runtime")
+          .shouldContain("jdk.httpserver specified during dump time but not during runtime")
           .shouldContain(subgraphCannotBeUsed);
 
         // dump an archive without the --add-modules option
@@ -109,7 +109,7 @@ public class AddmodsOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldContain("--add-modules module name(s) specified during runtime but not found in archive: jdk.jconsole")
+          .shouldContain("jdk.jconsole specified during runtime but not during dump time")
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern)
           .shouldContain(subgraphCannotBeUsed);

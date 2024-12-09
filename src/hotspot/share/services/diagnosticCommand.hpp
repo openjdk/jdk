@@ -776,6 +776,33 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class VThreadSchedulerDCmd : public DCmd {
+public:
+  VThreadSchedulerDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() {
+    return "Thread.vthread_scheduler";
+  }
+  static const char* description() {
+    return "Print the virtual thread scheduler, and the delayed task schedulers that support "
+           "virtual threads doing timed operations.";
+  }
+  static const char* impact() { return "Low"; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class VThreadPollersDCmd : public DCmd {
+public:
+  VThreadPollersDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() {
+    return "Thread.vthread_pollers";
+  }
+  static const char* description() {
+    return "Print the I/O pollers that support virtual threads doing blocking network I/O operations.";
+  }
+  static const char* impact() { return "Low"; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<bool> _human_readable;

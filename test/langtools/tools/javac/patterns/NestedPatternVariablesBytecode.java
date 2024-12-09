@@ -26,10 +26,8 @@
  * @bug 8268748
  * @summary Javac generates error opcodes when using nest pattern variables
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NestedPatternVariablesBytecode
  */

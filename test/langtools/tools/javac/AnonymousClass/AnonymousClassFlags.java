@@ -25,8 +25,6 @@
  * @test
  * @bug 8161013
  * @summary Verify that anonymous class binaries have the correct flags set
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main AnonymousClassFlags
  */
 

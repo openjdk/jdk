@@ -455,6 +455,27 @@ public final class RecordingStream implements AutoCloseable, EventStream {
         directoryStream.awaitTermination();
     }
 
+    /**
+     * Registers an action to perform when new metadata arrives in the stream.
+     *
+     * The event type of an event always arrives sometime before the actual event.
+     * The action must be registered before the stream is started.
+     * <p>
+     * The following example shows how to listen to new event types, register
+     * an action if the event type name matches a regular expression and increase a
+     * counter if a matching event is found. A benefit of using an action per
+     * event type, instead of the generic {@link #onEvent(Consumer)} method,
+     * is that a stream implementation can avoid reading events that are of no
+     * interest.
+     *
+     * {@snippet class = "Snippets" region = "RecordingStreamMetadata"}
+     *
+     * @param action to perform, not {@code null}
+     *
+     * @throws IllegalStateException if an action is added after the stream has
+     *                               started
+     * @since 16
+     */
     @Override
     public void onMetadata(Consumer<MetadataEvent> action) {
         directoryStream.onMetadata(action);
