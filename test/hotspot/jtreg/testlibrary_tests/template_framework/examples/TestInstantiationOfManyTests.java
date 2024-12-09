@@ -58,23 +58,28 @@ public class TestInstantiationOfManyTests {
         Template staticsTemplate = new Template("my_example_statics",
             """
             // $statics
+            private static String $PARAM1 = "#{param1}";
             """
         );
         Template mainTemplate = new Template("my_example_main",
             """
             // $main
-            $test();
+            $test("#{param2}");
             """
         );
         Template testTemplate = new Template("my_example_test",
             """
             // $test
-            public static void $test() {
-                System.out.println("$test");
+            public static void $test(String param2) {
+                System.out.println("$test #{param1} #{param2}");
+                System.out.println("$test " + $PARAM1 + " " + param2);
+                if (!$PARAM1.equals("#{param1}") || !param2.equals("#{param2}")) {
+                    throw new RuntimeException("Strings mismatched");
+                }
             }
             """
         );
-        instantiator.add(staticsTemplate, mainTemplate, testTemplate);
+        instantiator.where("param1", "abc").where("param2", "xyz").add(staticsTemplate, mainTemplate, testTemplate);
 
         return instantiator.instantiate();
     }

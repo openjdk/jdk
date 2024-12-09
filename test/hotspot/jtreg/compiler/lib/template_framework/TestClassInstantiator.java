@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 
@@ -91,9 +92,37 @@ public final class TestClassInstantiator {
             }
             isUsed = true;
 
-            // Shared parameters for the 3 templates, so the variable names are shared.
-            Parameters parameters = new Parameters();
+            String[] keys = argumentsMap.keySet().toArray(new String[0]);
+            ArrayList<Parameters> setOfParameters = new ArrayList<Parameters>();
+            setOfParameters.add(new Parameters());
+            generate(staticsTemplate, mainTemplate, testTemplate,
+                     keys, 0, setOfParameters);
+        }
 
+        public void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
+                             String[] keys, int keysPos, ArrayList<Parameters> setOfParameters) {
+            if (keysPos == keys.length) {
+                for (Parameters p : setOfParameters) {
+                    generate(staticsTemplate, mainTemplate, testTemplate, p);
+                }
+                return;
+            }
+            ArrayList<Parameters> newSet = new ArrayList<Parameters>();
+            String key = keys[keysPos];
+            List<String> values = argumentsMap.get(key);
+            for (Parameters pOld : setOfParameters) {
+                for (String v : values) {
+                    Parameters p = new Parameters(pOld.getArguments());
+                    p.add(key, v);
+                    newSet.add(p);
+                }
+            }
+            generate(staticsTemplate, mainTemplate, testTemplate, keys, keysPos + 1, newSet);
+        }
+
+        public void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
+                             Parameters parameters) {
+            // Shared parameters for the 3 templates, so the variable names are shared.
             Scope staticsSubScope = new Scope(staticsScope, staticsScope.fuel);
             staticsTemplate.instantiate(staticsSubScope, parameters);
             staticsSubScope.stream.addNewline();
