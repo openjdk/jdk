@@ -86,7 +86,7 @@ public class TestImplicitNullChecks {
     @Test
     @IR(counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
-    public static Object testLoad(Outer o) {
+    static Object testLoad(Outer o) {
         return o.f;
     }
 
@@ -96,14 +96,14 @@ public class TestImplicitNullChecks {
     @IR(applyIfPlatform = {"aarch64", "false"},
         counts = {IRNode.NULL_CHECK, "1"},
         phase = CompilePhase.FINAL_CODE)
-    public static Object testLoadVolatile(OuterWithVolatileField o) {
+    static Object testLoadVolatile(OuterWithVolatileField o) {
         return o.f;
     }
 
     @Run(test = {"testLoad",
                  "testLoadVolatile"},
          mode = RunMode.STANDALONE)
-    public static void runLoadTests() {
+    static void runLoadTests() {
         {
             Outer o = new Outer();
             // Trigger compilation with implicit null check.
@@ -140,12 +140,12 @@ public class TestImplicitNullChecks {
     // are not necessarily located at the initial instruction start address.
     @IR(failOn = IRNode.NULL_CHECK,
         phase = CompilePhase.FINAL_CODE)
-    public static void testStore(Outer o, Object o1) {
+    static void testStore(Outer o, Object o1) {
         o.f = o1;
     }
 
     @Run(test = {"testStore"})
-    public static void runStoreTests() {
+    static void runStoreTests() {
         {
             Outer o = new Outer();
             Object o1 = new Object();
@@ -182,7 +182,7 @@ public class TestImplicitNullChecks {
     @Run(test = {"testCompareAndExchange",
                  "testCompareAndSwap",
                  "testGetAndSet"})
-    public void runAtomicTests() {
+    static void runAtomicTests() {
         {
             Outer o = new Outer();
             Object oldVal = new Object();
@@ -224,7 +224,7 @@ public class TestImplicitNullChecks {
 
     @Run(test = {"testLoadSoftReference",
                  "testLoadWeakReference"})
-    public void runReferenceTests() {
+    static void runReferenceTests() {
         {
             Object o1 = new Object();
             SoftReference<Object> sref = new SoftReference<Object>(o1);
