@@ -2219,7 +2219,7 @@ address FileMapInfo::heap_region_dumptime_address() {
   assert(CDSConfig::is_using_archive(), "runtime only");
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   if (UseCompressedOops) {
-    return /*dumptime*/ narrow_oop_base() + r->mapping_offset();
+    return /*dumptime*/ (address)((uintptr_t)narrow_oop_base() + r->mapping_offset());
   } else {
     return heap_region_requested_address();
   }
