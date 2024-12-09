@@ -116,14 +116,21 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
 
   ins_encode %{
     if (UseNewCode) {
-      tty->print("zLoadP, memory operand %s: ", $mem->Name());
-      $mem->dump_spec(tty);
-      tty->cr();
+      //tty->print("zLoadP, memory operand %s: ", $mem->Name());
+      //$mem->dump_spec(tty);
+      //tty->cr();
     }
     Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     assert(!this->has_initial_implicit_null_check_candidate() ||
            Address::offset_ok_for_immed(ref_addr.offset(), exact_log2(8)),
            "an instruction that can be used for implicit null checking should emit the candidate memory access first");
+    if (UseNewCode) {
+      __ nop();
+      __ nop();
+      __ nop();
+      __ nop();
+      __ nop();
+    }
     if (ref_addr.getMode() == Address::base_plus_offset) {
       // Fix up any out-of-range offsets.
       assert_different_registers(rscratch2, as_Register($mem$$base));
