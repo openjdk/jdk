@@ -97,7 +97,7 @@ public sealed interface CompoundElement<E extends ClassFileElement>
     /**
      * {@return a text representation of the compound element and its contents for debugging purposes}
      *
-     * The format, structure and exact content are not specified and may change at any time in the future.
+     * The format, structure and exact contents of the returned string are not specified and may change at any time in the future.
      */
     default String toDebugString() {
         StringBuilder text = new StringBuilder();
