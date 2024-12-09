@@ -27,7 +27,6 @@
  * @summary Test invalid name in name and type
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @enablePreview
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyTypeValidationTest
  */
 

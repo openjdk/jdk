@@ -25,8 +25,6 @@
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method invocation type arguments
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MethodInvocationTypeArgument.java
  * @run main Driver MethodInvocationTypeArgument
  */

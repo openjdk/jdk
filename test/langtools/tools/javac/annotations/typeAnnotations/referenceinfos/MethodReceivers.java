@@ -27,8 +27,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method receivers
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MethodReceivers.java
  * @run main Driver MethodReceivers
  */
