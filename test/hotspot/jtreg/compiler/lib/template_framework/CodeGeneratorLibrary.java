@@ -78,6 +78,7 @@ public class CodeGeneratorLibrary {
             String type = parameters.get("type", " for generator call to load/store");
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
+                scope.print();
                 throw new TemplateFrameworkException("Generator call to load/store cannot find variable of type: " + type);
             }
             scope.stream.addCodeToLine(String.valueOf(name));
@@ -107,6 +108,7 @@ public class CodeGeneratorLibrary {
                     methodScope.dispatch(scope, generator, argumentsMap);
                 }
                 default -> {
+                    scope.print();
                     throw new TemplateFrameworkException("Generator dispatch got: scope=" + scopeKind +
                                                          "but should be scope=class or scope=method");
                 }
@@ -122,6 +124,7 @@ public class CodeGeneratorLibrary {
             String isFinal = parameters.getOrNull("final");
 
             if (isFinal != null && !isFinal.equals("true") && !isFinal.equals("false")) {
+                scope.print();
                 throw new TemplateFrameworkException("Generator 'add_variable' got: final=" + isFinal +
                                                      "but should be final=true or final=false");
             }
@@ -137,6 +140,7 @@ public class CodeGeneratorLibrary {
                     methodScope.addVariable(name, type, mutable);
                 }
                 default -> {
+                    scope.print();
                     throw new TemplateFrameworkException("Generator dispatch got: scope=" + scopeKind +
                                                          "but should be scope=class or scope=method");
                 }

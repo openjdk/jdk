@@ -88,6 +88,7 @@ public final class SelectorCodeGenerator implements CodeGenerator {
                 return name;
             }
         }
+        scope.print();
         throw new TemplateFrameworkException("Failed to select total=" + total + ", r=" + r);
     }
 

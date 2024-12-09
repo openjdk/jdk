@@ -97,8 +97,7 @@ public class Scope {
             System.out.println("Count after add: " + count(type));
         }
 
-        public void print(int i) {
-            System.out.println("print " + i);
+        public void printLocals() {
             for (Map.Entry<String,ArrayList<String>> e : variables.entrySet()) {
                 String type = e.getKey();
                 ArrayList<String> locals = e.getValue();
@@ -107,6 +106,14 @@ public class Scope {
                   System.out.println("    " + v);
                 }
             }
+            if (variables.isEmpty()) {
+                System.out.println("  empty");
+            }
+        }
+
+        public void print(int i) {
+            System.out.println("print " + i);
+            printLocals();
             if (parent != null) {
                 parent.print(i+1);
             }
@@ -118,7 +125,7 @@ public class Scope {
 
     record DebugContext(String description, Parameters parameters) {
         public void print() {
-            System.out.println("  Description: " + description);
+            System.out.println("  " + description);
             if (parameters == null) {
                 System.out.println("  No parameters.");
             } else {
@@ -183,6 +190,7 @@ public class Scope {
     public final ClassScope classScope(String errorMessage) {
         // TODO refactor to loop
         if (parent == null) {
+            print();
             throw new TemplateFrameworkException("Could not find ClassScope / '#open(class)' " + errorMessage);
         } else if (parent instanceof ClassScope cs) {
             return cs;
@@ -195,7 +203,9 @@ public class Scope {
      * Next outer Scope (not this) that is a MethodScope.
      */
     public final MethodScope methodScope(String errorMessage) {
+        // TODO refactor to loop
         if (parent == null) {
+            print();
             throw new TemplateFrameworkException("Could not find MethodScope / '#open(method)' " + errorMessage);
         } else if (parent instanceof MethodScope ms) {
             return ms;
@@ -215,6 +225,10 @@ public class Scope {
             difference += current.stream.getIndentation();
         }
         if (current == null) {
+            System.out.println("This scope:");
+            print();
+            System.out.println("Outer scope:");
+            outer.print();
             throw new TemplateFrameworkException("Outer scope not found.");
         }
         return difference;
@@ -227,6 +241,10 @@ public class Scope {
         } else {
             System.out.println("  No debug context set yet.");
         }
+        System.out.println("  mutable variables:");
+        mutableVariables.printLocals();
+        System.out.println("  all variables:");
+        allVariables.printLocals();
         if (parent != null) {
             parent.print();
         }

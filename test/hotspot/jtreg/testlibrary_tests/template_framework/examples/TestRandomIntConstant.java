@@ -82,7 +82,7 @@ public class TestRandomIntConstant {
                     #{:code:$con1,$con2,$con5}
                     int ${xxx:int} = 0;
                     #{:code(var=$xxx):$xxx,$con5};
-                    return $con1 + $con2 + #{param1};
+                    return $con1 + $con2 + #{param1} + #{param2};
                     #close(method)
                 }
 

@@ -179,6 +179,7 @@ public final class Template implements CodeGenerator {
 
         public String wrapVariable(String name, String templated) {
             if (name.equals("")) {
+                currentScope.print();
                 throw new TemplateFrameworkException("Template local variable cannot be empty string. Got: " + templated);
             }
             int id = parameters.instantiationID;
@@ -188,6 +189,7 @@ public final class Template implements CodeGenerator {
         public void registerVariable(String name, String type, boolean mutable) {
             System.out.println("register " + name + " " + type + " " + mutable);
             if (localVariables.containsKey(name)) {
+                currentScope.print();
                 throw new TemplateFrameworkException("Template local variable with type declaration " +
                                                      "${" + name + ":" + type + "} was not the first use of the variable.");
             }
@@ -210,6 +212,7 @@ public final class Template implements CodeGenerator {
                                         List<String> variableList,
                                         String templated) {
             if (!name.equals("") && replacementsMap.containsKey(name)) {
+                currentScope.print();
                 throw new TemplateFrameworkException("Template generator call is not the first use of " + name +
                                                      ". Got " + templated);
             }
@@ -222,6 +225,7 @@ public final class Template implements CodeGenerator {
                 variable = wrapVariable(variable, templated);
                 TypeAndMutability typeAndMutability = getVariable(variable);
                 if (typeAndMutability == null) {
+                    nestedScope.print();
                     throw new TemplateFrameworkException("Template generator call error. Variable type declaration not found" +
                                                          " for variable " + variable +
                                                          ". For generator call " + templated);
@@ -244,10 +248,12 @@ public final class Template implements CodeGenerator {
 
         public void repeatReplacement(String name, String templated) {
             if (name.equals("")) {
+                currentScope.print();
                 throw new TemplateFrameworkException("Template syntax error. Got: " + templated);
             }
             if (!replacementsMap.containsKey(name)) {
                 parameters.print();
+                currentScope.print();
                 throw new TemplateFrameworkException("Template replacement error. Was neither parameter nor " +
                                                      "repeat of previous generator call: " + templated);
             }
@@ -264,6 +270,7 @@ public final class Template implements CodeGenerator {
 
         public void closeClassScope() {
             if (!(currentScope instanceof ClassScope)) {
+                currentScope.print();
                 throw new TemplateFrameworkException("Template scope mismatch.");
             }
             Scope classScope = currentScope;
@@ -281,6 +288,7 @@ public final class Template implements CodeGenerator {
 
         public void closeMethodScope() {
             if (!(currentScope instanceof MethodScope)) {
+                currentScope.print();
                 throw new TemplateFrameworkException("Template scope mismatch.");
             }
             Scope methodScope = currentScope;
@@ -315,6 +323,7 @@ public final class Template implements CodeGenerator {
                 // Newline with indentation
                 int spaces = templated.length() - 1;
                 if (spaces % 4 != 0) {
+                    state.currentScope.print();
                     throw new TemplateFrameworkException("Template non factor-of-4 indentation: " + spaces);
                 }
                 // Compute indentation relative to templateScope from spaces.
@@ -342,6 +351,7 @@ public final class Template implements CodeGenerator {
             // Local variable with type declaration: ${name} or ${name:type} or ${name:type:final}
             String[] parts = templated.substring(2, templated.length() - 1).split(":");
             if (parts.length > 3 || (parts.length == 3 && !parts[2].equals("final"))) {
+                state.currentScope.print();
                 throw new TemplateFrameworkException("Template local variable with type declaration should have format " +
                                                      "$name or ${name} or ${name:type} or ${name:type:final}, but got " + templated);
             }
@@ -365,6 +375,7 @@ public final class Template implements CodeGenerator {
             String replacement = templated.substring(2, templated.length() - 1);
             String[] parts = replacement.split(":");
             if (parts.length > 3) {
+                state.currentScope.print();
                 throw new TemplateFrameworkException("Template replacement syntax error. Should be " +
                                                      "#{name:generator:variables}, but got " + templated);
             }
@@ -374,6 +385,7 @@ public final class Template implements CodeGenerator {
 
             // Can only have variables if there is a generator.
             if (generator.equals("") && !variables.equals("")) {
+                state.currentScope.print();
                 throw new TemplateFrameworkException("Template replacement syntax error. Cannot have variables " +
                                                      "without generator. Usage: ${name:generator:variables}. Got " +
                                                      templated);
@@ -385,6 +397,7 @@ public final class Template implements CodeGenerator {
                 if (parameterValue != null) {
                     // It is a parameter value.
                     if (!generator.equals("") || !variables.equals("")) {
+                        state.currentScope.print();
                         throw new TemplateFrameworkException("Template replacement error: " + name + "is given as " +
                                                              "parameter with value " + parameterValue + ", so we " +
                                                              "cannot also define a generator. Got " + templated);
@@ -400,6 +413,7 @@ public final class Template implements CodeGenerator {
                 int openPos = generator.indexOf('(');
                 int closePos = generator.indexOf(')');
                 if ((openPos == -1) != (closePos == -1) || (closePos != -1 && closePos != generator.length() - 1)) {
+                    state.currentScope.print();
                     throw new TemplateFrameworkException("Template replacement syntax error (generator brackets). " +
                                                          "Got: " + templated);
                 }
@@ -416,6 +430,7 @@ public final class Template implements CodeGenerator {
                     generatorName.contains(")") ||
                     generatorArguments.contains("(") ||
                     generatorArguments.contains(")")) {
+                    state.currentScope.print();
                     throw new TemplateFrameworkException("Template replacement syntax error (generator brackets). " +
                                                          "Generator name: " + generatorName + ". " +
                                                          "Generator arguments: " + generatorArguments + ". " +
@@ -426,7 +441,7 @@ public final class Template implements CodeGenerator {
                 //   arg=text
                 //   arg=$var
                 //   arg=#param
-                Map<String,String> argumentsMap = parseKeyValuePairs(generatorArguments);
+                Map<String,String> argumentsMap = parseKeyValuePairs(generatorArguments, state);
                 argumentsMap = argumentsMap.entrySet().stream().collect(Collectors.toMap(
                     e -> e.getKey(),
                     e -> {
@@ -464,19 +479,22 @@ public final class Template implements CodeGenerator {
             } else if (scopeAction.equals("close") && scopeKind.equals("method")) {
                 state.closeMethodScope();
             } else {
+                state.currentScope.print();
                 throw new TemplateFrameworkException("Template scope syntax error. Got: " + templated);
             }
         } else {
+            state.currentScope.print();
             throw new TemplateFrameworkException("Template pattern not handled: " + templated);
         }
     }
 
-    private static HashMap<String,String> parseKeyValuePairs(String pairs) {
+    private static HashMap<String,String> parseKeyValuePairs(String pairs, InstantiationState state) {
         HashMap<String,String> map = new HashMap<String,String>();
         if (!pairs.equals("")) {
             for (String pair : pairs.split(",")) {
                 String[] parts = pair.split("=");
                 if (parts.length != 2) {
+                    state.currentScope.print();
                     throw new TemplateFrameworkException("Template syntax error in key value pairs. " +
                                                          "Got: " + pairs);
                 }
@@ -484,6 +502,7 @@ public final class Template implements CodeGenerator {
                 String val = parts[1];
                 String oldVal = map.put(key, val);
                 if (oldVal != null) {
+                    state.currentScope.print();
                     throw new TemplateFrameworkException("Template syntax error in key value pairs. " +
                                                          "Duplicate of key " + key + ". " +
                                                          "Got: " + pairs);
