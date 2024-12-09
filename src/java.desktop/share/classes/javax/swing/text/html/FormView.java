@@ -193,7 +193,7 @@ public class FormView extends ComponentView implements ActionListener {
     protected Component createComponent() {
         AttributeSet attr = getElement().getAttributes();
         HTML.Tag t = (HTML.Tag)
-                attr.getAttribute(StyleConstants.NameAttribute);
+            attr.getAttribute(StyleConstants.NameAttribute);
         JComponent c = null;
         Object model = attr.getAttribute(StyleConstants.ModelAttribute);
 
@@ -208,8 +208,8 @@ public class FormView extends ComponentView implements ActionListener {
                 @SuppressWarnings("unchecked")
                 JList<?> list = new JList<>((ListModel) model);
                 int size = HTML.getIntegerAttributeValue(attr,
-                        HTML.Attribute.SIZE,
-                        1);
+                                                         HTML.Attribute.SIZE,
+                                                         1);
                 list.setVisibleRowCount(size);
                 list.setSelectionModel((ListSelectionModel)model);
                 c = new JScrollPane(list);
@@ -222,17 +222,17 @@ public class FormView extends ComponentView implements ActionListener {
         } else if (t == HTML.Tag.TEXTAREA) {
             JTextArea area = new JTextArea((Document) model);
             int rows = HTML.getIntegerAttributeValue(attr,
-                    HTML.Attribute.ROWS,
-                    1);
+                                                     HTML.Attribute.ROWS,
+                                                     1);
             area.setRows(rows);
             int cols = HTML.getIntegerAttributeValue(attr,
-                    HTML.Attribute.COLS,
-                    20);
+                                                     HTML.Attribute.COLS,
+                                                     20);
             maxIsPreferred = 3;
             area.setColumns(cols);
             c = new JScrollPane(area,
-                    JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                    JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+                                JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                                JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
         }
 
         if (c != null) {
@@ -256,7 +256,7 @@ public class FormView extends ComponentView implements ActionListener {
 
         if (type.equals("submit") || type.equals("reset")) {
             String value = (String)
-                    attr.getAttribute(HTML.Attribute.VALUE);
+                attr.getAttribute(HTML.Attribute.VALUE);
             if (value == null) {
                 if (type.equals("submit")) {
                     value = UIManager.getString("FormView.submitButtonText");
@@ -309,8 +309,8 @@ public class FormView extends ComponentView implements ActionListener {
             maxIsPreferred = 3;
         } else if (type.equals("text")) {
             int size = HTML.getIntegerAttributeValue(attr,
-                    HTML.Attribute.SIZE,
-                    -1);
+                                                     HTML.Attribute.SIZE,
+                                                     -1);
             JTextField field;
             if (size > 0) {
                 field = new JTextField();
@@ -333,8 +333,8 @@ public class FormView extends ComponentView implements ActionListener {
                 field.setDocument((Document) model);
             }
             int size = HTML.getIntegerAttributeValue(attr,
-                    HTML.Attribute.SIZE,
-                    -1);
+                                                     HTML.Attribute.SIZE,
+                                                     -1);
             field.setColumns((size > 0) ? size : 20);
             field.addActionListener(this);
             maxIsPreferred = 3;
@@ -344,16 +344,16 @@ public class FormView extends ComponentView implements ActionListener {
                 field.setDocument((Document)model);
             }
             int size = HTML.getIntegerAttributeValue(attr, HTML.Attribute.SIZE,
-                    -1);
+                                                     -1);
             field.setColumns((size > 0) ? size : 20);
             JButton browseButton = new JButton(UIManager.getString
-                    ("FormView.browseFileButtonText"));
+                                           ("FormView.browseFileButtonText"));
             Box box = Box.createHorizontalBox();
             box.add(field);
             box.add(Box.createHorizontalStrut(5));
             box.add(browseButton);
             browseButton.addActionListener(new BrowseFileAction(
-                    attr, (Document)model));
+                                           attr, (Document)model));
             c = box;
             maxIsPreferred = 3;
         }
@@ -434,20 +434,20 @@ public class FormView extends ComponentView implements ActionListener {
      */
     public float getMaximumSpan(int axis) {
         switch (axis) {
-            case View.X_AXIS:
-                if ((maxIsPreferred & 1) == 1) {
-                    super.getMaximumSpan(axis);
-                    return getPreferredSpan(axis);
-                }
-                return super.getMaximumSpan(axis);
-            case View.Y_AXIS:
-                if ((maxIsPreferred & 2) == 2) {
-                    super.getMaximumSpan(axis);
-                    return getPreferredSpan(axis);
-                }
-                return super.getMaximumSpan(axis);
-            default:
-                break;
+        case View.X_AXIS:
+            if ((maxIsPreferred & 1) == 1) {
+                super.getMaximumSpan(axis);
+                return getPreferredSpan(axis);
+            }
+            return super.getMaximumSpan(axis);
+        case View.Y_AXIS:
+            if ((maxIsPreferred & 2) == 2) {
+                super.getMaximumSpan(axis);
+                return getPreferredSpan(axis);
+            }
+            return super.getMaximumSpan(axis);
+        default:
+            break;
         }
         return super.getMaximumSpan(axis);
     }
@@ -523,9 +523,9 @@ public class FormView extends ComponentView implements ActionListener {
         try {
             @SuppressWarnings("deprecation")
             var _unused = actionURL = (action == null)
-                    ? new URL(base.getProtocol(), base.getHost(),
-                    base.getPort(), base.getFile())
-                    : new URL(base, action);
+                ? new URL(base.getProtocol(), base.getHost(),
+                                        base.getPort(), base.getFile())
+                : new URL(base, action);
             if (!isPostMethod) {
                 String query = data.toString();
                 @SuppressWarnings("deprecation")
@@ -686,7 +686,7 @@ public class FormView extends ComponentView implements ActionListener {
         Element elem = getElement();
         while (elem != null) {
             if (elem.getAttributes().getAttribute
-                    (StyleConstants.NameAttribute) == HTML.Tag.FORM) {
+                (StyleConstants.NameAttribute) == HTML.Tag.FORM) {
                 return elem;
             }
             elem = elem.getParentElement();
@@ -713,10 +713,10 @@ public class FormView extends ComponentView implements ActionListener {
             while ((next = it.next()) != null) {
                 if (isControl(next)) {
                     String type = (String)next.getAttributes().getAttribute
-                            (HTML.Attribute.TYPE);
+                                       (HTML.Attribute.TYPE);
 
                     if (type != null && type.equals("submit") &&
-                            next != getElement()) {
+                        next != getElement()) {
                         // do nothing - this submit is not the trigger
                     } else if (type == null || !type.equals("image")) {
                         // images only result in data if they triggered
@@ -747,7 +747,7 @@ public class FormView extends ComponentView implements ActionListener {
         }
         String value = null;
         HTML.Tag tag = (HTML.Tag)elem.getAttributes().getAttribute
-                (StyleConstants.NameAttribute);
+                                  (StyleConstants.NameAttribute);
 
         if (tag == HTML.Tag.INPUT) {
             value = getInputElementData(attr);
@@ -914,9 +914,9 @@ public class FormView extends ComponentView implements ActionListener {
                     AttributeSet elemAttr = next.getAttributes();
 
                     if (HTMLDocument.matchNameAttribute
-                            (elemAttr, HTML.Tag.INPUT)) {
+                                     (elemAttr, HTML.Tag.INPUT)) {
                         String type = (String)elemAttr.getAttribute
-                                (HTML.Attribute.TYPE);
+                                                  (HTML.Attribute.TYPE);
 
                         if ("text".equals(type) || "password".equals(type)) {
                             return false;
@@ -947,7 +947,7 @@ public class FormView extends ComponentView implements ActionListener {
                 if (isControl(next)) {
                     AttributeSet elemAttr = next.getAttributes();
                     Object m = elemAttr.getAttribute(StyleConstants.
-                            ModelAttribute);
+                                                     ModelAttribute);
                     if (m instanceof TextAreaDocument) {
                         TextAreaDocument doc = (TextAreaDocument)m;
                         doc.reset();
@@ -956,9 +956,9 @@ public class FormView extends ComponentView implements ActionListener {
                             PlainDocument doc =  (PlainDocument)m;
                             doc.remove(0, doc.getLength());
                             if (HTMLDocument.matchNameAttribute
-                                    (elemAttr, HTML.Tag.INPUT)) {
+                                             (elemAttr, HTML.Tag.INPUT)) {
                                 String value = (String)elemAttr.
-                                        getAttribute(HTML.Attribute.VALUE);
+                                           getAttribute(HTML.Attribute.VALUE);
                                 if (value != null) {
                                     doc.insertString(0, value, null);
                                 }
@@ -985,9 +985,9 @@ public class FormView extends ComponentView implements ActionListener {
                         }
                     } else if (m instanceof JToggleButton.ToggleButtonModel) {
                         boolean checked = ((String)elemAttr.getAttribute
-                                (HTML.Attribute.CHECKED) != null);
+                                           (HTML.Attribute.CHECKED) != null);
                         JToggleButton.ToggleButtonModel model =
-                                (JToggleButton.ToggleButtonModel)m;
+                                        (JToggleButton.ToggleButtonModel)m;
                         model.setSelected(checked);
                     }
                 }
@@ -1017,7 +1017,7 @@ public class FormView extends ComponentView implements ActionListener {
             JFileChooser fc = new JFileChooser();
             fc.setMultiSelectionEnabled(false);
             if (fc.showOpenDialog(getContainer()) ==
-                    JFileChooser.APPROVE_OPTION) {
+                  JFileChooser.APPROVE_OPTION) {
                 File selected = fc.getSelectedFile();
 
                 if (selected != null) {
