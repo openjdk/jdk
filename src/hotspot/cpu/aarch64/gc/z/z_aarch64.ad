@@ -143,6 +143,7 @@ instruct zLoadPVolatile(iRegPNoSp dst, indirect mem /* sync_memory */, rFlagsReg
   match(Set dst (LoadP mem));
   predicate(UseZGC && needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
+  ins_has_initial_implicit_null_check_candidate(true);
 
   ins_cost(VOLATILE_REF_COST);
 
