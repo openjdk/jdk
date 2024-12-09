@@ -221,10 +221,6 @@ public final class ClassPrinterImpl {
         }
     }
 
-    private interface LabelResolver {
-        int labelToBci(Label l);
-    }
-
     private static Node leaf(ConstantDesc name, ConstantDesc value) {
         return new LeafNodeImpl(name, value);
     }
@@ -546,7 +542,7 @@ public final class ClassPrinterImpl {
                 new MapNodeImpl(FLOW, "value").with(elementValueToTree(evp.value())))));
     }
 
-    private static Stream<ConstantDesc> convertVTIs(LabelResolver lr, List<VerificationTypeInfo> vtis) {
+    private static Stream<ConstantDesc> convertVTIs(CodeAttribute lr, List<VerificationTypeInfo> vtis) {
         return vtis.stream().mapMulti((vti, ret) -> {
             switch (vti) {
                 case SimpleVerificationTypeInfo s -> {
@@ -584,7 +580,7 @@ public final class ClassPrinterImpl {
             case ClassModel cm -> classToTree(cm, verbosity);
             case FieldModel fm -> fieldToTree(fm, verbosity);
             case MethodModel mm -> methodToTree(mm, verbosity);
-            case CodeModel com -> codeToTree(com, verbosity);
+            case CodeModel com -> codeToTree((CodeAttribute)com, verbosity);
         };
     }
 
@@ -680,7 +676,7 @@ public final class ClassPrinterImpl {
         }
     }
 
-    private static Node frameToTree(ConstantDesc name, LabelResolver lr, StackMapFrameInfo f) {
+    private static Node frameToTree(ConstantDesc name, CodeAttribute lr, StackMapFrameInfo f) {
         return new MapNodeImpl(FLOW, name).with(
                 list("locals", "item", convertVTIs(lr, f.locals())),
                 list("stack", "item", convertVTIs(lr, f.stack())));
@@ -709,26 +705,11 @@ public final class ClassPrinterImpl {
                 .with(codeToTree((CodeAttribute)m.code().orElse(null), verbosity));
     }
 
-    private static MapNode codeToTree(CodeModel com, Verbosity verbosity) {
+    private static MapNode codeToTree(CodeAttribute com, Verbosity verbosity) {
         if (verbosity != Verbosity.MEMBERS_ONLY && com != null) {
             var codeNode = new MapNodeImpl(BLOCK, "code");
-            LabelResolver lr;
-            if (com instanceof CodeAttribute ca) {
-                codeNode.with(leaf("max stack", ca.maxStack()));
-                codeNode.with(leaf("max locals", ca.maxLocals()));
-                lr = ca::labelToBci;
-            } else {
-                var bciMap = new HashMap<Label, Integer>();
-                int bci = 0;
-                for (var e : com) {
-                    switch (e) {
-                        case Label l -> bciMap.put(l, bci);
-                        case Instruction i -> bci += i.sizeInBytes();
-                        default -> {}
-                    }
-                }
-                lr = l -> bciMap.getOrDefault(l, -1);
-            }
+            codeNode.with(leaf("max stack", com.maxStack()));
+            codeNode.with(leaf("max locals", com.maxLocals()));
             codeNode.with(list("attributes",
                     "attribute", com.attributes().stream().map(Attribute::attributeName).map(Utf8Entry::stringValue)));
             var stackMap = new MapNodeImpl(BLOCK, "stack map frames");
@@ -739,7 +720,7 @@ public final class ClassPrinterImpl {
                 if (attr instanceof StackMapTableAttribute smta) {
                     codeNode.with(stackMap);
                     for (var smf : smta.entries()) {
-                        stackMap.with(frameToTree(lr.labelToBci(smf.target()), lr, smf));
+                        stackMap.with(frameToTree(com.labelToBci(smf.target()), com, smf));
                     }
                 } else if (verbosity == Verbosity.TRACE_ALL && attr != null) switch (attr) {
                     case LocalVariableTableAttribute lvta -> {
@@ -789,10 +770,10 @@ public final class ClassPrinterImpl {
                                 })));
                     }
                     case RuntimeVisibleTypeAnnotationsAttribute rvtaa ->
-                        rvtaa.annotations().forEach(a -> forEachOffset(a, lr, (off, an) ->
+                        rvtaa.annotations().forEach(a -> forEachOffset(a, com, (off, an) ->
                                 visibleTypeAnnos.computeIfAbsent(off, o -> new LinkedList<>()).add(an)));
                     case RuntimeInvisibleTypeAnnotationsAttribute ritaa ->
-                        ritaa.annotations().forEach(a -> forEachOffset(a, lr, (off, an) ->
+                        ritaa.annotations().forEach(a -> forEachOffset(a, com, (off, an) ->
                                 invisibleTypeAnnos.computeIfAbsent(off, o -> new LinkedList<>()).add(an)));
                     case Object o -> {}
                 }
@@ -800,13 +781,13 @@ public final class ClassPrinterImpl {
             codeNode.with(attributesToTree(com.attributes(), verbosity));
             if (!stackMap.containsKey(0)) {
                 codeNode.with(new MapNodeImpl(FLOW, "//stack map frame @0").with(
-                    list("locals", "item", convertVTIs(lr, StackMapDecoder.initFrameLocals(com.parent().get()))),
+                    list("locals", "item", convertVTIs(com, StackMapDecoder.initFrameLocals(com.parent().get()))),
                     list("stack", "item", Stream.of())));
             }
             var excHandlers = com.exceptionHandlers().stream().map(exc -> new ExceptionHandler(
-                    lr.labelToBci(exc.tryStart()),
-                    lr.labelToBci(exc.tryEnd()),
-                    lr.labelToBci(exc.handler()),
+                    com.labelToBci(exc.tryStart()),
+                    com.labelToBci(exc.tryEnd()),
+                    com.labelToBci(exc.handler()),
                     exc.catchType().map(ct -> ct.name().stringValue()).orElse(null))).toList();
             int bci = 0;
             for (var coe : com) {
@@ -894,17 +875,17 @@ public final class ClassPrinterImpl {
                         case ConstantInstruction cons -> in.with(leaf(
                                 "constant value", cons.constantValue()));
                         case BranchInstruction br -> in.with(leaf(
-                                "target", lr.labelToBci(br.target())));
+                                "target", com.labelToBci(br.target())));
                         case LookupSwitchInstruction si -> in.with(list(
                                 "targets", "target", Stream.concat(Stream.of(si.defaultTarget())
-                                        .map(lr::labelToBci), si.cases().stream()
-                                                .map(sc -> lr.labelToBci(sc.target())))));
+                                        .map(com::labelToBci), si.cases().stream()
+                                                .map(sc -> com.labelToBci(sc.target())))));
                         case TableSwitchInstruction si -> in.with(list(
                                 "targets", "target", Stream.concat(Stream.of(si.defaultTarget())
-                                        .map(lr::labelToBci), si.cases().stream()
-                                                .map(sc -> lr.labelToBci(sc.target())))));
+                                        .map(com::labelToBci), si.cases().stream()
+                                                .map(sc -> com.labelToBci(sc.target())))));
                         case DiscontinuedInstruction.JsrInstruction jsr -> in.with(leaf(
-                                "target", lr.labelToBci(jsr.target())));
+                                "target", com.labelToBci(jsr.target())));
                         case DiscontinuedInstruction.RetInstruction ret ->  in.with(leaf(
                                 "slot", ret.slot()));
                         default -> {}
@@ -1101,7 +1082,7 @@ public final class ClassPrinterImpl {
         return new Node[0];
     }
 
-    private static void forEachOffset(TypeAnnotation ta, LabelResolver lr, BiConsumer<Integer, TypeAnnotation> consumer) {
+    private static void forEachOffset(TypeAnnotation ta, CodeAttribute lr, BiConsumer<Integer, TypeAnnotation> consumer) {
         switch (ta.targetInfo()) {
             case TypeAnnotation.OffsetTarget ot ->
                 consumer.accept(lr.labelToBci(ot.target()), ta);
