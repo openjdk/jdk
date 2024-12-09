@@ -125,7 +125,7 @@ bool CompressedKlassPointers::check_klass_decode_mode(address base, int shift, c
   return MacroAssembler::check_klass_decode_mode(base, shift, range);
 }
 
-bool CompressedKlassPointers::check_klass_decode_mode() {
-  const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
-  return check_klass_decode_mode(_base, _shift, range);
+bool CompressedKlassPointers::set_klass_decode_mode() {
+  const size_t range = klass_range_end() - base();
+  return MacroAssembler::set_klass_decode_mode(_base, _shift, range);
 }

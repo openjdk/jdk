@@ -178,7 +178,7 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   calc_lowest_highest_narrow_klass_id();
 
   // This has already been checked for SharedBaseAddress and if this fails, it's a bug in the allocation code.
-  if (!check_klass_decode_mode()) {
+  if (!set_klass_decode_mode()) {
     fatal("base=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
           p2i(_base), _shift);
   }
@@ -275,7 +275,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   calc_lowest_highest_narrow_klass_id();
 
   // Initialize klass decode mode and check compability with decode instructions
-  if (!check_klass_decode_mode()) {
+  if (!set_klass_decode_mode()) {
 
     // Give fatal error if this is a specified address
     if ((address)CompressedClassSpaceBaseAddress == _base) {
