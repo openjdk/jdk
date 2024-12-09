@@ -345,6 +345,7 @@ instruct g1LoadP(iRegPNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, rF
   predicate(UseG1GC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, KILL cr);
+  ins_has_initial_implicit_null_check_candidate(true);
   ins_cost(4 * INSN_COST);
   format %{ "ldr  $dst, $mem\t# ptr" %}
   ins_encode %{
@@ -365,6 +366,7 @@ instruct g1LoadN(iRegNNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, iR
   predicate(UseG1GC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadN mem));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  ins_has_initial_implicit_null_check_candidate(true);
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed ptr" %}
   ins_encode %{
