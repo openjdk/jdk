@@ -630,19 +630,23 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 address generate_ghash_processBlocks() {
+  
   StubCodeMark mark(this, "StubRoutines", "ghash");
+  
   address start = __ function_entry();
-  Register state = R3_ARG1;  // long[] st
+  
+  //Registers for parameters
+  Register state = R3_ARG1;  // long[] st0
   Register subkeyH = R4_ARG2; // long[] subH
   Register data = R5_ARG3;  // byte[] data  
-  Register blocks = R6_ARG4; 
- // __ stop("ghash start");
-  // Temporary registers
+  Register blocks = R6_ARG4;
+
   Register temp1 = R8;
   Register temp2 = R9;
   Register temp3 = R10;
   Register temp4 = R11;
   Register align = data;
+  //Vector Registers
   VectorRegister vH = VR0;
   VectorRegister vX = VR1;
   VectorRegister vH_shift = VR2;
@@ -650,7 +654,7 @@ address generate_ghash_processBlocks() {
   VectorRegister vTmp2 = VR4;
   VectorRegister vSwappedH = VR5;
   VectorRegister vTmp4 = VR6;
-  VectorRegister vResult = VR7;
+  VectorRegister loadOrder = VR7;
   VectorRegister vMSB = VR8;
   VectorRegister vLowerH = VR9;
   VectorRegister vHigherH = VR10;
@@ -669,109 +673,118 @@ address generate_ghash_processBlocks() {
   VectorRegister vZero_Stored = VR23;
   VectorRegister vMask = VR24;
   VectorRegister vS = VR25;
-  Label   L_end, L_aligned, L_align_2,L_end_2,L_aligned3,L_end3,L_aligned4,L_end4;
+  
+  Label L_end, L_aligned, L_align_2, L_end_2, L_aligned3;
+  Label L_end3,L_aligned4,L_end4;
+  
+  
   static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
   static const unsigned char perm_pattern2[16] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-// Load the address of perm_pattern
+  
+  // Load the address of perm_pattern
+  #ifdef VM_LITTLE_ENDIAN
   __ load_const_optimized(temp1, (uintptr_t)&perm_pattern);
-  __ load_const_optimized(temp2, (uintptr_t)&perm_pattern2);
+  #else
+  __ load_const_optimized(temp1, (uintptr_t)&perm_pattern2);
+  #endif
+
   __ li(temp3,0);
   __ vxor(fromPerm, fromPerm, fromPerm);  // Clear the vector register
   __ lvxl(fromPerm, temp3,  temp1);  // Lo
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
+
   // Load the vector from memory into vConstC2
-  __ vxor(vConstC2,vConstC2,vConstC2);
+  __ vxor(vConstC2, vConstC2, vConstC2);
   __ mtvrd(vConstC2, temp1);
   __ vxor(vZero, vZero, vZero);
-  // Load H into vector registsiers
-  // Use a different register (e.g., R3)
+  // Checking if address is 16 byte aligned and load accordingly.
   __ li(temp1, 0);
   __ andi(temp1, subkeyH, 15);
-  __ cmpwi(CCR0,temp1,0);
-  __ beq(CCR0, L_aligned);         // Check if 'to' is aligned (mask lower 4 bits)
+  __ cmpwi(CCR0, temp1, 0);
+  __ beq(CCR0, L_aligned);// Check if 'to' is aligned (mask lower 4 bits)
   __ li(temp1, 0);      // Load immediate value 0 into temp  
-  __ vxor(vH,vH,vH);
-  __ lvx(vHigh, temp1, subkeyH);  // Load H using temp instead of R0
-  __ lvsl(vPerm,temp1,subkeyH);
-  __ addi(subkeyH,subkeyH,16);
-  __ lvx(vLow,temp1,subkeyH);
+  __ vxor(vH, vH, vH);
+  __ lvx(vHigh, temp1, subkeyH);
+  __ lvsl(vPerm, temp1, subkeyH);
+  __ addi(subkeyH, subkeyH, 16);
+  __ lvx(vLow, temp1, subkeyH);
   __ vec_perm(vH, vHigh, vLow, vPerm);
-  __ subi(subkeyH,subkeyH,16);
+  __ subi(subkeyH, subkeyH, 16);
   __ b(L_end);
   __ bind(L_aligned);
   __ lvx(vH,temp1,subkeyH);
   __ bind(L_end);
   __ vec_perm(vH, vH, vH, fromPerm);
+
   __ li(temp1, 0);
   __ andi(temp1, state, 15);
-  __ cmpwi(CCR0,temp1,0);
+  __ cmpwi(CCR0, temp1, 0);
   __ beq(CCR0, L_aligned3);// Check if 'to' is aligned (mask lower 4 bits)
   __ li(temp1, 0);      // Load immediate value 0 into temp  
-  __ vxor(vZero_Stored,vZero_Stored,vZero_Stored);
-  __ lvx(vHigh, temp1, state);  // Load H using temp instead of R0
+  __ vxor(vZero_Stored, vZero_Stored, vZero_Stored);
+  __ lvx(vHigh, temp1, state);// Load H using temp instead of R0
   __ lvsl(vPerm,temp1,state);
   __ addi(state, state, 16);
   __ lvx(vLow, temp1, state);
   __ vec_perm(vZero_Stored, vHigh, vLow, vPerm);
-  __ subi(state,state,16);
+  __ subi(state, state, 16);
   __ b(L_end3);
   __ bind(L_aligned3);
-  __ lvx(vZero_Stored,temp1,state);
+  __ lvx(vZero_Stored, temp1, state);
   __ bind(L_end3);
   __ vec_perm(vZero_Stored, vZero_Stored, vZero_Stored, fromPerm);
+  //Operations to obtain lower and higher bytes of subkey H.
   __ vspltisb(vConst1, 1); 
   __ vspltisb(vConst7, 7);
-  __ vsldoi(vTmp4, vZero, vConst1, 1);  // 0x1
+  __ vsldoi(vTmp4, vZero, vConst1, 1);// 0x1
   __ vor(vTmp4, vConstC2, vTmp4); //0xC2...1
   __ vsplt(vMSB, 0, vH); // MSB of H
-  __ vxor(vH_shift, vH_shift,vH_shift);
+  __ vxor(vH_shift, vH_shift, vH_shift);
   __ vsl(vH_shift, vH, vConst1); // Carry= H<<7
   __ vsrab(vMSB, vMSB, vConst7);
   __ vand(vMSB, vMSB, vTmp4); //Carry
   __ vxor(vTmp2, vH_shift, vMSB); // shift H<<<1
   __ vsldoi(vConstC2, vZero, vConstC2, 8);
-  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8); // swap L,H 
+  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);// swap L,H 
   __ vsldoi(vLowerH, vZero, vSwappedH, 8); //H.L
   __ vsldoi(vHigherH, vSwappedH, vZero, 8); //H.H
   __ vxor(vTmp1, vTmp1, vTmp1);
   __ vxor(vZero, vZero, vZero);
-    // Calculate the number of blocks
-    
+  // Calculate the number of blocks
   __ mtctr(blocks);
   __ li(temp1, 0);
   __ load_const_optimized(temp2, (uintptr_t)&perm_pattern2);
-
-    Label loop;
-    __ bind(loop);
-  
-   // Load immediate value 0 into temp  
-    __ vxor(vX,vX,vX);
+  __ lvx(loadOrder, temp2);
+  Label loop;
+  __ bind(loop);
+    // Load immediate value 0 into temp  
+    __ vxor(vX, vX, vX);
     __ vxor(vZero, vZero, vZero);
-    __ li(temp1,0);
+    __ li(temp1, 0);
     //alignment
     __ andi(temp1, data, 15);
-    __ cmpwi(CCR0,temp1,0);
+    __ cmpwi(CCR0, temp1,0);
     __ beq(CCR0, L_align_2);
-    __ li(temp1,0);
-    __ lvx(vHigh,temp1,align);
-    __ lvsl(fromPerm,temp1,align);
-    __ addi(align,align,16);
-    __ lvx(vLow,temp1,data);
-    __ vec_perm(vX, vHigh, vLow, fromPerm);
+    __ li(temp1, 0);
+    __ lvx(vHigh, temp1, align);
+    __ lvsl(vPerm, temp1, align);
+    __ addi(align, align, 16);
+    __ lvx(vLow, temp1, data);
+    __ vec_perm(vHigh, vHigh, vHigh, loadOrder);
+    __ vec_perm(vLow, vLow, vLow, loadOrder);
+    __ vec_perm(vX, vLow, vHigh, vPerm);
     __ subi(align,align,16);
     __ b(L_end_2);
     __ bind(L_align_2);
-    __ lvx(vX,temp1,data);
+    __ lvx(vX, temp1, data);
+    __ vec_perm(vX, vX, vX, loadOrder);
     __ bind(L_end_2);
-    __ lvx(fromPerm,  temp2);
-    __ vec_perm(vX, vX, vX, fromPerm);
-    
+    __ vxor(vX, vX, vZero_Stored);
 
-    __ vxor(vX,vX,vZero_Stored);
-    // Perform GCM multiplication
+      // Perform GCM multiplication
     __ vpmsumd(vTmp1, vLowerH, vX);  // L
-    __ vpmsumd(vTmp2, vSwappedH, vX);        // M
+    __ vpmsumd(vTmp2, vSwappedH, vX); // M
     __ vpmsumd(vTmp3, vHigherH, vX);  // H
     __ vpmsumd(vTmp4, vTmp1, vConstC2);  // reduction
     __ vsldoi(vTmp5, vTmp2, vZero, 8);  // mL
@@ -787,32 +800,34 @@ address generate_ghash_processBlocks() {
     __ vmr(vZero_Stored, vZero);
     __ addi(data, data , 16);
     __ bdnz(loop);
-    __ li(temp4, 0);
-    __ load_const_optimized(temp1, (uintptr_t)&perm_pattern);
-    __ lvx(fromPerm,  temp1);
-    __ vec_perm(vZero, vZero, vZero, fromPerm);
-    __ li(temp1, 0);
-    __ andi(temp1, state, 15);
-    __ cmpwi(CCR0,temp1,0);
-    __ beq(CCR0, L_aligned4);// Check if 'to' is aligned (mask lower 4 bits)
-    __ lvx(vHigh,temp4,state);
-    __ lvsr(vPerm,temp4,state);
-    __ addi(state,state,16);
-    __ lvx(vLow,temp4,state);
-    __ vspltisb(vConst1, -1); // Vector with 1s
-    __ vspltisb(vConst7, 0); // Vector with 7s
-    __ vec_perm(vMask,vConst7,vConst1,vPerm);
-    __ vec_perm(vZero,vZero,vZero,vPerm);
-    __ vsel(vLow,vZero,vLow,vMask);
-    __ vsel(vHigh,vHigh,vZero,vMask);
-    __ stvx(vLow,temp4,state);
-    __ addi(state,state,-16);
-    __ stvx(vHigh,temp4,state);
-    __ b(L_end4);
-    __ bind(L_aligned4);
-    __ stvx(vZero, temp4, state); 
-    __ bind(L_end4);
-    __ blr();  // Return from function
+  __ li(temp4, 0);
+
+  __ vec_perm(vZero, vZero, vZero, fromPerm);
+  __ li(temp1, 0);
+  __ andi(temp1, state, 15);
+  __ cmpwi(CCR0,temp1,0);
+  __ beq(CCR0, L_aligned4);// Check if 'to' is aligned (mask lower 4 bits)
+  __ lvx(vHigh, temp4, state);
+  __ lvsr(vPerm, temp4, state);
+  __ addi(state, state, 16);
+  __ lvx(vLow, temp4, state);
+  __ vspltisb(vConst1, -1); // Vector with 1s
+  __ vspltisb(vConst7, 0); // Vector with 7s
+  __ vec_perm(vMask, vConst7, vConst1, vPerm);
+  __ vec_perm(vZero, vZero, vZero, vPerm);
+  __ vsel(vLow, vZero, vLow, vMask);
+  __ vsel(vHigh, vHigh, vZero, vMask);
+  __ stvx(vLow, temp4, state);
+  __ addi(state, state, -16);
+  __ stvx(vHigh, temp4, state);
+  __ b(L_end4);
+  __ bind(L_aligned4);
+  __ stvx(vZero, temp4, state); 
+  __ bind(L_end4);
+
+    
+  __ blr();  // Return from function
+
   return start;
  
 
