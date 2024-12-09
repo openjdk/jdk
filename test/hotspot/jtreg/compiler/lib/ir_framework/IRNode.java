@@ -219,6 +219,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_L, "AddL");
     }
 
+    public static final String ADD_P = PREFIX + "ADD_P" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_P, "AddP");
+    }
+
     public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
         vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
@@ -249,6 +254,46 @@ public class IRNode {
         vectorNode(ADD_VL, "AddVL", TYPE_LONG);
     }
 
+    public static final String SATURATING_ADD_VB = VECTOR_PREFIX + "SATURATING_ADD_VB" + POSTFIX;
+    static {
+        vectorNode(SATURATING_ADD_VB, "SaturatingAddV", TYPE_BYTE);
+    }
+
+    public static final String SATURATING_ADD_VS = VECTOR_PREFIX + "SATURATING_ADD_VS" + POSTFIX;
+    static {
+        vectorNode(SATURATING_ADD_VS, "SaturatingAddV", TYPE_SHORT);
+    }
+
+    public static final String SATURATING_ADD_VI = VECTOR_PREFIX + "SATURATING_ADD_VI" + POSTFIX;
+    static {
+        vectorNode(SATURATING_ADD_VI, "SaturatingAddV", TYPE_INT);
+    }
+
+    public static final String SATURATING_ADD_VL = VECTOR_PREFIX + "SATURATING_ADD_VL" + POSTFIX;
+    static {
+        vectorNode(SATURATING_ADD_VL, "SaturatingAddV", TYPE_LONG);
+    }
+
+    public static final String SATURATING_SUB_VB = VECTOR_PREFIX + "SATURATING_SUB_VB" + POSTFIX;
+    static {
+        vectorNode(SATURATING_SUB_VB, "SaturatingSubV", TYPE_BYTE);
+    }
+
+    public static final String SATURATING_SUB_VS = VECTOR_PREFIX + "SATURATING_SUB_VS" + POSTFIX;
+    static {
+        vectorNode(SATURATING_SUB_VS, "SaturatingSubV", TYPE_SHORT);
+    }
+
+    public static final String SATURATING_SUB_VI = VECTOR_PREFIX + "SATURATING_SUB_VI" + POSTFIX;
+    static {
+        vectorNode(SATURATING_SUB_VI, "SaturatingSubV", TYPE_INT);
+    }
+
+    public static final String SATURATING_SUB_VL = VECTOR_PREFIX + "SATURATING_SUB_VL" + POSTFIX;
+    static {
+        vectorNode(SATURATING_SUB_VL, "SaturatingSubV", TYPE_LONG);
+    }
+
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(ADD_REDUCTION_V, "AddReductionV(B|S|I|L|F|D)");
@@ -272,6 +317,12 @@ public class IRNode {
     public static final String ADD_REDUCTION_VL = PREFIX + "ADD_REDUCTION_VL" + POSTFIX;
     static {
         superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
+    }
+
+    public static final String ADD_P_OF = COMPOSITE_PREFIX + "ADD_P_OF" + POSTFIX;
+    static {
+        String regex = START + "addP_" + IS_REPLACED + MID + ".*" + END;
+        machOnly(ADD_P_OF, regex);
     }
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
@@ -1116,6 +1167,26 @@ public class IRNode {
     public static final String MOD_L = PREFIX + "MOD_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(MOD_L, "ModL");
+    }
+
+    public static final String MOV_F2I = PREFIX + "MOV_F2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_F2I, "MoveF2I");
+    }
+
+    public static final String MOV_I2F = PREFIX + "MOV_I2F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_I2F, "MoveI2F");
+    }
+
+    public static final String MOV_D2L = PREFIX + "MOV_D2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_D2L, "MoveD2L");
+    }
+
+    public static final String MOV_L2D = PREFIX + "MOD_L2D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOV_L2D, "MoveL2D");
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;

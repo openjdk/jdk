@@ -38,11 +38,11 @@
        NSLog(@"Bad JNI lookup %s\n", name); \
        NSLog(@"%@",[NSThread callStackSymbols]); \
        if ([NSThread isMainThread] == NO) { \
-           if ((*env)->ExceptionOccurred(env) == NULL) { \
+           if (!(*env)->ExceptionCheck(env)) { \
               JNU_ThrowInternalError(env, "Bad JNI Lookup"); \
            } \
        } else { \
-              if ((*env)->ExceptionOccurred(env) != NULL) { \
+              if ((*env)->ExceptionCheck(env)) { \
                   (*env)->ExceptionDescribe(env); \
            } \
        } \
@@ -184,7 +184,7 @@
  * nature of the problem that has been detected and how survivable it is.
  */
 #define CHECK_EXCEPTION() \
-    if ((*env)->ExceptionOccurred(env) != NULL) { \
+    if ((*env)->ExceptionCheck(env)) { \
         if ([NSThread isMainThread] == YES) { \
             if (getenv("JNU_APPKIT_TRACE")) { \
                 (*env)->ExceptionDescribe(env); \

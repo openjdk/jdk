@@ -942,26 +942,6 @@ reg_class v11_reg(
     V11, V11_H, V11_J, V11_K
 );
 
-// class for vector register v12
-reg_class v12_reg(
-    V12, V12_H, V12_J, V12_K
-);
-
-// class for vector register v13
-reg_class v13_reg(
-    V13, V13_H, V13_J, V13_K
-);
-
-// class for vector register v14
-reg_class v14_reg(
-    V14, V14_H, V14_J, V14_K
-);
-
-// class for vector register v15
-reg_class v15_reg(
-    V15, V15_H, V15_J, V15_K
-);
-
 // class for condition codes
 reg_class reg_flags(RFLAGS);
 
@@ -1238,42 +1218,27 @@ bool needs_acquiring_load_reserved(const Node *n)
 
 int MachCallStaticJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return 1 * NativeInstruction::instruction_size; // jal
-  }
   return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
 }
 
 int MachCallDynamicJavaNode::ret_addr_offset()
 {
-  if (UseTrampolines) {
-    return NativeMovConstReg::movptr2_instruction_size +  NativeInstruction::instruction_size; // movptr2, jal
-  }
   return NativeMovConstReg::movptr2_instruction_size + (3 * NativeInstruction::instruction_size); // movptr2, auipc + ld + jal
 }
 
 int MachCallRuntimeNode::ret_addr_offset() {
-  // For generated stubs the call will be:
-  //   auipc + ld + jalr
-  // Using trampos:
-  //   jal(addr)
-  // or with far branches
-  //   jal(trampoline_stub)
-  // for real runtime callouts it will be 11 instructions
+  // For address inside the code cache the call will be:
+  //   auipc + jalr
+  // For real runtime callouts it will be 8 instructions
   // see riscv_enc_java_to_runtime
-  //   la(t0, retaddr)                ->  auipc + addi
-  //   la(t1, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
-  //   addi(sp, sp, -2 * wordSize)    ->  addi
-  //   sd(t1, Address(sp, wordSize))  ->  sd
-  //   jalr(t1)                       ->  jalr
-  CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb != nullptr) {
-    if (UseTrampolines) {
-      return 1 * NativeInstruction::instruction_size;
-    }
-    return 3 * NativeInstruction::instruction_size;
+  //   la(t0, retaddr)                                             ->  auipc + addi
+  //   sd(t0, Address(xthread, JavaThread::last_Java_pc_offset())) ->  sd
+  //   movptr(t1, addr, offset, t0)                                ->  lui + lui + slli + add
+  //   jalr(t1, offset)                                            ->  jalr
+  if (CodeCache::contains(_entry_point)) {
+    return 2 * NativeInstruction::instruction_size;
   } else {
-    return 11 * NativeInstruction::instruction_size;
+    return 8 * NativeInstruction::instruction_size;
   }
 }
 
@@ -1911,9 +1876,6 @@ bool Matcher::match_rule_supported(int opcode) {
       }
       break;
 
-    case Op_ExpandBits:        // fall through
-    case Op_CompressBits:      // fall through
-      guarantee(UseRVV == (MaxVectorSize >= 16), "UseRVV and MaxVectorSize not matched");
     case Op_StrCompressedCopy: // fall through
     case Op_StrInflatedCopy:   // fall through
     case Op_CountPositives:    // fall through
@@ -2435,10 +2397,8 @@ encode %{
       // The NOP here is purely to ensure that eliding a call to
       // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
       __ nop();
-      if (!UseTrampolines) {
-        __ nop();
-        __ nop();
-      }
+      __ nop();
+      __ nop();
       __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
       int method_index = resolved_method_index(masm);
@@ -2489,30 +2449,25 @@ encode %{
   enc_class riscv_enc_java_to_runtime(method meth) %{
     Assembler::IncompressibleRegion ir(masm);  // Fixed length: see ret_addr_offset
 
-    // some calls to generated routines (arraycopy code) are scheduled
-    // by C2 as runtime calls. if so we can call them using a jr (they
-    // will be in a reachable segment) otherwise we have to use a jalr
-    // which loads the absolute address into a register.
+    // Some calls to generated routines (arraycopy code) are scheduled by C2
+    // as runtime calls. if so we can call them using a far call (they will be
+    // in the code cache, thus in a reachable segment) otherwise we have to use
+    // a movptr+jalr pair which loads the absolute address into a register.
     address entry = (address)$meth$$method;
-    CodeBlob *cb = CodeCache::find_blob(entry);
-    if (cb != nullptr) {
-      address call = __ reloc_call(Address(entry, relocInfo::runtime_call_type));
-      if (call == nullptr) {
-        ciEnv::current()->record_failure("CodeCache is full");
-        return;
-      }
+    if (CodeCache::contains(entry)) {
+      __ far_call(Address(entry, relocInfo::runtime_call_type));
       __ post_call_nop();
     } else {
       Label retaddr;
+      // Make the anchor frame walkable
       __ la(t0, retaddr);
-      __ la(t1, RuntimeAddress(entry));
-      // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
-      __ addi(sp, sp, -2 * wordSize);
-      __ sd(t0, Address(sp, wordSize));
-      __ jalr(t1);
+      __ sd(t0, Address(xthread, JavaThread::last_Java_pc_offset()));
+      int32_t offset = 0;
+      // No relocation needed
+      __ movptr(t1, entry, offset, t0); // lui + lui + slli + add
+      __ jalr(t1, offset);
       __ bind(retaddr);
       __ post_call_nop();
-      __ addi(sp, sp, 2 * wordSize);
     }
   %}
 
@@ -3556,46 +3511,6 @@ operand vReg_V10()
 operand vReg_V11()
 %{
   constraint(ALLOC_IN_RC(v11_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V12()
-%{
-  constraint(ALLOC_IN_RC(v12_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V13()
-%{
-  constraint(ALLOC_IN_RC(v13_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V14()
-%{
-  constraint(ALLOC_IN_RC(v14_reg));
-  match(VecA);
-  match(vReg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vReg_V15()
-%{
-  constraint(ALLOC_IN_RC(v15_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -4790,7 +4705,7 @@ instruct loadN(iRegNNoSp dst, memory mem)
   match(Set dst (LoadN mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadN, compressed ptr, #@loadN" %}
+  format %{ "lwu  $dst, $mem\t# compressed ptr, #@loadN" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
@@ -4817,13 +4732,33 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 // Load Narrow Klass Pointer
 instruct loadNKlass(iRegNNoSp dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(LOAD_COST);
-  format %{ "lwu  $dst, $mem\t# loadNKlass, compressed class ptr, #@loadNKlass" %}
+  format %{ "lwu  $dst, $mem\t# compressed class ptr, #@loadNKlass" %}
 
   ins_encode %{
     __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+  %}
+
+  ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory mem)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+
+  ins_cost(LOAD_COST);
+  format %{
+    "lwu  $dst, $mem\t# compressed klass ptr, shifted\n\t"
+    "srli $dst, $dst, markWord::klass_shift_at_offset"
+  %}
+
+  ins_encode %{
+    __ lwu(as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), (unsigned) markWord::klass_shift_at_offset);
   %}
 
   ins_pipe(iload_reg_mem);
@@ -5809,7 +5744,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapB"
   %}
 
@@ -5832,7 +5767,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI_R12 oldval, iReg
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapS"
   %}
 
@@ -5852,12 +5787,12 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapI"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5871,12 +5806,12 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapL"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5891,12 +5826,12 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapN"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5911,12 +5846,12 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapP"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -5935,7 +5870,7 @@ instruct weakCompareAndSwapBAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapBAcq"
   %}
 
@@ -5960,7 +5895,7 @@ instruct weakCompareAndSwapSAcq(iRegINoSp res, indirect mem, iRegI_R12 oldval, i
   effect(TEMP_DEF res, KILL cr, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapSAcq"
   %}
 
@@ -5982,12 +5917,12 @@ instruct weakCompareAndSwapIAcq(iRegINoSp res, indirect mem, iRegI oldval, iRegI
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapIAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -6003,12 +5938,12 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapLAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -6024,12 +5959,12 @@ instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "# $res == 1 when success, #@weakCompareAndSwapNAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -6045,12 +5980,12 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 2);
 
   format %{
-    "cmpxchg_weak_acq $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
+    "weak_cmpxchg_acq $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval\n\t"
     "\t# $res == 1 when success, #@weakCompareAndSwapPAcq"
   %}
 
   ins_encode %{
-    __ cmpxchg_weak(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
+    __ weak_cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
                     /*acquire*/ Assembler::aq, /*release*/ Assembler::rl, $res$$Register);
   %}
 
@@ -10523,17 +10458,19 @@ instruct tlsLoadP(javaThread_RegP dst)
 
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
+                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3, #@cmpFastLock" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLock" %}
 
   ins_encode %{
-    __ fast_lock($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock($object$$Register, $box$$Register,
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -10556,23 +10493,26 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iR
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastLockLightweight" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3,$tmp4 #@cmpFastLockLightweight" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_lock_lightweight($object$$Register, $box$$Register,
+                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box,
+                                  iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
@@ -10582,7 +10522,8 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNo
   format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlockLightweight" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register,
+                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

@@ -266,9 +266,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="morning1">ب</dayPeriod>
+							<dayPeriod type="morning1">بامداد</dayPeriod>
 							<dayPeriod type="afternoon1" draft="contributed">بعد از چاشت</dayPeriod>
-							<dayPeriod type="night1">ش</dayPeriod>
+							<dayPeriod type="night1">شب</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>

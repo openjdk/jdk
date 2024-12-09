@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ public class CICO {
         "cFB24", "cFB32", "Cfb40", "CFB72", "OfB", "OfB20", "OfB48",
         "OfB56", "OFB64", "OFB112", "CFB112", "pCbC" };
     private static final String[] PADDING = { "noPadding", "pkcs5padding" };
-    private static final String PROVIDER = "SunJCE";
+    private static final String PROVIDER = System.getProperty("test.provider.name", "SunJCE");
     private static final int NREADS = 3;
     private static final int KEY_LENGTH = 128;
 

@@ -53,6 +53,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bi">bislamšćina</language>
 			<language type="bin">binišćina</language>
 			<language type="bla">siksikášćina</language>
+			<language type="blo">aniišćina</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengalšćina</language>
 			<language type="bo">tibetšćina</language>
@@ -176,6 +177,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="iba">ibanšćina</language>
 			<language type="ibb">ibibiošćina</language>
 			<language type="id">indonešćina</language>
+			<language type="ie">interlinguešćina</language>
 			<language type="ig">igbo</language>
 			<language type="ii">sichuan yi</language>
 			<language type="ik">inupiak</language>
@@ -231,6 +233,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kv">komišćina</language>
 			<language type="kw">kornišćina</language>
 			<language type="kwk">kwakʼwalašćina</language>
+			<language type="kxv">kuvišćina</language>
 			<language type="ky">kirgišćina</language>
 			<language type="la">łatyńšćina</language>
 			<language type="lad">ladinšćina</language>
@@ -239,8 +242,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lez">lezgianšćina</language>
 			<language type="lg">gandšćina</language>
 			<language type="li">limburšćina</language>
+			<language type="lij">liguriańšćina</language>
 			<language type="lil">lillooetšćina</language>
 			<language type="lkt">lakotšćina</language>
+			<language type="lmo">lombardišćina</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laošćina</language>
 			<language type="lou">Louisiana kreolšćina</language>
@@ -251,7 +256,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="lu">luba-katanga</language>
 			<language type="lua">luba-luluašćina</language>
 			<language type="lun">lundašćina</language>
-			<language type="luo">luo</language>
 			<language type="lus">mizošćina</language>
 			<language type="luy">luhya</language>
 			<language type="lv">letišćina</language>
@@ -395,6 +399,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="sw_CD">kongojska swahilišćina</language>
 			<language type="swb">comorianšćina</language>
 			<language type="syr">syriacšćina</language>
+			<language type="szl">šlazyńšćina</language>
 			<language type="ta">tamilšćina</language>
 			<language type="tce">pódpołdnjowa tutchonšćina</language>
 			<language type="te">telugšćina</language>
@@ -434,9 +439,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="und">njeznata rěc</language>
 			<language type="ur">urdušćina</language>
 			<language type="uz">usbekšćina</language>
-			<language type="vai">vai</language>
 			<language type="ve">vendašćina</language>
+			<language type="vec">venetišćina</language>
 			<language type="vi">vietnamšćina</language>
+			<language type="vmw">makhuwašćina</language>
 			<language type="vo">volapük</language>
 			<language type="vun">vunjo</language>
 			<language type="wa">walonšćina</language>
@@ -447,6 +453,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="wuu">wu chinšćina</language>
 			<language type="xal">kalmykšćina</language>
 			<language type="xh">xhosa</language>
+			<language type="xnr">kangrišćina</language>
 			<language type="xog">soga</language>
 			<language type="yav">yangben</language>
 			<language type="ybb">yembašćina</language>
@@ -2319,9 +2326,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Kap Verde</exemplarCity>
 			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
-			</zone>
 			<zone type="Indian/Christmas">
 				<exemplarCity>Gódowne kupy</exemplarCity>
 			</zone>
@@ -2410,6 +2414,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Bishkek">
 				<exemplarCity>Biškek</exemplarCity>
 			</zone>
+			<zone type="Pacific/Enderbury">
+				<exemplarCity>Enderbury</exemplarCity>
+			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity>Komory</exemplarCity>
 			</zone>
@@ -2458,14 +2465,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Lisbon">
 				<exemplarCity>Lissabon</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
-			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Katar</exemplarCity>
-			</zone>
-			<zone type="Indian/Reunion">
-				<exemplarCity>Réunion</exemplarCity>
 			</zone>
 			<zone type="Europe/Bucharest">
 				<exemplarCity>Bukarest</exemplarCity>
@@ -2514,9 +2515,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Africa/Mogadishu">
 				<exemplarCity>Mogadišu</exemplarCity>
-			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
 			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damaskus</exemplarCity>
@@ -2761,13 +2759,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Chinski cas</generic>
 					<standard>Chinski standardny cas</standard>
 					<daylight>Chinski lěśojski cas</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Choibalsański cas</generic>
-					<standard>Choibalsański standardny cas</standard>
-					<daylight>Choibalsański lěśojski cas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3021,6 +3012,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<generic>Japański cas</generic>
 					<standard>Japański standardny cas</standard>
 					<daylight>Japański lěśojski cas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>kazachiski cas</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -3593,10 +3589,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="two">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6324,6 +6316,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} britiske běrtyle</unitPattern>
 				<unitPattern count="other">{0} britiskich běrtylow</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>spěšnosć swětła</displayName>
+				<unitPattern count="one">{0} spěšnosć swětła</unitPattern>
+				<unitPattern count="two">{0} spěšnosći swětła</unitPattern>
+				<unitPattern count="few">{0} spěšnosći swětła</unitPattern>
+				<unitPattern count="other">{0} spěšnosćow swětła</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>miliardnina</displayName>
+				<unitPattern count="one">{0} miliardnina</unitPattern>
+				<unitPattern count="two">{0} miliardninje</unitPattern>
+				<unitPattern count="few">{0} miliardniny</unitPattern>
+				<unitPattern count="other">{0} miliardninow</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>pśenocowanja</displayName>
+				<unitPattern count="one">{0} pśenocowanje</unitPattern>
+				<unitPattern count="two">{0} pśenocowani</unitPattern>
+				<unitPattern count="few">{0} pśenocowanja</unitPattern>
+				<unitPattern count="other">{0} pśenocowanjow</unitPattern>
+				<perUnitPattern>{0} na pśenocowanje</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>njebjaski směr</displayName>
 				<coordinateUnitPattern type="east">{0} pódzajtšo</coordinateUnitPattern>
@@ -6740,6 +6754,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} šćipki</unitPattern>
 				<unitPattern count="other">{0} šćipkow</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>spěšnosć sw.</displayName>
+				<unitPattern count="one">{0} spěšnosć sw.</unitPattern>
+				<unitPattern count="two">{0} spěšnosći sw.</unitPattern>
+				<unitPattern count="few">{0} spěšnosći sw.</unitPattern>
+				<unitPattern count="other">{0} spěšnosćow sw.</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>nano</displayName>
+				<unitPattern count="one">{0} nano</unitPattern>
+				<unitPattern count="two">{0} nano</unitPattern>
+				<unitPattern count="few">{0} nano</unitPattern>
+				<unitPattern count="other">{0} nano</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nocy</displayName>
+				<unitPattern count="one">{0} noc</unitPattern>
+				<unitPattern count="two">{0} nocy</unitPattern>
+				<unitPattern count="few">{0} nocy</unitPattern>
+				<unitPattern count="other">{0} nocow</unitPattern>
+				<perUnitPattern>{0} na noc</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>směr</displayName>
 				<coordinateUnitPattern type="east">{0} pz</coordinateUnitPattern>
@@ -6809,6 +6845,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="two">{0} šć</unitPattern>
 				<unitPattern count="few">{0} šć</unitPattern>
 				<unitPattern count="other">{0} šć</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>c</displayName>
+				<unitPattern count="one">{0} c</unitPattern>
+				<unitPattern count="two">{0} c</unitPattern>
+				<unitPattern count="few">{0} c</unitPattern>
+				<unitPattern count="other">{0} c</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>n</displayName>
+				<unitPattern count="one">{0} n</unitPattern>
+				<unitPattern count="two">{0} n</unitPattern>
+				<unitPattern count="few">{0} n</unitPattern>
+				<unitPattern count="other">{0} n</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

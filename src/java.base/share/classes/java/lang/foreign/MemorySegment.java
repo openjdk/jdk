@@ -501,7 +501,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * All the methods that can be used to manipulate zero-length memory segments
  * ({@link #reinterpret(long)}, {@link #reinterpret(Arena, Consumer)}, {@link #reinterpret(long, Arena, Consumer)} and
  * {@link AddressLayout#withTargetLayout(MemoryLayout)}) are
- * <a href="package-summary.html#restricted"><em>restricted</em></a> methods, and should
+ * <a href="{@docRoot}/java.base/java/lang/doc-files/RestrictedMethods.html#restricted"><em>restricted</em></a> methods, and should
  * be used with caution: assigning a segment incorrect spatial and/or temporal bounds
  * could result in a VM crash when attempting to access the memory segment.
  *
@@ -761,8 +761,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
-     * method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * method returns a segment that can be used as any other segment allocated using the
+     * provided arena. However, The returned segment is backed by the same memory region
+     * as that of the original segment. As such, the region of memory backing the
+     * returned segment is deallocated only when this segment's arena is closed.
+     * This might lead to <em>use-after-free</em> issues, as the returned segment can be
+     * accessed <em>after</em> its region of memory has been deallocated via this
+     * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
@@ -811,9 +816,14 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * compatibly with the confinement restrictions associated with the provided arena:
      * that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
-     * of the confinement restrictions associated with this segment. In other words,
-     * this method returns a segment that behaves as if it had been allocated using the
-     * provided arena.
+     * of the confinement restrictions associated with this segment. In other words, this
+     * method returns a segment that can be used as any other segment allocated using the
+     * provided arena. However, The returned segment is backed by the same memory region
+     * as that of the original segment. As such, the region of memory backing the
+     * returned segment is deallocated only when this segment's arena is closed.
+     * This might lead to <em>use-after-free</em> issues, as the returned segment can be
+     * accessed <em>after</em> its region of memory has been deallocated via this
+     * segment's arena.
      * <p>
      * Clients can specify an optional cleanup action that should be executed when the
      * provided scope becomes invalid. This cleanup action receives a fresh memory
@@ -1267,9 +1277,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @throws IllegalArgumentException if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
-     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + 1)}, where
-     *         {@code B} is the size, in bytes, of the string encoded using UTF-8 charset
-     *         {@code str.getBytes(StandardCharsets.UTF_8).length})
+     * @throws IndexOutOfBoundsException if no string terminator (e.g. {@code '\0'}) is
+     *         present in this segment between the given {@code offset} and the end of
+     *         this segment.
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1297,21 +1307,19 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param offset  offset in bytes (relative to this segment address) at which this
      *                access operation will occur
      * @param charset the charset used to {@linkplain Charset#newDecoder() decode} the
-     *                string bytes
+     *                string bytes. The {@code charset} must be a
+     *                {@linkplain StandardCharsets standard charset}
      * @return a Java string constructed from the bytes read from the given starting
      *         address up to (but not including) the first {@code '\0'} terminator
      *         character (assuming one is found)
      * @throws IllegalArgumentException  if the size of the string is greater than the
      *         largest string supported by the platform
      * @throws IndexOutOfBoundsException if {@code offset < 0}
-     * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + N)}, where:
-     *         <ul>
-     *             <li>{@code B} is the size, in bytes, of the string encoded using the
-     *             provided charset (e.g. {@code str.getBytes(charset).length});</li>
-     *             <li>{@code N} is the size (in bytes) of the terminator char according
-     *             to the provided charset. For instance, this is 1 for
-     *             {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}.</li>
-     *         </ul>
+     * @throws IndexOutOfBoundsException if no string terminator (e.g. {@code '\0'}) is
+     *         present in this segment between the given {@code offset} and the end of
+     *         this segment. The byte size of the string terminator depends on the
+     *         selected {@code charset}. For instance, this is 1 for
+     *         {@link StandardCharsets#US_ASCII} and 2 for {@link StandardCharsets#UTF_16}
      * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
      *         this segment is not {@linkplain Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
@@ -1365,7 +1373,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *                access operation will occur, the final address of this write
      *                operation can be expressed as {@code address() + offset}
      * @param str     the Java string to be written into this segment
-     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the string bytes
+     * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
+     *                string bytes. The {@code charset} must be a
+     *                {@linkplain StandardCharsets standard charset}
      * @throws IndexOutOfBoundsException if {@code offset < 0}
      * @throws IndexOutOfBoundsException if {@code offset > byteSize() - (B + N)}, where:
      *         <ul>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.io.IOException;
 import java.util.List;
-import jdk.jpackage.internal.AppImageFile;
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
@@ -43,10 +43,9 @@ import jdk.jpackage.test.Annotations.Test;
  * @test
  * @summary jpackage with --app-image
  * @key jpackagePlatformPackage
- * @library ../helpers
+ * @library /test/jdk/tools/jpackage/helpers
  * @requires (jpackage.test.SQETest == null)
  * @build jdk.jpackage.test.*
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile AppImagePackageTest.java
  * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=AppImagePackageTest
@@ -88,7 +87,7 @@ public class AppImagePackageTest {
                 cmd.addArguments("--icon", iconPath("icon"));
             }
             cmd.removeArgumentWithValue("--input");
-            cmd.createJPackageXMLFile("EmptyAppImagePackageTest", "Hello");
+            new AppImageFile("EmptyAppImagePackageTest", "Hello").save(appImageDir);
 
             // on mac, with --app-image and without --mac-package-identifier,
             // will try to infer it from the image, so foreign image needs it.

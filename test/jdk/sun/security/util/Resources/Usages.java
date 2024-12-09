@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,8 +130,6 @@ public class Usages {
                             List.of(MGR_GETSTRING)),
                     new Pair("java.base/share/classes/sun/security/provider/PolicyParser.java",
                             List.of(LOC_GETNONLOC, NEW_LOC)),
-                    new Pair("java.base/share/classes/sun/security/provider/PolicyFile.java",
-                            List.of(MGR_GETSTRING, LOC_GETNONLOC, LOC_GETNONLOC_POLICY)),
                     new Pair("java.base/share/classes/javax/security/auth/",
                             List.of(MGR_GETSTRING)))
     );
@@ -170,11 +168,6 @@ public class Usages {
                                     Matcher m = p.matcher(content);
                                     while (m.find()) {
                                         String arg = m.group(1);
-                                        // Special case in PolicyFile.java:
-                                        if (arg.startsWith("POLICY + \"")) {
-                                            arg = "java.security.policy"
-                                                    + arg.substring(10);
-                                        }
                                         if (!keys.contains(arg)) {
                                             throw new RuntimeException(
                                                     "Not found: " + arg);

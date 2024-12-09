@@ -58,15 +58,9 @@ public class FileManager {
         loadOSXLibrary();
     }
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings("restricted")
     private static void loadOSXLibrary() {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("osx");
-                    return null;
-                }
-            });
+        System.loadLibrary("osx");
     }
 
     /**
@@ -136,11 +130,6 @@ public class FileManager {
          * @since 1.4
          */
     public static void setFileTypeAndCreator(String filename, int type, int creator) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(filename);
-        }
         _setFileTypeAndCreator(filename, type, creator);
     }
         private static native void _setFileTypeAndCreator(String filename, int type, int creator) throws IOException;
@@ -151,11 +140,6 @@ public class FileManager {
          * @since 1.4
          */
     public static void setFileType(String filename, int type) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(filename);
-        }
         _setFileType(filename, type);
         }
     private static native void _setFileType(String filename, int type) throws IOException;
@@ -166,11 +150,6 @@ public class FileManager {
          * @since 1.4
          */
     public static void setFileCreator(String filename, int creator) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkWrite(filename);
-        }
         _setFileCreator(filename, creator);
     }
     private static native void _setFileCreator(String filename, int creator) throws IOException;
@@ -181,11 +160,6 @@ public class FileManager {
          * @since 1.4
          */
     public static int getFileType(String filename) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(filename);
-        }
         return _getFileType(filename);
     }
     private static native int _getFileType(String filename) throws IOException;
@@ -196,11 +170,6 @@ public class FileManager {
          * @since 1.4
          */
     public static int getFileCreator(String filename) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkRead(filename);
-        }
         return _getFileCreator(filename);
     }
     private static native int _getFileCreator(String filename) throws IOException;
@@ -260,11 +229,6 @@ public class FileManager {
          * @since 1.4
          */
     public static String findFolder(short domain, int folderType, boolean createIfNeeded) throws FileNotFoundException {
-        @SuppressWarnings("removal")
-        final SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(new RuntimePermission("canExamineFileSystem"));
-        }
 
         final String foundFolder = _findFolder(domain, folderType, createIfNeeded);
         if (foundFolder == null) throw new FileNotFoundException("Can't find folder: " + Integer.toHexString(folderType));
@@ -288,11 +252,6 @@ public class FileManager {
          */
     @Deprecated
     public static void openURL(String url) throws IOException {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPermission(new RuntimePermission("canOpenURLs"));
-        }
         _openURL(url);
     }
     private static native void _openURL(String url) throws IOException;
@@ -340,10 +299,6 @@ public class FileManager {
 
         private static native String getNativeResourceFromBundle(String resourceName, String subDirName, String type) throws FileNotFoundException;
         private static String getResourceFromBundle(String resourceName, String subDirName, String type) throws FileNotFoundException {
-                @SuppressWarnings("removal")
-                final SecurityManager security = System.getSecurityManager();
-                if (security != null) security.checkPermission(new RuntimePermission("canReadBundle"));
-
                 final String resourceFromBundle = getNativeResourceFromBundle(resourceName, subDirName, type);
                 if (resourceFromBundle == null) throw new FileNotFoundException(resourceName);
                 return resourceFromBundle;
@@ -359,9 +314,6 @@ public class FileManager {
          * @since Java for Mac OS X 10.5 Update 2 - 1.5
          */
         public static String getPathToApplicationBundle() {
-                @SuppressWarnings("removal")
-                SecurityManager security = System.getSecurityManager();
-                if (security != null) security.checkPermission(new RuntimePermission("canReadBundle"));
                 return getNativePathToApplicationBundle();
         }
 
@@ -380,10 +332,6 @@ public class FileManager {
         public static boolean moveToTrash(final File file) throws FileNotFoundException {
                 if (file == null) throw new FileNotFoundException();
                 final String fileName = file.getAbsolutePath();
-
-                @SuppressWarnings("removal")
-                final SecurityManager security = System.getSecurityManager();
-                if (security != null) security.checkDelete(fileName);
 
                 return _moveToTrash(fileName);
         }
@@ -404,10 +352,6 @@ public class FileManager {
         public static boolean revealInFinder(final File file) throws FileNotFoundException {
                 if (file == null || !file.exists()) throw new FileNotFoundException();
                 final String fileName = file.getAbsolutePath();
-
-                @SuppressWarnings("removal")
-                final SecurityManager security = System.getSecurityManager();
-                if (security != null) security.checkRead(fileName);
 
                 return _revealInFinder(fileName);
         }

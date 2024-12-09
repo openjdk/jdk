@@ -34,16 +34,6 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::riscv::_get_previous_sp_entry = nullptr;
-
-address StubRoutines::riscv::_f2i_fixup = nullptr;
-address StubRoutines::riscv::_f2l_fixup = nullptr;
-address StubRoutines::riscv::_d2i_fixup = nullptr;
-address StubRoutines::riscv::_d2l_fixup = nullptr;
-address StubRoutines::riscv::_float_sign_mask = nullptr;
-address StubRoutines::riscv::_float_sign_flip = nullptr;
-address StubRoutines::riscv::_double_sign_mask = nullptr;
-address StubRoutines::riscv::_double_sign_flip = nullptr;
 address StubRoutines::riscv::_zero_blocks = nullptr;
 address StubRoutines::riscv::_compare_long_string_LL = nullptr;
 address StubRoutines::riscv::_compare_long_string_UU = nullptr;
@@ -52,7 +42,6 @@ address StubRoutines::riscv::_compare_long_string_UL = nullptr;
 address StubRoutines::riscv::_string_indexof_linear_ll = nullptr;
 address StubRoutines::riscv::_string_indexof_linear_uu = nullptr;
 address StubRoutines::riscv::_string_indexof_linear_ul = nullptr;
-address StubRoutines::riscv::_large_byte_array_inflate = nullptr;
 
 bool StubRoutines::riscv::_completed = false;
 
@@ -490,5 +479,17 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
     0x29413c29, 0x548c7116, 0xd2dba657, 0xaf16eb68, 0x05050e94,
     0x78c843ab, 0xfe9f94ea, 0x8352d9d5, 0x71c95953, 0x0c04146c,
     0x8a53c32d, 0xf79e8e12, 0x5d8d6bee, 0x204026d1, 0xa617f190,
-    0xdbdabcaf
+    0xdbdabcaf,
+
+    // CRC32 table for carry-less multiplication implementation
+    0xe88ef372UL, 0x00000001UL,
+    0x4a7fe880UL, 0x00000001UL,
+    0x54442bd4UL, 0x00000001UL,
+    0xc6e41596UL, 0x00000001UL,
+    0x3db1ecdcUL, 0x00000000UL,
+    0x74359406UL, 0x00000001UL,
+    0xf1da05aaUL, 0x00000000UL,
+    0x5a546366UL, 0x00000001UL,
+    0x751997d0UL, 0x00000001UL,
+    0xccaa009eUL, 0x00000000UL,
 };

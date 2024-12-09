@@ -613,7 +613,7 @@ JVMCIEnv::~JVMCIEnv() {
   if (_init_error_msg != nullptr) {
     // The memory allocated in libjvmci was not allocated with os::malloc
     // so must not be freed with os::free.
-    ALLOW_C_FUNCTION(::free((void*) _init_error_msg));
+    ALLOW_C_FUNCTION(::free, ::free((void*) _init_error_msg);)
   }
   if (_init_error != JNI_OK) {
     return;
@@ -941,9 +941,8 @@ void JVMCIEnv::fthrow_error(const char* file, int line, const char* format, ...)
   va_end(ap);
   JavaThread* THREAD = JavaThread::current();
   if (is_hotspot()) {
-    Handle h_loader = Handle();
-    Handle h_protection_domain = Handle();
-    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader, h_protection_domain);
+    Handle h_loader;
+    Exceptions::_throw_msg(THREAD, file, line, vmSymbols::jdk_vm_ci_common_JVMCIError(), msg, h_loader );
   } else {
     JNIAccessMark jni(this, THREAD);
     jni()->ThrowNew(JNIJVMCI::JVMCIError::clazz(), msg);

@@ -25,8 +25,6 @@
  * @test SyntheticParameters
  * @summary Test generation of annotations on inner class parameters.
  * @library /lib/annotations/
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main SyntheticParameters
  */
 

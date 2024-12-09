@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -82,17 +80,8 @@ public abstract class HttpServerProvider {
 
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("httpServerProvider")}
      */
-    protected HttpServerProvider() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("httpServerProvider"));
-    }
+    protected HttpServerProvider() {}
 
     private static boolean loadProviderFromProperty() {
         String cn = System.getProperty("com.sun.net.httpserver.HttpServerProvider");
@@ -111,8 +100,7 @@ public abstract class HttpServerProvider {
                  NoSuchMethodException |
                  ClassNotFoundException |
                  IllegalAccessException |
-                 InstantiationException |
-                 SecurityException x) {
+                 InstantiationException x) {
             throw new ServiceConfigurationError(null, x);
         }
     }
@@ -122,20 +110,10 @@ public abstract class HttpServerProvider {
             ServiceLoader.load(HttpServerProvider.class,
                                ClassLoader.getSystemClassLoader())
                 .iterator();
-        for (;;) {
-            try {
-                if (!i.hasNext())
-                    return false;
-                provider = i.next();
-                return true;
-            } catch (ServiceConfigurationError sce) {
-                if (sce.getCause() instanceof SecurityException) {
-                    // Ignore the security exception, try the next provider
-                    continue;
-                }
-                throw sce;
-            }
-        }
+        if (!i.hasNext())
+            return false;
+        provider = i.next();
+        return true;
     }
 
     /**
@@ -174,22 +152,16 @@ public abstract class HttpServerProvider {
      *
      * @return  The system-wide default HttpServerProvider
      */
-    @SuppressWarnings("removal")
     public static HttpServerProvider provider () {
         synchronized (lock) {
             if (provider != null)
                 return provider;
-            return (HttpServerProvider)AccessController
-                .doPrivileged(new PrivilegedAction<Object>() {
-                        public Object run() {
-                            if (loadProviderFromProperty())
-                                return provider;
-                            if (loadProviderAsService())
-                                return provider;
-                            provider = new sun.net.httpserver.DefaultHttpServerProvider();
-                            return provider;
-                        }
-                    });
+            if (loadProviderFromProperty())
+                return provider;
+            if (loadProviderAsService())
+                return provider;
+            provider = new sun.net.httpserver.DefaultHttpServerProvider();
+            return provider;
         }
     }
 

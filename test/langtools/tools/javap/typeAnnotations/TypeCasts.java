@@ -30,7 +30,6 @@ import java.io.*;
  * @bug 6843077
  * @summary test that typecasts annotation are emitted if only the cast
  *          expression is optimized away
- * @enablePreview
  */
 
 public class TypeCasts {

@@ -26,7 +26,6 @@
  * @bug 8262891
  * @summary Verify correct LineNumberTable for rule switches.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
