@@ -71,7 +71,6 @@ ifeq ($(call isTargetOs, windows), true)
       libExplicitAttach.c libImplicitAttach.c \
       exelauncher.c
 
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
   BUILD_JDK_JTREG_EXECUTABLES_LIBS_exerevokeall := advapi32.lib
   BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeNullCallerTest := /EHsc
 else
@@ -93,7 +92,7 @@ else
     BUILD_JDK_JTREG_LIBRARIES_JDK_LIBS_libInheritedChannel := java.base:libjava
     BUILD_JDK_JTREG_EXECUTABLES_LIBS_exelauncher := -ldl
   endif
-  BUILD_JDK_JTREG_EXECUTABLES_LIBS_exeNullCallerTest := $(LIBCXX)
+  BUILD_JDK_JTREG_EXECUTABLES_LDFLAGS_exeNullCallerTest := $(STATIC_STDCXX_LDFLAGS)
 endif
 
 ifeq ($(call isTargetOs, macosx), true)

@@ -279,7 +279,7 @@ JDK_RCFLAGS=$(RCFLAGS) \
 #     to be included for this module when building static libs
 #   EXTRA_RCFLAGS -- additional RCFLAGS to append.
 #   RC_FILEDESC -- override the default FILEDESC for Windows version.rc
-#   DEFAULT_LIBCXX -- if false, do not add LIBCXX to LIBS for C++ compilations
+#   NO_STATIC_LIBCXX -- if true, do not add flags to statically link std C++ libs
 #   DEFAULT_CFLAGS -- if false, do not add default CFLAGS and CXXFLAGS
 #   DEFAULT_LDFLAGS -- if false, do not add default LDFLAGS
 #   CFLAGS_FILTER_OUT -- flags to filter out from default CFLAGS
@@ -331,12 +331,6 @@ define SetupJdkNativeCompilationBody
       $1_OBJECT_DIR := $$(SUPPORT_OUTPUTDIR)/native/$$(MODULE)/$$($1_NATIVE_DIR_PREFIX)$$($1_NAME)
     else
       $$(error Must specify OBJECT_DIR in a MODULE free context)
-    endif
-  endif
-
-  ifneq ($$($1_DEFAULT_LIBCXX), false)
-    ifeq ($$($1_LINK_TYPE), C++)
-      $1_LIBS += $(LIBCXX)
     endif
   endif
 
@@ -437,6 +431,14 @@ define SetupJdkNativeCompilationBody
     else
       # Set the default flags first to be able to override
       $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKLIB) $$($1_LDFLAGS))
+    endif
+  endif
+
+  ifeq ($$($1_LINK_TYPE), C++)
+    $1_LIBS += $$(STDCXX_LIBS)
+
+    ifneq ($$($1_NO_STATIC_LIBCXX), true)
+      $1_LDFLAGS += $$(STATIC_STDCXX_LDFLAGS)
     endif
   endif
 

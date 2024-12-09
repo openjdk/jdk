@@ -615,15 +615,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
     # In the Microsoft toolchain we have a separate LD command "link".
     UTIL_LOOKUP_TOOLCHAIN_PROGS(LD, link)
     TOOLCHAIN_VERIFY_LINK_BINARY(LD)
-    LDCXX="$LD"
   else
     # All other toolchains use the compiler to link.
     LD="$CC"
-    LDCXX="$CXX"
   fi
   AC_SUBST(LD)
-  # FIXME: it should be CXXLD, according to standard (cf CXXCPP)
-  AC_SUBST(LDCXX)
 
   TOOLCHAIN_EXTRACT_LD_VERSION([LD], [linker])
   TOOLCHAIN_PREPARE_FOR_LD_VERSION_COMPARISONS
@@ -850,7 +846,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       # In the Microsoft toolchain we have a separate LD command "link".
       UTIL_REQUIRE_PROGS(BUILD_LD, link, [$VS_PATH])
       TOOLCHAIN_VERIFY_LINK_BINARY(BUILD_LD)
-      BUILD_LDCXX="$BUILD_LD"
     else
       if test "x$OPENJDK_BUILD_OS" = xmacosx; then
         UTIL_REQUIRE_PROGS(BUILD_CC, clang)
@@ -867,7 +862,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
       BUILD_AS="$BUILD_CC -c"
       # Just like for the target compiler, use the compiler as linker
       BUILD_LD="$BUILD_CC"
-      BUILD_LDCXX="$BUILD_CXX"
     fi
 
     PATH="$OLDPATH"
@@ -883,7 +877,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_CC="$CC"
     BUILD_CXX="$CXX"
     BUILD_LD="$LD"
-    BUILD_LDCXX="$LDCXX"
     BUILD_NM="$NM"
     BUILD_AS="$AS"
     BUILD_OBJCOPY="$OBJCOPY"
@@ -897,7 +890,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
   AC_SUBST(BUILD_CC)
   AC_SUBST(BUILD_CXX)
   AC_SUBST(BUILD_LD)
-  AC_SUBST(BUILD_LDCXX)
   AC_SUBST(BUILD_NM)
   AC_SUBST(BUILD_AS)
   AC_SUBST(BUILD_AR)

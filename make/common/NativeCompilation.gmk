@@ -308,11 +308,7 @@ define SetupToolchain
     $$(call SetIfEmpty, $1_STRIP, $$(BUILD_STRIP))
     $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$(BUILD_SYSROOT_CFLAGS))
     $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$(BUILD_SYSROOT_LDFLAGS))
-    ifeq ($$($1_LINK_TYPE), C++)
-      $$(call SetIfEmpty, $1_LD, $$(BUILD_LDCXX))
-    else
-      $$(call SetIfEmpty, $1_LD, $$(BUILD_LD))
-    endif
+    $$(call SetIfEmpty, $1_LD, $$(BUILD_LD))
   else
     $$(call SetIfEmpty, $1_CC, $$(CC))
     $$(call SetIfEmpty, $1_CXX, $$(CXX))
@@ -325,11 +321,7 @@ define SetupToolchain
     $$(call SetIfEmpty, $1_STRIP, $$(STRIP))
     $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$(SYSROOT_CFLAGS))
     $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$(SYSROOT_LDFLAGS))
-    ifeq ($$($1_LINK_TYPE), C++)
-      $$(call SetIfEmpty, $1_LD, $$(LDCXX))
-    else
-      $$(call SetIfEmpty, $1_LD, $$(LD))
-    endif
+    $$(call SetIfEmpty, $1_LD, $$(LD))
   endif
 endef
 

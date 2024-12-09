@@ -568,17 +568,15 @@ LDFLAGS_CXX_JDK := @LDFLAGS_CXX_JDK@
 # LDFLAGS specific to partial linking.
 LDFLAGS_CXX_PARTIAL_LINKING := @LDFLAGS_CXX_PARTIAL_LINKING@
 
-# Sometimes a different linker is needed for c++ libs
-LDCXX := @LDCXX@
-# The flags for linking libstdc++ linker.
-LIBCXX := @LIBCXX@
+# Linker flags needed to statically link std C++ libs, if requested
+STATIC_STDCXX_LDFLAGS := @STATIC_STDCXX_LDFLAGS@
+STDCXX_LIBS := @STDCXX_LIBS@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
 BUILD_CC := @BUILD_ICECC@ @BUILD_CC@
 BUILD_CXX := @BUILD_ICECC@ @BUILD_CXX@
 BUILD_LD := @BUILD_LD@
-BUILD_LDCXX := @BUILD_LDCXX@
 BUILD_AS := @BUILD_AS@
 BUILD_AR := @BUILD_AR@
 BUILD_NM := @BUILD_NM@

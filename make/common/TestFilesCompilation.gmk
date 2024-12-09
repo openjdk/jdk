@@ -118,7 +118,7 @@ define SetupTestFilesCompilationBody
         DISABLED_WARNINGS_clang := format-nonliteral \
             missing-field-initializers sometimes-uninitialized undef \
             unused-but-set-variable unused-function unused-variable, \
-        DEFAULT_LIBCXX := false, \
+        NO_STATIC_LIBCXX := true, \
         JDK_LIBS := $$($1_JDK_LIBS_$$(name)), \
         LIBS := $$($1_LIBS_$$(name)), \
         DEFAULT_VERSIONINFO_RESOURCE := false, \

@@ -137,6 +137,11 @@ $(eval $(call SetupJarArchive, BUILD_JDK_JAR, \
     JAR := $(MICROBENCHMARK_JAR), \
 ))
 
+ifeq ($(TOOLCHAIN_TYPE), gcc)
+  BUILD_MICROBENCHMARK_LIBRARIES_LIBS_libPoint := -lm
+  BUILD_MICROBENCHMARK_LIBRARIES_LIBS_libJNIPoint := -lm
+endif
+
 # Setup compilation of native library dependencies
 $(eval $(call SetupTestFilesCompilation, BUILD_MICROBENCHMARK_LIBRARIES, \
     TYPE := LIBRARY, \
