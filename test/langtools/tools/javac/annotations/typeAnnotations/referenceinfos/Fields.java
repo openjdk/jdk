@@ -25,8 +25,6 @@
  * @test
  * @bug 8042451 8208470
  * @summary Test population of reference info for field
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java Fields.java
  * @run main Driver Fields
  */

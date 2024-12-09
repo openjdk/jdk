@@ -715,10 +715,9 @@ struct TestMultipleStaticAssertFormsInClassScope {
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 void initialize_assert_poison() {
-  char* page = os::reserve_memory(os::vm_page_size());
+  char* page = os::reserve_memory(os::vm_page_size(), !ExecMem, mtInternal);
   if (page) {
-    MemTracker::record_virtual_memory_tag(page, mtInternal);
-    if (os::commit_memory(page, os::vm_page_size(), false) &&
+    if (os::commit_memory(page, os::vm_page_size(), !ExecMem) &&
         os::protect_memory(page, os::vm_page_size(), os::MEM_PROT_NONE)) {
       g_assert_poison = page;
       g_assert_poison_read_only = page;

@@ -26,10 +26,8 @@
  * @bug 8301580 8322159 8333107 8332230 8338678
  * @summary Verify error recovery w.r.t. Attr
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main AttrRecovery
  */

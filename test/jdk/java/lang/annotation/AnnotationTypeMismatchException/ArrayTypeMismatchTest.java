@@ -26,7 +26,6 @@
  * @bug 8266766
  * @summary An array property of a type that is no longer of a type that is a legal member of an
  *          annotation should throw an AnnotationTypeMismatchException.
- * @enablePreview
  * @run main ArrayTypeMismatchTest
  */
 

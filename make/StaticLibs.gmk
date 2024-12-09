@@ -29,6 +29,7 @@ include $(SPEC)
 include MakeBase.gmk
 
 include CopyFiles.gmk
+include DebugInfoUtils.gmk
 include Modules.gmk
 include modules/LauncherCommon.gmk
 
