@@ -1693,7 +1693,7 @@ public:
 // there is no rearrange instruction for short elements, what we will then do is to transform the
 // shuffle vector into one that we can do byte rearrange such that it would provide the same
 // result. This could have been done in VectorRearrangeNode during code emission but we eagerly
-// expand out this because it is often the case that an index vector is reused in many rearrange
+// expand this out because it is often the case that an index vector is reused in many rearrange
 // operations. This allows the index preparation to be GVN-ed as well as hoisted out of loops, etc.
 class VectorLoadShuffleNode : public VectorNode {
  public:
