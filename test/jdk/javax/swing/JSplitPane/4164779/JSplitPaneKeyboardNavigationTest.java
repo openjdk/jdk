@@ -105,7 +105,8 @@ public class JSplitPaneKeyboardNavigationTest {
                 robot.delay(100);
 
                 // Verifier2 - Verifies that, F6 transfers focus to the left side of the parent splitpane,
-                // if the right/bottom side of splitpane already has focus, and it is contained within another splitpane
+                // if the right/bottom side of splitpane already has focus,
+                // and it is contained within another splitpane
                 if (isFocusOwner(leftButton)) {
                     System.out.println("Verifier 2 passed");
                 } else {
@@ -147,7 +148,8 @@ public class JSplitPaneKeyboardNavigationTest {
                 if (failedVerifiers.toString().isEmpty()) {
                     System.out.println("Test passed, All verifiers succeeded for " + laf);
                 } else {
-                    throw new RuntimeException("Test failed, verifiers " + failedVerifiers.toString() + " failed for " + laf);
+                    throw new RuntimeException("Test failed, verifiers "
+                                 + failedVerifiers.toString() + " failed for " + laf);
                 }
             } finally {
                 SwingUtilities.invokeAndWait(JSplitPaneKeyboardNavigationTest::disposeFrame);
@@ -175,7 +177,7 @@ public class JSplitPaneKeyboardNavigationTest {
     }
 
     public static void createUI() {
-        frame = new JFrame();
+        frame = new JFrame("JSplitPaneKeyboardNavigationTest");
         panel = new JPanel();
         panel.setLayout(new BorderLayout());
         leftButton = new JButton("Left Button");
@@ -185,13 +187,14 @@ public class JSplitPaneKeyboardNavigationTest {
         bottomButton = new JButton("Bottom Button");
         panel.add(topButton, BorderLayout.NORTH);
         panel.add(bottomButton, BorderLayout.SOUTH);
-        final JSplitPane splitPane2 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, rightButton1, rightButton2);
-        final JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, leftButton, splitPane2);
+        final JSplitPane splitPane2 = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                                                     true, rightButton1, rightButton2);
+        final JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                                                     true, leftButton, splitPane2);
         panel.add(splitPane1, BorderLayout.CENTER);
         frame.setContentPane(panel);
         frame.setSize(200, 200);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.pack();
         frame.setAlwaysOnTop(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
