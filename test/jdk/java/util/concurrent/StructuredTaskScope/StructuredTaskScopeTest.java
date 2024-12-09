@@ -1484,6 +1484,50 @@ class StructuredTaskScopeTest {
     }
 
     /**
+     * Test Joiners onFork/onComplete methods with a subtask in an unexpected state.
+     */
+    @Test
+    void testJoinersWithUnavailableResukt() throws Exception {
+        try (var scope = StructuredTaskScope.open()) {
+            var done = new CountDownLatch(1);
+            var subtask = scope.fork(() -> {
+                done.await();
+                return null;
+            });
+
+            // onComplete with uncompleted task should throw IAE
+            assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.allSuccessfulOrThrow().onComplete(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.anySuccessfulResultOrThrow().onComplete(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.awaitAllSuccessfulOrThrow().onComplete(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.awaitAll().onComplete(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.allUntil(_ -> false).onComplete(subtask));
+
+            done.countDown();
+            scope.join();
+
+            // onFork with completed task should throw IAE
+            assertEquals(Subtask.State.SUCCESS, subtask.state());
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.allSuccessfulOrThrow().onFork(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.anySuccessfulResultOrThrow().onFork(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.awaitAllSuccessfulOrThrow().onFork(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.awaitAll().onFork(subtask));
+            assertThrows(IllegalArgumentException.class,
+                    () -> Joiner.allUntil(_ -> false).onFork(subtask));
+        }
+
+    }
+
+    /**
      * Test the Config function apply method throwing an exception.
      */
     @Test

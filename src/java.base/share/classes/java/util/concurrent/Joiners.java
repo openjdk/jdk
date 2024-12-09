@@ -155,7 +155,11 @@ class Joiners {
 
         @Override
         public boolean onComplete(Subtask<? extends T> subtask) {
-            return (subtask.state() == Subtask.State.FAILED)
+            Subtask.State state = subtask.state();
+            if (state == Subtask.State.UNAVAILABLE) {
+                throw new IllegalArgumentException();
+            }
+            return (state == Subtask.State.FAILED)
                     && (firstException == null)
                     && FIRST_EXCEPTION.compareAndSet(this, null, subtask.exception());
         }
