@@ -2668,6 +2668,9 @@ ins_attrib ins_alignment(4);    // Required alignment attribute (must
                                 // start) requires.  If > 1, a
                                 // compute_padding() function must be
                                 // provided for the instruction
+// Whether the first instruction in the code emitted for this node is a
+// candidate for implicit null check.
+ins_attrib ins_has_initial_implicit_null_check_candidate(false);
 
 //----------OPERANDS-----------------------------------------------------------
 // Operand definitions must precede instruction definitions for correct parsing
