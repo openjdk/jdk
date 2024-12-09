@@ -268,18 +268,16 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
 
-        if (algorithm.equals("TlsPremasterSecret")) {
+        if (KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
             // For now, only perform native derivation for TlsPremasterSecret
-            // as that is required for FIPS compliance.
+            // as that is required for FIPS compliance and Generic for KDF.
             // For other algorithms, there are unresolved issues regarding
             // how this should work in JCE plus a Solaris truncation bug.
             // (bug not yet filed).
             return nativeGenerateSecret(algorithm);
         }
 
-        if (!algorithm.equalsIgnoreCase("TlsPremasterSecret") &&
-            !AllowKDF.VALUE) {
-
+        if (!AllowKDF.VALUE) {
             throw new NoSuchAlgorithmException("Unsupported secret key "
                                                + "algorithm: " + algorithm);
         }
@@ -295,8 +293,6 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             keyLen = 24;
         } else if (algorithm.equalsIgnoreCase("Blowfish")) {
             keyLen = Math.min(56, secret.length);
-        } else if (algorithm.equalsIgnoreCase("TlsPremasterSecret")) {
-            keyLen = secret.length;
         } else {
             throw new NoSuchAlgorithmException
                 ("Unknown algorithm " + algorithm);

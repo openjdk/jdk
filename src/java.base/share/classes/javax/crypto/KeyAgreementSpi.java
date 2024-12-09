@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,14 +205,18 @@ public abstract class KeyAgreementSpi {
      * {@code generateSecret} to change the private information used in
      * subsequent operations.
      *
-     * @param algorithm the requested secret key algorithm
+     * @param algorithm the requested secret-key algorithm. This is
+     *      different from the {@code KeyAgreement} algorithm provided
+     *      to the {@code getInstance} method. Use "Generic" if
+     *      the output will be used as the input keying material of a
+     *      {@link javax.crypto.KDF}.
      *
      * @return the shared secret key
      *
      * @exception IllegalStateException if this key agreement has not been
      * initialized or if {@code doPhase} has not been called to supply the
      * keys for all parties in the agreement
-     * @exception NoSuchAlgorithmException if the requested secret key
+     * @exception NoSuchAlgorithmException if the specified secret-key
      * algorithm is not available
      * @exception InvalidKeyException if the shared secret key material cannot
      * be used to generate a secret key of the requested algorithm type (e.g.,

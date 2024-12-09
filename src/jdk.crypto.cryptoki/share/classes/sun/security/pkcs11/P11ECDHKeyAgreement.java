@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import javax.crypto.*;
 
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
+import sun.security.util.KeyUtil;
+
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
@@ -168,7 +170,7 @@ final class P11ECDHKeyAgreement extends KeyAgreementSpi {
         if (algorithm == null) {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
-        if (!algorithm.equals("TlsPremasterSecret")) {
+        if (!KeyUtil.isSupportedKeyAgreementOutputAlgorithm(algorithm)) {
             throw new NoSuchAlgorithmException
                 ("Only supported for algorithm TlsPremasterSecret");
         }

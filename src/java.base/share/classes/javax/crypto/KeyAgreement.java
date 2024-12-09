@@ -659,7 +659,11 @@ public class KeyAgreement {
      * {@code generateSecret} to change the private information used in
      * subsequent operations.
      *
-     * @param algorithm the requested secret-key algorithm
+     * @param algorithm the requested secret-key algorithm. This is
+     *      different from the {@code KeyAgreement} algorithm provided
+     *      to the {@code getInstance} method. Use "Generic" if
+     *      the output will be used as the input keying material of a
+     *      {@link javax.crypto.KDF}.
      *
      * @return the shared secret key
      *
