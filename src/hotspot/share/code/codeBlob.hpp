@@ -144,7 +144,7 @@ protected:
 
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
            int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
-           int mutable_data_size = 0);
+           int mutable_data_size);
 
   // Simple CodeBlob used for simple BufferBlob.
   CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size);
@@ -204,9 +204,6 @@ public:
   address    code_end() const                 { return (address)    header_begin() + _size; }
   address    blob_end() const                 { return (address)    header_begin() + _size; }
 
-  // [relocations, oops, metatada, jvmci_data] stays in _mutable_data
-  address    mdata_begin() const              { return mutable_data_begin(); }
-  address    mdata_end() const                { return mutable_data_end(); }
   // Offsets
   int content_offset() const                  { return _content_offset; }
   int code_offset() const                     { return _code_offset; }
