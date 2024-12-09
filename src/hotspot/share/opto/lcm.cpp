@@ -188,6 +188,16 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *m = val->out(i);
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
+    if (mach->barrier_data() != 0 &&
+        !mach->has_initial_implicit_null_check_candidate()) {
+      // Using memory accesses with barriers to perform implicit null checks is
+      // only supported if these are explicit marked as emitting a candidate
+      // memory access instruction at their initial address. If not marked as
+      // such, barrier-tagged operations might expand into one or several memory
+      // access instructions located at arbitrary offsets from the initial
+      // address, which would invalidate the implicit null exception table.
+      continue;
+    }
     was_store = false;
     int iop = mach->ideal_Opcode();
     switch( iop ) {
@@ -262,17 +272,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
         }
       }
       break;
-    }
-
-    if (mach->barrier_data() != 0 &&
-        !mach->has_initial_implicit_null_check_candidate()) {
-      // Using memory accesses with barriers to perform implicit null checks is
-      // only supported if these are explicit marked as emitting a candidate
-      // memory access instruction at their initial address. If not marked as
-      // such, barrier-tagged operations might expand into one or several memory
-      // access instructions located at arbitrary offsets from the initial
-      // address, which would invalidate the implicit null exception table.
-      continue;
     }
 
     // On some OSes (AIX) the page at address 0 is only write protected.
