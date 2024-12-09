@@ -26,7 +26,6 @@
  * @bug 8307814
  * @summary Verify correct LineNumberTable is generated for unrolled record patterns.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util

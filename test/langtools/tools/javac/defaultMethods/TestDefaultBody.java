@@ -25,8 +25,6 @@
  * @test
  * @bug 7192246
  * @summary  check that code attributed for default methods is correctly generated
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.classfile.*;

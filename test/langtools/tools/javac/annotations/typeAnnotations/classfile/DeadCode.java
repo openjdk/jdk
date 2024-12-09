@@ -32,8 +32,6 @@ import java.lang.classfile.*;
  * @test
  * @bug 6917130 8006775
  * @summary test that optimized away annotations are not emited to classfile
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 public class DeadCode extends ClassfileTestHelper {

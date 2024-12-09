@@ -25,8 +25,6 @@
  * @test
  * @bug 8005681
  * @summary Repeated annotations on new,array,cast.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;

@@ -26,7 +26,6 @@
  * @bug 8170708
  * @summary javap -m <module> cannot read a module-info.class
  * @library /tools/lib
- * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main

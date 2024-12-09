@@ -28,8 +28,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @bug 8013852 8042451
  * @summary Test population of reference info for instance and class initializers
  * @author Werner Dietl
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java Initializers.java
  * @run main Driver Initializers
  */
