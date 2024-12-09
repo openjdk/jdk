@@ -131,7 +131,7 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _kind(kind),
   _caller_must_gc_arguments(caller_must_gc_arguments),
   _mutable_data(nullptr),
-  _mutable_data_size(0)
+  _mutable_data_size(mutable_data_size)
 {
   assert(is_aligned(_size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,      oopSize), "unaligned size");
@@ -144,9 +144,6 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   assert(_frame_size >= -1, "must use frame size or -1 for runtime stubs");
 #endif // COMPILER1
 
-  // The mutable_data_size is either calculated by the nmethod constructor to account
-  // for reloc_info and additional data, or it is set here to accommodate only the relocation data.
-  _mutable_data_size = (mutable_data_size == 0) ? cb->total_relocation_size() : mutable_data_size;
   if (_mutable_data_size > 0) {
     _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
     if (_mutable_data == nullptr) {
@@ -218,7 +215,8 @@ RuntimeBlob::RuntimeBlob(
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments)
-  : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
+  : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments,
+             align_up(cb->total_relocation_size(), oopSize))
 {
   cb->copy_code_and_locs_to(this);
 }
