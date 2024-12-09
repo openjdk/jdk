@@ -64,14 +64,14 @@ public:
   stringStream _file_name;
   const char* _tag_text;
 
-  MappingInfo() {}
+  MappingInfo() : _address(nullptr), _size(0), _tag_text(nullptr) {}
 
   void reset() {
     _share_buffer.reset();
     _protect_buffer.reset();
     _type_buffer.reset();
     _file_name.reset();
-    _tag_text = "";
+    _tag_text = nullptr;
   }
 
   bool canCombine(const proc_regionwithpathinfo& mem_info) {
@@ -277,7 +277,7 @@ public:
       st->print(" ");
     } else {
       const char* tag = mapping_info._tag_text;
-      if (tag != NULL) {
+      if (tag != nullptr) {
         st->print("[%s] ", tag);
       }
     }
@@ -361,10 +361,6 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
     if (is_interesting(region_info_with_path)) {
       if (mapping_info.canCombine(region_info_with_path)) {
         mapping_info.combineWithFollowing(region_info_with_path);
-        // if this region size is not 128GB, it is the last of a set
-        if (region_info.pri_size != MACOS_PARTIAL_ALLOCATION_SIZE) {
-
-        }
       } else {
         // print previous mapping info
         // avoid printing the empty info at the start
