@@ -120,5 +120,7 @@ public class Pollset {
     public static native void socketpair(int[] sv) throws IOException;
     public static native void interrupt(int fd) throws IOException;
     public static native void drain1(int fd) throws IOException;
+    public static native void drain(int fd) throws IOException;
     public static native void close0(int fd);
+    public static native void configureBlocking(int fd, boolean blocking) throws IOException;
 }

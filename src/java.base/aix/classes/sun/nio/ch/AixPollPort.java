@@ -141,6 +141,8 @@ final class AixPollPort
         sv = new int[2];
         try {
             Pollset.socketpair(sv);
+            // make the reading part of the socket nonblocking, so the drain (drain_all) method works
+            Pollset.configureBlocking(sv[0], false);
             // register one end with pollset
             Pollset.pollsetCtl(pollset, Pollset.PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {
@@ -303,11 +305,23 @@ final class AixPollPort
         private Event poll() throws IOException {
             try {
                 for (;;) {
-                    int n;
+                    int n, m;
                     controlLock.lock();
                     try {
-                        n = Pollset.pollsetPoll(pollset, address,
+                        m = n = Pollset.pollsetPoll(pollset, address,
                                      MAX_EVENTS_TO_POLL, Pollset.PS_NO_TIMEOUT);
+                        while (m-- > 0) {
+                            long eventAddress = Pollset.getEvent(address, m);
+                            int fd = Pollset.getDescriptor(eventAddress);
+
+                            // To emulate one shot semantic we need to remove
+                            // the file descriptor here.
+                            if (fd != sp[0] && fd != ctlSp[0]) {
+                                synchronized (controlQueue) {
+                                    Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, fd, 0);
+                                }
+                            }
+                        }
                     } finally {
                         controlLock.unlock();
                     }
@@ -322,14 +336,6 @@ final class AixPollPort
                         while (n-- > 0) {
                             long eventAddress = Pollset.getEvent(address, n);
                             int fd = Pollset.getDescriptor(eventAddress);
-
-                            // To emulate one shot semantic we need to remove
-                            // the file descriptor here.
-                            if (fd != sp[0] && fd != ctlSp[0]) {
-                                synchronized (controlQueue) {
-                                    Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, fd, 0);
-                                }
-                            }
 
                             // wakeup
                             if (fd == sp[0]) {
@@ -350,7 +356,7 @@ final class AixPollPort
                             // wakeup to process control event
                             if (fd == ctlSp[0]) {
                                 synchronized (controlQueue) {
-                                    Pollset.drain1(ctlSp[0]);
+                                    Pollset.drain(ctlSp[0]);
                                     processControlQueue();
                                 }
                                 if (n > 0) {
