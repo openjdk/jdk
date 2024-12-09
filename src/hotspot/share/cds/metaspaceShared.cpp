@@ -145,15 +145,16 @@ size_t MetaspaceShared::core_region_alignment() {
 }
 
 static bool shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dump time. We must weed out values
-  // we already know to be invalid later.
+  // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
   // be the encoding base, since the the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
-  // Therefore, "shared_base" must be later usable as encoding base.
+  // On AARCH64, The "shared_base" may not be later usable as encoding base, depending on the
+  // total size of the reserved area and the precomputed_narrow_klass_shift. This is checked
+  // before reserving memory.  Here we weed out values already known to be invalid later.
   return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
 }
 
