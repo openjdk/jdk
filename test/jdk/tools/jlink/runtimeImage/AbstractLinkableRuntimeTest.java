@@ -192,8 +192,7 @@ public abstract class AbstractLinkableRuntimeTest {
             // if the exit checker failed, we expected the other outcome
             // i.e. fail for success and success for fail.
             boolean successExit = analyzer.getExitValue() == 0;
-            String msg = String.format("Expected jlink to %s given a run-time image " +
-                                       "link capable image. Exit code was: %d",
+            String msg = String.format("Expected jlink to %s given a jmodless image. Exit code was: %d",
                                        (successExit ? "fail" : "pass"), analyzer.getExitValue());
             throw new AssertionError(msg);
         }
