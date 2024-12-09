@@ -186,6 +186,16 @@ WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_
   return (jstring) JNIHandles::make_local(THREAD, result);
 WB_END
 
+WB_ENTRY(jint, WB_TakeLockAndHangInSafepoint(JNIEnv* env, jobject wb))
+  JavaThread* self = JavaThread::current();
+  // VMStatistic_lock is used to minimize interference with VM locking
+  MutexLocker mu(VMStatistic_lock);
+  VM_HangInSafepoint force_safepoint_stuck_op;
+  VMThread::execute(&force_safepoint_stuck_op);
+  ShouldNotReachHere();
+  return 0;
+WB_END
+
 class WBIsKlassAliveClosure : public LockedClassesDo {
     Symbol* _name;
     int _count;
@@ -428,7 +438,8 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
-    return Universe::heap()->is_in(p);
+    ShenandoahHeap* sh = ShenandoahHeap::heap();
+    return sh->mode()->is_generational() ?  sh->is_in_old(p) : sh->is_in(p);
   }
 #endif
 #if INCLUDE_SERIALGC
@@ -700,19 +711,11 @@ WB_ENTRY(void, WB_NMTFree(JNIEnv* env, jobject o, jlong mem))
 WB_END
 
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
-  jlong addr = 0;
-
-  addr = (jlong)(uintptr_t)os::reserve_memory(size);
-  MemTracker::record_virtual_memory_tag((address)addr, mtTest);
-
-  return addr;
+  return (jlong)(uintptr_t)os::reserve_memory(size, false, mtTest);
 WB_END
 
 WB_ENTRY(jlong, WB_NMTAttemptReserveMemoryAt(JNIEnv* env, jobject o, jlong addr, jlong size))
-  addr = (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size);
-  MemTracker::record_virtual_memory_tag((address)addr, mtTest);
-
-  return addr;
+  return (jlong)(uintptr_t)os::attempt_reserve_memory_at((char*)(uintptr_t)addr, (size_t)size, false, mtTest);
 WB_END
 
 WB_ENTRY(void, WB_NMTCommitMemory(JNIEnv* env, jobject o, jlong addr, jlong size))
@@ -2988,6 +2991,7 @@ static JNINativeMethod methods[] = {
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
+  {CC"lockAndStuckInSafepoint", CC"()V", (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"wordSize", CC"()J",                             (void*)&WB_WordSize},
   {CC"rootChunkWordSize", CC"()J",                    (void*)&WB_RootChunkWordSize}
 };

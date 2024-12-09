@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,8 @@ import com.sun.hotspot.igv.view.DiagramScene;
 import com.sun.hotspot.igv.view.actions.CustomSelectAction;
 import java.awt.*;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Set;
 import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -61,22 +59,23 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     private static final double ZOOM_FACTOR = 0.1;
     private final OutputSlot outputSlot;
     private final DiagramScene scene;
-    private final List<Connection> connections;
-    private final Point from;
-    private final Point to;
-    private final Rectangle clientArea;
+    private final List<? extends Connection> connections;
+    private Point from;
+    private Point to;
+    private Rectangle clientArea;
     private final LineWidget predecessor;
     private final List<LineWidget> successors;
     private boolean highlighted;
     private boolean popupVisible;
     private final boolean isBold;
     private final boolean isDashed;
+    private boolean needToInitToolTipText = true;
 
-    public LineWidget(DiagramScene scene, OutputSlot s, List<Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
+    public LineWidget(DiagramScene scene, OutputSlot s, List<? extends Connection> connections, Point from, Point to, LineWidget predecessor, boolean isBold, boolean isDashed) {
         super(scene);
         this.scene = scene;
         this.outputSlot = s;
-        this.connections = connections;
+        this.connections = Collections.unmodifiableList(connections);
         this.from = from;
         this.to = to;
         this.predecessor = predecessor;
@@ -88,32 +87,14 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         this.isBold = isBold;
         this.isDashed = isDashed;
 
-        int minX = from.x;
-        int minY = from.y;
-        int maxX = to.x;
-        int maxY = to.y;
-        if (minX > maxX) {
-            int tmp = minX;
-            minX = maxX;
-            maxX = tmp;
-        }
-
-        if (minY > maxY) {
-            int tmp = minY;
-            minY = maxY;
-            maxY = tmp;
-        }
-
-        clientArea = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
-        clientArea.grow(BORDER, BORDER);
+        computeClientArea();
 
         Color color = Color.BLACK;
-        if (connections.size() > 0) {
+        if (!connections.isEmpty()) {
             color = connections.get(0).getColor();
         }
-        setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
 
-        setCheckClipping(true);
+        setCheckClipping(false);
 
         getActions().addAction(ActionFactory.createPopupMenuAction(this));
         setBackground(color);
@@ -144,7 +125,35 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         }));
     }
 
-    private String generateToolTipText(List<Connection> conn) {
+    public Point getClientAreaLocation() {
+        return clientArea.getLocation();
+    }
+
+    private void computeClientArea() {
+        int minX = from.x;
+        int minY = from.y;
+        int maxX = to.x;
+        int maxY = to.y;
+
+        // Ensure min and max values are correct
+        if (minX > maxX) {
+            int tmp = minX;
+            minX = maxX;
+            maxX = tmp;
+        }
+
+        if (minY > maxY) {
+            int tmp = minY;
+            minY = maxY;
+            maxY = tmp;
+        }
+
+        // Set client area to include the curve and add a BORDER for extra space
+        clientArea = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+        clientArea.grow(BORDER, BORDER);
+    }
+
+    private String generateToolTipText(List<? extends Connection> conn) {
         StringBuilder sb = new StringBuilder();
         for (Connection c : conn) {
             sb.append(StringUtils.escapeHTML(c.getToolTipText()));
@@ -153,12 +162,30 @@ public class LineWidget extends Widget implements PopupMenuProvider {
         return sb.toString();
     }
 
+    public void setFrom(Point from) {
+        this.from = from;
+        computeClientArea();
+    }
+
+    public void setTo(Point to) {
+        this.to= to;
+        computeClientArea();
+    }
+
     public Point getFrom() {
         return from;
     }
 
     public Point getTo() {
         return to;
+    }
+
+    public LineWidget getPredecessor() {
+        return predecessor;
+    }
+
+    public List<LineWidget> getSuccessors() {
+        return Collections.unmodifiableList(successors);
     }
 
     private void addSuccessor(LineWidget widget) {
@@ -176,7 +203,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             return;
         }
 
-        Graphics2D g = getScene().getGraphics();
+        Graphics2D g = this.getGraphics();
         g.setPaint(this.getBackground());
         float width = 1.0f;
 
@@ -195,7 +222,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                     BasicStroke.JOIN_MITER, 10,
                     dashPattern, 0));
         } else {
-            g.setStroke(new BasicStroke(width));
+            g.setStroke(new BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_MITER));
         }
 
         g.drawLine(from.x, from.y, to.x, to.y);
@@ -234,6 +261,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
                     3);
         }
         g.setStroke(oldStroke);
+        super.paintWidget();
     }
 
     private void setPopupVisible(boolean b) {
@@ -254,6 +282,10 @@ public class LineWidget extends Widget implements PopupMenuProvider {
             setHighlighted(enableHighlighting);
             recursiveHighlightSuccessors(enableHighlighting);
             highlightVertices(enableHighlighting);
+            if (enableHighlighting && needToInitToolTipText) {
+                setToolTipText("<HTML>" + generateToolTipText(this.connections) + "</HTML>");
+                needToInitToolTipText = false; // Ensure it's only set once
+            }
         }
     }
 
@@ -350,4 +382,5 @@ public class LineWidget extends Widget implements PopupMenuProvider {
 
         return menu;
     }
+
 }

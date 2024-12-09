@@ -393,7 +393,13 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               bool verifyoop,
                                               bool generate_poll) {
   if (VerifyActivationFrameSize) {
-    Unimplemented();
+    Label L;
+    sub(rscratch2, rfp, esp);
+    int min_frame_size = (frame::link_offset - frame::interpreter_frame_initial_sp_offset) * wordSize;
+    subs(rscratch2, rscratch2, min_frame_size);
+    br(Assembler::GE, L);
+    stop("broken stack frame");
+    bind(L);
   }
   if (verifyoop) {
     interp_verify_oop(r0, state);

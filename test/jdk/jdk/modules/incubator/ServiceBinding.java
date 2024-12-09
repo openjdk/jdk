@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8233922
- * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build ServiceBinding TestBootLayer jdk.test.lib.util.ModuleInfoWriter

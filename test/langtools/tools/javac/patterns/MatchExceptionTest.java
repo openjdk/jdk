@@ -26,10 +26,8 @@
  * @bug 8297118
  * @summary Verify javac uses MatchException or IncompatibleClassChangeError for exhaustive switches
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main MatchExceptionTest
  */

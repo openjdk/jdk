@@ -26,7 +26,6 @@
  * @bug 8266925
  * @summary hidden class members can't be statically invocable
  * @modules java.base/jdk.internal.misc
- * @enablePreview
  * @build java.base/*
  * @run testng StaticInvocableTest
  */

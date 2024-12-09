@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +29,10 @@
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #ifdef COMPILER1
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
@@ -41,7 +44,7 @@
 class ShenandoahBarrierSetC1;
 class ShenandoahBarrierSetC2;
 
-ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
+ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_region) :
   BarrierSet(make_barrier_set_assembler<ShenandoahBarrierSetAssembler>(),
              make_barrier_set_c1<ShenandoahBarrierSetC1>(),
              make_barrier_set_c2<ShenandoahBarrierSetC2>(),
@@ -49,9 +52,14 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap) :
              new ShenandoahBarrierSetStackChunk(),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
+  _card_table(nullptr),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
   _satb_mark_queue_set(&_satb_mark_queue_buffer_allocator)
 {
+  if (ShenandoahCardBarrier) {
+    _card_table = new ShenandoahCardTable(heap_region);
+    _card_table->initialize();
+  }
 }
 
 ShenandoahBarrierSetAssembler* ShenandoahBarrierSet::assembler() {
@@ -78,6 +86,14 @@ bool ShenandoahBarrierSet::need_keep_alive_barrier(DecoratorSet decorators, Basi
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool on_weak_ref = (decorators & (ON_WEAK_OOP_REF | ON_PHANTOM_OOP_REF)) != 0;
   return (on_weak_ref || unknown) && keep_alive;
+}
+
+void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
+#if COMPILER2_OR_JVMCI
+  assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
+         "Error: losing card mark on initialzing store to old gen");
+#endif // COMPILER2_OR_JVMCI
+  assert(thread->deferred_card_mark().is_empty(), "We don't use this");
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
@@ -124,6 +140,12 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
       gclab->retire();
     }
 
+    PLAB* plab = ShenandoahThreadLocalData::plab(thread);
+    if (plab != nullptr) {
+      // This will assert if plab is not null in non-generational mode
+      ShenandoahGenerationalHeap::heap()->retire_plab(plab);
+    }
+
     // SATB protocol requires to keep alive reachable oops from roots at the beginning of GC
     if (ShenandoahStackWatermarkBarrier) {
       if (_heap->is_concurrent_mark_in_progress()) {
@@ -142,3 +164,22 @@ void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
     clone_barrier(src);
   }
 }
+
+void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
+  assert(ShenandoahCardBarrier, "Should have been checked by caller");
+
+  HeapWord* end = (HeapWord*)((char*) start + (count * heapOopSize));
+  // In the case of compressed oops, start and end may potentially be misaligned;
+  // so we need to conservatively align the first downward (this is not
+  // strictly necessary for current uses, but a case of good hygiene and,
+  // if you will, aesthetics) and the second upward (this is essential for
+  // current uses) to a HeapWord boundary, so we mark all cards overlapping
+  // this write.
+  HeapWord* aligned_start = align_down(start, HeapWordSize);
+  HeapWord* aligned_end   = align_up  (end,   HeapWordSize);
+  // If compressed oops were not being used, these should already be aligned
+  assert(UseCompressedOops || (aligned_start == start && aligned_end == end),
+         "Expected heap word alignment of start and end");
+  _heap->old_generation()->card_scan()->mark_range_as_dirty(aligned_start, (aligned_end - aligned_start));
+}
+
