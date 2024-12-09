@@ -43,15 +43,14 @@
 #include <mach/vm_prot.h>
 #include <mach/mach_vm.h>
 
-/* maximum number of mapping records returned */
+// maximum number of mapping records returned
 static const int MAX_REGIONS_RETURNED = 1000000;
 
-/* 
- * ::mmap() on MacOS is a layer ontop of Mach system calls, and will allocate in 128MB chunks.
- * This code will coalesce a series of identical 128GB chunks (maybe followed by one smaller chunk
- * with identical flags) into one.
- */
-
+// ::mmap() on MacOS is a layer on top of Mach system calls, and will allocate in 128MB chunks.
+// This code will coalesce a series of identical 128GB chunks (maybe followed by one smaller chunk
+// with identical flags) into one.
+// Unfortunately, two or more identically allocated contiguous sections will appear as one, if the 
+// first section is size 128MB.  vmmap(1) has the same issue.
 static const int MACOS_PARTIAL_ALLOCATION_SIZE = 128 * M;
 
 class MappingInfo {
@@ -102,7 +101,7 @@ public:
     if (mem_info.prp_vip.vip_path[0] != '\0') {
       _file_name.print_raw(mem_info.prp_vip.vip_path);
     }
-    /* proc_regionfilename() seems to give bad results, so we don't try to use it here. */
+    // proc_regionfilename() seems to give bad results, so we don't try to use it here.
 
     char prot[4];
     char maxprot[4];
@@ -118,7 +117,7 @@ public:
     static const char* share_strings[] = {
       "cow", "pvt", "---", "shr", "tsh", "p/a", "s/a", "lpg"
     };
-    assert(SM_COW == 1 && SM_LARGE_PAGE == 8, "share_mode contants are out of range");
+    assert(SM_COW == 1 && SM_LARGE_PAGE == (sizeof(share_strings)/sizeof(share_strings[0])), "share_mode contants are out of range");  // the +1 offset is intentional; see below
     const bool valid_share_mode = rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE;
     if (valid_share_mode) {
       int share_mode = rinfo.pri_share_mode;
@@ -158,7 +157,7 @@ public:
       X2(APPKIT, AppKit);
       X2(FOUNDATION, Foundation);
       X2(COREGRAPHICS, CoreGraphics);
-      X2(CORESERVICES, CoreServices); /* is also VM_MEMORY_CARBON */
+      X2(CORESERVICES, CoreServices); // is also VM_MEMORY_CARBON
       X2(JAVA, Java);
       X2(COREDATA, CoreData);
       X1(COREDATA_OBJECTIDS, CodeData_objectids);
@@ -362,9 +361,13 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
     if (is_interesting(region_info_with_path)) {
       if (mapping_info.canCombine(region_info_with_path)) {
         mapping_info.combineWithFollowing(region_info_with_path);
+        // if this region size is not 128GB, it is the last of a set
+        if (region_info.pri_size != MACOS_PARTIAL_ALLOCATION_SIZE) {
+
+        }
       } else {
-        /* print previous mapping info */
-        /* avoid printing the empty info at the start */
+        // print previous mapping info
+        // avoid printing the empty info at the start
         if (mapping_info._size != 0) {
           printer.print_single_mapping(region_info, mapping_info);
         }
