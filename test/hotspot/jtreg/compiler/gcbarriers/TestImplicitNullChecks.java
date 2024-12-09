@@ -28,15 +28,25 @@ import jdk.test.lib.Asserts;
 
 
 /**
- * @test
+ * @test id=G1
  * @summary Test that implicit null checks are generated as expected for G1
+ *          memory accesses with barriers.
+ * @library /test/lib /
+ * @requires vm.gc.G1
+ * @run driver compiler.gcbarriers.TestImplicitNullChecks G1
+ */
+
+/**
+ * @test id=Z
+ * @summary Test that implicit null checks are generated as expected for ZGC
             memory accesses with barriers.
  * @library /test/lib /
  * @requires vm.gc.Z
- * @run driver compiler.gcbarriers.TestZGCImplicitNullChecks
+ * @run driver compiler.gcbarriers.TestImplicitNullChecks Z
  */
 
-public class TestZGCImplicitNullChecks {
+
+public class TestImplicitNullChecks {
 
     static class Outer {
         Object f;
@@ -49,33 +59,67 @@ public class TestZGCImplicitNullChecks {
     static final String ANY_BARRIER = ".*";
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:+UseZGC");
+        if (args.length != 1) {
+            throw new IllegalArgumentException();
+        }
+        if (!args[0].equals("G1") && !args[0].equals("Z")) {
+            throw new IllegalArgumentException();
+        }
+        TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:+Use" + args[0] + "GC");
     }
 
     @Test
-    @IR(counts = { IRNode.Z_LOAD_P_WITH_BARRIER_FLAG, ANY_BARRIER, "1" }, phase = CompilePhase.FINAL_CODE)
-    @IR(counts = { IRNode.NULL_CHECK, "1" }, phase = CompilePhase.FINAL_CODE)
+    @IR(counts = {IRNode.NULL_CHECK, "1"},
+        phase = CompilePhase.FINAL_CODE)
     public static Object testLoad(Outer o) {
         return o.f;
     }
 
-    @Run(test = {"testLoad"},
+    @Test
+    // On aarch64, volatile loads always use indirect memory operands, which
+    // leads to a pattern that cannot be exploited by the current C2 analysis.
+    @IR(applyIfPlatform = {"aarch64", "false"},
+        counts = {IRNode.NULL_CHECK, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    public static Object testLoadVolatile(OuterWithVolatileField o) {
+        return o.f;
+    }
+
+    @Run(test = {"testLoad",
+                 "testLoadVolatile"},
          mode = RunMode.STANDALONE)
-    public void runLoadTests() {
-        Outer o = new Outer();
-        Object o1 = new Object();
-        o.f = o1;
-        // Trigger compilation with implicit null check.
-        for (int i = 0; i < 10_000; i++) {
-            Object o2 = testLoad(o);
-            Asserts.assertEquals(o1, o2);
+    public static void runLoadTests() {
+        {
+            Outer o = new Outer();
+            Object o1 = new Object();
+            o.f = o1;
+            // Trigger compilation with implicit null check.
+            for (int i = 0; i < 10_000; i++) {
+                testLoad(o);
+            }
+            // Trigger null pointer exception.
+            o = null;
+            boolean nullPointerException = false;
+            try {
+                testLoad(o);
+            } catch (NullPointerException e) { nullPointerException = true; }
+            Asserts.assertTrue(nullPointerException);
         }
-        // Trigger null pointer exception.
-        o = null;
-        boolean nullPointerException = false;
-        try {
-            testLoad(o);
-        } catch (NullPointerException e) { nullPointerException = true; }
-        Asserts.assertTrue(nullPointerException);
+        {
+            OuterWithVolatileField o = new OuterWithVolatileField();
+            Object o1 = new Object();
+            o.f = o1;
+            // Trigger compilation with implicit null check.
+            for (int i = 0; i < 10_000; i++) {
+                testLoadVolatile(o);
+            }
+            // Trigger null pointer exception.
+            o = null;
+            boolean nullPointerException = false;
+            try {
+                testLoadVolatile(o);
+            } catch (NullPointerException e) { nullPointerException = true; }
+            Asserts.assertTrue(nullPointerException);
+        }
     }
 }
