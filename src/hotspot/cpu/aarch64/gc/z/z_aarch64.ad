@@ -106,10 +106,9 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
   match(Set dst (LoadP mem));
   predicate(UseZGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP dst, KILL cr);
-  // indOffL8 is the memory operand used in the vast majority of cases. Sometimes we use indirect. Very rarely anything else.
-  // TODO: can we remove Address::offset_ok_for_immed check? it is already guaranteed for operand immLoffset8.
-  ins_has_initial_implicit_null_check_candidate((opnd_array(1)->opcode() == INDOFFL8 || opnd_array(1)->opcode() == INDIRECT) &&
-                                                Address::offset_ok_for_immed(opnd_array(1)->constant_disp(), exact_log2(8)));
+  // indOffL8 and indirect memory operands cover the majority of occurrences seen in practice.
+  ins_has_initial_implicit_null_check_candidate(opnd_array(1)->opcode() == INDOFFL8 ||
+                                                opnd_array(1)->opcode() == INDIRECT);
 
   ins_cost(4 * INSN_COST);
 
@@ -122,6 +121,9 @@ instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
       tty->cr();
     }
     Address ref_addr = mem2address($mem->opcode(), as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
+    assert(!this->has_initial_implicit_null_check_candidate() ||
+           Address::offset_ok_for_immed(ref_addr.offset(), exact_log2(8)),
+           "an instruction that can be used for implicit null checking should emit the candidate memory access first");
     if (ref_addr.getMode() == Address::base_plus_offset) {
       // Fix up any out-of-range offsets.
       assert_different_registers(rscratch2, as_Register($mem$$base));
