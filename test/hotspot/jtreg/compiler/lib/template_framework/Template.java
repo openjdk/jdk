@@ -493,4 +493,39 @@ public final class Template implements CodeGenerator {
         }
         return map;
     }
+
+    public class Instantiator {
+        Template template;
+        Parameters parameters;
+        boolean isUsed;
+
+	Instantiator(Template template) {
+            this.template = template;
+            parameters = new Parameters();
+        }
+
+        public Instantiator where(String paramKey, String paramValue) {
+            parameters.add(paramKey, paramValue);
+            return this;
+        }
+
+        public String instantiate() {
+            if (isUsed) {
+                throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
+            }
+            isUsed = true;
+            BaseScope scope = new BaseScope();
+            template.instantiate(scope, parameters);
+            scope.close();
+            return scope.toString();
+        }
+    }
+
+    public Instantiator where(String paramKey, String paramValue) {
+        return new Instantiator(this).where(paramKey, paramValue);
+    }
+
+    public String instantiate() {
+        return new Instantiator(this).instantiate();
+    }
 }

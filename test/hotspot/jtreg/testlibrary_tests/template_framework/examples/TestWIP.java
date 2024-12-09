@@ -60,11 +60,6 @@ public class TestWIP {
 
     // Generate a source Java file as String
     public static String generate() {
-        BaseScope scope = new BaseScope();
-        Parameters parameters = new Parameters();
-        parameters.add("param1", "1");
-        parameters.add("param2", "2");
-
         Template template = new Template("my_example",
             """
             package p.xyz;
@@ -99,8 +94,6 @@ public class TestWIP {
             }
             """
         );
-        template.instantiate(scope, parameters);
-        scope.close();
-        return scope.toString();
+        return template.where("param1", "1").where("param2", "2").instantiate();
     }
 }

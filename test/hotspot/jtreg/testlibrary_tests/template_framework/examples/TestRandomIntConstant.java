@@ -53,9 +53,6 @@ public class TestRandomIntConstant {
 
     // Generate a source Java file as String
     public static String generate() {
-        BaseScope scope = new BaseScope();
-        Parameters parameters = new Parameters();
-
         Template template = new Template("my_example",
             """
             package p.xyz;
@@ -94,8 +91,6 @@ public class TestRandomIntConstant {
             }
             """
         );
-        template.instantiate(scope, parameters);
-        scope.close();
-        return scope.toString();
+        return template.instantiate();
     }
 }
