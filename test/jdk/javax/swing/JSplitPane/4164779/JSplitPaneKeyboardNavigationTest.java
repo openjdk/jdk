@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public class JSplitPaneKeyboardNavigationTest {
     public static void main(String[] s) throws Exception {
         robot = new Robot();
         robot.setAutoWaitForIdle(true);
-        robot.setAutoDelay(200);
+        robot.setAutoDelay(100);
         List<String> lafs = Arrays.stream(getInstalledLookAndFeels())
                                   .map(LookAndFeelInfo::getClassName)
                                   .collect(Collectors.toList());
@@ -81,10 +81,13 @@ public class JSplitPaneKeyboardNavigationTest {
                     continue;
                 }
                 robot.waitForIdle();
+                robot.delay(1000);
 
                 // Press Right button 1 and move focus to it.
                 pressButton(rightButton1);
                 hitKeys(KeyEvent.VK_F6);
+                robot.waitForIdle();
+                robot.delay(100);
 
                 // Verifier1 - Verifies that, F6 transfers focus to the right/bottom side of the splitpane
                 if (isFocusOwner(rightButton2)) {
@@ -98,6 +101,8 @@ public class JSplitPaneKeyboardNavigationTest {
                 // Press Right button 2 and move focus to it.
                 pressButton(rightButton2);
                 hitKeys(KeyEvent.VK_F6);
+                robot.waitForIdle();
+                robot.delay(100);
 
                 // Verifier2 - Verifies that, F6 transfers focus to the left side of the parent splitpane,
                 // if the right/bottom side of splitpane already has focus, and it is contained within another splitpane
@@ -112,6 +117,9 @@ public class JSplitPaneKeyboardNavigationTest {
                 // Press Left button and move focus to it.
                 pressButton(leftButton);
                 hitKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_TAB);
+                robot.waitForIdle();
+                robot.delay(100);
+
                 // Verifier3 - Verifies that, CTRL-TAB navigates forward outside the JSplitPane
                 if (isFocusOwner(bottomButton)) {
                     System.out.println("Verifier 3 passed");
@@ -124,6 +132,8 @@ public class JSplitPaneKeyboardNavigationTest {
                 // Press Left button and move focus to it.
                 pressButton(leftButton);
                 hitKeys(KeyEvent.VK_CONTROL, KeyEvent.VK_SHIFT, KeyEvent.VK_TAB);
+                robot.waitForIdle();
+                robot.delay(100);
 
                 // Verifier4 - Verifies that, CTRL-SHIFT-TAB navigates backward outside the JSplitPane
                 if (isFocusOwner(topButton)) {
