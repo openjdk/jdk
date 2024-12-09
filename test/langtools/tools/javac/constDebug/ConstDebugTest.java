@@ -25,7 +25,6 @@
  * @test
  * @bug 4645152 4785453
  * @summary javac compiler incorrectly inserts <clinit> when -g is specified
- * @enablePreview
  * @run compile -g ConstDebugTest.java
  * @run main ConstDebugTest
  */

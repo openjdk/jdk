@@ -25,8 +25,6 @@
  * @test
  * @bug 8026791 8042451
  * @summary Test population of reference info for constructor results
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java Constructors.java
  * @run main Driver Constructors
  */

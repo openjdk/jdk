@@ -26,7 +26,6 @@
  * @bug 8025636
  * @library /test/lib/
  * @modules jdk.compiler
- * @enablePreview
  * @compile LambdaStackTrace.java
  * @run main LambdaStackTrace
  * @summary Synthetic frames should be hidden in exceptions
