@@ -188,30 +188,30 @@ public class Scope {
      * Next outer Scope (not this) that is a ClassScope.
      */
     public final ClassScope classScope(String errorMessage) {
-        // TODO refactor to loop
-        if (parent == null) {
-            print();
-            throw new TemplateFrameworkException("Could not find ClassScope / '#open(class)' " + errorMessage);
-        } else if (parent instanceof ClassScope cs) {
-            return cs;
-        } else {
-            return parent.classScope(errorMessage);
+        Scope current = this;
+        while (current.parent != null) {
+          if (current.parent instanceof ClassScope s) {
+            return s;
+          }
+          current = current.parent;
         }
+        print();
+        throw new TemplateFrameworkException("Could not find ClassScope / '#open(class)' " + errorMessage);
     }
 
     /**
      * Next outer Scope (not this) that is a MethodScope.
      */
     public final MethodScope methodScope(String errorMessage) {
-        // TODO refactor to loop
-        if (parent == null) {
-            print();
-            throw new TemplateFrameworkException("Could not find MethodScope / '#open(method)' " + errorMessage);
-        } else if (parent instanceof MethodScope ms) {
-            return ms;
-        } else {
-            return parent.methodScope(errorMessage);
+        Scope current = this;
+        while (current.parent != null) {
+          if (current.parent instanceof MethodScope s) {
+            return s;
+          }
+          current = current.parent;
         }
+        print();
+        throw new TemplateFrameworkException("Could not find MethodScope / '#open(method)' " + errorMessage);
     }
 
     /**
