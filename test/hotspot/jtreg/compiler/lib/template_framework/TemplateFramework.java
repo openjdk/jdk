@@ -44,6 +44,15 @@ package compiler.lib.template_framework;
  * - Example test / library that generates random classes, generates objects, loads / stores fields
  *   - Good for: Valhalla, escape analysis, maybe type system, maybe method inlining etc.
  *
+ *
+ * Many test instantiator:
+ * - static block
+ * - main block
+ * - test block
+ * - parameter: test name
+ * - for each parameter
+ * - repeated adding - so different versions are generated
  */
 public final class TemplateFramework {
+
 }

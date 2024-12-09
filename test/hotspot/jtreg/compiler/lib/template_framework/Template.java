@@ -519,6 +519,17 @@ public final class Template implements CodeGenerator {
             scope.close();
             return scope.toString();
         }
+
+        public void instantiate(Scope scope) {
+            if (isUsed) {
+                throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
+            }
+            isUsed = true;
+            Scope nestedScope = new Scope(scope, scope.fuel);
+            template.instantiate(nestedScope, parameters);
+            nestedScope.close();
+            scope.stream.addCodeStream(nestedScope.stream);
+        }
     }
 
     public Instantiator where(String paramKey, String paramValue) {
@@ -527,5 +538,9 @@ public final class Template implements CodeGenerator {
 
     public String instantiate() {
         return new Instantiator(this).instantiate();
+    }
+
+    public void instantiate(Scope scope) {
+        new Instantiator(this).instantiate(scope);
     }
 }
