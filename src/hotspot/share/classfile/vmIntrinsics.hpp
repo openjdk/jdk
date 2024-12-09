@@ -304,8 +304,6 @@ class methodHandle;
    do_name(     isAssignableFrom_name,                           "isAssignableFrom")                                    \
   do_intrinsic(_isInstance,               java_lang_Class,        isInstance_name, object_boolean_signature,     F_RN)  \
    do_name(     isInstance_name,                                 "isInstance")                                          \
-  do_intrinsic(_getModifiers,             java_lang_Class,        getModifiers_name, void_int_signature,         F_RN)  \
-   do_name(     getModifiers_name,                               "getModifiers")                                        \
   do_intrinsic(_isInterface,              java_lang_Class,        isInterface_name, void_boolean_signature,      F_RN)  \
    do_name(     isInterface_name,                                "isInterface")                                         \
   do_intrinsic(_isArray,                  java_lang_Class,        isArray_name, void_boolean_signature,          F_RN)  \

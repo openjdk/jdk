@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_RegisterFinalizer(Intrinsic* x);
   void do_isInstance(Intrinsic* x);
   void do_isPrimitive(Intrinsic* x);
-  void do_getModifiers(Intrinsic* x);
   void do_getClass(Intrinsic* x);
   void do_getObjectSize(Intrinsic* x);
   void do_currentCarrierThread(Intrinsic* x);

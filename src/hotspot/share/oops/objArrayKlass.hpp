@@ -143,7 +143,7 @@ class ObjArrayKlass : public ArrayKlass {
   inline void oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, void* low, void* high);
 
  public:
-  u2 compute_modifier_flags() const;
+  int compute_modifier_flags() const;
 
  public:
   // Printing
