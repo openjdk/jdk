@@ -29,3 +29,9 @@
 module name java.management.rmi
 header exports javax/management/remote/rmi requires name\u0020;java.base\u0020;flags\u0020;8000,name\u0020;java.naming\u0020;flags\u0020;0,name\u0020;java.management\u0020;flags\u0020;20,name\u0020;java.rmi\u0020;flags\u0020;20 provides interface\u0020;javax/management/remote/JMXConnectorProvider\u0020;impls\u0020;com/sun/jmx/remote/protocol/rmi/ClientProvider,interface\u0020;javax/management/remote/JMXConnectorServerProvider\u0020;impls\u0020;com/sun/jmx/remote/protocol/rmi/ServerProvider target macos-aarch64 flags 8000
 
+class name javax/management/remote/rmi/RMIConnector
+header extends java/lang/Object implements javax/management/remote/JMXConnector,java/io/Serializable,javax/management/remote/JMXAddressable flags 21
+innerclass innerClass java/lang/module/ModuleDescriptor$Modifier outerClass java/lang/module/ModuleDescriptor innerClassName Modifier flags 4019
+innerclass innerClass java/lang/module/ModuleDescriptor$Builder outerClass java/lang/module/ModuleDescriptor innerClassName Builder flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
