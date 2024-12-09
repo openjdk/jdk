@@ -630,15 +630,14 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 address generate_ghash_processBlocks() {
-  
   StubCodeMark mark(this, "StubRoutines", "ghash");
-  
+
   address start = __ function_entry();
-  
+
   // Registers for parameters
   Register state = R3_ARG1;                     // long[] st0
   Register subkeyH = R4_ARG2;                   // long[] subH
-  Register data = R5_ARG3;                      // byte[] data  
+  Register data = R5_ARG3;                      // byte[] data
   Register blocks = R6_ARG4;
   Register temp1 = R8;
   Register temp2 = R9;
@@ -672,14 +671,14 @@ address generate_ghash_processBlocks() {
   VectorRegister vZero_Stored = VR23;
   VectorRegister vMask = VR24;
   VectorRegister vS = VR25;
-  
+
   Label L_end, L_aligned, L_align_2, L_end_2, L_aligned3;
   Label L_end3,L_aligned4,L_end4;
-  
-  
+
+ 
   static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
   static const unsigned char perm_pattern2[16] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-  
+
   // Load the address of perm_pattern
   #ifdef VM_LITTLE_ENDIAN
   __ load_const_optimized(temp1, (uintptr_t)&perm_pattern);
@@ -702,7 +701,7 @@ address generate_ghash_processBlocks() {
   __ andi(temp1, subkeyH, 15);
   __ cmpwi(CCR0, temp1, 0);
   __ beq(CCR0, L_aligned);             // Check if 'to' is aligned (mask lower 4 bits)
-  __ li(temp1, 0); 
+  __ li(temp1, 0);
   __ vxor(vH, vH, vH);
   __ lvx(vHigh, temp1, subkeyH);
   __ lvsl(vPerm, temp1, subkeyH);
@@ -720,10 +719,10 @@ address generate_ghash_processBlocks() {
   __ andi(temp1, state, 15);
   __ cmpwi(CCR0, temp1, 0);
   __ beq(CCR0, L_aligned3);                     // Check if 'to' is aligned (mask lower 4 bits)
-  __ li(temp1, 0); 
+  __ li(temp1, 0);
   __ vxor(vZero_Stored, vZero_Stored, vZero_Stored);
   __ lvx(vHigh, temp1, state);
-  __ lvsl(vPerm,temp1,state); 
+  __ lvsl(vPerm,temp1,state);
   __ addi(state, state, 16);
   __ lvx(vLow, temp1, state);
   __ vec_perm(vZero_Stored, vHigh, vLow, vPerm);
@@ -734,7 +733,7 @@ address generate_ghash_processBlocks() {
   __ bind(L_end3);
   __ vec_perm(vZero_Stored, vZero_Stored, vZero_Stored, fromPerm);
   //Operations to obtain lower and higher bytes of subkey H.
-  __ vspltisb(vConst1, 1); 
+  __ vspltisb(vConst1, 1);
   __ vspltisb(vConst7, 7);
   __ vsldoi(vTmp4, vZero, vConst1, 1);          // 0x1
   __ vor(vTmp4, vConstC2, vTmp4);               //0xC2...1
@@ -745,7 +744,7 @@ address generate_ghash_processBlocks() {
   __ vand(vMSB, vMSB, vTmp4);                   //Carry
   __ vxor(vTmp2, vH_shift, vMSB);               // shift H<<<1
   __ vsldoi(vConstC2, vZero, vConstC2, 8);
-  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);        // swap L,H 
+  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);        // swap L,H
   __ vsldoi(vLowerH, vZero, vSwappedH, 8);      //H.L
   __ vsldoi(vHigherH, vSwappedH, vZero, 8);     //H.H
   __ vxor(vTmp1, vTmp1, vTmp1);
@@ -756,7 +755,7 @@ address generate_ghash_processBlocks() {
   __ lvx(loadOrder, temp2);
   Label loop;
   __ bind(loop);
-    // Load immediate value 0 into temp  
+    // Load immediate value 0 into temp
     __ vxor(vX, vX, vX);
     __ vxor(vZero, vZero, vZero);
     __ li(temp1, 0);
@@ -820,15 +819,12 @@ address generate_ghash_processBlocks() {
   __ stvx(vHigh, temp4, state);
   __ b(L_end4);
   __ bind(L_aligned4);
-  __ stvx(vZero, temp4, state); 
+  __ stvx(vZero, temp4, state);
   __ bind(L_end4);
 
-    
   __ blr();                                     // Return from function
 
   return start;
- 
-
 
 }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
