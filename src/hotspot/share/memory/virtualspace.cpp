@@ -45,20 +45,20 @@ ReservedSpace::ReservedSpace() : _base(nullptr), _size(0), _noaccess_prefix(0),
     _alignment(0), _special(false), _fd_for_heap(-1), _executable(false) {
 }
 
-ReservedSpace::ReservedSpace(size_t size) : _fd_for_heap(-1) {
+ReservedSpace::ReservedSpace(size_t size, MemTag mem_tag) : _fd_for_heap(-1) {
   // Want to use large pages where possible. If the size is
   // not large page aligned the mapping will be a mix of
   // large and normal pages.
   size_t page_size = os::page_size_for_region_unaligned(size, 1);
   size_t alignment = os::vm_allocation_granularity();
-  initialize(size, alignment, page_size, nullptr, false);
+  initialize(size, alignment, page_size, nullptr, false, mem_tag);
 }
 
 ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) : _fd_for_heap(-1) {
   // When a page size is given we don't want to mix large
   // and normal pages. If the size is not a multiple of the
   // page size it will be aligned up to achieve this.
-  size_t alignment = os::vm_allocation_granularity();;
+  size_t alignment = os::vm_allocation_granularity();
   if (preferred_page_size != os::vm_page_size()) {
     alignment = MAX2(preferred_page_size, alignment);
     size = align_up(size, alignment);
@@ -81,19 +81,19 @@ ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment, size_t p
 }
 
 // Helper method
-static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable) {
+static char* attempt_map_or_reserve_memory_at(char* base, size_t size, int fd, bool executable, MemTag mem_tag) {
   if (fd != -1) {
     return os::attempt_map_memory_to_file_at(base, size, fd);
   }
-  return os::attempt_reserve_memory_at(base, size, executable);
+  return os::attempt_reserve_memory_at(base, size, executable, mem_tag);
 }
 
 // Helper method
-static char* map_or_reserve_memory(size_t size, int fd, bool executable) {
+static char* map_or_reserve_memory(size_t size, int fd, bool executable, MemTag mem_tag) {
   if (fd != -1) {
     return os::map_memory_to_file(size, fd);
   }
-  return os::reserve_memory(size, executable);
+  return os::reserve_memory(size, executable, mem_tag);
 }
 
 // Helper method
@@ -154,7 +154,7 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
 }
 
 static char* reserve_memory(char* requested_address, const size_t size,
-                            const size_t alignment, int fd, bool exec) {
+                            const size_t alignment, int fd, bool exec, MemTag mem_tag) {
   char* base;
   // If the memory was requested at a particular address, use
   // os::attempt_reserve_memory_at() to avoid mapping over something
@@ -163,12 +163,12 @@ static char* reserve_memory(char* requested_address, const size_t size,
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
            p2i(requested_address), alignment);
-    base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec);
+    base = attempt_map_or_reserve_memory_at(requested_address, size, fd, exec, mem_tag);
   } else {
     // Optimistically assume that the OS returns an aligned base pointer.
     // When reserving a large address range, most OSes seem to align to at
     // least 64K.
-    base = map_or_reserve_memory(size, fd, exec);
+    base = map_or_reserve_memory(size, fd, exec, mem_tag);
     // Check alignment constraints. This is only needed when there is
     // no requested address.
     if (!is_aligned(base, alignment)) {
@@ -220,7 +220,8 @@ void ReservedSpace::reserve(size_t size,
                             size_t alignment,
                             size_t page_size,
                             char* requested_address,
-                            bool executable) {
+                            bool executable,
+                            MemTag mem_tag) {
   assert(is_aligned(size, alignment), "Size must be aligned to the requested alignment");
 
   // There are basically three different cases that we need to handle below:
@@ -235,7 +236,7 @@ void ReservedSpace::reserve(size_t size,
     // When there is a backing file directory for this space then whether
     // large pages are allocated is up to the filesystem of the backing file.
     // So UseLargePages is not taken into account for this reservation.
-    char* base = reserve_memory(requested_address, size, alignment, _fd_for_heap, executable);
+    char* base = reserve_memory(requested_address, size, alignment, _fd_for_heap, executable, mem_tag);
     if (base != nullptr) {
       initialize_members(base, size, alignment, os::vm_page_size(), true, executable);
     }
@@ -266,7 +267,7 @@ void ReservedSpace::reserve(size_t size,
   }
 
   // == Case 3 ==
-  char* base = reserve_memory(requested_address, size, alignment, -1, executable);
+  char* base = reserve_memory(requested_address, size, alignment, -1, executable, mem_tag);
   if (base != nullptr) {
     // Successful mapping.
     initialize_members(base, size, alignment, page_size, false, executable);
@@ -277,7 +278,8 @@ void ReservedSpace::initialize(size_t size,
                                size_t alignment,
                                size_t page_size,
                                char* requested_address,
-                               bool executable) {
+                               bool executable,
+                               MemTag mem_tag) {
   const size_t granularity = os::vm_allocation_granularity();
   assert((size & (granularity - 1)) == 0,
          "size not aligned to os::vm_allocation_granularity()");
@@ -298,7 +300,7 @@ void ReservedSpace::initialize(size_t size,
   alignment = MAX2(alignment, os::vm_page_size());
 
   // Reserve the memory.
-  reserve(size, alignment, page_size, requested_address, executable);
+  reserve(size, alignment, page_size, requested_address, executable, mem_tag);
 
   // Check that the requested address is used if given.
   if (failed_to_reserve_as_requested(_base, requested_address)) {
@@ -424,7 +426,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
                              p2i(requested_address),
                              size);
 
-  reserve(size, alignment, page_size, requested_address, false);
+  reserve(size, alignment, page_size, requested_address, false, mtJavaHeap);
 
   // Check alignment constraints.
   if (is_reserved() && !is_aligned(_base, _alignment)) {
@@ -610,7 +612,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // Last, desperate try without any placement.
     if (_base == nullptr) {
       log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
-      initialize(size + noaccess_prefix, alignment, page_size, nullptr, false);
+      initialize(size + noaccess_prefix, alignment, page_size, nullptr, false, mtJavaHeap);
     }
   }
 }
@@ -653,17 +655,13 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
     ShouldNotReachHere();
 #endif // _LP64
   } else {
-    initialize(size, alignment, page_size, nullptr, false);
+    initialize(size, alignment, page_size, nullptr, false, mtJavaHeap);
   }
 
   assert(markWord::encode_pointer_as_mark(_base).decode_pointer() == _base,
          "area must be distinguishable from marks for mark-sweep");
   assert(markWord::encode_pointer_as_mark(&_base[size]).decode_pointer() == &_base[size],
          "area must be distinguishable from marks for mark-sweep");
-
-  if (base() != nullptr) {
-    MemTracker::record_virtual_memory_tag((address)base(), mtJavaHeap);
-  }
 
   if (_fd_for_heap != -1) {
     ::close(_fd_for_heap);
@@ -679,8 +677,7 @@ MemRegion ReservedHeapSpace::region() const {
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
-  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
-  MemTracker::record_virtual_memory_tag((address)base(), mtCode);
+  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true, mtCode);
 }
 
 // VirtualSpace

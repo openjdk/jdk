@@ -119,9 +119,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private static final String FORCE_PIPE_PROP = "sun.print.ippdebug";
 
     static {
-        @SuppressWarnings("removal")
-        String debugStr = java.security.AccessController.doPrivileged(
-                  new sun.security.action.GetPropertyAction(FORCE_PIPE_PROP));
+        String debugStr = System.getProperty(FORCE_PIPE_PROP);
 
         debugPrint = "true".equalsIgnoreCase(debugStr);
     }
@@ -513,11 +511,6 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
 
     public DocPrintJob createPrintJob() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkPrintJobAccess();
-        }
         // REMIND: create IPPPrintJob
         return new UnixPrintJob(this);
     }
@@ -589,15 +582,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (flavor == null ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
-                try {
                     return new Destination((new File("out.ps")).toURI());
-                } catch (SecurityException se) {
-                    try {
-                        return new Destination(new URI("file:out.ps"));
-                    } catch (URISyntaxException e) {
-                        return null;
-                    }
-                }
             }
             return null;
         } else if (category == Fidelity.class) {
@@ -799,11 +784,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 return null;
             }
         } else if (category == RequestingUserName.class) {
-            String userName = "";
-            try {
-              userName = System.getProperty("user.name", "");
-            } catch (SecurityException se) {
-            }
+            String userName = System.getProperty("user.name", "");
             return new RequestingUserName(userName, null);
         } else if (category == Sides.class) {
             // The printer takes care of Sides so if short-edge
@@ -1576,15 +1557,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         } else if (category == Chromaticity.class) {
             return Chromaticity.COLOR;
         } else if (category == Destination.class) {
-            try {
-                return new Destination((new File("out.ps")).toURI());
-            } catch (SecurityException se) {
-                try {
-                    return new Destination(new URI("file:out.ps"));
-                } catch (URISyntaxException e) {
-                    return null;
-                }
-            }
+            return new Destination((new File("out.ps")).toURI());
         } else if (category == Fidelity.class) {
             return Fidelity.FIDELITY_FALSE;
         } else if (category == Finishings.class) {
@@ -1676,11 +1649,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 return new PageRanges(1, Integer.MAX_VALUE);
             }
         } else if (category == RequestingUserName.class) {
-            String userName = "";
-            try {
-              userName = System.getProperty("user.name", "");
-            } catch (SecurityException se) {
-            }
+            String userName = System.getProperty("user.name", "");
             return new RequestingUserName(userName, null);
         } else if (category == SheetCollate.class) {
             return SheetCollate.UNCOLLATED;
@@ -1874,18 +1843,12 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                                    AttributeClass.TAG_URI,
                                    ""+myURI)};
 
-            @SuppressWarnings("removal")
-            OutputStream os = java.security.AccessController.
-                doPrivileged(new java.security.PrivilegedAction<OutputStream>() {
-                    public OutputStream run() {
-                        try {
-                            return urlConnection.getOutputStream();
-                        } catch (Exception e) {
-                        }
-                        return null;
-                    }
-                });
 
+            OutputStream os = null;
+            try {
+                os = urlConnection.getOutputStream();
+            } catch (Exception e) {
+            }
             if (os == null) {
                 return;
             }

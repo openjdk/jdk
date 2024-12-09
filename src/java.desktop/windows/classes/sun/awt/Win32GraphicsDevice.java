@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.awt.AWTPermission;
 import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -81,7 +80,6 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     // pipelines which are mutually exclusive with opengl, for which
     // pixel formats were added in the first place
     protected static boolean pfDisabled;
-    private static AWTPermission fullScreenExclusivePermission;
     // the original display mode we had before entering the fullscreen
     // mode
     private DisplayMode defaultDisplayMode;
@@ -349,29 +347,12 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
                     getLocalGraphicsEnvironment().getDefaultScreenDevice());
     }
 
-    private static boolean isFSExclusiveModeAllowed() {
-        @SuppressWarnings("removal")
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            if (fullScreenExclusivePermission == null) {
-                fullScreenExclusivePermission =
-                    new AWTPermission("fullScreenExclusive");
-            }
-            try {
-                security.checkPermission(fullScreenExclusivePermission);
-            } catch (SecurityException e) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     /**
      * returns true unless we're not allowed to use fullscreen mode.
      */
     @Override
     public boolean isFullScreenSupported() {
-        return isFSExclusiveModeAllowed();
+        return true;
     }
 
     @Override

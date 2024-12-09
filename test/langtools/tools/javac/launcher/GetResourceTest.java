@@ -25,7 +25,6 @@
  * @test
  * @bug 8210009 8321739
  * @summary Source Launcher classloader should support getResource and getResourceAsStream
- * @enablePreview
  * @modules jdk.compiler
  * @library /tools/lib
  * @build toolbox.JavaTask toolbox.ToolBox
@@ -54,7 +53,6 @@ public class GetResourceTest {
         ToolBox tb = new ToolBox();
         Path file = Paths.get(tb.testSrc).resolve("src/p/q").resolve("CLTest.java");
         new JavaTask(tb)
-            .vmOptions("--enable-preview", "--source", String.valueOf(Runtime.version().feature()))
             .className(file.toString()) // implies source file mode
             .run(Task.Expect.SUCCESS)
             .writeAll();

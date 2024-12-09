@@ -25,7 +25,6 @@
 // key: compiler.misc.bad.class.file.header
 // key: compiler.err.cant.access
 // options: -processor CreateBadClassFile
-// run: exec --enable-preview
 
 /* The annotation processor will create an invalid classfile with a static
  * final field of type java.lang.Object having ConstantValue attribute with

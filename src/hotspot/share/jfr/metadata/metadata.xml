@@ -1208,6 +1208,23 @@
     <Field type="string" name="state" label="State" />
   </Type>
 
+  <Event name="ShenandoahEvacuationInformation" category="Java Virtual Machine, GC, Detailed" label="Shenandoah Evacuation Information" startTime="false">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="ulong" name="cSetRegions" label="Collection Set Regions" />
+    <Field type="ulong" contentType="bytes" name="cSetUsedBefore" label="Collection Set Before" description="Memory usage before GC in the collection set regions" />
+    <Field type="ulong" contentType="bytes" name="cSetUsedAfter" label="Collection Set After" description="Memory usage after GC in the collection set regions" />
+    <Field type="ulong" contentType="bytes" name="collectedOld" label="Collected Old" description="Memory collected from old generation" />
+    <Field type="ulong" contentType="bytes" name="collectedPromoted" label="Collected Promoted" description="Memory collected from generation promotion" />
+    <Field type="ulong" contentType="bytes" name="collectedYoung" label="Collection Young" description="Memory collected from young generation" />
+    <Field type="ulong" name="regionsPromotedHumongous" label="Regions Promoted Humongous" />
+    <Field type="ulong" name="regionsPromotedRegular" label="Regions Promoted Regular" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedGarbage" label="Regular Promoted Garbage" description="Garbage memory of in place promoted regular regions" />
+    <Field type="ulong" contentType="bytes" name="regularPromotedFree" label="Regular Promoted Free" description="Free memory of in place promoted regular regions" />
+    <Field type="ulong" name="regionsFreed" label="Regions Freed" description="Free regions prior to determining collection set" />
+    <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
+    <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
+  </Event>
+  
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
     <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
     <Field type="ulong" name="elements" label="Elements Written" />

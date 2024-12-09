@@ -271,7 +271,7 @@ public class LinkTaglet extends BaseTaglet {
             }
             if (utils.isExecutableElement(refMem)) {
                 if (refMemName.indexOf('(') < 0) {
-                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, false, true);
                 }
                 if (overriddenMethod != null) {
                     // The method to actually link.

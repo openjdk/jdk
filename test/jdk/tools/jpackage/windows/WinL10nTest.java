@@ -35,6 +35,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.test.Executor;
+import static jdk.jpackage.test.WindowsHelper.WixType.WIX3;
+import static jdk.jpackage.test.WindowsHelper.getWixTypeFromVerboseJPackageOutput;
 
 /*
  * @test
@@ -109,13 +111,13 @@ public class WinL10nTest {
         });
     }
 
-    private static Stream<String> getBuildCommandLine(Executor.Result result) {
+    private static Stream<String> getWixCommandLine(Executor.Result result) {
         return result.getOutput().stream().filter(createToolCommandLinePredicate("light").or(
                 createToolCommandLinePredicate("wix")));
     }
 
     private static boolean isWix3(Executor.Result result) {
-        return result.getOutput().stream().anyMatch(createToolCommandLinePredicate("light"));
+        return getWixTypeFromVerboseJPackageOutput(result) == WIX3;
     }
 
     private final static Predicate<String> createToolCommandLinePredicate(String wixToolName) {
@@ -127,10 +129,10 @@ public class WinL10nTest {
         };
     }
 
-    private static List<TKit.TextStreamVerifier> createDefaultL10nFilesLocVerifiers(Path tempDir) {
+    private static List<TKit.TextStreamVerifier> createDefaultL10nFilesLocVerifiers(Path wixSrcDir) {
         return Arrays.stream(DEFAULT_L10N_FILES).map(loc ->
-                TKit.assertTextStream("-loc " + tempDir.resolve(
-                        String.format("config/MsiInstallerStrings_%s.wxl", loc)).normalize()))
+                TKit.assertTextStream("-loc " + wixSrcDir.resolve(
+                        String.format("MsiInstallerStrings_%s.wxl", loc))))
                 .toList();
     }
 
@@ -183,16 +185,20 @@ public class WinL10nTest {
             cmd.addArguments("--temp", tempDir);
         })
         .addBundleVerifier((cmd, result) -> {
+            final List<String> wixCmdline = getWixCommandLine(result).toList();
+
+            final var isWix3 = isWix3(result);
+
             if (expectedCultures != null) {
                 String expected;
-                if (isWix3(result)) {
+                if (isWix3) {
                     expected = "-cultures:" + String.join(";", expectedCultures);
                 } else {
                     expected = Stream.of(expectedCultures).map(culture -> {
                         return String.join(" ", "-culture", culture);
                     }).collect(Collectors.joining(" "));
                 }
-                TKit.assertTextStream(expected).apply(getBuildCommandLine(result));
+                TKit.assertTextStream(expected).apply(wixCmdline.stream());
             }
 
             if (expectedErrorMessage != null) {
@@ -201,25 +207,27 @@ public class WinL10nTest {
             }
 
             if (wxlFileInitializers != null) {
-                var wixSrcDir = Path.of(cmd.getArgumentValue("--temp")).resolve("config");
+                var wixSrcDir = Path.of(cmd.getArgumentValue("--temp")).resolve(
+                        "config").normalize().toAbsolutePath();
 
                 if (allWxlFilesValid) {
                     for (var v : wxlFileInitializers) {
                         if (!v.name.startsWith("MsiInstallerStrings_")) {
-                            v.createCmdOutputVerifier(wixSrcDir).apply(getBuildCommandLine(result));
+                            v.createCmdOutputVerifier(wixSrcDir).apply(wixCmdline.stream());
                         }
                     }
-                    var tempDir = Path.of(cmd.getArgumentValue("--temp")).toAbsolutePath();
-                    for (var v : createDefaultL10nFilesLocVerifiers(tempDir)) {
-                        v.apply(getBuildCommandLine(result));
+
+                    for (var v : createDefaultL10nFilesLocVerifiers(wixSrcDir)) {
+                        v.apply(wixCmdline.stream());
                     }
                 } else {
                     Stream.of(wxlFileInitializers)
                             .filter(Predicate.not(WixFileInitializer::isValid))
                             .forEach(v -> v.createCmdOutputVerifier(
                                     wixSrcDir).apply(result.getOutput().stream()));
-                    TKit.assertFalse(getBuildCommandLine(result).findAny().isPresent(),
-                            "Check light.exe was not invoked");
+                    TKit.assertTrue(wixCmdline.stream().findAny().isEmpty(),
+                            String.format("Check %s.exe was not invoked",
+                                    isWix3 ? "light" : "wix"));
                 }
             }
         });
@@ -276,10 +284,9 @@ public class WinL10nTest {
                 }
 
                 @Override
-                TKit.TextStreamVerifier createCmdOutputVerifier(Path root) {
+                TKit.TextStreamVerifier createCmdOutputVerifier(Path wixSrcDir) {
                     return TKit.assertTextStream(String.format(
-                            "Failed to parse %s file",
-                            root.resolve("b.wxl").toAbsolutePath()));
+                            "Failed to parse %s file", wixSrcDir.resolve("b.wxl")));
                 }
             };
         }
@@ -297,9 +304,8 @@ public class WinL10nTest {
                             + "\" xmlns=\"http://schemas.microsoft.com/wix/2006/localization\" Codepage=\"1252\"/>"));
         }
 
-        TKit.TextStreamVerifier createCmdOutputVerifier(Path root) {
-            return TKit.assertTextStream(
-                    "-loc " + root.resolve(name).toAbsolutePath().normalize());
+        TKit.TextStreamVerifier createCmdOutputVerifier(Path wixSrcDir) {
+            return TKit.assertTextStream("-loc " + wixSrcDir.resolve(name));
         }
 
         boolean isValid() {

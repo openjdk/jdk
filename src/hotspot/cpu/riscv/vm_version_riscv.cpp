@@ -150,11 +150,12 @@ void VM_Version::common_initialize() {
   }
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
-    if (unaligned_access.value() != MISALIGNED_FAST) {
-      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
-    } else {
-      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, false);
-    }
+    FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
+      unaligned_access.value() != MISALIGNED_FAST);
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 
   // See JDK-8026049
@@ -352,6 +353,14 @@ void VM_Version::c2_initialize() {
   if (UseZvbb && !UseRVV) {
     FLAG_SET_DEFAULT(UseZvbb, false);
     warning("Cannot enable UseZvbb on cpu without RVV support.");
+  }
+
+  // UseZvbc (depends on RVV).
+  if (UseZvbc && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvbc)) {
+      warning("Cannot enable UseZvbc on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvbc, false);
   }
 
   // SHA's
