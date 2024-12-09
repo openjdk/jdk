@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Example test with constant int in Template.
+ * @summary All sorts of random things.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestRandomIntConstant
+ * @run driver template_framework.examples.TestWIP
  */
 
 package template_framework.examples;
@@ -34,7 +34,7 @@ package template_framework.examples;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
 
-public class TestRandomIntConstant {
+public class TestWIP {
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -46,15 +46,24 @@ public class TestRandomIntConstant {
         // Compile the source file.
         comp.compile();
 
-        // Object ret = p.xyz.InnterTest.test();
+        // Object ret = XYZ.test(5);
         Object ret = comp.invoke("p.xyz.InnerTest", "test", new Object[] {});
         System.out.println("res: " + ret);
+
+        // // Extract return value of invocation, verify its value.
+        // int i = (int) ret;
+        // System.out.println("Result of call: " + i);
+        // if (i != 10) {
+        //     throw new RuntimeException("wrong value: " + i);
+        // }
     }
 
     // Generate a source Java file as String
     public static String generate() {
         BaseScope scope = new BaseScope();
         Parameters parameters = new Parameters();
+        parameters.add("param1", "1");
+        parameters.add("param2", "2");
 
         Template template = new Template("my_example",
             """
@@ -64,30 +73,26 @@ public class TestRandomIntConstant {
                 #open(class)
                 public static int test() {
                     #open(method)
-                    int $con0 = 123;
-                    int $con1 = #{:int_con};
-                    int $con2 = #{:int_con(lo=0,hi=100)};
-                    int $con3 = #{:int_con(lo=0)};
-                    int $con4 = #{:int_con(hi=0)};
+                    int ${con1:int} = #{conx:int_con};
+                    int ${con2:int} = #{cony:int_con};
+                    int $con3 = #{:int_con};
+                    int ${con4} = 123;
+                    final int ${con5:int:final} = ${con4};
+                    $con2 = #{conz:int_con(lo=3,hi=11):$con2,$con2};
+                    #{:code:$con1,$con2,$con5}
+                    int ${xxx:int} = 0;
+                    #{:code(var=$xxx):$xxx,$con5};
+                    return $con1 + $con2 + #{param1} + #{param2};
+                    #close(method)
+                }
 
-                    int $con5 = #{:int_con(lo=min_int)};
-                    int $con6 = #{:int_con(lo=max_int)};
-                    int $con7 = #{:int_con(hi=max_int)};
-
-                    if ($con0 != 123) {
-                        throw new RuntimeException("$con0 was not 123");
-                    }
-                    if ($con2 < 0 || -$con2 >= 100) {
-                        throw new RuntimeException("$con2 was out of range");
-                    }
-                    if ($con3 < 0) {
-                        throw new RuntimeException("$con3 was not positive");
-                    }
-                    if ($con4 >= 0) {
-                        throw new RuntimeException("$con4 was not negative");
-                    }
-
-                    return $con0 + $con1 + $con2 + $con3 + $con4;
+                public static int test2() {
+                    #open(method)
+                    ${fieldI:int} += #{:int_con};
+                    #{:dispatch(scope=class,call=new_field_in_class,name=$fieldI,final=false)}
+                    ${varI:int} += #{:int_con};
+                    #{:dispatch(scope=method,call=new_var_in_method,name=$varI,final=false)}
+                    return $fieldI + $varI;
                     #close(method)
                 }
                 #close(class)

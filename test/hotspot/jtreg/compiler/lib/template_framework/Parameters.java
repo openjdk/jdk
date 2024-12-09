@@ -67,6 +67,7 @@ public class Parameters {
         return argumentsMap.get(name);
     }
 
+    // TODO pass scope?
     public String get(String name, String errorMessage) {
         String param = getOrNull(name);
         if (param == null) {
@@ -74,6 +75,20 @@ public class Parameters {
             throw new TemplateFrameworkException("Missing parameter '" + name + "' " + errorMessage);
         }
         return param;
+    }
+
+    public int getInt(String name, String errorMessage, Scope scope) {
+        String param = get(name, errorMessage);
+        switch (param) {
+            case "min_int" -> { return Integer.MIN_VALUE; }
+            case "max_int" -> { return Integer.MAX_VALUE; }
+        }
+        try {
+            return Integer.valueOf(param);
+        } catch (NumberFormatException e) {
+            scope.print();
+            throw new TemplateFrameworkException("Could not parse parameter '" + name + "' with value '" + param + "' as int. " + errorMessage);
+        }
     }
 
     public HashMap<String,String> getArguments() {

@@ -156,9 +156,46 @@ public class CodeGeneratorLibrary {
         // Random Constants.
         codeGenerators.put("int_con", new ProgrammaticCodeGenerator("int_con",
             (Scope scope, Parameters parameters) -> {
-                int v = RANDOM.nextInt();
-                scope.stream.addCodeToLine(String.valueOf(v));
-            }, 0));
+                String lo = parameters.getOrNull("lo");
+                String hi = parameters.getOrNull("hi");
+
+                if (lo == null && hi == null) {
+                    // Full int range
+                    int v = RANDOM.nextInt();
+                    scope.stream.addCodeToLine(String.valueOf(v));
+                } else if (lo == null) {
+                    // Bounded: [min_int, hi)
+                    int hiVal = parameters.getInt("hi", " In int_con.", scope);
+                    if (hiVal == Integer.MIN_VALUE) {
+                        scope.print();
+                        throw new TemplateFrameworkException("Generator int_con must have min_int < hi");
+                    }
+                    int v = RANDOM.nextInt(Integer.MIN_VALUE, hiVal);
+                    scope.stream.addCodeToLine(String.valueOf(v));
+                } else if (hi == null) {
+                    // Bounded: [lo, max_int]
+                    int loVal = parameters.getInt("lo", " In int_con.", scope);
+                    if (loVal == Integer.MIN_VALUE) {
+                        // Full int range
+                        int v = RANDOM.nextInt();
+                        scope.stream.addCodeToLine(String.valueOf(v));
+                    } else {
+                        // We have to shift things to make sure max_int can be generated.
+                        int v = RANDOM.nextInt(loVal-1, Integer.MAX_VALUE) + 1;
+                        scope.stream.addCodeToLine(String.valueOf(v));
+                    }
+                } else {
+                    // Bounded: [lo, hi)
+                    int loVal = parameters.getInt("lo", " In int_con.", scope);
+                    int hiVal = parameters.getInt("hi", " In int_con.", scope);
+                    if (loVal >= hiVal) {
+                        scope.print();
+                        throw new TemplateFrameworkException("Generator int_con must have lo < hi.");
+                    }
+                    int v = RANDOM.nextInt(loVal, hiVal);
+                    scope.stream.addCodeToLine(String.valueOf(v));
+                }
+           }, 0));
 
         // Variable load/store.
         codeGenerators.put("load",  factoryLoadStore(false));
