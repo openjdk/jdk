@@ -664,7 +664,7 @@
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _active_handles,                               JNIHandleBlock*)                       \
-  nonstatic_field(JavaThread,                  _lock_id,                                      int64_t)                               \
+  nonstatic_field(JavaThread,                  _monitor_owner_id,                             int64_t)                               \
   volatile_nonstatic_field(JavaThread,         _terminated,                                   JavaThread::TerminatedTypes)           \
   nonstatic_field(Thread,                      _osthread,                                     OSThread*)                             \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \

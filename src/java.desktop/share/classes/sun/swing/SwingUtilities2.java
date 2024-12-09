@@ -1462,20 +1462,6 @@ public class SwingUtilities2 {
        return !GraphicsEnvironment.isHeadless();
    }
 
-    /**
-     * Utility method that throws SecurityException if SecurityManager is set
-     * and modifiers are not public
-     *
-     * @param modifiers a set of modifiers
-     */
-    @SuppressWarnings("removal")
-    public static void checkAccess(int modifiers) {
-        if (System.getSecurityManager() != null
-                && !Modifier.isPublic(modifiers)) {
-            throw new SecurityException("Resource is not accessible");
-        }
-    }
-
     public static String displayPropertiesToCSS(Font font, Color fg) {
         StringBuilder rule = new StringBuilder("body {");
         if (font != null) {

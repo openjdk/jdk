@@ -513,6 +513,11 @@ static void* _native_java_library = nullptr;
 
 void* os::native_java_library() {
   if (_native_java_library == nullptr) {
+    if (is_vm_statically_linked()) {
+      _native_java_library = get_default_process_handle();
+      return _native_java_library;
+    }
+
     char buffer[JVM_MAXPATHLEN];
     char ebuf[1024];
 
@@ -2475,4 +2480,62 @@ jint os::set_minimum_stack_sizes() {
     return JNI_ERR;
   }
   return JNI_OK;
+}
+
+// Builds a platform dependent Agent_OnLoad_<lib_name> function name
+// which is used to find statically linked in agents.
+// Parameters:
+//            sym_name: Symbol in library we are looking for
+//            lib_name: Name of library to look in, null for shared libs.
+//            is_absolute_path == true if lib_name is absolute path to agent
+//                                     such as "C:/a/b/L.dll" or "/a/b/libL.so"
+//            == false if only the base name of the library is passed in
+//               such as "L"
+char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
+                                    bool is_absolute_path) {
+  char *agent_entry_name;
+  size_t len = 0;
+  size_t name_len = 0;
+  size_t prefix_len = strlen(JNI_LIB_PREFIX);
+  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
+  size_t underscore_len = 0; // optional underscore if lib_name is set
+  const char *start;
+
+  if (lib_name != nullptr) {
+    if (is_absolute_path) {
+      // Need to strip path, prefix and suffix
+      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
+        lib_name = ++start;
+      }
+#ifdef WINDOWS
+      else { // Need to check for drive prefix e.g. C:L.dll
+        if ((start = strchr(lib_name, ':')) != nullptr) {
+          lib_name = ++start;
+        }
+      }
+#endif
+      name_len = strlen(lib_name);
+      if (name_len <= (prefix_len + suffix_len)) {
+        return nullptr;
+      }
+      lib_name += prefix_len;
+      name_len = strlen(lib_name) - suffix_len;
+    } else {
+      name_len = strlen(lib_name);
+    }
+    underscore_len = 1;
+  }
+  // Total buffer length to allocate - includes null terminator.
+  len = strlen(sym_name) + underscore_len + name_len + 1;
+  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
+  if (agent_entry_name == nullptr) {
+    return nullptr;
+  }
+
+  strcpy(agent_entry_name, sym_name);
+  if (lib_name != nullptr) {
+    strcat(agent_entry_name, "_");
+    strncat(agent_entry_name, lib_name, name_len);
+  }
+  return agent_entry_name;
 }
