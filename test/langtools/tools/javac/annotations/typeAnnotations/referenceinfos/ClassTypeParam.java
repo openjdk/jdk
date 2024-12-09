@@ -27,8 +27,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @test
  * @bug 8042451
  * @summary Test population of reference info for class type parameters
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java ClassTypeParam.java
  * @run main Driver ClassTypeParam
  */

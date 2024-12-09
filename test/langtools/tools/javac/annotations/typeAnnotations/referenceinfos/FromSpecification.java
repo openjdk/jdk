@@ -27,8 +27,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @test
  * @bug 8042451
  * @summary Test that the examples from the manual are stored as expected
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java FromSpecification.java
  * @run main Driver FromSpecification
  */
