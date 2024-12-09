@@ -277,6 +277,14 @@ public class JlinkTask {
                 return EXIT_OK;
             }
 
+            if (options.modulePath.isEmpty()) {
+                // no --module-path specified - try to set $JAVA_HOME/jmods if that exists
+                Path jmods = getDefaultModulePath();
+                if (jmods != null) {
+                    options.modulePath.add(jmods);
+                }
+            }
+
             JlinkConfiguration config = initJlinkConfig();
             outputPath = config.getOutput();
             if (options.suggestProviders) {
@@ -369,10 +377,6 @@ public class JlinkTask {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
-        // Empty module path not allowed with ALL-MODULE-PATH in --add-modules
-        if (options.modulePath.isEmpty() && options.addMods.contains(ALL_MODULE_PATH)) {
-            throw taskHelper.newBadArgs("err.all.module.path.empty.mod.path");
-        }
         ModuleFinder initialFinder = createFinderFromPath(options.modulePath);
         boolean isLinkFromRuntime = determineLinkFromRuntime(initialFinder, options.modulePath);
         ModuleFinder rootsFinder = isLinkFromRuntime ? ModuleFinder.compose(ModuleFinder.ofSystem(),
@@ -382,8 +386,7 @@ public class JlinkTask {
             assert !isLinkFromRuntime : "Expected regular JMODs based link";
             // External module linked into a custom runtime, but JDK modules
             // not observable on the module path. Add the default module path
-            // if that exists. Adding it here is OK, because we limit the set
-            // in the ALL-MODULE-PATH case using initialFinder.
+            // if that exists.
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
                 options.modulePath.add(defModPath);
@@ -394,22 +397,7 @@ public class JlinkTask {
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH) && options.modulePath.size() > 0) {
-                // Apply a module limit for the roots finder if it was otherwise empty.
-                // Since we are using the same finder for determining the roots set as
-                // for the actual link, we need to apply this trick so as to not
-                // include all modules of the JDK plus the extra module path in
-                // the roots set.
-                Set<String> allModsLimits = options.limitMods;
-                if (options.limitMods.isEmpty()) {
-                    Set<String> modsLimits = new HashSet<>();
-                    initialFinder.findAll()
-                                 .stream()
-                                 .map(ModuleReference::descriptor)
-                                 .map(ModuleDescriptor::name)
-                                 .forEach(mn -> modsLimits.add(mn));
-                    allModsLimits = modsLimits;
-                }
-                ModuleFinder mf = newModuleFinder(rootsFinder, allModsLimits, Set.of(), isLinkFromRuntime);
+                ModuleFinder mf = newModuleFinder(rootsFinder, options.limitMods, Set.of(), isLinkFromRuntime);
                 // all observable modules are roots
                 mf.findAll()
                   .stream()
