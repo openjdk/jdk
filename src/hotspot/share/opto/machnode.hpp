@@ -391,7 +391,7 @@ public:
   // candidate for implicit null check. This function is only defined for nodes
   // with barrier data that are expanded late.
   virtual bool has_initial_implicit_null_check_candidate() const {
-    assert(barrier_data() != 0, "undefined function");
+    assert(barrier_data() != 0, "only defined for nodes with barrier data");
     return false;
   }
 
