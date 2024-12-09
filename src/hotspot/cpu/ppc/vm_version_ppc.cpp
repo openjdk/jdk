@@ -308,10 +308,6 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
   }
-  // if (UseGHASHIntrinsics && !has_Crypto_GHASH()) {
-  //   warning("GHASH intrinsics are not available on this CPU");
-  //   FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
-  // }
 
   if (FLAG_IS_DEFAULT(UseFMA)) {
     FLAG_SET_DEFAULT(UseFMA, true);
