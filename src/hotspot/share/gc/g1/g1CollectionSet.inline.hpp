@@ -29,7 +29,7 @@
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 
 template <class CardOrRangeVisitor>
-inline void G1CollectionSet::merge_cardsets_for_collection_groups(G1CollectedHeap* g1h, CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
+inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
   uint length = collection_groups_increment_length();
   uint offset =  _selected_groups_inc_part_start;
   if (length == 0) {

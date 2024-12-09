@@ -1391,7 +1391,7 @@ public:
           G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
         }
 
-        g1h->collection_set()->merge_cardsets_for_collection_groups(g1h, merge, worker_id, _num_workers);
+        g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
 
         g1h->collection_set_iterate_increment_from(&clear_bitmap, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();

@@ -249,7 +249,7 @@ public:
   bool only_contains_young_regions() const { return (initial_old_region_length() + num_optional_regions()) == 0; }
 
   template <class CardOrRangeVisitor>
-  inline void merge_cardsets_for_collection_groups(G1CollectedHeap* g1h, CardOrRangeVisitor& cl, uint worker_id, uint num_workers);
+  inline void merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers);
 
   // Reset the contents of the collection set.
   void clear();

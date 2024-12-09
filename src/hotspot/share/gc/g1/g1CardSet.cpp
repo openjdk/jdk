@@ -782,9 +782,11 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
 
 
 #ifdef ASSERT
-  uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
-  G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
-  assert(r->rem_set()->card_set() != this, "must be");
+  {
+    uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
+    G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
+    assert(r->rem_set()->card_set() != this, "must be");
+  }
 #endif
 
   return add_card(card_region, card_within_region, true /* increment_total */);

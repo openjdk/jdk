@@ -42,7 +42,7 @@ void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
 
 void G1CSetCandidateGroup::add(G1CollectionSetCandidateInfo& hr_info) {
   G1HeapRegion* hr = hr_info._r;
-  assert(!hr->is_young(), "should be flagged as survivor region");
+  assert(hr->is_old(), "Should be flagged as survivor region");
 
   _candidates.append(hr_info);
   hr->install_group_cardset(&_card_set);
@@ -342,7 +342,6 @@ void G1CollectionSetCandidates::remove(G1CSetCandidateGroupList* other) {
   // retained list.
   G1CSetCandidateGroupList other_marking_groups;
   G1CSetCandidateGroupList other_retained_groups;
-
 
   for (G1CSetCandidateGroup* group : *other) {
     assert(group->length() > 0, "Should not have empty groups");
