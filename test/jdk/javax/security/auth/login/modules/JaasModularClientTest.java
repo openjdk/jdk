@@ -43,7 +43,6 @@ import jdk.test.lib.util.ModuleInfoWriter;
  * @test
  * @bug 8078813 8183310
  * @summary Test custom JAAS login module with all possible modular option.
- * @enablePreview
  * @modules java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.JarUtils jdk.test.lib.util.ModuleInfoWriter

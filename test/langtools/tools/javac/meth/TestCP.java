@@ -25,8 +25,6 @@
  * @test
  * @bug 6991980
  * @summary  polymorphic signature calls don't share the same CP entries
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main TestCP
  */
 
