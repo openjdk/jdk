@@ -40,9 +40,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
-#ifdef COMPILER2
-#include "opto/matcher.hpp"
-#endif
 
 // -----------------------------------------------------------------------------------------
 // Implementation of VtableStub

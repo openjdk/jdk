@@ -27,8 +27,6 @@
 
 #include "c1/c1_Instruction.hpp"
 #include "ci/ciExceptionHandler.hpp"
-#include "ci/ciMethod.hpp"
-#include "ci/ciStreams.hpp"
 #include "memory/allocation.hpp"
 
 // An XHandler is a C1 internal description for an exception handler
