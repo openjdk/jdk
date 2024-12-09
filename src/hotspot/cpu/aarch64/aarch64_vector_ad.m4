@@ -310,7 +310,7 @@ source %{
     }
   }
 
-  bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+  bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
     return false;
   }
 

@@ -1754,7 +1754,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
   }
 
   int num_elem = vlen->get_con();
-  bool need_load_shuffle = Matcher::vector_needs_load_shuffle(shuffle_bt, num_elem);
+  bool need_load_shuffle = Matcher::vector_rearrange_requires_load_shuffle(shuffle_bt, num_elem);
 
   if (need_load_shuffle && !arch_supports_vector(Op_VectorLoadShuffle, num_elem, shuffle_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
@@ -1797,7 +1797,6 @@ bool LibraryCallKit::inline_vector_rearrange() {
 
   Node* v1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
   Node* shuffle = unbox_vector(argument(6), shbox_type, shuffle_bt, num_elem);
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
   const TypeVect* st = TypeVect::make(shuffle_bt, num_elem);
 
   if (v1 == nullptr || shuffle == nullptr) {
@@ -1934,7 +1933,7 @@ bool LibraryCallKit::inline_vector_select_from() {
   } else if (shuffle_bt == T_DOUBLE) {
     shuffle_bt = T_LONG;
   }
-  bool need_load_shuffle = Matcher::vector_needs_load_shuffle(shuffle_bt, num_elem);
+  bool need_load_shuffle = Matcher::vector_rearrange_requires_load_shuffle(shuffle_bt, num_elem);
 
   int cast_vopc = VectorCastNode::opcode(-1, elem_bt); // from vector of type elem_bt
   if ((need_load_shuffle && !arch_supports_vector(Op_VectorLoadShuffle, num_elem, elem_bt, VecMaskNotUsed)) ||
@@ -2667,7 +2666,7 @@ static Node* LowerSelectFromTwoVectorOperation(PhaseGVN& phase, Node* index_vec,
 
   // Load indexes from byte vector and appropriately transform them to target
   // specific permutation index format.
-  if (Matcher::vector_needs_load_shuffle(shuffle_bt, num_elem)) {
+  if (Matcher::vector_rearrange_requires_load_shuffle(shuffle_bt, num_elem)) {
     wrapped_index_vec = phase.transform(new VectorLoadShuffleNode(wrapped_index_vec, st));
   }
 

@@ -2212,7 +2212,7 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
 }
 
 // Return true if Vector::rearrange needs preparation of the shuffle argument
-bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
   switch (elem_bt) {
     case T_BYTE:  return false;
     case T_SHORT: return !VM_Version::supports_avx512bw();
