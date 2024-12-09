@@ -160,6 +160,7 @@ Java_GetXSpace_getSpace0
     return totalSpaceIsEstimated;
 }
 
+#ifdef WINDOWS
 JNIEXPORT jboolean JNICALL
 Java_GetXSpace_isCDDrive
     (JNIEnv *env, jclass cls, jstring root)
@@ -182,6 +183,7 @@ Java_GetXSpace_isCDDrive
 
     return JNI_TRUE;
 }
+#endif
 
 #ifdef __cplusplus
 }
