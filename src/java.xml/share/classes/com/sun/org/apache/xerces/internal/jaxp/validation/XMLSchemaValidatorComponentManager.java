@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -57,7 +57,7 @@ import org.xml.sax.ErrorHandler;
  * <p>An implementation of XMLComponentManager for a schema validator.</p>
  *
  * @author Michael Glavassevich, IBM
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettings implements
         XMLComponentManager {
@@ -230,7 +230,6 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
     private Locale fLocale = null;
 
     /** Constructs a component manager suitable for Xerces' schema validator. */
-    @SuppressWarnings("removal")
     public XMLSchemaValidatorComponentManager(XSGrammarPoolContainer grammarContainer) {
         // setup components
         fEntityManager = new XMLEntityManager();
@@ -293,11 +292,6 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         fFeatures.put(UNPARSED_ENTITY_CHECKING, Boolean.TRUE);
 
         boolean secureProcessing = grammarContainer.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING);
-        if (System.getSecurityManager() != null) {
-            _isSecureMode = true;
-            secureProcessing = true;
-        }
-
         fInitSecurityManager = (XMLSecurityManager)
                 grammarContainer.getProperty(SECURITY_MANAGER);
         if (fInitSecurityManager != null ) {

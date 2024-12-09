@@ -27,7 +27,6 @@
  * @author Jean-Francois Denise
  * @library ../../lib
  * @build tests.*
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins

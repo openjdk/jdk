@@ -31,8 +31,6 @@ import java.util.Map;
 
 import com.sun.beans.util.Cache;
 
-import static sun.reflect.misc.ReflectUtil.checkPackageAccess;
-
 public final class ClassInfo {
     private static final ClassInfo DEFAULT = new ClassInfo(null);
     private static final Cache<Class<?>,ClassInfo> CACHE
@@ -47,12 +45,7 @@ public final class ClassInfo {
         if (type == null) {
             return DEFAULT;
         }
-        try {
-            checkPackageAccess(type);
-            return CACHE.get(type);
-        } catch (SecurityException exception) {
-            return DEFAULT;
-        }
+        return CACHE.get(type);
     }
 
     public static void clear() {

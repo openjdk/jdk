@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ final class NamingEventNotifier implements Runnable {
         namingListeners = new Vector<>();
         namingListeners.addElement(firstListener);
 
-        worker = Obj.helper.createThread(this);
+        worker = new Thread(this);
         worker.setDaemon(true);  // not a user thread
         worker.start();
     }

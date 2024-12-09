@@ -45,7 +45,6 @@ import java.util.Map;
 
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
-import sun.security.action.GetPropertyAction;
 
 /**
  * TrueTypeFont is not called SFntFont because it is not expected

@@ -42,6 +42,7 @@
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
+import jdk.test.lib.Platform;
 import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadPinner;
 
@@ -53,7 +54,15 @@ public class GetStackTraceALotWhenPinned {
             VThreadRunner.ensureParallelism(2);
         }
 
-        int iterations = Integer.parseInt(args[0]);
+        int iterations;
+        int value = Integer.parseInt(args[0]);
+        if (Platform.isOSX() && Platform.isX64()) {
+            // reduced iterations on macosx-x64
+            iterations = Math.max(value / 4, 1);
+        } else {
+            iterations = value;
+        }
+
         var barrier = new Barrier(2);
 
         // Start a virtual thread that loops doing Thread.yield and parking while pinned.

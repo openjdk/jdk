@@ -560,6 +560,9 @@ const jfloat min_jfloat = jfloat_cast(min_jintFloat);
 const jint max_jintFloat = (jint)(0x7f7fffff);
 const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
+// A named constant for the integral representation of a Java null.
+const intptr_t NULL_WORD = 0;
+
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
 

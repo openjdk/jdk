@@ -32,8 +32,6 @@ import java.awt.peer.*;
 import java.io.*;
 import java.util.Locale;
 import java.util.Arrays;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
@@ -139,7 +137,7 @@ class XFileDialogPeer extends XDialogPeer
         this.target = target;
     }
 
-    @SuppressWarnings({"removal","deprecation"})
+    @SuppressWarnings("deprecation")
     private void init(FileDialog target) {
         fileDialog = target; //new Dialog(target, target.getTitle(), false);
         this.title = target.getTitle();
@@ -151,12 +149,7 @@ class XFileDialogPeer extends XDialogPeer
         savedDir = target.getDirectory();
         // Shouldn't save 'user.dir' to 'savedDir'
         // since getDirectory() will be incorrect after handleCancel
-        userDir = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                public String run() {
-                    return System.getProperty("user.dir");
-                }
-            });
+        userDir = System.getProperty("user.dir");
 
         installStrings();
         gbl = new GridBagLayout();

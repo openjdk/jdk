@@ -50,7 +50,7 @@ import org.xml.sax.XMLReader;
  *
  * Added Catalog Support for URI resolution
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 public final class Util {
     private static final String property = "org.xml.sax.driver";
@@ -204,10 +204,6 @@ public final class Util {
         catch (NullPointerException e) {
             ErrorMsg err = new ErrorMsg(ErrorMsg.JAXP_NO_SOURCE_ERR,
                                         "TransformerFactory.newTemplates()");
-            throw new TransformerConfigurationException(err.toString());
-        }
-        catch (SecurityException e) {
-            ErrorMsg err = new ErrorMsg(ErrorMsg.FILE_ACCESS_ERR, systemId);
             throw new TransformerConfigurationException(err.toString());
         }
         return input;

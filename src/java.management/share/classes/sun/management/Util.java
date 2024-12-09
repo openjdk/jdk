@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,34 +50,15 @@ public class Util {
         }
     }
 
-    private static ManagementPermission monitorPermission =
-        new ManagementPermission("monitor");
-    private static ManagementPermission controlPermission =
-        new ManagementPermission("control");
-
-    /**
-     * Check that the current context is trusted to perform monitoring
-     * or management.
-     * <p>
-     * If the check fails we throw a SecurityException, otherwise
-     * we return normally.
-     *
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have ManagementPermission("control").
-     */
-    static void checkAccess(ManagementPermission p)
-         throws SecurityException {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(p);
-        }
+    // Methods retained temporarily due to usage by jdk.management.
+    static void checkAccess(ManagementPermission p) {
+        // no-op
     }
 
     static void checkMonitorAccess() throws SecurityException {
-        checkAccess(monitorPermission);
+        // no-op
     }
     public static void checkControlAccess() throws SecurityException {
-        checkAccess(controlPermission);
+        // no-op
     }
 }
