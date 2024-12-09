@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +28,7 @@
  * @summary Test OOME in due to classloader leak
  * @requires vm.gc.Shenandoah
  * @library /test/lib
- * @run driver/timeout=600 TestClassLoaderLeak
+ * @run driver TestClassLoaderLeak
  */
 
 import java.util.*;
@@ -123,8 +124,9 @@ public class TestClassLoaderLeak {
         }
 
         String[][][] modeHeuristics = new String[][][] {
-             {{"satb"},    {"adaptive", "compact", "static", "aggressive"}},
-             {{"passive"}, {"passive"}}
+             {{"satb"},         {"adaptive", "compact", "static", "aggressive"}},
+             {{"passive"},      {"passive"}},
+             {{"generational"}, {"adaptive"}}
         };
 
         for (String[][] mh : modeHeuristics) {

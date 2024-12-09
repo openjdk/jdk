@@ -25,7 +25,6 @@
  * @test
  * @bug 8134759
  * @summary Add LineNumberTable attribute for return bytecodes split around finally code
- * @enablePreview
  */
 
 import java.lang.classfile.*;

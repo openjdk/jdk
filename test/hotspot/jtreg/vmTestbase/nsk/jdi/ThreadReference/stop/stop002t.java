@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ public class stop002t {
             log.display("TEST #5: interrupted = " + Thread.interrupted());
             // We don't expect the exception to be thrown when in vthread mode.
             if (!vthreadMode && t instanceof MyThrowable) {
-                log.display("TEST #5: Caught expected exception while in loop: " + t);
+                log.display("TEST #5: Caught expected exception while in sleep: " + t);
             } else {
                 log.complain("TEST #5: Unexpected exception caught: " + t);
                 t.printStackTrace();

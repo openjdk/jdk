@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.module
  * @library /test/lib

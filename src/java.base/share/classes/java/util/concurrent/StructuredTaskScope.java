@@ -398,11 +398,10 @@ public sealed interface StructuredTaskScope<T, R>
         State state();
 
         /**
-         * Returns the result of this subtask if it completed successfully. If
-         * {@linkplain #fork(Callable) forked} to execute a value-returning task then the
-         * result from the {@link Callable#call() call} method is returned. If
-         * {@linkplain #fork(Runnable) forked} to execute a task that does not return a
-         * result then {@code null} is returned.
+         * Returns the result of this subtask if it completed successfully. If the subtask
+         * was forked with {@link #fork(Callable) fork(Callable)} then the result from the
+         * {@link Callable#call() call} method is returned. If the subtask was forked with
+         * {@link #fork(Runnable) fork(Runnable)} then {@code null} is returned.
          *
          * <p> Code executing in the scope owner thread can use this method to get the
          * result of a successful subtask only after it has {@linkplain #join() joined}.
@@ -420,12 +419,11 @@ public sealed interface StructuredTaskScope<T, R>
         T get();
 
         /**
-         * {@return the exception thrown by this subtask if it failed} If
-         * {@linkplain #fork(Callable) forked} to execute a value-returning task then
-         * the exception thrown by the {@link Callable#call() call} method is returned.
-         * If {@linkplain #fork(Runnable) forked} to execute a task that does not return
-         * a result then the exception thrown by the {@link Runnable#run() run} method is
-         * returned.
+         * {@return the exception or error thrown by this subtask if it failed}
+         * If the subtask was forked with {@link #fork(Callable) fork(Callable)} then the
+         * exception or error thrown by the {@link Callable#call() call} method is returned.
+         * If the subtask was forked with {@link #fork(Runnable) fork(Runnable)} then the
+         * exception or error thrown by the {@link Runnable#run() run} method is returned.
          *
          * <p> Code executing in the scope owner thread can use this method to get the
          * exception thrown by a failed subtask only after it has {@linkplain #join() joined}.

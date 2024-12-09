@@ -31,6 +31,7 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_BOOLEAN;
@@ -46,7 +47,6 @@ import java.lang.invoke.MethodHandles;
 import static java.lang.invoke.MethodHandles.foldArguments;
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +86,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected MethodHandle arrangeDowncall(MethodType inferredMethodType, FunctionDescriptor function, LinkerOptions options) {
+        assertNotEmpty(function);
         MemorySegment cif = makeCif(inferredMethodType, function, options, Arena.ofAuto());
 
         int capturedStateMask = options.capturedCallState()
@@ -112,6 +113,7 @@ public final class FallbackLinker extends AbstractLinker {
 
     @Override
     protected UpcallStubFactory arrangeUpcall(MethodType targetType, FunctionDescriptor function, LinkerOptions options) {
+        assertNotEmpty(function);
         MemorySegment cif = makeCif(targetType, function, options, Arena.ofAuto());
 
         UpcallData invData = new UpcallData(function.returnLayout().orElse(null), function.argumentLayouts(), cif);
@@ -161,8 +163,14 @@ public final class FallbackLinker extends AbstractLinker {
             acquiredSessions.add(targetImpl);
 
             MemorySegment capturedState = null;
+            Object captureStateHeapBase = null;
             if (invData.capturedStateMask() != 0) {
                 capturedState = SharedUtils.checkCaptureSegment((MemorySegment) args[argStart++]);
+                if (!invData.allowsHeapAccess) {
+                    SharedUtils.checkNative(capturedState);
+                } else {
+                    captureStateHeapBase = capturedState.heapBase().orElse(null);
+                }
                 MemorySessionImpl capturedStateImpl = ((AbstractMemorySegmentImpl) capturedState).sessionImpl();
                 capturedStateImpl.acquire0();
                 acquiredSessions.add(capturedStateImpl);
@@ -197,7 +205,8 @@ public final class FallbackLinker extends AbstractLinker {
                 retSeg = (invData.returnLayout() instanceof GroupLayout ? returnAllocator : arena).allocate(invData.returnLayout);
             }
 
-            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs, capturedState, invData.capturedStateMask(),
+            LibFallback.doDowncall(invData.cif, target, retSeg, argPtrs,
+                                   captureStateHeapBase, capturedState, invData.capturedStateMask(),
                                    heapBases, args.length);
 
             Reference.reachabilityFence(invData.cif());
@@ -326,4 +335,35 @@ public final class FallbackLinker extends AbstractLinker {
 
         return Holder.CANONICAL_LAYOUTS;
     }
+
+    private static void assertNotEmpty(FunctionDescriptor fd) {
+        fd.returnLayout().ifPresent(FallbackLinker::assertNotEmpty);
+        fd.argumentLayouts().forEach(FallbackLinker::assertNotEmpty);
+    }
+
+    // Recursively tests for emptiness
+    private static void assertNotEmpty(MemoryLayout layout) {
+        switch (layout) {
+            case GroupLayout gl -> {
+                if (gl.memberLayouts().isEmpty()) {
+                    throw empty(gl);
+                } else {
+                    gl.memberLayouts().forEach(FallbackLinker::assertNotEmpty);
+                }
+            }
+            case SequenceLayout sl -> {
+                if (sl.elementCount() == 0) {
+                    throw empty(sl);
+                } else {
+                    assertNotEmpty(sl.elementLayout());
+                }
+            }
+            default -> { /* do nothing */ }
+        }
+    }
+
+    private static IllegalArgumentException empty(MemoryLayout layout) {
+        return new IllegalArgumentException("The layout " + layout + " is empty");
+    }
+
 }

@@ -22,11 +22,8 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -43,7 +40,7 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
-import java.lang.classfile.components.ClassRemapper;
+import jdk.internal.classfile.components.ClassRemapper;
 import jdk.internal.org.objectweb.asm.AnnotationVisitor;
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;

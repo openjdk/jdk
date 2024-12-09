@@ -36,23 +36,18 @@ final class LibFallback {
 
     static final boolean SUPPORTED = tryLoadLibrary();
 
-    @SuppressWarnings({"removal", "restricted"})
+    @SuppressWarnings({"restricted"})
     private static boolean tryLoadLibrary() {
-        return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<>() {
-                    public Boolean run() {
-                        try {
-                            System.loadLibrary("fallbackLinker");
-                        } catch (UnsatisfiedLinkError ule) {
-                            return false;
-                        }
-                        if (!init()) {
-                            // library failed to initialize. Do not silently mark as unsupported
-                            throw new ExceptionInInitializerError("Fallback library failed to initialize");
-                        }
-                        return true;
-                    }
-                });
+        try {
+            System.loadLibrary("fallbackLinker");
+        } catch (UnsatisfiedLinkError ule) {
+            return false;
+        }
+        if (!init()) {
+            // library failed to initialize. Do not silently mark as unsupported
+            throw new ExceptionInInitializerError("Fallback library failed to initialize");
+        }
+        return true;
     }
 
     static int defaultABI() { return NativeConstants.DEFAULT_ABI; }
@@ -95,10 +90,11 @@ final class LibFallback {
      * @see jdk.internal.foreign.abi.CapturableState
      */
     static void doDowncall(MemorySegment cif, MemorySegment target, MemorySegment retPtr, MemorySegment argPtrs,
-                           MemorySegment capturedState, int capturedStateMask,
+                           Object captureStateHeapBase, MemorySegment capturedState, int capturedStateMask,
                            Object[] heapBases, int numArgs) {
             doDowncall(cif.address(), target.address(),
                        retPtr == null ? 0 : retPtr.address(), argPtrs.address(),
+                       captureStateHeapBase,
                        capturedState == null ? 0 : capturedState.address(), capturedStateMask,
                        heapBases, numArgs);
     }
@@ -217,7 +213,7 @@ final class LibFallback {
     private static native int createClosure(long cif, Object userData, long[] ptrs);
     private static native void freeClosure(long closureAddress, long globalTarget);
     private static native void doDowncall(long cif, long fn, long rvalue, long avalues,
-                                          long capturedState, int capturedStateMask,
+                                          Object captureStateHeapBase, long capturedState, int capturedStateMask,
                                           Object[] heapBases, int numArgs);
 
     private static native int ffi_prep_cif(long cif, int abi, int nargs, long rtype, long atypes);

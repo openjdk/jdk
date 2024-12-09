@@ -449,7 +449,7 @@ awt_x11inputmethod_lookupString(XKeyPressedEvent *event, KeySym *keysymp)
                                  "(Ljava/lang/String;J)V",
                                  javastr,
                                  event->time);
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionDescribe(env);
                 (*env)->ExceptionClear(env);
             }
@@ -682,7 +682,7 @@ static void onoffStatusWindow(X11InputMethodData* pX11IMData,
         parent = JNU_CallMethodByName(env, NULL, pX11IMData->x11inputmethod,
                                       "getCurrentParentWindow",
                                       "()J").j;
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionDescribe(env);
             (*env)->ExceptionClear(env);
         }
@@ -1057,7 +1057,7 @@ PreeditDoneCallback(XIC ic, XPointer client_data, XPointer call_data)
                                  "clearComposedText",
                                  "(J)V",
                                  awt_util_nowMillisUTC());
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionDescribe(env);
                 (*env)->ExceptionClear(env);
             }
@@ -1160,7 +1160,7 @@ PreeditDrawCallback(XIC ic, XPointer client_data,
                          (jint)pre_draw->caret,
                          awt_util_nowMillisUTC());
 
-    if ((*env)->ExceptionOccurred(env)) {
+    if ((*env)->ExceptionCheck(env)) {
         (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
     }
@@ -2125,7 +2125,7 @@ JNIEXPORT jstring JNICALL Java_sun_awt_X11InputMethodBase_resetXIC
         JNU_CallMethodByName(env, NULL, pX11IMData->x11inputmethod,
                              "clearComposedText",
                              "()V");
-        if ((*env)->ExceptionOccurred(env)) {
+        if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionDescribe(env);
             (*env)->ExceptionClear(env);
         }

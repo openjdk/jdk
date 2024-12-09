@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ void *safe_Realloc(void *memblock, size_t size) {
 // std::bad_alloc in an out of memory situation. Instead, VC++ 5.0 returns 0.
 //
 // This function can be safely removed when the problem is corrected.
-void * CDECL operator new(size_t size) {
+void * operator new(size_t size) {
     return safe_Malloc(size);
 }
 #endif
@@ -228,7 +228,7 @@ void *safe_Realloc_outofmem(void *memblock, size_t size, const char *file,
     return safe_Realloc(memblock, size);
 }
 
-void * CDECL operator new(size_t size, const char *file, int line) {
+void * operator new(size_t size, const char *file, int line) {
     rand_alloc_fail(file, line);
     return operator new(size);
 }

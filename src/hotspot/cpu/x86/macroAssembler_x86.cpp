@@ -4115,7 +4115,7 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 
 XMMRegSet MacroAssembler::call_clobbered_xmm_registers() {
   int num_xmm_registers = XMMRegister::available_xmm_registers();
-#if defined(_WINDOWS) && defined(_LP64)
+#if defined(_WINDOWS)
   XMMRegSet result = XMMRegSet::range(xmm0, xmm5);
   if (num_xmm_registers > 16) {
      result += XMMRegSet::range(xmm16, as_XMMRegister(num_xmm_registers - 1));
@@ -4912,6 +4912,10 @@ void MacroAssembler::population_count(Register dst, Register src,
     }
     bind(done);
   }
+#ifdef ASSERT
+  mov64(scratch1, 0xCafeBabeDeadBeef);
+  movq(scratch2, scratch1);
+#endif
 }
 
 // Ensure that the inline code and the stub are using the same registers.
@@ -5113,6 +5117,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   const Register r_array_base = *available_regs++;
 
   // Get the first array index that can contain super_klass into r_array_index.
+  // Note: Clobbers r_array_base and slot.
   population_count(r_array_index, r_array_index, /*temp2*/r_array_base, /*temp3*/slot);
 
   // NB! r_array_index is off by 1. It is compensated by keeping r_array_base off by 1 word.
@@ -5130,7 +5135,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   jccb(Assembler::equal, L_success);
 
   // Restore slot to its true value
-  xorl(slot, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 1)); // slot ^ 63 === 63 - slot (mod 64)
+  movb(slot, Address(r_super_klass, Klass::hash_slot_offset()));
 
   // Linear probe. Rotate the bitmap so that the next bit to test is
   // in Bit 1.
@@ -5440,7 +5445,6 @@ void MacroAssembler::vallones(XMMRegister dst, int vector_len) {
   } else if (VM_Version::supports_avx()) {
     vpcmpeqd(dst, dst, dst, vector_len);
   } else {
-    assert(VM_Version::supports_sse2(), "");
     pcmpeqd(dst, dst);
   }
 }
@@ -10624,10 +10628,6 @@ Assembler::Condition MacroAssembler::negate_condition(Assembler::Condition cond)
   ShouldNotReachHere(); return Assembler::overflow;
 }
 
-// 32-bit Windows has its own fast-path implementation
-// of get_thread
-#if !defined(WIN32) || defined(_LP64)
-
 // This is simply a call to Thread::current()
 void MacroAssembler::get_thread(Register thread) {
   if (thread != rax) {
@@ -10661,9 +10661,6 @@ void MacroAssembler::get_thread(Register thread) {
     pop(rax);
   }
 }
-
-
-#endif // !WIN32 || _LP64
 
 void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigned bias, Register tmp) {
   Label L_stack_ok;
