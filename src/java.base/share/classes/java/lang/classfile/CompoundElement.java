@@ -34,6 +34,8 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.classfile.components.ClassPrinter;
+
 /**
  * A {@link ClassFileElement} that has complex structure defined in terms of
  * other classfile elements, such as a method, field, method body, or entire
@@ -92,4 +94,12 @@ public sealed interface CompoundElement<E extends ClassFileElement>
         return Collections.unmodifiableList(list);
     }
 
+    /**
+     * {@return a debug printout of the compound element}
+     */
+    default String toDebugString() {
+        StringBuilder text = new StringBuilder();
+        ClassPrinter.toYaml(this, ClassPrinter.Verbosity.TRACE_ALL, text::append);
+        return text.toString();
+    }
 }
