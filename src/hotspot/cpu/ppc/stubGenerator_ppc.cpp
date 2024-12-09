@@ -635,18 +635,17 @@ address generate_ghash_processBlocks() {
   
   address start = __ function_entry();
   
-  //Registers for parameters
-  Register state = R3_ARG1;  // long[] st0
-  Register subkeyH = R4_ARG2; // long[] subH
-  Register data = R5_ARG3;  // byte[] data  
+  // Registers for parameters
+  Register state = R3_ARG1;                     // long[] st0
+  Register subkeyH = R4_ARG2;                   // long[] subH
+  Register data = R5_ARG3;                      // byte[] data  
   Register blocks = R6_ARG4;
-
   Register temp1 = R8;
   Register temp2 = R9;
   Register temp3 = R10;
   Register temp4 = R11;
   Register align = data;
-  //Vector Registers
+  // Vector Registers
   VectorRegister vH = VR0;
   VectorRegister vX = VR1;
   VectorRegister vH_shift = VR2;
@@ -689,8 +688,8 @@ address generate_ghash_processBlocks() {
   #endif
 
   __ li(temp3,0);
-  __ vxor(fromPerm, fromPerm, fromPerm);  // Clear the vector register
-  __ lvxl(fromPerm, temp3,  temp1);  // Lo
+  __ vxor(fromPerm, fromPerm, fromPerm);        // Clear the vector register
+  __ lvxl(fromPerm, temp3,  temp1);             // Lo
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
 
@@ -702,8 +701,8 @@ address generate_ghash_processBlocks() {
   __ li(temp1, 0);
   __ andi(temp1, subkeyH, 15);
   __ cmpwi(CCR0, temp1, 0);
-  __ beq(CCR0, L_aligned);// Check if 'to' is aligned (mask lower 4 bits)
-  __ li(temp1, 0);      // Load immediate value 0 into temp  
+  __ beq(CCR0, L_aligned);             // Check if 'to' is aligned (mask lower 4 bits)
+  __ li(temp1, 0); 
   __ vxor(vH, vH, vH);
   __ lvx(vHigh, temp1, subkeyH);
   __ lvsl(vPerm, temp1, subkeyH);
@@ -720,11 +719,11 @@ address generate_ghash_processBlocks() {
   __ li(temp1, 0);
   __ andi(temp1, state, 15);
   __ cmpwi(CCR0, temp1, 0);
-  __ beq(CCR0, L_aligned3);// Check if 'to' is aligned (mask lower 4 bits)
-  __ li(temp1, 0);      // Load immediate value 0 into temp  
+  __ beq(CCR0, L_aligned3);                     // Check if 'to' is aligned (mask lower 4 bits)
+  __ li(temp1, 0); 
   __ vxor(vZero_Stored, vZero_Stored, vZero_Stored);
-  __ lvx(vHigh, temp1, state);// Load H using temp instead of R0
-  __ lvsl(vPerm,temp1,state);
+  __ lvx(vHigh, temp1, state);
+  __ lvsl(vPerm,temp1,state); 
   __ addi(state, state, 16);
   __ lvx(vLow, temp1, state);
   __ vec_perm(vZero_Stored, vHigh, vLow, vPerm);
@@ -737,21 +736,20 @@ address generate_ghash_processBlocks() {
   //Operations to obtain lower and higher bytes of subkey H.
   __ vspltisb(vConst1, 1); 
   __ vspltisb(vConst7, 7);
-  __ vsldoi(vTmp4, vZero, vConst1, 1);// 0x1
-  __ vor(vTmp4, vConstC2, vTmp4); //0xC2...1
-  __ vsplt(vMSB, 0, vH); // MSB of H
+  __ vsldoi(vTmp4, vZero, vConst1, 1);          // 0x1
+  __ vor(vTmp4, vConstC2, vTmp4);               //0xC2...1
+  __ vsplt(vMSB, 0, vH);                        // MSB of H
   __ vxor(vH_shift, vH_shift, vH_shift);
-  __ vsl(vH_shift, vH, vConst1); // Carry= H<<7
+  __ vsl(vH_shift, vH, vConst1);                // Carry= H<<7
   __ vsrab(vMSB, vMSB, vConst7);
-  __ vand(vMSB, vMSB, vTmp4); //Carry
-  __ vxor(vTmp2, vH_shift, vMSB); // shift H<<<1
+  __ vand(vMSB, vMSB, vTmp4);                   //Carry
+  __ vxor(vTmp2, vH_shift, vMSB);               // shift H<<<1
   __ vsldoi(vConstC2, vZero, vConstC2, 8);
-  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);// swap L,H 
-  __ vsldoi(vLowerH, vZero, vSwappedH, 8); //H.L
-  __ vsldoi(vHigherH, vSwappedH, vZero, 8); //H.H
+  __ vsldoi(vSwappedH, vTmp2, vTmp2, 8);        // swap L,H 
+  __ vsldoi(vLowerH, vZero, vSwappedH, 8);      //H.L
+  __ vsldoi(vHigherH, vSwappedH, vZero, 8);     //H.H
   __ vxor(vTmp1, vTmp1, vTmp1);
   __ vxor(vZero, vZero, vZero);
-  // Calculate the number of blocks
   __ mtctr(blocks);
   __ li(temp1, 0);
   __ load_const_optimized(temp2, (uintptr_t)&perm_pattern2);
@@ -783,18 +781,18 @@ address generate_ghash_processBlocks() {
     __ vxor(vX, vX, vZero_Stored);
 
       // Perform GCM multiplication
-    __ vpmsumd(vTmp1, vLowerH, vX);  // L
-    __ vpmsumd(vTmp2, vSwappedH, vX); // M
-    __ vpmsumd(vTmp3, vHigherH, vX);  // H
-    __ vpmsumd(vTmp4, vTmp1, vConstC2);  // reduction
-    __ vsldoi(vTmp5, vTmp2, vZero, 8);  // mL
-    __ vsldoi(vTmp6, vZero, vTmp2, 8);  // mH
-    __ vxor(vTmp1, vTmp1, vTmp5);    // LL + LL
-    __ vxor(vTmp3, vTmp3, vTmp6);    // HH + HH
-    __ vsldoi(vTmp1, vTmp1, vTmp1, 8);  // swap
-    __ vxor(vTmp1, vTmp1, vTmp4);       // reduction
-    __ vsldoi(vTmp7, vTmp1, vTmp1, 8);  // swap
-    __ vpmsumd(vTmp1, vTmp1, vConstC2);  // reduction
+    __ vpmsumd(vTmp1, vLowerH, vX);             // L
+    __ vpmsumd(vTmp2, vSwappedH, vX);           // M
+    __ vpmsumd(vTmp3, vHigherH, vX);            // H
+    __ vpmsumd(vTmp4, vTmp1, vConstC2);         // reduction
+    __ vsldoi(vTmp5, vTmp2, vZero, 8);          // mL
+    __ vsldoi(vTmp6, vZero, vTmp2, 8);          // mH
+    __ vxor(vTmp1, vTmp1, vTmp5);               // LL + LL
+    __ vxor(vTmp3, vTmp3, vTmp6);               // HH + HH
+    __ vsldoi(vTmp1, vTmp1, vTmp1, 8);          // swap
+    __ vxor(vTmp1, vTmp1, vTmp4);               // reduction
+    __ vsldoi(vTmp7, vTmp1, vTmp1, 8);          // swap
+    __ vpmsumd(vTmp1, vTmp1, vConstC2);         // reduction
     __ vxor(vTmp7, vTmp7, vTmp3);
     __ vxor(vZero, vTmp1, vTmp7);
     __ vmr(vZero_Stored, vZero);
@@ -806,13 +804,13 @@ address generate_ghash_processBlocks() {
   __ li(temp1, 0);
   __ andi(temp1, state, 15);
   __ cmpwi(CCR0,temp1,0);
-  __ beq(CCR0, L_aligned4);// Check if 'to' is aligned (mask lower 4 bits)
+  __ beq(CCR0, L_aligned4);                     // Check if 'to' is aligned (mask lower 4 bits)
   __ lvx(vHigh, temp4, state);
   __ lvsr(vPerm, temp4, state);
   __ addi(state, state, 16);
   __ lvx(vLow, temp4, state);
-  __ vspltisb(vConst1, -1); // Vector with 1s
-  __ vspltisb(vConst7, 0); // Vector with 7s
+  __ vspltisb(vConst1, -1);                     // Vector with 1s
+  __ vspltisb(vConst7, 0);                      // Vector with 7s
   __ vec_perm(vMask, vConst7, vConst1, vPerm);
   __ vec_perm(vZero, vZero, vZero, vPerm);
   __ vsel(vLow, vZero, vLow, vMask);
@@ -826,7 +824,7 @@ address generate_ghash_processBlocks() {
   __ bind(L_end4);
 
     
-  __ blr();  // Return from function
+  __ blr();                                     // Return from function
 
   return start;
  
