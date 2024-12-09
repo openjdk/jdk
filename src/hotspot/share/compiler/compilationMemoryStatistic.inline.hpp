@@ -29,6 +29,7 @@
 #include "compiler/compilationMemoryStatistic.hpp"
 
 #ifdef COMPILER2
+
 // C2 only: inform statistic about start and end of a compilation phase
 inline void CompilationMemoryStatistic::on_c2_phase_start(Phase::PhaseTraceId id) {
   if (enabled()) {
@@ -42,18 +43,15 @@ inline void CompilationMemoryStatistic::on_c2_phase_end() {
   }
 }
 
-inline PhaseIdStack::PhaseIdStack() : _depth(0) {
-  // Let Stack never be empty to also catch allocations that happen outside a TracePhase scope
-  push(Phase::PhaseTraceId::_t_none);
-}
-
 inline void PhaseIdStack::push(Phase::PhaseTraceId id) {
   assert(_depth < max_depth, "Sanity");
   _stack[_depth++] = id;
+//tty->print_cr(PTR_FORMAT " ->%s", p2i(this), Phase::get_phase_trace_id_text(id));
 }
 
 inline void PhaseIdStack::pop() {
-  assert(_depth > 1, "Sanity");
+  assert(_depth > 1, "Sanity " PTR_FORMAT, p2i(this));
+//  tty->print_cr(PTR_FORMAT " <-%s", p2i(this), Phase::get_phase_trace_id_text(top()));
   _depth --;
 }
 
@@ -64,6 +62,7 @@ inline Phase::PhaseTraceId PhaseIdStack::top() const {
 
 inline void CountersPerC2Phase::add(size_t size, int arena_tag, Phase::PhaseTraceId id) {
   assert(arena_tag >= 0 && arena_tag < Arena::tag_count(), "sanity");
+  assert((unsigned)id < Phase::PhaseTraceId::max_phase_timers, "sanity");
   int phaseid = (int)id;
   assert(phaseid >= 0 && phaseid < (int)Phase::PhaseTraceId::max_phase_timers, "sanity");
   _v[arena_tag][phaseid] += size;
@@ -71,6 +70,7 @@ inline void CountersPerC2Phase::add(size_t size, int arena_tag, Phase::PhaseTrac
 
 inline void CountersPerC2Phase::sub(size_t size, int arena_tag, Phase::PhaseTraceId id) {
   assert(arena_tag >= 0 && arena_tag < Arena::tag_count(), "sanity");
+  assert((unsigned)id < Phase::PhaseTraceId::max_phase_timers, "sanity");
   int phaseid = (int)id;
   assert(phaseid >= 0 && phaseid < (int)Phase::PhaseTraceId::max_phase_timers, "sanity");
   assert(_v[arena_tag][phaseid] >= size, "overflow");

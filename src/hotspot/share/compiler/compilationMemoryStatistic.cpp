@@ -83,8 +83,13 @@ void ArenaState::reset() {
   _limit = 0;
   _hit_limit = false;
   _limit_in_process = false;
-  _live_nodes_at_peak = 0;
   _active = false;
+#ifdef COMPILER2
+  _live_nodes_at_peak = 0;
+  _phase_id_stack.reset();
+  _current_phase_counters.reset();
+  _peak_phase_counters.reset();
+#endif
 }
 
 void ArenaState::start(size_t limit) {
@@ -99,23 +104,29 @@ void ArenaState::end() {
   _active = false;
 }
 
-void ArenaState::update_c2_node_count() {
-  assert(_active, "compilaton has not yet started");
 #ifdef COMPILER2
+
+bool ArenaState::is_c2_compilation() {
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   const CompileTask* const task = th->task();
   if (task != nullptr &&
       th->task()->compiler() != nullptr &&
       th->task()->compiler()->type() == compiler_c2) {
-    const Compile* const comp = Compile::current();
-    if (comp != nullptr) {
-      _live_nodes_at_peak = comp->live_nodes();
-    }
+    return true;
   }
-#endif
+  return false;
 }
 
-#ifdef COMPILER2
+PhaseIdStack::PhaseIdStack() {
+  reset();
+}
+
+void PhaseIdStack::reset() {
+//tty->print_cr(PTR_FORMAT " reset", p2i(this));
+  _depth = 0;
+  // Let stack never be empty to simplify phase handling.
+  push(Phase::PhaseTraceId::_t_none);
+}
 
 CountersPerC2Phase::CountersPerC2Phase() {
   reset();
@@ -125,9 +136,33 @@ void CountersPerC2Phase::reset() {
   memset(_v, 0, sizeof(_v));
 }
 
-void CountersPerC2Phase::print_on(outputStream* st) {
+void CountersPerC2Phase::copy_from(const CountersPerC2Phase& orig) {
+  memcpy(_v, orig._v, sizeof(_v));
+}
+
+void CountersPerC2Phase::print_on(outputStream* st) const {
+  bool header_printed = false;
   for (int phaseid = 0; phaseid < (int)Phase::PhaseTraceId::max_phase_timers; phaseid++) {
-    // todo
+    size_t sum = 0;
+    for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
+      sum += _v[arenatag][phaseid];
+    }
+    if (sum > 0) { // omit phases that did not contribute to allocation load
+      if (!header_printed) {
+        st->print("%24s %10s", "Phase", "Total");
+        for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
+          st->print("%10s", Arena::tag_name[arenatag]);
+        }
+        st->cr();
+        header_printed = true;
+      }
+      st->print("%24s ", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phaseid));
+      st->print(SIZE_FORMAT_W(10), sum);
+      for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
+        st->print(SIZE_FORMAT_W(10), _v[arenatag][phaseid]);
+      }
+      st->cr();
+    }
   }
 }
 
@@ -149,10 +184,28 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int tag, uint64_t* stamp
   _current += size;
   _current_by_tag.add(tag, size);
 
+#ifdef COMPILER2
+  if (is_c2_compilation()) {
+    // Update phase counters
+    _current_phase_counters.add(size, tag, _phase_id_stack.top());
+  }
+#endif // COMPILER2
+
   // Did we reach a peak?
   if (_current > _peak) {
     _peak = _current;
-    update_c2_node_count();
+#ifdef COMPILER2
+    if (is_c2_compilation()) {
+      // Snapshot per-phase memory counters
+      _peak_phase_counters.copy_from(_current_phase_counters);
+      // Update C2 node count at peak
+      // Note that Compile::current() may still be NULL since it is set only after
+      // Compile constructor runs. Compile constructor already causes chunk allocations.
+      if (Compile::current() != nullptr) {
+        _live_nodes_at_peak = Compile::current()->live_nodes();
+      }
+    }
+#endif // COMPILER2
     _peak_by_tag = _current_by_tag;
     rc = true;
     // Did we hit the memory limit?
@@ -176,20 +229,47 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   assert(_active, "compilaton has not yet started");
   assert(_current >= size, "Negative overflow (d=%zd %zu %zu)", size, _current, _peak);
   _current -= size;
+  // Extract tag and phase id from stamp
   chunkstamp_t cs;
   cs.raw = stamp;
   assert(cs.tracked == 1, "Sanity");
+  // Account by tag
   _current_by_tag.sub(cs.arena_tag, size);
+#ifdef COMPILER2
+  if (is_c2_compilation()) {
+    // Account by phase id and tag
+    _current_phase_counters.sub(size, cs.arena_tag, (Phase::PhaseTraceId)cs.phase_id);
+  }
+#endif // COMPILER2
 }
 
 void ArenaState::print_peak_state_on(outputStream* st) const {
-  st->print("%zu [", _peak);
-  _peak_by_tag.print_on(st);
+
+#ifdef COMPILER2
+  if (is_c2_compilation()) {
+    st->print("%zu", _peak);
+    if (is_c2_compilation()) {
+    _peak_by_tag.print_on(st);
+
+    st->cr();
+    _peak_phase_counters.print_on(st);
+  } else {
+    st->cr();
+  }
+#endif
 }
 
 void ArenaState::print_current_state_on(outputStream* st) const {
   st->print("%zu [", _current);
   _current_by_tag.print_on(st);
+#ifdef COMPILER2
+  if (is_c2_compilation()) {
+    st->cr();
+    _current_phase_counters.print_on(st);
+  } else {
+    st->cr();
+  }
+#endif
 }
 
 //////////////////////////
@@ -534,14 +614,12 @@ void CompilationMemoryStatistic::on_end_compilation() {
 
   if (print) {
     // Pre-assemble string to prevent tearing
-    char buf[2048];
-    stringStream ss(buf, sizeof(buf));
+    stringStream ss;
     ss.print("%s (%d) Arena usage", compilertype2name(ct), comp_id);
     fmn.print_on(&ss);
     ss.print_raw(": ");
     arena_stat->print_peak_state_on(&ss);
-    ss.cr();
-    tty->print_raw(buf);
+    tty->print_raw(ss.base());
   }
 
   arena_stat->end(); // reset things

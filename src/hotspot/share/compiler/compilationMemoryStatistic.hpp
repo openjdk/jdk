@@ -83,6 +83,7 @@ public:
   inline void push(Phase::PhaseTraceId id);
   inline void pop();
   inline Phase::PhaseTraceId top() const;
+  void reset();
 };
 
 // A table containing a counter per arena tag and per phase id
@@ -90,10 +91,11 @@ class CountersPerC2Phase {
   size_t _v[Arena::tag_count()][Phase::PhaseTraceId::max_phase_timers];
 public:
   CountersPerC2Phase();
+  void copy_from(const CountersPerC2Phase& orig);
   void add(size_t size, int arena_tag, Phase::PhaseTraceId id);
   void sub(size_t size, int arena_tag, Phase::PhaseTraceId id);
   void reset();
-  void print_on(outputStream* ss);
+  void print_on(outputStream* ss) const;
 };
 #endif // COMPILER2
 
@@ -118,16 +120,17 @@ class ArenaState : public CHeapObj<mtCompiler> {
   // When to start accounting
   bool _active;
 
+#ifdef COMPILER2
   // Number of live nodes when total peaked (c2 only)
   unsigned _live_nodes_at_peak;
-
-#ifdef COMPILER2
+  // Per-phase accounting
   PhaseIdStack _phase_id_stack;
   CountersPerC2Phase _current_phase_counters;
   CountersPerC2Phase _peak_phase_counters;
-#endif
 
-  void update_c2_node_count();
+  // Returns true if the current frame is running in the context of a C2 compilation.
+  static bool is_c2_compilation();
+#endif // COMPILER2
 
   void reset();
 
@@ -139,7 +142,6 @@ public:
 
   // Peak details
   ArenaCountersByTag peak_by_tag() const { return _peak_by_tag; }
-  unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
 
   // Mark the start and end of a compilation.
   void start(size_t limit);
@@ -151,8 +153,6 @@ public:
   // Account an arena deallocation.
   void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
 
-  void set_live_nodes_at_peak(unsigned i) { _live_nodes_at_peak = i; }
-
   void print_peak_state_on(outputStream* st) const;
   void print_current_state_on(outputStream* st) const;
 
@@ -163,7 +163,9 @@ public:
   bool   is_active() const          { return _active; }
 
 #ifdef COMPILER2
-  // C2 only: inform statistic about start and end of a compilation phase
+  unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
+  void set_live_nodes_at_peak(unsigned i) { _live_nodes_at_peak = i; }
+  const CountersPerC2Phase& peak_phase_counters() const { return _peak_phase_counters; }
   void on_c2_phase_start(Phase::PhaseTraceId id);
   void on_c2_phase_end();
 #endif
