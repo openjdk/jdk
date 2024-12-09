@@ -26,8 +26,6 @@
  * @bug 8194978
  * @summary Verify than an appropriate number of close method invocations is generated.
  * @library /tools/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox TwrSimpleClose
  * @run main TwrSimpleClose
  */

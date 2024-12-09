@@ -26,7 +26,6 @@
  * @summary Tests a line number table attribute for language constructions in different containers.
  * @bug 8040131
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util

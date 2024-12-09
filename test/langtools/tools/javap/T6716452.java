@@ -24,7 +24,6 @@
 /*
  * @test 6716452
  * @summary need a method to get an index of an attribute
- * @enablePreview
  */
 
 import java.io.*;
