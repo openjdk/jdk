@@ -162,6 +162,8 @@ public class CodeGeneratorLibrary {
                 String lo = parameters.getOrNull("lo");
                 String hi = parameters.getOrNull("hi");
 
+                // TODO biased sampling?
+
                 if (lo == null && hi == null) {
                     // Full int range
                     int v = RANDOM.nextInt();

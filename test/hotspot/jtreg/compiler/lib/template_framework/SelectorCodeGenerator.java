@@ -60,7 +60,6 @@ public final class SelectorCodeGenerator implements CodeGenerator {
     }
 
     private String choose(Scope scope) {
-        // TODO maybe cache the generators, so we can more quickly iterate?
         // Total weight of allowed choices
         double total = 0;
         for (Map.Entry<String,Float> entry : choiceWeights.entrySet()) {
