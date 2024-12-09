@@ -449,7 +449,8 @@ public final class Template implements CodeGenerator {
                         if (val.startsWith("$")) {
                             return state.wrapVariable(val.substring(1), e.getKey() + "=$" + val + " in " + templated);
                         } else if (val.startsWith("#")) {
-                            return state.parameters.get(val.substring(1), e.getKey() + "=#" + e.getKey() + " in " + templated);
+                            return state.parameters.get(val.substring(1), state.currentScope,
+                                                        e.getKey() + "=#" + e.getKey() + " in " + templated);
                         }
                         return val;
                     }

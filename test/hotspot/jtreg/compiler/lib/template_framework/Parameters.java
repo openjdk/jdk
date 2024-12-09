@@ -67,18 +67,17 @@ public class Parameters {
         return argumentsMap.get(name);
     }
 
-    // TODO pass scope?
-    public String get(String name, String errorMessage) {
+    public String get(String name, Scope scope, String errorMessage) {
         String param = getOrNull(name);
         if (param == null) {
-            print();
+            scope.print();
             throw new TemplateFrameworkException("Missing parameter '" + name + "' " + errorMessage);
         }
         return param;
     }
 
-    public int getInt(String name, String errorMessage, Scope scope) {
-        String param = get(name, errorMessage);
+    public int getInt(String name, Scope scope, String errorMessage) {
+        String param = get(name, scope, errorMessage);
         switch (param) {
             case "min_int" -> { return Integer.MIN_VALUE; }
             case "max_int" -> { return Integer.MAX_VALUE; }

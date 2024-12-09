@@ -75,7 +75,7 @@ public class CodeGeneratorLibrary {
     public static CodeGenerator factoryLoadStore(boolean mutable) {
         String generatorName = mutable ? "store" : "load";
         return new ProgrammaticCodeGenerator(generatorName, (Scope scope, Parameters parameters) -> {
-            String type = parameters.get("type", " for generator call to load/store");
+            String type = parameters.get("type", scope, " for generator call to load/store");
             String name = scope.sampleVariable(type, mutable);
             if (name == null) {
                 scope.print();
@@ -87,8 +87,8 @@ public class CodeGeneratorLibrary {
 
     public static CodeGenerator factoryDispatch() {
         return new ProgrammaticCodeGenerator("dispatch", (Scope scope, Parameters parameters) -> {
-            String scopeKind = parameters.get("scope", " for generator call to 'dispatch'");
-            String generatorName = parameters.get("call", " for generator call to 'dispatch'");
+            String scopeKind = parameters.get("scope", scope, " for generator call to 'dispatch'");
+            String generatorName = parameters.get("call", scope, " for generator call to 'dispatch'");
             CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
 
             System.out.println("Dispatch " + generatorName + " to " + scopeKind);
@@ -118,9 +118,9 @@ public class CodeGeneratorLibrary {
 
     public static CodeGenerator factoryAddVariable() {
         return new ProgrammaticCodeGenerator("add_variable", (Scope scope, Parameters parameters) -> {
-            String scopeKind = parameters.get("scope", " for generator call to 'add_variable'");
-            String name = parameters.get("name", " for generator call to 'add_variable'");
-            String type = parameters.get("type", " for generator call to 'add_variable'");
+            String scopeKind = parameters.get("scope", scope, " for generator call to 'add_variable'");
+            String name = parameters.get("name", scope, " for generator call to 'add_variable'");
+            String type = parameters.get("type", scope, " for generator call to 'add_variable'");
             String isFinal = parameters.getOrNull("final");
 
             if (isFinal != null && !isFinal.equals("true") && !isFinal.equals("false")) {
@@ -165,7 +165,7 @@ public class CodeGeneratorLibrary {
                     scope.stream.addCodeToLine(String.valueOf(v));
                 } else if (lo == null) {
                     // Bounded: [min_int, hi)
-                    int hiVal = parameters.getInt("hi", " In int_con.", scope);
+                    int hiVal = parameters.getInt("hi", scope, " In int_con.");
                     if (hiVal == Integer.MIN_VALUE) {
                         scope.print();
                         throw new TemplateFrameworkException("Generator int_con must have min_int < hi");
@@ -174,7 +174,7 @@ public class CodeGeneratorLibrary {
                     scope.stream.addCodeToLine(String.valueOf(v));
                 } else if (hi == null) {
                     // Bounded: [lo, max_int]
-                    int loVal = parameters.getInt("lo", " In int_con.", scope);
+                    int loVal = parameters.getInt("lo", scope, " In int_con.");
                     if (loVal == Integer.MIN_VALUE) {
                         // Full int range
                         int v = RANDOM.nextInt();
@@ -186,8 +186,8 @@ public class CodeGeneratorLibrary {
                     }
                 } else {
                     // Bounded: [lo, hi)
-                    int loVal = parameters.getInt("lo", " In int_con.", scope);
-                    int hiVal = parameters.getInt("hi", " In int_con.", scope);
+                    int loVal = parameters.getInt("lo", scope, " In int_con.");
+                    int hiVal = parameters.getInt("hi", scope, " In int_con.");
                     if (loVal >= hiVal) {
                         scope.print();
                         throw new TemplateFrameworkException("Generator int_con must have lo < hi.");
