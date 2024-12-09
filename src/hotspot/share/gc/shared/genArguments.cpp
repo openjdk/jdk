@@ -38,7 +38,7 @@ size_t MinOldSize = 0;
 size_t MaxOldSize = 0;
 
 // If InitialHeapSize or MinHeapSize is not set on cmdline, this variable,
-// together with NewSize, are used to derive them.
+// together with NewSize, is used to derive them.
 // Using the same value when it was a configurable flag to avoid breakage.
 // See more in JDK-8345323
 size_t OldSize = ScaleForWordSize(4*M);
