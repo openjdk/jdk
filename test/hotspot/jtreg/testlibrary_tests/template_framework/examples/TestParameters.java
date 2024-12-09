@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Example test with constant int in Template.
+ * @summary Example test with parameters.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.examples.TestRandomIntConstant
+ * @run driver template_framework.examples.TestParameters
  */
 
 package template_framework.examples;
@@ -34,7 +34,7 @@ package template_framework.examples;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
 
-public class TestRandomIntConstant {
+public class TestParameters {
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -49,44 +49,29 @@ public class TestRandomIntConstant {
         // Object ret = p.xyz.InnterTest.test();
         Object ret = comp.invoke("p.xyz.InnerTest", "test", new Object[] {});
         System.out.println("res: " + ret);
+
+        // Check that the return value is the sum of the two parameters.
+        if ((42 + 7) != (int)ret) {
+            throw new RuntimeException("Unexpected result");
+        }
     }
 
     // Generate a source Java file as String
     public static String generate() {
+        // Create a Template with two parameter holes.
         Template template = new Template("my_example",
             """
             package p.xyz;
 
             public class InnerTest {
                 public static int test() {
-                    int $con0 = 123;
-                    int $con1 = #{:int_con};
-                    int $con2 = #{:int_con(lo=0,hi=100)};
-                    int $con3 = #{:int_con(lo=0)};
-                    int $con4 = #{:int_con(hi=0)};
-
-                    int $con5 = #{:int_con(lo=min_int)};
-                    int $con6 = #{:int_con(lo=max_int)};
-                    int $con7 = #{:int_con(hi=max_int)};
-
-                    if ($con0 != 123) {
-                        throw new RuntimeException("$con0 was not 123");
-                    }
-                    if ($con2 < 0 || -$con2 >= 100) {
-                        throw new RuntimeException("$con2 was out of range");
-                    }
-                    if ($con3 < 0) {
-                        throw new RuntimeException("$con3 was not positive");
-                    }
-                    if ($con4 >= 0) {
-                        throw new RuntimeException("$con4 was not negative");
-                    }
-
-                    return $con0 + $con1 + $con2 + $con3 + $con4;
+                    return #{param1} + #{param2};
                 }
             }
             """
         );
-        return template.instantiate();
+
+        // The two parameter holes are to be replaced with the provided values.
+        return template.where("param1", "42").where("param2", "7").instantiate();
     }
 }
