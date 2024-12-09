@@ -58,7 +58,6 @@ class FileSystemPreferences extends AbstractPreferences {
     /**
      * Sync interval in seconds.
      */
-    @SuppressWarnings("removal")
     private static final int SYNC_INTERVAL = Math.max(1,
             Integer.getInteger("java.util.prefs.syncInterval", 30));
 

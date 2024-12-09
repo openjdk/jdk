@@ -263,7 +263,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
         // The next event in the queue
         LogEvent next;
 
-        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap, Level level,
                 ResourceBundle bundle, String msg,
                 Throwable thrown, Object[] params) {
@@ -281,7 +280,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             this.bootstrap = bootstrap;
         }
 
-        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap, Level level,
                 Supplier<String> msgSupplier,
                 Throwable thrown, Object[] params) {
@@ -299,7 +297,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             this.bootstrap = bootstrap;
         }
 
-        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap,
                 PlatformLogger.Level platformLevel,
                 String sourceClass, String sourceMethod,
@@ -319,7 +316,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
             this.bootstrap = bootstrap;
         }
 
-        @SuppressWarnings("removal")
         private LogEvent(BootstrapLogger bootstrap,
                 PlatformLogger.Level platformLevel,
                 String sourceClass, String sourceMethod,
@@ -860,7 +856,6 @@ public final class BootstrapLogger implements Logger, PlatformLogger.Bridge,
     // The purpose of this class is to delay the initialization of
     // the detectedBackend field until it is actually read.
     // We do not want this field to get initialized if VM.isBooted() is false.
-    @SuppressWarnings("removal")
     private static final class DetectBackend {
         static final LoggingBackend detectedBackend = detectBackend();
 
