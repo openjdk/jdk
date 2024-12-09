@@ -1206,7 +1206,7 @@ var getJibProfilesDependencies = function (input, common) {
             version: "3.0",
             build_number: "1",
             file: "bundles/jcov-3.0+1.zip",
-            environment_name: "JCOV_HOME", 
+            environment_name: "JCOV_HOME",
             configure_args: "--with-jcov=" + input.get("jcov", "home_path"),
         },
 
