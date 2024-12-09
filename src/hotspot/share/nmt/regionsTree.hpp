@@ -134,7 +134,6 @@ class RegionsTree : public VMATree {
       prev = curr;
       if (curr.is_released_begin() || begin_node.out_tag() != curr.out_tag()) {
         auto st = stack(curr);
-        size_t r_size = curr.distance_from(begin_node);
         if (rgn_size == 0) {
           prev.clear_node();
           return true;
