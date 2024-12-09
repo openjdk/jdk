@@ -129,7 +129,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         // Use method name as link label, but add signature as title attribute
         String name = name(member);
         ExecutableElement ee = (ExecutableElement) member;
-        String title = name + utils.makeSignature(ee, te, false, true);
+        String title = name + utils.makeSignature(ee, typeElement, false, true);
         target.add(writer.getLink(new HtmlLinkInfo(configuration, PLAIN, te)
                 .label(name)
                 .fragment(htmlIds.forMember(ee).getFirst().name())

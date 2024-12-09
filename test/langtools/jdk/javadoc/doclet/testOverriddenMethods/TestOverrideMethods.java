@@ -145,7 +145,7 @@ public class TestOverrideMethods  extends JavadocTester {
                 """
                     Classes.P.html#m3()" title="m3()">m3""",
                 """
-                    Classes.P.html#m4(K,V)" title="m4(K, V)">m4""",
+                    Classes.P.html#m4(K,V)" title="m4(Object, Object)">m4""",
                 """
                     Classes.P.html#rateProperty()" title="rateProperty()">rateProperty""",
                 """
