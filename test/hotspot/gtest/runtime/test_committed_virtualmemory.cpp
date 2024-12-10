@@ -54,7 +54,7 @@ public:
     // stack grows downward
     address stack_top = stack_end + stack_size;
     bool found_stack_top = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)rmr_found.base(), rmr_found.size(), [&](const CommittedMemoryRegion& cmr) {
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr) {
       if (cmr.base() + cmr.size() == stack_top) {
         EXPECT_TRUE(cmr.size() <= stack_size);
         found_stack_top = true;
@@ -110,7 +110,7 @@ public:
 
 
     bool precise_tracking_supported = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)rmr_found.base(), size, [&](const CommittedMemoryRegion& cmr){
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr){
       if (cmr.size() == size) {
         return false;
       } else {

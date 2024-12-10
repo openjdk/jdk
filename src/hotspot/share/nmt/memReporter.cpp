@@ -435,8 +435,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 
   if (all_committed) {
     bool reserved_and_committed = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)reserved_rgn->base(),
-                                                                    reserved_rgn->size(),
+    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
                                                                   [&](CommittedMemoryRegion& committed_rgn) {
       if (committed_rgn.size() == reserved_rgn->size() && committed_rgn.call_stack()->equals(*stack)) {
         // One region spanning the entire reserved region, with the same stack trace.
@@ -468,8 +467,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     )
   };
 
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)reserved_rgn->base(),
-                                                                  reserved_rgn->size(),
+  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
                                                                   [&](CommittedMemoryRegion& crgn) {
     print_committed_rgn(crgn);
     return true;

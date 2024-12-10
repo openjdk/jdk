@@ -45,7 +45,7 @@ int compare_reserved_region_base(const ReservedMemoryRegion& r1, const ReservedM
 size_t ReservedMemoryRegion::committed_size() const {
   size_t committed = 0;
   size_t result = 0;
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)base(), size(), [&](CommittedMemoryRegion& crgn) {
+  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*this, [&](CommittedMemoryRegion& crgn) {
     result += crgn.size();
     return true;
   });
@@ -55,7 +55,7 @@ size_t ReservedMemoryRegion::committed_size() const {
 address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
   address bottom = base();
   address top = base() + size();
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions((VMATree::position)base(), size(), [&](CommittedMemoryRegion& crgn) {
+  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*this, [&](CommittedMemoryRegion& crgn) {
     address committed_top = crgn.base() + crgn.size();
     if (committed_top < top) {
       // committed stack guard pages, skip them

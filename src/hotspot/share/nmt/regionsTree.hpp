@@ -90,21 +90,20 @@ class RegionsTree : public VMATree {
   }
 
   template<typename F>
-  void visit_committed_regions(position start, size_t size, F func) {
-    size_t end = start + size + 1;
+  void visit_committed_regions(const ReservedMemoryRegion& rgn, F func) {
+    position start = (position)rgn.base();
+    size_t end = (size_t)rgn.end() + 1;
     size_t comm_size = 0;
-    size_t base = start;
 
     NodeHelper prev;
     visit_range_in_order(start, end, [&](Node* node) {
       NodeHelper curr(node);
       if (prev.is_valid()) {
-        base = prev.position();
         if (prev.is_committed_begin()) {
           comm_size += curr.distance_from(prev);
           if (!curr.is_committed_begin()) {
             auto st = stack(curr);
-            CommittedMemoryRegion cmr((address)base, comm_size, st);
+            CommittedMemoryRegion cmr((address)prev.position(), comm_size, st);
             comm_size = 0;
             if (!func(cmr))
               return false;
@@ -120,8 +119,6 @@ class RegionsTree : public VMATree {
   void visit_reserved_regions(F func) {
     NodeHelper begin_node, prev;
     size_t rgn_size = 0;
-    size_t comm_size = 0;
-    size_t base = 0;
 
     visit_in_order([&](Node* node) {
       NodeHelper curr(node);
