@@ -265,8 +265,9 @@ import java.util.function.Supplier;
  *
  *     }
  *}
- * Calling {@code bar()} will create the {@code Bar} singleton if needed and will also
- * first create the {@code Foo} (which it depends on) if needed.
+ * Calling {@code bar()} will create the {@code Bar} singleton if it is not already
+ * created. Upon such a creation, the dependent {@code Foo} will first be created if
+ * the {@code Foo} does not already exist.
  * <p>
  * Here is another example where a more complex dependency graph is created in which
  * integers in the Fibonacci delta series are lazily computed:
