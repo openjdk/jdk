@@ -181,14 +181,11 @@ void VM_Version::get_os_cpu_info() {
 }
 
 static bool read_fully(const char *fname, char *buf, size_t buflen) {
-  assert(buf != nullptr, "invalid argument");
+  guarantee(buf != nullptr, "buf should not be nullptr");  // Use guarantee to suppress gcc warnings
   assert(buflen >= 1, "invalid argument");
   int fd = os::open(fname, O_RDONLY, 0);
   if (fd != -1) {
-    PRAGMA_DIAG_PUSH
-    PRAGMA_NONNULL_IGNORED
     ssize_t read_sz = ::read(fd, buf, buflen);
-    PRAGMA_DIAG_POP
     ::close(fd);
 
     // Skip if the contents is just "\n" because some machine only sets
