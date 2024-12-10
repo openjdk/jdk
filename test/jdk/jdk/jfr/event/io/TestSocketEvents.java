@@ -55,6 +55,7 @@ public class TestSocketEvents {
 
     private static final int writeInt = 'A';
     private static final byte[] writeBuf = { 'B', 'C', 'D', 'E' };
+    private static final int MAX_ATTEMPTS = 5;
 
     private List<IOEvent> expectedEvents = new ArrayList<>();
 
@@ -64,7 +65,12 @@ public class TestSocketEvents {
 
     public static void main(String[] args) throws Throwable {
         new TestSocketEvents().test();
-        testConnectException();
+        boolean completed = false;
+        for (int ntries = 0; (completed == false)  && (ntries < MAX_ATTEMPTS); ++ntries) {
+            completed = testConnectException();
+        }
+        if (! completed)
+            throw new Exception("Unable to setup connect exception");
     }
 
     private void test() throws Throwable {
@@ -126,7 +132,7 @@ public class TestSocketEvents {
         }
     }
 
-    private static void testConnectException() throws Throwable {
+    private static boolean testConnectException() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocket ss = new ServerSocket()) {
                 recording.enable(IOEvent.EVENT_SOCKET_CONNECT_FAILED);
@@ -140,6 +146,8 @@ public class TestSocketEvents {
                 IOException connectException = null;
                 try (Socket s = new Socket()) {
                     s.connect(addr);
+                    // unexpected, abandon the test
+                    return false;
                 } catch (IOException ioe) {
                     // we expect this
                     connectException = ioe;
@@ -149,6 +157,7 @@ public class TestSocketEvents {
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 Asserts.assertEquals(1, events.size());
                 IOHelper.checkConnectEventException(events.get(0), connectException);
+                return true;
             }
         }
     }

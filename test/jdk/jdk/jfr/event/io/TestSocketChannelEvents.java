@@ -53,6 +53,7 @@ import jdk.test.lib.thread.XRun;
 public class TestSocketChannelEvents {
     private static final int bufSizeA = 10;
     private static final int bufSizeB = 20;
+    private static final int MAX_ATTEMPTS = 5;
 
     private List<IOEvent> expectedEvents = new ArrayList<>();
 
@@ -63,8 +64,21 @@ public class TestSocketChannelEvents {
     public static void main(String[] args) throws Throwable {
         new TestSocketChannelEvents().test();
         new TestSocketChannelEvents().testNonBlockingConnect();
-        testConnectException();
-        testNonBlockingConnectException();
+
+        boolean completed = false;
+        for (int ntries = 0; (completed == false)  && (ntries < MAX_ATTEMPTS); ++ntries) {
+            completed = testConnectException();
+        }
+        if (! completed)
+            throw new Exception("Unable to setup connect exception");
+
+        completed = false;
+        for (int ntries = 0; (completed == false)  && (ntries < MAX_ATTEMPTS); ++ntries) {
+            completed = testNonBlockingConnectException();
+        }
+        if (! completed)
+            throw new Exception("Unable to setup non-blocking connect exception");
+
     }
 
     private void test() throws Throwable {
@@ -165,7 +179,7 @@ public class TestSocketChannelEvents {
         }
     }
 
-    private static void testConnectException() throws Throwable {
+    private static boolean testConnectException() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 recording.enable(IOEvent.EVENT_SOCKET_CONNECT_FAILED);
@@ -179,6 +193,8 @@ public class TestSocketChannelEvents {
                 // try to connect, but the server will not accept
                 IOException connectException = null;
                 try (SocketChannel sc = SocketChannel.open(addr)) {
+                    // unexpected connect, abandon the test
+                    return false;
                 } catch (IOException ioe) {
                     // we expect this
                     connectException = ioe;
@@ -188,11 +204,12 @@ public class TestSocketChannelEvents {
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 Asserts.assertEquals(1, events.size());
                 IOHelper.checkConnectEventException(events.get(0), connectException);
+                return true;
             }
         }
     }
 
-    private static void testNonBlockingConnectException() throws Throwable {
+    private static boolean testNonBlockingConnectException() throws Throwable {
         try (Recording recording = new Recording()) {
             try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
                 recording.enable(IOEvent.EVENT_SOCKET_CONNECT_FAILED);
@@ -206,20 +223,25 @@ public class TestSocketChannelEvents {
                 IOException connectException = null;
                 try (SocketChannel sc = SocketChannel.open()) {
                     sc.configureBlocking(false);
-                    boolean connected = sc.connect(addr);
-                    while (!connected) {
-                        Thread.sleep(10);
-                        connected = sc.finishConnect();
+                    try {
+                        boolean connected = sc.connect(addr);
+                        while (!connected) {
+                            Thread.sleep(10);
+                            connected = sc.finishConnect();
+                        }
+                        // unexpected connect, abandon the test
+                        return false;
+                    } catch (IOException ioe) {
+                        // we expect this
+                        connectException = ioe;
                     }
-                } catch (IOException ioe) {
-                    // we expect this
-                    connectException = ioe;
                 }
 
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 Asserts.assertEquals(1, events.size());
                 IOHelper.checkConnectEventException(events.get(0), connectException);
+                return true;
             }
         }
     }

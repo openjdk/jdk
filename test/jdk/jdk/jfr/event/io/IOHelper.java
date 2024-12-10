@@ -136,6 +136,6 @@ public class IOHelper {
         Asserts.assertEquals(IOEvent.EVENT_SOCKET_CONNECT_FAILED, event.getEventType().getName());
         Asserts.assertNotNull(ioe);
         String eventMessage = event.getString("connectExceptionMessage");
-        Asserts.assertEquals(eventMessage, ioe.getMessage());
+        Asserts.assertEquals(eventMessage, ioe.toString());
     }
 }

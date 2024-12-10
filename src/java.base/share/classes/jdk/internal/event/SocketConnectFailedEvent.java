@@ -114,7 +114,7 @@ public class SocketConnectFailedEvent extends Event {
     public static void offer(long start, SocketAddress remote, IOException connectEx) {
         long duration = timestamp() - start;
         if (shouldCommit(duration)) {
-            String msg = connectEx.getMessage();
+            String msg = connectEx.toString();
             if (remote instanceof InetSocketAddress isa) {
                 commit(start, duration, isa.getHostString(), isa.getAddress().getHostAddress(), isa.getPort(), msg);
             } else if (remote instanceof UnixDomainSocketAddress udsa) {
@@ -141,7 +141,7 @@ public class SocketConnectFailedEvent extends Event {
     public static void offer(long start, String host, InetAddress address, int port, IOException connectEx) {
         long duration = timestamp() - start;
         if (shouldCommit(duration)) {
-            commit(start, duration, host, address.getHostAddress(), port, connectEx.getMessage());
+            commit(start, duration, host, address.getHostAddress(), port, connectEx.toString());
         }
     }
 }
