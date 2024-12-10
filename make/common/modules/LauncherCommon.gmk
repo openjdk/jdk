@@ -160,6 +160,7 @@ define SetupBuildLauncherBody
           -framework ApplicationServices \
           -framework Cocoa \
           -framework Security, \
+      LINK_TYPE := $$($1_LINK_TYPE), \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       OBJECT_DIR := $$($1_OBJECT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \

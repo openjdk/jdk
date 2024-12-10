@@ -258,6 +258,9 @@ public:
         is_aligned(addr, klass_alignment_in_bytes());
   }
 
+  // Check that with the given base, shift and range, aarch64 an encode and decode the klass pointer.
+  static bool check_klass_decode_mode(address base, int shift, const size_t range) NOT_AARCH64({ return true;});
+  static bool set_klass_decode_mode() NOT_AARCH64({ return true;});  // can be called after initialization
 };
 
 #endif // SHARE_OOPS_COMPRESSEDKLASS_HPP

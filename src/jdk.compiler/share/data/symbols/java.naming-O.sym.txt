@@ -29,3 +29,6 @@
 module name java.naming
 header exports javax/naming,javax/naming/directory,javax/naming/event,javax/naming/ldap,javax/naming/spi,javax/naming/ldap/spi requires name\u0020;java.base\u0020;flags\u0020;8000,name\u0020;java.security.sasl\u0020;flags\u0020;0 uses javax/naming/ldap/StartTlsResponse,javax/naming/spi/InitialContextFactory,javax/naming/ldap/spi/LdapDnsProvider provides interface\u0020;java/security/Provider\u0020;impls\u0020;sun/security/provider/certpath/ldap/JdkLDAP target macos-aarch64 flags 8000
 
+class name javax/naming/Context
+-field name APPLET descriptor Ljava/lang/String;
+

@@ -637,6 +637,11 @@ class Assembler : public AbstractAssembler {
 #define LCDBR_ZOPC  (unsigned  int)(179 << 24 | 19 << 16)
 #define LCXBR_ZOPC  (unsigned  int)(179 << 24 | 67 << 16)
 
+ // Load Halfword Immediate on Condition
+ #define LOCHI_ZOPC   (unsigned long)(0xECL << 40 | 0x42L)
+ #define LOCHHI_ZOPC  (unsigned long)(0xECL << 40 | 0x4EL)
+ #define LOCGHI_ZOPC  (unsigned long)(0xECL << 40 | 0x46L)
+
 // Add
 // RR, signed
 #define AR_ZOPC     (unsigned  int)(26 << 8)
@@ -987,8 +992,8 @@ class Assembler : public AbstractAssembler {
 #define BASR_ZOPC   (unsigned  int)(13 << 8)
 #define BCT_ZOPC    (unsigned  int)(70 << 24)
 #define BCTR_ZOPC   (unsigned  int)(6 << 8)
-#define BCTG_ZOPC   (unsigned  int)(227L << 40 | 70)
-#define BCTGR_ZOPC  (unsigned long)(0xb946 << 16)
+#define BCTG_ZOPC   (unsigned long)(227L << 40 | 70)
+#define BCTGR_ZOPC  (unsigned  int)(0xb946 << 16)
 // Absolute
 #define BC_ZOPC     (unsigned  int)(71 << 24)
 #define BAL_ZOPC    (unsigned  int)(69 << 24)
@@ -2074,6 +2079,11 @@ class Assembler : public AbstractAssembler {
   inline void z_llihl(Register r1, int64_t i2);                 // r1 = i2_imm16    ; uint64 <- (uint16<<32)
   inline void z_llilh(Register r1, int64_t i2);                 // r1 = i2_imm16    ; uint64 <- (uint16<<16)
   inline void z_llill(Register r1, int64_t i2);                 // r1 = i2_imm16    ; uint64 <- uint16
+
+  // load halfword immediate on condition
+  inline void z_lochi( Register r1, int64_t i2, branch_condition m3);  // load immediate r1[32-63] = i2_simm16   ; int32 <- int16
+  inline void z_lochhi(Register r1, int64_t i2, branch_condition m3);  // load immediate r1[ 0-31] = i2_simm16   ; int32 <- int16
+  inline void z_locghi(Register r1, int64_t i2, branch_condition m3);  // load immediate r1[ 0-63] = i2_simm16   ; int64 <- int16
 
   // insert immediate
   inline void z_ic(  Register r1, int64_t d2, Register x2, Register b2); // insert character

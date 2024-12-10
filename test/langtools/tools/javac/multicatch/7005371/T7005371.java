@@ -25,8 +25,6 @@
  * @test
  * @bug 7005371
  * @summary  Multicatch: assertion error while generating LocalVariableTypeTable attribute
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g SubTest.java
  * @run main T7005371
  */

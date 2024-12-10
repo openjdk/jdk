@@ -98,10 +98,8 @@ EXTERNAL_LIBS := $(strip $(shell $(CAT) $(LIB_FLAGS_FILES) | \
 
 ifeq ($(call isTargetOs, macosx), true)
   STATIC_LIBS := $(addprefix -force_load$(SPACE), $(STATIC_LIB_FILES))
-  STANDARD_LIBS += -lstdc++
 else ifeq ($(call isTargetOs, linux), true)
   STATIC_LIBS := -Wl,--export-dynamic -Wl,--whole-archive $(STATIC_LIB_FILES) -Wl,--no-whole-archive
-  STANDARD_LIBS := -l:libstdc++.a
 else ifeq ($(call isTargetOs, windows), true)
   STATIC_LIBS := $(addprefix -wholearchive:, $(STATIC_LIB_FILES))
 else
@@ -115,7 +113,8 @@ $(eval $(call SetupBuildLauncher, java, \
     OPTIMIZATION := HIGH, \
     STATIC_LAUNCHER := true, \
     LDFLAGS := $(LDFLAGS_STATIC_JDK), \
-    LIBS := $(STATIC_LIBS) $(EXTERNAL_LIBS) $(STANDARD_LIBS), \
+    LIBS := $(STATIC_LIBS) $(EXTERNAL_LIBS), \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(STATIC_LAUNCHER_OUTPUT_DIR), \
     OBJECT_DIR := $(STATIC_LAUNCHER_OUTPUT_DIR), \
 ))

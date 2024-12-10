@@ -1416,7 +1416,7 @@ public:
   }
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-  void do_range_check(IdealLoopTree *loop, Node_List &old_new);
+  void do_range_check(IdealLoopTree* loop);
 
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to

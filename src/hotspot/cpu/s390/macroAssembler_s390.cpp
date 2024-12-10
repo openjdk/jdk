@@ -3426,7 +3426,7 @@ void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
   z_bru(L_done); // pass whatever result we got from a slow path
 
   bind(L_failure);
-  // TODO: use load immediate on condition and z_bru above will not be required
+
   z_lghi(r_result, 1);
 
   bind(L_done);

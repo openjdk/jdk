@@ -30,6 +30,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -176,6 +177,12 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 
   calc_lowest_highest_narrow_klass_id();
 
+  // This has already been checked for SharedBaseAddress and if this fails, it's a bug in the allocation code.
+  if (!set_klass_decode_mode()) {
+    fatal("base=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+          p2i(_base), _shift);
+  }
+
   DEBUG_ONLY(sanity_check_after_initialization();)
 }
 
@@ -267,6 +274,20 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   calc_lowest_highest_narrow_klass_id();
 
+  // Initialize klass decode mode and check compability with decode instructions
+  if (!set_klass_decode_mode()) {
+
+    // Give fatal error if this is a specified address
+    if ((address)CompressedClassSpaceBaseAddress == _base) {
+      vm_exit_during_initialization(
+            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+                    CompressedClassSpaceBaseAddress, _shift));
+    } else {
+      // If this fails, it's a bug in the allocation code.
+      fatal("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
+            p2i(_base), _shift);
+    }
+  }
 #ifdef ASSERT
   sanity_check_after_initialization();
 #endif

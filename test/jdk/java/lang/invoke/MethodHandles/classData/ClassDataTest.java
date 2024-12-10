@@ -25,7 +25,6 @@
  * @test
  * @bug 8230501
  * @library /test/lib
- * @enablePreview
  * @run testng/othervm ClassDataTest
  */
 

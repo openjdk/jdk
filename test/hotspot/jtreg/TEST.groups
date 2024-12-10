@@ -38,6 +38,9 @@ hotspot_all_no_apps = \
 hotspot_compiler = \
   compiler
 
+hotspot_compiler_resourcehogs = \
+  resourcehogs/compiler
+
 hotspot_gc = \
   gc
 
@@ -160,7 +163,6 @@ hotspot_slow_compiler = \
   compiler/gcbarriers/PreserveFPRegistersTest.java \
   compiler/memoryinitialization/ZeroTLABTest.java \
   compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  resourcehogs/compiler \
   :hotspot_compiler_arraycopy
 
 tier1_compiler_1 = \

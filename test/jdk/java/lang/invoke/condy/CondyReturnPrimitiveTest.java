@@ -25,7 +25,6 @@
  * @test
  * @bug 8186046
  * @summary Test for condy BSMs returning primitive values or null
- * @enablePreview
  * @run testng CondyReturnPrimitiveTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyReturnPrimitiveTest
  */
