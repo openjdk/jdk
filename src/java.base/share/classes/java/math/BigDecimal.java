@@ -4195,9 +4195,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             int highInt = (int)intCompact / 100;
             int highIntSize = DecimalDigits.stringSize(highInt);
             byte[] buf = new byte[highIntSize + 3];
-            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
-            buf[highIntSize] = '.';
             DecimalDigits.getCharsLatin1(highInt, highIntSize, buf);
+            buf[highIntSize] = '.';
+            DecimalDigits.putPairLatin1(buf, highIntSize + 1, lowInt);
             try {
                 return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
             } catch (CharacterCodingException cce) {
@@ -4209,6 +4209,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         int offset;  // offset is the starting index for coeff array
         // Get the significand as an absolute value
         if (intCompact != INFLATED) {
+            // All non negative longs can be made to fit into 19 character array.
             coeff = new char[19];
             offset = DecimalDigits.getChars(Math.abs(intCompact), coeff.length, coeff);
         } else {
