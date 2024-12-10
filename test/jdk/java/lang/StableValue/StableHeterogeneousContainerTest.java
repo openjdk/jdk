@@ -114,7 +114,7 @@ final class StableHeterogeneousContainerTest {
     void getOrThrow(Set<Value> inputs) {
         var container = StableValueFactories.ofHeterogeneousContainer(classes(inputs));
         assertTrue(container.tryPut(Integer.class, Value.INTEGER.valueAs(Integer.class)));
-        assertEquals(Value.INTEGER.value(), container.get(Integer.class));
+        assertEquals(Value.INTEGER.value(), container.getOrThrow(Integer.class));
         var e = assertThrows(NoSuchElementException.class , () -> container.getOrThrow(Value.SHORT.clazz()));
         assertEquals("The type `" + Short.class + "` is know but there is no instance associated with it", e.getMessage());
     }
