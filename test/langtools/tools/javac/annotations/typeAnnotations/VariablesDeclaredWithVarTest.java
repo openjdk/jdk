@@ -26,9 +26,7 @@
  * @bug 8261205
  * @summary check that potentially applicable type annotations are skip if the variable or parameter was declared with var
  * @library /tools/lib
- * @enablePreview
  * @modules
- *      java.base/jdk.internal.classfile.impl
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.code

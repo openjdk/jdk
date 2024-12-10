@@ -42,7 +42,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/shared/bufferNode.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -251,8 +251,8 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
 
       {
         // Process marked object.
-        assert(obj->is_forwarded() && obj->forwardee() == obj, "must be self-forwarded");
-        obj->init_mark();
+        assert(obj->is_self_forwarded(), "must be self-forwarded");
+        obj->unset_self_forwarded();
         hr->update_bot_for_block(obj_addr, obj_end_addr);
 
         // Statistics
@@ -475,27 +475,6 @@ public:
     _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();
     _bytes_freed = cl.bytes_freed();
   }
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::RestorePreservedMarksTask : public G1AbstractSubTask {
-  PreservedMarksSet* _preserved_marks;
-  WorkerTask* _task;
-
-public:
-  RestorePreservedMarksTask(PreservedMarksSet* preserved_marks) :
-    G1AbstractSubTask(G1GCPhaseTimes::RestorePreservedMarks),
-    _preserved_marks(preserved_marks),
-    _task(preserved_marks->create_task()) { }
-
-  virtual ~RestorePreservedMarksTask() {
-    delete _task;
-  }
-
-  double worker_cost() const override {
-    return _preserved_marks->num();
-  }
-
-  void do_work(uint worker_id) override { _task->work(worker_id); }
 };
 
 class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
@@ -966,6 +945,25 @@ public:
   }
 };
 
+class G1PostEvacuateCollectionSetCleanupTask2::ResetPartialArrayStateManagerTask
+  : public G1AbstractSubTask
+{
+public:
+  ResetPartialArrayStateManagerTask()
+    : G1AbstractSubTask(G1GCPhaseTimes::ResetPartialArrayStateManager)
+  {}
+
+  double worker_cost() const override {
+    return AlmostNoWork;
+  }
+
+  void do_work(uint worker_id) override {
+    // This must be in phase2 cleanup, after phase1 has destroyed all of the
+    // associated allocators.
+    G1CollectedHeap::heap()->partial_array_state_manager()->reset();
+  }
+};
+
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
@@ -977,9 +975,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   if (G1CollectedHeap::heap()->has_humongous_reclaim_candidates()) {
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
+  add_serial_task(new ResetPartialArrayStateManagerTask());
 
   if (evac_failure_regions->has_regions_evac_failed()) {
-    add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
   add_parallel_task(new RedirtyLoggedCardsTask(evac_failure_regions,

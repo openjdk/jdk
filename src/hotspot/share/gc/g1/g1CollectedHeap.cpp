@@ -77,6 +77,7 @@
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -85,7 +86,7 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
-#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -1165,6 +1166,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _cm_thread(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
+  _partial_array_state_manager(nullptr),
   _ref_processor_stw(nullptr),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
@@ -1198,9 +1200,13 @@ G1CollectedHeap::G1CollectedHeap() :
     _task_queues->register_queue(i, q);
   }
 
-  _gc_tracer_stw->initialize();
+  _partial_array_state_manager = new PartialArrayStateManager(n_queues);
 
-  guarantee(_task_queues != nullptr, "task_queues allocation failure.");
+  _gc_tracer_stw->initialize();
+}
+
+PartialArrayStateManager* G1CollectedHeap::partial_array_state_manager() const {
+  return _partial_array_state_manager;
 }
 
 G1RegionToSpaceMapper* G1CollectedHeap::create_aux_memory_mapper(const char* description,
@@ -1434,6 +1440,8 @@ jint G1CollectedHeap::initialize() {
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_service);
 
   G1InitLogger::print();
+
+  FullGCForwarding::initialize(heap_rs.region());
 
   return JNI_OK;
 }
@@ -2595,8 +2603,9 @@ void G1CollectedHeap::set_young_gen_card_set_stats(const G1MonotonicArenaMemoryS
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
+  size_t total_old_allocated = _old_evac_stats.allocated() + _old_evac_stats.direct_allocated();
   policy()->old_gen_alloc_tracker()->
-    add_allocated_bytes_since_last_gc(_old_evac_stats.allocated() * HeapWordSize);
+    add_allocated_bytes_since_last_gc(total_old_allocated * HeapWordSize);
 
   _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
                                                create_g1_evac_summary(&_old_evac_stats));

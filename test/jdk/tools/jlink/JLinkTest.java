@@ -51,7 +51,6 @@ import tests.JImageGenerator;
  * @author Jean-Francois Denise
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin

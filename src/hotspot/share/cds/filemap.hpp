@@ -188,12 +188,15 @@ private:
   address _narrow_oop_base;                       // compressed oop encoding base
   int    _narrow_oop_shift;                       // compressed oop encoding shift
   bool   _compact_strings;                        // value of CompactStrings
+  bool   _compact_headers;                        // value of UseCompactObjectHeaders
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
-  bool    _use_secondary_supers_table;            // save the flag UseSecondarySupersTable
+  int     _narrow_klass_pointer_bits;             // save number of bits in narrowKlass
+  int     _narrow_klass_shift;                    // save shift width used to pre-compute narrowKlass IDs in archived heap objects
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
+  size_t  _early_serialized_data_offset;          // Data accessed using {ReadClosure,WriteClosure}::serialize()
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
   unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
@@ -225,7 +228,9 @@ private:
   bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
+  bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
+  bool   _has_archived_invokedynamic;   // Does the archive have aot-linked invokedynamic CP entries?
   HeapRootSegments _heap_root_segments; // Heap root segments info
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
@@ -259,17 +264,22 @@ public:
   address narrow_oop_base()                const { return _narrow_oop_base; }
   int narrow_oop_shift()                   const { return _narrow_oop_shift; }
   bool compact_strings()                   const { return _compact_strings; }
+  bool compact_headers()                   const { return _compact_headers; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
+  char* early_serialized_data()            const { return from_mapped_offset(_early_serialized_data_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
+  bool has_aot_linked_classes()            const { return _has_aot_linked_classes; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
+  int narrow_klass_pointer_bits()          const { return _narrow_klass_pointer_bits; }
+  int narrow_klass_shift()                 const { return _narrow_klass_shift; }
   HeapRootSegments heap_root_segments()    const { return _heap_root_segments; }
   bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
@@ -284,6 +294,7 @@ public:
 
   void set_has_platform_or_app_classes(bool v)   { _has_platform_or_app_classes = v; }
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
+  void set_early_serialized_data(char* p)        { set_as_offset(p, &_early_serialized_data_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; }
@@ -397,6 +408,8 @@ public:
 
   char* cloned_vtables()                      const { return header()->cloned_vtables(); }
   void  set_cloned_vtables(char* p)           const { header()->set_cloned_vtables(p); }
+  char* early_serialized_data()               const { return header()->early_serialized_data(); }
+  void  set_early_serialized_data(char* p)    const { header()->set_early_serialized_data(p); }
   char* serialized_data()                     const { return header()->serialized_data(); }
   void  set_serialized_data(char* p)          const { header()->set_serialized_data(p); }
 
@@ -482,7 +495,8 @@ public:
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();
   bool validate_shared_path_table();
-  void validate_non_existent_class_paths();
+  bool validate_non_existent_class_paths();
+  bool validate_aot_class_linking();
   static void set_shared_path_table(FileMapInfo* info) {
     _shared_path_table = info->header()->shared_path_table();
   }
@@ -493,6 +507,10 @@ public:
 #if INCLUDE_JVMTI
   // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
+  static ClassFileStream* get_stream_from_class_loader(Handle class_loader,
+                                                       ClassPathEntry* cpe,
+                                                       const char* file_name,
+                                                       TRAPS);
 #endif
 
   static SharedClassPathEntry* shared_path(int index) {

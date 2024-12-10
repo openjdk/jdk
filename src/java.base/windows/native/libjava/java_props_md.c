@@ -552,8 +552,6 @@ GetJavaProperties(JNIEnv* env)
         sprops.os_version = _strdup(buf);
 #if defined(_M_AMD64)
         sprops.os_arch = "amd64";
-#elif defined(_X86_)
-        sprops.os_arch = "x86";
 #elif defined(_M_ARM64)
         sprops.os_arch = "aarch64";
 #else

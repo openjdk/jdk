@@ -35,7 +35,6 @@ import tests.JImageGenerator;
  * @summary Make sure that 100 modules can be linked using jlink.
  * @bug 8240567
  * @library ../lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin

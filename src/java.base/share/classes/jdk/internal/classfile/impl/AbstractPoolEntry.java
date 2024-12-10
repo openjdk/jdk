@@ -104,7 +104,7 @@ public abstract sealed class AbstractPoolEntry {
         return hash;
     }
 
-    public abstract byte tag();
+    public abstract int tag();
 
     public int width() {
         return 1;
@@ -181,7 +181,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_UTF8;
         }
 
@@ -382,38 +382,6 @@ public abstract sealed class AbstractPoolEntry {
                 return stringValue().equals(u.stringValue());
         }
 
-        /**
-         * Returns if this utf8 entry's content equals a substring
-         * of {@code s} obtained as {@code s.substring(start, end - start)}.
-         * This check avoids a substring allocation.
-         */
-        public boolean equalsRegion(String s, int start, int end) {
-            // start and end values trusted
-            if (state == State.RAW)
-                inflate();
-            int len = charLen;
-            if (len != end - start)
-                return false;
-
-            var sv = stringValue;
-            if (sv != null) {
-                return sv.regionMatches(0, s, start, len);
-            }
-
-            var chars = this.chars;
-            if (chars != null) {
-                for (int i = 0; i < len; i++)
-                    if (chars[i] != s.charAt(start + i))
-                        return false;
-            } else {
-                var bytes = this.rawBytes;
-                for (int i = 0; i < len; i++)
-                    if (bytes[offset + i] != s.charAt(start + i))
-                        return false;
-            }
-            return true;
-        }
-
         @Override
         public boolean equalsString(String s) {
             if (state == State.RAW)
@@ -554,7 +522,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_CLASS;
         }
 
@@ -614,7 +582,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_PACKAGE;
         }
 
@@ -645,7 +613,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_MODULE;
         }
 
@@ -677,7 +645,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_NAME_AND_TYPE;
         }
 
@@ -751,7 +719,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_FIELDREF;
         }
 
@@ -769,7 +737,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_METHODREF;
         }
 
@@ -787,7 +755,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_INTERFACE_METHODREF;
         }
 
@@ -881,7 +849,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_INVOKE_DYNAMIC;
         }
 
@@ -906,7 +874,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_DYNAMIC;
         }
 
@@ -937,7 +905,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_METHOD_HANDLE;
         }
 
@@ -996,7 +964,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_METHOD_TYPE;
         }
 
@@ -1034,7 +1002,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_STRING;
         }
 
@@ -1086,7 +1054,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_INTEGER;
         }
 
@@ -1132,7 +1100,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_FLOAT;
         }
 
@@ -1177,7 +1145,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_LONG;
         }
 
@@ -1227,7 +1195,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public byte tag() {
+        public int tag() {
             return TAG_DOUBLE;
         }
 

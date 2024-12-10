@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_VIRTUALSPACE_HPP
 
 #include "memory/memRegion.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -61,16 +62,16 @@ class ReservedSpace {
                           size_t page_size, bool special, bool executable);
 
   void initialize(size_t size, size_t alignment, size_t page_size,
-                  char* requested_address, bool executable);
+                  char* requested_address, bool executable, MemTag mem_tag = mtNone);
 
   void reserve(size_t size, size_t alignment, size_t page_size,
-               char* requested_address, bool executable);
+               char* requested_address, bool executable, MemTag mem_tag);
  public:
   // Constructor
   ReservedSpace();
   // Initialize the reserved space with the given size. Depending on the size
   // a suitable page size and alignment will be used.
-  explicit ReservedSpace(size_t size);
+  ReservedSpace(size_t size, MemTag mem_tag);
   // Initialize the reserved space with the given size. The preferred_page_size
   // is used as the minimum page size/alignment. This may waste some space if
   // the given size is not aligned to that value, as the reservation will be
@@ -133,6 +134,10 @@ ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size)
 // Class encapsulating behavior specific of memory space reserved for Java heap.
 class ReservedHeapSpace : public ReservedSpace {
  private:
+
+  // Compressed oop support is not relevant in 32bit builds.
+#ifdef _LP64
+
   void try_reserve_heap(size_t size, size_t alignment, size_t page_size,
                         char *requested_address);
   void try_reserve_range(char *highest_start, char *lowest_start,
@@ -141,6 +146,9 @@ class ReservedHeapSpace : public ReservedSpace {
   void initialize_compressed_heap(const size_t size, size_t alignment, size_t page_size);
   // Create protection page at the beginning of the space.
   void establish_noaccess_prefix();
+
+#endif // _LP64
+
  public:
   // Constructor. Tries to find a heap that is good for compressed oops.
   // heap_allocation_directory is the path to the backing memory for Java heap. When set, Java heap will be allocated

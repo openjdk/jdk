@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009, 2021, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,8 +35,6 @@
 
 // The default padding size for data structures to avoid false sharing.
 #define DEFAULT_PADDING_SIZE DEFAULT_CACHE_LINE_SIZE
-
-#define SUPPORT_MONITOR_COUNT
 
 #include <ffi.h>
 

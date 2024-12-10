@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,9 +92,9 @@ class C2AccessValuePtr: public C2AccessValue {
 
 public:
   C2AccessValuePtr(Node* node, const TypePtr* type) :
-    C2AccessValue(node, reinterpret_cast<const Type*>(type)) {}
+    C2AccessValue(node, type) {}
 
-  const TypePtr* type() const { return reinterpret_cast<const TypePtr*>(_type); }
+  const TypePtr* type() const { return _type->is_ptr(); }
 };
 
 // This class wraps a bunch of context parameters that are passed around in the

@@ -114,6 +114,13 @@ public class VectorSupport {
     public static final int VECTOR_OP_EXPM1 = 117;
     public static final int VECTOR_OP_HYPOT = 118;
 
+    public static final int VECTOR_OP_SADD  = 119;
+    public static final int VECTOR_OP_SSUB  = 120;
+    public static final int VECTOR_OP_SUADD = 121;
+    public static final int VECTOR_OP_SUSUB = 122;
+    public static final int VECTOR_OP_UMIN  = 123;
+    public static final int VECTOR_OP_UMAX  = 124;
+
     // See src/hotspot/share/opto/subnode.hpp
     //     struct BoolTest, and enclosed enum mask
     public static final int BT_eq = 0;  // 0000

@@ -27,8 +27,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @test
  * @bug 8042451
  * @summary Test population of reference info for method exception clauses
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java MethodThrows.java
  * @run main Driver MethodThrows
  */

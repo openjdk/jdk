@@ -25,12 +25,10 @@
  * @test 8247352 8293348
  * @summary test different configurations of sealed classes, same compilation unit, diff pkg or mdl, etc
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.code
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main SealedDiffConfigurationsTest
  */

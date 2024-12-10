@@ -43,10 +43,10 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @Warmup(iterations = 2)
 @Measurement(iterations = 4)
-@Fork(value = 1, jvmArgsAppend = {
+@Fork(value = 1, jvmArgs = {
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
-        "--enable-preview",
+        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 @State(Scope.Benchmark)
 public class AbstractCorpusBenchmark {

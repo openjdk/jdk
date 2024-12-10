@@ -72,6 +72,7 @@ public final class GLXGraphicsConfig
     private long pConfigInfo;
     private ContextCapabilities oglCaps;
     private final OGLContext context;
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
 
     private static native long getGLXConfigInfo(int screennum, int visualnum);
     private static native int getOGLCapabilities(long configInfo);
@@ -89,8 +90,8 @@ public final class GLXGraphicsConfig
     }
 
     @Override
-    public Object getProxyKey() {
-        return this;
+    public SurfaceManager.ProxyCache getSurfaceDataProxyCache() {
+        return surfaceDataProxyCache;
     }
 
     @Override

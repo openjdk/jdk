@@ -25,8 +25,6 @@
  * @test
  * @bug 8006582
  * @summary javac should generate method parameters correctly.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters UncommonParamNames.java
  * @run main MethodParametersTester UncommonParamNames UncommonParamNames.out
