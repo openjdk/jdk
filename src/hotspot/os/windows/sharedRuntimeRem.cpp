@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "runtime/sharedRuntime.hpp"
 
-#ifdef _M_ARM64
+#ifdef AARCH64
 // These are copied defines originally from fdlibm.h.
 
 #define __HI(x) *(1+(int*)&x)
