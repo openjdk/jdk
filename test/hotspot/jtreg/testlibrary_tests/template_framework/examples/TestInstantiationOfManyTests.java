@@ -135,6 +135,31 @@ public class TestInstantiationOfManyTests {
         instantiator.where("param", Arrays.asList("hello A", "hello B", "hello C"))
                     .add(null, callFunctionTemplate, null);
 
+        // Replacements are shared between templates of the same instantiation:
+        Template staticsTemplate2 = new Template("my_example_statics_2",
+            """
+            // $statics2
+            private static int $MY_CON = #{my_con:int_con};
+            """
+        );
+        Template mainTemplate2 = new Template("my_example_main_2",
+            """
+            // $main2
+            $test(#{my_con});
+            """
+        );
+        Template testTemplate2 = new Template("my_example_test_2",
+            """
+            // $test2
+            public static void $test(int myCon) {
+                if (myCon != #{my_con}) {
+                    throw new RuntimeException("Replacements mismatch.");
+                }
+            }
+            """
+        );
+        instantiator.add(staticsTemplate2, mainTemplate2, testTemplate2);
+
         // Collect everything into a String.
         return instantiator.instantiate();
     }

@@ -123,11 +123,13 @@ public final class TestClassInstantiator {
         }
 
         private void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
-                             Parameters parameters) {
-            // Shared parameters for the 3 templates, so the variable names are shared.
+                              Parameters parameters) {
+            // The 3 instantiations share the same parameters, and the ReplacementState. This ensures
+            // that the variable names and replacements are shared among the 3 instantiations.
+            Template.ReplacementState replacementState = new Template.ReplacementState();
             if (staticsTemplate != null) {
                 Scope staticsSubScope = new Scope(staticsScope, staticsScope.fuel);
-                staticsTemplate.instantiate(staticsSubScope, parameters);
+                staticsTemplate.instantiate(staticsSubScope, parameters, replacementState);
                 staticsSubScope.stream.addNewline();
                 staticsSubScope.stream.addNewline();
                 staticsSubScope.close();
@@ -136,7 +138,7 @@ public final class TestClassInstantiator {
 
             if (mainTemplate != null) {
                 Scope mainSubScope = new Scope(mainScope, mainScope.fuel);
-                mainTemplate.instantiate(mainSubScope, parameters);
+                mainTemplate.instantiate(mainSubScope, parameters, replacementState);
                 mainSubScope.stream.addNewline();
                 mainSubScope.close();
                 mainScope.stream.addCodeStream(mainSubScope.stream);
@@ -144,7 +146,7 @@ public final class TestClassInstantiator {
 
             if (testTemplate != null) {
                 Scope testScope = new Scope(classScope, classScope.fuel);
-                testTemplate.instantiate(testScope, parameters);
+                testTemplate.instantiate(testScope, parameters, replacementState);
                 testScope.stream.addNewline();
                 testScope.stream.addNewline();
                 testScope.close();
