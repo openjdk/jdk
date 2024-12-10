@@ -92,20 +92,22 @@ public final class TestClassInstantiator {
             }
             isUsed = true;
 
+            ArrayList<Parameters> setOfParameters = parametersCrossProduct();
+            for (Parameters p : setOfParameters) {
+                generate(staticsTemplate, mainTemplate, testTemplate, p);
+            }
+        }
+
+        private ArrayList<Parameters> parametersCrossProduct() {
             String[] keys = argumentsMap.keySet().toArray(new String[0]);
             ArrayList<Parameters> setOfParameters = new ArrayList<Parameters>();
             setOfParameters.add(new Parameters());
-            generate(staticsTemplate, mainTemplate, testTemplate,
-                     keys, 0, setOfParameters);
+            return parametersCrossProduct(keys, 0, setOfParameters);
         }
 
-        public void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
-                             String[] keys, int keysPos, ArrayList<Parameters> setOfParameters) {
+        private ArrayList<Parameters> parametersCrossProduct(String[] keys, int keysPos, ArrayList<Parameters> setOfParameters) {
             if (keysPos == keys.length) {
-                for (Parameters p : setOfParameters) {
-                    generate(staticsTemplate, mainTemplate, testTemplate, p);
-                }
-                return;
+                return setOfParameters;
             }
             ArrayList<Parameters> newSet = new ArrayList<Parameters>();
             String key = keys[keysPos];
@@ -117,10 +119,10 @@ public final class TestClassInstantiator {
                     newSet.add(p);
                 }
             }
-            generate(staticsTemplate, mainTemplate, testTemplate, keys, keysPos + 1, newSet);
+            return parametersCrossProduct(keys, keysPos + 1, newSet);
         }
 
-        public void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
+        private void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
                              Parameters parameters) {
             // Shared parameters for the 3 templates, so the variable names are shared.
             Scope staticsSubScope = new Scope(staticsScope, staticsScope.fuel);

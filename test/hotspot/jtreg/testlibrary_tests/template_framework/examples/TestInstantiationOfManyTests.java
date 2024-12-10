@@ -91,6 +91,7 @@ public class TestInstantiationOfManyTests {
                     .where("param2", Arrays.asList("xxx", "yyy", "zzz"))
                     .add(staticsTemplate, mainTemplate, testTemplate);
 
+        // Collect everything into a String.
         return instantiator.instantiate();
     }
 }
