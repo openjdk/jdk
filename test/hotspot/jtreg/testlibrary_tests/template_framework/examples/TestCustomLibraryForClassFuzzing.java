@@ -61,39 +61,34 @@ public class TestCustomLibraryForClassFuzzing {
         System.out.println("res: " + ret);
     }
 
-    static class KlassHierarchy {
-        public static class Klass {
-            public final String name;
-            public final Klass superKlass;
-            public final HashSet<Klass> subKlasses;
+    public static class Klass {
+        public final String name;
+        public final Klass superKlass;
+        public final HashSet<Klass> subKlasses;
 
-            public Klass(String name, Klass superKlass) {
-                this.name = name;
-                this.superKlass = superKlass;
-                this.subKlasses = new HashSet<Klass>();
-            }
-
-            public void generateSubKlasses(int level) {
-                int num = RANDOM.nextInt(0, 5 - level);
-                for (int i = 0; i < num; i++) {
-                    Klass klass = new Klass(name + "_" + i + "C", this);
-                    klass.generateSubKlasses(level + 1);
-                    subKlasses.add(klass);
-                }
-            }
+        public Klass(String name, Klass superKlass) {
+            this.name = name;
+            this.superKlass = superKlass;
+            this.subKlasses = new HashSet<Klass>();
         }
+    }
+
+    static class KlassHierarchy {
+        private static int ID = 0;
 
         private final HashSet<Klass> rootKlasses;
+        private final HashMap<String,Klass> klasses;
 
         public KlassHierarchy() {
             this.rootKlasses = new HashSet<Klass>();
+            this.klasses = new HashMap<String,Klass>();
+        }
 
-            int numRoots = RANDOM.nextInt(1, 10);
-            for (int i = 0; i < numRoots; i++) {
-                Klass root = new Klass("C" + i + "C", null);
-                root.generateSubKlasses(0);
-                rootKlasses.add(root);
-            }
+        public Klass makeKlass() {
+            Klass klass = new Klass("K" + (ID++) + "K", null);
+            rootKlasses.add(klass);
+            klasses.put(klass.name, klass);
+            return klass;
         }
     }
 
@@ -140,8 +135,17 @@ public class TestCustomLibraryForClassFuzzing {
         codeGenerators.add(new Template("my_base_klass",
             """
             // $my_base_klass
+            public static class #{klass:my_new_klass} {
+                // #{klass}
+            }
             """
         ));
+
+        codeGenerators.add(new ProgrammaticCodeGenerator("my_new_klass", (Scope scope, Parameters parameters) -> {
+            parameters.checkOnlyHas(scope, "klass", "super");
+            Klass klass = hierarchy.makeKlass();
+            scope.stream.addCodeToLine(klass.name);
+        }, 0));
 
         return new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
     }
