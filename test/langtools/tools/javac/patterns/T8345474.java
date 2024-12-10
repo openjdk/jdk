@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,25 +20,30 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package com.sun.jmx.mbeanserver;
-
-import java.security.PrivilegedAction;
-
-/**
- * Utility class to be used by the method {@code AccessControler.doPrivileged}
- * to get a system property.
- *
- * @since 1.5
+/*
+ * @test
+ * @bug 8345474
+ * @summary Translation for instanceof is not triggered when patterns are not used in the compilation unit
+ * @enablePreview
+ * @compile T8345474.java
+ * @run main T8345474
  */
-public class GetPropertyAction implements PrivilegedAction<String> {
-    private final String key;
+import java.util.List;
 
-    public GetPropertyAction(String key) {
-        this.key = key;
+public class T8345474 {
+    public static void main(String[] args) {
+        erasureInstanceofTypeComparisonOperator();
     }
 
-    public String run() {
-        return System.getProperty(key);
+    public static void erasureInstanceofTypeComparisonOperator() {
+        List<Short> ls = List.of((short) 42);
+
+        assertTrue(ls.get(0) instanceof int);
+    }
+
+    static void assertTrue(boolean actual) {
+        if (!actual) {
+            throw new AssertionError("Expected: true, but got false");
+        }
     }
 }
