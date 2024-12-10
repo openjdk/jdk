@@ -2137,13 +2137,9 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
   }
 
   if (src_region_ptr < top_region_ptr) {
-    // The next source region is in the current space.  Update src_region_idx
-    // and the source address to match src_region_ptr.
+    // Found the first non-empty region in the same space.
     src_region_idx = sd.region(src_region_ptr);
-    HeapWord* const src_region_addr = sd.region_to_addr(src_region_idx);
-    if (src_region_addr > closure.source()) {
-      closure.set_source(src_region_addr);
-    }
+    closure.set_source(sd.region_to_addr(src_region_idx));
     return src_region_idx;
   }
 
@@ -2167,13 +2163,10 @@ size_t PSParallelCompact::next_src_region(MoveAndUpdateClosure& closure,
       RegionData* cur = sd.region(cur_region);
       if (cur->live_obj_size() > 0) {
         HeapWord* region_start_addr = sd.region_to_addr(cur_region);
-        HeapWord* region_end_addr = region_start_addr + ParallelCompactData::RegionSize;
-        HeapWord* first_live_word = mark_bitmap()->find_obj_beg(region_start_addr, region_end_addr);
-        assert(first_live_word < region_end_addr, "inv");
 
         src_space_id = SpaceId(space_id);
         src_space_top = top;
-        closure.set_source(first_live_word);
+        closure.set_source(region_start_addr);
         return cur_region;
       }
     }
