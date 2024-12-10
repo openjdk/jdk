@@ -234,9 +234,9 @@ import java.util.function.Supplier;
  *}
  *
  * <h2 id="composition">Composing stable values</h2>
- * A stable value can depend on other stable values, thereby creating a dependency tree
- * that can be lazily computed but where the individual tree branches still provide
- * as-final performance. In the following example, a single {@code Foo} and a {@code Bar}
+ * A stable value can depend on other stable values, thereby creating a dependency graph
+ * that can be lazily computed but where access to individual elements still can be
+ * constant-folded. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
  * which are held by stable values:
  * {@snippet lang = java:
@@ -268,7 +268,7 @@ import java.util.function.Supplier;
  * Calling {@code bar()} will create the {@code Bar} singleton if needed and will also
  * first create the {@code Foo} (which it depends on) if needed.
  * <p>
- * Here is another example where a more complex dependency tree is created in which
+ * Here is another example where a more complex dependency graph is created in which
  * integers in the Fibonacci delta series are lazily computed:
  * {@snippet lang = java:
  *     class Fibonacci {
@@ -287,15 +287,15 @@ import java.util.function.Supplier;
  *     }
  * }
  * Both {@code FIB} and {@code Fibonacci::fib} recurses into each other. Because the
- * stable int function {@code FIB} internalizes intermediate results, the initial
+ * stable int function {@code FIB} caches intermediate results, the initial
  * computational complexity is reduced from exponential to linear compared to a
- * traditional non-internalizing recursive fibonacci method. Once computed, the VM
- * can constant-fold expressions like {@code Fibonacci.fib(10)}.
+ * traditional non-caching recursive fibonacci method. Once computed, the VM can
+ * constant-fold expressions like {@code Fibonacci.fib(10)}.
  * <p>
- * The fibonacci example above is a dependency graph with no circular dependencies. If
- * there are circular dependencies in a dependency graph, a stable value will
- * eventually throw a {@linkplain StackOverflowError} upon referencing elements in
- * a circularity.
+ * The fibonacci example above is a dependency graph with no circular dependencies (i.e.,
+ * it is a dependency tree). If there are circular dependencies in a dependency graph,
+ * a stable value will eventually throw a {@linkplain StackOverflowError} upon referencing
+ * elements in a circularity.
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A holder value is guaranteed to be set at most once. If competing threads are
