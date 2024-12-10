@@ -84,10 +84,26 @@ public class TestCustomLibraryForClassFuzzing {
             this.klasses = new HashMap<String,Klass>();
         }
 
-        public Klass makeKlass() {
-            Klass klass = new Klass("K" + (ID++) + "K", null);
-            rootKlasses.add(klass);
-            klasses.put(klass.name, klass);
+        public Klass makeKlass(String superKlassName, Scope scope) {
+            if (superKlassName == null) {
+                Klass klass = new Klass("K" + (ID++) + "K", null);
+                rootKlasses.add(klass);
+                klasses.put(klass.name, klass);
+                return klass;
+            } else {
+                Klass superKlass = find(superKlassName, scope);
+                Klass klass = new Klass(superKlassName + "_" + (ID++) + "K", superKlass);
+                klasses.put(klass.name, klass);
+                return klass;
+            }
+        }
+
+        public Klass find(String name, Scope scope) {
+            Klass klass = klasses.get(name);
+            if (klass == null) {
+                scope.print();
+                throw new RuntimeException("Could not find klass " + name);
+            }
             return klass;
         }
     }
@@ -135,16 +151,28 @@ public class TestCustomLibraryForClassFuzzing {
 
         codeGenerators.add(new Template("my_base_klass",
             """
-            // $my_base_klass
+            // $my_base_klass with #{num_sub_klasses:int_con(lo=0,hi=5)} sub classes.
             public static class #{klass:my_new_klass} {
+                // #{klass}
+            }
+
+            #{:repeat(call=my_sub_klass,repeat=#num_sub_klasses,super=#klass)}
+            """
+        ));
+
+        codeGenerators.add(new Template("my_sub_klass",
+            """
+            // $my_sub_klass
+            public static class #{klass:my_new_klass(super=#super)} extends #{super} {
                 // #{klass}
             }
             """
         ));
 
         codeGenerators.add(new ProgrammaticCodeGenerator("my_new_klass", (Scope scope, Parameters parameters) -> {
-            parameters.checkOnlyHas(scope, "klass", "super");
-            Klass klass = hierarchy.makeKlass();
+            parameters.checkOnlyHas(scope, "super");
+            String superKlassName = parameters.getOrNull("super");
+            Klass klass = hierarchy.makeKlass(superKlassName, scope);
             scope.stream.addCodeToLine(klass.name);
         }, 0));
 
