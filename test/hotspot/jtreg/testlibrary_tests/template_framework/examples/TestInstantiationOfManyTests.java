@@ -83,13 +83,57 @@ public class TestInstantiationOfManyTests {
         );
 
         // 2 individual instantiations:
-        instantiator.where("param1", "abc").where("param2", "xyz").add(staticsTemplate, mainTemplate, testTemplate);
-        instantiator.where("param1", "def").where("param2", "pqr").add(staticsTemplate, mainTemplate, testTemplate);
+        instantiator.where("param1", "abc")
+                    .where("param2", "xyz")
+                    .add(staticsTemplate, mainTemplate, testTemplate);
+        instantiator.where("param1", "def")
+                    .where("param2", "pqr")
+                    .add(staticsTemplate, mainTemplate, testTemplate);
 
         // Cross product with parameters, produces 9 individual instantiations:
         instantiator.where("param1", Arrays.asList("aaa", "bbb", "ccc"))
                     .where("param2", Arrays.asList("xxx", "yyy", "zzz"))
                     .add(staticsTemplate, mainTemplate, testTemplate);
+
+        // But we do not have to provide all 3 templates, we can also provide them
+        // selectively.
+        Template helloStaticTemplate = new Template("my_example_hello_static",
+            """
+            // $hello_static
+            static {
+                System.out.println("$hello_static");
+            }
+            """
+        );
+        instantiator.add(helloStaticTemplate, null, null);
+
+        Template helloMainTemplate = new Template("my_example_hello_main",
+            """
+            // $hello_main
+            System.out.println("$hello_main");
+            """
+        );
+        instantiator.add(null, helloMainTemplate, null);
+
+        // Define some method/function we would like to call from a few templates later:
+        Template helloFunctionTemplate = new Template("my_example_hello_function",
+            """
+            public static void helloFunction(String txt) {
+                System.out.println("helloFunction: " + txt);
+            }
+            """
+        );
+        instantiator.add(null, null, helloFunctionTemplate);
+
+        // Invoke that function with 3 different arguments.
+        Template callFunctionTemplate = new Template("my_example_call_function",
+            """
+            // $call_function
+            helloFunction("#{param}");
+            """
+        );
+        instantiator.where("param", Arrays.asList("hello A", "hello B", "hello C"))
+                    .add(null, callFunctionTemplate, null);
 
         // Collect everything into a String.
         return instantiator.instantiate();

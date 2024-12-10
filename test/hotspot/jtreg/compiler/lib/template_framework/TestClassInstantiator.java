@@ -125,25 +125,31 @@ public final class TestClassInstantiator {
         private void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
                              Parameters parameters) {
             // Shared parameters for the 3 templates, so the variable names are shared.
-            Scope staticsSubScope = new Scope(staticsScope, staticsScope.fuel);
-            staticsTemplate.instantiate(staticsSubScope, parameters);
-            staticsSubScope.stream.addNewline();
-            staticsSubScope.stream.addNewline();
-            staticsSubScope.close();
-            staticsScope.stream.addCodeStream(staticsSubScope.stream);
+            if (staticsTemplate != null) {
+                Scope staticsSubScope = new Scope(staticsScope, staticsScope.fuel);
+                staticsTemplate.instantiate(staticsSubScope, parameters);
+                staticsSubScope.stream.addNewline();
+                staticsSubScope.stream.addNewline();
+                staticsSubScope.close();
+                staticsScope.stream.addCodeStream(staticsSubScope.stream);
+            }
 
-            Scope mainSubScope = new Scope(mainScope, mainScope.fuel);
-            mainTemplate.instantiate(mainSubScope, parameters);
-            mainSubScope.stream.addNewline();
-            mainSubScope.close();
-            mainScope.stream.addCodeStream(mainSubScope.stream);
+            if (mainTemplate != null) {
+                Scope mainSubScope = new Scope(mainScope, mainScope.fuel);
+                mainTemplate.instantiate(mainSubScope, parameters);
+                mainSubScope.stream.addNewline();
+                mainSubScope.close();
+                mainScope.stream.addCodeStream(mainSubScope.stream);
+            }
 
-            Scope testScope = new Scope(classScope, classScope.fuel);
-            testTemplate.instantiate(testScope, parameters);
-            testScope.stream.addNewline();
-            testScope.stream.addNewline();
-            testScope.close();
-            classScope.stream.addCodeStream(testScope.stream);
+            if (testTemplate != null) {
+                Scope testScope = new Scope(classScope, classScope.fuel);
+                testTemplate.instantiate(testScope, parameters);
+                testScope.stream.addNewline();
+                testScope.stream.addNewline();
+                testScope.close();
+                classScope.stream.addCodeStream(testScope.stream);
+            }
         }
 
         public Instantiator where(String paramKey, String paramValue) {
