@@ -14,51 +14,77 @@ import java.util.function.Supplier;
 /**
  * A stable heterogeneous container that can associate types to implementing instances.
  * <p>
- * Attempting to associate a type with an instance that is {@code null} will result in
- * a {@linkplain NullPointerException}.
+ * Attempting to associate a type with an instance that is {@code null} or attempting to
+ * provide a {@code type} that is {@code null} will result in a {@linkplain NullPointerException}
+ * for all methods in this class.
  *
  * @implNote Implementations of this interface are thread-safe
-
  */
 public sealed interface StableHeterogeneousContainer {
 
     /**
-     * {@return {@code true} if the provided {@code type} was associated with the
-     *          provided {@code instance}, {@code false} otherwise}
+     * {@return {@code true} if the provided {@code type} was associated with the provided
+     * {@code instance}, {@code false} otherwise}
      * <p>
-     * When this method returns, the provided {@code type} is always associated with
-     * an instance.
+     * When this method returns, the provided {@code type} is always associated with an
+     * instance.
      *
      * @param type     the class type of the instance to store
      * @param instance the instance to store
+     * @throws ClassCastException       if the provided {@code instance} is not
+     *                                  {@code null} and is not assignable to the type T
      * @throws IllegalArgumentException if the provided {@code type} is not a type
-     *         specified at creation
+     *                                  specified at creation
      */
     <T> boolean tryPut(Class<T> type, T instance);
 
-    <T> T computeIfAbsent(Class<T> type, Function<Class<T>, T> constructor);
-
     /**
      * {@return the instance associated with the provided {@code type}, {@code null}
-     *          otherwise}
+     * otherwise}
+     *
      * @param type used to retrieve an associated instance
-     * @param <T> type of the associated instance
+     * @param <T>  type of the associated instance
+     * @throws ClassCastException       if the associated instance is not assignable to
+     *                                  the type T
      * @throws IllegalArgumentException if the provided {@code type} is not a type
-     *         specified at creation
+     *                                  specified at creation
      */
     <T> T get(Class<T> type);
 
     /**
      * {@return the instance associated with the provided {@code type}, or throws
-     *          NoSuchElementException}
+     * NoSuchElementException}
+     *
      * @param type used to retrieve an associated instance
-     * @param <T> type of the associated instance
+     * @param <T>  type of the associated instance
+     * @throws ClassCastException       if the associated instance is not assignable to
+     *                                  the type T
      * @throws IllegalArgumentException if the provided {@code type} is not a type
-     *         specified at creation
-     * @throws java.util.NoSuchElementException if the provided {@code type} is not
-     *         associated with an instance
+     *                                  specified at creation
+     * @throws NoSuchElementException   if the provided {@code type} is not associated
+     *                                  with an instance
      */
     <T> T getOrThrow(Class<T> type);
+
+    /**
+     * {@return the instance associated with the provided {@code type}, if no association
+     *          is made, first attempts to compute and associate an instance with the
+     *          provided {@code type} using the provided {@code mapper}}
+     * <p>
+     * The provided {@code mapper} is guaranteed to be invoked at most once if it
+     * completes without throwing an exception.
+     * <p>
+     * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
+     * association is made.
+     * <p>
+     * When this method returns, the provided {@code type} is always associated with an
+     * instance.
+     *
+     * @param type   used to retrieve an associated instance
+     * @param <T>    type of the associated instance
+     * @param mapper to be used for computing the associated instance
+     */
+    <T> T computeIfAbsent(Class<T> type, Function<Class<T>, T> mapper);
 
     final class Impl implements StableHeterogeneousContainer {
 
@@ -73,7 +99,7 @@ public sealed interface StableHeterogeneousContainer {
         @Override
         public <T> boolean tryPut(Class<T> type, T instance) {
             Objects.requireNonNull(type);
-            Objects.requireNonNull(instance, "The instance was null");
+            Objects.requireNonNull(instance, "The provided instance for '" + type + "' was null");
             return of(type)
                     .trySet(
                             type.cast(instance)
@@ -83,14 +109,14 @@ public sealed interface StableHeterogeneousContainer {
         @SuppressWarnings("unchecked")
         @ForceInline
         @Override
-        public <T> T computeIfAbsent(Class<T> type, Function<Class<T>, T> constructor) {
+        public <T> T computeIfAbsent(Class<T> type, Function<Class<T>, T> mapper) {
             Objects.requireNonNull(type);
-            Objects.requireNonNull(constructor);
+            Objects.requireNonNull(mapper);
             final StableValue<Object> stableValue = of(type);
             if (stableValue.isSet()) {
                 return (T) stableValue.orElseThrow();
             }
-            return computeIfAbsentSlowPath(type, constructor, stableValue);
+            return computeIfAbsentSlowPath(type, mapper, stableValue);
         }
 
         @SuppressWarnings("unchecked")
@@ -103,7 +129,8 @@ public sealed interface StableHeterogeneousContainer {
                 public Object get() {
                     return type.cast(
                             Objects.requireNonNull(
-                                    constructor.apply(type), "The constructor returned null"
+                                    constructor.apply(type),
+                                    "The constructor for `" + type + "` returned null"
                             ));
                 }
             });
@@ -112,6 +139,7 @@ public sealed interface StableHeterogeneousContainer {
         @ForceInline
         @Override
         public <T> T get(Class<T> type) {
+            Objects.requireNonNull(type);
             return type.cast(
                     of(type)
                             .orElse(null)
@@ -123,7 +151,7 @@ public sealed interface StableHeterogeneousContainer {
         public <T> T getOrThrow(Class<T> type) {
             final T t = get(type);
             if (t == null) {
-                throw new NoSuchElementException("No instance associated with " + type);
+                throw new NoSuchElementException("The type `" + type + "` is know but there is no instance associated with it");
             }
             return t;
         }
