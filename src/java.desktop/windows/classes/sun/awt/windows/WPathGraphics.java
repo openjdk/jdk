@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ final class WPathGraphics extends PathGraphics {
                      "sun.java2d.print.enableGDITextLayout");
 
         if (textLayoutStr != null) {
-            useGDITextLayout = Boolean.getBoolean(textLayoutStr);
+            useGDITextLayout = Boolean.parseBoolean(textLayoutStr);
             if (!useGDITextLayout) {
                 if (textLayoutStr.equalsIgnoreCase("prefer")) {
                     useGDITextLayout = true;
