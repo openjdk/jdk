@@ -30,7 +30,6 @@ import java.lang.classfile.attribute.*;
  * @test Visibility
  * @bug 6843077
  * @summary test that type annotations are recorded in the classfile
- * @enablePreview
  */
 
 public class Visibility {

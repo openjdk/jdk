@@ -25,8 +25,6 @@
  * @test
  * @bug 6943289
  * @summary  Project Coin: Improved Exception Handling for Java (aka 'multicatch')
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main Pos05
  */
 

@@ -145,7 +145,7 @@ final class PendingFuture<V,A> implements Future<V> {
      * Sets the result, or a no-op if the result or exception is already set.
      */
     void setFailure(Throwable x) {
-        if (!(x instanceof IOException) && !(x instanceof SecurityException))
+        if (!(x instanceof IOException))
             x = new IOException(x);
         synchronized (this) {
             if (haveResult)

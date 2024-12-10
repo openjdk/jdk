@@ -348,8 +348,6 @@ PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfTrueNode* templ
                                                                ParsePredicateNode* unswitched_loop_parse_predicate) {
   TemplateAssertionPredicate template_assertion_predicate(template_assertion_predicate_success_proj);
   IfTrueNode* template_success_proj = template_assertion_predicate.clone(unswitched_loop_parse_predicate->in(0), this);
-  assert(assertion_predicate_has_loop_opaque_node(template_success_proj->in(0)->as_If()),
-         "must find Assertion Predicate for fast loop");
   _igvn.replace_input_of(unswitched_loop_parse_predicate, 0, template_success_proj);
   set_idom(unswitched_loop_parse_predicate, template_success_proj, dom_depth(template_success_proj));
   return template_success_proj;

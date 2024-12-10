@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -470,7 +470,7 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # Maximum amount of heap memory.
   JVM_HEAP_LIMIT_32="768"
   # Running a 64 bit JVM allows for and requires a bigger heap
-  JVM_HEAP_LIMIT_64="1600"
+  JVM_HEAP_LIMIT_64="2048"
   JVM_HEAP_LIMIT_GLOBAL=`expr $MEMORY_SIZE / 2`
   if test "$JVM_HEAP_LIMIT_GLOBAL" -lt "$JVM_HEAP_LIMIT_32"; then
     JVM_HEAP_LIMIT_32=$JVM_HEAP_LIMIT_GLOBAL

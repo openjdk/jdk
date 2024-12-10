@@ -25,9 +25,7 @@
  * @test
  * @bug 8022186 8271254
  * @summary javac generates dead code if a try with an empty body has a finalizer
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.util
+ * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.lang.classfile.*;

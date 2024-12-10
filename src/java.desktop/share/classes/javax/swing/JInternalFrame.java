@@ -1096,12 +1096,8 @@ public class JInternalFrame extends JComponent implements
           fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_ACTIVATED);
         else {
           fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_DEACTIVATED);
-          try {
-              java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+          java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
                                                new sun.awt.UngrabEvent(this));
-          } catch (SecurityException e) {
-              this.dispatchEvent(new sun.awt.UngrabEvent(this));
-          }
         }
         repaint();
     }
@@ -1785,12 +1781,8 @@ public class JInternalFrame extends JComponent implements
           isClosed = true;
         }
         fireInternalFrameEvent(InternalFrameEvent.INTERNAL_FRAME_CLOSED);
-        try {
-            java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
-                    new sun.awt.UngrabEvent(this));
-        } catch (SecurityException e) {
-            this.dispatchEvent(new sun.awt.UngrabEvent(this));
-        }
+        java.awt.Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                new sun.awt.UngrabEvent(this));
     }
 
     /**
@@ -1862,12 +1854,14 @@ public class JInternalFrame extends JComponent implements
 
     /**
      * Gets the warning string that is displayed with this internal frame.
-     * Since an internal frame is always secure (since it's fully
-     * contained within a window that might need a warning string)
-     * this method always returns <code>null</code>.
+     * This method always returns <code>null</code>.
+     * Warning strings are no longer applicable, even to top-level
+     * windows, so this method may be removed in a future release
      * @return    <code>null</code>
      * @see       java.awt.Window#getWarningString
+     * @deprecated since JDK 24
      */
+    @Deprecated(since="24", forRemoval=true)
     @BeanProperty(bound = false)
     public final String getWarningString() {
         return null;

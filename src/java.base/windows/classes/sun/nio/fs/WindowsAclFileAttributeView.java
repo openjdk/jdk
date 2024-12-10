@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,22 +61,6 @@ class WindowsAclFileAttributeView
         this.followLinks = followLinks;
     }
 
-    // permission check
-    private void checkAccess(WindowsPath file,
-                             boolean checkRead,
-                             boolean checkWrite)
-    {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (checkRead)
-                sm.checkRead(file.getPathForPermissionCheck());
-            if (checkWrite)
-                sm.checkWrite(file.getPathForPermissionCheck());
-            sm.checkPermission(new RuntimePermission("accessUserInformation"));
-        }
-    }
-
     // invokes GetFileSecurity to get requested security information
     static NativeBuffer getFileSecurity(String path, int request)
         throws IOException
@@ -114,8 +98,6 @@ class WindowsAclFileAttributeView
     public UserPrincipal getOwner()
         throws IOException
     {
-        checkAccess(file, true, false);
-
         // GetFileSecurity does not follow links so when following links we
         // need the final target
         String path = WindowsLinkSupport.getFinalPath(file, followLinks);
@@ -135,8 +117,6 @@ class WindowsAclFileAttributeView
     public List<AclEntry> getAcl()
         throws IOException
     {
-        checkAccess(file, true, false);
-
         // GetFileSecurity does not follow links so when following links we
         // need the final target
         String path = WindowsLinkSupport.getFinalPath(file, followLinks);
@@ -157,9 +137,6 @@ class WindowsAclFileAttributeView
         if (!(obj instanceof WindowsUserPrincipals.User))
             throw new ProviderMismatchException();
         WindowsUserPrincipals.User owner = (WindowsUserPrincipals.User)obj;
-
-        // permission check
-        checkAccess(file, false, true);
 
         // SetFileSecurity does not follow links so when following links we
         // need the final target
@@ -199,8 +176,6 @@ class WindowsAclFileAttributeView
 
     @Override
     public void setAcl(List<AclEntry> acl) throws IOException {
-        checkAccess(file, false, true);
-
         // SetFileSecurity does not follow links so when following links we
         // need the final target
         String path = WindowsLinkSupport.getFinalPath(file, followLinks);
