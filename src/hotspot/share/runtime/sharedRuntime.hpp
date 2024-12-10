@@ -139,7 +139,7 @@ class SharedRuntime: AllStatic {
   static jdouble drem(jdouble x, jdouble y);
 
 
-#ifdef _M_ARM64
+#if defined(_WINDOWS) && defined(AARCH64)
   // This used to be a workaround for the fmod issue
   // in the Windows x64 CRT. Windows x64 now uses its
   // own custom assembly, but during the review of
