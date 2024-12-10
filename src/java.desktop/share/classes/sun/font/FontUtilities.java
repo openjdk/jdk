@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,6 +306,44 @@ public final class FontUtilities {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Checks whether or not the specified codepoint is ignorable by default, per the
+     * Unicode standard (with exceptions for HarfBuzz and Uniscribe compatibility).
+     * The codepoints categorized as ignorable should remain in sync with HarfBuzz's
+     * is_default_ignorable() in hb-unicode.hh.
+     */
+    public static boolean isDefaultIgnorable(int charCode) {
+        if (charCode < 0x00AD) {
+            return false;
+        }
+        int plane = charCode >> 16;
+        if (plane == 0) {
+            // basic multilingual plane (BMP)
+            int page = charCode >> 8;
+            switch (page) {
+                case 0x00: return (charCode == 0x00AD);
+                case 0x03: return (charCode == 0x034F);
+                case 0x06: return (charCode == 0x061C);
+                case 0x17: return (charCode >= 0x17B4 && charCode <= 0x17B5);
+                case 0x18: return (charCode >= 0x180B && charCode <= 0x180E);
+                case 0x20: return (charCode >= 0x200B && charCode <= 0x200F) ||
+                                  (charCode >= 0x202A && charCode <= 0x202E) ||
+                                  (charCode >= 0x2060 && charCode <= 0x206F);
+                case 0xFE: return (charCode >= 0xFE00 && charCode <= 0xFE0F) ||
+                                  (charCode == 0xFEFF);
+                case 0xFF: return (charCode >= 0xFFF0 && charCode <= 0xFFF8);
+                default: return false;
+            }
+        } else {
+            // other planes
+            switch (plane) {
+                case 0x01: return (charCode >= 0x1D173 && charCode <= 0x1D17A);
+                case 0x0E: return (charCode >= 0xE0000 && charCode <= 0xE0FFF);
+                default: return false;
+            }
+        }
     }
 
     public static PlatformLogger getLogger() {
