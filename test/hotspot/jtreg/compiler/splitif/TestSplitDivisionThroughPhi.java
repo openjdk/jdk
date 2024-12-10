@@ -74,6 +74,7 @@ public class TestSplitDivisionThroughPhi {
 
 
     public static void main(String[] strArr) {
+        // Make sure classes are loaded when compiling with -Xcomp
         Integer.divideUnsigned(2, 3);
         Long.divideUnsigned(2, 3);
         for (int i = 0; i < 5000; i++) {
