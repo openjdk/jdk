@@ -91,16 +91,22 @@ public:
 };
 
 #define DO_ARENA_TAG(FN) \
-  FN(ra, RA, Resource areas) \
-  FN(ha, HA, Handle area) \
-  FN(node, NA, Node arena) \
-  FN(other, Others, Other arenas) \
+  FN(ra,          Resource areas) \
+  FN(ha,          Handle area) \
+  FN(node,        C2 Node arena) \
+  FN(comp,        C2 Compile arena) \
+  FN(type,        C2 Type arena) \
+  FN(index,       C2 Index arena) \
+  FN(reglive,     C2 Register Allocation Live Arena) \
+  FN(regsplit,    C2 Register Allocation Split Arena) \
+  FN(cienv,       CI Env Arena) \
+  FN(other,       Other arenas) \
 
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
 public:
   enum class Tag: uint8_t {
-#define ARENA_TAG_ENUM(name, str, desc) tag_##name,
+#define ARENA_TAG_ENUM(name, desc) tag_##name,
     DO_ARENA_TAG(ARENA_TAG_ENUM)
 #undef ARENA_TAG_ENUM
     tag_count

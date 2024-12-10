@@ -45,13 +45,13 @@ STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
 
 const char* Arena::tag_name[] = {
-#define ARENA_TAG_STRING(name, str, desc) XSTR(name),
+#define ARENA_TAG_STRING(name, desc) XSTR(name),
   DO_ARENA_TAG(ARENA_TAG_STRING)
 #undef ARENA_TAG_STRING
 };
 
 const char* Arena::tag_desc[] = {
-#define ARENA_TAG_DESC(name, str, desc) XSTR(desc),
+#define ARENA_TAG_DESC(name, desc) XSTR(desc),
   DO_ARENA_TAG(ARENA_TAG_DESC)
 #undef ARENA_TAG_DESC
 };
