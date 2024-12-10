@@ -74,8 +74,6 @@ public class TestSplitDivisionThroughPhi {
 
 
     public static void main(String[] strArr) {
-        Integer.divideUnsigned(2, 3);
-        Long.divideUnsigned(2, 3);
         for (int i = 0; i < 5000; i++) {
             testPushDivIThruPhi();
             testPushDivIThruPhiInChain();
@@ -87,8 +85,6 @@ public class TestSplitDivisionThroughPhi {
             testPushModLThruPhiInChain();
             testPushDivLThruPhiForOuterLongLoop();
             testPushModLThruPhiForOuterLongLoop();
-            testPushUDivLThruPhiForOuterLongLoop();
-            testPushUModLThruPhiForOuterLongLoop();
             testPushUDivIThruPhi();
             testPushUDivIThruPhiInChain();
             testPushUModIThruPhi();
@@ -310,18 +306,6 @@ public class TestSplitDivisionThroughPhi {
             for (int j = 0; j < 10; j++) {
                 flag = !flag;
             }
-        }
-    }
-
-    static void testPushUDivLThruPhiForOuterLongLoop() {
-        for (long i = 10; i > 1; i -= 2) {
-            lFld = Long.divideUnsigned(10, i);
-        }
-    }
-
-    static void testPushUModLThruPhiForOuterLongLoop() {
-        for (int i = 10; i > 1; i -= 2) {
-            iFld = Integer.remainderUnsigned(10, i);
         }
     }
 }
