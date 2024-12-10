@@ -63,14 +63,13 @@ public class UnmeteredTempBuffers {
         try {
             byte[] bytes = new byte[cap];
             Files.write(file, bytes);
-            InputStream in = Files.newInputStream(file);
-            try {
+            try (InputStream in = Files.newInputStream(file)) {
                 in.read(bytes);
             } catch (OutOfMemoryError oome) {
                 throw new RuntimeException(oome);
             }
         }  finally {
-            Files.deleteIfExists(file);
+            Files.delete(file);
         }
     }
 }
