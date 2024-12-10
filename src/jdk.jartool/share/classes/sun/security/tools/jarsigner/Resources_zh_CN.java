@@ -164,7 +164,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
 
         {"history.with.ts", "- \u7531 \"%1$s\" \u7B7E\u540D\n    \u6458\u8981\u7B97\u6CD5: %2$s\n    \u7B7E\u540D\u7B97\u6CD5: %3$s, %4$s\n  \u7531 \"%6$s\" \u4E8E %5$tc \u52A0\u65F6\u95F4\u6233\n    \u65F6\u95F4\u6233\u6458\u8981\u7B97\u6CD5: %7$s\n    \u65F6\u95F4\u6233\u7B7E\u540D\u7B97\u6CD5: %8$s, %9$s"},
         {"history.without.ts", "- \u7531 \"%1$s\" \u7B7E\u540D\n    \u6458\u8981\u7B97\u6CD5: %2$s\n    \u7B7E\u540D\u7B97\u6CD5: %3$s, %4$s"},
-        {"history.nonexistent.entries", "    \u8B66\u544A\uFF1A\u7B7E\u540D\u6761\u76EE\u4E0D\u5B58\u5728\uFF1A"},
+        {"history.nonexistent.entries", "\u8B66\u544A\uFF1A\u4E0D\u5B58\u5728\u7684\u7B7E\u540D\u6761\u76EE\uFF1A "},
         {"history.unparsable", "- \u65E0\u6CD5\u89E3\u6790\u7684\u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6587\u4EF6 %s"},
         {"history.nosf", "- \u7F3A\u5C11\u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6587\u4EF6 META-INF/%s.SF"},
         {"history.nobk", "- \u4E0E\u7B7E\u540D\u76F8\u5173\u7684\u6587\u4EF6 META-INF/%s.SF \u7F3A\u5C11\u5757\u6587\u4EF6"},
