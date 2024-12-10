@@ -26,7 +26,6 @@
  * @summary Test image creation
  * @author Jean-Francois Denise
  * @library ../lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin

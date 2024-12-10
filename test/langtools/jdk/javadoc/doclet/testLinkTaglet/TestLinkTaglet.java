@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4732864 6280605 7064544 8014636 8016328 8025633 8071982 8182765
- *           8274781
+ *           8274781 8345664
  * @summary  Make sure that you can link from one member to another using
  *           non-qualified name, furthermore, ensure the right one is linked.
  * @library  ../../lib
@@ -50,6 +50,17 @@ public class TestLinkTaglet extends JavadocTester {
                 "pkg", testSrc("checkPkg/B.java"));
         checkExit(Exit.OK);
 
+        checkOutput("pkg/package-summary.html", true,
+                """
+                    Qualified Link: <a href="C.InnerC.html" title="class in pkg"><code>C.InnerC</code></a>.<br/>
+                     Unqualified Link1: <a href="C.InnerC.html" title="class in pkg"><code>C.InnerC</code></a>.<br/>
+                     Unqualified Link2: <a href="C.InnerC.html" title="class in pkg"><code>C.InnerC</code></a>.<br/>
+                     Qualified Link: <a href="C.html#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>C.method(pkg.\
+                    C.InnerC, pkg.C.InnerC2)</code></a>.<br/>
+                     Unqualified Link: <a href="C.html#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>C.method(C.InnerC, C.InnerC2)</code></a>.<br/>
+                     Unqualified Link: <a href="C.html#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>C.method(InnerC, InnerC2)</code></a>.<br/>
+                     Link w/o Signature: <a href="C.html#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>C.method(C.InnerC, C.InnerC2)</code></a>.<br/>
+                     Package Link: <a href="package-summary.html"><code>pkg</code></a>.<br/>""");
         checkOutput("pkg/C.html", true,
                 """
                     Qualified Link: <a href="C.InnerC.html" title="class in pkg"><code>C.InnerC</code></a>.<br/>
@@ -59,6 +70,7 @@ public class TestLinkTaglet extends JavadocTester {
                     C.InnerC, pkg.C.InnerC2)</code></a>.<br/>
                      Unqualified Link: <a href="#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>
                      Unqualified Link: <a href="#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>method(InnerC, InnerC2)</code></a>.<br/>
+                     Link w/o Signature: <a href="#method(pkg.C.InnerC,pkg.C.InnerC2)"><code>method(C.InnerC, C.InnerC2)</code></a>.<br/>
                      Package Link: <a href="package-summary.html"><code>pkg</code></a>.<br/>""");
 
         checkOutput("pkg/C.InnerC.html", true,

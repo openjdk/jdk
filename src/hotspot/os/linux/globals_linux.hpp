@@ -38,9 +38,6 @@
   product(bool, UseOprofile, false,                                     \
         "enable support for Oprofile profiler")                         \
                                                                         \
-  product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
-          "(Deprecated) enable fast Linux Posix clocks where available") \
-                                                                        \
   product(bool, UseTransparentHugePages, false,                         \
           "Use MADV_HUGEPAGE for large pages")                          \
                                                                         \

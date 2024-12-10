@@ -25,8 +25,6 @@
  * @test
  * @summary Wrong classfile attribution in inner class of lambda expression.
  * @bug 8010015
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 import java.lang.annotation.*;
