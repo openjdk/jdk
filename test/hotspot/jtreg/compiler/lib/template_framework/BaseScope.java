@@ -32,11 +32,12 @@ public class BaseScope extends Scope {
 
     public BaseScope(long fuel, CodeGeneratorLibrary codeGeneratorLibrary) {
         super(null, fuel);
-        this.codeGeneratorLibrary = codeGeneratorLibrary;
+        this.codeGeneratorLibrary = (codeGeneratorLibrary != null) ? codeGeneratorLibrary
+                                                                   : CodeGeneratorLibrary.standard();
     }
 
     public BaseScope() {
-        this(DEFAULT_FUEL, CodeGeneratorLibrary.standard());
+        this(DEFAULT_FUEL, null);
     }
 
     @Override

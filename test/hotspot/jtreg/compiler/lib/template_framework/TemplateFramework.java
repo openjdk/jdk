@@ -27,9 +27,6 @@ package compiler.lib.template_framework;
  * TODO
  *
  * - Extend library
- * - Way to add variable to method/class scope
- * - Need better error messages when exception is hit - too difficult to debug now
- * - Separate parameter vs replacements?
  * - Pass replacements as arguments - need to convert to string - what about newline?
  *
  * - Convenience Classes:

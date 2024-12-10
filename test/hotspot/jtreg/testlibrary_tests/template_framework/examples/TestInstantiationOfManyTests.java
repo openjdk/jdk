@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary All sorts of random things.
+ * @summary Example to demonstrate basic usage of TestClassInstantiator.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver template_framework.examples.TestInstantiationOfManyTests

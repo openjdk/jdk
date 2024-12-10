@@ -39,8 +39,12 @@ public final class TestClassInstantiator {
     private final Scope mainScope;
 
     public TestClassInstantiator(String packageName, String className) {
+        this(packageName, className, null);
+    }
+
+    public TestClassInstantiator(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary) {
         // Open the base scope, and open the class.
-        baseScope = new BaseScope();
+        baseScope = new BaseScope(BaseScope.DEFAULT_FUEL, codeGeneratorLibrary);
         baseScope.setDebugContext("for TestClassInstantiator", null);
         new Template("test_class_instantiator_open",
             """

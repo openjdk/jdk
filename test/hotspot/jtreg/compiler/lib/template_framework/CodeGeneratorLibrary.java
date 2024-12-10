@@ -24,6 +24,8 @@
 package compiler.lib.template_framework;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.function.Consumer;
 
@@ -38,16 +40,15 @@ public class CodeGeneratorLibrary {
     private CodeGeneratorLibrary parent;
     private HashMap<String,CodeGenerator> library;
 
-    CodeGeneratorLibrary(CodeGeneratorLibrary parent, HashMap<String,CodeGenerator> library) {
+    public CodeGeneratorLibrary(CodeGeneratorLibrary parent, HashSet<CodeGenerator> generators) {
         this.parent = parent;
-        if (parent != null) {
-            for (String name : library.keySet()) {
-                if (parent.findOrNull(name) != null) {
-                    throw new TemplateFrameworkException("Code library already has a generator for name " + name);
-                }
+        this.library = new HashMap<String,CodeGenerator>();
+        for (CodeGenerator generator : generators) {
+            if (findOrNull(generator.name()) != null) {
+                throw new TemplateFrameworkException("Code library already has a generator for name " + generator.name());
             }
+            this.library.put(generator.name(), generator);
         }
-        this.library = new HashMap<String,CodeGenerator>(library);
     }
 
     /**
@@ -56,7 +57,8 @@ public class CodeGeneratorLibrary {
     public CodeGenerator find(String name, String errorMessage) {
         CodeGenerator codeGenerator = findOrNull(name);
         if (codeGenerator == null) {
-            throw new TemplateFrameworkException("Template generator '" + name + "' not found " + errorMessage);
+            print();
+            throw new TemplateFrameworkException("Code generator '" + name + "' not found" + errorMessage);
         }
         return codeGenerator;
     }
@@ -69,6 +71,16 @@ public class CodeGeneratorLibrary {
             return parent.findOrNull(name);
         } else {
             return null;
+        }
+    }
+
+    public void print() {
+        System.out.println("Library");
+        for (Map.Entry<String,CodeGenerator> e : library.entrySet()) {
+            System.out.println("  " + e.getKey() + ":   fuelCost=" + e.getValue().fuelCost());
+        }
+        if (parent != null) {
+            parent.print();
         }
     }
 
@@ -150,13 +162,11 @@ public class CodeGeneratorLibrary {
         }, 0);
     }
 
-
-
     public static CodeGeneratorLibrary standard() {
-        HashMap<String,CodeGenerator> codeGenerators = new HashMap<String,CodeGenerator>();
+        HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
         // Random Constants.
-        codeGenerators.put("int_con", new ProgrammaticCodeGenerator("int_con",
+        codeGenerators.add(new ProgrammaticCodeGenerator("int_con",
             (Scope scope, Parameters parameters) -> {
                 parameters.checkOnlyHas(scope, "lo", "hi");
                 String lo = parameters.getOrNull("lo");
@@ -203,17 +213,17 @@ public class CodeGeneratorLibrary {
            }, 0));
 
         // Variable load/store.
-        codeGenerators.put("load",  factoryLoadStore(false));
-        codeGenerators.put("store", factoryLoadStore(true));
+        codeGenerators.add(factoryLoadStore(false));
+        codeGenerators.add(factoryLoadStore(true));
 
         // Dispatch generator call to a ClassScope or MethodScope
-        codeGenerators.put("dispatch", factoryDispatch());
+        codeGenerators.add(factoryDispatch());
 
         // Add variable to ClassScope or MethodScope.
-        codeGenerators.put("add_variable", factoryAddVariable());
+        codeGenerators.add(factoryAddVariable());
 
         // ClassScope generators.
-        codeGenerators.put("new_field_in_class", new Template("new_field_in_class",
+        codeGenerators.add(new Template("new_field_in_class",
             """
             // start $new_field_in_class
             public static int #{name} = #{:int_con};
@@ -223,7 +233,7 @@ public class CodeGeneratorLibrary {
         ));
 
         // MethodScope generators.
-        codeGenerators.put("new_var_in_method", new Template("new_var_in_method",
+        codeGenerators.add(new Template("new_var_in_method",
             """
             // start $new_var_in_method
             int #{name} = #{:int_con};
@@ -233,12 +243,12 @@ public class CodeGeneratorLibrary {
         ));
 
         // Code blocks.
-        codeGenerators.put("empty", new Template("empty",
+        codeGenerators.add(new Template("empty",
             """
             // $empty
             """
         ));
-        codeGenerators.put("split", new Template("split",
+        codeGenerators.add(new Template("split",
             """
             // start $split
                 #{:code}
@@ -247,7 +257,7 @@ public class CodeGeneratorLibrary {
             // end   $split
             """
         ));
-        codeGenerators.put("prefix", new Template("prefix",
+        codeGenerators.add(new Template("prefix",
             """
             // start $prefix
             // ... prefix code ...
@@ -255,7 +265,7 @@ public class CodeGeneratorLibrary {
             // end   $prefix
             """
         ));
-        codeGenerators.put("foo", new Template("foo",
+        codeGenerators.add(new Template("foo",
             """
             // start $foo
             {
@@ -268,7 +278,7 @@ public class CodeGeneratorLibrary {
             // end   $foo
             """
         ));
-        codeGenerators.put("bar", new Template("bar",
+        codeGenerators.add(new Template("bar",
             """
             // start $bar
             {
@@ -282,12 +292,12 @@ public class CodeGeneratorLibrary {
         ));
 
         // Selector for code blocks.
-        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("code_selector", "empty");
+        SelectorCodeGenerator selectorForCode = new SelectorCodeGenerator("code", "empty");
         selectorForCode.add("split",  100);
         selectorForCode.add("prefix", 100);
         selectorForCode.add("foo", 100);
         selectorForCode.add("bar", 100);
-        codeGenerators.put("code", selectorForCode);
+        codeGenerators.add(selectorForCode);
 
         return new CodeGeneratorLibrary(null, codeGenerators);
     }
