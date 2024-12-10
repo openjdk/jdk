@@ -675,7 +675,7 @@ address generate_ghash_processBlocks() {
   Label L_end, L_aligned, L_align_2, L_end_2, L_aligned3;
   Label L_end3,L_aligned4,L_end4;
 
-  static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8};
+  static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8}; //byte order for double.
   static const unsigned char perm_pattern2[16] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
 
   // Load the address of perm_pattern
