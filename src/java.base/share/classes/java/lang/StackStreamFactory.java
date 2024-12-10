@@ -81,8 +81,7 @@ final class StackStreamFactory {
     @Native private static final int SHOW_HIDDEN_FRAMES        = 0x20;  // LambdaForms are hidden by the VM
     @Native private static final int FILL_LIVE_STACK_FRAMES    = 0x100;
 
-    static final boolean isDebug =
-            "true".equals(System.getProperty("stackwalk.debug"));
+    static final boolean isDebug = Boolean.getBoolean("stackwalk.debug");
 
     static <T> StackFrameTraverser<T>
         makeStackTraverser(StackWalker walker, Function<? super Stream<StackFrame>, ? extends T> function)
