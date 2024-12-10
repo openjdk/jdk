@@ -73,7 +73,6 @@ class TypeArrayKlass : public ArrayKlass {
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
-  // jvm support
   jint compute_modifier_flags() const;
 
   // Oop iterators. Since there are no oops in TypeArrayKlasses,
