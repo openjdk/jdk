@@ -130,27 +130,10 @@ public final class StringSupport {
                                  final long toOffset) {
         final long length = toOffset - fromOffset;
         segment.checkBounds(fromOffset, length);
-        if (length < 3) {
-            switch ((int) length) {
-                case 0:
-                    // There can be no null terminator present
-                    segment.scope.checkValidState();
-                    throw nullNotFound(segment, fromOffset, toOffset);
-                case 1:
-                    if (SCOPED_MEMORY_ACCESS.getByte(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset) == 0) {
-                        return 0;
-                    }
-                    throw nullNotFound(segment, fromOffset, toOffset);
-                case 2:
-                    final short val = SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
-                    if ((val & 0x00ff) == 0) {
-                        return 0;
-                    }
-                    if ((val & 0xff00) == 0) {
-                        return 1;
-                    }
-                    throw nullNotFound(segment, fromOffset, toOffset);
-            }
+        if (length < Byte.BYTES) {
+            // There can be no null terminator present
+            segment.scope.checkValidState();
+            throw nullNotFound(segment, fromOffset, toOffset);
         }
         final long longBytes = length & LONG_MASK;
         final long longLimit = fromOffset + longBytes;
@@ -181,27 +164,10 @@ public final class StringSupport {
                                   final long toOffset) {
         final long length = toOffset - fromOffset;
         segment.checkBounds(fromOffset, length);
-        if (length < 3 * Short.BYTES) {
-            switch ((int) length >> 1) {
-                case 0:
-                    // There can be no null terminator present
-                    segment.scope.checkValidState();
-                    throw nullNotFound(segment, fromOffset, toOffset);
-                case 1:
-                    if (SCOPED_MEMORY_ACCESS.getShortUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian()) == 0) {
-                        return 0;
-                    }
-                    throw nullNotFound(segment, fromOffset, toOffset);
-                case 2:
-                    final int val = SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
-                    if ((val & 0x0000_ffff) == 0) {
-                        return 0;
-                    }
-                    if ((val & 0xffff_0000) == 0) {
-                        return Short.BYTES;
-                    }
-                    throw nullNotFound(segment, fromOffset, toOffset);
-            }
+        if (length < Short.BYTES) {
+            // There can be no null terminator present
+            segment.scope.checkValidState();
+            throw nullNotFound(segment, fromOffset, toOffset);
         }
         final long longBytes = length & LONG_MASK;
         final long longLimit = fromOffset + longBytes;
@@ -234,27 +200,10 @@ public final class StringSupport {
                                 final long toOffset) {
         final long length = toOffset - fromOffset;
         segment.checkBounds(fromOffset, length);
-        if (length < 3 * Integer.BYTES) {
-            switch ((int) length >> 2) {
-                case 0:
-                    // There can be no null terminator present
-                    segment.scope.checkValidState();
-                    throw nullNotFound(segment, fromOffset, toOffset);
-                case 1:
-                    if (SCOPED_MEMORY_ACCESS.getIntUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian()) == 0) {
-                        return 0;
-                    }
-                    throw nullNotFound(segment, fromOffset, toOffset);
-                case 2:
-                    final long val = SCOPED_MEMORY_ACCESS.getLongUnaligned(segment.sessionImpl(), segment.unsafeGetBase(), segment.unsafeGetOffset() + fromOffset, !Architecture.isLittleEndian());
-                    if ((val & 0x0000_0000__ffff_ffffL) == 0) {
-                        return 0;
-                    }
-                    if ((val & 0xffff_ffff__0000_0000L) == 0) {
-                        return Integer.BYTES;
-                    }
-                    throw nullNotFound(segment, fromOffset, toOffset);
-            }
+        if (length < Integer.BYTES) {
+            // There can be no null terminator present
+            segment.scope.checkValidState();
+            throw nullNotFound(segment, fromOffset, toOffset);
         }
         long offset = fromOffset;
         // For quad byte strings, it does not pay off to use long scanning on x64
