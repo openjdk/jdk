@@ -28,9 +28,7 @@
  *  Add back-end support for invokedynamic
  *  temporarily workaround combo tests are causing time out in several platforms
  * @library /tools/javac/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.api
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.jvm

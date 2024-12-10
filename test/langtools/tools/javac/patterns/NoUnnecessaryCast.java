@@ -26,8 +26,6 @@
  * @bug 8237528
  * @summary Verify there are no unnecessary checkcasts and conditions generated
  *          for the pattern matching in instanceof.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile NoUnnecessaryCast.java
  * @run main NoUnnecessaryCast
  */

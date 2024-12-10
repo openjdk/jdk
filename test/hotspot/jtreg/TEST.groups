@@ -38,10 +38,6 @@ hotspot_all_no_apps = \
 hotspot_compiler = \
   compiler
 
-hotspot_compiler_xcomp = \
-  :hotspot_compiler \
-  -:tier1_compiler_not_xcomp
-
 hotspot_gc = \
   gc
 
@@ -151,8 +147,7 @@ tier1_common = \
 tier1_compiler = \
   :tier1_compiler_1 \
   :tier1_compiler_2 \
-  :tier1_compiler_3 \
-  :tier1_compiler_not_xcomp
+  :tier1_compiler_3
 
 hotspot_not_fast_compiler = \
   :hotspot_compiler \
@@ -210,6 +205,7 @@ tier1_compiler_3 = \
   compiler/macronodes/ \
   compiler/memoryinitialization/ \
   compiler/osr/ \
+  compiler/profiling \
   compiler/regalloc/ \
   compiler/runtime/ \
   compiler/startup/ \
@@ -268,9 +264,6 @@ tier3_compiler = \
   :hotspot_slow_compiler \
   -:tier1_compiler \
   -:tier2_compiler
-
-tier1_compiler_not_xcomp = \
-  compiler/profiling
 
 ctw_1 = \
   applications/ctw/modules/ \

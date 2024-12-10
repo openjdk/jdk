@@ -46,7 +46,6 @@ import javax.management.ReflectionException;
 import javax.management.RuntimeErrorException;
 import javax.management.RuntimeMBeanException;
 import javax.management.RuntimeOperationsException;
-import sun.reflect.misc.ConstructorUtil;
 
 /**
  * Implements the MBeanInstantiator interface. Provides methods for
@@ -681,7 +680,7 @@ public class MBeanInstantiator {
 
     private Constructor<?> findConstructor(Class<?> c, Class<?>[] params) {
         try {
-            return ConstructorUtil.getConstructor(c, params);
+            return c.getConstructor(params);
         } catch (Exception e) {
             return null;
         }

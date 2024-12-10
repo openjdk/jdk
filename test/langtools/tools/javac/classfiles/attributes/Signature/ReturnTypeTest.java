@@ -26,7 +26,6 @@
  * @bug 8049238
  * @summary Checks Signature attribute for array return type of method.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules java.desktop
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
