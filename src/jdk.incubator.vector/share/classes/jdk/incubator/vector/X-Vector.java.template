@@ -2685,9 +2685,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $abstractvectortype$ that = ($abstractvectortype$) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2715,9 +2721,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     $abstractvectortype$ sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2736,10 +2748,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $abstractvectortype$ that = ($abstractvectortype$) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast(($type$)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2776,10 +2793,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast(($type$)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.GE, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.GE, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 

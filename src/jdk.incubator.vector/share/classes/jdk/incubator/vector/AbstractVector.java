@@ -214,9 +214,9 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     abstract <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap);
 
-    abstract VectorShuffle<E> iotaShuffle();
+    abstract AbstractShuffle<E> iotaShuffle();
 
-    abstract VectorShuffle<E> iotaShuffle(int start, int step, boolean wrap);
+    abstract AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap);
 
     @ForceInline
     final VectorShuffle<E> iotaShuffleTemplate(int start, int step, boolean wrap) {
