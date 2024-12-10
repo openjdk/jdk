@@ -271,39 +271,70 @@ TEST_VM(RiscV, cmpxchg_int32_maybe_zacas) {
   }
 }
 
+template <typename TESTSIZE>
+TESTSIZE next_count(TESTSIZE now, TESTSIZE add) {
+  if ((std::numeric_limits<TESTSIZE>::max() - add) >= now) {
+    return now + add;
+  }
+  TESTSIZE diff = std::numeric_limits<TESTSIZE>::max() - now;
+  add -= diff;
+  return std::numeric_limits<TESTSIZE>::min() + add;
+}
+
+constexpr int64_t PAR_IT   = 100;
+constexpr int64_t CTHREADS = 4;
+constexpr int64_t TOT_IT   = CTHREADS * PAR_IT;
+  
+template <typename TESTSIZE>
+constexpr TESTSIZE result_count() {
+  if (std::numeric_limits<TESTSIZE>::max() > (std::numeric_limits<TESTSIZE>::min() + TOT_IT)) {
+    return std::numeric_limits<TESTSIZE>::min() + TOT_IT;
+  }
+  int64_t range = std::numeric_limits<TESTSIZE>::max();
+  range -= std::numeric_limits<TESTSIZE>::min();
+  int64_t rest = TOT_IT % range;
+  return std::numeric_limits<TESTSIZE>::min() + rest;
+}
+
+template<>
+constexpr int64_t result_count<int64_t>() {
+    return std::numeric_limits<int64_t>::min() + TOT_IT;
+}
+
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_concurrent_cmpxchg_tests() {
-  volatile TESTSIZE data = 0;
-  int num_threads = 4;
+  volatile TESTSIZE data = std::numeric_limits<TESTSIZE>::min();
+  int num_threads = CTHREADS;
   CmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg(0, false); // variant 0, not bool ret
   auto incThread = [&](Thread* _current, int _id) {
-    for (int i = 0; i < 10000; i++) {
-      TESTSIZE oldvalue = _id + num_threads * i;
-      TESTSIZE newvalue = oldvalue + 1;
+    TESTSIZE my_oldvalue = std::numeric_limits<TESTSIZE>::min() + _id;
+    for (int64_t i = 0; i < PAR_IT ; i++) {
+      TESTSIZE newvalue = next_count<TESTSIZE>(my_oldvalue,  1);
       TESTSIZE ret;
       do {
-        ret = cmpxchg.cmpxchg((intptr_t)&data, oldvalue, newvalue);
-      } while (ret != oldvalue);
+        ret = cmpxchg.cmpxchg((intptr_t)&data, my_oldvalue, newvalue);
+      } while (ret != my_oldvalue);
+      my_oldvalue = next_count<TESTSIZE>(my_oldvalue, num_threads);
     }
   };
   TestThreadGroup<decltype(incThread)> ttg(incThread, num_threads);
   ttg.doit();
   ttg.join();
-  ASSERT_EQ(data, (TESTSIZE)(num_threads*10000));
+  ASSERT_EQ(data, result_count<TESTSIZE>());
 }
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_concurrent_alt_cmpxchg_tests() {
-  volatile TESTSIZE data = 0;
-  int num_threads = 4;
+  volatile TESTSIZE data = std::numeric_limits<TESTSIZE>::min();
+  int num_threads = CTHREADS;
   CmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg(0, false); // variant 0, not bool ret
   auto incThread = [&](Thread* _current, int _id) {
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < PAR_IT; i++) {
       TESTSIZE oldvalue;
       TESTSIZE ret = 0;
       do {
         oldvalue = ret;
-        TESTSIZE newvalue = oldvalue + 1;
+        TESTSIZE newvalue = next_count<TESTSIZE>(oldvalue, 1);
         ret = cmpxchg.cmpxchg((intptr_t)&data, oldvalue, newvalue);
       } while (ret != oldvalue);
     }
@@ -311,7 +342,7 @@ static void run_concurrent_alt_cmpxchg_tests() {
   TestThreadGroup<decltype(incThread)> ttg(incThread, num_threads);
   ttg.doit();
   ttg.join();
-  ASSERT_EQ(data, (TESTSIZE)(num_threads*10000));
+  ASSERT_EQ(data, result_count<TESTSIZE>());
 }
 
 TEST_VM(RiscV, cmpxchg_int64_concurrent_lr_sc) {
@@ -438,37 +469,38 @@ TEST_VM(RiscV, cmpxchg_int8_maybe_zacas) {
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_concurrent_narrow_cmpxchg_tests() {
-  volatile TESTSIZE data = 0;
-  int num_threads = 4;
+  volatile TESTSIZE data = std::numeric_limits<TESTSIZE>::min();
+  int num_threads = CTHREADS;
   NarrowCmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg(false); // not bool ret
   auto incThread = [&](Thread* _current, int _id) {
-    for (int i = 0; i < 10000; i++) {
-      TESTSIZE oldvalue = _id + num_threads * i;
-      TESTSIZE newvalue = oldvalue + 1;
+    TESTSIZE my_oldvalue = std::numeric_limits<TESTSIZE>::min() + _id;
+    for (int i = 0; i < PAR_IT; i++) {
+      TESTSIZE newvalue = next_count<TESTSIZE>(my_oldvalue, 1);
       TESTSIZE ret;
       do {
-        ret = cmpxchg.narrow_cmpxchg((intptr_t)&data, oldvalue, newvalue);
-      } while (ret != oldvalue);
+        ret = cmpxchg.narrow_cmpxchg((intptr_t)&data, my_oldvalue, newvalue);
+      } while (ret != my_oldvalue);
+      my_oldvalue = next_count<TESTSIZE>(my_oldvalue, num_threads);
     }
   };
   TestThreadGroup<decltype(incThread)> ttg(incThread, num_threads);
   ttg.doit();
   ttg.join();
-  ASSERT_EQ(data, (TESTSIZE)(num_threads*10000));
+  ASSERT_EQ(data, result_count<TESTSIZE>());
 }
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_concurrent_alt_narrow_cmpxchg_tests() {
-  volatile TESTSIZE data = 0;
-  int num_threads = 4;
+  volatile TESTSIZE data = std::numeric_limits<TESTSIZE>::min();
+  int num_threads = CTHREADS;
   NarrowCmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg(false); // not bool ret
   auto incThread = [&](Thread* _current, int _id) {
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < PAR_IT; i++) {
       TESTSIZE oldvalue;
       TESTSIZE ret = 0;
       do {
         oldvalue = ret;
-        TESTSIZE newvalue = oldvalue + 1;
+        TESTSIZE newvalue = next_count<TESTSIZE>(oldvalue, 1);
         ret = cmpxchg.narrow_cmpxchg((intptr_t)&data, oldvalue, newvalue);
       } while (ret != oldvalue);
     }
@@ -476,7 +508,7 @@ static void run_concurrent_alt_narrow_cmpxchg_tests() {
   TestThreadGroup<decltype(incThread)> ttg(incThread, num_threads);
   ttg.doit();
   ttg.join();
-  ASSERT_EQ(data, (TESTSIZE)(num_threads*10000));
+  ASSERT_EQ(data, result_count<TESTSIZE>());
 }
 
 TEST_VM(RiscV, cmpxchg_int16_concurrent_lr_sc) {
@@ -625,37 +657,38 @@ TEST_VM(RiscV, weak_cmpxchg_int8_maybe_zacas) {
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_concurrent_weak_cmpxchg_tests() {
-  volatile TESTSIZE data = 0;
-  int num_threads = 4;
+  volatile TESTSIZE data = std::numeric_limits<TESTSIZE>::min();
+  int num_threads = CTHREADS;
   WeakCmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg; // not bool ret
   auto incThread = [&](Thread* _current, int _id) {
-    for (int i = 0; i < 10000; i++) {
-      TESTSIZE oldvalue = _id + num_threads * i;
-      TESTSIZE newvalue = oldvalue + 1;
+    TESTSIZE my_oldvalue = std::numeric_limits<TESTSIZE>::min() + _id;
+    for (int64_t i = 0; i < PAR_IT; i++) {
+      TESTSIZE newvalue = next_count<TESTSIZE>(my_oldvalue, 1);
       TESTSIZE ret;
       do {
-        ret = cmpxchg.weak_cmpxchg((intptr_t)&data, oldvalue, newvalue);
+        ret = cmpxchg.weak_cmpxchg((intptr_t)&data, my_oldvalue, newvalue);
       } while (ret != 1);
+      my_oldvalue = next_count<TESTSIZE>(my_oldvalue, num_threads);
     }
   };
   TestThreadGroup<decltype(incThread)> ttg(incThread, num_threads);
   ttg.doit();
   ttg.join();
-  ASSERT_EQ(data, (TESTSIZE)(num_threads*10000));
+  ASSERT_EQ(data, result_count<TESTSIZE>());
 }
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_concurrent_alt_weak_cmpxchg_tests() {
-  volatile TESTSIZE data = 0;
-  int num_threads = 4;
+  volatile TESTSIZE data = std::numeric_limits<TESTSIZE>::min();
+  int num_threads = CTHREADS;
   WeakCmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg; // not bool ret
   auto incThread = [&](Thread* _current, int _id) {
-    for (int i = 0; i < 10000; i++) {
+    for (int i = 0; i < PAR_IT; i++) {
       TESTSIZE oldvalue;
       TESTSIZE ret = 0;
       do {
         oldvalue = data;
-        TESTSIZE newvalue = oldvalue + 1;
+        TESTSIZE newvalue = next_count<TESTSIZE>(oldvalue, 1);
         ret = cmpxchg.weak_cmpxchg((intptr_t)&data, oldvalue, newvalue);
       } while (ret != 1);
     }
@@ -663,7 +696,7 @@ static void run_concurrent_alt_weak_cmpxchg_tests() {
   TestThreadGroup<decltype(incThread)> ttg(incThread, num_threads);
   ttg.doit();
   ttg.join();
-  ASSERT_EQ(data, (TESTSIZE)(num_threads*10000));
+  ASSERT_EQ(data, result_count<TESTSIZE>());
 }
 
 TEST_VM(RiscV, weak_cmpxchg_int64_concurrent_lr_sc) {
