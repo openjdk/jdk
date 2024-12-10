@@ -5551,13 +5551,24 @@ instruct countLeadingZerosI_nf(rRegI dst, rRegI src) %{
 %}
 
 instruct countLeadingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
-  predicate(UseCountLeadingZerosInstruction);
+  predicate(!UseAPX && UseCountLeadingZerosInstruction);
   match(Set dst (CountLeadingZerosI (LoadI src)));
   effect(KILL cr);
   ins_cost(175);
   format %{ "lzcntl  $dst, $src\t# count leading zeros (int)" %}
   ins_encode %{
     __ lzcntl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct countLeadingZerosI_mem_nf(rRegI dst, memory src) %{
+  predicate(UseAPX && UseCountLeadingZerosInstruction);
+  match(Set dst (CountLeadingZerosI (LoadI src)));
+  ins_cost(175);
+  format %{ "elzcntl  $dst, $src\t# count leading zeros (int) nf" %}
+  ins_encode %{
+    __ elzcntl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5671,13 +5682,24 @@ instruct countTrailingZerosI_nf(rRegI dst, rRegI src) %{
 %}
 
 instruct countTrailingZerosI_mem(rRegI dst, memory src, rFlagsReg cr) %{
-  predicate(UseCountTrailingZerosInstruction);
+  predicate(!UseAPX && UseCountTrailingZerosInstruction);
   match(Set dst (CountTrailingZerosI (LoadI src)));
   effect(KILL cr);
   ins_cost(175);
   format %{ "tzcntl    $dst, $src\t# count trailing zeros (int)" %}
   ins_encode %{
     __ tzcntl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct countTrailingZerosI_mem_nf(rRegI dst, memory src) %{
+  predicate(UseAPX && UseCountTrailingZerosInstruction);
+  match(Set dst (CountTrailingZerosI (LoadI src)));
+  ins_cost(175);
+  format %{ "etzcntl    $dst, $src\t# count trailing zeros (int) nf" %}
+  ins_encode %{
+    __ etzcntl($dst$$Register, $src$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -5828,13 +5850,25 @@ instruct popCountI_nf(rRegI dst, rRegI src) %{
 %}
 
 instruct popCountI_mem(rRegI dst, memory mem, rFlagsReg cr) %{
-  predicate(UsePopCountInstruction);
+  predicate(!UseAPX && UsePopCountInstruction);
   match(Set dst (PopCountI (LoadI mem)));
   effect(KILL cr);
 
   format %{ "popcnt  $dst, $mem" %}
   ins_encode %{
     __ popcntl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+
+instruct popCountI_mem_nf(rRegI dst, memory mem) %{
+  predicate(UseAPX && UsePopCountInstruction);
+  match(Set dst (PopCountI (LoadI mem)));
+
+  format %{ "epopcnt  $dst, $mem" %}
+  ins_encode %{
+    __ epopcntl($dst$$Register, $mem$$Address, true);
   %}
   ins_pipe(ialu_reg);
 %}
