@@ -284,16 +284,13 @@ JRT_LEAF(jlong, SharedRuntime::lrem(jlong y, jlong x))
 JRT_END
 
 
-#ifdef _M_ARM64
+#if defined(_WINDOWS) && defined(AARCH64)
 const juint  float_sign_mask  = 0x7FFFFFFF;
 const juint  float_infinity   = 0x7F800000;
 const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
-#endif
 
-#if !defined(X86)
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
-#ifdef _WIN64
   // Initially, this was in place because 64-bit Windows
   // on amd64 returns the wrong values for infinity
   // operands. 64-bit Windows on AMD64 now uses custom
@@ -312,13 +309,9 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
     return x;
   }
   return ((jfloat)fmod_winarm64((double)x, (double)y));
-#else
-  return ((jfloat)fmod((double)x,(double)y));
-#endif
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
-#ifdef _WIN64
   julong xbits = PrimitiveConversions::cast<julong>(x);
   julong ybits = PrimitiveConversions::cast<julong>(y);
   // x Mod Infinity == x unless x is infinity
@@ -327,11 +320,16 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
     return x;
   }
   return ((jdouble)fmod_winarm64((double)x, (double)y));
-#else
-  return ((jdouble)fmod((double)x,(double)y));
-#endif
 JRT_END
-#endif // !X86
+#elif !defined(X86)
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
+  return ((jfloat)fmod((double)x,(double)y));
+JRT_END
+
+JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
+  return ((jdouble)fmod((double)x,(double)y));
+JRT_END
+#endif // _WINDOWS && AARCH64
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
