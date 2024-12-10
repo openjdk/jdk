@@ -73,8 +73,9 @@ public:
     WorkerTask("Shenandoah Reset Bitmap"), _generation(generation) {}
 
   void work(uint worker_id) {
-    ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
+    assert(!heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
+    ShenandoahHeapRegion* region = _regions.next();
     ShenandoahMarkingContext* const ctx = heap->marking_context();
     while (region != nullptr) {
       auto const affiliation = region->affiliation();
