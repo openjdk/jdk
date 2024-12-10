@@ -1077,19 +1077,12 @@ bool CallStaticJavaNode::cmp( const Node &n ) const {
 
 Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
-  if (cg != nullptr) {
-    if (late_inline_failed()) {
-      phase->C->prepend_late_inline(cg);
-      if (cg->is_mh_late_inline()) {
-        phase->C->inc_number_of_mh_late_inlines();
-      }
-      set_generator(nullptr);
-    } else if (can_reshape) {
+  if (cg != nullptr && can_reshape) {
+    if (cg->is_mh_late_inline()) {
+      // Check whether this MH handle call becomes a candidate for inlining.
       assert(IncrementalInlineMH, "required");
       assert(cg->call_node() == this, "mismatch");
-      assert(cg->is_mh_late_inline(), "not virtual");
-
-      // Check whether this MH handle call becomes a candidate for inlining.
+      assert(cg->method()->is_method_handle_intrinsic(), "required");
       ciMethod* callee = cg->method();
       vmIntrinsics::ID iid = callee->intrinsic_id();
       if (iid == vmIntrinsics::_invokeBasic) {
@@ -1103,9 +1096,16 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         assert(callee->has_member_arg(), "wrong type of call?");
         if (in(TypeFunc::Parms + callee->arg_size() - 1)->Opcode() == Op_ConP) {
           phase->C->prepend_late_inline(cg);
+          phase->C->inc_number_of_mh_late_inlines();
           set_generator(nullptr);
         }
       }
+    } else {
+      // TODO: additional checks to ensure the call is actually "inlineable" now
+      assert(IncrementalInline, "required");
+      assert(cg->method()->is_method_handle_intrinsic() == false, "required");
+      phase->C->prepend_late_inline(cg);
+      set_generator(nullptr);
     }
   }
   return CallNode::Ideal(phase, can_reshape);
@@ -1173,14 +1173,10 @@ bool CallDynamicJavaNode::cmp( const Node &n ) const {
 
 Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   CallGenerator* cg = generator();
-  if (cg != nullptr) {
-    if (late_inline_failed()) {
-        phase->C->prepend_late_inline(cg);
-        set_generator(nullptr);
-    } else if (can_reshape) {
+  if (cg != nullptr && can_reshape) {
+    if (cg->is_virtual_late_inline()) {
       assert(IncrementalInlineVirtual, "required");
       assert(cg->call_node() == this, "mismatch");
-      assert(cg->is_virtual_late_inline(), "not virtual");
 
       // Recover symbolic info for method resolution.
       ciMethod* caller = jvms()->method();
@@ -1212,6 +1208,11 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         phase->C->prepend_late_inline(cg); // MH late inlining prepends to the list, so do the same
         set_generator(nullptr);
       }
+    } else {
+      // TODO: additional checks to ensure the call is "inlineable" now
+      assert(IncrementalInline, "required");
+      phase->C->prepend_late_inline(cg);
+      set_generator(nullptr);
     }
   }
   return CallNode::Ideal(phase, can_reshape);

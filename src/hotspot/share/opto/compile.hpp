@@ -461,7 +461,6 @@ private:
   NodeHash*             _node_hash;
 
   GrowableArray<CallGenerator*> _late_inlines;        // List of CallGenerators to be revisited after main parsing has finished.
-  GrowableArray<CallGenerator*> _failed_late_inlines; // List of CallGenerators that have failed inlining
   GrowableArray<CallGenerator*> _string_late_inlines; // same but for string operations
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
@@ -1081,10 +1080,6 @@ private:
 
   void              prepend_late_inline(CallGenerator* cg)    {
     _late_inlines.insert_before(0, cg);
-  }
-
-  void              add_failed_late_inline(CallGenerator* cg) {
-    _failed_late_inlines.push(cg);
   }
 
   void              add_string_late_inline(CallGenerator* cg) {
