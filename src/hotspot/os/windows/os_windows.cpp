@@ -2588,7 +2588,7 @@ static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // On Windows, the mxcsr control bits are non-volatile across calls
     // See also CR 6192333
     //
-    jint MxCsr = INITIAL_MXCSR;
+    jint MxCsr = INITIAL_MXCSR; // FIXME? this is `define INITIAL_MXCSR 0x1f80` in windows sdk
     // we can't use StubRoutines::x86::addr_mxcsr_std()
     // because in Win64 mxcsr is not saved there
     if (MxCsr != ctx->MxCsr) {

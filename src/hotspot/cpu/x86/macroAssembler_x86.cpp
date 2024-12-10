@@ -2376,6 +2376,20 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst, Register rscratch
   }
 }
 
+void MacroAssembler::cmp_mxcsr(Address mxcsr_save, Register tmp, Register rscratch) {
+  ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
+  assert(rscratch != noreg || always_reachable(mxcsr_std), "missing");
+  
+  stmxcsr(mxcsr_save);
+  movl(tmp, mxcsr_save);
+  if (EnableX86ECoreOpts) {
+    orl(tmp, 0x003f); // Mask out any pending exceptions (only check control and mask bits)
+  } else {
+    andl(tmp, 0xFFC0); // Mask out any pending exceptions (only check control and mask bits)
+  }
+  cmp32(tmp, mxcsr_std, rscratch);
+}
+
 void MacroAssembler::ldmxcsr(AddressLiteral src, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
