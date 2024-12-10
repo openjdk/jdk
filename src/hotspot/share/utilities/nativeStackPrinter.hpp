@@ -21,12 +21,15 @@
  * questions.
  *
  */
+#ifndef SHARE_UTILITIES_NATIVESTACKPRINTER_HPP
+#define SHARE_UTILITIES_NATIVESTACKPRINTER_HPP
 
 #include "memory/allocation.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Forward declarations
-class Address;
-class frame;
 class outputStream;
 class Thread;
 
@@ -58,8 +61,8 @@ class NativeStackPrinter : public StackObj {
     _filename(filename),
     _lineno(lineno) {
     assert((_lineno == 0 && _filename == nullptr) ||
-            (_lineno  > 0 && _filename != nullptr),
-            "file name and line number need to be provided together");
+           (_lineno  > 0 && _filename != nullptr),
+           "file name and line number need to be provided together");
   }
 
   NativeStackPrinter(Thread* current_or_null)
@@ -100,6 +103,6 @@ class NativeStackPrinter : public StackObj {
                                       : os::current_frame();
       print_stack_from_frame(st, fr, buf, buf_size, print_source_info, max_frames);
   }
-
-
 };
+
+#endif // SHARE_UTILITIES_NATIVESTACKPRINTER_HPP
