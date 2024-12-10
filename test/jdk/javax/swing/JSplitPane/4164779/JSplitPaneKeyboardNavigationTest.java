@@ -171,7 +171,8 @@ public class JSplitPaneKeyboardNavigationTest {
             loc.set(button.getLocationOnScreen());
         });
         final Point buttonLoc = loc.get();
-        robot.mouseMove(buttonLoc.x + 8, buttonLoc.y + 8);
+        robot.mouseMove(buttonLoc.x + button.getWidth() / 2,
+                        buttonLoc.y + button.getHeight() / 2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
@@ -226,7 +227,6 @@ public class JSplitPaneKeyboardNavigationTest {
     private static void disposeFrame() {
         if (frame != null) {
             frame.dispose();
-            frame = null;
         }
     }
 
