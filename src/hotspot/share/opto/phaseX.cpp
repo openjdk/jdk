@@ -1745,7 +1745,7 @@ bool PhaseIterGVN::no_dependent_zero_check(Node* n) const {
     case Op_DivL:
     case Op_ModL:
     case Op_UDivL:
-    case Op_UModL:{
+    case Op_UModL: {
       // Type of divisor includes 0?
       if (type(n->in(2)) == Type::TOP) {
         // 'n' is dead. Treat as if zero check is still there to avoid any further optimizations.
