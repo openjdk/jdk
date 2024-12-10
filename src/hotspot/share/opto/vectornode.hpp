@@ -1688,7 +1688,7 @@ public:
   virtual int Opcode() const;
 };
 
-// The machine may not directly support the rearrange operation of an element type. In those cases,
+// The target may not directly support the rearrange operation for an element type. In those cases,
 // we can transform the rearrange into a different element type. For example, on x86 before AVX512,
 // there is no rearrange instruction for short elements, what we will then do is to transform the
 // shuffle vector into one that we can do byte rearrange such that it would provide the same
