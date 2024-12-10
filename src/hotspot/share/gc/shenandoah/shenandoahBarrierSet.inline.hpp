@@ -380,7 +380,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
   // this barrier will be called with ENQUEUE=true and HAS_FWD=false, even though the young generation
   // may have forwarded objects. In this case, the `arraycopy_work` is first called with HAS_FWD=true and
   // ENQUEUE=false.
-  assert(HAS_FWD == _heap->has_forwarded_objects() || (_heap->gc_state() & ShenandoahHeap::OLD_MARKING) != 0,
+  assert(HAS_FWD == _heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(),
          "Forwarded object status is sane");
   // This function cannot be called to handle marking and evacuation at the same time (they operate on
   // different sides of the copy).
