@@ -167,6 +167,11 @@ public class CodeGeneratorLibrary {
             String generatorName = parameters.get("call", scope, " for generator call to 'repeat'");
             int repeat = parameters.getInt("repeat", scope, " In call to 'repeat'");
 
+            if (repeat > 1000) {
+                scope.print();
+                throw new TemplateFrameworkException("Generator repeat should have repeat <= 1000, got: " + repeat);
+            }
+
             CodeGenerator generator = scope.library().find(generatorName, " for repeat");
 
             // Copy arguments, and remove the 2 args we just used. Forward the other args to the repeat.
@@ -174,7 +179,9 @@ public class CodeGeneratorLibrary {
             argumentsMap.remove("call");
             argumentsMap.remove("repeat");
 
-            // TODO
+            for (int i = 0; i < repeat; i++) {
+                generator.where(argumentsMap).instantiate(scope);
+            }
         }, 0);
     }
 

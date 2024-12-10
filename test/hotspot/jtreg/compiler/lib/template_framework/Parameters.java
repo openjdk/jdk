@@ -64,6 +64,12 @@ public class Parameters {
         argumentsMap.put(name, value);
     }
 
+    public void add(Map<String,String> argumentsMap) {
+        for (Map.Entry<String,String> e : argumentsMap.entrySet()) {
+            add(e.getKey(), e.getValue());
+        }
+    }
+
     public String getOrNull(String name) {
         return argumentsMap.get(name);
     }

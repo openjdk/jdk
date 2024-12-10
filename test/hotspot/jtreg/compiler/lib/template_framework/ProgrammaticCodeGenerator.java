@@ -26,7 +26,7 @@ package compiler.lib.template_framework;
 /**
  * TODO public?
  */
-public class ProgrammaticCodeGenerator implements CodeGenerator {
+public class ProgrammaticCodeGenerator extends CodeGenerator {
     public interface Instantiator {
         public void call(Scope scope, Parameters parameters);
     }

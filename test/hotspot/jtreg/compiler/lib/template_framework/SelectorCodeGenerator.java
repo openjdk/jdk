@@ -32,7 +32,7 @@ import jdk.test.lib.Utils;
 /**
  * TODO desc
  */
-public final class SelectorCodeGenerator implements CodeGenerator {
+public final class SelectorCodeGenerator extends CodeGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     private final String generatorName;
