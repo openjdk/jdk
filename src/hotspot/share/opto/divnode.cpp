@@ -462,26 +462,26 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
   if (t == Type::TOP) {
     return nullptr;
   }
-  const TypeClass* tl = t->cast<TypeClass>();
+  const TypeClass* type_divisor = t->cast<TypeClass>();
 
   // Check for useless control input
   // Check for excluding div-zero case
-  if (div->in(0) != nullptr && (tl->_hi < 0 || tl->_lo > 0)) {
+  if (div->in(0) != nullptr && (type_divisor->_hi < 0 || type_divisor->_lo > 0)) {
     div->set_req(0, nullptr); // Yank control input
     return div;
   }
 
-  if (!tl->is_con()) {
+  if (!type_divisor->is_con()) {
     return nullptr;
   }
-  Unsigned l = static_cast<Unsigned>(tl->get_con()); // Get divisor
+  Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con()); // Get divisor
 
-  if (l == 0 || l == 1) {
+  if (divisor == 0 || divisor == 1) {
     return nullptr; // Dividing by zero constant does not idealize
   }
 
-  if (is_power_of_2(l)) {
-    return make_urshift<TypeClass>(div->in(1), phase->intcon(log2i_graceful(l)));
+  if (is_power_of_2(divisor)) {
+    return make_urshift<TypeClass>(div->in(1), phase->intcon(log2i_graceful(divisor)));
   }
 
   return nullptr;
@@ -1136,26 +1136,26 @@ static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   if (t == Type::TOP) {
     return nullptr;
   }
-  const TypeClass* ti = t->cast<TypeClass>();
+  const TypeClass* type_divisor = t->cast<TypeClass>();
 
   // Check for useless control input
   // Check for excluding mod-zero case
-  if (mod->in(0) != nullptr && (ti->_hi < 0 || ti->_lo > 0)) {
+  if (mod->in(0) != nullptr && (type_divisor->_hi < 0 || type_divisor->_lo > 0)) {
     mod->set_req(0, nullptr); // Yank control input
     return mod;
   }
 
-  if (!ti->is_con()) {
+  if (!type_divisor->is_con()) {
     return nullptr;
   }
-  Unsigned con = static_cast<Unsigned>(ti->get_con());
+  Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con());
 
-  if (con == 0) {
+  if (divisor == 0) {
     return nullptr;
   }
 
-  if (is_power_of_2(con)) {
-    return make_and<TypeClass>(mod->in(1), phase->makecon(TypeClass::make(con - 1)));
+  if (is_power_of_2(divisor)) {
+    return make_and<TypeClass>(mod->in(1), phase->makecon(TypeClass::make(divisor - 1)));
   }
 
   return nullptr;
@@ -1188,15 +1188,15 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
     return bot;
   }
 
-  const TypeClass* i2 = t2->cast<TypeClass>();
-  if (i2->is_con() && i2->get_con() == 1) {
+  const TypeClass* type_divisor = t2->cast<TypeClass>();
+  if (type_divisor->is_con() && type_divisor->get_con() == 1) {
     return TypeClass::ZERO;
   }
 
-  const TypeClass* i1 = t1->cast<TypeClass>();
-  if (i1->is_con() && i2->is_con()) {
-    Unsigned au = static_cast<Unsigned>(i1->get_con());
-    Unsigned bu = static_cast<Unsigned>(i2->get_con());
+  const TypeClass* type_dividend = t1->cast<TypeClass>();
+  if (type_dividend->is_con() && type_divisor->is_con()) {
+    Unsigned au = static_cast<Unsigned>(type_dividend->get_con());
+    Unsigned bu = static_cast<Unsigned>(type_divisor->get_con());
     return TypeClass::make(static_cast<Signed>(au % bu));
   }
 
