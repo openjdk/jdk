@@ -3015,7 +3015,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
     __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass, result,
                                            r_array_base, r_array_length, r_array_index,
-                                           r_bitmap, super_klass_index, true);
+                                           r_bitmap, super_klass_index, /*stub_is_near*/ true);
     __ leave();
     __ ret();
 

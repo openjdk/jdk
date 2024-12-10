@@ -889,6 +889,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
                                          x15,     /*tmp2_reg*/
                                          nullptr, /*L_success*/
                                          &miss    /*L_failure*/);
+        // Need extras for table lookup: x7, x11, x13
 
         // fallthrough on success:
         __ mv(t0, 1);

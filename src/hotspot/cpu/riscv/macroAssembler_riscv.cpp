@@ -2879,7 +2879,7 @@ void MacroAssembler::ror_reg(Register dst, Register src, Register shift, Registe
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
 
-  li(tmp, 64);
+  mv(tmp, 64);
   sub(tmp, tmp, shift);
   sll(tmp, src, tmp);
   srl(dst, src, shift);
@@ -4343,11 +4343,10 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
   tmp1_reg = allocate_if_noreg(tmp1_reg, available_regs, pushed_regs);
   tmp2_reg = allocate_if_noreg(tmp2_reg, available_regs, pushed_regs);
 
-  Register tmp3_reg = noreg, tmp4_reg = noreg, tmp5_reg = noreg, result_reg = noreg;
+  Register tmp3_reg = noreg, tmp4_reg = noreg, result_reg = noreg;
 
   tmp3_reg = allocate_if_noreg(tmp3_reg, available_regs, pushed_regs);
   tmp4_reg = allocate_if_noreg(tmp4_reg, available_regs, pushed_regs);
-  tmp5_reg = allocate_if_noreg(tmp5_reg, available_regs, pushed_regs);
   result_reg = allocate_if_noreg(result_reg, available_regs, pushed_regs);
 
   push_reg(pushed_regs, sp);
