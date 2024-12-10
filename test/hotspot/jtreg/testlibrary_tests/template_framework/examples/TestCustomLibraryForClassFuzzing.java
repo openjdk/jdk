@@ -36,11 +36,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
+
+import jdk.test.lib.Utils;
 
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.*;
 
 public class TestCustomLibraryForClassFuzzing {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
         // Create a new CompileFramework instance.
@@ -68,12 +72,28 @@ public class TestCustomLibraryForClassFuzzing {
                 this.superKlass = superKlass;
                 this.subKlasses = new HashSet<Klass>();
             }
+
+            public void generateSubKlasses(int level) {
+                int num = RANDOM.nextInt(0, 5 - level);
+                for (int i = 0; i < num; i++) {
+                    Klass klass = new Klass(name + "_" + i + "C", this);
+                    klass.generateSubKlasses(level + 1);
+                    subKlasses.add(klass);
+                }
+            }
         }
 
         private final HashSet<Klass> rootKlasses;
 
         public KlassHierarchy() {
             this.rootKlasses = new HashSet<Klass>();
+
+            int numRoots = RANDOM.nextInt(1, 10);
+            for (int i = 0; i < numRoots; i++) {
+                Klass root = new Klass("C" + i + "C", null);
+                root.generateSubKlasses(0);
+                rootKlasses.add(root);
+            }
         }
     }
 
@@ -90,7 +110,7 @@ public class TestCustomLibraryForClassFuzzing {
         Template klassTemplate = new Template("my_klass",
             """
             // KlassHierarchy
-            #{:my_klass_hierarchy}
+            #{:repeat(call=my_base_klass,repeat=3)}
             """
         );
         instantiator.add(klassTemplate, null, null);
@@ -123,10 +143,10 @@ public class TestCustomLibraryForClassFuzzing {
     }
 
     public static CodeGenerator factoryMyKlassHierarchy() {
-        return new ProgrammaticCodeGenerator("my_klass_hierarchy", (Scope scope, Parameters parameters) -> {
+        return new ProgrammaticCodeGenerator("my_base_klass", (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope); // no arguments
 
-            scope.stream.addCodeToLine("// xyz");
+            scope.stream.addCodeToLine("// $my_base_klass");
             scope.stream.addNewline();
         }, 0);
     }

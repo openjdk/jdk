@@ -162,6 +162,22 @@ public class CodeGeneratorLibrary {
         }, 0);
     }
 
+    public static CodeGenerator factoryRepeat() {
+        return new ProgrammaticCodeGenerator("repeat", (Scope scope, Parameters parameters) -> {
+            String generatorName = parameters.get("call", scope, " for generator call to 'repeat'");
+            int repeat = parameters.getInt("repeat", scope, " In call to 'repeat'");
+
+            CodeGenerator generator = scope.library().find(generatorName, " for repeat");
+
+            // Copy arguments, and remove the 2 args we just used. Forward the other args to the repeat.
+            HashMap<String,String> argumentsMap = new HashMap<String,String>(parameters.getArguments());
+            argumentsMap.remove("call");
+            argumentsMap.remove("repeat");
+
+            // TODO
+        }, 0);
+    }
+
     public static CodeGeneratorLibrary standard() {
         HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
@@ -241,6 +257,9 @@ public class CodeGeneratorLibrary {
             // end   $new_var_in_method
             """
         ));
+
+        // Control flow.
+        codeGenerators.add(factoryRepeat());
 
         // Code blocks.
         codeGenerators.add(new Template("empty",
