@@ -448,6 +448,7 @@ public final class Template extends CodeGenerator {
                 //   arg=text
                 //   arg=$var
                 //   arg=#param
+                //   arg=#repeat_replacement
                 Map<String,String> argumentsMap = parseKeyValuePairs(generatorArguments, state);
                 argumentsMap = argumentsMap.entrySet().stream().collect(Collectors.toMap(
                     e -> e.getKey(),
@@ -456,8 +457,15 @@ public final class Template extends CodeGenerator {
                         if (val.startsWith("$")) {
                             return state.wrapVariable(val.substring(1), e.getKey() + "=$" + val + " in " + templated);
                         } else if (val.startsWith("#")) {
-                            return state.parameters.get(val.substring(1), state.currentScope,
-                                                        e.getKey() + "=#" + e.getKey() + " in " + templated);
+                            String n = val.substring(1);
+                            // Try parameter
+                            String parameterValue = state.parameters.getOrNull(n);
+                            if (parameterValue != null) {
+                                return parameterValue;
+                            }
+                            // Else replacement
+                            CodeStream repeatReplacement = state.replacementState.get(n, state.currentScope, templated);
+                            return repeatReplacement.toString();
                         }
                         return val;
                     }

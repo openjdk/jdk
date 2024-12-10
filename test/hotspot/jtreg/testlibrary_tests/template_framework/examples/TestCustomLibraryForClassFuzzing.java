@@ -102,10 +102,11 @@ public class TestCustomLibraryForClassFuzzing {
         TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest", customLibrary);
 
         // Generate code for classes
+	// Note: we get a random num_klasses 1..9, and call my_base_klass that many times.
         Template klassTemplate = new Template("my_klass",
             """
-            // KlassHierarchy
-            #{:repeat(call=my_base_klass,repeat=3)}
+            // KlassHierarchy with #{num_klasses:int_con(lo=1,hi=10)} base classes.
+            #{:repeat(call=my_base_klass,repeat=#num_klasses)}
             """
         );
         instantiator.add(klassTemplate, null, null);
