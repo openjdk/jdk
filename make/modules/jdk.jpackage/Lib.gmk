@@ -49,6 +49,7 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGEAPPLAUNCHER, \
     LINK_TYPE := $(JPACKAGEAPPLAUNCHER_LINK_TYPE), \
     OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
     SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncher, \
+    ONLY_EXPORTED := true, \
     SRC := applauncher, \
     EXTRA_SRC := common, \
     INCLUDE_FILES := $(JPACKAGEAPPLAUNCHER_INCLUDE_FILES), \
@@ -83,6 +84,7 @@ ifeq ($(call isTargetOs, linux), true)
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := \
           $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncheraux, \
+      ONLY_EXPORTED := true, \
       SRC := libapplauncher, \
       EXTRA_SRC := \
           applauncher \
@@ -127,6 +129,7 @@ ifeq ($(call isTargetOs, windows), true)
       NAME := wixhelper, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwixhelper, \
+      ONLY_EXPORTED := true, \
       OPTIMIZATION := LOW, \
       EXTRA_SRC := common, \
       CXXFLAGS_FILTER_OUT := -MD, \
@@ -146,6 +149,7 @@ ifeq ($(call isTargetOs, windows), true)
       NAME := msiwrapper, \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/msiwrapper, \
+      ONLY_EXPORTED := true, \
       EXTRA_SRC := common, \
       CXXFLAGS_FILTER_OUT := -MD, \
       CXXFLAGS_windows := -MT $(JPACKAGE_CXXFLAGS_windows), \
@@ -164,6 +168,7 @@ ifeq ($(call isTargetOs, windows), true)
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := \
           $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncherw, \
+      ONLY_EXPORTED := true, \
       SRC := applauncher, \
       EXTRA_SRC := common, \
       OPTIMIZATION := LOW, \

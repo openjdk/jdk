@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -353,6 +353,14 @@ void VM_Version::c2_initialize() {
   if (UseZvbb && !UseRVV) {
     FLAG_SET_DEFAULT(UseZvbb, false);
     warning("Cannot enable UseZvbb on cpu without RVV support.");
+  }
+
+  // UseZvbc (depends on RVV).
+  if (UseZvbc && !UseRVV) {
+    if (!FLAG_IS_DEFAULT(UseZvbc)) {
+      warning("Cannot enable UseZvbc on cpu without RVV support.");
+    }
+    FLAG_SET_DEFAULT(UseZvbc, false);
   }
 
   // SHA's

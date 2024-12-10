@@ -37,7 +37,6 @@ import tests.Result;
  * @summary Test non-ASCII path in custom JRE
  * @library ../lib
  *          /test/lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.*
