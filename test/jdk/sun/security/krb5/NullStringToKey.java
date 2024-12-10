@@ -24,11 +24,8 @@
  * @test
  * @bug 8343622
  * @summary KerberosKey created with null key bytes
- * @library /test/lib
  * @run main/othervm NullStringToKey
  */
-
-import jdk.test.lib.Utils;
 
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
@@ -47,8 +44,16 @@ public class NullStringToKey {
                 "aes128-cts-hmac-sha1-96", "aes256-cts-hmac-sha1-96",
                 "aes128-cts-hmac-sha256-128", "aes256-cts-hmac-sha384-192")) {
             System.out.println(alg);
-            Utils.runAndCheckException(() -> new KerberosKey(name, pass, alg),
-                    IllegalArgumentException.class);
+            // Do not use Utils.runAndCheckException as it might call
+            // MessageDigest.getInstance("MD5") at class initialization
+            // and we have already removed the SUN provider.
+            try {
+                new KerberosKey(name, pass, alg);
+                throw new RuntimeException("Didn't get expected exception");
+            } catch (IllegalArgumentException e) {
+                // expected
+                System.out.println(e);
+            }
         }
     }
 }

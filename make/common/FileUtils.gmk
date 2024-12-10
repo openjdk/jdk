@@ -307,26 +307,3 @@ ifeq ($(DISABLE_CACHE_FIND), true)
 else
   FindFiles = $(CacheFindFiles)
 endif
-
-# Find native debuginfo files in a directory
-#
-# Param 1 - dir to find debuginfo files in
-FindDebuginfoFiles = \
-    $(wildcard $(addprefix $1/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*, $(DEBUGINFO_SUFFIXES)) \
-        $(addprefix $1/*/*/*, $(DEBUGINFO_SUFFIXES)))
-
-# Pick the correct debug info files to copy, either zipped or not.
-ifeq ($(ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
-  DEBUGINFO_SUFFIXES += .diz
-else
-  DEBUGINFO_SUFFIXES := .debuginfo .pdb .map
-  # On Macosx, if debug symbols have not been zipped, find all files inside *.dSYM
-  # dirs.
-  ifeq ($(call isTargetOs, macosx), true)
-    $(call FillFindCache, \
-        $(SUPPORT_OUTPUTDIR)/modules_libs $(SUPPORT_OUTPUTDIR)/modules_cmds)
-    FindDebuginfoFiles = \
-        $(if $(wildcard $1), $(call containing, .dSYM/, $(call FindFiles, $1)))
-  endif
-endif

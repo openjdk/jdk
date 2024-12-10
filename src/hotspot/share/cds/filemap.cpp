@@ -1975,6 +1975,32 @@ char* FileMapInfo::map_bitmap_region() {
   return bitmap_base;
 }
 
+class SharedDataRelocationTask : public ArchiveWorkerTask {
+private:
+  BitMapView* const _rw_bm;
+  BitMapView* const _ro_bm;
+  SharedDataRelocator* const _rw_reloc;
+  SharedDataRelocator* const _ro_reloc;
+
+public:
+  SharedDataRelocationTask(BitMapView* rw_bm, BitMapView* ro_bm, SharedDataRelocator* rw_reloc, SharedDataRelocator* ro_reloc) :
+                           ArchiveWorkerTask("Shared Data Relocation"),
+                           _rw_bm(rw_bm), _ro_bm(ro_bm), _rw_reloc(rw_reloc), _ro_reloc(ro_reloc) {}
+
+  void work(int chunk, int max_chunks) override {
+    work_on(chunk, max_chunks, _rw_bm, _rw_reloc);
+    work_on(chunk, max_chunks, _ro_bm, _ro_reloc);
+  }
+
+  void work_on(int chunk, int max_chunks, BitMapView* bm, SharedDataRelocator* reloc) {
+    BitMap::idx_t size  = bm->size();
+    BitMap::idx_t start = MIN2(size, size * chunk / max_chunks);
+    BitMap::idx_t end   = MIN2(size, size * (chunk + 1) / max_chunks);
+    assert(end > start, "Sanity: no empty slices");
+    bm->iterate(reloc, start, end);
+  }
+};
+
 // This is called when we cannot map the archive at the requested[ base address (usually 0x800000000).
 // We relocate all pointers in the 2 core regions (ro, rw).
 bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
@@ -2013,8 +2039,15 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
                                 valid_new_base, valid_new_end, addr_delta);
     SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
-    rw_ptrmap.iterate(&rw_patcher);
-    ro_ptrmap.iterate(&ro_patcher);
+
+    if (AOTCacheParallelRelocation) {
+      ArchiveWorkers workers;
+      SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
+      workers.run_task(&task);
+    } else {
+      rw_ptrmap.iterate(&rw_patcher);
+      ro_ptrmap.iterate(&ro_patcher);
+    }
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
 
@@ -2698,8 +2731,8 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
                                                            const char* file_name,
                                                            TRAPS) {
   JavaValue result(T_OBJECT);
-  TempNewSymbol class_name_sym = SymbolTable::new_symbol(file_name);
-  Handle ext_class_name = java_lang_String::externalize_classname(class_name_sym, CHECK_NULL);
+  oop class_name = java_lang_String::create_oop_from_str(file_name, THREAD);
+  Handle h_class_name = Handle(THREAD, class_name);
 
   // byte[] ClassLoader.getResourceAsByteArray(String name)
   JavaCalls::call_virtual(&result,
@@ -2707,7 +2740,7 @@ ClassFileStream* FileMapInfo::get_stream_from_class_loader(Handle class_loader,
                           vmClasses::ClassLoader_klass(),
                           vmSymbols::getResourceAsByteArray_name(),
                           vmSymbols::getResourceAsByteArray_signature(),
-                          ext_class_name,
+                          h_class_name,
                           CHECK_NULL);
   assert(result.get_type() == T_OBJECT, "just checking");
   oop obj = result.get_oop();
