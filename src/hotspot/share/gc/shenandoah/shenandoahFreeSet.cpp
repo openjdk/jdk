@@ -1268,7 +1268,7 @@ public:
 };
 
 void ShenandoahFreeSet::recycle_trash() {
-  // lock is not reentrable, check we don't have it
+  // lock is not non-reentrant, check we don't have it
   shenandoah_assert_not_heaplocked();
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();

@@ -572,6 +572,7 @@ ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {
 
 
 void ShenandoahHeapRegion::recycle_internal() {
+  assert(_recycling.is_set() && is_trash(), "Wrong state");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   set_top(bottom());

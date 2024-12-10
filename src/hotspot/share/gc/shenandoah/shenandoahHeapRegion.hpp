@@ -189,25 +189,24 @@ public:
   void make_uncommitted();
   void make_committed_bypass();
 
-  // Individual states:
+  // Primitive state predicates
   bool is_empty_uncommitted()      const { return state() == _empty_uncommitted; }
   bool is_empty_committed()        const { return state() == _empty_committed; }
   bool is_regular()                const { return state() == _regular; }
   bool is_humongous_continuation() const { return state() == _humongous_cont; }
-
-  bool is_empty_state(RegionState state) const { return state == _empty_committed || state == _empty_uncommitted; }
-  bool is_humongous_start_state(RegionState state) const { return state == _humongous_start || state == _pinned_humongous_start; }
-
-  // Participation in logical groups:
-  bool is_empty()                  const { return this->is_empty_state(this->state()); }
-  bool is_active()                 const { auto cur_state = state(); return !is_empty_state(cur_state) && cur_state != _trash; }
+  bool is_regular_pinned()         const { return state() == _pinned; }
   bool is_trash()                  const { return state() == _trash; }
+
+  // Derived state predicates (boolean combinations of individual states)
+  bool static is_empty_state(RegionState state) { return state == _empty_committed || state == _empty_uncommitted; }
+  bool static is_humongous_start_state(RegionState state) { return state == _humongous_start || state == _pinned_humongous_start; }
+  bool is_empty()                  const { return is_empty_state(this->state()); }
+  bool is_active()                 const { auto cur_state = state(); return !is_empty_state(cur_state) && cur_state != _trash; }
   bool is_humongous_start()        const { return is_humongous_start_state(state()); }
   bool is_humongous()              const { auto cur_state = state(); return is_humongous_start_state(cur_state) || cur_state == _humongous_cont; }
   bool is_committed()              const { return !is_empty_uncommitted(); }
   bool is_cset()                   const { auto cur_state = state(); return cur_state == _cset || cur_state == _pinned_cset; }
   bool is_pinned()                 const { auto cur_state = state(); return cur_state == _pinned || cur_state == _pinned_cset || cur_state == _pinned_humongous_start; }
-  bool is_regular_pinned()         const { return state() == _pinned; }
 
   inline bool is_young() const;
   inline bool is_old() const;
@@ -265,7 +264,7 @@ private:
   uint _age;
   CENSUS_NOISE(uint _youth;)   // tracks epochs of retrograde ageing (rejuvenation)
 
-  ShenandoahSharedFlag _recycling;
+  ShenandoahSharedFlag _recycling; // Used to indicate that the region is being recycled; see try_recycle*().
 
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
