@@ -8634,15 +8634,24 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   Node* fld3 = nullptr;
   switch(num_args) {
     case 3:
-      assert(argument(2)->bottom_type()->array_element_basic_type() == T_SHORT, "");
+      assert((argument(2)->is_ConI() &&
+              argument(2)->get_int() >= min_jshort &&
+              argument(2)->get_int() <= max_jshort) ||
+             (argument(2)->bottom_type()->array_element_basic_type() == T_SHORT), "");
       fld3 = _gvn.transform(new ReinterpretS2HFNode(argument(2)));
     // fall-through
     case 2:
-      assert(argument(1)->bottom_type()->array_element_basic_type() == T_SHORT, "");
+      assert((argument(1)->is_ConI() &&
+              argument(1)->get_int() >= min_jshort &&
+              argument(1)->get_int() <= max_jshort) ||
+             (argument(1)->bottom_type()->array_element_basic_type() == T_SHORT), "");
       fld2 = _gvn.transform(new ReinterpretS2HFNode(argument(1)));
     // fall-through
     case 1:
-      assert(argument(0)->bottom_type()->array_element_basic_type() == T_SHORT, "");
+      assert((argument(0)->is_ConI() &&
+              argument(0)->get_int() >= min_jshort &&
+              argument(0)->get_int() <= max_jshort) ||
+             (argument(0)->bottom_type()->array_element_basic_type() == T_SHORT), "");
       fld1 = _gvn.transform(new ReinterpretS2HFNode(argument(0)));
       break;
     default: fatal("Unsupported number of arguments %d", num_args);

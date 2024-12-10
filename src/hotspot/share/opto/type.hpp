@@ -529,9 +529,9 @@ public:
 
 // Class of Half Float-Constant Types.
 class TypeH : public Type {
-  TypeH( short f ) : Type(HalfFloatCon), _f(f) {};
+  TypeH(short f) : Type(HalfFloatCon), _f(f) {};
 public:
-  virtual bool eq( const Type *t ) const;
+  virtual bool eq(const Type *t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
@@ -545,7 +545,7 @@ public:
   virtual bool        is_nan()    const;  // Is not a number (NaN)
 
   virtual float getf() const;
-  virtual const Type *xmeet( const Type *t ) const;
+  virtual const Type *xmeet(const Type *t) const;
   virtual const Type *xdual() const;    // Compute dual right now.
   // Convenience common pre-built types.
   static const TypeH *MAX;
@@ -555,7 +555,7 @@ public:
   static const TypeH *POS_INF;
   static const TypeH *NEG_INF;
 #ifndef PRODUCT
-  virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
+  virtual void dump2(Dict &d, uint depth, outputStream *st) const;
 #endif
 };
 

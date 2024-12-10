@@ -932,7 +932,7 @@ const Type* RoundDoubleModeNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 
 const Type* ReinterpretS2HFNode::Value(PhaseGVN* phase) const {
-  const Type* type = phase->type( in(1) );
+  const Type* type = phase->type(in(1));
   // Convert short constant value to a Half Float constant value
   if ((type->isa_int() && type->is_int()->is_con())) {
      jshort hfval = type->is_int()->get_con();
@@ -950,7 +950,7 @@ Node* ReinterpretS2HFNode::Identity(PhaseGVN* phase) {
 }
 
 const Type* ReinterpretHF2SNode::Value(PhaseGVN* phase) const {
-  const Type* type = phase->type( in(1) );
+  const Type* type = phase->type(in(1));
   // Convert Half float constant value to short constant value.
   if (type->isa_half_float_constant()) {
      jshort hfval = type->is_half_float_constant()->_f;

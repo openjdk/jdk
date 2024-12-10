@@ -39,6 +39,7 @@ import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
 import static java.lang.Integer.numberOfLeadingZeros;
 import static java.lang.Math.multiplyHigh;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.Float16Math;
 
 /**
@@ -322,8 +323,10 @@ public final class Float16
     *
     * @param  f a {@code float}
     */
+    @ForceInline
     public static Float16 valueOf(float f) {
-        return new Float16(floatToFloat16(f));
+        short hf = floatToFloat16(f);
+        return new Float16(hf);
     }
 
    /**
@@ -765,6 +768,7 @@ public final class Float16
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
+    @ForceInline
     public byte byteValue() {
         return (byte)floatValue();
     }
@@ -786,6 +790,7 @@ public final class Float16
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
+    @ForceInline
     public short shortValue() {
         return (short)floatValue();
     }
@@ -801,6 +806,7 @@ public final class Float16
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
     @Override
+    @ForceInline
     public int intValue() {
         return (int)floatValue();
     }
@@ -831,6 +837,7 @@ public final class Float16
      * @jls 5.1.2 Widening Primitive Conversion
      */
     @Override
+    @ForceInline
     public float floatValue() {
         return float16ToFloat(value);
     }
@@ -846,6 +853,7 @@ public final class Float16
      * @jls 5.1.2 Widening Primitive Conversion
      */
     @Override
+    @ForceInline
     public double doubleValue() {
         return (double)floatValue();
     }

@@ -27,6 +27,7 @@
 #include "ci/ciTypeFlow.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "libadt/dict.hpp"
 #include "memory/oopFactory.hpp"
@@ -104,7 +105,7 @@ const Type::TypeInfo Type::_type_info[Type::lastype] = {
   { Return_Address,  T_ADDRESS,    "return_address",false, Op_RegP,              relocInfo::none          },  // Return_Address
   { Memory,          T_ILLEGAL,    "memory",        false, 0,                    relocInfo::none          },  // Memory
   { HalfFloatBot,    T_SHORT,      "halffloat_top", false, Op_RegF,              relocInfo::none          },  // HalfFloatTop
-  { HalfFloatCon,    T_SHORT,      "htcon:",        false, Op_RegF,              relocInfo::none          },  // HalfFloatCon
+  { HalfFloatCon,    T_SHORT,      "hfcon:",        false, Op_RegF,              relocInfo::none          },  // HalfFloatCon
   { HalfFloatTop,    T_SHORT,      "short",         false, Op_RegF,              relocInfo::none          },  // HalfFloatBot
   { FloatBot,        T_FLOAT,      "float_top",     false, Op_RegF,              relocInfo::none          },  // FloatTop
   { FloatCon,        T_FLOAT,      "ftcon:",        false, Op_RegF,              relocInfo::none          },  // FloatCon
@@ -1081,19 +1082,30 @@ const Type *Type::xmeet( const Type *t ) const {
   case Bottom:                  // Ye Olde Default
     return t;
 
+  case HalfFloatTop:
+    if (_base == HalfFloatTop) return this;
+  case HalfFloatBot:            // Half Float
+    if (_base == HalfFloatBot || _base == HalfFloatTop) return HALF_FLOAT;
+    if (_base == FloatBot || _base == FloatTop) return Type::BOTTOM;
+    if (_base == DoubleTop || _base == DoubleBot) return Type::BOTTOM;
+    typerr(t);
+    return Type::BOTTOM;
+
   case FloatTop:
-    if( _base == FloatTop ) return this;
+    if (_base == FloatTop ) return this;
   case FloatBot:                // Float
-    if( _base == FloatBot || _base == FloatTop ) return FLOAT;
-    if( _base == DoubleTop || _base == DoubleBot ) return Type::BOTTOM;
+    if (_base == FloatBot || _base == FloatTop) return FLOAT;
+    if (_base == HalfFloatTop || _base == HalfFloatBot) return Type::BOTTOM;
+    if (_base == DoubleTop || _base == DoubleBot) return Type::BOTTOM;
     typerr(t);
     return Type::BOTTOM;
 
   case DoubleTop:
-    if( _base == DoubleTop ) return this;
+    if (_base == DoubleTop) return this;
   case DoubleBot:               // Double
-    if( _base == DoubleBot || _base == DoubleTop ) return DOUBLE;
-    if( _base == FloatTop || _base == FloatBot ) return Type::BOTTOM;
+    if (_base == DoubleBot || _base == DoubleTop) return DOUBLE;
+    if (_base == HalfFloatTop || _base == HalfFloatBot) return Type::BOTTOM;
+    if (_base == FloatTop || _base == FloatBot) return Type::BOTTOM;
     typerr(t);
     return Type::BOTTOM;
 
@@ -1101,7 +1113,7 @@ const Type *Type::xmeet( const Type *t ) const {
   case Control:                 // Control of code
   case Abio:                    // State of world outside of program
   case Memory:
-    if( _base == t->_base )  return this;
+    if (_base == t->_base)  return this;
     typerr(t);
     return Type::BOTTOM;
 
@@ -1443,7 +1455,7 @@ const TypeH *TypeH::make(short f) {
 }
 
 const TypeH *TypeH::make(float f) {
-  assert( StubRoutines::f2hf_adr() != nullptr, "");
+  assert(StubRoutines::f2hf_adr() != nullptr, "");
   short hf = StubRoutines::f2hf(f);
   return (TypeH*)(new TypeH(hf))->hashcons();
 }
@@ -1452,7 +1464,7 @@ const TypeH *TypeH::make(float f) {
 // Compute the MEET of two types.  It returns a new Type object.
 const Type *TypeH::xmeet( const Type *t ) const {
   // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
+  if (this == t) return this;  // Meeting same type-rep?
 
   // Current "this->_base" is FloatCon
   switch (t->base()) {          // Switch on original type
@@ -1484,17 +1496,17 @@ const Type *TypeH::xmeet( const Type *t ) const {
   default:                      // All else is a mistake
     typerr(t);
 
-  case HalfFloatCon:            // Float-constant vs Float-constant?
-    if(jint_cast(_f) != jint_cast(t->getf())) {         // unequal constants?
+  case HalfFloatCon:            // Half float-constant vs Half float-constant?
+    if (_f != t->geth()) {      // unequal constants?
                                 // must compare bitwise as positive zero, negative zero and NaN have
                                 // all the same representation in C++
       return HALF_FLOAT;        // Return generic float
     }                           // Equal constants
   case Top:
   case HalfFloatTop:
-    break;                      // Return the float constant
+    break;                      // Return the Half float constant
   }
-  return this;                  // Return the float constant
+  return this;                  // Return the Half float constant
 }
 
 //------------------------------xdual------------------------------------------
@@ -1508,7 +1520,7 @@ const Type *TypeH::xdual() const {
 bool TypeH::eq(const Type *t) const {
   // Bitwise comparison to distinguish between +/-0. These values must be treated
   // as different to be consistent with C1 and the interpreter.
-  return (jint_cast(_f) == jint_cast(t->geth()));
+  return (_f == t->geth());
 }
 
 //------------------------------hash-------------------------------------------
@@ -1520,20 +1532,20 @@ uint TypeH::hash(void) const {
 //------------------------------is_finite--------------------------------------
 // Has a finite value
 bool TypeH::is_finite() const {
-  assert( StubRoutines::hf2f_adr() != nullptr, "");
+  assert(StubRoutines::hf2f_adr() != nullptr, "");
   float f = StubRoutines::hf2f(geth());
   return g_isfinite(f) != 0;
 }
 
 float TypeH::getf() const {
-  assert( StubRoutines::hf2f_adr() != nullptr, "");
+  assert(StubRoutines::hf2f_adr() != nullptr, "");
   return StubRoutines::hf2f(geth());
 }
 
 //------------------------------is_nan-----------------------------------------
 // Is not a number (NaN)
-bool TypeH::is_nan()    const {
-  assert( StubRoutines::hf2f_adr() != nullptr, "");
+bool TypeH::is_nan() const {
+  assert(StubRoutines::hf2f_adr() != nullptr, "");
   float f = StubRoutines::hf2f(geth());
   return g_isnan(f) != 0;
 }
@@ -1543,7 +1555,7 @@ bool TypeH::is_nan()    const {
 #ifndef PRODUCT
 void TypeH::dump2( Dict &d, uint depth, outputStream *st ) const {
   Type::dump2(d,depth, st);
-  st->print("%x", _f);
+  st->print("%f", getf());
 }
 #endif
 

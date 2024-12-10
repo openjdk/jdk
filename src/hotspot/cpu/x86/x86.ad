@@ -4528,17 +4528,6 @@ instruct ReplHF_imm(vec dst, immH con, rRegI rtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ReplHF_short_reg(vec dst, rRegI src) %{
-  predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
-  match(Set dst (Replicate (ReinterpretS2HF src)));
-  format %{ "replicateHF $dst, $src" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    __ evpbroadcastw($dst$$XMMRegister, $src$$Register, vlen_enc);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 instruct ReplHF_reg(vec dst, regF src, rRegI rtmp) %{
   predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate src));

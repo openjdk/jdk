@@ -1647,9 +1647,6 @@ const Type* MinFNode::add_ring(const Type* t0, const Type* t1 ) const {
     return f0 < f1 ? r0 : r1;
   }
 
-  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
-  // zeros as equals. Thus, performing signed integral comparison for min value
-  // detection.
   return (jint_cast(f0) < jint_cast(f1)) ? r0 : r1;
 }
 
@@ -1699,7 +1696,9 @@ const Type* MaxHFNode::add_ring(const Type* t0, const Type* t1) const {
     return f0 > f1 ? r0 : r1;
   }
 
-  // handle max of 0.0,-0.0 case.
+  // As per IEEE 754 specification, floating point comparison consider +ve and -ve
+  // zeros as equals. Thus, performing signed integral comparison for min value
+  // detection.
   return (jint_cast(f0) > jint_cast(f1)) ? r0 : r1;
 }
 
