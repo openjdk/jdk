@@ -26,7 +26,6 @@
  * @bug 8049238
  * @summary Checks Signature attribute for type bounds.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          java.base/jdk.internal.classfile.impl
