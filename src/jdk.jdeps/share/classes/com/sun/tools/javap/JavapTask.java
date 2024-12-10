@@ -549,6 +549,10 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             throw new BadArgs("err.incompatible.options", sb);
         }
 
+        if (!options.showDisassembled && !options.verbose && options.showLineAndLocalVariableTables) {
+            reportWarning("err.incompatible.options", "-l without -c, line number and local variable tables will not be printed");
+        }
+
         if ((classes == null || classes.size() == 0) &&
                 !(noArgs || options.help || options.version || options.fullVersion)) {
             throw new BadArgs("err.no.classes.specified");

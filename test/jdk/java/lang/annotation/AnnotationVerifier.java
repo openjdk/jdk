@@ -40,7 +40,6 @@ import java.util.stream.Stream;
  * @bug 8158510
  * @summary Verify valid annotation
  * @modules java.base/sun.reflect.annotation
- * @enablePreview
  * @clean AnnotationWithVoidReturn AnnotationWithParameter
  *        AnnotationWithExtraInterface AnnotationWithException
  *        AnnotationWithHashCode AnnotationWithDefaultMember

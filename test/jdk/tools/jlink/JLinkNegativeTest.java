@@ -28,7 +28,6 @@
  * @bug 8174718
  * @bug 8189671
  * @author Andrei Eremeev
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          java.base/jdk.internal.module
  *          jdk.jlink/jdk.tools.jlink.internal

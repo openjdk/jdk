@@ -26,7 +26,6 @@
  * @summary javap should not fail if reserved access flag bits are set to 1
  * @library /tools/lib
  * @modules jdk.jdeps/com.sun.tools.javap
- * @enablePreview
  * @run junit UndefinedAccessFlagTest
  */
 

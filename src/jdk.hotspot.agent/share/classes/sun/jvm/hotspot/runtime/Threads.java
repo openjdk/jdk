@@ -213,7 +213,7 @@ public class Threads {
         if (o == null) return null;
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
-            if (o.equals(thread.getLockId())) {
+            if (o.equals(thread.getMonitorOwnerID())) {
                 return thread;
             }
         }

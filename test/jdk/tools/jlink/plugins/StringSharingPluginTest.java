@@ -26,7 +26,6 @@
  * @summary Test StringSharingPluginTest
  * @author Jean-Francois Denise
  * @library ../../lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          java.base/jdk.internal.jimage.decompressor
  *          jdk.jlink/jdk.tools.jlink.internal

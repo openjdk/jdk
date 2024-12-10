@@ -25,7 +25,6 @@
  * @test
  * @bug 6887895
  * @summary test getting constantpool elements' basename through asInternalName() API
- * @enablePreview
  */
 
 import java.io.*;
