@@ -76,8 +76,8 @@ public class TestInterface extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>All Known Implementing Classes:</dt>
-                    <dd><code><a href="Child.html" title="class in pkg">Child</a></code>, <code><a h\
-                    ref="Parent.html" title="class in pkg">Parent</a></code></dd>
+                    <dd><code><a href="Child.html" title="class in pkg">Child</a>, <a href="Parent.h\
+                    tml" title="class in pkg">Parent</a></code></dd>
                     </dl>""");
 
         checkOutput("pkg/Child.html", true,
