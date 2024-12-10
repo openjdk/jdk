@@ -67,8 +67,8 @@ inline oop ShenandoahBarrierSet::load_reference_barrier_mutator(oop obj, T* load
 
   oop fwd = resolve_forwarded_not_null_mutator(obj);
   if (obj == fwd) {
+    assert(_heap->is_evacuation_in_progress(), "evac should be in progress");
     Thread* const t = Thread::current();
-    assert(ShenandoahThreadLocalData::is_gc_state(t, ShenandoahHeap::EVACUATION), "evac should be in progress");
     ShenandoahEvacOOMScope scope(t);
     fwd = _heap->evacuate_object(obj, t);
   }
@@ -89,7 +89,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(oop obj) {
     // Subsumes null-check
     assert(obj != nullptr, "cset check must have subsumed null-check");
     oop fwd = resolve_forwarded_not_null(obj);
-    if (obj == fwd && ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::EVACUATION)) {
+    if (obj == fwd && _heap->is_evacuation_in_progress()) {
       Thread* t = Thread::current();
       ShenandoahEvacOOMScope oom_evac_scope(t);
       return _heap->evacuate_object(obj, t);
@@ -124,7 +124,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   // Prevent resurrection of unreachable objects that are visited during
   // concurrent class-unloading.
   if ((decorators & AS_NO_KEEPALIVE) != 0 &&
-      ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::EVACUATION) &&
+      _heap->is_evacuation_in_progress() &&
       !_heap->marking_context()->is_marked(obj)) {
     return obj;
   }
@@ -249,7 +249,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_store_common(T* addr, oop value) {
   shenandoah_assert_marked_if(nullptr, value,
-                              !CompressedOops::is_null(value) && ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::EVACUATION)
+                              !CompressedOops::is_null(value) && ShenandoahHeap::heap()->is_evacuation_in_progress()
                               && !(ShenandoahHeap::heap()->active_generation()->is_young()
                                    && ShenandoahHeap::heap()->heap_region_containing(value)->is_old()));
   shenandoah_assert_not_in_cset_if(addr, value, value != nullptr && !ShenandoahHeap::heap()->cancelled_gc());
@@ -489,7 +489,7 @@ inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) {
 
 template <class T>
 void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
-  assert(ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::EVACUATION), "only during evacuation");
+  assert(_heap->is_evacuation_in_progress(), "only during evacuation");
   if (need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
     ShenandoahEvacOOMScope oom_evac;
     arraycopy_work<T, true, true, false>(src, count);
@@ -498,7 +498,7 @@ void ShenandoahBarrierSet::arraycopy_evacuation(T* src, size_t count) {
 
 template <class T>
 void ShenandoahBarrierSet::arraycopy_update(T* src, size_t count) {
-  assert(ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::UPDATEREFS), "only during update-refs");
+  assert(_heap->is_update_refs_in_progress(), "only during update-refs");
   if (need_bulk_update(reinterpret_cast<HeapWord*>(src))) {
     arraycopy_work<T, true, false, false>(src, count);
   }

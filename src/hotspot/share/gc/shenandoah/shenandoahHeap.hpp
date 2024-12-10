@@ -364,10 +364,11 @@ private:
 
 public:
   char gc_state() const;
+  bool is_gc_state(GCState state) const;
 
   // This copies the global gc state into a thread local variable for java threads.
   // It is primarily intended to support quick access at barriers.
-  void propagate_gc_state_to_java_threads();
+  void propagate_gc_state_to_all_threads();
 
   // This is public to support assertions that the state hasn't been changed off of
   // a safepoint and that any changes were propagated to java threads after the safepoint.
@@ -390,9 +391,7 @@ public:
   void set_concurrent_strong_root_in_progress(bool cond);
   void set_concurrent_weak_root_in_progress(bool cond);
 
-  inline bool is_stable() const;
   inline bool is_idle() const;
-
   inline bool is_concurrent_mark_in_progress() const;
   inline bool is_concurrent_young_mark_in_progress() const;
   inline bool is_concurrent_old_mark_in_progress() const;

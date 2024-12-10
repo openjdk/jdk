@@ -2006,7 +2006,7 @@ void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
   _update_refs_iterator.reset();
 }
 
-void ShenandoahHeap::propagate_gc_state_to_java_threads() {
+void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
     _gc_state_changed = false;
@@ -2030,6 +2030,10 @@ void ShenandoahHeap::propagate_gc_state_to_worker_threads() {
   do_thread(VMThread::vm_thread());
   do_thread(control_thread());
   _workers->threads_do_l(do_thread);
+
+  if (_safepoint_workers != nullptr) {
+    _safepoint_workers->threads_do_l(do_thread);
+  }
 }
 
 void ShenandoahHeap::set_gc_state(uint mask, bool value) {
@@ -2668,6 +2672,13 @@ bool ShenandoahRegionIterator::has_next() const {
 char ShenandoahHeap::gc_state() const {
   return _gc_state.raw_value();
 }
+
+bool ShenandoahHeap::is_gc_state(GCState state) const {
+  return _gc_state_changed
+    ? _gc_state.is_set(state)
+    : ShenandoahThreadLocalData::is_gc_state(state);
+}
+
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT

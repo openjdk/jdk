@@ -56,8 +56,7 @@ private:
   bool     _initialize_gclab;
 public:
   ShenandoahWorkerThreads(const char* name, uint workers) :
-    WorkerThreads(name, workers), _initialize_gclab(false) {
-    }
+    WorkerThreads(name, workers), _initialize_gclab(false) {}
 
   template<typename Function>
   void threads_do_l(Function function) {

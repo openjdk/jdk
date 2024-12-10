@@ -75,7 +75,7 @@ public:
 };
 
 void ShenandoahBarrierSet::clone_evacuation(oop obj) {
-  assert(ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::EVACUATION), "only during evacuation");
+  assert(_heap->is_evacuation_in_progress(), "only during evacuation");
   if (need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
     ShenandoahEvacOOMScope oom_evac_scope;
     ShenandoahUpdateRefsForOopClosure</* has_fwd = */ true, /* evac = */ true, /* enqueue */ false> cl;
@@ -84,7 +84,7 @@ void ShenandoahBarrierSet::clone_evacuation(oop obj) {
 }
 
 void ShenandoahBarrierSet::clone_update(oop obj) {
-  assert(ShenandoahThreadLocalData::is_gc_state(ShenandoahHeap::UPDATEREFS), "only during update-refs");
+  assert(_heap->is_update_refs_in_progress(), "only during update-refs");
   if (need_bulk_update(cast_from_oop<HeapWord*>(obj))) {
     ShenandoahUpdateRefsForOopClosure</* has_fwd = */ true, /* evac = */ false, /* enqueue */ false> cl;
     obj->oop_iterate(&cl);
@@ -95,8 +95,7 @@ void ShenandoahBarrierSet::clone_barrier(oop obj) {
   assert(ShenandoahCloneBarrier, "only get here with clone barriers enabled");
   shenandoah_assert_correct(nullptr, obj);
 
-  char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
-  if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
+  if (_heap->is_evacuation_in_progress()) {
     clone_evacuation(obj);
   } else {
     clone_update(obj);
