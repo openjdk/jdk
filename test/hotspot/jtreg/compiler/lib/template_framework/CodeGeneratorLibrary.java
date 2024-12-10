@@ -104,8 +104,6 @@ public class CodeGeneratorLibrary {
             String generatorName = parameters.get("call", scope, " for generator call to 'dispatch'");
             CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
 
-            System.out.println("Dispatch " + generatorName + " to " + scopeKind);
-
             // Copy arguments, and remove the 2 args we just used. Forward the other args to the dispatch.
             HashMap<String,String> argumentsMap = new HashMap<String,String>(parameters.getArguments());
             argumentsMap.remove("scope");

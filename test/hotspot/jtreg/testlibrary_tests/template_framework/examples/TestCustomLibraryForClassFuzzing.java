@@ -137,18 +137,12 @@ public class TestCustomLibraryForClassFuzzing {
     public static CodeGeneratorLibrary createCustomLibrary(KlassHierarchy hierarchy) {
         HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
-        codeGenerators.add(factoryMyKlassHierarchy());
+        codeGenerators.add(new Template("my_base_klass",
+            """
+            // $my_base_klass
+            """
+        ));
 
         return new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
     }
-
-    public static CodeGenerator factoryMyKlassHierarchy() {
-        return new ProgrammaticCodeGenerator("my_base_klass", (Scope scope, Parameters parameters) -> {
-            parameters.checkOnlyHas(scope); // no arguments
-
-            scope.stream.addCodeToLine("// $my_base_klass");
-            scope.stream.addNewline();
-        }, 0);
-    }
-
 }

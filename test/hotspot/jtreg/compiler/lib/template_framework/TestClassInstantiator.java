@@ -54,7 +54,6 @@ public final class TestClassInstantiator {
             """
         ).where("packageName", packageName).where("className", className).instantiate(baseScope);
         baseScope.stream.indent();
-        baseScope.stream.addNewline();
 
         // Open the class scope
         // Inside we have:
@@ -75,7 +74,6 @@ public final class TestClassInstantiator {
             """
         ).instantiate(mainScope);
         mainScope.stream.indent();
-        mainScope.stream.addNewline();
     }
 
     public class Instantiator {
@@ -140,7 +138,6 @@ public final class TestClassInstantiator {
                 Scope staticsSubScope = new Scope(staticsScope, staticsScope.fuel);
                 staticsTemplate.instantiate(staticsSubScope, parameters, replacementState);
                 staticsSubScope.stream.addNewline();
-                staticsSubScope.stream.addNewline();
                 staticsSubScope.close();
                 staticsScope.stream.addCodeStream(staticsSubScope.stream);
             }
@@ -148,7 +145,6 @@ public final class TestClassInstantiator {
             if (mainTemplate != null) {
                 Scope mainSubScope = new Scope(mainScope, mainScope.fuel);
                 mainTemplate.instantiate(mainSubScope, parameters, replacementState);
-                mainSubScope.stream.addNewline();
                 mainSubScope.close();
                 mainScope.stream.addCodeStream(mainSubScope.stream);
             }
@@ -156,7 +152,6 @@ public final class TestClassInstantiator {
             if (testTemplate != null) {
                 Scope testScope = new Scope(classScope, classScope.fuel);
                 testTemplate.instantiate(testScope, parameters, replacementState);
-                testScope.stream.addNewline();
                 testScope.stream.addNewline();
                 testScope.close();
                 classScope.stream.addCodeStream(testScope.stream);

@@ -64,7 +64,6 @@ public class Scope {
 
         public String sample(String type) {
             int c = count(type);
-            System.out.println("Sample count: " + c);
             if (c == 0) {
                 // No variable of this type
                 return null;
@@ -75,12 +74,10 @@ public class Scope {
                 int pc = parent.count(type);
                 int r = RANDOM.nextInt(c);
                 if (r < pc) {
-                    System.out.println("Sample parent: " + pc + " " + r);
                     return parent.sample(type);
                 }
             }
 
-            System.out.println("Sample local");
             ArrayList<String> locals = variables.get(type);
             int r = RANDOM.nextInt(locals.size());
             return locals.get(r);
@@ -94,7 +91,6 @@ public class Scope {
                 variables.put(type, variablesWithType);
             }
             variablesWithType.add(name);
-            System.out.println("Count after add: " + count(type));
         }
 
         public void printLocals() {
@@ -177,9 +173,6 @@ public class Scope {
     }
 
     public String sampleVariable(String type, boolean mutable) {
-        System.out.println("sample " + type + " " + mutable);
-        allVariables.print(0);
-        mutableVariables.print(0);
         return mutable ? mutableVariables.sample(type) : allVariables.sample(type);
     }
 

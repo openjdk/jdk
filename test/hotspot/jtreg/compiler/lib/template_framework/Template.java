@@ -119,8 +119,7 @@ public final class Template extends CodeGenerator {
 
     public Template(String templateName, String templateString, int fuelCost) {
         this.templateName = templateName;
-        // Trim to remove the newline at the end of mutli-line strings.
-        this.templateString = templateString.trim();
+        this.templateString = templateString;
         this.templateFuelCost = fuelCost;
     }
 
@@ -204,7 +203,6 @@ public final class Template extends CodeGenerator {
         }
 
         public void registerVariable(String name, String type, boolean mutable) {
-            System.out.println("register " + name + " " + type + " " + mutable);
             if (localVariables.containsKey(name)) {
                 currentScope.print();
                 throw new TemplateFrameworkException("Template local variable with type declaration " +
