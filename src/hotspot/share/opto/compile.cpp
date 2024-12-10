@@ -41,6 +41,7 @@
 #include "jfr/jfrEvents.hpp"
 #include "jvm_io.h"
 #include "memory/allocation.hpp"
+#include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -3021,6 +3022,20 @@ void Compile::Code_Gen() {
     output.install();
     print_method(PHASE_FINAL_CODE, 1); // Compile::_output is not null here
   }
+
+#ifdef ASSERT
+  {
+    // Don't mind me, just testing the compiler memory statistic
+    TracePhase tp(_t_testTimer);
+    // We allocate some RA, then release part of it. Note that to make a blip on the radar, sizes
+    // must be large enough to force a new arena chunk to be allocated.
+    NEW_RESOURCE_ARRAY(char, Chunk::max_default_size * 3);
+    {
+      ResourceMark rm;
+      NEW_RESOURCE_ARRAY(char, Chunk::max_default_size * 3);
+    }
+  }
+#endif
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);

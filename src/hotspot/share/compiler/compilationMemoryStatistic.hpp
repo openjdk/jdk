@@ -95,22 +95,28 @@ public:
   void add(size_t size, int arena_tag, Phase::PhaseTraceId id);
   void sub(size_t size, int arena_tag, Phase::PhaseTraceId id);
   void reset();
-  void print_on(outputStream* ss) const;
+  void print_on(outputStream* ss, bool human_readable) const;
+  bool is_empty() const;
 };
 #endif // COMPILER2
 
 // Holds all memory statistic data for the current compilation.
 // Attached to the Compiler Thread.
 class ArenaState : public CHeapObj<mtCompiler> {
+public:
+  struct Counters {
+    size_t _total;
+    ArenaCountersByTag _by_tag;
+#ifdef COMPILER2
+    CountersPerC2Phase _by_tag_and_c2_phase;
+    unsigned _live_nodes;
+#endif
+    void reset();
+  };
 
-  // Current bytes, total
-  size_t _current;
-  // bytes at last peak, total
-  size_t _peak;
-  // Current bytes used by arenas per tag
-  ArenaCountersByTag _current_by_tag;
-  // Peak composition:
-  ArenaCountersByTag _peak_by_tag;
+private:
+  Counters _counters_current;
+  Counters _counters_peak;
 
   // MemLimit handling
   size_t _limit;
@@ -121,27 +127,18 @@ class ArenaState : public CHeapObj<mtCompiler> {
   bool _active;
 
 #ifdef COMPILER2
-  // Number of live nodes when total peaked (c2 only)
-  unsigned _live_nodes_at_peak;
-  // Per-phase accounting
+  // Keep track of current C2 phase
   PhaseIdStack _phase_id_stack;
-  CountersPerC2Phase _current_phase_counters;
-  CountersPerC2Phase _peak_phase_counters;
-
   // Returns true if the current frame is running in the context of a C2 compilation.
   static bool is_c2_compilation();
 #endif // COMPILER2
 
   void reset();
 
+  static void print_counters(outputStream* st, const Counters& counters, bool is_c2_compilation);
+
 public:
   ArenaState();
-
-  // Size of peak since last compilation
-  size_t peak() const { return _peak; }
-
-  // Peak details
-  ArenaCountersByTag peak_by_tag() const { return _peak_by_tag; }
 
   // Mark the start and end of a compilation.
   void start(size_t limit);
@@ -163,12 +160,11 @@ public:
   bool   is_active() const          { return _active; }
 
 #ifdef COMPILER2
-  unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
-  void set_live_nodes_at_peak(unsigned i) { _live_nodes_at_peak = i; }
-  const CountersPerC2Phase& peak_phase_counters() const { return _peak_phase_counters; }
   void on_c2_phase_start(Phase::PhaseTraceId id);
   void on_c2_phase_end();
 #endif
+
+  const Counters& peak_counters() const { return _counters_peak; }
 };
 
 class CompilationMemoryStatistic : public AllStatic {
@@ -201,7 +197,8 @@ public:
   // Account an arena deallocation.
   static void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
 
-  static void print_all_by_size(outputStream* st, bool human_readable, size_t minsize);
+  static void print_all_by_size(outputStream* st, bool human_readable, bool by_phase, size_t minsize);
+
   // For compilers
   static const char* failure_reason_memlimit();
 };

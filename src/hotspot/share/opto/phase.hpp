@@ -67,7 +67,7 @@ public:
   };
 
 #define ALL_PHASE_TRACE_IDS(f)                                   \
-    f( _t_none,                      "none")                     \
+    f( _t_none,                      "(outside any phase)")      \
     f(   _t_parser,                  "parse")                    \
     f(   _t_optimizer,               "optimizer")                \
     f(     _t_escapeAnalysis,        "escapeAnalysis")           \
@@ -121,7 +121,8 @@ public:
     f(     _t_fillBuffer,            "fill buffer")              \
     f(     _t_registerMethod,        "install_code")             \
     f(   _t_temporaryTimer1,         "tempTimer1")               \
-    f(   _t_temporaryTimer2,         "tempTimer2")
+    f(   _t_temporaryTimer2,         "tempTimer2")               \
+    f(   _t_testTimer,               "testTimer")
 
   enum PhaseTraceId {
 #define DEFID(name, text) name,
