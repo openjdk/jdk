@@ -42,7 +42,7 @@ import tests.Result;
  * @summary Test ALL-MODULE-PATH option
  * @bug 8345259 8345573
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library ../lib /test/lib
+ * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
@@ -70,7 +70,8 @@ public class AllModulePathTest {
         PrintWriter out = new PrintWriter(baos);
         ByteArrayOutputStream berrOs = new ByteArrayOutputStream();
         PrintWriter err = new PrintWriter(berrOs);
-        JLINK_TOOL.run(out, err, allArgs.toArray(new String[] {}));
+        int rc = JLINK_TOOL.run(out, err, allArgs.toArray(new String[] {}));
+        assertTrue(rc != 0);
         OutputAnalyzer analyzer = new OutputAnalyzer(new String(baos.toByteArray(), StandardCharsets.UTF_8),
                                                      new String(berrOs.toByteArray(), StandardCharsets.UTF_8));
         analyzer.stdoutShouldContain("Error");
@@ -90,7 +91,8 @@ public class AllModulePathTest {
         PrintWriter out = new PrintWriter(baos);
         ByteArrayOutputStream berrOs = new ByteArrayOutputStream();
         PrintWriter err = new PrintWriter(berrOs);
-        JLINK_TOOL.run(out, err, allArgs.toArray(new String[] {}));
+        int rc = JLINK_TOOL.run(out, err, allArgs.toArray(new String[] {}));
+        assertTrue(rc == 0);
         OutputAnalyzer analyzer = new OutputAnalyzer(new String(baos.toByteArray(), StandardCharsets.UTF_8),
                                                      new String(berrOs.toByteArray(), StandardCharsets.UTF_8));
         analyzer.shouldBeEmpty();
@@ -111,7 +113,8 @@ public class AllModulePathTest {
         PrintWriter out = new PrintWriter(baos);
         ByteArrayOutputStream berrOs = new ByteArrayOutputStream();
         PrintWriter err = new PrintWriter(berrOs);
-        JLINK_TOOL.run(out, err, allArgs.toArray(new String[] {}));
+        int rc = JLINK_TOOL.run(out, err, allArgs.toArray(new String[] {}));
+        assertTrue(rc == 0);
         OutputAnalyzer analyzer = new OutputAnalyzer(new String(baos.toByteArray(), StandardCharsets.UTF_8),
                                                      new String(berrOs.toByteArray(), StandardCharsets.UTF_8));
         analyzer.stderrShouldBeEmpty();
@@ -121,6 +124,12 @@ public class AllModulePathTest {
         // Verify the output image's modules
         List<String> expected = List.of(moduleName, "java.base", "jdk.jfr");
         verifyListModules(targetPath, expected);
+    }
+
+    private static void assertTrue(boolean cond) {
+        if (!cond) {
+            throw new AssertionError("Expected to be true, was false");
+        }
     }
 
     private void verifyListModules(Path targetPath, List<String> expected) throws Exception {

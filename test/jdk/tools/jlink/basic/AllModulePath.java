@@ -21,16 +21,9 @@
  * questions.
  */
 
-/*
- * @test
- * @summary jlink test of --add-module ALL-MODULE-PATH
- * @library /test/lib
- * @modules jdk.compiler
- * @build jdk.test.lib.process.ProcessTools
- *        jdk.test.lib.process.OutputAnalyzer
- *        jdk.test.lib.compiler.CompilerUtils
- * @run testng AllModulePath
- */
+
+
+import static org.testng.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,22 +37,35 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.spi.ToolProvider;
-
-import jdk.test.lib.compiler.CompilerUtils;
-import jdk.test.lib.process.ProcessTools;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
 
+import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.process.ProcessTools;
+import jdk.tools.jlink.internal.LinkableRuntimeImage;
+
+/*
+ * @test
+ * @summary jlink test of --add-module ALL-MODULE-PATH
+ * @library /test/lib
+ * @modules jdk.compiler
+ *          jdk.jlink/jdk.tools.jlink.internal
+ * @build jdk.test.lib.process.ProcessTools
+ *        jdk.test.lib.process.OutputAnalyzer
+ *        jdk.test.lib.compiler.CompilerUtils
+ * @run testng/othervm AllModulePath
+ */
 public class AllModulePath {
 
-    private final Path JMODS = Paths.get(System.getProperty("test.jdk")).resolve("jmods");
-    private final Path SRC = Paths.get(System.getProperty("test.src")).resolve("src");
-    private final Path MODS = Paths.get("mods");
+    private static final Path JMODS = Paths.get(System.getProperty("test.jdk")).resolve("jmods");
+    private static final Path SRC = Paths.get(System.getProperty("test.src")).resolve("src");
+    private static final Path MODS = Paths.get("mods");
+    private static final boolean LINKABLE_RUNTIME = LinkableRuntimeImage.isLinkableRuntime();
+    private static final boolean JMODS_EXIST = Files.exists(JMODS);
 
     private final static Set<String> MODULES = Set.of("test", "m1");
 
@@ -68,9 +74,19 @@ public class AllModulePath {
             new RuntimeException("jlink tool not found")
         );
 
+    private static boolean isApplicable() {
+        if (!JMODS_EXIST) {
+            if (!LINKABLE_RUNTIME) {
+                System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+                return false;
+            }
+        }
+        return true;
+    }
+
     @BeforeClass
     public void setup() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (!isApplicable()) {
             return;
         }
 
@@ -86,7 +102,7 @@ public class AllModulePath {
 
     @Test
     public void testAllModulePath() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (!isApplicable()) {
             return;
         }
 
@@ -95,11 +111,16 @@ public class AllModulePath {
         createImage(image, "--add-modules", "ALL-MODULE-PATH");
 
         Set<String> modules = new HashSet<>();
-        Files.find(JMODS, 1, (Path p, BasicFileAttributes attr) ->
+        if (JMODS_EXIST) {
+            Files.find(JMODS, 1, (Path p, BasicFileAttributes attr) ->
                                 p.toString().endsWith(".jmod"))
-             .map(p -> JMODS.relativize(p).toString())
-             .map(n -> n.substring(0, n.length()-5))
-             .forEach(modules::add);
+                 .map(p -> JMODS.relativize(p).toString())
+                 .map(n -> n.substring(0, n.length()-5))
+                 .forEach(modules::add);
+        } else {
+            // java.base is a dependency of external modules
+            modules.add("java.base");
+        }
         modules.add("m1");
         modules.add("test");
         checkModules(image, modules);
@@ -107,7 +128,7 @@ public class AllModulePath {
 
     @Test
     public void testLimitModules() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (!isApplicable()) {
             return;
         }
 
@@ -122,7 +143,7 @@ public class AllModulePath {
 
     @Test
     public void testAddModules() throws Throwable {
-        if (Files.notExists(JMODS)) {
+        if (!isApplicable()) {
             return;
         }
 
@@ -165,7 +186,8 @@ public class AllModulePath {
     }
 
     private void createImage(Path image, String... options) throws IOException {
-        String modulepath = JMODS.toString() + File.pathSeparator + MODS.toString();
+        String modulepath = (JMODS_EXIST ? JMODS.toString() + File.pathSeparator : "")
+                                + MODS.toString();
         List<String> opts = List.of("--module-path", modulepath,
                                     "--output", image.toString());
         String[] args = Stream.concat(opts.stream(), Arrays.stream(options))
