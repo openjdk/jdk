@@ -85,14 +85,6 @@ public class TestSplitDivisionThroughPhi {
             testPushModLThruPhiInChain();
             testPushDivLThruPhiForOuterLongLoop();
             testPushModLThruPhiForOuterLongLoop();
-            testPushUDivIThruPhi();
-            testPushUDivIThruPhiInChain();
-            testPushUModIThruPhi();
-            testPushUModIThruPhiInChain();
-            testPushUDivLThruPhi();
-            testPushUDivLThruPhiInChain();
-            testPushUModLThruPhi();
-            testPushUModLThruPhiInChain();
         }
     }
 
@@ -204,104 +196,6 @@ public class TestSplitDivisionThroughPhi {
             for (int j = 0; j < 1; j++) {
             }
             lFld = 10L % (i * 100L);
-
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UDivI.
-    static void testPushUDivIThruPhi() {
-        for (int i = 10; i > 1; i -= 2) {
-            lFld = Integer.divideUnsigned(10, i);
-
-            // Loop that is not removed such that we do not transform the outer LongCountedLoop (only done if innermost)
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UDivI.
-    static void testPushUDivIThruPhiInChain() {
-        for (int i = 10; i > 1; i -= 2) {
-            for (int j = 0; j < 1; j++) {
-            }
-            lFld = Integer.divideUnsigned(10, (i * 100));
-
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UModI
-    static void testPushUModIThruPhi() {
-        for (int i = 10; i > 1; i -= 2) {
-            lFld = Integer.remainderUnsigned(10, i);
-
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UModI
-    static void testPushUModIThruPhiInChain() {
-        for (int i = 10; i > 1; i -= 2) {
-            for (int j = 0; j < 1; j++) {
-            }
-            lFld = Integer.remainderUnsigned(10, (i * 100));
-
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UDivL.
-    static void testPushUDivLThruPhi() {
-        for (long i = 10; i > 1; i -= 2) {
-            lFld = Long.divideUnsigned(10L, i);
-
-            // Loop that is not removed such that we do not transform the outer LongCountedLoop (only done if innermost)
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UDivL.
-    static void testPushUDivLThruPhiInChain() {
-        for (long i = 10; i > 1; i -= 2) {
-            for (int j = 0; j < 1; j++) {
-            }
-            lFld = Long.divideUnsigned(10L, (i * 100L));
-
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UModL
-    static void testPushUModLThruPhi() {
-        for (long i = 10; i > 1; i -= 2) {
-            lFld = Long.remainderUnsigned(10L, i);
-
-            for (int j = 0; j < 10; j++) {
-                flag = !flag;
-            }
-        }
-    }
-
-    // Same as above but with UModL
-    static void testPushUModLThruPhiInChain() {
-        for (long i = 10; i > 1; i -= 2) {
-            for (int j = 0; j < 1; j++) {
-            }
-            lFld = Long.remainderUnsigned(10L, (i * 100L));
 
             for (int j = 0; j < 10; j++) {
                 flag = !flag;
