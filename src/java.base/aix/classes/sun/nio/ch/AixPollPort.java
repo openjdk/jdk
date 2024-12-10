@@ -28,6 +28,8 @@ package sun.nio.ch;
 
 import java.nio.channels.spi.AsynchronousChannelProvider;
 import sun.nio.ch.Pollset;
+import sun.nio.ch.IOUtil;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -142,7 +144,7 @@ final class AixPollPort
         try {
             Pollset.socketpair(sv);
             // make the reading part of the socket nonblocking, so the drain (drain_all) method works
-            Pollset.configureBlocking(sv[0], false);
+            IOUtil.configureBlocking(IOUtil.newFD(sv[0]), false);
             // register one end with pollset
             Pollset.pollsetCtl(pollset, Pollset.PS_ADD, sv[0], Net.POLLIN);
         } catch (IOException x) {

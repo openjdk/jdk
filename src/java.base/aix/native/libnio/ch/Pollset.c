@@ -183,15 +183,3 @@ Java_sun_nio_ch_Pollset_close0(JNIEnv *env, jclass c, jint fd) {
     int res;
     RESTARTABLE(close(fd), res);
 }
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_Pollset_configureBlocking(JNIEnv *env, jclass c, jint fd, jboolean blocking) {
-    int flags = fcntl(fd, F_GETFL);
-    int newflags = blocking ? (flags & ~O_NONBLOCK) : (flags | O_NONBLOCK);
-
-    if (flags != newflags) {
-        if (fcntl(fd, F_SETFL, newflags) < 0) {
-            JNU_ThrowIOExceptionWithLastError(env, "Configure blocking failed");
-        }
-    }
-}
