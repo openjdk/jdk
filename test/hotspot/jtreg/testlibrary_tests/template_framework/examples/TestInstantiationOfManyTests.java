@@ -158,7 +158,9 @@ public class TestInstantiationOfManyTests {
             }
             """
         );
-        instantiator.add(staticsTemplate2, mainTemplate2, testTemplate2);
+        // We instantiate these templates in 3 sets. Every set internally shares the
+        // replacements and variables.
+        instantiator.repeat(3).add(staticsTemplate2, mainTemplate2, testTemplate2);
 
         // Collect everything into a String.
         return instantiator.instantiate();

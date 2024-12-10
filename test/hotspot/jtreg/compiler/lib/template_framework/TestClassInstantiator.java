@@ -81,6 +81,7 @@ public final class TestClassInstantiator {
         private final Template mainTemplate = null;
         private final Template testTemplate = null;
         private final HashMap<String,List<String>> argumentsMap = new HashMap<String,List<String>>();
+        private int repeatCount = 1;
 
         Instantiator(TestClassInstantiator parent) {
             this.parent = parent;
@@ -94,7 +95,11 @@ public final class TestClassInstantiator {
 
             ArrayList<Parameters> setOfParameters = parametersCrossProduct();
             for (Parameters p : setOfParameters) {
-                generate(staticsTemplate, mainTemplate, testTemplate, p);
+                for (int i = 0; i < repeatCount; i++) {
+                    // If we have more than 1 set, we must clone the parameters, so that we get a unique ID.
+                    p = (i == 0) ? p : new Parameters(p.getArguments());
+                    generate(staticsTemplate, mainTemplate, testTemplate, p);
+                }
             }
         }
 
@@ -169,6 +174,17 @@ public final class TestClassInstantiator {
             argumentsMap.put(paramKey, paramValues);
             return this;
         }
+
+        public Instantiator repeat(int repeatCount) {
+            if (repeatCount <= 2 || repeatCount > 1000) {
+                throw new TemplateFrameworkException("Bad repeat count: " + repeatCount + " should be 2..1000");
+            }
+            if (this.repeatCount > 1) {
+                throw new TemplateFrameworkException("Repeat count already set.");
+            }
+            this.repeatCount = repeatCount;
+            return this;
+        }
     }
 
     public void add(Template staticsTemplate, Template mainTemplate, Template testTemplate) {
@@ -181,6 +197,10 @@ public final class TestClassInstantiator {
 
     public Instantiator where(String paramKey, List<String> paramValues) {
         return new Instantiator(this).where(paramKey, paramValues);
+    }
+
+    public Instantiator repeat(int repeatCount) {
+        return new Instantiator(this).repeat(repeatCount);
     }
 
     public String instantiate() {
