@@ -24,6 +24,7 @@
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -62,6 +63,9 @@ public class AllModulePathTest {
         this.helper = helper;
     }
 
+    /*
+     * No --module-path with --add-modules ALL-MODULE-PATH is an error.
+     */
     private void noModulePath() {
         Path targetPath = helper.createNewImageDir("all-mod-path-no-mod-path");
         List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
@@ -78,6 +82,34 @@ public class AllModulePathTest {
         analyzer.stdoutShouldContain("ALL-MODULE-PATH requires --module-path option");
     }
 
+    /*
+     * --module-path not-exist and --add-modules ALL-MODULE-PATH is an error.
+     */
+    private void modulePathEmpty() {
+        Path targetPath = helper.createNewImageDir("all-mod-path-not-existing");
+        Path notExists = Path.of("not-exist");
+        if (Files.exists(notExists)) {
+            throw new RuntimeException("Test setup error, path must not exist!");
+        }
+        List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
+                                       "--module-path", notExists.toString(),
+                                       "--output", targetPath.toString());
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintWriter out = new PrintWriter(baos);
+        ByteArrayOutputStream berrOs = new ByteArrayOutputStream();
+        PrintWriter err = new PrintWriter(berrOs);
+        int rc = JLINK_TOOL.run(out, err, allArgs.toArray(new String[] {}));
+        assertTrue(rc != 0);
+        OutputAnalyzer analyzer = new OutputAnalyzer(new String(baos.toByteArray(), StandardCharsets.UTF_8),
+                                                     new String(berrOs.toByteArray(), StandardCharsets.UTF_8));
+        analyzer.stdoutShouldContain("Error");
+        analyzer.stdoutShouldContain("ALL-MODULE-PATH requires --module-path option");
+    }
+
+    /*
+     * --add-modules ALL-MODULE-PATH with an existing module path and module
+     * limits applied.
+     */
     private void modulePathWithLimitMods() throws Exception {
         Path targetPath = helper.createNewImageDir("all-mods-limit-mods");
         String moduleName = "com.baz.runtime";
@@ -100,6 +132,9 @@ public class AllModulePathTest {
         verifyListModules(targetPath, expected);
     }
 
+    /*
+     * --add-modules ALL-MODULE-PATH with an existing module-path.
+     */
     private void modulePath() throws Exception {
         Path targetPath = helper.createNewImageDir("all-mod-path-w-mod-path");
         String moduleName = "com.foo.runtime";
@@ -158,6 +193,7 @@ public class AllModulePathTest {
         }
         AllModulePathTest test = new AllModulePathTest(helper);
         test.noModulePath();
+        test.modulePathEmpty();
         test.modulePath();
         test.modulePathWithLimitMods();
     }

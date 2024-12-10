@@ -370,10 +370,15 @@ public class JlinkTask {
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
         // Empty module path not allowed with ALL-MODULE-PATH in --add-modules
-        if (options.modulePath.isEmpty() && options.addMods.contains(ALL_MODULE_PATH)) {
+        boolean hasAllModulePath = options.addMods.contains(ALL_MODULE_PATH);
+        if (options.modulePath.isEmpty() && hasAllModulePath) {
             throw taskHelper.newBadArgs("err.all.module.path.empty.mod.path");
         }
         ModuleFinder initialFinder = createFinderFromPath(options.modulePath);
+        if (hasAllModulePath && initialFinder.findAll().isEmpty()) {
+            // ALL-MODULE-PATH and empty module paths are an error.
+            throw taskHelper.newBadArgs("err.all.module.path.empty.mod.path");
+        }
         boolean isLinkFromRuntime = determineLinkFromRuntime(initialFinder, options.modulePath);
         ModuleFinder rootsFinder = isLinkFromRuntime ? ModuleFinder.compose(ModuleFinder.ofSystem(),
                                                                             initialFinder) :
