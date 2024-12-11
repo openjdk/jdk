@@ -32,20 +32,18 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_Package_info}, representing a package, in the
  * constant pool of a {@code class} file.
  * <p>
- * Conceptually, a package entry is a record:
- * {@snippet lang=text :
- * // @link substring="PackageEntry" target="ConstantPoolBuilder#packageEntry(PackageDesc)" :
- * PackageEntry(PackageDesc) // @link substring="PackageDesc" target="#asSymbol()"
- * }
- * where the {@code PackageDesc} must not be the unnamed package.
+ * The use of a {@code PackageEntry} is represented by a {@link PackageDesc}
+ * that does not represent the unnamed package.  Conversions are through
+ * {@link ConstantPoolBuilder#packageEntry(PackageDesc)} and
+ * {@link #asSymbol()}.
  * <p>
- * Physically, a package entry is a record:
+ * A package entry is composite:
  * {@snippet lang=text :
  * // @link substring="PackageEntry" target="ConstantPoolBuilder#packageEntry(Utf8Entry)" :
- * PackageEntry(Utf8Entry) // @link substring="Utf8Entry" target="#name()"
+ * PackageEntry(Utf8Entry name) // @link substring="name" target="#name()"
  * }
- * where the {@code Utf8Entry} is the {@linkplain ClassEntry##internal-name
- * internal form} of a binary package name and is not empty.
+ * where {@code name} is the {@linkplain ClassEntry##internal-name internal form}
+ * of a binary package name and is not empty.
  *
  * @jvms 4.4.12 The {@code CONSTANT_Package_info} Structure
  * @since 24

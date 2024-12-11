@@ -47,7 +47,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Builder for the constant pool of a {@code class} file.  Provides read and
  * write access to the constant pool that is {@linkplain ClassFileBuilder#constantPool()
- * being built}.  Writing is append-only (the index of new entries will always
+ * being built}.  Writing is append-only (the index of new entries monotonically
  * increase) and idempotent (entry-bearing methods will return an existing entry
  * if there is a suitable one).
  * <p>
@@ -58,24 +58,32 @@ import static java.util.Objects.requireNonNull;
  * ClassFile.ConstantPoolSharingOption} controls how the constant pool builder
  * of the resulting {@code class} is created.
  *
- * <h2 id="adoption">Non-directly-writable constant pool entries</h2>
+ * <h2 id="foreign">Foreign constant pool entries</h2>
  * In {@code class} file building and constant pool building, some constant pool
- * entries supplied will not be {@linkplain #canWriteDirect(ConstantPool)
- * directly writable} to this constant pool.  For example, {@link #classEntry(Utf8Entry)
- * classEntry(Utf8Entry)} may be called with an UTF8 entry not directly writable.
- * Such entries will be first converted to a pool entry in this builder, reusing
- * suitable entries or adding new entries if there is none suitable.  As a
- * result, all pool entries returned by writing methods in this builder is
- * directly writable to this constant pool.
+ * entries supplied will be {@linkplain #canWriteDirect(ConstantPool) foreign}
+ * to this constant pool builder of the active class file builder.  For example,
+ * {@link #classEntry(Utf8Entry) classEntry(Utf8Entry)} may be called with a
+ * foreign UTF8 entry.  Foreign entries will be converted to a pool entry in
+ * this constant pool builder, reusing equivalent entries or adding new entries
+ * if there is none.  As a result, all pool entries returned by entry-bearing
+ * methods in this constant pool builder belong to this constant pool.
  * <p>
- * Some non-constant-pool builder methods may have their outputs adjusted if
- * they receive non-directly-writable pool entries.  For example, if an {@link
- * ConstantInstruction#ofLoad ldc_w} instruction with a non-directly-writable
- * entry is written to a {@link CodeBuilder}, the {@code CodeBuilder} may emit
- * a functionally equivalent {@code ldc} instruction instead, if the converted
- * entry can be encoded in such an instruction.
+ * Some {@link ClassFileBuilder} methods may have their outputs adjusted if they
+ * receive pool entries foreign to {@linkplain ClassFileBuilder#constantPool
+ * their constant pools}.  For example, if an {@link ConstantInstruction#ofLoad
+ * ldc_w} instruction with a foreign entry is written to a {@link CodeBuilder},
+ * the {@code CodeBuilder} may emit a functionally equivalent {@code ldc}
+ * instruction instead, if the converted entry can be encoded in such an
+ * instruction.
+ * <p>
+ * To avoid the conversion of foreign constant pool entries, such as for the
+ * accuracy of the generated {@code class} file, users can always supply
+ * constant pool entries obtained by calling the constant pool builder
+ * entry-bearing methods of the constant pools associated with the {@code
+ * ClassFileBuilder}.  Otherwise, the conversions have no impact on the
+ * behaviors of the generated {@code class} files.
  *
- * @see ClassFileBuilder#constantPool() ClassFileBuilder::constantPool
+ * @see ClassFileBuilder#constantPool()
  * @since 24
  */
 public sealed interface ConstantPoolBuilder
@@ -91,9 +99,7 @@ public sealed interface ConstantPoolBuilder
      *
      * @param classModel the class to copy from
      * @see ClassFile#build(ClassEntry, ConstantPoolBuilder, Consumer)
-     *      ClassFile::build(ClassEntry, ConstantPoolBuilder, Consumer)
      * @see ClassFile.ConstantPoolSharingOption#SHARED_POOL
-     *      ConstantPoolSharingOption.SHARED_POOL
      */
     static ConstantPoolBuilder of(ClassModel classModel) {
         return new SplitConstantPool((ClassReaderImpl) classModel.constantPool());
@@ -104,7 +110,6 @@ public sealed interface ConstantPoolBuilder
      * will be empty.  The index of new entries will start from {@code 1}.
      *
      * @see ClassFile.ConstantPoolSharingOption#NEW_POOL
-     *      ConstantPoolSharingOption.NEW_POOL
      */
     static ConstantPoolBuilder of() {
         return new SplitConstantPool();
@@ -115,9 +120,14 @@ public sealed interface ConstantPoolBuilder
      * pool refers to the same entry in this builder}  This may be because they
      * are the same builder, or because this builder was {@linkplain
      * #of(ClassModel) pre-populated} from the given constant pool.
+     * <p>
+     * If the constant pool of an entry is not directly writable to this pool,
+     * it is foreign to this pool, and a {@link ClassFileBuilder} associated
+     * with this constant pool will convert that foreign constant pool entry.
      *
      * @param constantPool the given constant pool
-     * @see ##adoption Non-directly-writable constant pool entries
+     * @see ClassFileBuilder#constantPool() ClassFileBuilder::constantPool
+     * @see ##foreign Foreign constant pool entries
      */
     boolean canWriteDirect(ConstantPool constantPool);
 
@@ -136,7 +146,8 @@ public sealed interface ConstantPoolBuilder
      *
      * @apiNote
      * The resulting {@code Utf8Entry} is usually not {@linkplain
-     * #classEntry(Utf8Entry) referable by} a {@link ClassEntry}.
+     * #classEntry(Utf8Entry) referable by} a {@link ClassEntry}, which uses
+     * internal form of binary names.
      *
      * @param desc the symbolic descriptor for the class
      */

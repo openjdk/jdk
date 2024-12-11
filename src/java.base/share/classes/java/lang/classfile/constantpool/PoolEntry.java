@@ -26,22 +26,26 @@ package java.lang.classfile.constantpool;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassFileBuilder;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 
 /**
- * Models an entry in the constant pool of a {@code class} file.
+ * Models an entry in the constant pool of a {@code class} file.  Entries are
+ * read from {@code class} files, and can be created with a {@link
+ * ConstantPoolBuilder} to write to {@code class} files.
  *
  * @implNote
- * <h2 id="unbound">Unbound constant pool entries</h2>
+ * <h2 id="unbound">Unbound Constant Pool Entries</h2>
  * Implementations may create unbound constant pool entries not belonging to
- * an actual constant pool.  They are convenient to represent constant pool
- * entries referred by unbound {@linkplain Attribute attributes}.  Their
- * {@link #constantPool() constantPool()} returns a dummy constant pool that
- * throws {@link UnsupportedOperationException} upon queries, their {@link
- * #index() index()} return a non-positive invalid value, and they will always
- * be converted by the {@linkplain ClassFileBuilder#constantPool() contextual
- * constant pool} when they are written to {@code class} files.
+ * an actual constant pool.  They conveniently represent constant pool entries
+ * referred by unbound {@linkplain Attribute attributes} not read from a {@code
+ * class} file.  Their {@link #index() index()} return a non-positive invalid
+ * value, and behaviors of their {@link #constantPool() constantPool()} are
+ * unspecified.  They are considered foreign to any {@linkplain
+ * ClassFileBuilder#constantPool() contextual constant pool} and will be
+ * converted when they are written to {@code class} files.
  *
- * @see ConstantPoolBuilder##adoption Non-directly-writable constant pool entries
+ * @see ConstantPoolBuilder##foreign Foreign constant pool entries
  * @sealedGraph
  * @since 24
  */
@@ -106,11 +110,11 @@ public sealed interface PoolEntry
      *
      * @apiNote
      * Given a {@link ConstantPoolBuilder} {@code builder} and a {@code
-     * PoolEntry} {@code entry}, use {@link ConstantPoolBuilder#canWriteDirect
+     * PoolEntry entry}, use {@link ConstantPoolBuilder#canWriteDirect
      * builder.canWriteDirect(entry.constantPool())} instead of object equality
-     * of the constant pool to determine if an entry is compatible.
+     * of the constant pool to determine if an entry belongs to the builder.
      *
-     * @see ##unbound Unbound constant pool entries
+     * @see ##unbound Unbound Constant Pool Entries
      */
     ConstantPool constantPool();
 
@@ -128,7 +132,7 @@ public sealed interface PoolEntry
      * A valid index is always positive; if the index is non-positive, this
      * entry is {@linkplain ##unbound unbound}.
      *
-     * @see ##unbound Unbound constant pool entries
+     * @see ##unbound Unbound Constant Pool Entries
      */
     int index();
 
@@ -139,6 +143,16 @@ public sealed interface PoolEntry
      * DoubleEntry CONSTANT_Double} have width {@code 1}. These two exceptions
      * have width {@code 2}, and their subsequent indices at {@link #index()
      * index() + 1} are considered unusable.
+     *
+     * @apiNote
+     * If this entry is {@linkplain LoadableConstantEntry loadable}, the width
+     * of this entry does not decide if this entry should be loaded with {@link
+     * Opcode#LDC ldc} or {@link Opcode#LDC2_W ldc2_w}.  For example, {@link
+     * ConstantDynamicEntry} always has width {@code 1}, but it must be loaded
+     * with {@code ldc2_w} if its {@linkplain ConstantDynamicEntry#typeKind()
+     * type} is {@link TypeKind#LONG long} or {@link TypeKind#DOUBLE double}.
+     * Use {@link LoadableConstantEntry#typeKind() typeKind().slotSize()} to
+     * determine the loading instruction instead.
      *
      * @see ConstantPool##index Index in the Constant Pool
      */

@@ -32,15 +32,10 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_Float_info} structure, or a {@code float} constant,
  * in the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a float entry is a record:
- * {@snippet lang=text :
- * // @link substring="FloatEntry" target="ConstantPoolBuilder#floatEntry(float)" :
- * FloatEntry(float) // @link substring="float" target="#floatValue()"
- * }
- * where all NaN values of the {@code float} may be collapsed into a single
- * "canonical" NaN value.
- * <p>
- * Physically, a float entry stores an arbitrary 4-byte value.
+ * The use of a {@code FloatEntry} is modeled by a {@code float}.  Conversions
+ * are through {@link ConstantPoolBuilder#floatEntry} and {@link #floatValue()}.
+ * In the conversions, all NaN values of the {@code float} may be collapsed into
+ * a single {@linkplain Float#NaN "canonical" NaN value}.
  *
  * @see ConstantPoolBuilder#floatEntry ConstantPoolBuilder::floatEntry
  * @jvms 4.4.4 The {@code CONSTANT_Integer_info} and {@code CONSTANT_Float_info}
@@ -55,7 +50,6 @@ public sealed interface FloatEntry
      * {@return the {@code float} value}
      *
      * @see ConstantPoolBuilder#floatEntry(float)
-     *      ConstantPoolBuilder::floatEntry(float)
      */
     float floatValue();
 

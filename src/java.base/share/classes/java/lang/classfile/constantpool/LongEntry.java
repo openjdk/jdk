@@ -32,15 +32,10 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_Long_info} structure, or a {@code long} constant, in
  * the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a long entry is a record:
- * {@snippet lang=text :
- * // @link substring="LongEntry" target="ConstantPoolBuilder#longEntry(long)" :
- * LongEntry(long) // @link substring="long" target="#longValue()"
- * }
+ * The use of a {@code LongEntry} is modeled by a {@code long}.  Conversions are
+ * through {@link ConstantPoolBuilder#longEntry(long)} and {@link #longValue()}.
  * <p>
- * Physically, a long entry stores an arbitrary 8-byte value.
- * <p>
- * This constant has a {@linkplain #width() width} of {@code 2}, making its
+ * A long entry has a {@linkplain #width() width} of {@code 2}, making its
  * subsequent constant pool index valid and unusable.
  *
  * @see ConstantPoolBuilder#longEntry ConstantPoolBuilder::longEntry

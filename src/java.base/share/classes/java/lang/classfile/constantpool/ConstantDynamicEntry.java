@@ -37,20 +37,19 @@ import jdk.internal.classfile.impl.Util;
  * "dynamically-computed constant"}</dfn>, in the constant pool of a {@code
  * class} file.
  * <p>
- * Conceptually, a constant dynamic entry is a record:
- * {@snippet lang=text :
- * // @link substring="ConstantDynamicEntry" target="ConstantPoolBuilder#constantDynamicEntry(DynamicConstantDesc)" :
- * ConstantDynamicEntry(DynamicConstantDesc) // @link substring="DynamicConstantDesc" target="#asSymbol()"
- * }
+ * The use of a {@code ConstantDynamicEntry} is modeled by a {@link
+ * DynamicConstantDesc}.  Conversions are through {@link #asSymbol()} and {@link
+ * ConstantPoolBuilder#constantDynamicEntry(DynamicConstantDesc)}.
  * <p>
- * Physically, a constant dynamic entry is a record:
+ * A dynamic constant entry is composite:
  * {@snippet lang=text :
- * // @link region substring="ConstantDynamicEntry" target="ConstantPoolBuilder#constantDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry)"
- * // @link substring="BootstrapMethodEntry" target="#bootstrap()"
- * ConstantDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
- * // @end
+ * // @link substring="ConstantDynamicEntry" target="ConstantPoolBuilder#constantDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry)" :
+ * ConstantDynamicEntry(
+ *     BootstrapMethodEntry bootstrap, // @link substring="bootstrap" target="#bootstrap()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
  * }
- * where the type in the {@code NameAndTypeEntry} is a {@linkplain #typeSymbol()
+ * where {@link #type() nameAndType.type()} is a {@linkplain #typeSymbol()
  * field descriptor} string.
  *
  * @apiNote

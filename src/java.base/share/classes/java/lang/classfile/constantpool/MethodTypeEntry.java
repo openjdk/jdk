@@ -33,18 +33,16 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_MethodType_info} structure, or a symbolic reference
  * to a method type, in the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a method type entry is a record:
- * {@snippet lang=text :
- * // @link substring="MethodTypeEntry" target="ConstantPoolBuilder#methodTypeEntry(MethodTypeDesc)" :
- * MethodTypeEntry(MethodTypeDesc) // @link substring="MethodTypeDesc" target="#asSymbol()"
- * }
+ * The use of a {@code MethodTypeEntry} is modeled by a {@link MethodTypeDesc}.
+ * Conversions are through {@link ConstantPoolBuilder#methodTypeEntry(MethodTypeDesc)}
+ * and {@link #asSymbol()}.
  * <p>
- * Physically, a method type entry is a record:
+ * A method type entry is composite:
  * {@snippet lang=text :
  * // @link substring="MethodTypeEntry" target="ConstantPoolBuilder#methodTypeEntry(Utf8Entry)" :
- * MethodTypeEntry(Utf8Entry) // @link substring="Utf8Entry" target="#descriptor()"
+ * MethodTypeEntry(Utf8Entry descriptor) // @link substring="descriptor" target="#descriptor()"
  * }
- * where the {@code Utf8Entry} is a {@linkplain #asSymbol() method descriptor}
+ * where {@code descriptor} is a {@linkplain #asSymbol() method descriptor}
  * string.
  *
  * @jvms 4.4.9 The {@code CONSTANT_MethodType_info} Structure

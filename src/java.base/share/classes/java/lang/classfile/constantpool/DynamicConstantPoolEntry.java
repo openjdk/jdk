@@ -31,15 +31,16 @@ import java.lang.classfile.BootstrapMethodEntry;
  * include {@link ConstantDynamicEntry} and {@link InvokeDynamicEntry}, in the
  * constant pool of a {@code class} file.
  * <p>
- * Conceptually, dynamically-computed constant pool entries are not treated as
- * a single type.  The subtypes appear in distinct locations and serve distinct
- * purposes.  They resemble each other structurally and share parts of their
- * resolution processes.
+ * Different types of dynamically-computed constant pool entries bear structural
+ * similarities, but they appear in distinct locations.  As a result, their uses
+ * are represented by different symbolic descriptors, specific to each subtype.
  * <p>
- * Physically, a dynamically-computed constant pool entry is a record:
+ * A dynamic constant entry is composite:
  * {@snippet lang=text :
- * // @link substring="BootstrapMethodEntry" target="#bootstrap()" :
- * DynamicConstantPoolEntry(BootstrapMethodEntry, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
+ * DynamicConstantPoolEntry(
+ *     BootstrapMethodEntry bootstrap, // @link substring="bootstrap" target="#bootstrap()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
  * }
  *
  * @see java.lang.invoke##jvm_mods Dynamic resolution of call sites and

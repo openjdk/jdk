@@ -36,21 +36,23 @@ import jdk.internal.classfile.impl.Util;
  * reference to a <dfn>{@index "dynamically-computed call site"}</dfn>, in the
  * constant pool of a {@code class} file.
  * <p>
- * Conceptually, an invoke dynamic entry is a record:
- * {@snippet lang=text :
- * // @link substring="InvokeDynamicEntry" target="ConstantPoolBuilder#constantDynamicEntry(DynamicConstantDesc)" :
- * InvokeDynamicEntry(DynamicCallSiteDesc) // @link substring="DynamicCallSiteDesc" target="#asSymbol()"
- * }
+ * The use of a {@code InvokeDynamicEntry} is modeled by a {@link
+ * DynamicCallSiteDesc} symbolic descriptor.  It can be obtained from {@link
+ * #asSymbol() InvokeDynamicEntry::asSymbol} and converted back to a constant
+ * pool entry through {@link ConstantPoolBuilder#invokeDynamicEntry(DynamicCallSiteDesc)
+ * ConstantPoolBuilder::invokeDynamicEntry}.
  * <p>
- * Physically, an invoke dynamic entry is a record:
+ * An invoke dynamic entry is composite:
  * {@snippet lang=text :
- * // @link region substring="InvokeDynamicEntry" target="ConstantPoolBuilder#constantDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry)"
- * // @link substring="BootstrapMethodEntry" target="#bootstrap()"
- * InvokeDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
+ * // @link substring="InvokeDynamicEntry" target="ConstantPoolBuilder#invokeDynamicEntry(BootstrapMethodEntry, NameAndTypeEntry)" :
+ * InvokeDynamicEntry(
+ *     BootstrapMethodEntry bootstrap, // @link substring="bootstrap" target="#bootstrap()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
  * // @end
  * }
- * where the type in the {@code NameAndTypeEntry} is a {@linkplain #typeSymbol()
- * method descriptor} string.
+ * where the {@link #type() type} in the {@code nameAndType} is a {@linkplain
+ * #typeSymbol() method descriptor} string.
  *
  * @apiNote
  * A dynamically-computed call site is frequently called a <dfn>{@index "dynamic
@@ -59,6 +61,8 @@ import jdk.internal.classfile.impl.Util;
  *
  * @see ConstantPoolBuilder#invokeDynamicEntry
  *      ConstantPoolBuilder::invokeDynamicEntry
+ * @see DynamicCallSiteDesc
+ * @see java.lang.invoke##indyinsn Dynamically-computed call sites
  * @jvms 4.4.10 The {@code CONSTANT_Dynamic_info} and {@code
  *              CONSTANT_InvokeDynamic_info} Structures
  * @since 24

@@ -38,8 +38,8 @@
  * When read from {@code class} files, the pool entries are lazily inflated; the contents of these entries, besides the
  * bare structure, are not evaluated to speed up parsing.  Entries to users interest, usually accessed from other models
  * and elements, have their contents read on demand.  For example, to search for methods, a user should filter first by
- * access flags and then by method name, and use {@link Utf8Entry#equalsString(String) Utf8Entry::equalsString} instead
- * of checking equality with the string value.  This avoids inflation of UTF-8 entries as much as possible:
+ * access flags and then by method name, and use {@link Utf8Entry#equalsString(String)} instead of checking equality
+ * against {@link Utf8Entry#stringValue()}.  This avoids inflation of UTF-8 entries as much as possible:
  * {@snippet lang="java" class="PackageSnippets" region="isStaticWorkMethod"}
  * <p>
  * The entries also define accessors to validated symbolic information with nominal descriptor abstractions from the
@@ -50,16 +50,17 @@
  * <p>
  * Due to the lazy nature of {@code class} file parsing, {@link IllegalArgumentException} indicating malformed
  * {@code class} file data can be thrown at any method invocation.  For example, an exception may come from a {@link
- * ClassEntry} when it is first read from the constant pool (referring to an illegal entry), when its referred Utf8
- * entry is expanded (malformed Utf8 data), or when its symbolic information is accessed (the string is not valid).
+ * ClassEntry} when it is first read from the constant pool (referring to an invalid index or wrong type of entry), when
+ * its referred UTF-8 entry is expanded (malformed UTF-8 data), or when its symbolic information is accessed (the string
+ * is not valid for a class entry).
  *
  * <h2 id="writing">Writing the constant pool entries</h2>
  * In general, users do not need to worry about working with the constant pool and its entries when writing {@code
  * class} files.  Most Class-File API models and elements have two sets of factory methods: one that accepts symbolic
- * information, and another that accepts physical constant pool entries.  The constant pool builder associated with
- * {@code class} file builders, {@link ClassFileBuilder#constantPool ClassFileBuilder::constantPool}, automatically
- * creates or reuses pool entries from the symbolic information.  Validated data in symbolic information helps {@code
- * class} file generation by avoiding extraneous parsing of raw constant pool entry data.
+ * information representing the uses, and another that accepts constant pool entries.  The constant pool builder
+ * associated with {@code class} file builders, {@link ClassFileBuilder#constantPool}, automatically creates or reuses
+ * pool entries from the symbolic information.  Validated data in symbolic information helps {@code class} file
+ * generation by avoiding extraneous parsing of raw constant pool entry data.
  * <p>
  * As always, users can use factories that accept constant pool entries if they already have them by hand, or if they
  * desire fine-grained control over {@code class} file generation.

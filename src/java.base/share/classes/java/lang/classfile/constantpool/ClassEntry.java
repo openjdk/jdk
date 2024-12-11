@@ -31,24 +31,29 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
  * Models a {@code CONSTANT_Class_info} structure, representing a reference
- * type, in the constant pool of a {@code class} file.  This describes a class
- * or interface with the internal form of its binary name (JVMS {@jvms 4.2.1}),
- * or an array type with its descriptor string (JVMS {@jvms 4.3.2}).
+ * type, in the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a class entry is a record:
- * {@snippet lang=text :
- * // @link substring="ClassEntry" target="ConstantPoolBuilder#classEntry(ClassDesc)" :
- * ClassEntry(ClassDesc) // @link substring="ClassDesc" target="#asSymbol()"
- * }
- * where the {@code ClassDesc} must not be primitive.
+ * The use of a {@code ClassEntry} is modeled by a {@link ClassDesc}, which must
+ * not be primitive.  Conversions are through {@link ConstantPoolBuilder#classEntry(
+ * ClassDesc)} and {@link #asSymbol()}.
  * <p>
- * Physically, a class entry is a record:
+ * A {@code ClassEntry} is composite:
  * {@snippet lang=text :
  * // @link substring="ClassEntry" target="ConstantPoolBuilder#classEntry(Utf8Entry)" :
- * ClassEntry(Utf8Entry) // @link substring="Utf8Entry" target="Utf8Entry"
+ * ClassEntry(Utf8Entry name) // @link substring="name" target="#name"
  * }
- * where the {@code Utf8Entry} is a valid internal form of binary name or array
- * type descriptor string.
+ * where {@code name} represents:
+ * <ul>
+ * <li>The internal form of a binary name (JVMS {@jvms 4.2.1}), if and only if
+ * this {@code ClassEntry} represents a class or interface, such as {@code
+ * java/lang/String} for the {@link String} class.
+ * <li>A field descriptor string (JVMS {@jvms 4.3.2}) representing an array type,
+ * if and only if this {@code ClassEntry} represents an array type, such as
+ * {@code [I} for the {@code int[]} type, or {@code [Ljava/lang/String;} for the
+ * {@code String[]} type.
+ * </ul>
+ * A field descriptor string for an array type can be distinguished by its
+ * leading {@code '['} character.
  *
  * @apiNote
  * The internal form of a binary name, where all occurrences of {@code .} in the
@@ -76,7 +81,7 @@ public sealed interface ClassEntry
     }
 
     /**
-     * {@return the {@code Utf8Entry} referred by this class entry}  If the
+     * {@return the {@code Utf8Entry} referred by this structure}  If the
      * value of the UTF8 starts with a {@code [}, this represents an array type
      * and the value is a descriptor string; otherwise, this represents a class
      * or interface and the value is the {@linkplain ##internal-name internal
@@ -90,8 +95,7 @@ public sealed interface ClassEntry
     /**
      * {@return the represented reference type, as the {@linkplain
      * ##internal-name internal form} of a binary name or an array descriptor
-     * string}  The return value is equivalent to {@link #name()
-     * name().stringValue()}.
+     * string}  This is a shortcut for {@link #name() name().stringValue()}.
      */
     String asInternalName();
 

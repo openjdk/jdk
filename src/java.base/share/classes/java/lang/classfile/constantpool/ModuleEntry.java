@@ -32,18 +32,16 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_Module_info} structure, denoting a module, in the
  * constant pool of a {@code class} file.
  * <p>
- * Conceptually, a module entry is a record:
- * {@snippet lang=text :
- * // @link substring="ModuleEntry" target="ConstantPoolBuilder#moduleEntry(ModuleDesc)" :
- * ModuleEntry(ModuleDesc) // @link substring="ModuleDesc" target="#asSymbol()"
- * }
+ * The use of a {@code ModuleEntry} is modeled by a {@link ModuleDesc}.
+ * Conversions are through {@link ConstantPoolBuilder#moduleEntry(ModuleDesc)}
+ * and {@link #asSymbol()}.
  * <p>
- * Physically, a module entry is a record:
+ * A module entry is composite:
  * {@snippet lang=text :
  * // @link substring="ModuleEntry" target="ConstantPoolBuilder#moduleEntry(Utf8Entry)" :
- * ModuleEntry(Utf8Entry) // @link substring="Utf8Entry" target="#name()"
+ * ModuleEntry(Utf8Entry name) // @link substring="name" target="#name()"
  * }
- * where the {@code Utf8Entry} is a {@linkplain #asSymbol() module name}.
+ * where {@code name} is a {@linkplain #asSymbol() module name}.
  *
  * @jvms 4.4.11 The {@code CONSTANT_Module_info} Structure
  * @since 24

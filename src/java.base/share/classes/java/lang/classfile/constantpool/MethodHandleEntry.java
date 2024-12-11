@@ -34,22 +34,23 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 /**
  * Models a {@code CONSTANT_MethodHandle_info} structure, or a symbolic
  * reference to a {@linkplain MethodHandle method handle}, in the constant pool
- * of a {@code class} file.
+ * of a {@code class} file.  The method handle directly accesses an accessible
+ * method, field, or constructor.
  * <p>
- * Conceptually, a method handle entry is a record:
- * {@snippet lang=text :
- * // @link substring="MethodHandleEntry" target="ConstantPoolBuilder#methodHandleEntry(DirectMethodHandleDesc)" :
- * MethodHandleEntry(DirectMethodHandleDesc) // @link substring="DirectMethodHandleDesc" target="#typeSymbol()"
- * }
+ * The use of a {@code MethodHandleEntry} is modeled by a {@link
+ * DirectMethodHandleDesc}.  Conversions are through {@link
+ * ConstantPoolBuilder#methodHandleEntry(DirectMethodHandleDesc)} and {@link
+ * #asSymbol()}.
  * <p>
- * Physically, a method handle entry is a record:
+ * A method handle entry is composite:
  * {@snippet lang=text :
- * // @link region=1 substring="MethodHandleEntry" target="ConstantPoolBuilder#methodHandleEntry(int, MemberRefEntry)"
- * // @link substring="int refKind" target="#kind()" :
- * MethodHandleEntry(int refKind, MemberRefEntry) // @link substring="MemberRefEntry" target="#reference()"
- * // @end region=1
+ * // @link substring="MethodHandleEntry" target="ConstantPoolBuilder#methodHandleEntry(int, MemberRefEntry)" :
+ * MethodHandleEntry(
+ *     int refKind, // @link substring="refKind" target="#kind()"
+ *     MemberRefEntry reference // @link substring="reference" target="#reference()"
+ * )
  * }
- * where the {@code refKind} is in the range {@code [1, 9]}.
+ * where {@code refKind} is in the range {@code [1, 9]}.
  *
  * @see ConstantPoolBuilder#methodHandleEntry
  *      ConstantPoolBuilder::methodHandleEntry

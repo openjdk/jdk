@@ -33,26 +33,16 @@ import jdk.internal.classfile.impl.Util;
  * Models a {@code CONSTANT_Fieldref_info} structure, or a symbolic reference
  * to a field, in the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a field reference entry is a record:
+ * A field reference constant pool entry is composite:
  * {@snippet lang=text :
- * // @link region=1 substring="FieldRefEntry" target="ConstantPoolBuilder#fieldRefEntry(ClassDesc, String, ClassDesc)"
- * // @link region=2 substring="ClassDesc owner" target="#owner()"
- * // @link substring="String name" target="#name()" :
- * FieldRefEntry(ClassDesc owner, String name, ClassDesc type) // @link substring="ClassDesc type" target="#typeSymbol()"
- * // @end region=1
- * // @end region=2
+ * // @link substring="FieldRefEntry" target="ConstantPoolBuilder#fieldRefEntry(ClassEntry, NameAndTypeEntry)" :
+ * FieldRefEntry(
+ *     ClassEntry owner, // @link substring="owner" target="#owner()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
  * }
- * where the {@code ClassDesc owner} represents a class or interface.
- * <p>
- * Physically, a field reference entry is a record:
- * {@snippet lang=text :
- * // @link region=1 substring="FieldRefEntry" target="ConstantPoolBuilder#fieldRefEntry(ClassEntry, NameAndTypeEntry)"
- * // @link substring="ClassEntry owner" target="#owner()" :
- * FieldRefEntry(ClassEntry owner, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
- * // @end region=1
- * }
- * where the type in the {@code NameAndTypeEntry} is a {@linkplain #typeSymbol()
- * field descriptor} string.
+ * where the {@link #type() nameAndType.type()} represents a {@linkplain
+ * #typeSymbol() field descriptor} string.
  *
  * @see ConstantPoolBuilder#fieldRefEntry ConstantPoolBuilder::fieldRefEntry
  * @jvms 4.4.2 The {@code CONSTANT_Fieldref_info}, {@code

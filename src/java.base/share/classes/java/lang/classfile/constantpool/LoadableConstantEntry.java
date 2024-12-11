@@ -33,11 +33,12 @@ import java.lang.constant.ConstantDesc;
 /**
  * Marker interface for constant pool entries suitable for loading via the
  * {@link ConstantInstruction.LoadConstantInstruction ldc} instructions.
+ * <p>
+ * The use of a {@code LoadableConstantEntry} is modeled by a {@link ConstantDesc}.
+ * Conversions are through {@link ConstantPoolBuilder#loadableConstantEntry(ConstantDesc)}
+ * and {@link #constantValue()}.
  *
  * @see CodeBuilder#ldc(LoadableConstantEntry)
- *      CodeBuilder::ldc(LoadableConstantEntry)
- * @see ConstantPoolBuilder#loadableConstantEntry
- *      ConstantPoolBuilder::loadableConstantEntry
  * @jvms 4.4 The Constant Pool
  * @sealedGraph
  * @since 24
@@ -49,7 +50,6 @@ public sealed interface LoadableConstantEntry extends PoolEntry
      * {@return a symbolic descriptor of this constant}
      *
      * @see ConstantPoolBuilder#loadableConstantEntry(ConstantDesc)
-     *      ConstantPoolBuilder::loadableConstantEntry(ConstantDesc)
      */
     ConstantDesc constantValue();
 
@@ -64,18 +64,4 @@ public sealed interface LoadableConstantEntry extends PoolEntry
     default TypeKind typeKind() {
         return TypeKind.REFERENCE;
     }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @apiNote
-     * The width of this entry does not decide if this entry should be loaded
-     * with {@link Opcode#LDC ldc} or {@link Opcode#LDC2_W ldc2_w}.
-     * For example, {@link ConstantDynamicEntry} always has width {@code 1}, but
-     * it must be loaded with {@code ldc2_w} if its {@linkplain #typeKind()
-     * type} is {@link TypeKind#LONG long} or {@link TypeKind#DOUBLE double}.
-     * Use {@link #typeKind() typeKind().slotSize()} for this purpose instead.
-     */
-    @Override
-    int width();
 }

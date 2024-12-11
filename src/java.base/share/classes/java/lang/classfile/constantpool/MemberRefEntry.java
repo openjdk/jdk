@@ -24,6 +24,8 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.classfile.Opcode;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 
 /**
@@ -32,14 +34,18 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * {@linkplain FieldRefEntry fields}, {@linkplain MethodRefEntry class methods},
  * and {@linkplain InterfaceMethodRefEntry interface methods}.
  * <p>
- * Conceptually, member reference entries are not treated as a single type.  The
- * subtypes appear in distinct locations and serve distinct purposes.  They
- * resemble each other structurally and share parts of the resolution processes.
+ * Different types of symbolic references to a member of a class or interface
+ * bear structural similarities and share parts of the resolution processes, and
+ * they can sometimes appear in the same locations.  For example, both {@link
+ * MethodRefEntry} and {@link InterfaceMethodRefEntry} can appear in an {@link
+ * Opcode#INVOKESTATIC invokestatic} instruction.
  * <p>
- * Physically, a member reference entry is a record:
+ * A member reference entry is composite:
  * {@snippet lang=text :
- * // @link substring="ClassEntry owner" target="#owner()" :
- * MemberRefEntry(ClassEntry owner, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
+ * MemberRefEntry(
+ *     ClassEntry owner, // @link substring="owner" target="#owner()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
  * }
  *
  * @jvms 4.4.2 The {@code CONSTANT_Fieldref_info}, {@code
@@ -52,10 +58,6 @@ public sealed interface MemberRefEntry extends PoolEntry
         permits FieldRefEntry, InterfaceMethodRefEntry, MethodRefEntry, AbstractPoolEntry.AbstractMemberRefEntry {
     /**
      * {@return the class or interface which this member belongs to}
-     *
-     * @apiNote
-     * A symbolic descriptor for the owner is available through {@link
-     * ClassEntry#asSymbol() owner().asSymbol()}.
      */
     ClassEntry owner();
 
@@ -66,10 +68,6 @@ public sealed interface MemberRefEntry extends PoolEntry
 
     /**
      * {@return the name of the member}
-     *
-     * @apiNote
-     * A string value for the name is available through {@link
-     * Utf8Entry#stringValue() name().stringValue()}.
      */
     default Utf8Entry name() {
         return nameAndType().name();

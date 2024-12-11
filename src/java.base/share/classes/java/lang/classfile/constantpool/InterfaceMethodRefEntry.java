@@ -34,26 +34,16 @@ import jdk.internal.classfile.impl.Util;
  * reference to an interface method, in the constant pool of a {@code class}
  * file.
  * <p>
- * Conceptually, an interface method reference entry is a record:
+ * An interface method reference entry is composite:
  * {@snippet lang=text :
- * // @link region=1 substring="InterfaceMethodRefEntry" target="ConstantPoolBuilder#interfaceMethodRefEntry(ClassDesc, String, MethodTypeDesc)"
- * // @link region=2 substring="ClassDesc owner" target="#owner()"
- * // @link substring="String name" target="#name()" :
- * InterfaceMethodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) // @link substring="MethodTypeDesc type" target="#typeSymbol()"
- * // @end region=1
- * // @end region=2
+ * // @link substring="InterfaceMethodRefEntry" target="ConstantPoolBuilder#interfaceMethodRefEntry(ClassEntry, NameAndTypeEntry)" :
+ * InterfaceMethodRefEntry(
+ *     ClassEntry owner, // @link substring="owner" target="#owner()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
  * }
- * where the {@code ClassDesc owner} represents an interface.
- * <p>
- * Physically, an interface method reference entry is a record:
- * {@snippet lang=text :
- * // @link region=1 substring="InterfaceMethodRefEntry" target="ConstantPoolBuilder#interfaceMethodRefEntry(ClassEntry, NameAndTypeEntry)"
- * // @link substring="ClassEntry owner" target="#owner()" :
- * InterfaceMethodRefEntry(ClassEntry owner, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
- * // @end region=1
- * }
- * where the type in the {@code NameAndTypeEntry} is a {@linkplain #typeSymbol()
- * method descriptor} string.
+ * where the {@link #type() type} in the {@code nameAndType} is a {@linkplain
+ * #typeSymbol() method descriptor} string.
  *
  * @see ConstantPoolBuilder#interfaceMethodRefEntry
  *      ConstantPoolBuilder::interfaceMethodRefEntry

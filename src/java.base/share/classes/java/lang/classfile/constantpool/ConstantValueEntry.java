@@ -44,7 +44,6 @@ public sealed interface ConstantValueEntry extends LoadableConstantEntry
      * Integer}, {@link Long}, {@link Float}, {@link Double}, or {@link String}.
      *
      * @see ConstantPoolBuilder#constantValueEntry(ConstantDesc)
-     *      ConstantPoolBuilder::constantValueEntry
      */
     @Override
     ConstantDesc constantValue();

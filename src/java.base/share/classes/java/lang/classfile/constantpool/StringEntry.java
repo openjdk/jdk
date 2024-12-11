@@ -30,16 +30,14 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_String_info} structure, or a string constant, in the
  * constant pool of a {@code class} file.
  * <p>
- * Conceptually, a string entry is a record:
- * {@snippet lang=text :
- * // @link substring="StringEntry" target="ConstantPoolBuilder#stringEntry(String)" :
- * StringEntry(String) // @link regex="String(?=[)])" target="#stringValue()"
- * }
+ * The use of a {@code StringEntry} is represented by a {@link String}.
+ * Conversions are through {@link ConstantPoolBuilder#stringEntry(String)} and
+ * {@link #stringValue()}.
  * <p>
- * Physically, a string entry is a record:
+ * A string entry is composite:
  * {@snippet lang=text :
  * // @link substring="StringEntry" target="ConstantPoolBuilder#stringEntry(Utf8Entry)" :
- * StringEntry(Utf8Entry) // @link substring="Utf8Entry" target="#utf8()"
+ * StringEntry(Utf8Entry utf8) // @link substring="utf8" target="#utf8()"
  * }
  *
  * @jvms 4.4.3 The {@code CONSTANT_String_info} Structure
@@ -52,7 +50,6 @@ public sealed interface StringEntry
      * {@return the UTF constant pool entry describing the string contents}
      *
      * @see ConstantPoolBuilder#stringEntry(Utf8Entry)
-     *      ConstantPoolBuilder::stringEntry(Utf8Entry)
      */
     Utf8Entry utf8();
 
@@ -60,7 +57,6 @@ public sealed interface StringEntry
      * {@return the string value for this entry}
      *
      * @see ConstantPoolBuilder#stringEntry(String)
-     *      ConstantPoolBuilder::stringEntry(String)
      */
     String stringValue();
 }

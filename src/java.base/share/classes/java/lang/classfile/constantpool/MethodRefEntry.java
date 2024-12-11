@@ -33,23 +33,13 @@ import jdk.internal.classfile.impl.Util;
  * Models a {@code CONSTANT_MethodRef_info} structure, or a symbolic reference
  * to a class method, in the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a class method reference entry is a record:
+ * A class method reference entry is composite:
  * {@snippet lang=text :
- * // @link region=1 substring="MethodRefEntry" target="ConstantPoolBuilder#methodRefEntry(ClassDesc, String, MethodTypeDesc)"
- * // @link region=2 substring="ClassDesc owner" target="#owner()"
- * // @link substring="String name" target="#name()" :
- * MethodRefEntry(ClassDesc owner, String name, MethodTypeDesc type) // @link substring="MethodTypeDesc type" target="#typeSymbol()"
- * // @end region=1
- * // @end region=2
- * }
- * where the {@code ClassDesc owner} represents a class.
- * <p>
- * Physically, a class method reference entry is a record:
- * {@snippet lang=text :
- * // @link region=1 substring="MethodRefEntry" target="ConstantPoolBuilder#methodRefEntry(ClassEntry, NameAndTypeEntry)"
- * // @link substring="ClassEntry owner" target="#owner()" :
- * MethodRefEntry(ClassEntry owner, NameAndTypeEntry) // @link substring="NameAndTypeEntry" target="#nameAndType()"
- * // @end region=1
+ * // @link substring="MethodRefEntry" target="ConstantPoolBuilder#methodRefEntry(ClassEntry, NameAndTypeEntry)" :
+ * MethodRefEntry(
+ *     ClassEntry owner, // @link substring="owner" target="#owner()"
+ *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
+ * )
  * }
  * where the type in the {@code NameAndTypeEntry} is a {@linkplain #typeSymbol()
  * method descriptor} string.

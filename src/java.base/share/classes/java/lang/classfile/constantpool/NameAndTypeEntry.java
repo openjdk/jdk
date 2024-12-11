@@ -24,6 +24,8 @@
  */
 package java.lang.classfile.constantpool;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.TypeDescriptor;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
@@ -32,28 +34,24 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_NameAndType_info} structure, representing a field or
  * method, in the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a name and type entry may be one of the following records:
- * {@snippet lang=text :
- * // @link region substring="NameAndTypeEntry" target="ConstantPoolBuilder#nameAndTypeEntry(String, ClassDesc)"
- * // @link substring="String" target="#name()" :
- * NameAndTypeEntry(String, ClassDesc) // @link substring="ClassDesc" target="#type()"
- * // @end
- * // @link region substring="NameAndTypeEntry" target="ConstantPoolBuilder#nameAndTypeEntry(String, MethodTypeDesc)"
- * // @link substring="String" target="#name()" :
- * NameAndTypeEntry(String, MethodTypeDesc) // @link substring="MethodTypeDesc" target="#type()"
- * // @end
- * }
- * where {@code String} is an unqualified name.
+ * The use of a {@code NameAndTypeEntry} is symbolically represented as a
+ * {@code String name}, and a {@link ConstantPoolBuilder#nameAndTypeEntry(String,
+ * ClassDesc) ClassDesc} or a {@link ConstantPoolBuilder#nameAndTypeEntry(String,
+ * MethodTypeDesc) MethodTypeDesc} {@code type}, depending on where this {@code
+ * NameAndTypeEntry} appears.  The accessors to the symbolic descriptors for the
+ * {@code type} is defined on a per-use-site basis, such as {@link
+ * FieldRefEntry#typeSymbol()} returning a {@code ClassDesc}, and {@link
+ * MethodRefEntry#typeSymbol()} returning a {@code MethodTypeDesc}.
  * <p>
- * Physically, a name and type entry is a record:
+ * A name and type entry is composite:
  * {@snippet lang=text :
- * // @link region substring="NameAndTypeEntry" target="ConstantPoolBuilder#nameAndTypeEntry(Utf8Entry, Utf8Entry)"
- * // @link substring="Utf8Entry name" target="#name()" :
- * NameAndTypeEntry(Utf8Entry name, Utf8Entry type) // @link substring="Utf8Entry type" target="#type()"
- * // @end
+ * NameAndTypeEntry( // @link substring="NameAndTypeEntry" target="ConstantPoolBuilder#nameAndTypeEntry(Utf8Entry, Utf8Entry)"
+ *     Utf8Entry name, // @link substring="name" target="#name()"
+ *     Utf8Entry type  // @link substring="type" target="#type()"
+ * )
  * }
- * where {@code Utf8Entry name} is an unqualified name, and {@code Utf8Entry
- * type} is a field or method descriptor string.
+ * where {@code name} is an unqualified name, and {@code type} is a field or
+ * method descriptor string.
  *
  * @jvms 4.4.6 The {@code CONSTANT_NameAndType_info} Structure
  * @since 24
@@ -63,10 +61,6 @@ public sealed interface NameAndTypeEntry extends PoolEntry
 
     /**
      * {@return the field or method name}
-     *
-     * @apiNote
-     * A string value for the name is available through {@link
-     * Utf8Entry#stringValue() name().stringValue()}.
      */
     Utf8Entry name();
 

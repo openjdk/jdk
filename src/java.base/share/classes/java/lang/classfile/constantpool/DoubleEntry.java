@@ -32,17 +32,12 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_Double_info} structure, representing a {@code
  * double} constant, in the constant pool of a {@code class} file.
  * <p>
- * Conceptually, a double entry is a record:
- * {@snippet lang=text :
- * // @link substring="DoubleEntry" target="ConstantPoolBuilder#doubleEntry(double)" :
- * DoubleEntry(double) // @link substring="double" target="#doubleValue()"
- * }
- * where all NaN values of the {@code double} may be collapsed into a single
- * "canonical" NaN value.
+ * The use of a {@code DoubleEntry} is modeled by a {@code double}.  Conversions
+ * are through {@link ConstantPoolBuilder#doubleEntry} and {@link #doubleValue()}.
+ * In the conversions, all NaN values of the {@code double} may be collapsed
+ * into a single {@linkplain Double#NaN "canonical" NaN value}.
  * <p>
- * Physically, a double entry stores an arbitrary 8-byte value.
- * <p>
- * This constant has a {@linkplain #width() width} of {@code 2}, making its
+ * A double entry has a {@linkplain #width() width} of {@code 2}, making its
  * subsequent constant pool index valid and unusable.
  *
  * @see ConstantPoolBuilder#doubleEntry ConstantPoolBuilder::doubleEntry

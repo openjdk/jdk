@@ -54,7 +54,7 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
      *
      * @apiNote
      * If only a particular type of entry is expected, use {@link #entryByIndex(
-     * int, Class) entryByIndex(int, Class)}.
+     * int, Class)}.
      *
      * @param index the index within the pool of the desired entry
      * @throws ConstantPoolException if the index is out of range of the
@@ -88,7 +88,7 @@ public sealed interface ConstantPool extends Iterable<PoolEntry>
      *
      * @apiNote
      * This skips any unusable index and is less error-prone than iterating by
-     * raw index.
+     * raw index.  See <em>{@linkplain ##index Index in the Constant Pool}</em>.
      */
     @Override
     default Iterator<PoolEntry> iterator() {
