@@ -207,7 +207,7 @@ Use `jfr configure` to configure a .jfc settings file.
 The syntax is:
 
  `jfr configure` \[--interactive\] \[--verbose\]
-               \[--input <files>\] [--output <file>\]
+               \[--input &lt;files&gt;\] [--output &lt;file&gt;\]
                \[option=value\]* \[event-setting=value\]*
 
 <a id="configure-option-interactive">`--interactive`</a>
@@ -244,9 +244,9 @@ names, categories and field layout within a flight recording file.
 
 The syntax is:
 
-`jfr metadata` \[--categories <filter>\]
-              \[--events <filter>\]
-              \[<file>\]
+`jfr metadata` \[--categories &lt;filter&gt;\]
+              \[--events &lt;filter&gt;\]
+              \[&lt;file&gt;\]
 
 <a id="metadata-option-categories">`--categories` <*filter*></a>
 : Select events matching a category name. The filter is a comma-separated
@@ -259,7 +259,7 @@ list of names, simple and/or qualified, and/or quoted glob patterns.
 <a id="metadata-option-file"><*file*></a>
 : Location of the recording file (.jfr)
 
-If the <file> parameter is omitted, metadata from the JDK where
+If the &lt;file&gt; parameter is omitted, metadata from the JDK where
 the 'jfr' tool is located will be used.
 
 #### `jfr summary` subcommand
