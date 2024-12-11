@@ -45,6 +45,8 @@ public class TestIntGenerators {
         test(new SpecialIntGenerator(0));
         test(new SpecialIntGenerator(2));
         test(new SpecialIntGenerator(16));
+        test(new MixedIntGenerator(1, 1, 16));
+        test(new MixedIntGenerator(1, 2, 2));
 
         // Test randomly picked generators.
         for (int i = 0; i < 10; i++) {

@@ -29,7 +29,7 @@ import java.util.HashSet;
 import jdk.test.lib.Utils;
 
 /**
- * Provide a uniform int distribution random generator.
+ * Provide a distribution over values close to the powers of 2.
  */
 public final class SpecialIntGenerator extends IntGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();

@@ -23,31 +23,36 @@
 
 package compiler.lib.generators;
 
+import java.util.Arrays;
 import java.util.Random;
+import java.util.HashSet;
 import jdk.test.lib.Utils;
 
 /**
- * The generators class provides a set of generator functions for testing.
- * The goal is to cover many special cases, such as NaNs in Floats or values
- * close to overflow in ints. They should produce values from specific
- * "intersting" distributions which might trigger various behaviours in
- * optimizations.
+ * Mixed results between UniformIntGenerator and SpecialIntGenerator.
  */
-public final class Generators {
+public final class MixedIntGenerator extends IntGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    /**
-     * Randomly pick an int generator.
-     */
-    public static IntGenerator ints() {
-        switch(RANDOM.nextInt(6)) {
-            case 0  -> { return new UniformIntGenerator(); }
-            case 1  -> { return new SpecialIntGenerator(0); }
-            case 2  -> { return new SpecialIntGenerator(2); }
-            case 3  -> { return new SpecialIntGenerator(16); }
-            case 4  -> { return new MixedIntGenerator(1, 1, 16); }
-            case 5  -> { return new MixedIntGenerator(1, 2, 2); }
-            default -> { throw new RuntimeException("impossible"); }
+    private final UniformIntGenerator uniform;
+    private final SpecialIntGenerator special;
+    private final int weightUniform;
+    private final int weightSpecial;
+
+    public MixedIntGenerator(int weightUniform, int weightSpecial, int rangeSpecial) {
+        this.weightUniform = weightUniform;
+        this.weightSpecial = weightSpecial;
+        this.uniform = new UniformIntGenerator();
+        this.special = new SpecialIntGenerator(rangeSpecial);
+    }
+
+    @Override
+    public int nextInt(int lo, int hi) {
+        int r = RANDOM.nextInt(weightUniform + weightSpecial);
+        if (r < weightUniform) {
+            return uniform.nextInt(lo, hi);
+        } else {
+            return special.nextInt(lo, hi);
         }
     }
 }
