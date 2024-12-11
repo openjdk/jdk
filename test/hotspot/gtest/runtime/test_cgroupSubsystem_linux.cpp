@@ -27,6 +27,7 @@
 
 #include "runtime/os.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "cgroupUtil_linux.hpp"
 #include "cgroupV1Subsystem_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
 #include "unittest.hpp"
@@ -451,6 +452,72 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
     ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
+}
+
+TEST(cgroupTest, set_cgroupv1_subsystem_path_adjusted) {
+  TestCase memory = {
+    "/sys/fs/cgroup/memory", // mount_path
+    "/",                     // root_path
+    "../test1",              // cgroup_path
+    "/sys/fs/cgroup/memory"  // expected_path
+  };
+  TestCase cpu = {
+    "/sys/fs/cgroup/cpu", // mount_path
+    "/",                  // root_path
+    "../../test2",        // cgroup_path
+    "/sys/fs/cgroup/cpu"  // expected_path
+  };
+  CgroupCpuController* ccc = new CgroupV1CpuController(CgroupV1Controller((char*)cpu.root_path,
+                                                                          (char*)cpu.mount_path,
+                                                                          true /* read-only mount */));
+  ccc->set_subsystem_path((char*)cpu.cgroup_path);
+  EXPECT_TRUE(ccc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(ccc);
+  ASSERT_STREQ(cpu.expected_path, ccc->subsystem_path());
+  EXPECT_FALSE(ccc->needs_hierarchy_adjustment());
+
+  CgroupMemoryController* cmc = new CgroupV1MemoryController(CgroupV1Controller((char*)memory.root_path,
+                                                                                (char*)memory.mount_path,
+                                                                                true /* read-only mount */));
+  cmc->set_subsystem_path((char*)memory.cgroup_path);
+  EXPECT_TRUE(cmc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(cmc);
+  ASSERT_STREQ(memory.expected_path, cmc->subsystem_path());
+  EXPECT_FALSE(cmc->needs_hierarchy_adjustment());
+}
+
+TEST(cgroupTest, set_cgroupv2_subsystem_path_adjusted) {
+  TestCase memory = {
+    "/sys/fs/cgroup", // mount_path
+    "/",              // root_path
+    "../test1",       // cgroup_path
+    "/sys/fs/cgroup"  // expected_path
+  };
+  TestCase cpu = {
+    "/sys/fs/cgroup", // mount_path
+    "/",              // root_path
+    "../../test2",    // cgroup_path
+    "/sys/fs/cgroup"  // expected_path
+  };
+  CgroupCpuController* ccc = new CgroupV2CpuController(CgroupV2Controller((char*)cpu.mount_path,
+                                                                          (char*)cpu.cgroup_path,
+                                                                          true /* read-only mount */));
+  EXPECT_TRUE(ccc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(ccc);
+  ASSERT_STREQ(cpu.expected_path, ccc->subsystem_path());
+  EXPECT_FALSE(ccc->needs_hierarchy_adjustment());
+
+  CgroupMemoryController* cmc = new CgroupV2MemoryController(CgroupV2Controller((char*)memory.mount_path,
+                                                                                (char*)memory.cgroup_path,
+                                                                                true /* read-only mount */));
+  EXPECT_TRUE(cmc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(cmc);
+  ASSERT_STREQ(memory.expected_path, cmc->subsystem_path());
+  EXPECT_FALSE(cmc->needs_hierarchy_adjustment());
 }
 
 TEST(cgroupTest, set_cgroupv2_subsystem_path) {

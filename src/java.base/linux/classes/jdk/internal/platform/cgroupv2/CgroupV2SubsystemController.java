@@ -25,7 +25,6 @@
 
 package jdk.internal.platform.cgroupv2;
 
-import java.lang.System.Logger.Level;
 import java.nio.file.Paths;
 
 import jdk.internal.platform.CgroupSubsystem;
@@ -36,13 +35,7 @@ public class CgroupV2SubsystemController implements CgroupSubsystemController {
     private final String path;
 
     public CgroupV2SubsystemController(String mountPath, String cgroupPath) {
-        if (cgroupPath.indexOf("../") == -1) {
-            this.path = Paths.get(mountPath, cgroupPath).toString();
-        } else {
-            this.path = mountPath;
-            System.getLogger("jdk.internal.platform").log(Level.WARNING,
-                    "Cgroup cpu/memory controller path includes '../', detected limits won't be accurate");
-        }
+        this.path = Paths.get(mountPath, cgroupPath).toString();
     }
 
     @Override

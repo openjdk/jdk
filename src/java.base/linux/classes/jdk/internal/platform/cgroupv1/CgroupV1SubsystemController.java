@@ -51,12 +51,7 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
             if (root.equals("/")) {
                 // host processes and containers with cgroupns=private
                 if (!cgroupPath.equals("/")) {
-                    if (cgroupPath.indexOf("../") == -1) {
-                        path += cgroupPath;
-                    } else {
-                        System.getLogger("jdk.internal.platform").log(Level.WARNING,
-                                "Cgroup cpu/memory controller path includes '../', detected limits won't be accurate");
-                    }
+                    path += cgroupPath;
                 }
             } else {
                 // containers with cgroupns=host, default setting is _root==cgroup_path

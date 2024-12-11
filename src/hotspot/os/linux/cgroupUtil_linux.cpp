@@ -49,12 +49,17 @@ int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
 }
 
 void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
+  assert(mem->cgroup_path() != nullptr, "invariant");
+  if (strstr(mem->cgroup_path(), "../") != nullptr) {
+    mem->set_subsystem_path("/");
+    log_warning(os, container)("Cgroup memory controller path includes '../', detected limits won't be accurate");
+    return;
+  }
   if (!mem->needs_hierarchy_adjustment()) {
     // nothing to do
     return;
   }
   log_trace(os, container)("Adjusting controller path for memory: %s", mem->subsystem_path());
-  assert(mem->cgroup_path() != nullptr, "invariant");
   char* orig = os::strdup(mem->cgroup_path());
   char* cg_path = os::strdup(orig);
   char* last_slash;
@@ -106,12 +111,17 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
 }
 
 void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
+  assert(cpu->cgroup_path() != nullptr, "invariant");
+  if (strstr(cpu->cgroup_path(), "../") != nullptr) {
+    cpu->set_subsystem_path("/");
+    log_warning(os, container)("Cgroup cpu controller path includes '../', detected limits won't be accurate");
+    return;
+  }
   if (!cpu->needs_hierarchy_adjustment()) {
     // nothing to do
     return;
   }
   log_trace(os, container)("Adjusting controller path for cpu: %s", cpu->subsystem_path());
-  assert(cpu->cgroup_path() != nullptr, "invariant");
   char* orig = os::strdup(cpu->cgroup_path());
   char* cg_path = os::strdup(orig);
   char* last_slash;

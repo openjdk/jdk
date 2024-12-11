@@ -292,6 +292,10 @@ jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
 }
 
 void CgroupV2Controller::set_subsystem_path(const char* cgroup_path) {
+  if (_cgroup_path != nullptr) {
+    os::free(_cgroup_path);
+  }
+  _cgroup_path = os::strdup(cgroup_path);
   if (_path != nullptr) {
     os::free(_path);
   }
@@ -315,11 +319,7 @@ char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_pa
   stringStream ss;
   ss.print_raw(mount_path);
   if (strcmp(cgroup_path, "/") != 0) {
-    if (strstr(cgroup_path, "../") == nullptr) {
-      ss.print_raw(cgroup_path);
-    } else {
-      log_warning(os, container)("Cgroup cpu/memory controller path includes '../', detected limits won't be accurate");
-    }
+    ss.print_raw(cgroup_path);
   }
   return os::strdup(ss.base());
 }

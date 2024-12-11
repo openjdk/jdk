@@ -53,11 +53,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
     if (strcmp(_root, "/") == 0) {
       // host processes and containers with cgroupns=private
       if (strcmp(cgroup_path,"/") != 0) {
-        if (strstr(cgroup_path, "../") == nullptr) {
-          ss.print_raw(cgroup_path);
-        } else {
-          log_warning(os, container)("Cgroup cpu/memory controller path includes '../', detected limits won't be accurate");
-        }
+        ss.print_raw(cgroup_path);
       }
     } else {
       // containers with cgroupns=host, default setting is _root==cgroup_path
