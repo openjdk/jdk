@@ -2379,11 +2379,11 @@ void MacroAssembler::jump_cc(Condition cc, AddressLiteral dst, Register rscratch
 void MacroAssembler::cmp_mxcsr(Address mxcsr_save, Register tmp, Register rscratch) {
   ExternalAddress mxcsr_std(StubRoutines::x86::addr_mxcsr_std());
   assert(rscratch != noreg || always_reachable(mxcsr_std), "missing");
-  
+
   stmxcsr(mxcsr_save);
   movl(tmp, mxcsr_save);
   if (EnableX86ECoreOpts) {
-    orl(tmp, 0x003f); // Mask out any pending exceptions (only check control and mask bits)
+    orl(tmp, 0x003f);  // Set exceptions bits, addr_mxcsr_std has them set for ECore
   } else {
     andl(tmp, 0xFFC0); // Mask out any pending exceptions (only check control and mask bits)
   }
