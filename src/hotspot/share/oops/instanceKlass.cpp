@@ -3567,7 +3567,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 #define BULLET  " - "
 
 static const char* state_names[] = {
-  "allocated", "loaded", "being_linked", "linked", "being_initialized", "fully_initialized", "initialization_error"
+  "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
 };
 
 static void print_vtable(intptr_t* start, int len, outputStream* st) {
@@ -4208,7 +4208,7 @@ void InstanceKlass::set_init_state(ClassState state) {
 #ifdef ASSERT
   bool good_state = is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
-  bool link_failed = _init_state == being_linked && state == loaded;
+  bool link_failed = state == loaded;
   assert(good_state || state == allocated || link_failed, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
