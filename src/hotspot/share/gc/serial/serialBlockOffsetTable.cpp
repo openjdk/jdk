@@ -32,6 +32,16 @@
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
+
+// Return the number of slots needed for an offset array
+// that covers mem_region_words words.
+size_t SerialBlockOffsetTable::compute_size(size_t mem_region_words) {
+  assert(mem_region_words % CardTable::card_size_in_words() == 0, "precondition");
+
+  size_t number_of_slots = mem_region_words / CardTable::card_size_in_words();
+  return os::align_up_vm_allocation_granularity(number_of_slots);
+}
 
 SerialBlockOffsetTable::SerialBlockOffsetTable(MemRegion reserved,
                                                size_t init_word_size):
@@ -61,14 +71,14 @@ void SerialBlockOffsetTable::resize(size_t new_word_size) {
   size_t delta;
   char* high = _vs.high();
   if (new_size > old_size) {
-    delta = ReservedSpace::page_align_size_up(new_size - old_size);
+    delta = os::align_up_vm_page_size(new_size - old_size);
     assert(delta > 0, "just checking");
     if (!_vs.expand_by(delta)) {
       vm_exit_out_of_memory(delta, OOM_MMAP_ERROR, "offset table expansion");
     }
     assert(_vs.high() == high + delta, "invalid expansion");
   } else {
-    delta = ReservedSpace::page_align_size_down(old_size - new_size);
+    delta = os::align_down_vm_page_size(old_size - new_size);
     if (delta == 0) return;
     _vs.shrink_by(delta);
     assert(_vs.high() == high - delta, "invalid expansion");

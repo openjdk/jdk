@@ -420,11 +420,11 @@ void* JfrVirtualMemory::initialize(size_t reservation_size_request_bytes,
   _aligned_datum_size_bytes = align_up(datum_size_bytes, BytesPerWord);
   assert(is_aligned(_aligned_datum_size_bytes, BytesPerWord), "invariant");
 
-  reservation_size_request_bytes = ReservedSpace::allocation_align_size_up(reservation_size_request_bytes);
+  reservation_size_request_bytes = os::align_up_vm_allocation_granularity(reservation_size_request_bytes);
   assert(is_aligned(reservation_size_request_bytes, os::vm_allocation_granularity()), "invariant");
   assert(is_aligned(reservation_size_request_bytes, _aligned_datum_size_bytes), "invariant");
   block_size_request_bytes = MAX2(block_size_request_bytes, (size_t)os::vm_allocation_granularity());
-  block_size_request_bytes = ReservedSpace::allocation_align_size_up(block_size_request_bytes);
+  block_size_request_bytes = os::align_up_vm_allocation_granularity(block_size_request_bytes);
   assert(is_aligned(block_size_request_bytes, os::vm_allocation_granularity()), "invariant");
   assert(is_aligned(block_size_request_bytes, _aligned_datum_size_bytes), "invariant");
   // adjustment to valid ratio in units of vm_allocation_granularity
