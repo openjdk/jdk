@@ -279,6 +279,34 @@ CastIINode* CastIINode::pin_array_access_node() const {
   return nullptr;
 }
 
+void CastIINode::remove_range_check_cast(Compile* C) {
+  if (has_range_check()) {
+    // Range check CastII nodes feed into an address computation subgraph. Remove them to let that subgraph float freely.
+    // For memory access or integer divisions nodes that depend on the cast, record the dependency on the cast's control
+    // as a precedence edge, so they can't float above the cast in case that cast's narrowed type helped eliminate a
+    // range check or a null divisor check.
+    assert(in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(this);
+    for (uint next = 0; next < wq.size(); ++next) {
+      Node* m = wq.at(next);
+      for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+        Node* use = m->fast_out(i);
+        if (use->is_Mem() || use->is_div_or_mod(T_INT) || use->is_div_or_mod(T_LONG)) {
+          use->ensure_control_or_add_prec(in(0));
+        } else if (!use->is_CFG() && !use->is_Phi()) {
+          wq.push(use);
+        }
+      }
+    }
+    subsume_by(in(1), C);
+    if (outcnt() == 0) {
+      disconnect_inputs(C);
+    }
+  }
+}
+
 
 const Type* CastLLNode::Value(PhaseGVN* phase) const {
   const Type* res = ConstraintCastNode::Value(phase);

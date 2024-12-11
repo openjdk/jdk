@@ -3431,7 +3431,7 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
   case Op_CastII: {
-    remove_range_check_cast(n->as_CastII());
+    n->as_CastII()->remove_range_check_cast(this);
   }
   break;
 #ifdef _LP64
@@ -3795,34 +3795,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     assert(!n->is_Mem(), "");
     assert(nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
-  }
-}
-
-void Compile::remove_range_check_cast(CastIINode* cast) {
-  if (cast->has_range_check()) {
-    // Range check CastII nodes feed into an address computation subgraph. Remove them to let that subgraph float freely.
-    // For memory access or integer divisions nodes that depend on the cast, record the dependency on the cast's control
-    // as a precedence edge, so they can't float above the cast in case that cast's narrowed type helped eliminate a
-    // range check or a null divisor check.
-    assert(cast->in(0) != nullptr, "All RangeCheck CastII must have a control dependency");
-    ResourceMark rm;
-    Unique_Node_List wq;
-    wq.push(cast);
-    for (uint next = 0; next < wq.size(); ++next) {
-      Node* m = wq.at(next);
-      for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
-        Node* use = m->fast_out(i);
-        if (use->is_Mem() || use->is_div_or_mod(T_INT) || use->is_div_or_mod(T_LONG)) {
-          use->ensure_control_or_add_prec(cast->in(0));
-        } else if (!use->is_CFG() && !use->is_Phi()) {
-          wq.push(use);
-        }
-      }
-    }
-    cast->subsume_by(cast->in(1), this);
-    if (cast->outcnt() == 0) {
-      cast->disconnect_inputs(this);
-    }
   }
 }
 

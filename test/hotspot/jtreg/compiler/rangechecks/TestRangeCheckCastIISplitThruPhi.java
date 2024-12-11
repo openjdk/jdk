@@ -27,7 +27,7 @@
  * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation TestRangeCheckCastIISplitThruPhi
- *
+ * @run main/othervm TestRangeCheckCastIISplitThruPhi
  *
  */
 

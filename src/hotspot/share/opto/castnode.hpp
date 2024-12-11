@@ -122,6 +122,7 @@ class CastIINode: public ConstraintCastNode {
   }
 
   CastIINode* pin_array_access_node() const;
+  void remove_range_check_cast(Compile* C);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;

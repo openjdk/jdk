@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8324517
- * @summary C2: out of bound array load because of dependency on removed range check CastIIs
+ * @bug 8332827
+ * @summary [REDO] C2: crash in compiled code because of dependency on removed range check CastIIs
  *
  * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation
  *                   -XX:CompileCommand=dontinline,TestArrayAccessAboveRCAfterRCCastIIEliminated::notInlined
