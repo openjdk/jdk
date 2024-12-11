@@ -27,6 +27,14 @@ package compiler.lib.template_framework;
  * TODO
  *
  * - Extend library
+ * - int_con etc - better sampling and inclusive limits?
+ * - generators for other int types
+ * - generators for float types
+ * - maybe also test utilities - for verification, data generation, etc
+ *   - that utility could be the base of my samplers/generators
+ * - boolean generators
+ * - templates that delay constant folding
+ * - templates that generate ranges - maybe later constant fold?
  *
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
@@ -36,10 +44,8 @@ package compiler.lib.template_framework;
  *   - improve API for recursive calls, parameter checks/load, etc
  *
  * Tests:
- * - List of ops, test with any inputs
- * - Example test / library that generates random classes, generates objects, loads / stores fields
- *   - Good for: Valhalla, escape analysis, maybe type system, maybe method inlining etc.
- *
+ * - IR test
+ * - random distribution tests
  *
  * Many test instantiator:
  * - static block
