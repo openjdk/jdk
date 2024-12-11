@@ -36,7 +36,7 @@ const char* ZUtils::thread_name() {
 }
 
 void ZUtils::fill(uintptr_t* addr, size_t count, uintptr_t value) {
-  for (uintptr_t* end = addr + count; addr < end; ++addr) {
-    *addr = value;
+  for (size_t i = 0; i < count; ++i) {
+    addr[i] = value;
   }
 }
