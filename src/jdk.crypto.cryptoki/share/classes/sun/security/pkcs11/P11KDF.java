@@ -43,6 +43,22 @@ final class P11KDF extends KDFSpi {
     private final Token token;
     private final P11SecretKeyFactory.HKDFKeyInfo svcKi;
     private final long hmacMechanism;
+    private final SecretKey EMPTY_KEY = new SecretKey() {
+        @Override
+        public String getAlgorithm() {
+            return "Generic";
+        }
+
+        @Override
+        public String getFormat() {
+            return "RAW";
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            return new byte[0];
+        }
+    };
 
     private static KDFParameters requireNull(KDFParameters kdfParameters,
             String message) throws InvalidAlgorithmParameterException {
@@ -139,7 +155,7 @@ final class P11KDF extends KDFSpi {
         if (salt instanceof SecretKeySpec) {
             saltType = CKF_HKDF_SALT_DATA;
             saltBytes = salt.getEncoded();
-        } else if (salt != null) {
+        } else if (salt != EMPTY_KEY) {
             // consolidateKeyMaterial returns a salt from the token.
             saltType = CKF_HKDF_SALT_KEY;
             p11SaltKey = (P11Key.P11SecretKey) salt;
@@ -185,8 +201,8 @@ final class P11KDF extends KDFSpi {
                     token.p11.C_DestroyObject(session.id(), derivedObjectID);
                 }
             } else {
-                ret = P11Key.secretKey(session, derivedObjectID, alg, outLen,
-                        null);
+                ret = P11Key.secretKey(session, derivedObjectID, alg,
+                        outLen * 8, null);
             }
             return retType.cast(ret);
         } catch (PKCS11Exception e) {
@@ -243,7 +259,7 @@ final class P11KDF extends KDFSpi {
                 long derivedKeyID = token.p11.C_DeriveKey(session.id(), ckMech,
                         baseKeyID, attrs);
                 return (P11Key.P11SecretKey) P11Key.secretKey(session,
-                        derivedKeyID, "Generic", derivedKeyLen, null);
+                        derivedKeyID, "Generic", derivedKeyLen * 8, null);
             } catch (PKCS11Exception e) {
                 throw new ProviderException("Failure when merging key " +
                         "material.", e);
@@ -265,7 +281,7 @@ final class P11KDF extends KDFSpi {
         }
 
         SecretKey getKeyMaterial() {
-            return null;
+            return EMPTY_KEY;
         }
     }
 

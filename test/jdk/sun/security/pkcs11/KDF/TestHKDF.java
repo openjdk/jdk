@@ -132,7 +132,7 @@ public final class TestHKDF extends PKCS11Test {
                 if (baseKey instanceof SecretKeySpec) {
                     addKeyMaterial(keyMaterialCombination, baseKey.getEncoded(),
                             b::addIKM, b::addIKM);
-                } else {
+                } else if (baseKey != null) {
                     b.addIKM(baseKey);
                 }
                 if (ctx.salt != null) {
@@ -609,6 +609,21 @@ public final class TestHKDF extends PKCS11Test {
                 "aad5",
                 "94459a6593f9c2cfea2ad32970efb8506f3a927927ba283fb6bfd7111aa8" +
                 "63fc");
+    }
+
+    private static void test_AES_HKDFWithHmacSHA256_EmptyBaseKey() {
+        executeTest("AES - HKDF-SHA256 (empty base key)",
+                "HKDF-SHA256",
+                "AES",
+                (SecretKey) null,
+                "101112131415161718191a1b1c1d1e1f",
+                "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf",
+                "cc267bd9515c1eba2cf6aaa1fc8380677f4351fcbea6d70873df5a334efc" +
+                        "ee0d",
+                "cf353a33460b146c0eae3f0788ee281e5a0be15280fbeba107472aa1cd58" +
+                        "d111",
+                "326e9028f51c05c1919215bad6e35668c94c88040c3777e8e6f8b6acdece" +
+                        "85fa");
     }
 
     private static void test_HKDF_after_DH_HkdfSHA256() throws Exception {
