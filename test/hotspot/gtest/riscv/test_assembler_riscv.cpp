@@ -375,7 +375,7 @@ constexpr int64_t PAR_IT_END       = 10000;
 constexpr int64_t NUMBER_THREADS   = 4;
 constexpr int64_t TOTAL_ITERATIONS = NUMBER_THREADS * PAR_IT_END;
 
-template <typename TESTSIZE, ENABLE_IF(std::numeric_limits<TESTSIZE>::max() < (std::numeric_limits<TESTSIZE>::min() + TOTAL_ITERATIONS))>
+template <typename TESTSIZE, ENABLE_IF(std::numeric_limits<TESTSIZE>::max() <= (std::numeric_limits<TESTSIZE>::min() + TOTAL_ITERATIONS))>
 constexpr TESTSIZE result_count() {
   int64_t range = std::numeric_limits<TESTSIZE>::max() - std::numeric_limits<TESTSIZE>::min() + 1;
   int64_t rest = TOTAL_ITERATIONS % range;
