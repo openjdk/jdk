@@ -1110,7 +1110,6 @@ void ShenandoahConcurrentGC::op_final_updaterefs() {
 
   heap->set_update_refs_in_progress(false);
   heap->set_has_forwarded_objects(false);
-  heap->propagate_gc_state_to_all_threads();
 
   if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
     // When the SATB barrier is left on to support concurrent old gen mark, it may pick up writes to
@@ -1150,7 +1149,6 @@ void ShenandoahConcurrentGC::op_final_roots() {
   ShenandoahHeap *heap = ShenandoahHeap::heap();
   heap->set_concurrent_weak_root_in_progress(false);
   heap->set_evacuation_in_progress(false);
-  heap->propagate_gc_state_to_all_threads();
 
   if (heap->mode()->is_generational()) {
     // If the cycle was shortened for having enough immediate garbage, this could be
