@@ -102,6 +102,7 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/events.hpp"
@@ -1208,19 +1209,30 @@ public:
   }
 };
 
-class ShenandoahPrepareForUpdateRefs : public HandshakeClosure {
-private:
-  ShenandoahRetireGCLABClosure _retire;
+class ShenandoahGCStatePropagator : public ThreadClosure {
 public:
-  explicit ShenandoahPrepareForUpdateRefs() :
-    HandshakeClosure("Shenandoah Retire Java GC LABs"),
-    _retire(ResizeTLAB) {}
+  explicit ShenandoahGCStatePropagator(char gc_state) : _gc_state(gc_state) {}
 
   void do_thread(Thread* thread) override {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahThreadLocalData::set_gc_state(thread, heap->gc_state());
+    ShenandoahThreadLocalData::set_gc_state(thread, _gc_state);
+  }
+private:
+  char _gc_state;
+};
+
+class ShenandoahPrepareForUpdateRefs : public HandshakeClosure {
+public:
+  explicit ShenandoahPrepareForUpdateRefs(const ShenandoahGCStatePropagator& propagator) :
+    HandshakeClosure("Shenandoah Prepare for Update Refs"),
+    _retire(ResizeTLAB), _propagator(propagator) {}
+
+  void do_thread(Thread* thread) override {
+    _propagator.do_thread(thread);
     _retire.do_thread(thread);
   }
+private:
+  ShenandoahRetireGCLABClosure _retire;
+  ShenandoahGCStatePropagator _propagator;
 };
 
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
@@ -1235,17 +1247,18 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   _gc_state.set_cond(WEAK_ROOTS, false);
   _gc_state.set_cond(UPDATEREFS, true);
 
-  ShenandoahPrepareForUpdateRefs prepare_for_update_refs;
+  ShenandoahGCStatePropagator propagate_gc_state(_gc_state.raw_value());
+  ShenandoahPrepareForUpdateRefs prepare_for_update_refs(propagate_gc_state);
 
   // The control thread handles transferring the reference processing list and may go through
   // the LRB. It must therefore also keep the gc state locally.
   prepare_for_update_refs.do_thread(control_thread());
 
   // The VM thread will run barriers during a full GC or a degenerated cycle. It may also go
-  // through barriers for certain diagnostic commands that run during concurrent phases. Not
-  // sure we want it to have any LABs though.
-  ShenandoahThreadLocalData::set_gc_state(VMThread::vm_thread(), gc_state());
+  // through barriers for certain diagnostic commands that run during concurrent phases.
+  propagate_gc_state.do_thread(VMThread::vm_thread());
 
+  // Workers need gclabs and state updated
   workers()->threads_do(&prepare_for_update_refs);
 
   // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
@@ -1975,30 +1988,9 @@ void ShenandoahHeap::prepare_update_heap_references(bool concurrent) {
 void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
+    ShenandoahGCStatePropagator propagator(_gc_state.raw_value());
+    Threads::threads_do(&propagator);
     _gc_state_changed = false;
-    char state = gc_state();
-
-    propagate_gc_state_to_worker_threads();
-
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-      ShenandoahThreadLocalData::set_gc_state(t, state);
-    }
-  }
-}
-
-void ShenandoahHeap::propagate_gc_state_to_worker_threads() {
-  char state = gc_state();
-
-  auto do_thread = [&](Thread* t) {
-    ShenandoahThreadLocalData::set_gc_state(t, state);
-  };
-
-  do_thread(VMThread::vm_thread());
-  do_thread(control_thread());
-  _workers->threads_do_l(do_thread);
-
-  if (_safepoint_workers != nullptr) {
-    _safepoint_workers->threads_do_l(do_thread);
   }
 }
 
@@ -2666,9 +2658,7 @@ char ShenandoahHeap::gc_state() const {
 }
 
 bool ShenandoahHeap::is_gc_state(GCState state) const {
-  return _gc_state_changed
-    ? _gc_state.is_set(state)
-    : ShenandoahThreadLocalData::is_gc_state(state);
+  return _gc_state_changed ? _gc_state.is_set(state) : ShenandoahThreadLocalData::is_gc_state(state);
 }
 
 
