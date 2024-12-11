@@ -31,7 +31,6 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
 import com.sun.management.GcInfo;
-import sun.management.Util;
 
 /**
  * Helper class to build composite data.
