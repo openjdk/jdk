@@ -179,58 +179,48 @@ public class SegmentFactories {
     public static long allocateNative(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
                                       boolean shouldReserve, boolean init) {
         ensureInitialized();
+        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         sessionImpl.checkValidState();
         if (VM.isDirectMemoryPageAligned()) {
             byteAlignment = Math.max(byteAlignment, AbstractMemorySegmentImpl.NIO_ACCESS.pageSize());
         }
-        // Align up to 8 so we can init the memory with longs
+        // Align the allocation size up to a multiple of 8 so we can init the memory with longs
         long alignedSize = init ? Utils.alignUp(byteSize, Long.BYTES) : byteSize;
 
+        long allocationSize;
+        long allocationBase;
+        long result;
         if (byteAlignment > MAX_MALLOC_ALIGN) {
-            return allocateNativeOveraligned(byteSize, byteAlignment, sessionImpl, shouldReserve, init, alignedSize);
+            allocationSize = alignedSize + byteAlignment - MAX_MALLOC_ALIGN;
+            if (shouldReserve) {
+                AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(allocationSize, byteSize);
+            }
+
+            allocationBase = allocateMemoryWrapper(allocationSize);
+            result = Utils.alignUp(allocationBase, byteAlignment);
+        } else {
+            allocationSize = alignedSize;
+            if (shouldReserve) {
+                AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(allocationSize, byteSize);
+            }
+
+            allocationBase = allocateMemoryWrapper(allocationSize);
+            result = allocationBase;
         }
 
-        if (shouldReserve) {
-            AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(alignedSize, byteSize);
-        }
-        long address = allocateMemoryWrapper(alignedSize);
         if (init) {
-            initNativeMemory(address, alignedSize);
+            initNativeMemory(result, alignedSize);
         }
         sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
-                UNSAFE.freeMemory(address);
+                UNSAFE.freeMemory(allocationBase);
                 if (shouldReserve) {
-                    AbstractMemorySegmentImpl.NIO_ACCESS.unreserveMemory(alignedSize, byteSize);
+                    AbstractMemorySegmentImpl.NIO_ACCESS.unreserveMemory(allocationSize, byteSize);
                 }
             }
         });
-        return address;
-    }
-
-    @DontInline
-    private static long allocateNativeOveraligned(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
-                                                  boolean shouldReserve, boolean init, long alignedSize) {
-        long allocSize = alignedSize + byteAlignment - MAX_MALLOC_ALIGN;
-        if (shouldReserve) {
-            AbstractMemorySegmentImpl.NIO_ACCESS.reserveMemory(allocSize, byteSize);
-        }
-        long base = allocateMemoryWrapper(allocSize);
-        long res = Utils.alignUp(base, byteAlignment);
-        if (init) {
-            initNativeMemory(res, alignedSize);
-        }
-        sessionImpl.addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
-            @Override
-            public void cleanup() {
-                UNSAFE.freeMemory(base);
-                if (shouldReserve) {
-                    AbstractMemorySegmentImpl.NIO_ACCESS.unreserveMemory(allocSize, byteSize);
-                }
-            }
-        });
-        return res;
+        return result;
     }
 
     private static void initNativeMemory(long address, long byteSize) {

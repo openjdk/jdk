@@ -48,15 +48,15 @@ public final class ArenaImpl implements Arena {
     }
 
     public NativeMemorySegmentImpl allocateNoInit(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         long address = SegmentFactories.allocateNative(byteSize, byteAlignment, session, shouldReserveMemory, false);
+        // Must be called after SegmentFactories.allocateNative to avoid class initialization cycles
         return new NativeMemorySegmentImpl(address, byteSize, false, session);
     }
 
     @Override
     public NativeMemorySegmentImpl allocate(long byteSize, long byteAlignment) {
-        Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         long address = SegmentFactories.allocateNative(byteSize, byteAlignment, session, shouldReserveMemory, true);
+        // Must be called after SegmentFactories.allocateNative to avoid class initialization cycles
         return new NativeMemorySegmentImpl(address, byteSize, false, session);
     }
 }

@@ -66,45 +66,27 @@ public class AllocTest extends CLayouts {
 
         static final MethodHandle CALLOC;
         static final MethodHandle FREE;
-        static final long ADDRESS_SIZE;
         static final Consumer<MemorySegment> CLEANUP;
 
         static {
-            ADDRESS_SIZE = AddressLayout.ADDRESS.byteSize();
             var linker = Linker.nativeLinker();
             var lookup = linker.defaultLookup();
             var callocAddr = lookup.findOrThrow("calloc");
             var freeAddr = lookup.findOrThrow("free");
-            if (ADDRESS_SIZE == Long.BYTES) {
-                CALLOC = linker.downcallHandle(callocAddr, FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
-                FREE = linker.downcallHandle(freeAddr, FunctionDescriptor.ofVoid(ValueLayout.JAVA_LONG));
-                CLEANUP = ms -> {
-                    try {
-                        FREE.invokeExact(ms.address());
-                    } catch (Throwable e) {
-                        throw new AssertionError(e);
-                    }
-                };
-            } else {
-                CALLOC = linker.downcallHandle(callocAddr, FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT));
-                FREE = linker.downcallHandle(freeAddr, FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
-                CLEANUP = ms -> {
-                    try {
-                        FREE.invokeExact((int)ms.address());
-                    } catch (Throwable e) {
-                        throw new AssertionError(e);
-                    }
-                };
-            }
+            CALLOC = linker.downcallHandle(callocAddr, FunctionDescriptor.of(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG));
+            FREE = linker.downcallHandle(freeAddr, FunctionDescriptor.ofVoid(ValueLayout.JAVA_LONG));
+            CLEANUP = ms -> {
+                try {
+                    FREE.invokeExact(ms.address());
+                } catch (Throwable e) {
+                    throw new AssertionError(e);
+                }
+            };
         }
 
         static long calloc(long size) {
             try {
-                if (ADDRESS_SIZE == Long.BYTES) {
-                    return (long)CALLOC.invokeExact(1L, size);
-                } else {
-                    return (int)CALLOC.invokeExact(1, (int)size);
-                }
+                return (long)CALLOC.invokeExact(1L, size);
             } catch (Throwable e) {
                 throw new AssertionError(e);
             }
