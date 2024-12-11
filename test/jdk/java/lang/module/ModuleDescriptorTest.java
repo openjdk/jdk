@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8142968 8158456 8298875
- * @enablePreview
  * @modules java.base/jdk.internal.access
  *          java.base/jdk.internal.module
  * @library /test/lib

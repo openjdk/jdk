@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,17 @@
  * @key headful
  * @bug 4865918
  * @summary REGRESSION:JCK1.4a-runtime api/javax_swing/interactive/JScrollBarTests.html#JScrollBar
- * @author Andrey Pikalev
  * @run main bug4865918
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.Dimension;
+import java.awt.Robot;
+import javax.swing.JFrame;
+import javax.swing.JScrollBar;
+import javax.swing.SwingUtilities;
+import java.awt.event.MouseEvent;
+
+import java.util.Date;
 
 public class bug4865918 {
 
@@ -43,29 +46,18 @@ public class bug4865918 {
     public static void main(String[] argv) throws Exception {
         try {
             Robot robot = new Robot();
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
             robot.waitForIdle();
+            robot.delay(1000);
 
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                @Override
-                public void run() {
-                    sbar.pressMouse();
-                }
-            });
+            SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
 
             robot.waitForIdle();
+            robot.delay(200);
 
-            int value = getValue();
-
-            if (value != 9) {
-                throw new Error("The scrollbar block increment is incorect");
+            if (getValue() != 9) {
+                throw new RuntimeException("The scrollbar block increment is incorrect");
             }
         } finally {
             if (frame != null) SwingUtilities.invokeAndWait(() -> frame.dispose());
@@ -75,11 +67,8 @@ public class bug4865918 {
     private static int getValue() throws Exception {
         final int[] result = new int[1];
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            @Override
-            public void run() {
-                result[0] = sbar.getValue();
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            result[0] = sbar.getValue();
         });
 
         return result[0];
@@ -95,8 +84,9 @@ public class bug4865918 {
 
         frame.getContentPane().add(sbar);
         frame.pack();
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
+        frame.toFront();
     }
 
     static class TestScrollBar extends JScrollBar {
@@ -111,7 +101,7 @@ public class bug4865918 {
             MouseEvent me = new MouseEvent(sbar,
                     MouseEvent.MOUSE_PRESSED,
                     (new Date()).getTime(),
-                    MouseEvent.BUTTON1_MASK,
+                    MouseEvent.BUTTON1_DOWN_MASK,
                     3 * getWidth() / 4, getHeight() / 2,
                     1, true);
             processMouseEvent(me);

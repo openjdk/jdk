@@ -30,7 +30,6 @@ import tests.Helper;
  * @summary Test the --vendor-version --vendor-url-bug plugins
  * @library ../../lib
  * @library /test/lib
- * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jmod
