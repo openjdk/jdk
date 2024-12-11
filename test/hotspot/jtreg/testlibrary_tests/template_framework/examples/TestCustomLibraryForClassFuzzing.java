@@ -61,15 +61,22 @@ public class TestCustomLibraryForClassFuzzing {
         System.out.println("res: " + ret);
     }
 
+    public static record KField (String name, String type) {}
+
     public static class Klass {
         public final String name;
         public final Klass superKlass;
         public final HashSet<Klass> subKlasses;
+        public final HashSet<KField> fields;
 
         public Klass(String name, Klass superKlass) {
             this.name = name;
             this.superKlass = superKlass;
             this.subKlasses = new HashSet<Klass>();
+            if (superKlass != null) {
+                superKlass.subKlasses.add(this);
+            }
+            this.fields = new HashSet<KField>();
         }
     }
 
@@ -106,6 +113,13 @@ public class TestCustomLibraryForClassFuzzing {
             }
             return klass;
         }
+
+        public String makeField(String klassName, String type, Scope scope) {
+            Klass klass = find(klassName, scope);
+            String name = "field" + (ID++);
+            klass.fields.add(new KField(name, type));
+            return name;
+        }
     }
 
     // Generate a source Java file as String
@@ -118,7 +132,7 @@ public class TestCustomLibraryForClassFuzzing {
         TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest", customLibrary);
 
         // Generate code for classes
-	// Note: we get a random num_klasses 1..9, and call my_base_klass that many times.
+        // Note: we get a random num_klasses 1..9, and call my_base_klass that many times.
         Template klassTemplate = new Template("my_klass",
             """
             // KlassHierarchy with #{num_klasses:int_con(lo=1,hi=10)} base classes.
@@ -153,7 +167,8 @@ public class TestCustomLibraryForClassFuzzing {
             """
             // $my_base_klass with #{num_sub_klasses:int_con(lo=0,hi=5)} sub classes.
             public static class #{klass:my_new_klass} {
-                // #{klass}
+                // Generate #{num_fields:int_con(lo=1,hi=4)} fields:
+                #{:repeat(call=my_define_new_field,repeat=#num_fields,klass=#klass)}
             }
 
             #{:repeat(call=my_sub_klass,repeat=#num_sub_klasses,super=#klass)}
@@ -164,16 +179,34 @@ public class TestCustomLibraryForClassFuzzing {
             """
             // $my_sub_klass
             public static class #{klass:my_new_klass(super=#super)} extends #{super} {
-                // #{klass}
+                // Generate #{num_fields:int_con(lo=0,hi=2)} fields:
+                #{:repeat(call=my_define_new_field,repeat=#num_fields,klass=#klass)}
             }
             """
         ));
 
+        codeGenerators.add(new Template("my_define_new_field",
+            """
+            // $my_define_new_field for #{klass}.
+            public int #{:my_new_field(klass=#klass,type=int)} = 0;
+            """
+        ));
+
+        // Creates a new klass. If "super" provided, it is a subklass of "super". Returns the name of the klass.
         codeGenerators.add(new ProgrammaticCodeGenerator("my_new_klass", (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "super");
             String superKlassName = parameters.getOrNull("super");
             Klass klass = hierarchy.makeKlass(superKlassName, scope);
             scope.stream.addCodeToLine(klass.name);
+        }, 0));
+
+        // Creates a new field in a klass, with the specified type. Returns the name of the field.
+        codeGenerators.add(new ProgrammaticCodeGenerator("my_new_field", (Scope scope, Parameters parameters) -> {
+            parameters.checkOnlyHas(scope, "klass", "type");
+            String klassName = parameters.get("klass", scope, " for generator call to 'my_new_field'");
+            String type = parameters.get("type", scope, " for generator call to 'my_new_field'");
+            String fieldName = hierarchy.makeField(klassName, type, scope);
+            scope.stream.addCodeToLine(fieldName);
         }, 0));
 
         return new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), codeGenerators);
