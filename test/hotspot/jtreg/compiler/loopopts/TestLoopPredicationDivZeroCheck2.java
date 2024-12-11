@@ -30,8 +30,8 @@
  */
 
 /*
- * Loop predication will try to move 3 / y (input to the range check for bArr[x / 30]) before outside loop but it may
- * not as y must be zero-checked. See TestLoopPredicationDivZeroCheck for a more detailed explanation.
+ * Loop predication will try to move 3 / y (input to the range check for bArr[x / 30]) before its containing for loop
+ * but it may not as y must be zero-checked. See TestLoopPredicationDivZeroCheck for a more detailed explanation.
  */
 public class TestLoopPredicationDivZeroCheck2 {
     static volatile long lFld;
