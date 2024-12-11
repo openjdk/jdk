@@ -178,7 +178,7 @@ public class SegmentFactories {
 
     public static NativeMemorySegmentImpl allocateNativeSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
                                                                 boolean shouldReserve, boolean init) {
-        long address = SegmentFactories.allocateNativeInternal(byteSize, byteAlignment, sessionImpl, shouldReserve, false);
+        long address = SegmentFactories.allocateNativeInternal(byteSize, byteAlignment, sessionImpl, shouldReserve, init);
         return new NativeMemorySegmentImpl(address, byteSize, false, sessionImpl);
     }
 
