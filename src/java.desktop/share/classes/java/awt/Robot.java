@@ -405,7 +405,6 @@ public class Robot {
      *          valid key
      * @throws  IllegalThreadStateException if called on the AWT event
      *          dispatching thread and {@code isAutoWaitForIdle} would return true
-
      * @see  #keyPress(int)
      * @see     java.awt.event.KeyEvent
      */
