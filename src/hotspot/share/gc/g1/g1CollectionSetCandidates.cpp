@@ -175,7 +175,7 @@ void G1CSetCandidateGroupList::clear(bool uninstall_group_cardset) {
 
 void G1CSetCandidateGroupList::prepare_for_scan() {
   for (G1CSetCandidateGroup* gr : _groups) {
-    gr->card_set()->reset_table_scanner();
+    gr->card_set()->reset_table_scanner_for_groups();
   }
 }
 
