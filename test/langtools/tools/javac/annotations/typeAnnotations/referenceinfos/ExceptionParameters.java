@@ -28,8 +28,6 @@ import static java.lang.classfile.TypeAnnotation.TargetType.*;
  * @bug 8028576 8042451
  * @summary Test population of reference info for exception parameters
  * @author Werner Dietl
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g Driver.java ReferenceInfoUtil.java ExceptionParameters.java
  * @run main Driver ExceptionParameters
  */

@@ -27,7 +27,6 @@
  * @summary Annotation property which is compiled as an array property but
  *          changed observed as a singular element should throw an
  *          AnnotationTypeMismatchException
- * @enablePreview
  * @run main ArityTypeMismatchTest
  */
 

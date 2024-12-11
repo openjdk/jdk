@@ -26,12 +26,10 @@
 
 package javax.management.openmbean;
 
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 import com.sun.jmx.mbeanserver.Util;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -148,10 +146,7 @@ public class TabularDataSupport
         // Since LinkedHashMap was introduced in SE 1.4, it's conceivable even
         // if very unlikely that we might be the server of a 1.3 client.  In
         // that case you'll need to set this property.  See CR 6334663.
-        @SuppressWarnings("removal")
-        String useHashMapProp = AccessController.doPrivileged(
-                new GetPropertyAction("jmx.tabular.data.hash.map"));
-        boolean useHashMap = "true".equalsIgnoreCase(useHashMapProp);
+        boolean useHashMap = Boolean.getBoolean("jmx.tabular.data.hash.map");
 
         // Construct the empty contents HashMap
         //

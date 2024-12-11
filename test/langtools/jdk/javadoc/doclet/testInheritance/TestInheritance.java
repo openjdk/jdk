@@ -95,8 +95,8 @@ public class TestInheritance extends JavadocTester {
                      <div class="inheritance">pkg.B&lt;O,<wbr>P&gt;</div>""");
         checkOrder("pkg/C.html", """
                      <div class="inheritance" title="Inheritance Tree">java.lang.Object
-                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;java.lang.String,<wbr>Q&gt;
-                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;java.lang.String,<wbr>Q&gt;
+                     <div class="inheritance"><a href="A.html" title="class in pkg">pkg.A</a>&lt;java.lang.String, Q&gt;
+                     <div class="inheritance"><a href="B.html" title="class in pkg">pkg.B</a>&lt;java.lang.String, Q&gt;
                      <div class="inheritance">pkg.C&lt;Q&gt;</div>""");
         checkOrder("pkg/D.html", """
                      <div class="inheritance" title="Inheritance Tree">java.lang.Object

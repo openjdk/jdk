@@ -26,7 +26,6 @@
  * @bug 8186046
  * @summary Test nested dynamic constant declarations that are recursive
  * @compile CondyNestedTest_Code.jcod
- * @enablePreview
  * @run testng CondyNestedTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNestedTest
  */

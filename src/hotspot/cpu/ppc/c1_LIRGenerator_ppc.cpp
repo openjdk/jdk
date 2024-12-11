@@ -690,6 +690,23 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
       break;
     }
+    case vmIntrinsics::_floatToFloat16: {
+      assert(x->number_of_arguments() == 1, "wrong type");
+      LIRItem value(x->argument_at(0), this);
+      value.load_item();
+      LIR_Opr dst = rlock_result(x);
+      LIR_Opr tmp = new_register(T_FLOAT);
+      __ f2hf(value.result(), dst, tmp);
+      break;
+    }
+    case vmIntrinsics::_float16ToFloat: {
+      assert(x->number_of_arguments() == 1, "wrong type");
+      LIRItem value(x->argument_at(0), this);
+      value.load_item();
+      LIR_Opr dst = rlock_result(x);
+      __ hf2f(value.result(), dst, LIR_OprFact::illegalOpr);
+      break;
+    }
     case vmIntrinsics::_dsqrt:
     case vmIntrinsics::_dsqrt_strict: {
       if (VM_Version::has_fsqrt()) {

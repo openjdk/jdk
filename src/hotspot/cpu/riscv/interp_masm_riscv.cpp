@@ -179,15 +179,10 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
 void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  if (AvoidUnalignedAccesses && (bcp_offset % 2)) {
-    lbu(t1, Address(xbcp, bcp_offset));
-    lbu(reg, Address(xbcp, bcp_offset + 1));
-    slli(t1, t1, 8);
-    add(reg, reg, t1);
-  } else {
-    lhu(reg, Address(xbcp, bcp_offset));
-    revb_h_h_u(reg, reg);
-  }
+  lbu(t1, Address(xbcp, bcp_offset));
+  lbu(reg, Address(xbcp, bcp_offset + 1));
+  slli(t1, t1, 8);
+  add(reg, reg, t1);
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
@@ -200,15 +195,7 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    if (AvoidUnalignedAccesses) {
-      assert_different_registers(index, tmp);
-      load_unsigned_byte(index, Address(xbcp, bcp_offset));
-      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
-      slli(tmp, tmp, 8);
-      add(index, index, tmp);
-    } else {
-      load_unsigned_short(index, Address(xbcp, bcp_offset));
-    }
+    load_short_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
   } else if (index_size == sizeof(u4)) {
     load_int_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
   } else if (index_size == sizeof(u1)) {
@@ -441,7 +428,14 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
                                               Register Rs) {
   // Pay attention to the argument Rs, which is acquiesce in t0.
   if (VerifyActivationFrameSize) {
-    Unimplemented();
+    Label L;
+    sub(t1, fp, esp);
+    int min_frame_size =
+      (frame::link_offset - frame::interpreter_frame_initial_sp_offset + frame::metadata_words) * wordSize;
+    sub(t1, t1, min_frame_size);
+    bgez(t1, L);
+    stop("broken stack frame");
+    bind(L);
   }
   if (verifyoop && state == atos) {
     verify_oop(x10);

@@ -1018,7 +1018,11 @@ public class TypeAnnotations {
                     if (!invocation.typeargs.contains(tree)) {
                         return TypeAnnotationPosition.unknown;
                     }
-                    MethodSymbol exsym = (MethodSymbol) TreeInfo.symbol(invocation.getMethodSelect());
+                    Symbol exsym = TreeInfo.symbol(invocation.getMethodSelect());
+                    if (exsym.type.isErroneous()) {
+                        // bail out, don't deal with erroneous types which would be reported anyways
+                        return TypeAnnotationPosition.unknown;
+                    }
                     final int type_index = invocation.typeargs.indexOf(tree);
                     if (exsym == null) {
                         throw new AssertionError("could not determine symbol for {" + invocation + "}");

@@ -26,6 +26,7 @@ package jdk.jpackage.test;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 
 public enum JPackageStringBundle {
 
@@ -39,7 +40,7 @@ public enum JPackageStringBundle {
             i18nClass_getString = i18nClass.getDeclaredMethod("getString", String.class);
             i18nClass_getString.setAccessible(true);
         } catch (ClassNotFoundException|NoSuchMethodException ex) {
-            throw Functional.rethrowUnchecked(ex);
+            throw rethrowUnchecked(ex);
         }
     }
 
@@ -50,12 +51,17 @@ public enum JPackageStringBundle {
         try {
             return (String)i18nClass_getString.invoke(i18nClass, key);
         } catch (IllegalAccessException|InvocationTargetException ex) {
-            throw Functional.rethrowUnchecked(ex);
+            throw rethrowUnchecked(ex);
         }
     }
 
     private String getFormattedString(String key, Object[] args) {
-        return MessageFormat.format(getString(key), args);
+        var str = getString(key);
+        if (args.length != 0) {
+            return MessageFormat.format(str, args);
+        } else {
+            return str;
+        }
     }
 
     public CannedFormattedString cannedFormattedString(String key, String ... args) {

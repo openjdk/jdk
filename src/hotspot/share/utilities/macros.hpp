@@ -458,18 +458,6 @@
 #define NOT_IA32(code) code
 #endif
 
-// This is a REALLY BIG HACK, but on AIX <sys/systemcfg.h> unconditionally defines IA64.
-// At least on AIX 7.1 this is a real problem because 'systemcfg.h' is indirectly included
-// by 'pthread.h' and other common system headers.
-
-#if defined(IA64) && !defined(AIX)
-#define IA64_ONLY(code) code
-#define NOT_IA64(code)
-#else
-#define IA64_ONLY(code)
-#define NOT_IA64(code) code
-#endif
-
 #ifdef AMD64
 #define AMD64_ONLY(code) code
 #define NOT_AMD64(code)

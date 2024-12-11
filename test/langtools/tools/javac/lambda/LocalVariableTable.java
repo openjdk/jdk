@@ -25,8 +25,6 @@
  * @test
  * @bug 8025998 8026749 8054220 8058227
  * @summary Missing LV table in lambda bodies
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -g LocalVariableTable.java
  * @run main LocalVariableTable
  */

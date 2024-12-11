@@ -26,8 +26,6 @@
  * @bug     8011738
  * @author  sogoel
  * @summary Code translation test for Lambda expressions, method references
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @run main ByteCodeTest
  */
 

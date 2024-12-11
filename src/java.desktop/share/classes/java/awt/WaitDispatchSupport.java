@@ -161,7 +161,6 @@ class WaitDispatchSupport implements SecondaryLoop {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("removal")
     @Override
     public boolean enter() {
         if (log.isLoggable(PlatformLogger.Level.FINE)) {

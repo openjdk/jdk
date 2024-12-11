@@ -37,7 +37,6 @@ import java.awt.print.*;
 import javax.print.PrintService;
 import javax.print.attribute.*;
 import javax.print.attribute.standard.*;
-import java.util.PropertyPermission;
 
 public class PrintToDir extends Frame implements Printable {
 
@@ -122,17 +121,6 @@ public class PrintToDir extends Frame implements Printable {
 
 
     public static void main(String arg[]) {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            System.out.println("Security manager detected");
-            try {
-                security.checkPermission(new FilePermission("<<ALL FILES>>", "read,write"));
-                security.checkPermission(new PropertyPermission("user.dir", "read"));
-            } catch (SecurityException se) {
-                System.out.println("Security requirement not obtained.  TEST PASSED");
-                return;
-            }
-        }
         String[] testStr = {".", ""};
         for (int i=0; i<testStr.length; i++) {
             System.out.println("Testing file name = \""+testStr[i]+"\"");

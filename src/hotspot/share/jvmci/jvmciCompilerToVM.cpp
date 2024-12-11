@@ -3223,6 +3223,10 @@ C2V_VMENTRY(void, getOopMapAt, (JNIEnv* env, jobject, ARGUMENT_PAIR(method),
   JVMCIENV->copy_longs_from((jlong*)oop_map_buf, oop_map, 0, nwords);
 C2V_END
 
+C2V_VMENTRY_0(jint, getCompilationActivityMode, (JNIEnv* env, jobject))
+  return CompileBroker::get_compilation_activity_mode();
+}
+
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
 
@@ -3385,6 +3389,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
   {CC "updateCompilerThreadCanCallJava",              CC "(Z)Z",                                                                            FN_PTR(updateCompilerThreadCanCallJava)},
+  {CC "getCompilationActivityMode",                   CC "()I",                                                                             FN_PTR(getCompilationActivityMode)},
 };
 
 int CompilerToVM::methods_count() {
