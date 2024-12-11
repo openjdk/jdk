@@ -26,7 +26,6 @@
  * @bug 8228988 8266598
  * @summary An annotation-typed property of an annotation that is represented as an
  *          incompatible property of another type should yield an AnnotationTypeMismatchException.
- * @enablePreview
  * @run main AnnotationTypeMismatchTest
  */
 

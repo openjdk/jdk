@@ -1602,7 +1602,6 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 #ifdef ASSERT
   __ load_const_optimized(tmp2, ContinuationEntry::cookie_value());
   __ stw(tmp2, in_bytes(ContinuationEntry::cookie_offset()), R1_SP);
-  __ std(tmp2, _abi0(cr), R1_SP);
 #endif //ASSERT
 
   __ li(zero, 0);
@@ -1646,10 +1645,6 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
   __ ld_ptr(tmp1, JavaThread::cont_entry_offset(), R16_thread);
   __ cmpd(CCR0, R1_SP, tmp1);
   __ asm_assert_eq(FILE_AND_LINE ": incorrect R1_SP");
-  __ load_const_optimized(tmp1, ContinuationEntry::cookie_value());
-  __ ld(tmp2, _abi0(cr), R1_SP);
-  __ cmpd(CCR0, tmp1, tmp2);
-  __ asm_assert_eq(FILE_AND_LINE ": cookie not found");
 #endif
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
@@ -2108,7 +2103,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   BasicType *out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair *out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   // Create the signature for the C call:
   //   1) add the JNIEnv*

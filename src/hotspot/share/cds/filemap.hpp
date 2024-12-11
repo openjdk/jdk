@@ -507,6 +507,10 @@ public:
 #if INCLUDE_JVMTI
   // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
+  static ClassFileStream* get_stream_from_class_loader(Handle class_loader,
+                                                       ClassPathEntry* cpe,
+                                                       const char* file_name,
+                                                       TRAPS);
 #endif
 
   static SharedClassPathEntry* shared_path(int index) {

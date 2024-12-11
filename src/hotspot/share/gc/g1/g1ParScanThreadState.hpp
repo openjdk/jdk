@@ -84,7 +84,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Indicates whether in the last generation (old) there is no more space
   // available for allocation.
   bool _old_gen_is_full;
-  PartialArrayStateAllocator* _partial_array_state_allocator;
+  PartialArrayStateAllocator _partial_array_state_allocator;
   PartialArrayTaskStepper _partial_array_stepper;
   StringDedup::Requests _string_dedup_requests;
 
@@ -124,8 +124,7 @@ public:
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
-                       G1EvacFailureRegions* evac_failure_regions,
-                       PartialArrayStateAllocator* partial_array_state_allocator);
+                       G1EvacFailureRegions* evac_failure_regions);
   virtual ~G1ParScanThreadState();
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
@@ -247,7 +246,6 @@ class G1ParScanThreadStateSet : public StackObj {
   uint _num_workers;
   bool _flushed;
   G1EvacFailureRegions* _evac_failure_regions;
-  PartialArrayStateAllocator _partial_array_state_allocator;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,

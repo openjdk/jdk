@@ -25,7 +25,6 @@
  * @test
  * @bug 8011181
  * @summary javac, empty UTF8 entry generated for inner class
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.util
  */
 

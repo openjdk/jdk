@@ -26,7 +26,6 @@
  * @bug 8026213
  * @summary Reflection support for private methods in interfaces
  * @author  Robert Field
- * @enablePreview
  * @run main TestPrivateInterfaceMethodReflect
  */
 

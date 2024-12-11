@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+ xmlns:xs="http://www.w3.org/2001/XMLSchema"
+ elementFormDefault="qualified"
+ xmlns:xh11d="http://www.w3.org/1999/xhtml/datatypes/"
+>
+    <xs:import namespace="http://www.w3.org/1999/xhtml/datatypes/" 
+               schemaLocation="xhtml-datatypes-1.xsd" />
+    <xs:annotation>
+        <xs:documentation>
+      List Module
+      This is the XML Schema Lists module for XHTML
+      List Module Elements
+    
+        * dl, dt, dd, ol, ul, li
+    
+      This module declares the list-oriented element types
+      and their attributes.
+      $Id: xhtml-list-1.xsd,v 1.2 2005/09/26 22:54:53 ahby Exp $      
+    </xs:documentation>
+        <xs:documentation source="xhtml-copyright-1.xsd"/>
+        <xs:documentation source="http://www.w3.org/TR/2001/REC-xhtml-modularization-20010410/abstract_modules.html#s_listmodule"/>
+    </xs:annotation>
+    <xs:attributeGroup name="xhtml.dt.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.dt.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Inline.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.dt.type" mixed="true">
+        <xs:group ref="xhtml.dt.content"/>
+        <xs:attributeGroup ref="xhtml.dt.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.dd.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.dd.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Flow.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.dd.type" mixed="true">
+        <xs:group ref="xhtml.dd.content"/>
+        <xs:attributeGroup ref="xhtml.dd.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.dl.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.dl.content">
+        <xs:sequence>
+            <xs:choice maxOccurs="unbounded">
+                <xs:element name="dt" type="xhtml.dt.type"/>
+                <xs:element name="dd" type="xhtml.dd.type"/>
+            </xs:choice>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.dl.type">
+        <xs:group ref="xhtml.dl.content"/>
+        <xs:attributeGroup ref="xhtml.dl.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.li.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.li.content">
+        <xs:sequence>
+            <xs:group ref="xhtml.Flow.mix" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.li.type" mixed="true">
+        <xs:group ref="xhtml.li.content"/>
+        <xs:attributeGroup ref="xhtml.li.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.ol.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.ol.content">
+        <xs:sequence>
+            <xs:element name="li" type="xhtml.li.type" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.ol.type">
+        <xs:group ref="xhtml.ol.content"/>
+        <xs:attributeGroup ref="xhtml.ol.attlist"/>
+    </xs:complexType>
+    <xs:attributeGroup name="xhtml.ul.attlist">
+        <xs:attributeGroup ref="xhtml.Common.attrib"/>
+    </xs:attributeGroup>
+    <xs:group name="xhtml.ul.content">
+        <xs:sequence>
+            <xs:element name="li" type="xhtml.li.type" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:group>
+    <xs:complexType name="xhtml.ul.type">
+        <xs:group ref="xhtml.ul.content"/>
+        <xs:attributeGroup ref="xhtml.ul.attlist"/>
+    </xs:complexType>
+</xs:schema>

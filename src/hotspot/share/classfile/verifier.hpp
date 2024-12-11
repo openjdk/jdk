@@ -61,7 +61,6 @@ class Verifier : AllStatic {
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
 
  private:
-  static bool is_eligible_for_verification(InstanceKlass* klass, bool should_verify_class);
   static Symbol* inference_verify(
     InstanceKlass* klass, char* msg, size_t msg_len, TRAPS);
 };

@@ -145,9 +145,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
       "| grep -E '^[ 0-9a-zA-Z_-]*@' | awk '{print $4}'"
     };
 
-    @SuppressWarnings("removal")
-    private static String encoding = java.security.AccessController.doPrivileged(
-            new sun.security.action.GetPropertyAction("file.encoding"));
+    private static String encoding = System.getProperty("file.encoding");
 
     /* let's try to support a few of these */
     private static final Class<?>[] serviceAttrCats = {
@@ -418,11 +416,6 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     public DocPrintJob createPrintJob() {
-      @SuppressWarnings("removal")
-      SecurityManager security = System.getSecurityManager();
-      if (security != null) {
-        security.checkPrintJobAccess();
-      }
         return new UnixPrintJob(this);
     }
 
@@ -629,15 +622,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         } else if (category == Chromaticity.class) {
             return Chromaticity.COLOR;
         } else if (category == Destination.class) {
-            try {
-                return new Destination((new File("out.ps")).toURI());
-            } catch (SecurityException se) {
-                try {
-                    return new Destination(new URI("file:out.ps"));
-                } catch (URISyntaxException e) {
-                    return null;
-                }
-            }
+            return new Destination((new File("out.ps")).toURI());
         } else if (category == Fidelity.class) {
             return Fidelity.FIDELITY_FALSE;
         } else if (category == JobName.class) {
@@ -674,11 +659,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         } else if (category == PageRanges.class) {
             return new PageRanges(1, Integer.MAX_VALUE);
         } else if (category == RequestingUserName.class) {
-            String userName = "";
-            try {
-              userName = System.getProperty("user.name", "");
-            } catch (SecurityException se) {
-            }
+            String userName = System.getProperty("user.name", "");
             return new RequestingUserName(userName, null);
         } else if (category == SheetCollate.class) {
             return SheetCollate.UNCOLLATED;
@@ -735,15 +716,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
                 return null;
             }
         } else if (category == Destination.class) {
-            try {
                 return new Destination((new File("out.ps")).toURI());
-            } catch (SecurityException se) {
-                try {
-                    return new Destination(new URI("file:out.ps"));
-                } catch (URISyntaxException e) {
-                    return null;
-                }
-            }
         } else if (category == JobName.class) {
             return new JobName("Java Printing", null);
         } else if (category == JobSheets.class) {
@@ -752,11 +725,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
             arr[1] = JobSheets.STANDARD;
             return arr;
         } else if (category == RequestingUserName.class) {
-            String userName = "";
-            try {
-              userName = System.getProperty("user.name", "");
-            } catch (SecurityException se) {
-            }
+            String userName = System.getProperty("user.name", "");
             return new RequestingUserName(userName, null);
         } else if (category == OrientationRequested.class) {
             if (flavor == null || isServiceFormattedFlavor(flavor)) {

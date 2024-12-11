@@ -28,6 +28,7 @@
  */
 
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
@@ -41,8 +42,8 @@ public class SnippetsTest {
     @ParameterizedTest
     @ValueSource(strings = {
         "src/java.base/share/classes/java/lang/classfile/snippet-files/PackageSnippets.java",
-        "src/java.base/share/classes/java/lang/classfile/components/snippet-files/PackageSnippets.java",
         "src/java.base/share/classes/java/lang/classfile/constantpool/snippet-files/PackageSnippets.java",
+        "src/java.base/share/classes/jdk/internal/classfile/components/snippet-files/PackageSnippets.java"
     })
     void testSnippet(String source) throws Exception {
         var p = Paths.get(System.getProperty("test.src", ".")).toAbsolutePath();
@@ -54,9 +55,13 @@ public class SnippetsTest {
                     var compilationUnits = fileManager.getJavaFileObjectsFromFiles(List.of(src));
                     fileManager.setLocation(StandardLocation.CLASS_OUTPUT,
                             List.of(Paths.get(System.getProperty("test.classes", ".")).toFile()));
-                    var task = compiler.getTask(null, fileManager, null, List.of(
-                            "--enable-preview",
-                            "--source", String.valueOf(Runtime.version().feature())),
+                    List<String> flags = List.of();
+                    if (source.contains("jdk/internal/classfile/components")) {
+                        flags = new ArrayList<>(flags);
+                        flags.add("--add-exports");
+                        flags.add("java.base/jdk.internal.classfile.components=ALL-UNNAMED");
+                    }
+                    var task = compiler.getTask(null, fileManager, null, flags,
                             null, compilationUnits);
                     if (task.call()) return;
                     throw new RuntimeException("Error compiling " + source);

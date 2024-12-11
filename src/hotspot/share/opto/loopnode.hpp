@@ -941,12 +941,7 @@ private:
 #ifdef ASSERT
   static void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
- public:
-  IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
-                                                     Node* new_stride, Node* control);
-  DEBUG_ONLY(static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);)
  private:
-  DEBUG_ONLY(static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);)
   static void get_template_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(CountedLoopNode* main_loop_head);
   void initialize_assertion_predicates_for_peeled_loop(CountedLoopNode* peeled_loop_head,
@@ -984,6 +979,10 @@ public:
     assert( ctrl->in(0), "cannot set dead control node" );
     assert( ctrl == find_non_split_ctrl(ctrl), "must set legal crtl" );
     _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)ctrl + 1));
+  }
+  void set_root_as_ctrl(Node* n) {
+    assert(!has_node(n) || has_ctrl(n), "");
+    _loop_or_ctrl.map(n->_idx, (Node*)((intptr_t)C->root() + 1));
   }
   // Set control and update loop membership
   void set_ctrl_and_loop(Node* n, Node* ctrl) {
@@ -1421,7 +1420,7 @@ public:
   }
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-  void do_range_check(IdealLoopTree *loop, Node_List &old_new);
+  void do_range_check(IdealLoopTree* loop);
 
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
@@ -1789,6 +1788,16 @@ public:
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+
+  ConINode* intcon(jint i);
+
+  ConLNode* longcon(jlong i);
+
+  ConNode* makecon(const Type* t);
+
+  ConNode* integercon(jlong l, BasicType bt);
+
+  ConNode* zerocon(BasicType bt);
 };
 
 

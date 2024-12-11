@@ -29,8 +29,6 @@ import java.util.ArrayList;
  * @test
  * @bug 8136419 8200301
  * @summary test that type annotations on entities in initializers are emitted to classfile
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile -XDdeduplicateLambdas=false InstanceInitializer.java
  * @run main InstanceInitializer
  */
