@@ -33,7 +33,7 @@
  * The division 2 / i4 requires a non-zero check. As the result is an array access, it will be the input to a range
  * check. Loop predication will try to move the range check and the division to right before the loop as the division
  * appears to be invariant (i4 is always 0). However, the division is not truly invariant as it requires the zero
- * check for i4 that can throw an exception. The bug fixed 8331717 caused the division to still be moved before the
+ * check for i4 that can throw an exception. The bug fixed in 8331717 caused the division to still be moved before the
  * for loop with the range check.
  */
 public class TestLoopPredicationDivZeroCheck {
