@@ -79,7 +79,7 @@ public class AllModulePathTest {
         OutputAnalyzer analyzer = new OutputAnalyzer(new String(baos.toByteArray(), StandardCharsets.UTF_8),
                                                      new String(berrOs.toByteArray(), StandardCharsets.UTF_8));
         analyzer.stdoutShouldContain("Error");
-        analyzer.stdoutShouldContain("ALL-MODULE-PATH requires --module-path option");
+        analyzer.stdoutShouldContain("--module-path option must be specified with --add-modules ALL-MODULE-PATH");
     }
 
     /*
@@ -87,7 +87,8 @@ public class AllModulePathTest {
      */
     private void modulePathEmpty() {
         Path targetPath = helper.createNewImageDir("all-mod-path-not-existing");
-        Path notExists = Path.of("not-exist");
+        String strNotExists = "not-exist";
+        Path notExists = Path.of(strNotExists);
         if (Files.exists(notExists)) {
             throw new RuntimeException("Test setup error, path must not exist!");
         }
@@ -103,7 +104,8 @@ public class AllModulePathTest {
         OutputAnalyzer analyzer = new OutputAnalyzer(new String(baos.toByteArray(), StandardCharsets.UTF_8),
                                                      new String(berrOs.toByteArray(), StandardCharsets.UTF_8));
         analyzer.stdoutShouldContain("Error");
-        analyzer.stdoutShouldContain("ALL-MODULE-PATH requires --module-path option");
+        analyzer.stdoutShouldContain("No module found in module path");
+        analyzer.stdoutShouldContain(strNotExists);
     }
 
     /*

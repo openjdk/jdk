@@ -369,6 +369,12 @@ public class JlinkTask {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
+        // Empty module path not allowed with ALL-MODULE-PATH in --add-modules
+        if (options.addMods.contains(ALL_MODULE_PATH) && options.modulePath.isEmpty()) {
+            throw taskHelper.newBadArgs("err.no.module.path");
+        }
+
+        List<Path> originalModulePath = new ArrayList<>(options.modulePath);
         ModuleFinder appModulePathFinder = createFinderFromPath(options.modulePath);
         ModuleFinder finder = appModulePathFinder;
         boolean isLinkFromRuntime = false;
@@ -402,7 +408,28 @@ public class JlinkTask {
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
-                ModuleFinder mf = newModuleFinder(finder, options.limitMods,
+                // all observable modules in app module path are roots
+                Set<String> initialRoots = appModulePathFinder.findAll()
+                        .stream()
+                        .map(ModuleReference::descriptor)
+                        .map(ModuleDescriptor::name)
+                        .collect(Collectors.toSet());
+
+                // Error if no module is found on the app module path
+                if (initialRoots.isEmpty()) {
+                    String modPath = originalModulePath.stream()
+                                                       .map(a -> a.toString())
+                                                       .collect(Collectors.joining(","));
+                    throw taskHelper.newBadArgs("err.empty.module.path", modPath);
+                }
+
+                // Use a module finder with limited observability, as determined
+                // by initialRoots, to find the observable modules from the
+                // application module path (--module-path option) only. We must
+                // not include JDK modules from the default module path or the
+                // run-time image. Only do this if no --limit-modules has been
+                // specified to begin with.
+                ModuleFinder mf = newModuleFinder(finder, options.limitMods.isEmpty() ? initialRoots : options.limitMods,
                                                   Set.of(), isLinkFromRuntime);
                 mf.findAll()
                   .stream()
