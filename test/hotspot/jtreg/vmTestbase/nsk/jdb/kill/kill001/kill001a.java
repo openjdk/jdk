@@ -157,13 +157,13 @@ class MyThread extends Thread {
         if (vthreadMode) {
             // JVMTI StopThread is only supported for mounted virtual threads. We need to
             // pin the virtual threads so they remain mounted.
-            VThreadPinner.runPinned(() -> run1());
+            VThreadPinner.runPinned(() -> test());
         } else {
-            run1();
+            test();
         }
     }
 
-    public void run1() {
+    public void test() {
         // Concatenate strings in advance to avoid lambda calculations later
         String ThreadFinished = "Thread finished: " + this.name;
         String CaughtExpected = "Thread " + this.name + " caught expected async exception: " + expectedException;
