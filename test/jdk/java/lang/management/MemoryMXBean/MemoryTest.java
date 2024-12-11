@@ -46,15 +46,27 @@
  */
 
 /*
- * @test
+ * @test id=Shenandoah
  * @bug     4530538
- * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
- *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc == "Shenandoah"
+ * @summary Shenandoah has a gc mgr bean for cycles and another
+ *          for pauses, they both have one pool.
+ * @requires vm.gc == "Shenandoah" & vm.opt.ShenandoahGCMode != "generational"
  * @author  Mandy Chung
  *
  * @modules jdk.management
  * @run main MemoryTest 2 1
+ */
+
+/*
+ * @test id=Genshen
+ * @bug     4530538
+ * @summary Shenandoah's generational mode has a gc mgr bean for cycles.
+ *          They both reference the young and old pools.
+ * @requires vm.gc == "Shenandoah" & vm.opt.ShenandoahGCMode == "generational"
+ * @author  Mandy Chung
+ *
+ * @modules jdk.management
+ * @run main MemoryTest 2 2
  */
 
 /*
@@ -174,6 +186,7 @@ public class MemoryTest {
         // Check the number of Memory Managers
         for (ListIterator iter = mgrs.listIterator(); iter.hasNext();) {
             MemoryManagerMXBean mgr = (MemoryManagerMXBean) iter.next();
+            System.out.println(mgr.getName());
             String[] poolNames = mgr.getMemoryPoolNames();
             if (poolNames == null || poolNames.length == 0) {
                 throw new RuntimeException("TEST FAILED: " +
