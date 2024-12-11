@@ -248,7 +248,7 @@ public:
     //
     // Attach client can make sanity connect/disconnect.
     // In the case we get "premature EOF" error.
-    // If "may_be_empty" is true, the error is not logged.
+    // If may_be_empty is true, the error is not logged.
     int read_uint(bool may_be_empty = false);
   };
 

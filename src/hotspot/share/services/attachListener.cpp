@@ -697,9 +697,9 @@ bool AttachOperation::write_reply(ReplyWriter * writer, jint result, const char*
   if (message_len < 0) {
     message_len = (int)strlen(message);
   }
-  char msg[32];
-  os::snprintf_checked(msg, sizeof(msg), "%d\n", result);
-  if (!writer->write_fully(msg, (int)strlen(msg))) {
+  char buf[32];
+  os::snprintf_checked(buf, sizeof(buf), "%d\n", result);
+  if (!writer->write_fully(buf, (int)strlen(buf))) {
     return false;
   }
   if (!writer->write_fully(message, message_len)) {

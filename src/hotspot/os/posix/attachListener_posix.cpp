@@ -142,16 +142,16 @@ public:
 class PosixAttachOperation: public AttachOperation {
  private:
   // the connection to the client
-  SocketChannel _socket;
+  SocketChannel _socket_channel;
 
  public:
   void complete(jint res, bufferedStream* st) override;
 
-  PosixAttachOperation(int socket) : AttachOperation(), _socket(socket) {
+  PosixAttachOperation(int socket) : AttachOperation(), _socket_channel(socket) {
   }
 
   bool read_request() {
-    return AttachOperation::read_request(&_socket, &_socket);
+    return AttachOperation::read_request(&_socket_channel, &_socket_channel);
   }
 };
 
@@ -322,7 +322,7 @@ void PosixAttachOperation::complete(jint result, bufferedStream* st) {
   JavaThread* thread = JavaThread::current();
   ThreadBlockInVM tbivm(thread);
 
-  write_reply(&_socket, result, st);
+  write_reply(&_socket_channel, result, st);
 
   delete this;
 }
