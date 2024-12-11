@@ -157,7 +157,7 @@ public class IntegrationTest {
         boolean linkFromRuntime = false;
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
                 mods,
-                JlinkTask.newModuleFinder(JlinkTask.createFinderFromPath(modulePaths), limits, mods, linkFromRuntime), linkFromRuntime, false, false);
+                JlinkTask.limitFinder(JlinkTask.newModuleFinder(modulePaths), limits, mods), linkFromRuntime, false, false);
 
         List<Plugin> lst = new ArrayList<>();
 
