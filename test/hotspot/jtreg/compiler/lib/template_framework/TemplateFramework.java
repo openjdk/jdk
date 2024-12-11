@@ -27,7 +27,6 @@ package compiler.lib.template_framework;
  * TODO
  *
  * - Extend library
- * - Pass replacements as arguments - need to convert to string - what about newline?
  *
  * - Convenience Classes:
  *   - Repeat test, maybe with set of values for parameters
