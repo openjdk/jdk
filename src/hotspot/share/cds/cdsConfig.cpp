@@ -433,6 +433,11 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for
       // generating deterministic archives when building the JDK.
       //
+      // We check the JVMCI flags here to avoid running with -Xint when the JVMCI compiler is used.
+      // Ideally we should only check EnableJVMCI, but that flag can be ergonomically enabled
+      // in CompilerConfig::check_args_consistency(), which is called after the current function returns.
+      // So we have to manually check all the relevant flags here. TODO: This should be refactored.
+      //
       // If your classlist is large and you don't care about deterministic dumping, you can use
       // -Xshare:dump -Xmixed to improve dumping speed.
       Arguments::set_mode_flags(Arguments::_int);
