@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,10 @@ struct G1HeapTransition::DetailedUsage : public StackObj {
     _humongous_region_count(0) {}
 };
 
-class G1HeapTransition::DetailedUsageClosure: public HeapRegionClosure {
+class G1HeapTransition::DetailedUsageClosure: public G1HeapRegionClosure {
 public:
   DetailedUsage _usage;
-  bool do_heap_region(HeapRegion* r) {
+  bool do_heap_region(G1HeapRegion* r) {
     if (r->is_old()) {
       _usage._old_used += r->used();
       _usage._old_region_count++;
@@ -157,17 +157,17 @@ void G1HeapTransition::print() {
   log_regions("Survivor", _before._survivor_length, after._survivor_length, survivor_capacity_length_before_gc,
               _before._survivor_length_per_node, after._survivor_length_per_node);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
-                      usage._survivor_used / K, ((after._survivor_length * HeapRegion::GrainBytes) - usage._survivor_used) / K);
+                      usage._survivor_used / K, ((after._survivor_length * G1HeapRegion::GrainBytes) - usage._survivor_used) / K);
 
   log_info(gc, heap)("Old regions: " SIZE_FORMAT "->" SIZE_FORMAT,
                      _before._old_length, after._old_length);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
-                      usage._old_used / K, ((after._old_length * HeapRegion::GrainBytes) - usage._old_used) / K);
+                      usage._old_used / K, ((after._old_length * G1HeapRegion::GrainBytes) - usage._old_used) / K);
 
   log_info(gc, heap)("Humongous regions: " SIZE_FORMAT "->" SIZE_FORMAT,
                      _before._humongous_length, after._humongous_length);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
-                      usage._humongous_used / K, ((after._humongous_length * HeapRegion::GrainBytes) - usage._humongous_used) / K);
+                      usage._humongous_used / K, ((after._humongous_length * G1HeapRegion::GrainBytes) - usage._humongous_used) / K);
 
   MetaspaceUtils::print_metaspace_change(_before._meta_sizes);
 }

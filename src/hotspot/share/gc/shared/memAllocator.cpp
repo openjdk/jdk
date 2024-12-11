@@ -123,21 +123,21 @@ bool MemAllocator::Allocation::check_out_of_memory() {
   }
 
   const char* message = _overhead_limit_exceeded ? "GC overhead limit exceeded" : "Java heap space";
-  if (!_thread->in_retryable_allocation()) {
+  if (!_thread->is_in_internal_oome_mark()) {
     // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
     report_java_out_of_memory(message);
-
     if (JvmtiExport::should_post_resource_exhausted()) {
       JvmtiExport::post_resource_exhausted(
         JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR | JVMTI_RESOURCE_EXHAUSTED_JAVA_HEAP,
         message);
     }
+
     oop exception = _overhead_limit_exceeded ?
         Universe::out_of_memory_error_gc_overhead_limit() :
         Universe::out_of_memory_error_java_heap();
     THROW_OOP_(exception, true);
   } else {
-    THROW_OOP_(Universe::out_of_memory_error_retry(), true);
+    THROW_OOP_(Universe::out_of_memory_error_java_heap_without_backtrace(), true);
   }
 }
 
@@ -147,7 +147,7 @@ void MemAllocator::Allocation::verify_before() {
   JavaThread* THREAD = _thread; // For exception macros.
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
   debug_only(check_for_valid_allocation_state());
-  assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
+  assert(!Universe::heap()->is_stw_gc_active(), "Allocation during GC pause not allowed");
 }
 
 #ifdef ASSERT
@@ -361,18 +361,23 @@ void MemAllocator::mem_clear(HeapWord* mem) const {
   assert(mem != nullptr, "cannot initialize null object");
   const size_t hs = oopDesc::header_size();
   assert(_word_size >= hs, "unexpected object size");
-  oopDesc::set_klass_gap(mem, 0);
+  if (oopDesc::has_klass_gap()) {
+    oopDesc::set_klass_gap(mem, 0);
+  }
   Copy::fill_to_aligned_words(mem + hs, _word_size - hs);
 }
 
 oop MemAllocator::finish(HeapWord* mem) const {
   assert(mem != nullptr, "null object pointer");
-  // May be bootstrapping
-  oopDesc::set_mark(mem, markWord::prototype());
   // Need a release store to ensure array/class length, mark word, and
   // object zeroing are visible before setting the klass non-null, for
   // concurrent collectors.
-  oopDesc::release_set_klass(mem, _klass);
+  if (UseCompactObjectHeaders) {
+    oopDesc::release_set_mark(mem, _klass->prototype_header());
+  } else {
+    oopDesc::set_mark(mem, markWord::prototype());
+    oopDesc::release_set_klass(mem, _klass);
+  }
   return cast_to_oop(mem);
 }
 
@@ -388,6 +393,7 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     mem_clear(mem);
+    mem_zap_start_padding(mem);
     mem_zap_end_padding(mem);
   }
   arrayOopDesc::set_length(mem, _length);
@@ -395,6 +401,20 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
 }
 
 #ifndef PRODUCT
+void ObjArrayAllocator::mem_zap_start_padding(HeapWord* mem) const {
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
+  const size_t header_size_in_bytes = arrayOopDesc::header_size_in_bytes();
+
+  const address base = reinterpret_cast<address>(mem) + base_offset_in_bytes;
+  const address header_end = reinterpret_cast<address>(mem) + header_size_in_bytes;
+
+  if (header_end < base) {
+    const size_t padding_in_bytes = base - header_end;
+    Copy::fill_to_bytes(header_end, padding_in_bytes, heapPaddingByteVal);
+  }
+}
+
 void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
   const size_t length_in_bytes = static_cast<size_t>(_length) << ArrayKlass::cast(_klass)->log2_element_size();
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();

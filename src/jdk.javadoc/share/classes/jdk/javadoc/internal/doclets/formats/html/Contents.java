@@ -31,11 +31,12 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -171,6 +172,7 @@ public class Contents {
     public final Content relatedPackages;
     public final Content returns;
     public final Content searchLabel;
+    public final Content searchTagsLabel;
     public final Content seeAlso;
     public final Content serializedForm;
     public final Content servicesLabel;
@@ -324,6 +326,7 @@ public class Contents {
         relatedPackages = getContent("doclet.Related_Packages");
         returns = getContent("doclet.Returns");
         searchLabel = getContent("doclet.search");
+        searchTagsLabel = getContent("doclet.searchTags");
         seeAlso = getContent("doclet.See_Also");
         serializedForm = getContent("doclet.Serialized_Form");
         servicesLabel = getContent("doclet.Services");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,15 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.ProtocolException;
-import java.net.ProxySelector;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLPermission;
-import java.security.AccessControlContext;
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 
@@ -50,23 +43,16 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.Log;
 
-import static jdk.internal.net.http.common.Utils.permissionForProxy;
-
 /**
  * One request/response exchange (handles 100/101 intermediate response also).
  * depth field used to track number of times a new request is being sent
  * for a given API request. If limit exceeded exception is thrown.
  *
- * Security check is performed here:
- * - uses AccessControlContext captured at API level
- * - checks for appropriate URLPermission for request
- * - if permission allowed, grants equivalent SocketPermission to call
- * - in case of direct HTTP proxy, checks additionally for access to proxy
- *    (CONNECT proxying uses its own Exchange, so check done there)
- *
  */
 final class Exchange<T> {
 
+    static final int MAX_NON_FINAL_RESPONSES =
+            Utils.getIntegerNetProperty("jdk.httpclient.maxNonFinalResponses", 8);
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     final HttpRequestImpl request;
@@ -78,8 +64,6 @@ final class Exchange<T> {
     // used to record possible cancellation raised before the exchImpl
     // has been established.
     private volatile IOException failed;
-    @SuppressWarnings("removal")
-    final AccessControlContext acc;
     final MultiExchange<T> multi;
     final Executor parentExecutor;
     volatile boolean upgrading; // to HTTP/2
@@ -91,24 +75,10 @@ final class Exchange<T> {
     // exchange so that it can be aborted/timed out mid setup.
     final ConnectionAborter connectionAborter = new ConnectionAborter();
 
+    final AtomicInteger nonFinalResponses = new AtomicInteger();
+
     Exchange(HttpRequestImpl request, MultiExchange<T> multi) {
         this.request = request;
-        this.upgrading = false;
-        this.client = multi.client();
-        this.multi = multi;
-        this.acc = multi.acc;
-        this.parentExecutor = multi.executor;
-        this.pushGroup = multi.pushGroup;
-        this.dbgTag = "Exchange";
-    }
-
-    /* If different AccessControlContext to be used  */
-    Exchange(HttpRequestImpl request,
-             MultiExchange<T> multi,
-             @SuppressWarnings("removal") AccessControlContext acc)
-    {
-        this.request = request;
-        this.acc = acc;
         this.upgrading = false;
         this.client = multi.client();
         this.multi = multi;
@@ -331,7 +301,7 @@ final class Exchange<T> {
         }
     }
 
-    <T> CompletableFuture<T> checkCancelled(CompletableFuture<T> cf, HttpConnection connection) {
+    <U> CompletableFuture<U> checkCancelled(CompletableFuture<U> cf, HttpConnection connection) {
         return cf.handle((r,t) -> {
             if (t == null) {
                 if (multi.requestCancelled()) {
@@ -347,7 +317,7 @@ final class Exchange<T> {
                         } catch (Throwable x) {
                             if (debug.on()) debug.log("Failed to close connection", x);
                         }
-                        return MinimalFuture.<T>failedFuture(t);
+                        return MinimalFuture.<U>failedFuture(t);
                     }
                 }
             }
@@ -357,7 +327,7 @@ final class Exchange<T> {
 
     public void h2Upgrade() {
         upgrading = true;
-        request.setH2Upgrade(client.client2());
+        request.setH2Upgrade(this);
     }
 
     synchronized IOException getCancelCause() {
@@ -415,15 +385,6 @@ final class Exchange<T> {
         return responseAsyncImpl(null);
     }
 
-    CompletableFuture<Response> responseAsyncImpl(HttpConnection connection) {
-        SecurityException e = checkPermissions();
-        if (e != null) {
-            return MinimalFuture.failedFuture(e);
-        } else {
-            return responseAsyncImpl0(connection);
-        }
-    }
-
     // check whether the headersSentCF was completed exceptionally with
     // ProxyAuthorizationRequired. If so the Response embedded in the
     // exception is returned. Otherwise we proceed.
@@ -453,32 +414,55 @@ final class Exchange<T> {
     // for the 100-Continue response
     private CompletableFuture<Response> expectContinue(ExchangeImpl<T> ex) {
         assert request.expectContinue();
+
+        long responseTimeoutMillis = 5000;
+        if (request.timeout().isPresent()) {
+            final long timeoutMillis = request.timeout().get().toMillis();
+            responseTimeoutMillis = Math.min(responseTimeoutMillis, timeoutMillis);
+        }
+
         return ex.getResponseAsync(parentExecutor)
+                .completeOnTimeout(null, responseTimeoutMillis, TimeUnit.MILLISECONDS)
                 .thenCompose((Response r1) -> {
-            Log.logResponse(r1::toString);
-            int rcode = r1.statusCode();
-            if (rcode == 100) {
-                Log.logTrace("Received 100-Continue: sending body");
-                if (debug.on()) debug.log("Received 100-Continue for %s", r1);
-                CompletableFuture<Response> cf =
-                        exchImpl.sendBodyAsync()
-                                .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
-                cf = wrapForUpgrade(cf);
-                cf = wrapForLog(cf);
-                return cf;
-            } else {
-                Log.logTrace("Expectation failed: Received {0}",
-                        rcode);
-                if (debug.on()) debug.log("Expect-Continue failed (%d) for: %s", rcode, r1);
-                if (upgrading && rcode == 101) {
-                    IOException failed = new IOException(
-                            "Unable to handle 101 while waiting for 100");
-                    return MinimalFuture.failedFuture(failed);
-                }
-                exchImpl.expectContinueFailed(rcode);
-                return MinimalFuture.completedFuture(r1);
-            }
-        });
+                    // The response will only be null if there was a timeout
+                    // send body regardless
+                    if (r1 == null) {
+                        if (debug.on())
+                            debug.log("Setting ExpectTimeoutRaised and sending request body");
+                        exchImpl.setExpectTimeoutRaised();
+                        CompletableFuture<Response> cf =
+                                exchImpl.sendBodyAsync()
+                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        cf = wrapForUpgrade(cf);
+                        cf = wrapForLog(cf);
+                        return cf;
+                    }
+
+                    Log.logResponse(r1::toString);
+                    int rcode = r1.statusCode();
+                    if (rcode == 100) {
+                        nonFinalResponses.incrementAndGet();
+                        Log.logTrace("Received 100-Continue: sending body");
+                        if (debug.on()) debug.log("Received 100-Continue for %s", r1);
+                        CompletableFuture<Response> cf =
+                                exchImpl.sendBodyAsync()
+                                        .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
+                        cf = wrapForUpgrade(cf);
+                        cf = wrapForLog(cf);
+                        return cf;
+                    } else {
+                        Log.logTrace("Expectation failed: Received {0}",
+                                rcode);
+                        if (debug.on()) debug.log("Expect-Continue failed (%d) for: %s", rcode, r1);
+                        if (upgrading && rcode == 101) {
+                            IOException failed = new IOException(
+                                    "Unable to handle 101 while waiting for 100");
+                            return MinimalFuture.failedFuture(failed);
+                        }
+                        exchImpl.expectContinueFailed(rcode);
+                        return MinimalFuture.completedFuture(r1);
+                    }
+                });
     }
 
     // After sending the request headers, if no ProxyAuthorizationRequired
@@ -534,19 +518,27 @@ final class Exchange<T> {
                         + rsp.statusCode());
             }
             assert exchImpl != null : "Illegal state - current exchange isn't set";
-            // ignore this Response and wait again for the subsequent response headers
-            final CompletableFuture<Response> cf = exchImpl.getResponseAsync(parentExecutor);
-            // we recompose the CF again into the ignore1xxResponse check/function because
-            // the 1xx response is allowed to be sent multiple times for a request, before
-            // a final response arrives
-            return cf.thenCompose(this::ignore1xxResponse);
+            int count = nonFinalResponses.incrementAndGet();
+            if (MAX_NON_FINAL_RESPONSES > 0 && (count < 0 || count > MAX_NON_FINAL_RESPONSES)) {
+                return MinimalFuture.failedFuture(
+                        new ProtocolException(String.format(
+                                "Too many interim responses received: %s > %s",
+                                count, MAX_NON_FINAL_RESPONSES)));
+            } else {
+                // ignore this Response and wait again for the subsequent response headers
+                final CompletableFuture<Response> cf = exchImpl.getResponseAsync(parentExecutor);
+                // we recompose the CF again into the ignore1xxResponse check/function because
+                // the 1xx response is allowed to be sent multiple times for a request, before
+                // a final response arrives
+                return cf.thenCompose(this::ignore1xxResponse);
+            }
         } else {
             // return the already completed future
             return MinimalFuture.completedFuture(rsp);
         }
     }
 
-    CompletableFuture<Response> responseAsyncImpl0(HttpConnection connection) {
+    CompletableFuture<Response> responseAsyncImpl(HttpConnection connection) {
         Function<ExchangeImpl<T>, CompletableFuture<Response>> after407Check;
         bodyIgnored = null;
         if (request.expectContinue()) {
@@ -697,111 +689,16 @@ final class Exchange<T> {
         return MinimalFuture.completedFuture(resp);
     }
 
-    private URI getURIForSecurityCheck() {
-        URI u;
-        String method = request.method();
-        InetSocketAddress authority = request.authority();
-        URI uri = request.uri();
-
-        // CONNECT should be restricted at API level
-        if (method.equalsIgnoreCase("CONNECT")) {
-            try {
-                u = new URI("socket",
-                             null,
-                             authority.getHostString(),
-                             authority.getPort(),
-                             null,
-                             null,
-                             null);
-            } catch (URISyntaxException e) {
-                throw new InternalError(e); // shouldn't happen
-            }
-        } else {
-            u = uri;
-        }
-        return u;
-    }
-
-    /**
-     * Returns the security permission required for the given details.
-     * If method is CONNECT, then uri must be of form "scheme://host:port"
-     */
-    private static URLPermission permissionForServer(URI uri,
-                                                     String method,
-                                                     Map<String, List<String>> headers) {
-        if (method.equals("CONNECT")) {
-            return new URLPermission(uri.toString(), "CONNECT");
-        } else {
-            return Utils.permissionForServer(uri, method, headers.keySet().stream());
-        }
-    }
-
-    /**
-     * Performs the necessary security permission checks required to retrieve
-     * the response. Returns a security exception representing the denied
-     * permission, or null if all checks pass or there is no security manager.
-     */
-    private SecurityException checkPermissions() {
-        String method = request.method();
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null || method.equals("CONNECT")) {
-            // tunneling will have a null acc, which is fine. The proxy
-            // permission check will have already been preformed.
-            return null;
-        }
-
-        HttpHeaders userHeaders = request.getUserHeaders();
-        URI u = getURIForSecurityCheck();
-        URLPermission p = permissionForServer(u, method, userHeaders.map());
-
-        try {
-            assert acc != null;
-            sm.checkPermission(p, acc);
-        } catch (SecurityException e) {
-            return e;
-        }
-        String hostHeader = userHeaders.firstValue("Host").orElse(null);
-        if (hostHeader != null && !hostHeader.equalsIgnoreCase(u.getHost())) {
-            // user has set a Host header different to request URI
-            // must check that for URLPermission also
-            URI u1 = replaceHostInURI(u, hostHeader);
-            URLPermission p1 = permissionForServer(u1, method, userHeaders.map());
-            try {
-                assert acc != null;
-                sm.checkPermission(p1, acc);
-            } catch (SecurityException e) {
-                return e;
-            }
-        }
-        ProxySelector ps = client.proxySelector();
-        if (ps != null) {
-            if (!method.equals("CONNECT")) {
-                // a non-tunneling HTTP proxy. Need to check access
-                URLPermission proxyPerm = permissionForProxy(request.proxy());
-                if (proxyPerm != null) {
-                    try {
-                        sm.checkPermission(proxyPerm, acc);
-                    } catch (SecurityException e) {
-                        return e;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private static URI replaceHostInURI(URI u, String hostPort) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(u.getScheme())
-                .append("://")
-                .append(hostPort)
-                .append(u.getRawPath());
-        return URI.create(sb.toString());
-    }
-
     HttpClient.Version version() {
         return multi.version();
+    }
+
+    boolean pushEnabled() {
+        return pushGroup != null;
+    }
+
+    String h2cSettingsStrings() {
+        return client.client2().getSettingsString(pushEnabled());
     }
 
     String dbgString() {

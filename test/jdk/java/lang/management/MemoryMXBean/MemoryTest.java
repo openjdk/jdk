@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,27 +34,15 @@
  */
 
 /*
- * @test id=ZSinglegen
+ * @test id=Z
  * @bug     4530538
  * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
  *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc.ZSinglegen
+ * @requires vm.gc.Z
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main/othervm -XX:+UseZGC -XX:-ZGenerational MemoryTest 2 1
- */
-
-/*
- * @test id=ZGenerational
- * @bug     4530538
- * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
- *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc.ZGenerational
- * @author  Mandy Chung
- *
- * @modules jdk.management
- * @run main/othervm -XX:+UseZGC -XX:+ZGenerational MemoryTest 4 2
+ * @run main/othervm -XX:+UseZGC MemoryTest 4 2
  */
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -831,11 +831,20 @@ class PerfTraceTime : public StackObj {
 
   public:
     inline PerfTraceTime(PerfLongCounter* timerp) : _timerp(timerp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _t.start();
     }
 
-    ~PerfTraceTime();
+    const char* name() const {
+      assert(_timerp != nullptr, "sanity");
+      return _timerp->name();
+    }
+
+    ~PerfTraceTime() {
+      if (!UsePerfData || !_t.is_active()) { return; }
+      _t.stop();
+      _timerp->inc(_t.ticks());
+    }
 };
 
 /* The PerfTraceTimedEvent class is responsible for counting the
@@ -864,7 +873,7 @@ class PerfTraceTimedEvent : public PerfTraceTime {
 
   public:
     inline PerfTraceTimedEvent(PerfLongCounter* timerp, PerfLongCounter* eventp): PerfTraceTime(timerp), _eventp(eventp) {
-      if (!UsePerfData) return;
+      if (!UsePerfData || timerp == nullptr) { return; }
       _eventp->inc();
     }
 

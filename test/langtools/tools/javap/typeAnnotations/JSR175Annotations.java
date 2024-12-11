@@ -30,7 +30,6 @@ import java.lang.classfile.attribute.*;
  * @test JSR175Annotations
  * @bug 6843077
  * @summary test that only type annotations are recorded as such in classfile
- * @enablePreview
  */
 
 public class JSR175Annotations {
@@ -58,8 +57,8 @@ public class JSR175Annotations {
     }
 
     void test(AttributedElement m) {
-        test(m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(m, Attributes.runtimeVisibleTypeAnnotations());
+        test(m, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
     // test the result of AttributedElement.findAttribute according to expectations

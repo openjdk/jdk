@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,10 @@ class DontCareFieldPosition extends FieldPosition {
 
     private final Format.FieldDelegate noDelegate = new Format.FieldDelegate() {
         public void formatted(Format.Field attr, Object value, int start,
-                              int end, StringBuffer buffer) {
+                              int end, Format.StringBuf buffer) {
         }
         public void formatted(int fieldID, Format.Field attr, Object value,
-                              int start, int end, StringBuffer buffer) {
+                              int start, int end, Format.StringBuf buffer) {
         }
     };
 

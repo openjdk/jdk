@@ -24,7 +24,6 @@
 /*
  * @test 6716452
  * @summary need a method to get an index of an attribute
- * @enablePreview
  */
 
 import java.io.*;
@@ -51,8 +50,8 @@ public class T6716452 {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.CODE, CodeAttribute.class);
-        test(mm, Attributes.EXCEPTIONS, ExceptionsAttribute.class);
+        test(mm, Attributes.code(), CodeAttribute.class);
+        test(mm, Attributes.exceptions(), ExceptionsAttribute.class);
     }
 
     // test the result of MethodModel.findAttribute, MethodModel.attributes().indexOf() according to expectations
@@ -70,7 +69,7 @@ public class T6716452 {
                 if (!c.isAssignableFrom(mm.attributes().get(index).getClass())) {
                     error(mm + ": unexpected attribute found,"
                             + " expected " + c.getName()
-                            + " found " + mm.attributes().get(index).attributeName());
+                            + " found " + mm.attributes().get(index).attributeName().stringValue());
                 }
             } else {
                 error(mm + ": expected attribute " + attr.name() + " not found");

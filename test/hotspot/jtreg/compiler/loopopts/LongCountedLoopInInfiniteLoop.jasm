@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+super public class LongCountedLoopInInfiniteLoop
+{
+  public Method "<init>":"()V"
+    stack 1 locals 1
+  {
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
+  }
+  Method test:"()V"
+    stack 3 locals 3
+  {
+        // #1 = 0;
+        iconst_0;
+        istore_1;
+
+    LOOPa:
+        // if #1 >= 10: goto END
+        iload_1;
+        bipush    10;
+        if_icmpge    END;
+
+        // if #1 > 1: goto LOOPc
+        iload_1;
+        iconst_1;
+        if_icmpgt    LOOPc;
+
+        // #2 = 0;
+        iconst_0;
+        istore_2;
+
+    LOOPb:
+        // if #2 > 2: goto LOOPa
+        iload_2;
+        iconst_2;
+        if_icmpgt    LOOPa;
+
+        // #2 ++
+        iinc    2, 1;
+
+        goto    LOOPb;
+
+    LOOPc:
+        // #1 ++
+        iinc    1, 1;
+
+        goto    LOOPa;
+
+    END:
+        return;
+    
+  }
+}

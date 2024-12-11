@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package java.lang.classfile;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Immutable model for a portion of (or the entirety of) a classfile.  Elements
  * that model parts of the classfile that have attributes will implement {@link
@@ -35,10 +33,9 @@ import jdk.internal.javac.PreviewFeature;
  * will implement {@link ClassElement}, {@link MethodElement}, etc.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileElement
-        permits AttributedElement, CompoundElement, WritableElement,
+        permits AttributedElement, CompoundElement, Attribute,
                 ClassElement, CodeElement, FieldElement, MethodElement {
 }

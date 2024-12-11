@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,14 +225,14 @@ void ZPhysicalMemoryBacking::warn_commit_limits(size_t max_capacity) const {
 
 size_t ZPhysicalMemoryBacking::commit(zoffset offset, size_t length) {
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, (untype(offset) + length) / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   return _impl->commit(offset, length);
 }
 
 size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) {
   log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, (untype(offset) + length) / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   return _impl->uncommit(offset, length);
 }

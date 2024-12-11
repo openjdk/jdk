@@ -99,6 +99,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         };
 
         Action[] actionsWithSelection = new Action[]{
+                ColorAction.get(ColorAction.class),
                 ExtractAction.get(ExtractAction.class),
                 HideAction.get(HideAction.class),
                 null,
@@ -139,6 +140,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
         centerPanel.setLayout(cardLayout);
+        centerPanel.setOpaque(true);
         centerPanel.setBackground(Color.WHITE);
         satelliteComponent = scene.createSatelliteView();
         satelliteComponent.setSize(200, 200);
@@ -195,21 +197,9 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
 
-        diagramViewModel.getGraphChangedEvent().addListener(model -> {
-            // HierarchicalStableLayoutManager is not reliable for difference graphs
-            boolean isDiffGraph = model.getGraph().isDiffGraph();
-            // deactivate HierarchicalStableLayoutManager for difference graphs
-            stableSeaLayoutButton.setEnabled(!isDiffGraph);
-            if (stableSeaLayoutButton.isSelected() && isDiffGraph) {
-                // fallback to HierarchicalLayoutManager for difference graphs
-                seaLayoutButton.setSelected(true);
-            }
-        });
-
         toolBar.addSeparator();
         toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
         toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
-        toolBar.add(new JToggleButton(new HideDuplicatesAction(diagramViewModel.getHideDuplicates())));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -220,6 +210,11 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
+
+        JToggleButton cutEdgesButton = new JToggleButton(CutEdgesAction.get(CutEdgesAction.class));
+        cutEdgesButton.setHideActionText(true);
+        toolBar.add(cutEdgesButton);
+
         JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
         globalSelectionButton.setHideActionText(true);
         toolBar.add(globalSelectionButton);
@@ -349,6 +344,10 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         scene.addSelectedNodes(nodes, showIfHidden);
     }
 
+    public void colorSelectedFigures(Color color) {
+        scene.colorSelectedFigures(color);
+    }
+
     public void centerSelectedNodes() {
         scene.centerSelectedFigures();
     }
@@ -448,6 +447,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         }
         etc.addSelectedNodes(selectedNodes, false);
         model.setGlobalSelection(GlobalSelectionAction.get(GlobalSelectionAction.class).isSelected(), false);
+        model.setCutEdges(CutEdgesAction.get(CutEdgesAction.class).isSelected(), false);
         etc.resetUndoRedo();
 
         int currentZoomLevel = scene.getZoomPercentage();

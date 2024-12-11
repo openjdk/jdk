@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,11 @@ void SharedRuntime::inline_check_hashcode_from_object_header(MacroAssembler* mas
 
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    // check if monitor
-    __ testptr(result, markWord::monitor_value);
-    __ jcc(Assembler::notZero, slowCase);
+    if (!UseObjectMonitorTable) {
+      // check if monitor
+      __ testptr(result, markWord::monitor_value);
+      __ jcc(Assembler::notZero, slowCase);
+    }
   } else {
     // check if locked
     __ testptr(result, markWord::unlocked_value);

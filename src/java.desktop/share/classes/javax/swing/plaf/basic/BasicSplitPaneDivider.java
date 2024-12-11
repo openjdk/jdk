@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -360,6 +360,20 @@ public class BasicSplitPaneDivider extends Container
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        if (splitPane.isOneTouchExpandable() &&
+                rightButton != null &&
+                leftButton != null) {
+
+            rightButton.setEnabled(enabled);
+            leftButton.setEnabled(enabled);
+        }
+    }
 
     /**
      * Paints the divider.
@@ -380,7 +394,10 @@ public class BasicSplitPaneDivider extends Container
 
     /**
      * Messaged when the oneTouchExpandable value of the JSplitPane the
-     * divider is contained in changes. Will create the
+     * divider is contained in changes.
+     * If a particular L&amp;F supports this Swing
+     * "SplitPane.supportsOneTouchButtons" property
+     * it will create the
      * <code>leftButton</code> and <code>rightButton</code> if they are null
      * and corresponding JSplitPane supports oneTouchExpandable property.
      * Invalidates the corresponding JSplitPane as well.
@@ -472,6 +489,7 @@ public class BasicSplitPaneDivider extends Container
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setRequestFocusEnabled(false);
+        b.setEnabled(splitPane.isEnabled());
         return b;
     }
 
@@ -529,6 +547,7 @@ public class BasicSplitPaneDivider extends Container
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setRequestFocusEnabled(false);
+        b.setEnabled(splitPane.isEnabled());
         return b;
     }
 
@@ -727,7 +746,6 @@ public class BasicSplitPaneDivider extends Container
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     protected class DragController
     {
         /**

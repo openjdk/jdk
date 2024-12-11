@@ -46,7 +46,7 @@ Java_gc_gctests_nativeGC03_nativeGC03_nativeMethod03
 
                 clss = env->GetObjectClass(obj);
                 mid = env->GetMethodID(clss, "fillArray", "()V");
-                if (mid == 0) {
+                if (mid == nullptr) {
                         return;
                 }
                 env->CallVoidMethod(obj, mid);

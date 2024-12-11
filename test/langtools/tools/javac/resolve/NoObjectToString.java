@@ -25,7 +25,6 @@
  * @test
  * @bug 8272564
  * @summary Correct resolution of toString() (and other similar calls) on interfaces
- * @enablePreview
  * @compile NoObjectToString.java
  * @run main NoObjectToString
  */

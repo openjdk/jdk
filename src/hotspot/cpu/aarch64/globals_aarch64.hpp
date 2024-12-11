@@ -38,7 +38,7 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap nulls 
 
 define_pd_global(bool, DelayCompilerStubsGeneration, COMPILER2_OR_JVMCI);
 
-define_pd_global(uintx, CodeCacheSegmentSize,    64 COMPILER1_AND_COMPILER2_PRESENT(+64)); // Tiered compilation has large code-entry alignment.
+define_pd_global(uintx, CodeCacheSegmentSize,    64);
 define_pd_global(intx, CodeEntryAlignment,       64);
 define_pd_global(intx, OptoLoopAlignment,        16);
 
@@ -124,6 +124,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, 99)                                                  \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
+  product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
+          "Always merge DMB instructions in code emission")             \
 
 // end of ARCH_FLAGS
 

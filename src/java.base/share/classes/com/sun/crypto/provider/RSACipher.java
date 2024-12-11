@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.security.interfaces.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.MGF1ParameterSpec;
+import java.util.Objects;
 
 import javax.crypto.*;
 import javax.crypto.spec.PSource;
@@ -126,7 +127,7 @@ public final class RSACipher extends CipherSpi {
     // modes do not make sense for RSA, but allow ECB
     // see JCE spec
     protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
-        if (mode.equalsIgnoreCase("ECB") == false) {
+        if (!mode.equalsIgnoreCase("ECB")) {
             throw new NoSuchAlgorithmException("Unsupported mode " + mode);
         }
     }
@@ -468,7 +469,7 @@ public final class RSACipher extends CipherSpi {
 
         boolean isTlsRsaPremasterSecret =
                 algorithm.equals("TlsRsaPremasterSecret");
-        byte[] encoded = null;
+        byte[] encoded;
 
         update(wrappedKey, 0, wrappedKey.length);
         try {

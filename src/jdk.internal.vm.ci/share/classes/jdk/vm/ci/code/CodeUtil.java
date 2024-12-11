@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import jdk.vm.ci.meta.Signature;
  */
 public class CodeUtil {
 
-    public static final String NEW_LINE = String.format("%n");
+    public static final String NEW_LINE = System.lineSeparator();
 
     public static final int K = 1024;
     public static final int M = 1024 * 1024;

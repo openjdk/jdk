@@ -3362,10 +3362,10 @@ BOOL AwtComponent::IsNumPadKey(UINT vkey, BOOL extended)
     return FALSE;
 }
 static void
-resetKbdState( BYTE kstate[256]) {
-    BYTE tmpState[256];
+resetKbdState( BYTE (&kstate)[AwtToolkit::KB_STATE_SIZE]) {
+    BYTE tmpState[AwtToolkit::KB_STATE_SIZE];
     WCHAR wc[2];
-    memmove(tmpState, kstate, 256 * sizeof(BYTE));
+    memmove(tmpState, kstate, sizeof(kstate));
     tmpState[VK_SHIFT] = 0;
     tmpState[VK_CONTROL] = 0;
     tmpState[VK_MENU] = 0;
@@ -6420,10 +6420,7 @@ void AwtComponent::PostUngrabEvent() {
 
 void AwtComponent::SetFocusedWindow(HWND window)
 {
-    HWND old = sm_focusedWindow;
     sm_focusedWindow = window;
-
-    AwtWindow::FocusedWindowChanged(old, window);
 }
 
 /************************************************************************

@@ -94,7 +94,7 @@ define CreateDebugSymbols
 
           $1 += $$($1_DEBUGINFO_ZIP)
         endif
-       endif # !STATIC_LIBRARY
+      endif # !STATIC_LIBRARY
     endif # $1_DEBUG_SYMBOLS != false
   endif # COPY_DEBUG_SYMBOLS
 endef

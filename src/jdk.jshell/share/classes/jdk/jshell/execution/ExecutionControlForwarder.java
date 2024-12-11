@@ -177,7 +177,7 @@ class ExecutionControlForwarder {
                     } catch (Throwable ex) {
                         // JShell-core not waiting for a result, ignore
                     }
-                    return true;
+                    return false;
                 }
                 default: {
                     Object arg = in.readObject();

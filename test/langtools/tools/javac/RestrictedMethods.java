@@ -3,6 +3,7 @@
  * @bug 8316971
  * @summary Smoke test for restricted method call warnings
  * @compile/fail/ref=RestrictedMethods.out -Xlint:restricted -Werror -XDrawDiagnostics RestrictedMethods.java
+ * @compile/fail/ref=RestrictedMethods.out --release ${jdk.version} -Xlint:restricted -Werror -XDrawDiagnostics RestrictedMethods.java
  * @compile -Werror RestrictedMethods.java
  */
 

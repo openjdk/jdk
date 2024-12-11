@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 8061778
  * @summary  Wrong LineNumberTable for default constructors
- * @enablePreview
  */
 
 import java.util.List;
@@ -21,8 +20,8 @@ public class NestedLineNumberTest {
         }
 
         int line = lines.get(0).lineNumber();
-        if (line != 50) {
-            error(String.format("LineNumberTable contains wrong line number - expected %d, found %d", 50, line));
+        if (line != 49) {
+            error(String.format("LineNumberTable contains wrong line number - expected %d, found %d", 49, line));
         }
     }
 
@@ -30,7 +29,7 @@ public class NestedLineNumberTest {
         ClassModel self = ClassFile.of().parse(NestedLineNumberTest.Test.class.getResourceAsStream("NestedLineNumberTest$Test.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if ("<init>".equals(m.methodName().stringValue())) {
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElseThrow();
                 for (Attribute<?> at : code_attribute.attributes()) {
                     if (at instanceof LineNumberTableAttribute lineAt) {
                         return lineAt.lineNumbers();

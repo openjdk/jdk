@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,6 @@ void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_r
     return;
   }
   // We need to clear the bitmap on commit, removing any existing information.
-  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
+  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * G1HeapRegion::GrainWords);
   _bm->clear_range(mr);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ void mutex_init();
 void universe_oopstorage_init();
 void perfMemory_init();
 void SuspendibleThreadSet_init();
+void ExternalsRecorder_init(); // After mutex_init() and before CodeCache_init
 
 // Initialization done by Java thread in init_globals()
 void management_init();
@@ -107,6 +108,7 @@ void vm_init_globals() {
   universe_oopstorage_init();
   perfMemory_init();
   SuspendibleThreadSet_init();
+  ExternalsRecorder_init(); // After mutex_init() and before CodeCache_init
 }
 
 
@@ -124,7 +126,10 @@ jint init_globals() {
   compilationPolicy_init();
   codeCache_init();
   VM_Version_init();              // depends on codeCache_init for emitting code
+  // stub routines in initial blob are referenced by later generated code
   initial_stubs_init();
+  // stack overflow exception blob is referenced by the interpreter
+  SharedRuntime::generate_initial_stubs();
   jint status = universe_init();  // dependent on codeCache_init and
                                   // initial_stubs_init and metaspace_init.
   if (status != JNI_OK)
@@ -142,6 +147,9 @@ jint init_globals() {
   gc_barrier_stubs_init();   // depends on universe_init, must be before interpreter_init
   continuations_init();      // must precede continuation stub generation
   continuation_stubs_init(); // depends on continuations_init
+#if INCLUDE_JFR
+  SharedRuntime::generate_jfr_stubs();
+#endif
   interpreter_init_stub();   // before methods get loaded
   accessFlags_init();
   InterfaceSupport_init();

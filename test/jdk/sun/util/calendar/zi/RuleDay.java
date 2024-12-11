@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,6 @@
  * questions.
  */
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
  * RuleDay class represents the value of the "ON" field.  The day of
  * week values start from 1 following the {@link java.util.Calendar}
@@ -34,13 +29,6 @@ import java.util.Map;
  * @since 1.4
  */
 class RuleDay {
-    private static final Map<String,DayOfWeek> abbreviations = new HashMap<String,DayOfWeek>(7);
-    static {
-        for (DayOfWeek day : DayOfWeek.values()) {
-            abbreviations.put(day.getAbbr(), day);
-        }
-    }
-
     private String dayName = null;
     private DayOfWeek dow;
     private boolean lastOne = false;
@@ -166,13 +154,23 @@ class RuleDay {
         return sign + toString(d);
     }
 
-    private static DayOfWeek getDOW(String abbr) {
-        return abbreviations.get(abbr);
+    private static DayOfWeek getDOW(String name) {
+        int len = name.length();
+
+        if (name.regionMatches(true, 0, "Monday", 0, len)) return DayOfWeek.MONDAY;
+        if (name.regionMatches(true, 0, "Tuesday", 0, len)) return DayOfWeek.TUESDAY;
+        if (name.regionMatches(true, 0, "Wednesday", 0, len)) return DayOfWeek.WEDNESDAY;
+        if (name.regionMatches(true, 0, "Thursday", 0, len)) return DayOfWeek.THURSDAY;
+        if (name.regionMatches(true, 0, "Friday", 0, len)) return DayOfWeek.FRIDAY;
+        if (name.regionMatches(true, 0, "Saturday", 0, len)) return DayOfWeek.SATURDAY;
+        if (name.regionMatches(true, 0, "Sunday", 0, len)) return DayOfWeek.SUNDAY;
+
+        throw new IllegalArgumentException("Unknown day-of-week: " + name);
     }
 
     /**
      * Converts the specified day of week value to the day-of-week
-     * name defined in {@link java.util.Calenda}.
+     * name defined in {@link java.util.Calendar}.
      * @param dow 1-based day of week value
      * @return the Calendar day of week name with "Calendar." prefix.
      * @throws IllegalArgumentException if the specified dow value is out of range.

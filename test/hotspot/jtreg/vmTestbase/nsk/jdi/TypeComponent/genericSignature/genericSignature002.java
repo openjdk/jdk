@@ -175,7 +175,6 @@ public class genericSignature002 {
         argsHandler = new ArgumentHandler(argv);
         verboseMode = argsHandler.verbose();
         logHandler = new Log(out, argsHandler);
-        logHandler.enableErrorsSummary(false);
 
         logAlways("==> nsk/jdi/TypeComponent/genericSignature/genericSignature002 test...");
         logOnVerbose

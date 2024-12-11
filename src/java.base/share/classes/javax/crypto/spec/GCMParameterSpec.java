@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,12 @@ import java.security.spec.AlgorithmParameterSpec;
  * values {128, 120, 112, 104, 96}, or {64, 32} for certain
  * applications.  Other values can be specified for this class, but not
  * all CSP implementations will support them.
+ *
+ * @spec https://www.rfc-editor.org/info/rfc5116
+ *      RFC 5116: An Interface and Algorithms for Authenticated Encryption
+ * @spec https://csrc.nist.gov/publications/nistpubs/800-38D/SP-800-38D.pdf
+ *      Recommendation for Block Cipher Modes of Operation: Galois/Counter
+ *      Mode (GCM) and GMAC
  *
  * @see javax.crypto.Cipher
  *

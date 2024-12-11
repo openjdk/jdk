@@ -25,7 +25,7 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
-#include "opto/node.hpp"
+#include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
 #include "utilities/pair.hpp"
@@ -128,6 +128,9 @@ public:
   // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
+
+  // Should we align vector memory references on this platform?
+  static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
 #ifndef PRODUCT
   const VTrace& vtrace()      const { return _vtrace; }
@@ -667,13 +670,51 @@ private:
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.
+//
+// We parse and represent pointers of the simple form:
+//
+//   pointer   = adr + offset + invar + scale * ConvI2L(iv)
+//
+// Where:
+//
+//   adr: the base address of an array (base = adr)
+//        OR
+//        some address to off-heap memory (base = TOP)
+//
+//   offset: a constant offset
+//   invar:  a runtime variable, which is invariant during the loop
+//   scale:  scaling factor
+//   iv:     loop induction variable
+//
+// But more precisely, we parse the composite-long-int form:
+//
+//   pointer   = adr + long_offset + long_invar + long_scale * ConvI2L(int_offset + inv_invar + int_scale * iv)
+//
+//   pointer   = adr + long_offset + long_invar + long_scale * ConvI2L(int_index)
+//   int_index =       int_offset  + int_invar  + int_scale  * iv
+//
+// However, for aliasing and adjacency checks (e.g. VPointer::cmp()) we always use the simple form to make
+// decisions. Hence, we must make sure to only create a "valid" VPointer if the optimisations based on the
+// simple form produce the same result as the compound-long-int form would. Intuitively, this depends on
+// if the int_index overflows, but the precise conditions are given in VPointer::is_safe_to_use_as_simple_form().
+//
+//   ConvI2L(int_index) = ConvI2L(int_offset  + int_invar  + int_scale  * iv)
+//                      = Convi2L(int_offset) + ConvI2L(int_invar) + ConvI2L(int_scale) * ConvI2L(iv)
+//
+//   scale  = long_scale * ConvI2L(int_scale)
+//   offset = long_offset + long_scale * ConvI2L(int_offset)
+//   invar  = long_invar  + long_scale * ConvI2L(int_invar)
+//
+//   pointer   = adr + offset + invar + scale * ConvI2L(iv)
+//
 class VPointer : public ArenaObj {
  protected:
-  const MemNode*  _mem;      // My memory reference node
+  MemNode* const  _mem;      // My memory reference node
   const VLoop&    _vloop;
 
-  Node* _base;               // null if unsafe nonheap reference
-  Node* _adr;                // address pointer
+  // Components of the simple form:
+  Node* _base;               // Base address of an array OR null if some off-heap memory.
+  Node* _adr;                // Same as _base if an array pointer OR some off-heap memory pointer.
   int   _scale;              // multiplier for iv (in bytes), 0 if no loop iv
   int   _offset;             // constant offset (in bytes)
 
@@ -683,6 +724,13 @@ class VPointer : public ArenaObj {
   bool  _debug_negate_invar; // if true then use: (0 - _invar)
   Node* _debug_invar_scale;  // multiplier for invariant
 #endif
+
+  // The int_index components of the compound-long-int form. Used to decide if it is safe to use the
+  // simple form rather than the compound-long-int form that was parsed.
+  bool  _has_int_index_after_convI2L;
+  int   _int_index_after_convI2L_offset;
+  Node* _int_index_after_convI2L_invar;
+  int   _int_index_after_convI2L_scale;
 
   Node_Stack* _nstack;       // stack used to record a vpointer trace of variants
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
@@ -711,17 +759,19 @@ class VPointer : public ArenaObj {
     NotComparable = (Less | Greater | Equal)
   };
 
-  VPointer(const MemNode* mem, const VLoop& vloop) :
+  VPointer(MemNode* const mem, const VLoop& vloop) :
     VPointer(mem, vloop, nullptr, false) {}
-  VPointer(const MemNode* mem, const VLoop& vloop, Node_Stack* nstack) :
+  VPointer(MemNode* const mem, const VLoop& vloop, Node_Stack* nstack) :
     VPointer(mem, vloop, nstack, true) {}
  private:
-  VPointer(const MemNode* mem, const VLoop& vloop,
+  VPointer(MemNode* const mem, const VLoop& vloop,
            Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
   NONCOPYABLE(VPointer);
+
+  bool is_safe_to_use_as_simple_form(Node* base, Node* adr) const;
 
  public:
   bool valid()             const { return _adr != nullptr; }
@@ -729,7 +779,7 @@ class VPointer : public ArenaObj {
 
   Node* base()             const { return _base; }
   Node* adr()              const { return _adr; }
-  const MemNode* mem()     const { return _mem; }
+  MemNode* mem()           const { return _mem; }
   int   scale_in_bytes()   const { return _scale; }
   Node* invar()            const { return _invar; }
   int   offset_in_bytes()  const { return _offset; }
@@ -748,10 +798,43 @@ class VPointer : public ArenaObj {
     return _invar == q._invar;
   }
 
+  // We compute if and how two VPointers can alias at runtime, i.e. if the two addressed regions of memory can
+  // ever overlap. There are essentially 3 relevant return states:
+  //  - NotComparable:  Synonymous to "unknown aliasing".
+  //                    We have no information about how the two VPointers can alias. They could overlap, refer
+  //                    to another location in the same memory object, or point to a completely different object.
+  //                    -> Memory edge required. Aliasing unlikely but possible.
+  //
+  //  - Less / Greater: Synonymous to "never aliasing".
+  //                    The two VPointers may point into the same memory object, but be non-aliasing (i.e. we
+  //                    know both address regions inside the same memory object, but these regions are non-
+  //                    overlapping), or the VPointers point to entirely different objects.
+  //                    -> No memory edge required. Aliasing impossible.
+  //
+  //  - Equal:          Synonymous to "overlap, or point to different memory objects".
+  //                    The two VPointers either overlap on the same memory object, or point to two different
+  //                    memory objects.
+  //                    -> Memory edge required. Aliasing likely.
+  //
+  // In a future refactoring, we can simplify to two states:
+  //  - NeverAlias:     instead of Less / Greater
+  //  - MayAlias:       instead of Equal / NotComparable
+  //
+  // Two VPointer are "comparable" (Less / Greater / Equal), iff all of these conditions apply:
+  //   1) Both are valid, i.e. expressible in the compound-long-int or simple form.
+  //   2) The adr are identical, or both are array bases of different arrays.
+  //   3) They have identical scale.
+  //   4) They have identical invar.
+  //   5) The difference in offsets is limited: abs(offset0 - offset1) < 2^31.
   int cmp(const VPointer& q) const {
     if (valid() && q.valid() &&
         (_adr == q._adr || (_base == _adr && q._base == q._adr)) &&
         _scale == q._scale   && invar_equals(q)) {
+      jlong difference = abs(java_subtract((jlong)_offset, (jlong)q._offset));
+      jlong max_diff = (jlong)1 << 31;
+      if (difference >= max_diff) {
+        return NotComparable;
+      }
       bool overlap = q._offset <   _offset +   memory_size() &&
                        _offset < q._offset + q.memory_size();
       return overlap ? Equal : (_offset < q._offset ? Less : Greater);
@@ -760,9 +843,9 @@ class VPointer : public ArenaObj {
     }
   }
 
-  bool overlap_possible_with_any_in(const Node_List* p) const {
-    for (uint k = 0; k < p->size(); k++) {
-      MemNode* mem = p->at(k)->as_Mem();
+  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
+    for (int i = 0; i < nodes.length(); i++) {
+      MemNode* mem = nodes.at(i)->as_Mem();
       VPointer p_mem(mem, _vloop);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
@@ -781,7 +864,13 @@ class VPointer : public ArenaObj {
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
 
+  // We need to be able to sort the VPointer to efficiently group the
+  // memops into groups, and to find adjacent memops.
+  static int cmp_for_sort_by_group(const VPointer** p1, const VPointer** p2);
+  static int cmp_for_sort(const VPointer** p1, const VPointer** p2);
+
   NOT_PRODUCT( void print() const; )
+  NOT_PRODUCT( static void print_con_or_idx(const Node* n); )
 
 #ifndef PRODUCT
   class Tracer {
@@ -850,6 +939,12 @@ class VPointer : public ArenaObj {
   Node* maybe_negate_invar(bool negate, Node* invar);
 
   void maybe_add_to_invar(Node* new_invar, bool negate);
+
+  static bool try_AddI_no_overflow(int offset1, int offset2, int& result);
+  static bool try_SubI_no_overflow(int offset1, int offset2, int& result);
+  static bool try_AddSubI_no_overflow(int offset1, int offset2, bool is_sub, int& result);
+  static bool try_LShiftI_no_overflow(int offset1, int offset2, int& result);
+  static bool try_MulI_no_overflow(int offset1, int offset2, int& result);
 
   Node* register_if_new(Node* n) const;
 };

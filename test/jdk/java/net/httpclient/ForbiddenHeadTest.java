@@ -381,7 +381,7 @@ public class ForbiddenHeadTest implements HttpServerAdapters {
     public void teardown() throws Exception {
         authClient = noAuthClient = null;
         Thread.sleep(100);
-        AssertionError fail = TRACKER.check(500);
+        AssertionError fail = TRACKER.check(1500);
         try {
             proxy.stop();
             authproxy.stop();

@@ -262,7 +262,7 @@ public interface VirtualMachine extends Mirror {
      * with <a href="{@docRoot}/../specs/jni/index.html">JNI code</a>.
      *
      * <p> It is implementation dependent if the list contains elements for live
-     * <a href=../../api/java.base/java/lang/Thread.html#virtual-threads>virtual threads</a>
+     * <a href={@docRoot}/java.base/java/lang/Thread.html#virtual-threads>virtual threads</a>
      * in the target VM. The target VM may not return any references to virtual threads,
      * or it may be configured to return a reference to some or all virtual threads.
      * Tools that want to track all virtual threads may enable {@link ThreadStartRequest}

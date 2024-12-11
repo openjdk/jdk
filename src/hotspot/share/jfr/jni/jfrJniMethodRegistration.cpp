@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"hostTotalSwapMemory", (char*)"()J", (void*) jfr_host_total_swap_memory,
       (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
       (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
-      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter
+      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter,
+      (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

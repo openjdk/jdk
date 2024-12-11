@@ -210,11 +210,25 @@ julong os::physical_memory() {
   return Bsd::physical_memory();
 }
 
+size_t os::rss() {
+  size_t rss = 0;
+#ifdef __APPLE__
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+
+  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                                (task_info_t)&info, &count);
+  if (ret == KERN_SUCCESS) {
+    rss = info.resident_size;
+  }
+#endif // __APPLE__
+
+  return rss;
+}
+
 // Cpu architecture string
 #if   defined(ZERO)
 static char cpu_arch[] = ZERO_LIBARCH;
-#elif defined(IA64)
-static char cpu_arch[] = "ia64";
 #elif defined(IA32)
 static char cpu_arch[] = "i386";
 #elif defined(AMD64)
@@ -457,9 +471,9 @@ void os::init_system_properties_values() {
     if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
-#ifdef STATIC_BUILD
-    strcat(buf, "/lib");
-#endif
+    if (is_vm_statically_linked()) {
+      strcat(buf, "/lib");
+    }
 
     Arguments::set_dll_dir(buf);
 
@@ -617,9 +631,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     return false;
   }
 
-  // set the correct thread state
-  osthread->set_thread_type(thr_type);
-
   // Initial state is ALLOCATED but not INITIALIZED
   osthread->set_state(ALLOCATED);
 
@@ -752,9 +763,9 @@ void os::pd_start_thread(Thread* thread) {
 void os::free_thread(OSThread* osthread) {
   assert(osthread != nullptr, "osthread not set");
 
-  // We are told to free resources of the argument thread,
-  // but we can only really operate on the current thread.
-  assert(Thread::current()->osthread() == osthread,
+  // We are told to free resources of the argument thread, but we can only really operate
+  // on the current thread. The current thread may be already detached at this point.
+  assert(Thread::current_or_null() == nullptr || Thread::current()->osthread() == osthread,
          "os::free_thread but not current thread");
 
   // Restore caller's signal mask
@@ -1077,19 +1088,20 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
-#endif // STATIC_BUILD
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
@@ -1178,8 +1190,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_386;
   #elif   (defined AMD64)
   static  Elf32_Half running_arch_code=EM_X86_64;
-  #elif  (defined IA64)
-  static  Elf32_Half running_arch_code=EM_IA_64;
   #elif  (defined __powerpc64__)
   static  Elf32_Half running_arch_code=EM_PPC64;
   #elif  (defined __powerpc__)
@@ -1200,7 +1210,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   static  Elf32_Half running_arch_code=EM_68K;
   #else
     #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
+         IA32, AMD64, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
   #endif
 
   // Identify compatibility class for VM's architecture and library's architecture
@@ -1253,7 +1263,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   return nullptr;
-#endif // STATIC_BUILD
 }
 #endif // !__APPLE__
 
@@ -1493,7 +1502,7 @@ void os::jvm_path(char *buf, jint buflen) {
   assert(ret, "cannot locate libjvm");
   char *rp = nullptr;
   if (ret && dli_fname[0] != '\0') {
-    rp = os::Posix::realpath(dli_fname, buf, buflen);
+    rp = os::realpath(dli_fname, buf, buflen);
   }
   if (rp == nullptr) {
     return;
@@ -1525,7 +1534,7 @@ void os::jvm_path(char *buf, jint buflen) {
         p = strrchr(buf, '/');
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
-        rp = os::Posix::realpath(java_home_var, buf, buflen);
+        rp = os::realpath(java_home_var, buf, buflen);
         if (rp == nullptr) {
           return;
         }
@@ -1559,7 +1568,7 @@ void os::jvm_path(char *buf, jint buflen) {
           snprintf(buf + len, buflen-len, "/libjvm%s", JNI_LIB_SUFFIX);
         } else {
           // Fall back to path of current library
-          rp = os::Posix::realpath(dli_fname, buf, buflen);
+          rp = os::realpath(dli_fname, buf, buflen);
           if (rp == nullptr) {
             return;
           }
@@ -1668,7 +1677,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_disclaim_memory(char *addr, size_t bytes) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
@@ -2135,13 +2144,12 @@ jint os::init_2(void) {
 
       // On macOS according to setrlimit(2), OPEN_MAX must be used instead
       // of RLIM_INFINITY, but testing on macOS >= 10.6, reveals that
-      // we can, in fact, use even RLIM_INFINITY, so try the max value
-      // that the system claims can be used first, same as other BSD OSes.
-      // However, some terminals (ksh) will internally use "int" type
-      // to store this value and since RLIM_INFINITY overflows an "int"
-      // we might end up with a negative value, so cap the system limit max
-      // at INT_MAX instead, just in case, for everyone.
-      nbr_files.rlim_cur = MIN(INT_MAX, nbr_files.rlim_max);
+      // we can, in fact, use even RLIM_INFINITY.
+      // However, we need to limit the value to 0x100000 (which is the max value
+      // allowed on Linux) so that any existing code that iterates over all allowed
+      // file descriptors, finishes in a reasonable time, without appearing
+      // to hang.
+      nbr_files.rlim_cur = MIN(0x100000, nbr_files.rlim_max);
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
@@ -2382,16 +2390,6 @@ int os::open(const char *path, int oflag, int mode) {
   }
 
   return fd;
-}
-
-// return current position of file pointer
-jlong os::current_file_offset(int fd) {
-  return (jlong)::lseek(fd, (off_t)0, SEEK_CUR);
-}
-
-// move file pointer to the specified offset
-jlong os::seek_to_file_offset(int fd, jlong offset) {
-  return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)

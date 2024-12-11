@@ -399,7 +399,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ verify_not_null_oop(rax);
 
   // search an exception handler (rax: exception oop, rdx: throwing pc)
-  __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));
+  __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::handle_exception_from_callee_id)));
   __ should_not_reach_here();
   guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
@@ -463,7 +463,7 @@ int LIR_Assembler::emit_unwind_handler() {
 
   // remove the activation and dispatch to the unwind handler
   __ remove_frame(initial_frame_size_in_bytes());
-  __ jump(RuntimeAddress(Runtime1::entry_for(Runtime1::unwind_exception_id)));
+  __ jump(RuntimeAddress(Runtime1::entry_for(C1StubId::unwind_exception_id)));
 
   // Emit the slow path assembly
   if (stub != nullptr) {
@@ -1333,10 +1333,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     }
 #endif
 
-    if (!(UseZGC && !ZGenerational)) {
-      // Load barrier has not yet been applied, so ZGC can't verify the oop here
-      __ verify_oop(dest->as_register());
-    }
+    __ verify_oop(dest->as_register());
   }
 }
 
@@ -1566,7 +1563,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
       // instruction sequence too long to inline it here
       {
-        __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::fpu2long_stub_id)));
+        __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::fpu2long_stub_id)));
       }
       break;
 #endif // _LP64
@@ -1578,6 +1575,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     add_debug_info_for_null_check_here(op->stub()->info());
+    // init_state needs acquire, but x86 is TSO, and so we are already good.
     __ cmpb(Address(op->klass()->as_register(),
                     InstanceKlass::init_state_offset()),
                     InstanceKlass::fully_initialized);
@@ -1621,7 +1619,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -1780,7 +1779,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 #else
         __ pushklass(k->constant_encoding(), noreg);
 #endif // _LP64
-        __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+        __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
         __ pop(klass_RInfo);
         __ pop(klass_RInfo);
         // result is a boolean
@@ -1794,7 +1793,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       // call out-of-line instance of __ check_klass_subtype_slow_path(...):
       __ push(klass_RInfo);
       __ push(k_RInfo);
-      __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
       __ pop(klass_RInfo);
       __ pop(k_RInfo);
       // result is a boolean
@@ -1873,7 +1872,7 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     // call out-of-line instance of __ check_klass_subtype_slow_path(...):
     __ push(klass_RInfo);
     __ push(k_RInfo);
-    __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+    __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
     __ pop(klass_RInfo);
     __ pop(k_RInfo);
     // result is a boolean
@@ -2835,7 +2834,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
     offset += NativeCall::displacement_offset;
     break;
   case lir_icvirtual_call:
-    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
+    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size_rex;
     break;
   default: ShouldNotReachHere();
   }
@@ -2872,7 +2871,7 @@ void LIR_Assembler::emit_static_call_stub() {
   int start = __ offset();
 
   // make sure that the displacement word of the call ends up word aligned
-  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
+  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ mov_metadata(rbx, (Metadata*)nullptr);
   // must be set to -1 at code generation time
@@ -2892,7 +2891,7 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   // exception object is not added to oop map by LinearScan
   // (LinearScan assumes that no oops are in fixed registers)
   info->add_register_oop(exceptionOop);
-  Runtime1::StubID unwind_id;
+  C1StubId unwind_id;
 
   // get current pc information
   // pc is only needed if the method has an exception handler, the unwind code does not need it.
@@ -2904,9 +2903,9 @@ void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmit
   __ verify_not_null_oop(rax);
   // search an exception handler (rax: exception oop, rdx: throwing pc)
   if (compilation()->has_fpu_code()) {
-    unwind_id = Runtime1::handle_exception_id;
+    unwind_id = C1StubId::handle_exception_id;
   } else {
-    unwind_id = Runtime1::handle_exception_nofpu_id;
+    unwind_id = C1StubId::handle_exception_nofpu_id;
   }
   __ call(RuntimeAddress(Runtime1::entry_for(unwind_id)));
 
@@ -3047,6 +3046,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   Register length  = op->length()->as_register();
   Register tmp = op->tmp()->as_register();
   Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
+  Register tmp2 = UseCompactObjectHeaders ? rscratch2 : noreg;
 
   CodeStub* stub = op->stub();
   int flags = op->flags();
@@ -3171,8 +3171,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   Address src_length_addr = Address(src, arrayOopDesc::length_offset_in_bytes());
   Address dst_length_addr = Address(dst, arrayOopDesc::length_offset_in_bytes());
-  Address src_klass_addr = Address(src, oopDesc::klass_offset_in_bytes());
-  Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
 
   // length and pos's are all sign extended at this point on 64bit
 
@@ -3238,13 +3236,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedClassPointers) {
-        __ movl(tmp, src_klass_addr);
-        __ cmpl(tmp, dst_klass_addr);
-      } else {
-        __ movptr(tmp, src_klass_addr);
-        __ cmpptr(tmp, dst_klass_addr);
-      }
+      __ cmp_klasses_from_objects(src, dst, tmp, tmp2);
       __ jcc(Assembler::notEqual, *stub->entry());
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -3261,7 +3253,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
       __ push(src);
       __ push(dst);
-      __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));
+      __ call(RuntimeAddress(Runtime1::entry_for(C1StubId::slow_subtype_check_id)));
       __ pop(dst);
       __ pop(src);
 
@@ -3303,6 +3295,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
        store_parameter(src, 4);
 
 #ifndef _LP64
+       Address dst_klass_addr = Address(dst, oopDesc::klass_offset_in_bytes());
         __ movptr(tmp, dst_klass_addr);
         __ movptr(tmp, Address(tmp, ObjArrayKlass::element_klass_offset()));
         __ push(tmp);
@@ -3406,16 +3399,12 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 #endif
 
     if (basic_type != T_OBJECT) {
-
-      if (UseCompressedClassPointers)          __ cmpl(tmp, dst_klass_addr);
-      else                   __ cmpptr(tmp, dst_klass_addr);
+      __ cmp_klass(tmp, dst, tmp2);
       __ jcc(Assembler::notEqual, halt);
-      if (UseCompressedClassPointers)          __ cmpl(tmp, src_klass_addr);
-      else                   __ cmpptr(tmp, src_klass_addr);
+      __ cmp_klass(tmp, src, tmp2);
       __ jcc(Assembler::equal, known_ok);
     } else {
-      if (UseCompressedClassPointers)          __ cmpl(tmp, dst_klass_addr);
-      else                   __ cmpptr(tmp, dst_klass_addr);
+      __ cmp_klass(tmp, dst, tmp2);
       __ jcc(Assembler::equal, known_ok);
       __ cmpptr(src, dst);
       __ jcc(Assembler::equal, known_ok);
@@ -3453,7 +3442,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
   __ call_VM_leaf(entry, 0);
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
@@ -3510,13 +3501,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-#ifdef _LP64
-  if (UseCompressedClassPointers) {
-    __ movl(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-    __ decode_klass_not_null(result, rscratch1);
-  } else
-#endif
-    __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+  __ load_klass(result, obj, rscratch1);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {

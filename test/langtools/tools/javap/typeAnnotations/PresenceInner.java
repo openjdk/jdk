@@ -29,7 +29,6 @@ import java.lang.classfile.attribute.*;
  * @test PresenceInner
  * @bug 6843077
  * @summary test that annotations in inner types count only once
- * @enablePreview
  */
 
 public class PresenceInner {
@@ -71,8 +70,8 @@ public class PresenceInner {
     }
 
     void test(AttributedElement m) {
-        test(m, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(m, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(m, Attributes.runtimeVisibleTypeAnnotations());
+        test(m, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
     // test the result of AttributedElement.findAttribute according to expectations

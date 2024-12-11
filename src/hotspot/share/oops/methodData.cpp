@@ -59,9 +59,14 @@ bool DataLayout::needs_array_len(u1 tag) {
 // Perform generic initialization of the data.  More specific
 // initialization occurs in overrides of ProfileData::post_initialize.
 void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
-  _header._bits = (intptr_t)0;
-  _header._struct._tag = tag;
-  _header._struct._bci = bci;
+  DataLayout temp;
+  temp._header._bits = (intptr_t)0;
+  temp._header._struct._tag = tag;
+  temp._header._struct._bci = bci;
+  // Write the header using a single intptr_t write.  This ensures that if the layout is
+  // reinitialized readers will never see the transient state where the header is 0.
+  _header = temp._header;
+
   for (int i = 0; i < cell_count; i++) {
     set_cell_at(i, (intptr_t)0);
   }
@@ -1224,6 +1229,28 @@ MethodData::MethodData(const methodHandle& method)
   initialize();
 }
 
+// Reinitialize the storage of an existing MDO at a safepoint.  Doing it this way will ensure it's
+// not being accessed while the contents are being rewritten.
+class VM_ReinitializeMDO: public VM_Operation {
+ private:
+  MethodData* _mdo;
+ public:
+  VM_ReinitializeMDO(MethodData* mdo): _mdo(mdo) {}
+  VMOp_Type type() const                         { return VMOp_ReinitializeMDO; }
+  void doit() {
+    // The extra data is being zero'd, we'd like to acquire the extra_data_lock but it can't be held
+    // over a safepoint.  This means that we don't actually need to acquire the lock.
+    _mdo->initialize();
+  }
+  bool allow_nested_vm_operations() const        { return true; }
+};
+
+void MethodData::reinitialize() {
+  VM_ReinitializeMDO op(this);
+  VMThread::execute(&op);
+}
+
+
 void MethodData::initialize() {
   Thread* thread = Thread::current();
   NoSafepointVerifier no_safepoint;  // init function atomic wrt GC
@@ -1331,21 +1358,6 @@ void MethodData::init() {
 #if INCLUDE_JVMCI
   _jvmci_ir_size = 0;
   _failed_speculations = nullptr;
-#endif
-
-#if INCLUDE_RTM_OPT
-  _rtm_state = NoRTM; // No RTM lock eliding by default
-  if (UseRTMLocking &&
-      !CompilerOracle::has_option(mh, CompileCommandEnum::NoRTMLockEliding)) {
-    if (CompilerOracle::has_option(mh, CompileCommandEnum::UseRTMLockEliding) || !UseRTMDeopt) {
-      // Generate RTM lock eliding code without abort ratio calculation code.
-      _rtm_state = UseRTM;
-    } else if (UseRTMDeopt) {
-      // Generate RTM lock eliding code and include abort ratio calculation
-      // code if UseRTMDeopt is on.
-      _rtm_state = ProfileRTM;
-    }
-  }
 #endif
 
   // Initialize escape flags.
@@ -1546,6 +1558,8 @@ void MethodData::print_value_on(outputStream* st) const {
 }
 
 void MethodData::print_data_on(outputStream* st) const {
+  ConditionalMutexLocker ml(extra_data_lock(), !extra_data_lock()->owned_by_self(),
+                            Mutex::_no_safepoint_check_flag);
   ResourceMark rm;
   ProfileData* data = first_data();
   if (_parameters_type_data_di != no_parameters) {
@@ -1556,6 +1570,7 @@ void MethodData::print_data_on(outputStream* st) const {
     st->fill_to(6);
     data->print_data_on(st, this);
   }
+
   st->print_cr("--- Extra data:");
   DataLayout* dp    = extra_data_base();
   DataLayout* end   = args_data_limit();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,11 +404,9 @@ const ciTypeFlow::StateVector* ciTypeFlow::get_start_state() {
     state->push_translate(str.type());
   }
   // Set the rest of the locals to bottom.
-  Cell cell = state->next_cell(state->tos());
-  state->set_stack_size(0);
-  int limit = state->limit_cell();
-  for (; cell < limit; cell = state->next_cell(cell)) {
-    state->set_type_at(cell, state->bottom_type());
+  assert(state->stack_size() <= 0, "stack size should not be strictly positive");
+  while (state->stack_size() < 0) {
+    state->push(state->bottom_type());
   }
   // Lock an object, if necessary.
   state->set_monitor_count(method()->is_synchronized() ? 1 : 0);
@@ -722,12 +720,18 @@ void ciTypeFlow::StateVector::do_jsr(ciBytecodeStream* str) {
 void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
   if (str->is_in_error()) {
     trap(str, nullptr, Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
-                                                      Deoptimization::Action_none));
+                                                         Deoptimization::Action_none));
     return;
   }
   ciConstant con = str->get_constant();
   if (con.is_valid()) {
     int cp_index = str->get_constant_pool_index();
+    if (!con.is_loaded()) {
+      trap(str, nullptr, Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
+                                                           Deoptimization::Action_reinterpret,
+                                                           cp_index));
+      return;
+    }
     BasicType basic_type = str->get_basic_type_for_constant_at(cp_index);
     if (is_reference_type(basic_type)) {
       ciObject* obj = con.as_object();
@@ -2209,11 +2213,10 @@ bool ciTypeFlow::can_trap(ciBytecodeStream& str) {
   if (!Bytecodes::can_trap(str.cur_bc()))  return false;
 
   switch (str.cur_bc()) {
-    // %%% FIXME: ldc of Class can generate an exception
     case Bytecodes::_ldc:
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
-      return str.is_in_error();
+      return str.is_in_error() || !str.get_constant().is_loaded();
 
     case Bytecodes::_aload_0:
       // These bytecodes can trap for rewriting.  We need to assume that

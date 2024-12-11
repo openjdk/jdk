@@ -755,7 +755,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
 
     if (Opcode() == Op_CallLeafVector) {
       // If the return is in vector, compute appropriate regmask taking into account the whole range
-      if(ideal_reg >= Op_VecS && ideal_reg <= Op_VecZ) {
+      if(ideal_reg >= Op_VecA && ideal_reg <= Op_VecZ) {
         if(OptoReg::is_valid(regs.second())) {
           for (OptoReg::Name r = regs.first(); r <= regs.second(); r = OptoReg::add(r, 1)) {
             rm.Insert(r);
@@ -985,7 +985,7 @@ Node* CallNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 bool CallNode::is_call_to_arraycopystub() const {
-  if (_name != nullptr && strstr(_name, "arraycopy") != 0) {
+  if (_name != nullptr && strstr(_name, "arraycopy") != nullptr) {
     return true;
   }
   return false;
@@ -1601,10 +1601,8 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 
 void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 {
-  assert(initializer != nullptr &&
-         initializer->is_initializer() &&
-         !initializer->is_static(),
-             "unexpected initializer method");
+  assert(initializer != nullptr && initializer->is_object_initializer(),
+         "unexpected initializer method");
   BCEscapeAnalyzer* analyzer = initializer->get_bcea();
   if (analyzer == nullptr) {
     return;
@@ -1617,8 +1615,14 @@ void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 }
 Node *AllocateNode::make_ideal_mark(PhaseGVN *phase, Node* obj, Node* control, Node* mem) {
   Node* mark_node = nullptr;
-  // For now only enable fast locking for non-array types
-  mark_node = phase->MakeConX(markWord::prototype().value());
+  if (UseCompactObjectHeaders) {
+    Node* klass_node = in(AllocateNode::KlassNode);
+    Node* proto_adr = phase->transform(new AddPNode(klass_node, klass_node, phase->MakeConX(in_bytes(Klass::prototype_header_offset()))));
+    mark_node = LoadNode::make(*phase, control, mem, proto_adr, TypeRawPtr::BOTTOM, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
+  } else {
+    // For now only enable fast locking for non-array types
+    mark_node = phase->MakeConX(markWord::prototype().value());
+  }
   return mark_node;
 }
 
@@ -1950,6 +1954,22 @@ bool AbstractLockNode::find_unlocks_for_region(const RegionNode* region, LockNod
 
 }
 
+// Check that all locks/unlocks associated with object come from balanced regions.
+bool AbstractLockNode::is_balanced() {
+  Node* obj = obj_node();
+  for (uint j = 0; j < obj->outcnt(); j++) {
+    Node* n = obj->raw_out(j);
+    if (n->is_AbstractLock() &&
+        n->as_AbstractLock()->obj_node()->eqv_uncast(obj)) {
+      BoxLockNode* n_box = n->as_AbstractLock()->box_node()->as_BoxLock();
+      if (n_box->is_unbalanced()) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 const char* AbstractLockNode::_kind_names[] = {"Regular", "NonEscObj", "Coarsened", "Nested"};
 
 const char * AbstractLockNode::kind_as_string() const {
@@ -2056,6 +2076,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           int unlocks = 0;
           if (Verbose) {
             tty->print_cr("=== Locks coarsening ===");
+            tty->print("Obj: ");
+            obj_node()->dump();
           }
           for (int i = 0; i < lock_ops.length(); i++) {
             AbstractLockNode* lock = lock_ops.at(i);
@@ -2064,6 +2086,8 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             else
               unlocks++;
             if (Verbose) {
+              tty->print("Box %d: ", i);
+              box_node()->dump();
               tty->print(" %d: ", i);
               lock->dump();
             }

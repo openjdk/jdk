@@ -31,10 +31,11 @@ import java.util.SortedSet;
 
 import javax.lang.model.element.ModuleElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate the module index page "index.html".
@@ -78,9 +79,9 @@ public class ModuleIndexWriter extends AbstractOverviewIndexWriter {
 
         if (!groupModuleMap.keySet().isEmpty()) {
             TableHeader tableHeader = new TableHeader(contents.moduleLabel, contents.descriptionLabel);
-            var table = new Table<ModuleElement>(HtmlStyle.summaryTable)
+            var table = new Table<ModuleElement>(HtmlStyles.summaryTable)
                     .setHeader(tableHeader)
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                    .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                     .setId(HtmlIds.ALL_MODULES_TABLE)
                     .setDefaultTab(contents.getContent("doclet.All_Modules"));
 

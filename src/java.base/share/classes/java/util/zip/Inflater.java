@@ -56,35 +56,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * The following code fragment demonstrates a trivial compression
  * and decompression of a string using {@code Deflater} and
  * {@code Inflater}.
- *
- * <blockquote><pre>
- * try {
- *     // Encode a String into bytes
- *     String inputString = "blahblahblah\u20AC\u20AC";
- *     byte[] input = inputString.getBytes("UTF-8");
- *
- *     // Compress the bytes
- *     byte[] output = new byte[100];
- *     Deflater compresser = new Deflater();
- *     compresser.setInput(input);
- *     compresser.finish();
- *     int compressedDataLength = compresser.deflate(output);
- *
- *     // Decompress the bytes
- *     Inflater decompresser = new Inflater();
- *     decompresser.setInput(output, 0, compressedDataLength);
- *     byte[] result = new byte[100];
- *     int resultLength = decompresser.inflate(result);
- *     decompresser.end();
- *
- *     // Decode the bytes into a String
- *     String outputString = new String(result, 0, resultLength, "UTF-8");
- * } catch (java.io.UnsupportedEncodingException ex) {
- *     // handle
- * } catch (java.util.zip.DataFormatException ex) {
- *     // handle
- * }
- * </pre></blockquote>
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @apiNote
  * To release resources used by this {@code Inflater}, the {@link #end()} method
@@ -310,8 +282,7 @@ public class Inflater {
     }
 
     /**
-     * Returns true if a preset dictionary is needed for decompression.
-     * @return true if a preset dictionary is needed for decompression
+     * {@return true if a preset dictionary is needed for decompression}
      * @see Inflater#setDictionary
      */
     public boolean needsDictionary() {
@@ -321,10 +292,8 @@ public class Inflater {
     }
 
     /**
-     * Returns true if the end of the compressed data stream has been
-     * reached.
-     * @return true if the end of the compressed data stream has been
-     * reached
+     * {@return true if the end of the compressed data stream has been
+     * reached}
      */
     public boolean finished() {
         synchronized (zsRef) {
@@ -630,8 +599,7 @@ public class Inflater {
     }
 
     /**
-     * Returns the ADLER-32 value of the uncompressed data.
-     * @return the ADLER-32 value of the uncompressed data
+     * {@return the ADLER-32 value of the uncompressed data}
      */
     public int getAdler() {
         synchronized (zsRef) {

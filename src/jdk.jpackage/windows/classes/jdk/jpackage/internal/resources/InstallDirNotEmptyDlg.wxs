@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,7 @@
         <Control Id="No" Type="PushButton" X="150" Y="55" Width="50" Height="15" Default="yes" Cancel="yes" Text="!(loc.WixUINo)">
           <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
         </Control>
-        <Control Id="Text" Type="Text" X="25" Y="15" Width="250" Height="30" TabSkip="no">
-          <Text>!(loc.message.install.dir.exist)</Text>
-        </Control>
+        <Control Id="Text" Type="Text" X="25" Y="15" Width="250" Height="30" TabSkip="no" Text="!(loc.InstallDirNotEmptyDlgInstallDirExistMessage)"/>
       </Dialog>
 
       <Publish Dialog="InstallDirDlg" Control="Next" Event="DoAction" Value="JpCheckInstallDir" Order="3">1</Publish>

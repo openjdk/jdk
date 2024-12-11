@@ -50,7 +50,7 @@ public class TestSelectiveBarrierFlags {
     public static void main(String[] args) throws Exception {
         String[][] opts = {
                 new String[] { "ShenandoahLoadRefBarrier" },
-                new String[] { "ShenandoahSATBBarrier", "ShenandoahIUBarrier" },
+                new String[] { "ShenandoahSATBBarrier" },
                 new String[] { "ShenandoahCASBarrier" },
                 new String[] { "ShenandoahCloneBarrier" },
                 new String[] { "ShenandoahStackWatermarkBarrier" }

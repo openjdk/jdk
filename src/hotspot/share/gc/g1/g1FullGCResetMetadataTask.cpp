@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,14 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
   _g1h(G1CollectedHeap::heap()),
   _collector(collector) { }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(HeapRegion* hr) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
   hr->rem_set()->clear();
   hr->clear_cardtable();
 }
 
-bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(HeapRegion* hr) {
+bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(G1HeapRegion* hr) {
+  hr->uninstall_group_cardset();
+
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {
     assert(!hr->is_free(), "all free regions should be compaction targets");
@@ -54,7 +56,7 @@ bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(HeapRegio
   return false;
 }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_region(HeapRegion* hr, bool update_bot_for_live) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_region(G1HeapRegion* hr, bool update_bot_for_live) {
   assert(hr->needs_scrubbing_during_full_gc(), "must be");
 
   HeapWord* limit = hr->top();
@@ -82,7 +84,7 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::scrub_skip_compacting_re
   }
 }
 
-void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(HeapRegion* hr) {
+void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(G1HeapRegion* hr) {
 #ifdef ASSERT
   uint region_index = hr->hrm_index();
   assert(_collector->is_skip_compacting(region_index), "Only call on is_skip_compacting regions");

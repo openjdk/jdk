@@ -30,7 +30,8 @@
  *          java.management/com.sun.jmx.remote.security
  * @run clean RMIAltAuthTest
  * @run build RMIAltAuthTest SimpleStandard SimpleStandardMBean
- * @run main/othervm -Djava.security.manager=allow RMIAltAuthTest
+ *
+ * @run main/othervm RMIAltAuthTest
  */
 
 import java.io.File;

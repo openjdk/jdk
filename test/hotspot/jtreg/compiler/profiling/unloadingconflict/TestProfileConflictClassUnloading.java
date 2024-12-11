@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary class unloading resets profile, method compiled after the profile is
  * first set and before class loading sets unknown bit with not recorded class
  * @library /
+ * @requires vm.compMode != "Xcomp"
  * @build compiler.profiling.unloadingconflict.B
  * @run main/othervm -XX:TypeProfileLevel=222 -XX:-BackgroundCompilation
  *                   compiler.profiling.unloadingconflict.TestProfileConflictClassUnloading

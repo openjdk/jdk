@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_HPP
 #define SHARE_OOPS_INSTANCEKLASS_HPP
 
+#include "memory/allocation.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -44,7 +45,6 @@
 class ConstantPool;
 class DeoptimizationScope;
 class klassItable;
-class Monitor;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -67,7 +67,6 @@ class ClassFileStream;
 class KlassDepChange;
 class DependencyContext;
 class fieldDescriptor;
-class jniIdMapBase;
 class JNIid;
 class JvmtiCachedClassFieldMap;
 class nmethodBucket;
@@ -144,6 +143,8 @@ class InstanceKlass: public Klass {
  protected:
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, bool use_class_space, TRAPS) throw();
+
  public:
   InstanceKlass();
 
@@ -152,7 +153,6 @@ class InstanceKlass: public Klass {
   enum ClassState : u1 {
     allocated,                          // allocated (but not yet linked)
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
-    being_linked,                       // currently running verifier and rewriter
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
     fully_initialized,                  // initialized (successful final state)
@@ -226,14 +226,16 @@ class InstanceKlass: public Klass {
 
   volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
+  // Class states are defined as ClassState (see above).
+  // Place the _init_state here to utilize the unused 2-byte after
+  // _idnum_allocated_count.
   volatile ClassState _init_state;          // state of class
 
-  u1              _reference_type;          // reference type
+  u1              _reference_type;                // reference type
 
   // State is set either at parse time or while executing, atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
-  Monitor*             _init_monitor;       // mutual exclusion to _init_state and _init_thread.
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
@@ -319,6 +321,7 @@ class InstanceKlass: public Klass {
   void set_shared_loading_failed() { _misc_flags.set_shared_loading_failed(true); }
 
 #if INCLUDE_CDS
+  int  shared_class_loader_type() const;
   void set_shared_class_loader_type(s2 loader_type) { _misc_flags.set_shared_class_loader_type(loader_type); }
   void assign_class_loader_type() { _misc_flags.assign_class_loader_type(_class_loader_data); }
 #endif
@@ -425,6 +428,9 @@ class InstanceKlass: public Klass {
   }
   bool is_record() const;
 
+  // test for enum class (or possibly an anonymous subclass within a sealed enum)
+  bool is_enum_subclass() const;
+
   // permitted subclasses
   Array<u2>* permitted_subclasses() const     { return _permitted_subclasses; }
   void set_permitted_subclasses(Array<u2>* s) { _permitted_subclasses = s; }
@@ -471,6 +477,7 @@ public:
   // package
   PackageEntry* package() const     { return _package_entry; }
   ModuleEntry* module() const;
+  bool in_javabase_module() const;
   bool in_unnamed_package() const   { return (_package_entry == nullptr); }
   void set_package(ClassLoaderData* loader_data, PackageEntry* pkg_entry, TRAPS);
   // If the package for the InstanceKlass is in the boot loader's package entry
@@ -497,9 +504,7 @@ public:
                                        TRAPS);
 
   JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
-  // We can safely access the name as long as we hold the _init_monitor.
   const char* init_thread_name() {
-    assert(_init_monitor->owned_by_self(), "Must hold _init_monitor here");
     return init_thread()->name_raw();
   }
 
@@ -507,30 +512,14 @@ public:
   // initialization state
   bool is_loaded() const                   { return init_state() >= loaded; }
   bool is_linked() const                   { return init_state() >= linked; }
-  bool is_being_linked() const             { return init_state() == being_linked; }
   bool is_initialized() const              { return init_state() == fully_initialized; }
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_init_thread(JavaThread *thread)  { return thread == init_thread(); }
-  ClassState  init_state() const           { return Atomic::load(&_init_state); }
+  bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
+  ClassState  init_state() const           { return Atomic::load_acquire(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
-
-  class LockLinkState : public StackObj {
-    InstanceKlass* _ik;
-    JavaThread*    _current;
-   public:
-    LockLinkState(InstanceKlass* ik, JavaThread* current) : _ik(ik), _current(current) {
-      ik->check_link_state_and_wait(current);
-    }
-    ~LockLinkState() {
-      if (!_ik->is_linked()) {
-        // Reset to loaded if linking failed.
-        _ik->set_initialization_state_and_notify(loaded, _current);
-      }
-    }
-  };
 
   // is this a sealed class
   bool is_sealed() const;
@@ -545,12 +534,15 @@ public:
 
   // initialization (virtuals from Klass)
   bool should_be_initialized() const;  // means that initialize should be called
+  void initialize_with_aot_initialized_mirror(TRAPS);
+  void assert_no_clinit_will_run_for_aot_initialized_class() const NOT_DEBUG_RETURN;
   void initialize(TRAPS);
   void link_class(TRAPS);
   bool link_class_or_fail(TRAPS); // returns false on failure
   void rewrite_class(TRAPS);
   void link_methods(TRAPS);
   Method* class_initializer() const;
+  bool interface_needs_clinit_execution_as_super(bool also_check_supers=true) const;
 
   // reference type
   ReferenceType reference_type() const     { return (ReferenceType)_reference_type; }
@@ -766,8 +758,6 @@ public:
   bool declares_nonstatic_concrete_methods() const { return _misc_flags.declares_nonstatic_concrete_methods(); }
   void set_declares_nonstatic_concrete_methods(bool b) { _misc_flags.set_declares_nonstatic_concrete_methods(b); }
 
-  bool has_vanilla_constructor() const  { return _misc_flags.has_vanilla_constructor(); }
-  void set_has_vanilla_constructor()    { _misc_flags.set_has_vanilla_constructor(true); }
   bool has_miranda_methods () const     { return _misc_flags.has_miranda_methods(); }
   void set_has_miranda_methods()        { _misc_flags.set_has_miranda_methods(true); }
   bool has_final_method() const         { return _misc_flags.has_final_method(); }
@@ -831,7 +821,7 @@ public:
 
   // initialization
   void call_class_initializer(TRAPS);
-  void set_initialization_state_and_notify(ClassState state, JavaThread* current);
+  void set_initialization_state_and_notify(ClassState state, TRAPS);
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
@@ -843,6 +833,7 @@ public:
   void set_jni_ids(JNIid* ids)                   { _jni_ids = ids; }
   JNIid* jni_id_for(int offset);
 
+ public:
   // maintenance of deoptimization dependencies
   inline DependencyContext dependencies();
   void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, KlassDepChange& changes);
@@ -1057,7 +1048,7 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
- private:
+private:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags.set_rewritten(true); }
@@ -1074,6 +1065,12 @@ public:
   jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
 public:
+  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
+  // Must be one per class and it has to be a VM internal object so java code
+  // cannot lock it (like the mirror).
+  // It has to be an object not a Mutex because it's held through java calls.
+  oop init_lock() const;
+
   // Returns the array class for the n'th dimension
   virtual ArrayKlass* array_klass(int n, TRAPS);
   virtual ArrayKlass* array_klass_or_null(int n);
@@ -1083,10 +1080,9 @@ public:
   virtual ArrayKlass* array_klass_or_null();
 
   static void clean_initialization_error_table();
-
-  Monitor* init_monitor() const { return _init_monitor; }
 private:
-  void check_link_state_and_wait(JavaThread* current);
+  void fence_and_clear_init_lock();
+
   bool link_class_impl                           (TRAPS);
   bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
@@ -1126,7 +1122,6 @@ public:
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, PackageEntry* pkg_entry, TRAPS);
   void init_shared_package_entry();
   bool can_be_verified_at_dumptime() const;
-  bool methods_contain_jsr_bytecode() const;
   void compute_has_loops_flag_for_methods();
 #endif
 

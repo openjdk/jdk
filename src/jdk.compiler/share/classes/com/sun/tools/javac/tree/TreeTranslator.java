@@ -131,6 +131,11 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitModuleImport(JCModuleImport tree) {
+        tree.module = translate(tree.module);
+        result = tree;
+    }
+
     public void visitClassDef(JCClassDecl tree) {
         tree.mods = translate(tree.mods);
         tree.typarams = translateTypeParams(tree.typarams);

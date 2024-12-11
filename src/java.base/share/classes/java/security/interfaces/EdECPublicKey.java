@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.security.spec.NamedParameterSpec;
  * An Edwards-Curve public key is a point on the curve, which is represented using an
  * EdECPoint.
  *
+ * @spec https://www.rfc-editor.org/info/rfc8032
+ *      RFC 8032: Edwards-Curve Digital Signature Algorithm (EdDSA)
  * @since 15
  */
 public interface EdECPublicKey extends EdECKey, PublicKey {
@@ -56,7 +58,6 @@ public interface EdECPublicKey extends EdECKey, PublicKey {
      * The default implementation returns {@code null}.
      *
      * @return {@inheritDoc java.security.AsymmetricKey}
-     * @since 22
      */
     @Override
     default NamedParameterSpec getParams() {

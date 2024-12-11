@@ -25,7 +25,6 @@
  * @test
  * @summary
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
@@ -68,7 +67,7 @@ public class NoLocalsMustBeReservedForDCEedVarsTest {
         ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         for (MethodModel method: classFile.methods()) {
             if (method.methodName().stringValue().equals("foo")) {
-                CodeAttribute codeAttr = method.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute codeAttr = method.findAttribute(Attributes.code()).orElse(null);
                 assert codeAttr != null;
                 Assert.check(codeAttr.maxLocals() == 0, "max locals found " + codeAttr.maxLocals());
             }

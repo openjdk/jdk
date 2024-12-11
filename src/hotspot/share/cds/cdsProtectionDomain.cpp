@@ -199,22 +199,25 @@ Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS
 Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   Handle url_h;
   if (shared_jar_url(shared_path_index) == nullptr) {
-    JavaValue result(T_OBJECT);
     const char* path = FileMapInfo::shared_path_name(shared_path_index);
-    Handle path_string = java_lang_String::create_from_str(path, CHECK_(url_h));
-    Klass* classLoaders_klass =
-        vmClasses::jdk_internal_loader_ClassLoaders_klass();
-    JavaCalls::call_static(&result, classLoaders_klass,
-                           vmSymbols::toFileURL_name(),
-                           vmSymbols::toFileURL_signature(),
-                           path_string, CHECK_(url_h));
-
-    atomic_set_shared_jar_url(shared_path_index, result.get_oop());
+    oop result_oop = to_file_URL(path, url_h, CHECK_(url_h));
+    atomic_set_shared_jar_url(shared_path_index, result_oop);
   }
 
   url_h = Handle(THREAD, shared_jar_url(shared_path_index));
   assert(url_h.not_null(), "sanity");
   return url_h;
+}
+
+oop CDSProtectionDomain::to_file_URL(const char* path, Handle url_h, TRAPS) {
+  JavaValue result(T_OBJECT);
+  Handle path_string = java_lang_String::create_from_str(path, CHECK_NULL);
+  JavaCalls::call_static(&result,
+                         vmClasses::jdk_internal_loader_ClassLoaders_klass(),
+                         vmSymbols::toFileURL_name(),
+                         vmSymbols::toFileURL_signature(),
+                         path_string, CHECK_NULL);
+  return result.get_oop();
 }
 
 // Get the ProtectionDomain associated with the CodeSource from the classloader.

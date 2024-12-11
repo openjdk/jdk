@@ -25,7 +25,6 @@
  * @test
  * @bug 8134759
  * @summary Add LineNumberTable attribute for return bytecodes split around finally code
- * @enablePreview
  */
 
 import java.lang.classfile.*;
@@ -83,7 +82,7 @@ public class FinallyLineNumberTest {
         ClassModel self = ClassFile.of().parse(FinallyLineNumberTest.class.getResourceAsStream("FinallyLineNumberTest.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if (m.methodName().equalsString("method")) {
-                CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute code_attribute = m.findAttribute(Attributes.code()).orElseThrow();
                 for (Attribute<?> at : code_attribute.attributes()) {
                     if (at instanceof LineNumberTableAttribute lineAt) {
                         return lineAt.lineNumbers();

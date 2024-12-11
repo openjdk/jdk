@@ -25,10 +25,8 @@
  * @test
  * @bug 8044537
  * @summary Checking ACC_SYNTHETIC flag is generated for assert statement.
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build AssertFieldTest SyntheticTestDriver ExpectedClass ExpectedClasses

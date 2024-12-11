@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-import jdk.internal.foreign.Utils;
 import sun.invoke.util.Wrapper;
 
 import java.lang.reflect.Constructor;
@@ -36,8 +35,6 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
@@ -46,13 +43,6 @@ import static java.lang.invoke.MethodHandleStatics.VAR_HANDLE_IDENTITY_ADAPT;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
 
 final class VarHandles {
-
-    static ClassValue<ConcurrentMap<Integer, MethodHandle>> ADDRESS_FACTORIES = new ClassValue<>() {
-        @Override
-        protected ConcurrentMap<Integer, MethodHandle> computeValue(Class<?> type) {
-            return new ConcurrentHashMap<>();
-        }
-    };
 
     static VarHandle makeFieldHandle(MemberName f, Class<?> refc, boolean isWriteAllowedOnFinalFields) {
         if (!f.isStatic()) {
@@ -306,6 +296,9 @@ final class VarHandles {
      * The resulting var handle will take a memory segment as first argument (the segment to be dereferenced),
      * and a {@code long} as second argument (the offset into the segment).
      *
+     * Note: the returned var handle does not perform any size or alignment check. It is up to clients
+     * to adapt the returned var handle and insert the appropriate checks.
+     *
      * @param carrier the Java carrier type.
      * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
      * @param byteOrder the byte order.
@@ -316,24 +309,23 @@ final class VarHandles {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
-        long size = Utils.byteWidthOfPrimitive(carrier);
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
         boolean exact = VAR_HANDLE_SEGMENT_FORCE_EXACT;
 
         if (carrier == byte.class) {
-            return maybeAdapt(new VarHandleSegmentAsBytes(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsBytes(be, alignmentMask, exact));
         } else if (carrier == char.class) {
-            return maybeAdapt(new VarHandleSegmentAsChars(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsChars(be, alignmentMask, exact));
         } else if (carrier == short.class) {
-            return maybeAdapt(new VarHandleSegmentAsShorts(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsShorts(be, alignmentMask, exact));
         } else if (carrier == int.class) {
-            return maybeAdapt(new VarHandleSegmentAsInts(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsInts(be, alignmentMask, exact));
         } else if (carrier == float.class) {
-            return maybeAdapt(new VarHandleSegmentAsFloats(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsFloats(be, alignmentMask, exact));
         } else if (carrier == long.class) {
-            return maybeAdapt(new VarHandleSegmentAsLongs(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsLongs(be, alignmentMask, exact));
         } else if (carrier == double.class) {
-            return maybeAdapt(new VarHandleSegmentAsDoubles(be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsDoubles(be, alignmentMask, exact));
         } else {
             throw new IllegalStateException("Cannot get here");
         }

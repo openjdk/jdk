@@ -22,30 +22,7 @@
 # questions.
 #
 
-#ifdef __APPLE__
-# Darwin uses _ prefixed global symbols
-#define SYMBOL(s) _ ## s
-#define ELF_TYPE(name, description)
-#else
-#define SYMBOL(s) s
-#define ELF_TYPE(name, description) .type name,description
-#endif
-
-    .globl SYMBOL(SafeFetch32_impl)
-    .globl SYMBOL(SafeFetchN_impl)
-    .globl SYMBOL(_SafeFetch32_fault)
-    .globl SYMBOL(_SafeFetchN_fault)
-    .globl SYMBOL(_SafeFetch32_continuation)
-    .globl SYMBOL(_SafeFetchN_continuation)
-
-#ifdef __APPLE__
-    .private_extern SYMBOL(SafeFetch32_impl)
-    .private_extern SYMBOL(SafeFetchN_impl)
-    .private_extern SYMBOL(_SafeFetch32_fault)
-    .private_extern SYMBOL(_SafeFetchN_fault)
-    .private_extern SYMBOL(_SafeFetch32_continuation)
-    .private_extern SYMBOL(_SafeFetchN_continuation)
-#endif
+#include "defs.S.inc"
 
     .text
 
@@ -53,12 +30,11 @@
     #
     #  %rdi : address
     #  %esi : defaultval
-    ELF_TYPE(SafeFetch32_impl,@function)
-SYMBOL(SafeFetch32_impl:)
-SYMBOL(_SafeFetch32_fault:)
+DECLARE_FUNC(SafeFetch32_impl):
+DECLARE_FUNC(_SafeFetch32_fault):
     movl (%rdi), %eax
     ret
-SYMBOL(_SafeFetch32_continuation:)
+DECLARE_FUNC(_SafeFetch32_continuation):
     movl %esi, %eax
     ret
 
@@ -66,11 +42,10 @@ SYMBOL(_SafeFetch32_continuation:)
     #
     #  %rdi : address
     #  %rsi : defaultval
-    ELF_TYPE(SafeFetchN_impl,@function)
-SYMBOL(SafeFetchN_impl:)
-SYMBOL(_SafeFetchN_fault:)
+DECLARE_FUNC(SafeFetchN_impl):
+DECLARE_FUNC(_SafeFetchN_fault):
     movq (%rdi), %rax
     ret
-SYMBOL(_SafeFetchN_continuation:)
+DECLARE_FUNC(_SafeFetchN_continuation):
     movq %rsi, %rax
     ret

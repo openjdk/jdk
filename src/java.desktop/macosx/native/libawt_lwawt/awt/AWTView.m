@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,9 @@
 
 // keyboard layout
 static NSString *kbdLayout;
+
+// Constant for keyman layouts
+#define KEYMAN_LAYOUT "keyman"
 
 @interface AWTView()
 @property (retain) CDropTarget *_dropTarget;
@@ -259,7 +262,7 @@ static BOOL shouldUsePressAndHold() {
 
 - (void) keyDown: (NSEvent *)event {
     fProcessingKeystroke = YES;
-    fKeyEventsNeeded = YES;
+    fKeyEventsNeeded = ![(NSString *)kbdLayout containsString:@KEYMAN_LAYOUT];
 
     // Allow TSM to look at the event and potentially send back NSTextInputClient messages.
     [self interpretKeyEvents:[NSArray arrayWithObject:event]];
@@ -512,23 +515,6 @@ static BOOL shouldUsePressAndHold() {
     [super drawRect:dirtyRect];
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     if (env != NULL) {
-        /*
-         if ([self inLiveResize]) {
-         NSRect rs[4];
-         NSInteger count;
-         [self getRectsExposedDuringLiveResize:rs count:&count];
-         for (int i = 0; i < count; i++) {
-         JNU_CallMethodByName(env, NULL, [m_awtWindow cPlatformView],
-         "deliverWindowDidExposeEvent", "(FFFF)V",
-         (jfloat)rs[i].origin.x, (jfloat)rs[i].origin.y,
-         (jfloat)rs[i].size.width, (jfloat)rs[i].size.height);
-         if ((*env)->ExceptionOccurred(env)) {
-         (*env)->ExceptionDescribe(env);
-         (*env)->ExceptionClear(env);
-         }
-         }
-         } else {
-         */
         DECLARE_CLASS(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
         DECLARE_METHOD(jm_deliverWindowDidExposeEvent, jc_CPlatformView, "deliverWindowDidExposeEvent", "()V");
         jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
@@ -537,9 +523,6 @@ static BOOL shouldUsePressAndHold() {
             CHECK_EXCEPTION();
             (*env)->DeleteLocalRef(env, jlocal);
         }
-        /*
-         }
-         */
     }
 }
 
@@ -965,7 +948,7 @@ static jclass jc_CInputMethod = NULL;
 
     if ((utf16Length > 2) ||
         ((utf8Length > 1) && [self isCodePointInUnicodeBlockNeedingIMEvent:codePoint]) ||
-        ((codePoint == 0x5c) && ([(NSString *)kbdLayout containsString:@"Kotoeri"]))) {
+        [(NSString *)kbdLayout containsString:@KEYMAN_LAYOUT]) {
 #ifdef IM_DEBUG
         NSLog(@"string complex ");
 #endif

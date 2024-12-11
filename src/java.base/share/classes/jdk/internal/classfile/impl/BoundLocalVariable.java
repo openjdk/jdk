@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ClassDesc;
 import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.LocalVariable;
+import java.lang.constant.ClassDesc;
 
 public final class BoundLocalVariable
         extends AbstractBoundLocalVariable
@@ -46,7 +46,7 @@ public final class BoundLocalVariable
 
     @Override
     public ClassDesc typeSymbol() {
-        return ClassDesc.ofDescriptor(type().stringValue());
+        return Util.fieldTypeSymbol(type());
     }
 
     @Override

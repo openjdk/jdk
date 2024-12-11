@@ -407,6 +407,89 @@ public class SuperInitGood {
         }
     }
 
+    // we allow 'this' reference prior to super() for field assignments only
+    public static class Test20 {
+        private int x;
+        public Test20(short x) {
+            x = x;
+            super();
+        }
+        public Test20(int x) {
+            this.x = x;
+            super();
+        }
+        public Test20(char x) {
+            Test20.this.x = x;
+            super();
+        }
+        public Test20(byte y) {
+            x = y;
+            this((int)y);
+            this.x++;
+        }
+    }
+
+    // allow creating and using local and anonymous classes before super()
+    // they will not have enclosing instances though
+    public static class Test21 {
+        public Test21(int x) {
+            Runnable r = new Runnable() {
+                public void run() {
+                    this.hashCode();
+                }
+            };
+            r.run();
+            super();
+            r.run();
+        }
+        public Test21(float x) {
+            class Foo {
+                public void bar() {
+                    this.hashCode();
+                }
+            };
+            new Foo().bar();
+            super();
+            new Foo().bar();
+        }
+    }
+
+    // Lambdas within constructors
+    public static class Test22 {
+        public Test22() {
+            Runnable r = () -> System.out.println();
+            super();
+            r.run();
+        }
+        public Test22(int x) {
+            Runnable r = () -> System.out.println();
+            r.run();
+            super();
+        }
+        public Test22(char x) {
+            Runnable r = () -> {
+                class A {
+                    A() {
+                        return;
+                    }
+                    A(int x) {
+                        Runnable r2 = () -> {
+                            return;
+                        };
+                        this();
+                        r2.run();
+                    }
+                    A(char x) {
+                        this(0);
+                    }
+                }
+                return;
+            };
+            r.run();
+            super();
+        }
+    }
+
     public static void main(String[] args) {
         new Test0();
         new Test1();
@@ -448,5 +531,9 @@ public class SuperInitGood {
             assert false : "unexpected exception: " + e;
         }
         new Test19(123);
+        new Test20(123);
+        new Test21((int)123);
+        new Test21((float)123);
+        new Test22('x');
     }
 }

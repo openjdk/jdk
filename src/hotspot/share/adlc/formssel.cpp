@@ -210,15 +210,16 @@ bool InstructForm::is_pinned(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",          index)) return true;
-  if (_matrule->find_type("If",            index)) return true;
-  if (_matrule->find_type("CountedLoopEnd",index)) return true;
-  if (_matrule->find_type("Return",        index)) return true;
-  if (_matrule->find_type("Rethrow",       index)) return true;
-  if (_matrule->find_type("TailCall",      index)) return true;
-  if (_matrule->find_type("TailJump",      index)) return true;
-  if (_matrule->find_type("Halt",          index)) return true;
-  if (_matrule->find_type("Jump",          index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("If",               index)) return true;
+  if (_matrule->find_type("CountedLoopEnd",   index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
+  if (_matrule->find_type("Jump",             index)) return true;
 
   return is_parm(globals);
 }
@@ -228,12 +229,13 @@ bool InstructForm::is_projection(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",    index)) return true;
-  if (_matrule->find_type("Return",  index)) return true;
-  if (_matrule->find_type("Rethrow", index)) return true;
-  if (_matrule->find_type("TailCall",index)) return true;
-  if (_matrule->find_type("TailJump",index)) return true;
-  if (_matrule->find_type("Halt",    index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
 
   return false;
 }
@@ -376,6 +378,7 @@ bool InstructForm::is_ideal_return() const {
   if (_matrule->find_type("Rethrow",index)) return true;
   if (_matrule->find_type("TailCall",index)) return true;
   if (_matrule->find_type("TailJump",index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
 
   return false;
 }
@@ -894,6 +897,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"Rethrow"   )==0 ||
       strcmp(_matrule->_opType,"TailCall"  )==0 ||
       strcmp(_matrule->_opType,"TailJump"  )==0 ||
+      strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
       strcmp(_matrule->_opType,"Halt"      )==0 )
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
@@ -3650,7 +3654,6 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
 #if INCLUDE_SHENANDOAHGC
     "ShenandoahCompareAndSwapN", "ShenandoahCompareAndSwapP", "ShenandoahWeakCompareAndSwapP", "ShenandoahWeakCompareAndSwapN", "ShenandoahCompareAndExchangeP", "ShenandoahCompareAndExchangeN",
 #endif
-    "StoreCM",
     "GetAndSetB", "GetAndSetS", "GetAndAddI", "GetAndSetI", "GetAndSetP",
     "GetAndAddB", "GetAndAddS", "GetAndAddL", "GetAndSetL", "GetAndSetN",
     "ClearArray"
@@ -3954,15 +3957,15 @@ void MatchNode::count_commutative_op(int& count) {
     "AndI","AndL",
     "MaxI","MinI","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulF","MulD",
-    "OrI","OrL",
-    "XorI","XorL"
+    "OrI","OrL", "XorI","XorL",
+    "UMax","UMin"
   };
 
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVF", "MulVD",
     "AndV", "OrV", "XorV",
-    "MaxV", "MinV"
+    "MaxV", "MinV", "UMax","UMin"
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
@@ -4336,7 +4339,7 @@ bool MatchRule::is_vector() const {
     "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV",
+    "MaxV", "MinV", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
@@ -4352,14 +4355,14 @@ bool MatchRule::is_vector() const {
     "Replicate","ReverseV","ReverseBytesV",
     "RoundDoubleModeV","RotateLeftV" , "RotateRightV", "LoadVector","StoreVector",
     "LoadVectorGather", "StoreVectorScatter", "LoadVectorGatherMasked", "StoreVectorScatterMasked",
-    "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
-    "VectorRearrange","VectorLoadShuffle", "VectorLoadConst",
+    "SelectFromTwoVector", "VectorTest", "VectorLoadMask", "VectorStoreMask", "VectorBlend", "VectorInsert",
+    "VectorRearrange", "VectorLoadShuffle", "VectorLoadConst",
     "VectorCastB2X", "VectorCastS2X", "VectorCastI2X",
     "VectorCastL2X", "VectorCastF2X", "VectorCastD2X", "VectorCastF2HF", "VectorCastHF2F",
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
-    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     "RoundVF", "RoundVD",

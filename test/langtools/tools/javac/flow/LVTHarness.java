@@ -28,8 +28,6 @@
  *          javac crash while creating LVT entry for a local variable defined in
  *          an inner block
  * @library /tools/javac/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor LVTHarness
  * @run main LVTHarness
  */
@@ -138,8 +136,8 @@ public class LVTHarness {
     }
 
     void checkMethod(MethodModel method, AliveRanges ranges) {
-        CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
-        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElseThrow();
+        CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+        LocalVariableTableAttribute lvt = code.findAttribute(Attributes.localVariableTable()).orElseThrow();
         List<String> infoFromRanges = convertToStringList(ranges);
         List<String> infoFromLVT = convertToStringList(lvt);
 

@@ -110,6 +110,11 @@ public class tc04x001 {
             e.printStackTrace();
         } finally {
             debugee.resume();
+            int code = debugee.waitFor();
+            if (code != Consts.JCK_STATUS_BASE) {
+                log.complain("Debugee FAILED with exit code: " + code);
+                exitStatus = Consts.TEST_FAILED;
+            }
         }
         display("Test finished. exitStatus = " + exitStatus);
 

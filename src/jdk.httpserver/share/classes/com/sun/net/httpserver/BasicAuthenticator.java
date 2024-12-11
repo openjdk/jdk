@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ public abstract class BasicAuthenticator extends Authenticator {
      *         correctly quoted, as specified in <a href="https://tools.ietf.org/html/rfc7230#section-3.2">
      *         RFC 7230 section-3.2</a>. Note, any {@code \} character used for
      *         quoting must itself be quoted in source code.
+     *
+     * @since 14
      */
     public BasicAuthenticator(String realm, Charset charset) {
         Objects.requireNonNull(charset);
@@ -118,7 +120,7 @@ public abstract class BasicAuthenticator extends Authenticator {
             return new Authenticator.Retry (401);
         }
         int sp = auth.indexOf (' ');
-        if (sp == -1 || !auth.substring(0, sp).equals ("Basic")) {
+        if (sp == -1 || !auth.substring(0, sp).equalsIgnoreCase("Basic")) {
             return new Authenticator.Failure (401);
         }
         byte[] b = Base64.getDecoder().decode(auth.substring(sp+1));

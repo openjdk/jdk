@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,13 @@
  *
  * @test
  * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647 8294020
+ *      8332600
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
- * @enablePreview
  * @modules
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.code
  *      jdk.compiler/com.sun.tools.javac.util
- *      java.base/jdk.internal.classfile.impl
  * @build JavacTestingAbstractProcessor
  * @run junit/othervm -DuseAP=false RecordCompilationTests
  * @run junit/othervm -DuseAP=true RecordCompilationTests
@@ -136,6 +135,7 @@ class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.repeated.modifier", "public public record R(String foo) { }");
         assertFail("compiler.err.repeated.modifier", "private private record R(String foo) { }");
         assertFail("compiler.err.already.defined", "record R(int x, int x) {}");
+        assertFail("compiler.err.already.defined", "record R(int x, int x, int x) {}");
         for (String s : List.of("var", "record"))
             assertFail("compiler.err.restricted.type.not.allowed.here", "record R(# x) { }", s);
         for (String s : List.of("public", "protected", "private", "static", "final", "transient", "volatile",
@@ -1320,7 +1320,7 @@ class RecordCompilationTests extends CompilationTestCase {
                 ClassModel classFile = ClassFile.of().parse(fileEntry.toPath());
                 for (MethodModel method : classFile.methods()) {
                     if (method.methodName().equalsString("<init>")) {
-                        CodeAttribute code_attribute = method.findAttribute(Attributes.CODE).orElseThrow();
+                        CodeAttribute code_attribute = method.findAttribute(Attributes.code()).orElseThrow();
                         for (CodeElement ce : code_attribute.elementList()) {
                             if (ce instanceof Instruction instruction && instruction.opcode() == Opcode.PUTFIELD) {
                                 if (putField1 != null && putField2 != null) {
@@ -1356,7 +1356,7 @@ class RecordCompilationTests extends CompilationTestCase {
         try {
             String[] testOptions = {};
             setCompileOptions(testOptions);
-            assertFail("compiler.err.illegal.start.of.type",
+            assertFail("compiler.err.statement.not.expected",
                     "class R {\n" +
                             "    record RR(int i) {\n" +
                             "        return null;\n" +
@@ -1613,7 +1613,7 @@ class RecordCompilationTests extends CompilationTestCase {
         }
         assert tAnno != null;
         Assert.check(tAnno.targetInfo().targetType().name().equals(positionType));
-        String annotationName = tAnno.classSymbol().displayName();
+        String annotationName = tAnno.annotation().classSymbol().displayName();
         Assert.check(annotationName.startsWith(annoName));
     }
     private void checkAnno(Attribute<?> rAnnos,

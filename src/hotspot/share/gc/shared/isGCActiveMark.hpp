@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,18 +28,12 @@
 #include "memory/allocation.hpp"
 
 // This class provides a method for block structured setting of the
-// _is_gc_active state without requiring accessors in CollectedHeap
+// _is_stw_gc_active state without requiring accessors in CollectedHeap
 
-class IsGCActiveMark : public StackObj {
+class IsSTWGCActiveMark : public StackObj {
  public:
-  IsGCActiveMark();
-  ~IsGCActiveMark();
-};
-
-class DisableIsGCActiveMark : public StackObj {
- public:
-  DisableIsGCActiveMark();
-  ~DisableIsGCActiveMark();
+  IsSTWGCActiveMark();
+  ~IsSTWGCActiveMark();
 };
 
 #endif // SHARE_GC_SHARED_ISGCACTIVEMARK_HPP

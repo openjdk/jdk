@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.security;
 
-import jdk.internal.util.random.RandomSupport.RandomGeneratorProperties;
 import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.jca.Providers;
@@ -141,6 +140,11 @@ import java.util.regex.Pattern;
  * <li>{@link SecureRandomSpi#engineReseed(SecureRandomParameters)}
  * </ul>
  *
+ * @spec https://www.rfc-editor.org/info/rfc4086
+ *      RFC 4086: Randomness Requirements for Security
+ * @spec https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.140-2.pdf
+ *      Security Requirements for Cryptographic Modules
+ *
  * @see java.security.SecureRandomSpi
  * @see java.util.Random
  *
@@ -149,10 +153,6 @@ import java.util.regex.Pattern;
  * @since 1.1
  */
 
-@RandomGeneratorProperties(
-        name = "SecureRandom",
-        isStochastic = true
-)
 public class SecureRandom extends java.util.Random {
 
     private static final Debug pdebug =
@@ -230,8 +230,8 @@ public class SecureRandom extends java.util.Random {
         if (provider == null || algorithm == null) {
             return false;
         } else {
-            return Boolean.parseBoolean(provider.getProperty(
-                    "SecureRandom." + algorithm + " ThreadSafe", "false"));
+            Service service = provider.getService("SecureRandom", algorithm);
+            return Boolean.parseBoolean(service.getAttribute("ThreadSafe"));
         }
     }
 
@@ -942,11 +942,7 @@ public class SecureRandom extends java.util.Random {
     public static SecureRandom getInstanceStrong()
             throws NoSuchAlgorithmException {
 
-        @SuppressWarnings("removal")
-        String property = AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> Security.getProperty(
-                    "securerandom.strongAlgorithms"));
-
+        String property = Security.getProperty("securerandom.strongAlgorithms");
         if (property == null || property.isEmpty()) {
             throw new NoSuchAlgorithmException(
                 "Null/empty securerandom.strongAlgorithms Security Property");

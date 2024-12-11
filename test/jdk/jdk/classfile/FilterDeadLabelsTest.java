@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ class FilterDeadLabelsTest {
                 }))).methods().get(0).code().get();
 
         assertTrue(code.exceptionHandlers().isEmpty());
-        code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).ifPresent(a -> assertTrue(a.localVariables().isEmpty()));
-        code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).ifPresent(a -> assertTrue(a.localVariableTypes().isEmpty()));
-        code.findAttribute(Attributes.CHARACTER_RANGE_TABLE).ifPresent(a -> assertTrue(a.characterRangeTable().isEmpty()));
+        code.findAttribute(Attributes.localVariableTable()).ifPresent(a -> assertTrue(a.localVariables().isEmpty()));
+        code.findAttribute(Attributes.localVariableTypeTable()).ifPresent(a -> assertTrue(a.localVariableTypes().isEmpty()));
+        code.findAttribute(Attributes.characterRangeTable()).ifPresent(a -> assertTrue(a.characterRangeTable().isEmpty()));
     }
 
     @ParameterizedTest

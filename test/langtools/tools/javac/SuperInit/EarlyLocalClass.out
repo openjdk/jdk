@@ -1,0 +1,4 @@
+EarlyLocalClass.java:12:32: compiler.err.cant.ref.before.ctor.called: this
+- compiler.note.preview.filename: EarlyLocalClass.java, DEFAULT
+- compiler.note.preview.recompile
+1 error

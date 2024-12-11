@@ -101,8 +101,10 @@ class InterruptHangTarg {
         for (int ii = 0; ii < INTERRUPTS_EXPECTED; ii++) {
             boolean wasInterrupted = false;
             try {
-                // Give other thread a chance to interrupt
-                Thread.sleep(100);
+                // Give other thread a chance to interrupt. Normally only a very short
+                // sleep is needed, but we need to account for unexpected delays in
+                // the interrupt due to machine and network hiccups.
+                Thread.sleep(10*1000);
             } catch (InterruptedException ee) {
                 answer++;
                 wasInterrupted = true;

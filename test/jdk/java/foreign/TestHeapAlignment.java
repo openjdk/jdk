@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class TestHeapAlignment {
     public void testHeapAlignment(MemorySegment segment, int align, Object val, Object arr, ValueLayout layout, Function<Object, MemorySegment> segmentFactory) {
         assertAligned(align, layout, () -> layout.varHandle().get(segment, 0L));
         assertAligned(align, layout, () -> layout.varHandle().set(segment, 0L, val));
-        MemoryLayout seq = MemoryLayout.sequenceLayout(10, layout);
+        MemoryLayout seq = MemoryLayout.sequenceLayout(1, layout);
         assertAligned(align, layout, () -> seq.varHandle(MemoryLayout.PathElement.sequenceElement()).get(segment, 0L, 0L));
         assertAligned(align, layout, () -> seq.varHandle(MemoryLayout.PathElement.sequenceElement()).set(segment, 0L, 0L, val));
         assertAligned(align, layout, () -> segment.spliterator(layout));

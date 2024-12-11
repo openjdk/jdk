@@ -37,38 +37,12 @@ public:
   // See full description in macroAssembler_x86.cpp.
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2, Register thread,
-                 RTMLockingCounters* rtm_counters,
-                 RTMLockingCounters* stack_rtm_counters,
-                 Metadata* method_data,
-                 bool use_rtm, bool profile_rtm);
-  void fast_unlock(Register obj, Register box, Register tmp, bool use_rtm);
+                 Metadata* method_data);
+  void fast_unlock(Register obj, Register box, Register tmp);
 
   void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
                              Register t, Register thread);
   void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
-
-#if INCLUDE_RTM_OPT
-  void rtm_counters_update(Register abort_status, Register rtm_counters);
-  void branch_on_random_using_rdtsc(Register tmp, Register scr, int count, Label& brLabel);
-  void rtm_abort_ratio_calculation(Register tmp, Register rtm_counters_reg,
-                                   RTMLockingCounters* rtm_counters,
-                                   Metadata* method_data);
-  void rtm_profiling(Register abort_status_Reg, Register rtm_counters_Reg,
-                     RTMLockingCounters* rtm_counters, Metadata* method_data, bool profile_rtm);
-  void rtm_retry_lock_on_abort(Register retry_count, Register abort_status, Label& retryLabel);
-  void rtm_retry_lock_on_busy(Register retry_count, Register box, Register tmp, Register scr, Label& retryLabel);
-  void rtm_stack_locking(Register obj, Register tmp, Register scr,
-                         Register retry_on_abort_count,
-                         RTMLockingCounters* stack_rtm_counters,
-                         Metadata* method_data, bool profile_rtm,
-                         Label& DONE_LABEL, Label& IsInflated);
-  void rtm_inflated_locking(Register obj, Register box, Register tmp,
-                            Register scr, Register retry_on_busy_count,
-                            Register retry_on_abort_count,
-                            RTMLockingCounters* rtm_counters,
-                            Metadata* method_data, bool profile_rtm,
-                            Label& DONE_LABEL);
-#endif
 
   // Generic instructions support for use in .ad files C2 code generation
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src);
@@ -82,10 +56,21 @@ public:
                 XMMRegister dst, XMMRegister src1, XMMRegister src2,
                 int vlen_enc);
 
+  void vpuminmax(int opcode, BasicType elem_bt,
+                XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                int vlen_enc);
+
+  void vpuminmax(int opcode, BasicType elem_bt,
+                XMMRegister dst, XMMRegister src1, Address src2,
+                int vlen_enc);
+
   void vminmax_fp(int opcode, BasicType elem_bt,
                   XMMRegister dst, XMMRegister a, XMMRegister b,
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
+
+  void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
   void evminmax_fp(int opcode, BasicType elem_bt,
                    XMMRegister dst, XMMRegister a, XMMRegister b,
                    KRegister ktmp, XMMRegister atmp, XMMRegister btmp,
@@ -131,6 +116,7 @@ public:
 
   void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len);
   void evmovdqu(BasicType type, KRegister kmask, Address dst, XMMRegister src, bool merge, int vector_len);
+  void evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, XMMRegister src, bool merge, int vector_len);
 
   // extract
   void extract(BasicType typ, Register dst, XMMRegister src, int idx);
@@ -153,8 +139,8 @@ public:
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral src2, int comparison, int vector_len, Register rscratch = noreg);
   void evpblend(BasicType typ, XMMRegister dst, KRegister kmask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
-  void load_vector(XMMRegister dst, Address        src, int vlen_in_bytes);
-  void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = noreg);
+  void load_vector(BasicType bt, XMMRegister dst, Address        src, int vlen_in_bytes);
+  void load_vector(BasicType bt, XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = noreg);
 
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
   void load_vector_mask(KRegister   dst, XMMRegister src, XMMRegister xtmp, bool novlbwdq, int vlen_enc);
@@ -175,6 +161,9 @@ public:
   void reduce_fp(int opcode, int vlen,
                  XMMRegister dst, XMMRegister src,
                  XMMRegister vtmp1, XMMRegister vtmp2 = xnoreg);
+  void unordered_reduce_fp(int opcode, int vlen,
+                           XMMRegister dst, XMMRegister src,
+                           XMMRegister vtmp1 = xnoreg, XMMRegister vtmp2 = xnoreg);
   void reduceB(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
   void mulreduceB(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
   void reduceS(int opcode, int vlen, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
@@ -187,6 +176,8 @@ public:
  private:
   void reduceF(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
   void reduceD(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+  void unorderedReduceF(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+  void unorderedReduceD(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
 
   // Int Reduction
   void reduce2I (int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2);
@@ -223,14 +214,27 @@ public:
   void reduce8F (int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
   void reduce16F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
 
+  // Unordered Float Reduction
+  void unorderedReduce2F(int opcode, XMMRegister dst, XMMRegister src);
+  void unorderedReduce4F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp);
+  void unorderedReduce8F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+  void unorderedReduce16F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+
   // Double Reduction
   void reduce2D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp);
   void reduce4D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
   void reduce8D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
 
+  // Unordered Double Reduction
+  void unorderedReduce2D(int opcode, XMMRegister dst, XMMRegister src);
+  void unorderedReduce4D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp);
+  void unorderedReduce8D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2);
+
   // Base reduction instruction
   void reduce_operation_128(BasicType typ, int opcode, XMMRegister dst, XMMRegister src);
   void reduce_operation_256(BasicType typ, int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
+  void unordered_reduce_operation_128(BasicType typ, int opcode, XMMRegister dst, XMMRegister src);
+  void unordered_reduce_operation_256(BasicType typ, int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
  public:
 #ifdef _LP64
@@ -289,10 +293,11 @@ public:
   void count_positives(Register ary1, Register len,
                        Register result, Register tmp1,
                        XMMRegister vec1, XMMRegister vec2, KRegister mask1 = knoreg, KRegister mask2 = knoreg);
+
   // Compare char[] or byte[] arrays.
-  void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
-                     Register limit, Register result, Register chr,
-                     XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
+  void arrays_equals(bool is_array_equ, Register ary1, Register ary2, Register limit,
+                     Register result, Register chr, XMMRegister vec1, XMMRegister vec2,
+                     bool is_char, KRegister mask = knoreg, bool expand_ary2 = false);
 
   void arrays_hashcode(Register str1, Register cnt1, Register result,
                        Register tmp1, Register tmp2, Register tmp3, XMMRegister vnext,
@@ -511,5 +516,71 @@ public:
 #endif
   void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                               Register offset, Register rtmp, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, bool is_unsigned, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, bool is_unsigned, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void vector_saturating_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
+
+  void vector_saturating_unsigned_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void vector_saturating_unsigned_op(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc);
+
+  void vector_sub_dq_saturating_unsigned_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, KRegister ktmp, int vlen_enc);
+
+  void vector_sub_dq_saturating_unsigned_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                             XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
+  void vector_add_dq_saturating_unsigned_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                              XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp, int vlen_enc);
+
+  void vector_add_dq_saturating_unsigned_avx(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                             XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, int vlen_enc);
+
+  void vector_addsub_dq_saturating_avx(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, int vlen_enc);
+
+  void vector_addsub_dq_saturating_evex(int opc, BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                        XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, int vlen_enc);
+
+  void evpmovd2m_emu(KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc, bool xtmp2_hold_M1 = false);
+
+  void evpmovq2m_emu(KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc, bool xtmp2_hold_M1 = false);
+
+  void vpsign_extend_dq(BasicType etype, XMMRegister dst, XMMRegister src, int vlen_enc);
+
+  void vpgenmin_value(BasicType etype, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones = false);
+
+  void vpgenmax_value(BasicType etype, XMMRegister dst, XMMRegister allones, int vlen_enc, bool compute_allones = false);
+
+  void evpcmpu(BasicType etype, KRegister kmask,  XMMRegister src1, XMMRegister src2, Assembler::ComparisonPredicate cond, int vlen_enc);
+
+  void vpcmpgt(BasicType etype, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
+
+  void evpmov_vec_to_mask(BasicType etype, KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
+                          int vlen_enc, bool xtmp2_hold_M1 = false);
+
+  void evmasked_saturating_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                              bool is_unsigned, bool merge, int vlen_enc);
+
+  void evmasked_saturating_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, Address src2,
+                              bool is_unsigned, bool merge, int vlen_enc);
+
+  void evmasked_saturating_signed_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                              bool merge, int vlen_enc);
+
+  void evmasked_saturating_signed_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1, Address src2,
+                              bool merge, int vlen_enc);
+
+  void evmasked_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1,
+                                       XMMRegister src2, bool merge, int vlen_enc);
+
+  void evmasked_saturating_unsigned_op(int ideal_opc, BasicType elem_bt, KRegister mask, XMMRegister dst, XMMRegister src1,
+                                       Address src2, bool merge, int vlen_enc);
+
+  void select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP

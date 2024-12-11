@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 final class ChunkInputStream extends InputStream {
     private final Iterator<RepositoryChunk> chunks;
@@ -85,10 +86,7 @@ final class ChunkInputStream extends InputStream {
                 if (r != -1) {
                     return r;
                 }
-                stream.close();
-                currentChunk.release();
-                stream = null;
-                currentChunk = null;
+                closeStream();
             }
             if (!nextStream()) {
                 return -1;
@@ -97,14 +95,55 @@ final class ChunkInputStream extends InputStream {
     }
 
     @Override
-    public void close() throws IOException {
+    public int read(byte[] buf, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, buf.length);
+        if (len == 0) {
+            return 0;
+        }
+
+        int totalRead = 0;
+        while (len > 0) {
+            if (stream == null) {
+                closeChunk();
+                if (!nextStream()) {
+                    return totalRead > 0 ? totalRead : -1;
+                }
+            }
+            int read = stream.read(buf, off, len);
+            if (read > -1) {
+                totalRead += read;
+                len -= read;
+                if (len == 0) {
+                    return totalRead;
+                }
+                off += read;
+            } else {
+                closeStream();
+            }
+        }
+        return totalRead;
+    }
+
+    private void closeStream() throws IOException {
         if (stream != null) {
             stream.close();
             stream = null;
         }
-        while (currentChunk != null) {
+        closeChunk();
+    }
+
+    private void closeChunk() {
+        if (currentChunk != null) {
             currentChunk.release();
             currentChunk = null;
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        closeStream();
+        while (currentChunk != null) {
+            closeChunk();
             if (!nextChunk()) {
                 return;
             }

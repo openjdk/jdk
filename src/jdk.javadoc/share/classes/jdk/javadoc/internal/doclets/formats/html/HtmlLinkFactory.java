@@ -43,17 +43,19 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * A factory that returns a link given the information about it.
@@ -161,9 +163,11 @@ public class HtmlLinkFactory {
                     Element owner = typevariable.asElement().getEnclosingElement();
                     if (linkInfo.linkTypeParameters() && utils.isTypeElement(owner)) {
                         linkInfo.setTypeElement((TypeElement) owner);
-                        Content label = newContent();
-                        label.add(utils.getTypeName(type, false));
-                        linkInfo.label(label).skipPreview(true);
+                        if (linkInfo.getLabel() == null || linkInfo.getLabel().isEmpty()) {
+                            Content label = newContent();
+                            label.add(utils.getTypeName(type, false));
+                            linkInfo.label(label).skipPreview(true);
+                        }
                         link.add(getClassLink(linkInfo));
                     } else {
                         // No need to link method type parameters.
@@ -241,6 +245,11 @@ public class HtmlLinkFactory {
             boolean isTypeLink = linkInfo.getType() != null &&
                      utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
             title = getClassToolTip(typeElement, isTypeLink);
+            if (isTypeLink) {
+                linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
+                        utils.getTypeName(utils.getComponentType(linkInfo.getType()), false),
+                        typeElement).name());
+            }
         }
         Content label = linkInfo.getClassLinkLabel(configuration);
         if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
@@ -288,26 +297,12 @@ public class HtmlLinkFactory {
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
-                DocPath filename = getPath(linkInfo);
+                DocPath fileName = getPath(linkInfo);
                 if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentPageElement()) {
                         link.add(m_writer.links.createLink(
-                                filename.fragment(linkInfo.getFragment()),
-                                label,
-                                linkInfo.getStyle(),
-                                title));
-                        Content spacer = Text.EMPTY;
-                        if (flags.contains(ElementFlag.PREVIEW)) {
-                            link.add(HtmlTree.SUP(m_writer.links.createLink(
-                                    filename.fragment(m_writer.htmlIds.forPreviewSection(previewTarget).name()),
-                                    m_writer.contents.previewMark)));
-                            spacer = Entity.NO_BREAK_SPACE;
-                        }
-                        if (flags.contains(ElementFlag.RESTRICTED)) {
-                            link.add(spacer);
-                            link.add(HtmlTree.SUP(m_writer.links.createLink(
-                                    filename.fragment(m_writer.htmlIds.forRestrictedSection(restrictedTarget).name()),
-                                    m_writer.contents.restrictedMark)));
-                        }
+                                fileName.fragment(linkInfo.getFragment()),
+                                label, linkInfo.getStyle(), title));
+                        addSuperscript(link, flags, fileName, null, previewTarget, restrictedTarget);
                         return link;
                 }
             }
@@ -317,38 +312,63 @@ public class HtmlLinkFactory {
                 label, linkInfo.getStyle(), true);
             if (crossLink != null) {
                 link.add(crossLink);
-                Content spacer = Text.EMPTY;
-                if (flags.contains(ElementFlag.PREVIEW)) {
-                    link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
-                        typeElement,
-                        m_writer.htmlIds.forPreviewSection(previewTarget).name(),
-                        m_writer.contents.previewMark,
-                        null, false)));
-                    spacer = Entity.NO_BREAK_SPACE;
-                }
-                if (flags.contains(ElementFlag.RESTRICTED)) {
-                    link.add(spacer);
-                    link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
-                            typeElement,
-                            m_writer.htmlIds.forRestrictedSection(restrictedTarget).name(),
-                            m_writer.contents.restrictedMark,
-                            null, false)));
-                }
+                addSuperscript(link, flags, null, typeElement, previewTarget, restrictedTarget);
                 return link;
             }
         }
         // Can't link so just write label.
         link.add(label);
+        addSuperscript(link, flags, null, null, previewTarget, restrictedTarget);
+        return link;
+    }
+
+    /**
+     * Adds PREVIEW and RESTRICTED superscript labels. Depending on the parameter values,
+     * labels will be formatted as local or external links or plain text.
+     *
+     * @param content the content to add to
+     * @param flags the flags
+     * @param fileName file name to link to, or null if no local link target
+     * @param typeElement external type to link to, or null if no external link
+     * @param previewTarget preview link target element
+     * @param restrictedTarget restricted link target element
+     */
+    private void addSuperscript(Content content, Set<ElementFlag> flags, DocPath fileName, TypeElement typeElement,
+                                Element previewTarget, ExecutableElement restrictedTarget) {
         Content spacer = Text.EMPTY;
         if (flags.contains(ElementFlag.PREVIEW)) {
-            link.add(HtmlTree.SUP(m_writer.contents.previewMark));
+            content.add(HtmlTree.SUP(HtmlStyles.previewMark,
+                    getSuperscript(fileName, typeElement,
+                            m_writer.htmlIds.forPreviewSection(previewTarget),
+                            m_writer.contents.previewMark)));
             spacer = Entity.NO_BREAK_SPACE;
         }
         if (flags.contains(ElementFlag.RESTRICTED)) {
-            link.add(spacer);
-            link.add(HtmlTree.SUP(m_writer.contents.restrictedMark));
+            content.add(spacer);
+            content.add(HtmlTree.SUP(HtmlStyles.restrictedMark,
+                    getSuperscript(fileName, typeElement,
+                            m_writer.htmlIds.forRestrictedSection(restrictedTarget),
+                            m_writer.contents.restrictedMark)));
         }
-        return link;
+    }
+
+    /**
+     * Returns PREVIEW or RESTRICTED superscript as either local or external link or as plain text.
+     *
+     * @param fileName local file name to link to, or null if no local link target
+     * @param typeElement external type to link to, or null if no external link
+     * @param id the id fragment to link to
+     * @param label the label content
+     * @return superscript content
+     */
+    private Content getSuperscript(DocPath fileName, TypeElement typeElement, HtmlId id, Content label) {
+        if (fileName != null) {
+            return m_writer.links.createLink(fileName.fragment(id.name()), label);
+        } else if (typeElement != null) {
+            return (m_writer.getCrossClassLink(typeElement, id.name(), label, null, false));
+        } else {
+            return label;
+        }
     }
 
     /**
@@ -377,16 +397,19 @@ public class HtmlLinkFactory {
         }
         if (!vars.isEmpty()) {
             if (linkInfo.addLineBreakOpportunitiesInTypeParameters()) {
-                links.add(new HtmlTree(TagName.WBR));
+                links.add(HtmlTree.WBR());
             }
             links.add("<");
             boolean many = false;
+            boolean longTypeParams = vars.stream()
+                    .map(t -> getLink(linkInfo.forType(t)))
+                    .anyMatch(t -> t.charCount() > ClassWriter.LONG_TYPE_PARAM);
             for (TypeMirror t : vars) {
                 if (many) {
-                    links.add(",");
-                    links.add(new HtmlTree(TagName.WBR));
-                    if (linkInfo.addLineBreaksInTypeParameters()) {
-                        links.add(Text.NL);
+                    if (longTypeParams) {
+                        links.add(", ");
+                    } else {
+                        links.add(",").add(HtmlTree.WBR());
                     }
                 }
                 links.add(getLink(linkInfo.forType(t)));

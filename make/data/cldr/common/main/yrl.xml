@@ -1213,7 +1213,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2246,6 +2246,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Hurariyu {0}</regionFormat>
 			<regionFormat type="daylight">Kurasí Ara Hurariyu: {0}</regionFormat>
 			<regionFormat type="standard">Hurariyu Retewa: {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Hunururu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Hurariyu Mũdi turususawa Kurdenadu</standard>
@@ -2935,9 +2938,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Urã Baturu</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Xuibausã</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makau</exemplarCity>
 			</zone>
@@ -3306,9 +3306,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Réra</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Hunururu</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ãkurage</exemplarCity>
@@ -3687,13 +3684,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Xina Hurariyu</generic>
 					<standard>Xina Hurariyu Retewa</standard>
 					<daylight>Xina Kurasí Ara Hurariyu</daylight>
-				</long>
-			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Xoibasã Hurariyu</generic>
-					<standard>Xoibasã Hurariyu Retewa</standard>
-					<daylight>Xoibasã Kurasí Ara Hurariyu</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">

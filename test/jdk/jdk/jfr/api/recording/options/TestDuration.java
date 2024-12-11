@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestDuration {
 
         Instant afterStop = Instant.now();
         Asserts.assertLessThanOrEqual(r.getStopTime(), afterStop, "getStopTime() > afterStop");
-        long durationMillis = Duration.between(afterStart, r.getStopTime()).toMillis();
+        long durationMillis = afterStart.until(r.getStopTime()).toMillis();
 
         // Performance of test servers varies too much to make a strict check of actual duration.
         // We only check that recording stops before timeout of 20 seconds.

@@ -26,10 +26,8 @@
  * @bug 8042251
  * @summary Test that outer_class_info_index of local and anonymous class is zero.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @run main InnerClassesIndexTest
  */
@@ -69,7 +67,7 @@ public class InnerClassesIndexTest extends TestResult {
         try {
             addTestCase("Source is InnerClassesIndexTest.java");
             ClassModel classFile = readClassFile(InnerClassesIndexTest.class);
-            InnerClassesAttribute attr = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+            InnerClassesAttribute attr = classFile.findAttribute(Attributes.innerClasses()).orElse(null);
 
             Set<String> foundClasses = new HashSet<>();
             assert attr != null;

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      7180906 8026567 8239804 8324342
+ * @bug      7180906 8026567 8239804 8324342 8332039
  * @summary  Test to make sure that the since tag works correctly
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -144,6 +144,47 @@ public class TestSinceTag extends JavadocTester {
                     <dl class="notes">
                     <dt>Since:</dt>
                     <dd>99</dd>""");
+
+    }
+
+    @Test
+    public void testSinceDefault_NestedTag(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                /**
+                 * Class C.
+                 * @since 99 {@link C}
+                 */
+                 public class C {
+                     public static class Nested1 {
+                         /** Class Nested, with no explicit at-since. */
+                         public static class Nested { }
+                     }
+                 }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99 <a href="C.html" title="class in p"><code>C</code></a></dd>""");
+
+        checkOutput("p/C.Nested1.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99 <a href="C.html" title="class in p"><code>C</code></a></dd>""");
+
+        checkOutput("p/C.Nested1.Nested.html", true,
+                """
+                    <dl class="notes">
+                    <dt>Since:</dt>
+                    <dd>99 <a href="C.html" title="class in p"><code>C</code></a></dd>""");
 
     }
 }

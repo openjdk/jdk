@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@
 #include "gc/z/zUncoloredRoot.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
@@ -298,7 +299,7 @@ void ZGeneration::reset_statistics() {
   _page_allocator->reset_statistics(_id);
 }
 
-ssize_t ZGeneration::freed() const {
+size_t ZGeneration::freed() const {
   return _freed;
 }
 
@@ -438,7 +439,7 @@ public:
   virtual void doit() {
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
-    IsGCActiveMark gc_active_mark;
+    IsSTWGCActiveMark gc_active_mark;
 
     // Verify before operation
     ZVerify::before_zoperation();
@@ -447,11 +448,15 @@ public:
     _success = do_operation();
 
     // Update statistics
-    ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
+    ZStatSample(ZSamplerJavaThreads, (uint64_t)Threads::number_of_threads());
   }
 
   virtual void doit_epilogue() {
     Heap_lock->unlock();
+
+    // GC thread root traversal likely used OopMapCache a lot, which
+    // might have created lots of old entries. Trigger the cleanup now.
+    OopMapCache::try_trigger_cleanup();
   }
 
   bool success() const {
@@ -1279,6 +1284,10 @@ bool ZGenerationOld::mark_end() {
 
 void ZGenerationOld::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
+}
+
+bool ZGenerationOld::uses_clear_all_soft_reference_policy() const {
+  return _reference_processor.uses_clear_all_soft_reference_policy();
 }
 
 class ZRendezvousHandshakeClosure : public HandshakeClosure {

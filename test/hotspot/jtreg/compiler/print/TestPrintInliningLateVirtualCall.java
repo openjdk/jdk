@@ -44,9 +44,9 @@ public class TestPrintInliningLateVirtualCall {
     private static void testHelper(int i) {
         A a;
         if (i == 10) {
-            a = fieldA;
-        } else if (i > 10) {
             a = fieldB;
+        } else if (i > 10) {
+            a = fieldA;
         } else {
             a = fieldC;
         }

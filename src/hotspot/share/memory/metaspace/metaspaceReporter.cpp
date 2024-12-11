@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,6 +39,7 @@
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "oops/compressedKlass.hpp"
 #include "runtime/os.hpp"
 
 namespace metaspace {
@@ -49,7 +50,6 @@ static const char* describe_spacetype(Metaspace::MetaspaceType st) {
     case Metaspace::StandardMetaspaceType: s = "Standard"; break;
     case Metaspace::BootMetaspaceType: s = "Boot"; break;
     case Metaspace::ClassMirrorHolderMetaspaceType: s = "ClassMirrorHolder"; break;
-    case Metaspace::ReflectionMetaspaceType: s = "Reflection"; break;
     default: ShouldNotReachHere();
   }
   return s;
@@ -116,8 +116,11 @@ static void print_settings(outputStream* out, size_t scale) {
   out->print("Current GC threshold: ");
   print_human_readable_size(out, MetaspaceGC::capacity_until_GC(), scale);
   out->cr();
-  out->print_cr("CDS: %s", (UseSharedSpaces ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
+  out->print_cr("CDS: %s", (CDSConfig::is_using_archive() ? "on" : (CDSConfig::is_dumping_static_archive() ? "dump" : "off")));
   Settings::print_on(out);
+#ifdef _LP64
+  CompressedKlassPointers::print_mode(out);
+#endif
 }
 
 // This will print out a basic metaspace usage report but
@@ -325,7 +328,7 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
   // For all wastages, print percentages from total. As total use the total size of memory committed for metaspace.
   const size_t committed_words = RunningCounters::committed_words();
 
-  out->print("(percentages refer to total committed size ");
+  out->print(" (percentages refer to total committed size ");
   print_scaled_words(out, committed_words, scale);
   out->print_cr("):");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -622,20 +622,6 @@ void PSYoungGen::resize_spaces(size_t requested_eden_size,
         mangle_survivors(to_space(), toMR, from_space(), fromMR);
       }
     }
-
-    // If not mangling the spaces, do some checking to verify that
-    // the spaces are already mangled.
-    // The spaces should be correctly mangled at this point so
-    // do some checking here. Note that they are not being mangled
-    // in the calls to initialize().
-    // Must check mangling before the spaces are reshaped.  Otherwise,
-    // the bottom or end of one space may have moved into an area
-    // covered by another space and a failure of the check may
-    // not correctly indicate which space is not properly mangled.
-    HeapWord* limit = (HeapWord*) virtual_space()->high();
-    eden_space()->check_mangled_unused_area(limit);
-    from_space()->check_mangled_unused_area(limit);
-      to_space()->check_mangled_unused_area(limit);
   }
 
   WorkerThreads* workers = &ParallelScavengeHeap::heap()->workers();
@@ -833,12 +819,3 @@ void PSYoungGen::verify() {
   from_space()->verify();
   to_space()->verify();
 }
-
-#ifndef PRODUCT
-void PSYoungGen::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  eden_space()->set_top_for_allocations();
-  from_space()->set_top_for_allocations();
-  to_space()->set_top_for_allocations();
-}
-#endif

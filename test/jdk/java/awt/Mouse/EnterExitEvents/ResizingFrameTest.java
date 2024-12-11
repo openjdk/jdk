@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,19 @@
  * @bug 7154048
  * @summary Programmatically resized  window does not receive mouse entered/exited events
  * @author  alexandr.scherbatiy area=awt.event
+ * @library /test/lib
+ * @build   jdk.test.lib.Platform
  * @run main ResizingFrameTest
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.Frame;
+import java.awt.Robot;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
+import jdk.test.lib.Platform;
 
 public class ResizingFrameTest {
 
@@ -41,6 +48,9 @@ public class ResizingFrameTest {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        if (Platform.isOnWayland()) {
+            return;
+        }
 
         Robot robot = new Robot();
         robot.setAutoDelay(50);

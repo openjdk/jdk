@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class G1FullGCScope : public StackObj {
   SvcGCMarker             _svc_marker;
   STWGCTimer              _timer;
   G1FullGCTracer*         _tracer;
-  IsGCActiveMark          _active;
+  IsSTWGCActiveMark       _active;
   G1FullGCJFRTracerMark   _tracer_mark;
   ClearedAllSoftRefs      _soft_refs;
   G1FullGCMonitoringScope _monitoring_scope;

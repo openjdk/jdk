@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,8 @@ public:
 
   void verify_card_table_cleanup() PRODUCT_RETURN;
 
-  void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
+  void verify_not_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
+  void verify_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 };
 

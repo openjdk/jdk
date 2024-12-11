@@ -25,9 +25,7 @@
  * @test
  * @bug 8022186 8271254
  * @summary javac generates dead code if a try with an empty body has a finalizer
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.util
+ * @modules jdk.compiler/com.sun.tools.javac.util
  */
 
 import java.lang.classfile.*;
@@ -64,7 +62,7 @@ public class DeadCodeGeneratedForEmptyTryTest {
         constantPool = classFile.constantPool();
         for (MethodModel method: classFile.methods()) {
             if (method.methodName().equalsString("methodToLookFor")) {
-                CodeAttribute codeAtt = method.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAtt = method.findAttribute(Attributes.code()).orElseThrow();
                 codeAtt.elementList().stream()
                         .filter(ce -> ce instanceof Instruction)
                         .forEach(ins -> checkIndirectRefToString((Instruction) ins));

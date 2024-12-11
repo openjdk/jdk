@@ -46,7 +46,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
-template<typename K, typename V, size_t _table_size>
+template<typename K, typename V, size_t TableSize>
 class ZArenaHashtable : public ResourceObj {
   class ZArenaHashtableEntry : public ResourceObj {
   public:
@@ -55,10 +55,10 @@ class ZArenaHashtable : public ResourceObj {
     V _value;
   };
 
-  static const size_t _table_mask = _table_size - 1;
+  static const size_t TableMask = TableSize - 1;
 
   Arena* _arena;
-  ZArenaHashtableEntry* _table[_table_size];
+  ZArenaHashtableEntry* _table[TableSize];
 
 public:
   class Iterator {
@@ -84,7 +84,7 @@ public:
       if (_current_entry != nullptr) {
         _current_entry = _current_entry->_next;
       }
-      while (_current_entry == nullptr && ++_current_index < _table_size) {
+      while (_current_entry == nullptr && ++_current_index < TableSize) {
         _current_entry = _table->_table[_current_index];
       }
     }
@@ -100,12 +100,12 @@ public:
     ZArenaHashtableEntry* entry = new (_arena) ZArenaHashtableEntry();
     entry->_key = key;
     entry->_value = value;
-    entry->_next = _table[key & _table_mask];
-    _table[key & _table_mask] = entry;
+    entry->_next = _table[key & TableMask];
+    _table[key & TableMask] = entry;
   }
 
   V* get(K key) const {
-    for (ZArenaHashtableEntry* e = _table[key & _table_mask]; e != nullptr; e = e->_next) {
+    for (ZArenaHashtableEntry* e = _table[key & TableMask]; e != nullptr; e = e->_next) {
       if (e->_key == key) {
         return &(e->_value);
       }
@@ -140,6 +140,10 @@ public:
   bool needs_liveness_data(const MachNode* mach) const {
     // Don't need liveness data for nodes without barriers
     return mach->barrier_data() != ZBarrierElided;
+  }
+
+  bool needs_livein_data() const {
+    return true;
   }
 
   void inc_trampoline_stubs_count() {
@@ -200,6 +204,9 @@ ZLoadBarrierStubC2::ZLoadBarrierStubC2(const MachNode* node, Address ref_addr, R
     _ref(ref) {
   assert_different_registers(ref, ref_addr.base());
   assert_different_registers(ref, ref_addr.index());
+  // The runtime call updates the value of ref, so we should not spill and
+  // reload its outdated value.
+  dont_preserve(ref);
 }
 
 Address ZLoadBarrierStubC2::ref_addr() const {
@@ -208,10 +215,6 @@ Address ZLoadBarrierStubC2::ref_addr() const {
 
 Register ZLoadBarrierStubC2::ref() const {
   return _ref;
-}
-
-Register ZLoadBarrierStubC2::result() const {
-  return ref();
 }
 
 address ZLoadBarrierStubC2::slow_path() const {
@@ -236,21 +239,23 @@ void ZLoadBarrierStubC2::emit_code(MacroAssembler& masm) {
   ZBarrierSet::assembler()->generate_c2_load_barrier_stub(&masm, static_cast<ZLoadBarrierStubC2*>(this));
 }
 
-ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
+ZStoreBarrierStubC2* ZStoreBarrierStubC2::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive) {
   AARCH64_ONLY(fatal("Should use ZStoreBarrierStubC2Aarch64::create"));
-  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
+  ZStoreBarrierStubC2* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic, is_nokeepalive);
   register_stub(stub);
 
   return stub;
 }
 
-ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic)
+ZStoreBarrierStubC2::ZStoreBarrierStubC2(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer,
+                                         bool is_native, bool is_atomic, bool is_nokeepalive)
   : ZBarrierStubC2(node),
     _ref_addr(ref_addr),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
     _is_native(is_native),
-    _is_atomic(is_atomic) {}
+    _is_atomic(is_atomic),
+    _is_nokeepalive(is_nokeepalive) {}
 
 Address ZStoreBarrierStubC2::ref_addr() const {
   return _ref_addr;
@@ -272,8 +277,8 @@ bool ZStoreBarrierStubC2::is_atomic() const {
   return _is_atomic;
 }
 
-Register ZStoreBarrierStubC2::result() const {
-  return noreg;
+bool ZStoreBarrierStubC2::is_nokeepalive() const {
+  return _is_nokeepalive;
 }
 
 void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {
@@ -328,7 +333,7 @@ int ZBarrierSetC2::estimate_stub_size() const {
   int size = 0;
 
   for (int i = 0; i < stubs->length(); i++) {
-    CodeBuffer cb(blob->content_begin(), (address)C->output()->scratch_locs_memory() - blob->content_begin());
+    CodeBuffer cb(blob->content_begin(), checked_cast<CodeBuffer::csize_t>((address)C->output()->scratch_locs_memory() - blob->content_begin()));
     MacroAssembler masm(&cb);
     stubs->at(i)->emit_code(masm);
     size += cb.insts_size();
@@ -408,23 +413,6 @@ bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, 
   return type == T_OBJECT || type == T_ARRAY;
 }
 
-// This TypeFunc assumes a 64bit system
-static const TypeFunc* clone_type() {
-  // Create input type (domain)
-  const Type** const domain_fields = TypeTuple::fields(4);
-  domain_fields[TypeFunc::Parms + 0] = TypeInstPtr::NOTNULL;  // src
-  domain_fields[TypeFunc::Parms + 1] = TypeInstPtr::NOTNULL;  // dst
-  domain_fields[TypeFunc::Parms + 2] = TypeLong::LONG;        // size lower
-  domain_fields[TypeFunc::Parms + 3] = Type::HALF;            // size upper
-  const TypeTuple* const domain = TypeTuple::make(TypeFunc::Parms + 4, domain_fields);
-
-  // Create result type (range)
-  const Type** const range_fields = TypeTuple::fields(0);
-  const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
-
-  return TypeFunc::make(domain, range);
-}
-
 #define XTOP LP64_ONLY(COMMA phase->top())
 
 void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
@@ -457,7 +445,7 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
       assert(src_offset == dest_offset, "should be equal");
       const jlong offset = src_offset->get_long();
       if (offset != arrayOopDesc::base_offset_in_bytes(T_OBJECT)) {
-        assert(!UseCompressedClassPointers, "should only happen without compressed class pointers");
+        assert(!UseCompressedClassPointers || UseCompactObjectHeaders, "should only happen without compressed class pointers");
         assert((arrayOopDesc::base_offset_in_bytes(T_OBJECT) - offset) == BytesPerLong, "unexpected offset");
         length = phase->transform_later(new SubLNode(length, phase->longcon(1))); // Size is in longs
         src_offset = phase->longcon(arrayOopDesc::base_offset_in_bytes(T_OBJECT));
@@ -480,31 +468,10 @@ void ZBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* a
     return;
   }
 
-  // Clone instance
-  Node* const ctrl       = ac->in(TypeFunc::Control);
-  Node* const mem        = ac->in(TypeFunc::Memory);
-  Node* const dst        = ac->in(ArrayCopyNode::Dest);
-  Node* const size       = ac->in(ArrayCopyNode::Length);
-
-  assert(size->bottom_type()->is_long(), "Should be long");
-
-  // The native clone we are calling here expects the instance size in words
-  // Add header/offset size to payload size to get instance size.
-  Node* const base_offset = phase->longcon(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
-  Node* const full_size = phase->transform_later(new AddLNode(size, base_offset));
-
-  Node* const call = phase->make_leaf_call(ctrl,
-                                           mem,
-                                           clone_type(),
-                                           ZBarrierSetRuntime::clone_addr(),
-                                           "ZBarrierSetRuntime::clone",
-                                           TypeRawPtr::BOTTOM,
-                                           src,
-                                           dst,
-                                           full_size,
-                                           phase->top());
-  phase->transform_later(call);
-  phase->igvn().replace_node(ac, call);
+  // Clone instance or array where 'src' is only known to be an object (ary_ptr
+  // is null). This can happen in bytecode generated dynamically to implement
+  // reflective array clones.
+  clone_in_runtime(phase, ac, ZBarrierSetRuntime::clone_addr(), "ZBarrierSetRuntime::clone");
 }
 
 #undef XTOP

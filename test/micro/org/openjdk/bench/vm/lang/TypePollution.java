@@ -105,28 +105,28 @@ public class TypePollution {
     int probe = 99;
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchLinearNoSCC() {
         return parallelInstanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchLinearSCC() {
         return parallelInstanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchTableNoSCC() {
         return parallelInstanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public long parallelInstanceOfInterfaceSwitchTableSCC() {
         return parallelInstanceOfInterfaceSwitch();
@@ -149,25 +149,25 @@ public class TypePollution {
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchLinearNoSCC() {
         return instanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:-UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchLinearSCC() {
         return instanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:-UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchTableNoSCC() {
         return instanceOfInterfaceSwitch();
     }
 
     @Benchmark
-    @Fork(jvmArgsAppend={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySuperCache"})
+    @Fork(jvmArgs={"-XX:+UnlockDiagnosticVMOptions", "-XX:+UseSecondarySupersTable", "-XX:+UseSecondarySupersCache"})
     public int instanceOfInterfaceSwitchTableSCC() {
         return instanceOfInterfaceSwitch();
     }
@@ -178,7 +178,7 @@ public class TypePollution {
             probe ^= probe << 13;   // xorshift
             probe ^= probe >>> 17;
             probe ^= probe << 5;
-            dummy += switch(objectArray[Math.abs(probe) % objectArray.length]) {
+            dummy += switch(objectArray[(probe & Integer.MAX_VALUE) % objectArray.length]) {
             case I01 inst -> 1;
             case I02 inst -> 2;
             case I03 inst -> 3;
@@ -192,7 +192,7 @@ public class TypePollution {
             probe ^= probe << 13;   // xorshift
             probe ^= probe >>> 17;
             probe ^= probe << 5;
-            dummy += switch(objectArray[Math.abs(probe) % objectArray.length]) {
+            dummy += switch(objectArray[(probe & Integer.MAX_VALUE) % objectArray.length]) {
             case I18 inst -> 8;
             case I17 inst -> 7;
             case I16 inst -> 6;

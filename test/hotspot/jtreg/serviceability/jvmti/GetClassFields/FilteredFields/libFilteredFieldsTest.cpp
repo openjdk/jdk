@@ -35,7 +35,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
-        fflush(0);
+        fflush(nullptr);
         return JNI_ERR;
     }
     return JNI_OK;
@@ -72,7 +72,7 @@ Java_FilteredFieldsTest_getJVMTIFieldCount(JNIEnv *env, jclass cls, jclass clazz
         printf("  [%d]: %s\n", i, name);
         jvmti->Deallocate((unsigned char *)name);
     }
-    fflush(0);
+    fflush(nullptr);
     return fcount;
 }
 

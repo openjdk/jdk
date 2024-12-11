@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ public class ActionHelper {
         Stopwatch stopwatch = new Stopwatch();
         stopwatch.start();
 
-        log.printf("%s%n[%tF %<tT] %s timeout=%s%n%1$s%n", line, new Date(), pb.command(), params.timeout);
+        log.printf("%s%n[%tF %<tT] %s timeout=%s in %s%n%1$s%n", line, new Date(), pb.command(), params.timeout, pb.directory());
 
         Process process;
         KillerTask killer;

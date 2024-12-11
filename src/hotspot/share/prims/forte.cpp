@@ -602,7 +602,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     return;
   }
 
-  if (Universe::heap()->is_gc_active()) {
+  if (Universe::heap()->is_stw_gc_active()) {
     trace->num_frames = ticks_GC_active; // -2
     return;
   }

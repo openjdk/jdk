@@ -659,7 +659,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
   if (UseFastNewInstance && klass->is_loaded()
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
-    Runtime1::StubID stub_id = klass->is_initialized() ? Runtime1::fast_new_instance_id : Runtime1::fast_new_instance_init_check_id;
+    C1StubId stub_id = klass->is_initialized() ? C1StubId::fast_new_instance_id : C1StubId::fast_new_instance_init_check_id;
 
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, stub_id);
 
@@ -670,7 +670,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
                        oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
   } else {
-    CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, Runtime1::new_instance_id);
+    CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, C1StubId::new_instance_id);
     __ branch(lir_cond_always, slow_path);
     __ branch_destination(slow_path->continuation());
   }
@@ -1300,7 +1300,7 @@ void LIRGenerator::do_isPrimitive(Intrinsic* x) {
   }
 
   __ move(new LIR_Address(rcvr.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, info);
-  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(0));
+  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(nullptr));
   __ cmove(lir_cond_notEqual, LIR_OprFact::intConst(0), LIR_OprFact::intConst(1), result, T_BOOLEAN);
 }
 
@@ -1333,7 +1333,7 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
 
   // Check if this is a Java mirror of primitive type, and select the appropriate klass.
   LIR_Opr klass = new_register(T_METADATA);
-  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(0));
+  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(nullptr));
   __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
   // Get the answer.
@@ -1479,7 +1479,7 @@ void LIRGenerator::do_RegisterFinalizer(Intrinsic* x) {
   args->append(receiver.result());
   CodeEmitInfo* info = state_for(x, x->state());
   call_runtime(&signature, args,
-               CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::register_finalizer_id)),
+               CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::register_finalizer_id)),
                voidType, info);
 
   set_no_result(x);
@@ -2971,6 +2971,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_dsqrt:          // fall through
   case vmIntrinsics::_dsqrt_strict:   // fall through
   case vmIntrinsics::_dtan:           // fall through
+  case vmIntrinsics::_dtanh:          // fall through
   case vmIntrinsics::_dsin :          // fall through
   case vmIntrinsics::_dcos :          // fall through
   case vmIntrinsics::_dexp :          // fall through

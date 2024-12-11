@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -195,7 +195,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label ok;
-    __ cmpd(CCR0, R19_method, 0);
+    __ cmpdi(CCR0, R19_method, 0);
     __ bne(CCR0, ok);
     __ stop("method is null");
     __ bind(ok);

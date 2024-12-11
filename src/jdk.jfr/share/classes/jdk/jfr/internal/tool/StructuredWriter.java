@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ abstract class StructuredWriter {
     private int column;
     // print first event immediately so tool feels responsive
     private boolean first = true;
-    private String lineSeparator = String.format("%n");
+    private String lineSeparator = System.lineSeparator();
 
     StructuredWriter(PrintWriter p) {
         out = p;

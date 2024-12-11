@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1461,6 +1461,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          *
          * @param e  a {@code ChangeEvent} object. Must not be {@code null}
          * @throws NullPointerException if the parameter is {@code null}
+         *
+         * @since 16
          */
         public void stateChanged(ChangeEvent e) {
             if (e == null) {
@@ -1561,6 +1563,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * which decrements the slider value
          *
          * @return the zero-based number of Actions in this object
+         *
+         * @since 17
          */
         public int getAccessibleActionCount() {
             return 2;
@@ -1572,6 +1576,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * @param i zero-based index of the actions
          * @return a String description of the action
          * @see #getAccessibleActionCount
+         *
+         * @since 17
          */
         public String getAccessibleActionDescription(int i) {
             if (i == 0) {
@@ -1590,6 +1596,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
          * action (index 1) is AccessibleAction.DECREMENT.
          * @return true if the action was performed, otherwise false
          * @see #getAccessibleActionCount
+         *
+         * @since 17
          */
         public boolean doAccessibleAction(int i) {
             if (i < 0 || i > 1) {

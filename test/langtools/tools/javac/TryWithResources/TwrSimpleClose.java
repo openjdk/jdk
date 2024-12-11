@@ -26,8 +26,6 @@
  * @bug 8194978
  * @summary Verify than an appropriate number of close method invocations is generated.
  * @library /tools/lib
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox TwrSimpleClose
  * @run main TwrSimpleClose
  */
@@ -101,7 +99,7 @@ public class TwrSimpleClose {
             ClassModel cf = ClassFile.of().parse(new ByteArrayInputStream(data).readAllBytes());
 
             for (MethodModel m : cf.methods()) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
                 for (CodeElement ce : codeAttr.elementList()) {
                     if (ce instanceof InvokeInstruction ins && ins.opcode() == Opcode.INVOKEVIRTUAL) {
                         MemberRefEntry method = ins.method();

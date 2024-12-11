@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
 * @test
 * @key stress randomness
-* @bug 8299259
+* @bug 8299259 8336729
 * @requires vm.compiler2.enabled
 * @summary Test various cases of divisions/modulo which should not be split through iv phis.
 * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM -XX:StressSeed=884154126
@@ -35,13 +35,35 @@
 /**
 * @test
 * @key stress randomness
-* @bug 8299259
+* @bug 8299259 8336729
 * @requires vm.compiler2.enabled
 * @summary Test various cases of divisions/modulo which should not be split through iv phis.
 * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM
 *                   -XX:CompileCommand=compileonly,compiler.splitif.TestSplitDivisionThroughPhi::*
 *                   compiler.splitif.TestSplitDivisionThroughPhi
 */
+
+/**
+ * @test
+ * @key stress randomness
+ * @bug 8336729
+ * @requires vm.compiler2.enabled
+ * @summary Test various cases of divisions/modulo which should not be split through iv phis.
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM -XX:StressSeed=3434
+ *                   -XX:CompileCommand=compileonly,compiler.splitif.TestSplitDivisionThroughPhi::*
+ *                   compiler.splitif.TestSplitDivisionThroughPhi
+ */
+
+/**
+ * @test
+ * @key stress randomness
+ * @bug 8336729
+ * @requires vm.compiler2.enabled
+ * @summary Test various cases of divisions/modulo which should not be split through iv phis.
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM
+ *                   -XX:CompileCommand=compileonly,compiler.splitif.TestSplitDivisionThroughPhi::*
+ *                   compiler.splitif.TestSplitDivisionThroughPhi
+ */
 
 package compiler.splitif;
 
@@ -52,6 +74,9 @@ public class TestSplitDivisionThroughPhi {
 
 
     public static void main(String[] strArr) {
+        // Make sure classes are loaded when compiling with -Xcomp
+        Integer.divideUnsigned(2, 3);
+        Long.divideUnsigned(2, 3);
         for (int i = 0; i < 5000; i++) {
             testPushDivIThruPhi();
             testPushDivIThruPhiInChain();
@@ -61,6 +86,18 @@ public class TestSplitDivisionThroughPhi {
             testPushDivLThruPhiInChain();
             testPushModLThruPhi();
             testPushModLThruPhiInChain();
+            testPushDivLThruPhiForOuterLongLoop();
+            testPushModLThruPhiForOuterLongLoop();
+            testPushUDivLThruPhiForOuterLongLoop();
+            testPushUModLThruPhiForOuterLongLoop();
+            testPushUDivIThruPhi();
+            testPushUDivIThruPhiInChain();
+            testPushUModIThruPhi();
+            testPushUModIThruPhiInChain();
+            testPushUDivLThruPhi();
+            testPushUDivLThruPhiInChain();
+            testPushUModLThruPhi();
+            testPushUModLThruPhiInChain();
         }
     }
 
@@ -75,6 +112,27 @@ public class TestSplitDivisionThroughPhi {
             // as input which has type [0..8]. We end up executing a division by zero on the last iteration because
             // the DivI it is not pinned to the loop exit test and can freely float above the loop exit check.
             iFld = 10 / i;
+        }
+    }
+
+    // Fixed with JDK-8336729.
+    static void testPushDivLThruPhiForOuterLongLoop() {
+        // This loop is first transformed into a LongCountedLoop in the first loop opts phase.
+        // In the second loop opts phase, the LongCountedLoop is split into an inner and an outer loop. Both get the
+        // same iv phi type which is [2..10]. Only the inner loop is transformed into a CountedLoopNode while the outer
+        // loop is still a LoopNode. We run into the same problem as described in testPushDivIThruPhi() when splitting
+        // the DivL node through the long iv phi of the outer LoopNode.
+        // The fix for JDK-8299259 only prevents this splitting for CountedLoopNodes. We now extend it to LoopNodes
+        // in general.
+        for (long i = 10; i > 1; i -= 2) {
+            lFld = 10 / i;
+        }
+    }
+
+    // Same as testPushDivLThruPhiForOuterLongLoop() but for ModL.
+    static void testPushModLThruPhiForOuterLongLoop() {
+        for (int i = 10; i > 1; i -= 2) {
+            iFld = 10 % i;
         }
     }
 
@@ -155,6 +213,116 @@ public class TestSplitDivisionThroughPhi {
             for (int j = 0; j < 10; j++) {
                 flag = !flag;
             }
+        }
+    }
+
+    // Same as above but with UDivI.
+    static void testPushUDivIThruPhi() {
+        for (int i = 10; i > 1; i -= 2) {
+            lFld = Integer.divideUnsigned(10, i);
+
+            // Loop that is not removed such that we do not transform the outer LongCountedLoop (only done if innermost)
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    // Same as above but with UDivI.
+    static void testPushUDivIThruPhiInChain() {
+        for (int i = 10; i > 1; i -= 2) {
+            for (int j = 0; j < 1; j++) {
+            }
+            lFld = Integer.divideUnsigned(10, (i * 100));
+
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    // Same as above but with UModI
+    static void testPushUModIThruPhi() {
+        for (int i = 10; i > 1; i -= 2) {
+            lFld = Integer.remainderUnsigned(10, i);
+
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    // Same as above but with UModI
+    static void testPushUModIThruPhiInChain() {
+        for (int i = 10; i > 1; i -= 2) {
+            for (int j = 0; j < 1; j++) {
+            }
+            lFld = Integer.remainderUnsigned(10, (i * 100));
+
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    // Same as above but with UDivL.
+    static void testPushUDivLThruPhi() {
+        for (long i = 10; i > 1; i -= 2) {
+            lFld = Long.divideUnsigned(10L, i);
+
+            // Loop that is not removed such that we do not transform the outer LongCountedLoop (only done if innermost)
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    // Same as above but with UDivL.
+    static void testPushUDivLThruPhiInChain() {
+        for (long i = 10; i > 1; i -= 2) {
+            for (int j = 0; j < 1; j++) {
+            }
+            lFld = Long.divideUnsigned(10L, (i * 100L));
+
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    // Same as above but with UModL
+    static void testPushUModLThruPhi() {
+        for (long i = 10; i > 1; i -= 2) {
+            lFld = Long.remainderUnsigned(10L, i);
+
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    // Same as above but with UModL
+    static void testPushUModLThruPhiInChain() {
+        for (long i = 10; i > 1; i -= 2) {
+            for (int j = 0; j < 1; j++) {
+            }
+            lFld = Long.remainderUnsigned(10L, (i * 100L));
+
+            for (int j = 0; j < 10; j++) {
+                flag = !flag;
+            }
+        }
+    }
+
+    static void testPushUDivLThruPhiForOuterLongLoop() {
+        for (long i = 10; i > 1; i -= 2) {
+            lFld = Long.divideUnsigned(10, i);
+        }
+    }
+
+    static void testPushUModLThruPhiForOuterLongLoop() {
+        for (int i = 10; i > 1; i -= 2) {
+            iFld = Integer.remainderUnsigned(10, i);
         }
     }
 }

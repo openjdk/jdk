@@ -30,7 +30,6 @@ import java.lang.classfile.attribute.*;
  * @test Visibility
  * @bug 6843077
  * @summary test that type annotations are recorded in the classfile
- * @enablePreview
  */
 
 public class Visibility {
@@ -55,8 +54,8 @@ public class Visibility {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(mm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
     // test the result of mm.findAttribute according to expectations

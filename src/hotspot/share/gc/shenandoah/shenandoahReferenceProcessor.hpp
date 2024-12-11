@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
 #include "gc/shared/referencePolicy.hpp"
@@ -188,4 +188,4 @@ public:
   void abandon_partial_discovery();
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP

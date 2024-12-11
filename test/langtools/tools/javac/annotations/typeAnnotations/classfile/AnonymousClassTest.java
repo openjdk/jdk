@@ -26,10 +26,8 @@
  * @bug 8198945 8207018 8207017
  * @summary Invalid RuntimeVisibleTypeAnnotations for annotation on anonymous class type parameter
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask
  * @run compile -g AnonymousClassTest.java
@@ -100,7 +98,7 @@ public class AnonymousClassTest {
     static void testAnonymousClassDeclaration() throws Exception {
         ClassModel cm = ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$1.class"));
         RuntimeVisibleTypeAnnotationsAttribute rvta =
-                cm.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+                cm.findAttribute(Attributes.runtimeVisibleTypeAnnotations()).orElse(null);
         assert rvta != null;
         assertEquals(
                 Set.of(
@@ -115,7 +113,7 @@ public class AnonymousClassTest {
         ClassModel cm = ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
         MethodModel method = findMethod(cm, "f");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
-        CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute cAttr = method.findAttribute(Attributes.code()).orElse(null);
         assertEquals(
                 Set.of("@LAnonymousClassTest$TA;(0) NEW, offset=0, location=[INNER_TYPE]"),
                 annotations.stream().map(a -> annotationDebugString(cm, cAttr, a)).collect(toSet()));
@@ -126,7 +124,7 @@ public class AnonymousClassTest {
                 ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$Inner.class"));
         MethodModel method = findMethod(cm, "g");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
-        CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute cAttr = method.findAttribute(Attributes.code()).orElse(null);
         // The annotation needs two INNER_TYPE type path entries to apply to
         // AnonymousClassTest$Inner$1.
         assertEquals(
@@ -141,7 +139,7 @@ public class AnonymousClassTest {
                     ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
             MethodModel method = findMethod(cm, "g");
             Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
-            CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute cAttr = method.findAttribute(Attributes.code()).orElse(null);
             // Only @TA(4) is propagated to the anonymous class declaration.
             assertEquals(
                     Set.of("@LAnonymousClassTest$TA;(4) NEW, offset=0, location=[INNER_TYPE]"),
@@ -152,7 +150,7 @@ public class AnonymousClassTest {
             ClassModel cm =
                     ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$2.class"));
             RuntimeVisibleTypeAnnotationsAttribute rvta =
-                    cm.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+                    cm.findAttribute(Attributes.runtimeVisibleTypeAnnotations()).orElse(null);
             assert rvta != null;
             assertEquals(
                     Set.of(
@@ -168,14 +166,14 @@ public class AnonymousClassTest {
         ClassModel cm = ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
         MethodModel method = findMethod(cm, "<init>");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
-        CodeAttribute cAttr1 = method.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute cAttr1 = method.findAttribute(Attributes.code()).orElse(null);
         assertEquals(
                 Set.of("@LAnonymousClassTest$TA;(5) NEW, offset=4, location=[INNER_TYPE]"),
                 annotations.stream().map(a -> annotationDebugString(cm, cAttr1, a)).collect(toSet()) );
 
         method = findMethod(cm, "<clinit>");
         annotations = getRuntimeVisibleTypeAnnotations(method);
-        CodeAttribute cAttr2 = method.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute cAttr2 = method.findAttribute(Attributes.code()).orElse(null);
         assertEquals(
                 Set.of("@LAnonymousClassTest$TA;(6) NEW, offset=16, location=[INNER_TYPE]"),
                 annotations.stream().map(a -> annotationDebugString(cm, cAttr2, a)).collect(toSet()) );
@@ -184,14 +182,14 @@ public class AnonymousClassTest {
     // Returns the Method's RuntimeVisibleTypeAnnotations, and asserts that there are no RVTIs
     // erroneously associated with the Method instead of its Code attribute.
     private static Set<TypeAnnotation> getRuntimeVisibleTypeAnnotations(MethodModel method) {
-        if (method.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null) != null) {
+        if (method.findAttribute(Attributes.runtimeVisibleTypeAnnotations()).orElse(null) != null) {
             throw new AssertionError(
                     "expected no RuntimeVisibleTypeAnnotations attribute on enclosing method");
         }
-        CodeAttribute code = method.findAttribute(Attributes.CODE).orElse(null);
+        CodeAttribute code = method.findAttribute(Attributes.code()).orElse(null);
         assert code != null;
         RuntimeVisibleTypeAnnotationsAttribute rvta =
-                code.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
+                code.findAttribute(Attributes.runtimeVisibleTypeAnnotations()).orElse(null);
         assert rvta != null;
         return new HashSet<>(rvta.annotations());
     }
@@ -215,7 +213,7 @@ public class AnonymousClassTest {
         int offset = info instanceof TypeAnnotation.OffsetTarget offsetInfo? cAttr.labelToBci(offsetInfo.target()): -1;
         String name;
         try {
-            name = annotation.classSymbol().descriptorString();
+            name = annotation.annotation().classSymbol().descriptorString();
         } catch (Exception e) {
             throw new AssertionError(e);
         }
@@ -227,7 +225,7 @@ public class AnonymousClassTest {
         return String.format(
                 "@%s(%s) %s, offset=%d, location=%s",
                 name,
-                annotationValueDebugString(cm, annotation),
+                annotationValueDebugString(cm, annotation.annotation()),
                 info.targetType(),
                 offset,
                 location);
@@ -246,7 +244,7 @@ public class AnonymousClassTest {
 
     private static String elementValueDebugString(AnnotationValue value) {
         if (value.tag() == 'I') {
-            return Integer.toString(((AnnotationValue.OfInteger) value).intValue());
+            return Integer.toString(((AnnotationValue.OfInt) value).intValue());
         } else {
             throw new UnsupportedOperationException(String.format("%c", value.tag()));
         }

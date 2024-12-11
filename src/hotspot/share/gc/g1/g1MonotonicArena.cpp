@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,22 +29,22 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
-G1MonotonicArena::Segment::Segment(uint slot_size, uint num_slots, Segment* next, MEMFLAGS flag) :
+G1MonotonicArena::Segment::Segment(uint slot_size, uint num_slots, Segment* next, MemTag mem_tag) :
   _slot_size(slot_size),
   _num_slots(num_slots),
   _next(next),
   _next_allocate(0),
-  _mem_flag(flag) {
+  _mem_tag(mem_tag) {
   _bottom = ((char*) this) + header_size();
 }
 
 G1MonotonicArena::Segment* G1MonotonicArena::Segment::create_segment(uint slot_size,
                                                                      uint num_slots,
                                                                      Segment* next,
-                                                                     MEMFLAGS mem_flag) {
+                                                                     MemTag mem_tag) {
   size_t block_size = size_in_bytes(slot_size, num_slots);
-  char* alloc_block = NEW_C_HEAP_ARRAY(char, block_size, mem_flag);
-  return new (alloc_block) Segment(slot_size, num_slots, next, mem_flag);
+  char* alloc_block = NEW_C_HEAP_ARRAY(char, block_size, mem_tag);
+  return new (alloc_block) Segment(slot_size, num_slots, next, mem_tag);
 }
 
 void G1MonotonicArena::Segment::delete_segment(Segment* segment) {
@@ -54,7 +54,7 @@ void G1MonotonicArena::Segment::delete_segment(Segment* segment) {
     GlobalCounter::write_synchronize();
   }
   segment->~Segment();
-  FREE_C_HEAP_ARRAY(_mem_flag, segment);
+  FREE_C_HEAP_ARRAY(_mem_tag, segment);
 }
 
 void G1MonotonicArena::SegmentFreeList::bulk_add(Segment& first,
@@ -108,7 +108,7 @@ G1MonotonicArena::Segment* G1MonotonicArena::new_segment(Segment* const prev) {
     uint prev_num_slots = (prev != nullptr) ? prev->num_slots() : 0;
     uint num_slots = _alloc_options->next_num_slots(prev_num_slots);
 
-    next = Segment::create_segment(slot_size(), num_slots, prev, _alloc_options->mem_flag());
+    next = Segment::create_segment(slot_size(), num_slots, prev, _alloc_options->mem_tag());
   } else {
     assert(slot_size() == next->slot_size() ,
            "Mismatch %d != %d", slot_size(), next->slot_size());

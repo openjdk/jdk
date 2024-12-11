@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8304487 8325653
+ * @bug 8304487 8325653 8332463
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile/fail/ref=PrimitivePatternsSwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW PrimitivePatternsSwitchErrors.java
@@ -59,7 +59,7 @@ public class PrimitivePatternsSwitchErrors {
         int i = 42;
         return switch (i) {
             case Integer ib  -> ib;
-            case byte ip     -> ip; // Error - dominated!
+            case byte ip     -> ip; // OK - not dominated!
         };
     }
 
@@ -260,5 +260,9 @@ public class PrimitivePatternsSwitchErrors {
         return switch (test) {
             case char c -> c; // Error - not exhaustive and not allowed
         };
+    }
+
+    public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndNarrowingPrimitive(T i) {
+        return i instanceof byte b;  // not allowed as a conversion
     }
 }

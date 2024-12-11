@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ size_t G1CMObjArrayProcessor::process_slice(HeapWord* slice) {
   // slide is fast enough for "smaller" objects in non-humongous regions, but is slower
   // than directly using heap region table.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  HeapRegion* r = g1h->heap_region_containing(slice);
+  G1HeapRegion* r = g1h->heap_region_containing(slice);
 
   HeapWord* const start_address = r->is_humongous() ?
                                   r->humongous_start_region()->bottom() :

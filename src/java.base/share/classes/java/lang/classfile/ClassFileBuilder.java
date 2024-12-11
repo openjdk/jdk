@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,11 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
 import java.util.function.Consumer;
 
-import java.lang.classfile.constantpool.ConstantPool;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.classfile.impl.TransformImpl;
 
 /**
  * A builder for a classfile or portion of a classfile.  Builders are rarely
@@ -44,9 +43,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see ClassFileTransform
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends ClassFileBuilder<E, B>>
         extends Consumer<E> permits ClassBuilder, FieldBuilder, MethodBuilder, CodeBuilder {
 
@@ -72,24 +70,18 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
     ConstantPoolBuilder constantPool();
 
     /**
-     * {@return whether the provided constant pool is compatible with this builder}
-     * @param source the constant pool to test compatibility with
-     */
-    default boolean canWriteDirect(ConstantPool source) {
-        return constantPool().canWriteDirect(source);
-    }
-
-    /**
      * Apply a transform to a model, directing results to this builder.
      * @param model the model to transform
      * @param transform the transform to apply
+     * @return this builder
      */
-    default void transform(CompoundElement<E> model, ClassFileTransform<?, E, B> transform) {
+    default B transform(CompoundElement<E> model, ClassFileTransform<?, E, B> transform) {
         @SuppressWarnings("unchecked")
         B builder = (B) this;
-        var resolved = transform.resolve(builder);
+        var resolved = TransformImpl.resolve(transform, builder);
         resolved.startHandler().run();
-        model.forEachElement(resolved.consumer());
+        model.forEach(resolved.consumer());
         resolved.endHandler().run();
+        return builder;
     }
 }

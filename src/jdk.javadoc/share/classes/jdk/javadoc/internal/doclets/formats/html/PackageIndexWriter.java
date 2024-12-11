@@ -31,11 +31,12 @@ import java.util.SortedSet;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Group;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate the package index page "index.html".
@@ -81,9 +82,9 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            var table = new Table<PackageElement>(HtmlStyle.summaryTable)
+            var table = new Table<PackageElement>(HtmlStyles.summaryTable)
                     .setHeader(getPackageTableHeader())
-                    .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                    .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                     .setId(HtmlIds.ALL_PACKAGES_TABLE)
                     .setDefaultTab(contents.getContent("doclet.All_Packages"));
 

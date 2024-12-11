@@ -1845,7 +1845,8 @@ public class Check {
         }
 
         if (shouldCheckPreview(m, other, origin)) {
-            checkPreview(tree.pos(), m, other);
+            checkPreview(TreeInfo.diagnosticPositionFor(m, tree),
+                         m, origin.type, other);
         }
 
         Type mt = types.memberType(origin.type, m);
@@ -1925,7 +1926,8 @@ public class Check {
         private boolean shouldCheckPreview(MethodSymbol m, MethodSymbol other, ClassSymbol origin) {
             if (m.owner != origin ||
                 //performance - only do the expensive checks when the overridden method is a Preview API:
-                (other.flags() & PREVIEW_API) == 0) {
+                ((other.flags() & PREVIEW_API) == 0 &&
+                 (other.owner.flags() & PREVIEW_API) == 0)) {
                 return false;
             }
 
@@ -3828,8 +3830,29 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s) && !disablePreviewCheck) {
-            if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
+        checkPreview(pos, other, Type.noType, s);
+    }
+
+    void checkPreview(DiagnosticPosition pos, Symbol other, Type site, Symbol s) {
+        boolean sIsPreview;
+        Symbol previewSymbol;
+        if ((s.flags() & PREVIEW_API) != 0) {
+            sIsPreview = true;
+            previewSymbol=  s;
+        } else if ((s.kind == Kind.MTH || s.kind == Kind.VAR) &&
+                   site.tsym != null &&
+                   (site.tsym.flags() & PREVIEW_API) == 0 &&
+                   (s.owner.flags() & PREVIEW_API) != 0) {
+            //calling a method, or using a field, whose owner is a preview, but
+            //using a site that is not a preview. Also produce an error or warning:
+            sIsPreview = true;
+            previewSymbol = s.owner;
+        } else {
+            sIsPreview = false;
+            previewSymbol = null;
+        }
+        if (sIsPreview && !preview.participatesInPreview(syms, other, s) && !disablePreviewCheck) {
+            if ((previewSymbol.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));
                 } else {
@@ -4060,9 +4083,9 @@ public class Check {
                     break;
                 }
 
-                // If super()/this() isn't first, require "statements before super()" feature
+                // If super()/this() isn't first, require flexible constructors feature
                 if (!firstStatement)
-                    preview.checkSourceLevel(apply.pos(), Feature.SUPER_INIT);
+                    preview.checkSourceLevel(apply.pos(), Feature.FLEXIBLE_CONSTRUCTORS);
 
                 // We found a legitimate super()/this() call; remember it
                 initCall = methodName;
@@ -4082,6 +4105,29 @@ public class Check {
         @Override
         public void visitClassDef(JCClassDecl tree) {
             // don't descend any further
+        }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            final boolean constructorPrev = constructor;
+            final boolean firstStatementPrev = firstStatement;
+            final JCReturn earlyReturnPrev = earlyReturn;
+            final Name initCallPrev = initCall;
+            final int scanDepthPrev = scanDepth;
+            constructor = false;
+            firstStatement = false;
+            earlyReturn = null;
+            initCall = null;
+            scanDepth = 0;
+            try {
+                super.visitLambda(tree);
+            } finally {
+                constructor = constructorPrev;
+                firstStatement = firstStatementPrev;
+                earlyReturn = earlyReturnPrev;
+                initCall = initCallPrev;
+                scanDepth = scanDepthPrev;
+            }
         }
     }
 
@@ -4396,7 +4442,9 @@ public class Check {
     }
 
     public void checkImportsResolvable(final JCCompilationUnit toplevel) {
-        for (final JCImport imp : toplevel.getImports()) {
+        for (final JCImportBase impBase : toplevel.getImports()) {
+            if (!(impBase instanceof JCImport imp))
+                continue;
             if (!imp.staticImport || !imp.qualid.hasTag(SELECT))
                 continue;
             final JCFieldAccess select = imp.qualid;
@@ -4420,12 +4468,13 @@ public class Check {
 
     // Check that packages imported are in scope (JLS 7.4.3, 6.3, 6.5.3.1, 6.5.3.2)
     public void checkImportedPackagesObservable(final JCCompilationUnit toplevel) {
-        OUTER: for (JCImport imp : toplevel.getImports()) {
-            if (!imp.staticImport && TreeInfo.name(imp.qualid) == names.asterisk) {
+        OUTER: for (JCImportBase impBase : toplevel.getImports()) {
+            if (impBase instanceof JCImport imp && !imp.staticImport &&
+                TreeInfo.name(imp.qualid) == names.asterisk) {
                 TypeSymbol tsym = imp.qualid.selected.type.tsym;
                 if (tsym.kind == PCK && tsym.members().isEmpty() &&
                     !(Feature.IMPORT_ON_DEMAND_OBSERVABLE_PACKAGES.allowedInSource(source) && tsym.exists())) {
-                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, Errors.DoesntExist(tsym));
+                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.qualid.selected.pos(), Errors.DoesntExist(tsym));
                 }
             }
         }
@@ -4815,7 +4864,6 @@ public class Check {
                     JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
                     boolean dominated = false;
-                    if (unconditionalCaseLabel == testCaseLabel) unconditionalFound = true;
                     if (types.isUnconditionallyExact(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
                         //the current label is potentially dominated by the existing (test) label, check:
@@ -4828,11 +4876,6 @@ public class Check {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
-                    }
-
-                    // Domination can occur even when we have not an unconditional pair between case labels.
-                    if (unconditionalFound && unconditionalCaseLabel != label) {
-                        dominated = true;
                     }
 
                     if (dominated) {

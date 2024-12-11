@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.ValueParser;
+import static jdk.jfr.internal.util.ValueParser.MISSING;
 
 @MetadataDefinition
 @Label("Period")
@@ -46,6 +47,7 @@ public final class PeriodSetting extends JDKSettingControl {
     public static final String EVERY_CHUNK = "everyChunk";
     public static final String BEGIN_CHUNK = "beginChunk";
     public static final String END_CHUNK = "endChunk";
+    public static final String DEFAULT_VALUE = EVERY_CHUNK;
     public static final String NAME = "period";
     private final PlatformEventType eventType;
     private String value = EVERY_CHUNK;
@@ -56,7 +58,6 @@ public final class PeriodSetting extends JDKSettingControl {
 
     @Override
     public String combine(Set<String> values) {
-
         boolean beginChunk = false;
         boolean endChunk = false;
         Long min = null;
@@ -74,15 +75,11 @@ public final class PeriodSetting extends JDKSettingControl {
                 endChunk = true;
                 break;
             default:
-                long l = ValueParser.parseTimespanWithInfinity(value);
-                // Always accept first specified value
-                if (min == null) {
-                    text = value;
-                    min = l;
-                } else {
-                    if (l < min) {
+                long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+                if (nanos != MISSING) {
+                    if (min == null || nanos < min) {
                         text = value;
-                        min = l;
+                        min = nanos;
                     }
                 }
             }
@@ -97,7 +94,7 @@ public final class PeriodSetting extends JDKSettingControl {
         if (!beginChunk && endChunk) {
             return END_CHUNK;
         }
-        return EVERY_CHUNK; // also default
+        return DEFAULT_VALUE; // "everyChunk" is default
     }
 
     @Override
@@ -113,7 +110,10 @@ public final class PeriodSetting extends JDKSettingControl {
             eventType.setPeriod(0, false, true);
             break;
         default:
-            long nanos = ValueParser.parseTimespanWithInfinity(value);
+            long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
+            if (nanos == MISSING) {
+                return;
+            }
             if (nanos == 0 || nanos == Long.MAX_VALUE) {
                 eventType.setPeriod(nanos, false, false);
             } else {

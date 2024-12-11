@@ -1389,6 +1389,11 @@ void GraphBuilder::jsr(int dest) {
   // If the bytecodes are strange (jumping out of a jsr block) then we
   // might end up trying to re-parse a block containing a jsr which
   // has already been activated. Watch for this case and bail out.
+  if (next_bci() >= method()->code_size()) {
+    // This can happen if the subroutine does not terminate with a ret,
+    // effectively turning the jsr into a goto.
+    BAILOUT("too-complicated jsr/ret structure");
+  }
   for (ScopeData* cur_scope_data = scope_data();
        cur_scope_data != nullptr && cur_scope_data->parsing_jsr() && cur_scope_data->scope() == scope();
        cur_scope_data = cur_scope_data->parent()) {
@@ -1563,7 +1568,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
   // The conditions for a memory barrier are described in Parse::do_exits().
   bool need_mem_bar = false;
   if (method()->name() == ciSymbols::object_initializer_name() &&
-       (scope()->wrote_final() ||
+       (scope()->wrote_final() || scope()->wrote_stable() ||
          (AlwaysSafeConstructors && scope()->wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile()))) {
     need_mem_bar = true;
@@ -1741,14 +1746,16 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     }
   }
 
-  if (field->is_final() && (code == Bytecodes::_putfield)) {
-    scope()->set_wrote_final();
-  }
-
   if (code == Bytecodes::_putfield) {
     scope()->set_wrote_fields();
     if (field->is_volatile()) {
       scope()->set_wrote_volatile();
+    }
+    if (field->is_final()) {
+      scope()->set_wrote_final();
+    }
+    if (field->is_stable()) {
+      scope()->set_wrote_stable();
     }
   }
 
@@ -2026,8 +2033,11 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
       int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
       receiver = state()->stack_at(index);
       ciType* type = receiver->exact_type();
-      if (type != nullptr && type->is_loaded() &&
-          type->is_instance_klass() && !type->as_instance_klass()->is_interface()) {
+      if (type != nullptr && type->is_loaded()) {
+        assert(!type->is_instance_klass() || !type->as_instance_klass()->is_interface(), "Must not be an interface");
+        // Detects non-interface instances, primitive arrays, and some object arrays.
+        // Array receivers can only call Object methods, so we should be able to allow
+        // all object arrays here too, even those with unloaded types.
         receiver_klass = (ciInstanceKlass*) type;
         type_is_exact = true;
       }
@@ -2243,7 +2253,7 @@ void GraphBuilder::new_instance(int klass_index) {
 
 void GraphBuilder::new_type_array() {
   ValueStack* state_before = copy_state_exhandling();
-  apush(append_split(new NewTypeArray(ipop(), (BasicType)stream()->get_index(), state_before)));
+  apush(append_split(new NewTypeArray(ipop(), (BasicType)stream()->get_index(), state_before, true)));
 }
 
 
@@ -3329,6 +3339,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
+  case vmIntrinsics::_dtanh         : // fall through
   case vmIntrinsics::_dlog          : // fall through
   case vmIntrinsics::_dlog10        : // fall through
   case vmIntrinsics::_dexp          : // fall through
@@ -3515,6 +3526,9 @@ static void set_flags_for_inlined_callee(Compilation* compilation, ciMethod* cal
   if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
     compilation->set_has_monitors(true);
   }
+  if (callee->is_scoped()) {
+    compilation->set_has_scoped_access(true);
+  }
 }
 
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {
@@ -3650,8 +3664,12 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee, bool ignore_retur
   case vmIntrinsics::_getAndSetReference     : append_unsafe_get_and_set(callee, false); return;
   case vmIntrinsics::_getCharStringU         : append_char_access(callee, false); return;
   case vmIntrinsics::_putCharStringU         : append_char_access(callee, true); return;
+  case vmIntrinsics::_clone                  : append_alloc_array_copy(callee); return;
   default:
     break;
+  }
+  if (_inline_bailout_msg != nullptr) {
+    return;
   }
 
   // create intrinsic node
@@ -3714,6 +3732,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
     }
   }
   build_graph_for_intrinsic(callee, ignore_return);
+  if (_inline_bailout_msg != nullptr) {
+    return false;
+  }
   return true;
 }
 
@@ -3721,6 +3742,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
 bool GraphBuilder::try_inline_jsr(int jsr_dest_bci) {
   // Introduce a new callee continuation point - all Ret instructions
   // will be replaced with Gotos to this point.
+  if (next_bci() >= method()->code_size()) {
+    return false;
+  }
   BlockBegin* cont = block_at(next_bci());
   assert(cont != nullptr, "continuation must exist (BlockListBuilder starts a new block after a jsr");
 
@@ -4425,6 +4449,44 @@ void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
     load->set_flag(Instruction::NeedsRangeCheckFlag, false);
     push(load->type(), load);
   }
+}
+
+void GraphBuilder::append_alloc_array_copy(ciMethod* callee) {
+  const int args_base = state()->stack_size() - callee->arg_size();
+  ciType* receiver_type = state()->stack_at(args_base)->exact_type();
+  if (receiver_type == nullptr) {
+    inline_bailout("must have a receiver");
+    return;
+  }
+  if (!receiver_type->is_type_array_klass()) {
+    inline_bailout("clone array not primitive");
+    return;
+  }
+
+  ValueStack* state_before = copy_state_before();
+  state_before->set_force_reexecute();
+  Value src = apop();
+  BasicType basic_type = src->exact_type()->as_array_klass()->element_type()->basic_type();
+  Value length = append(new ArrayLength(src, state_before));
+  Value new_array = append_split(new NewTypeArray(length, basic_type, state_before, false));
+
+  ValueType* result_type = as_ValueType(callee->return_type());
+  vmIntrinsics::ID id = vmIntrinsics::_arraycopy;
+  Values* args = new Values(5);
+  args->push(src);
+  args->push(append(new Constant(new IntConstant(0))));
+  args->push(new_array);
+  args->push(append(new Constant(new IntConstant(0))));
+  args->push(length);
+  const bool has_receiver = true;
+  Intrinsic* array_copy = new Intrinsic(result_type, id,
+                                    args, has_receiver, state_before,
+                                    vmIntrinsics::preserves_state(id),
+                                    vmIntrinsics::can_trap(id));
+  array_copy->set_flag(Instruction::OmitChecksFlag, true);
+  append_split(array_copy);
+  apush(new_array);
+  append(new MemBar(lir_membar_storestore));
 }
 
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {

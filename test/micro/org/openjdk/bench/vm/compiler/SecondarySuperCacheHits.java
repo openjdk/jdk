@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 5, time = 300, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 300, timeUnit = TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = {"-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1"})
+@Fork(value = 3, jvmArgs = {"-XX:+TieredCompilation", "-XX:TieredStopAtLevel=1"})
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Threads(1)

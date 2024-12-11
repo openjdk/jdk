@@ -30,9 +30,7 @@
  * The class uses the ClassFile library to validate the contents of
  * the URLs and streams returned by the methods being tested.
  *
- * $ java \
- *      --enable-preview
- *      /path/to/CLTest.java
+ * $ java /path/to/CLTest.java
  */
 package p.q;
 

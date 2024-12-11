@@ -32,7 +32,6 @@
 #include "oops/methodFlags.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.hpp"
-#include "oops/typeArrayOop.hpp"
 #include "utilities/accessFlags.hpp"
 #include "utilities/align.hpp"
 #include "utilities/growableArray.hpp"
@@ -122,6 +121,7 @@ class Method : public Metadata {
 #if INCLUDE_CDS
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+  static void restore_archived_method_handle_intrinsic(methodHandle m, TRAPS);
 #endif
 
   // accessors for instance variables
@@ -446,8 +446,10 @@ public:
   address signature_handler() const              { return *(signature_handler_addr()); }
   void set_signature_handler(address handler);
 
-  // Interpreter oopmap support
+  // Interpreter oopmap support.
+  // If handle is already available, call with it for better performance.
   void mask_for(int bci, InterpreterOopMap* mask);
+  void mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
   void print_invocation_count(outputStream* st);
@@ -574,9 +576,6 @@ public:
   // returns true if the method does nothing but return a constant of primitive type
   bool is_constant_getter() const;
 
-  // returns true if the method is an initializer (<init> or <clinit>).
-  bool is_initializer() const;
-
   // returns true if the method is static OR if the classfile version < 51
   bool has_valid_initializer_flags() const;
 
@@ -586,6 +585,9 @@ public:
 
   // returns true if the method name is <init>
   bool is_object_initializer() const;
+
+  // returns true if the method name is wait0
+  bool is_object_wait0() const;
 
   // compiled code support
   // NOTE: code() is inherently racy as deopt can be clearing code
@@ -747,6 +749,9 @@ public:
   bool changes_current_thread() const { return constMethod()->changes_current_thread(); }
   void set_changes_current_thread() { constMethod()->set_changes_current_thread(); }
 
+  bool jvmti_hide_events() const { return constMethod()->jvmti_hide_events(); }
+  void set_jvmti_hide_events() { constMethod()->set_jvmti_hide_events(); }
+
   bool jvmti_mount_transition() const { return constMethod()->jvmti_mount_transition(); }
   void set_jvmti_mount_transition() { constMethod()->set_jvmti_mount_transition(); }
 
@@ -809,14 +814,6 @@ public:
       build_method_counters(current, this);
     }
     return _method_counters;
-  }
-
-  // Clear the flags related to compiler directives that were set by the compilerBroker,
-  // because the directives can be updated.
-  void clear_directive_flags() {
-    set_has_matching_directives(false);
-    clear_is_not_c1_compilable();
-    clear_is_not_c2_compilable();
   }
 
   void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   ce->store_parameter(_bci, 0);
   ce->store_parameter(_method->as_constant_ptr()->as_metadata(), 1);
-  __ call(Runtime1::entry_for(Runtime1::counter_overflow_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(C1StubId::counter_overflow_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
 
@@ -57,7 +57,7 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
   if (_info->deoptimize_on_exception()) {
-    __ call(Runtime1::entry_for(Runtime1::predicate_failed_trap_id), relocInfo::runtime_call_type);
+    __ call(Runtime1::entry_for(C1StubId::predicate_failed_trap_id), relocInfo::runtime_call_type);
     ce->add_call_info_here(_info);
     ce->verify_oop_map(_info);
     debug_only(__ should_not_reach_here());
@@ -73,10 +73,10 @@ void RangeCheckStub::emit_code(LIR_Assembler* ce) {
   }
 
   if (_throw_index_out_of_bounds_exception) {
-    __ call(Runtime1::entry_for(Runtime1::throw_index_exception_id), relocInfo::runtime_call_type);
+    __ call(Runtime1::entry_for(C1StubId::throw_index_exception_id), relocInfo::runtime_call_type);
   } else {
     __ str(_array->as_pointer_register(), Address(SP, BytesPerWord)); // ??? Correct offset? Correct instruction?
-    __ call(Runtime1::entry_for(Runtime1::throw_range_check_failed_id), relocInfo::runtime_call_type);
+    __ call(Runtime1::entry_for(C1StubId::throw_range_check_failed_id), relocInfo::runtime_call_type);
   }
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
@@ -89,7 +89,7 @@ PredicateFailedStub::PredicateFailedStub(CodeEmitInfo* info) {
 
 void PredicateFailedStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  __ call(Runtime1::entry_for(Runtime1::predicate_failed_trap_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(C1StubId::predicate_failed_trap_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   debug_only(__ should_not_reach_here());
@@ -100,7 +100,7 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
     ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   }
   __ bind(_entry);
-  __ call(Runtime1::entry_for(Runtime1::throw_div0_exception_id),
+  __ call(Runtime1::entry_for(C1StubId::throw_div0_exception_id),
           relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   DEBUG_ONLY(STOP("DivByZero");)
@@ -109,14 +109,14 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
 
 // Implementation of NewInstanceStub
 
-NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, Runtime1::StubID stub_id) {
+NewInstanceStub::NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, C1StubId stub_id) {
   _result = result;
   _klass = klass;
   _klass_reg = klass_reg;
   _info = new CodeEmitInfo(info);
-  assert(stub_id == Runtime1::new_instance_id                 ||
-         stub_id == Runtime1::fast_new_instance_id            ||
-         stub_id == Runtime1::fast_new_instance_init_check_id,
+  assert(stub_id == C1StubId::new_instance_id                 ||
+         stub_id == C1StubId::fast_new_instance_id            ||
+         stub_id == C1StubId::fast_new_instance_init_check_id,
          "need new_instance id");
   _stub_id   = stub_id;
 }
@@ -148,7 +148,7 @@ void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
   assert(_klass_reg->as_register() == R1, "runtime call setup");
   assert(_length->as_register() == R2, "runtime call setup");
   __ bind(_entry);
-  __ call(Runtime1::entry_for(Runtime1::new_type_array_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(C1StubId::new_type_array_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ b(_continuation);
@@ -170,7 +170,7 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   assert(_klass_reg->as_register() == R1, "runtime call setup");
   assert(_length->as_register() == R2, "runtime call setup");
   __ bind(_entry);
-  __ call(Runtime1::entry_for(Runtime1::new_object_array_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(C1StubId::new_object_array_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ b(_continuation);
@@ -189,9 +189,9 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
     __ str(lock_reg, Address(SP, BytesPerWord));
   }
 
-  Runtime1::StubID enter_id = ce->compilation()->has_fpu_code() ?
-                              Runtime1::monitorenter_id :
-                              Runtime1::monitorenter_nofpu_id;
+  C1StubId enter_id = ce->compilation()->has_fpu_code() ?
+                              C1StubId::monitorenter_id :
+                              C1StubId::monitorenter_nofpu_id;
   __ call(Runtime1::entry_for(enter_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
@@ -210,9 +210,9 @@ void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ str(lock_reg, Address(SP));
 
   // Non-blocking leaf routine - no call info needed
-  Runtime1::StubID exit_id = ce->compilation()->has_fpu_code() ?
-                             Runtime1::monitorexit_id :
-                             Runtime1::monitorexit_nofpu_id;
+  C1StubId exit_id = ce->compilation()->has_fpu_code() ?
+                             C1StubId::monitorexit_id :
+                             C1StubId::monitorexit_nofpu_id;
   __ call(Runtime1::entry_for(exit_id), relocInfo::runtime_call_type);
   __ b(_continuation);
 }
@@ -322,10 +322,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
-    case access_field_id:  target = Runtime1::entry_for(Runtime1::access_field_patching_id); break;
-    case load_klass_id:    target = Runtime1::entry_for(Runtime1::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
-    case load_mirror_id:   target = Runtime1::entry_for(Runtime1::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
-    case load_appendix_id: target = Runtime1::entry_for(Runtime1::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
+    case access_field_id:  target = Runtime1::entry_for(C1StubId::access_field_patching_id); break;
+    case load_klass_id:    target = Runtime1::entry_for(C1StubId::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
+    case load_mirror_id:   target = Runtime1::entry_for(C1StubId::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
+    case load_appendix_id: target = Runtime1::entry_for(C1StubId::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);
@@ -351,7 +351,7 @@ void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
   __ mov_slow(Rtemp, _trap_request);
   ce->verify_reserved_argument_area_size(1);
   __ str(Rtemp, Address(SP));
-  __ call(Runtime1::entry_for(Runtime1::deoptimize_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(C1StubId::deoptimize_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   DEBUG_ONLY(__ should_not_reach_here());
 }
@@ -362,9 +362,9 @@ void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   if (_info->deoptimize_on_exception()) {
     // Deoptimize, do not throw the exception, because it is
     // probably wrong to do it here.
-    a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
+    a = Runtime1::entry_for(C1StubId::predicate_failed_trap_id);
   } else {
-    a = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
+    a = Runtime1::entry_for(C1StubId::throw_null_pointer_exception_id);
   }
   ce->compilation()->implicit_exception_table()->append(_offset, __ offset());
   __ bind(_entry);

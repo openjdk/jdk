@@ -333,10 +333,22 @@ inline void dereferenceable_test(zaddress addr) {
 }
 #endif
 
-inline zaddress to_zaddress(uintptr_t value) {
-  const zaddress addr = zaddress(value);
+inline void check_is_valid_zaddress(zaddress addr) {
   assert_is_valid(addr);
   DEBUG_ONLY(dereferenceable_test(addr));
+}
+
+inline void check_is_valid_zaddress(uintptr_t value) {
+  check_is_valid_zaddress(zaddress(value));
+}
+
+inline void check_is_valid_zaddress(oopDesc* o) {
+  check_is_valid_zaddress(uintptr_t(o));
+}
+
+inline zaddress to_zaddress(uintptr_t value) {
+  const zaddress addr = zaddress(value);
+  check_is_valid_zaddress(addr);
   return addr;
 }
 
@@ -344,7 +356,7 @@ inline zaddress to_zaddress(oopDesc* o) {
   return to_zaddress(uintptr_t(o));
 }
 
-inline oop to_oop(zaddress addr) {
+inline void assert_is_oop_or_null(zaddress addr) {
   const oop obj = cast_to_oop(addr);
   assert(!ZVerifyOops || oopDesc::is_oop_or_null(obj), "Broken oop: " PTR_FORMAT " [" PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT " " PTR_FORMAT "]",
          p2i(obj),
@@ -352,7 +364,16 @@ inline oop to_oop(zaddress addr) {
          *(uintptr_t*)(untype(addr) + 0x08),
          *(uintptr_t*)(untype(addr) + 0x10),
          *(uintptr_t*)(untype(addr) + 0x18));
-  return obj;
+}
+
+inline void assert_is_oop(zaddress addr) {
+  assert(!is_null(addr), "Should not be null");
+  assert_is_oop_or_null(addr);
+}
+
+inline oop to_oop(zaddress addr) {
+  assert_is_oop_or_null(addr);
+  return cast_to_oop(addr);
 }
 
 inline zaddress operator+(zaddress addr, size_t size) {
@@ -377,7 +398,6 @@ inline bool is_valid(zaddress_unsafe addr, bool assert_on_failure = false) {
 inline void assert_is_valid(zaddress_unsafe addr) {
   DEBUG_ONLY(is_valid(addr, true /* assert_on_failure */);)
 }
-
 
 inline uintptr_t untype(zaddress_unsafe addr) {
   return static_cast<uintptr_t>(addr);

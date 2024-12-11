@@ -156,9 +156,11 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
-  Node* generate_access_flags_guard(Node* kls,
-                                    int modifier_mask, int modifier_bits,
-                                    RegionNode* region);
+  Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
+                                   ByteSize offset, const Type* type, BasicType bt);
+  Node* generate_misc_flags_guard(Node* kls,
+                                  int modifier_mask, int modifier_bits,
+                                  RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
   Node* generate_array_guard(Node* kls, RegionNode* region) {
@@ -241,6 +243,7 @@ class LibraryCallKit : public GraphKit {
   const Type* scopedValueCache_type();
   Node* scopedValueCache_helper();
   bool inline_native_setScopedValueCache();
+  bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #if INCLUDE_JVMTI
@@ -279,6 +282,7 @@ class LibraryCallKit : public GraphKit {
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
   void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards, int saved_reexecute_sp,
                                       uint new_idx);
+  bool check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt);
   bool inline_array_sort();
   bool inline_array_partition();
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
@@ -293,6 +297,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
   bool inline_reference_refersTo0(bool is_phantom);
+  bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
   bool inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id);
@@ -307,6 +312,8 @@ class LibraryCallKit : public GraphKit {
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
   bool inline_poly1305_processBlocks();
+  bool inline_intpoly_montgomeryMult_P256();
+  bool inline_intpoly_assign();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
@@ -347,7 +354,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_nary_operation(int n);
   bool inline_vector_frombits_coerced();
   bool inline_vector_shuffle_to_vector();
+  bool inline_vector_wrap_shuffle_indexes();
   bool inline_vector_shuffle_iota();
+  Node* partially_wrap_indexes(Node* index_vec, int num_elem, BasicType type_bt);
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_mem_masked_operation(bool is_store);
@@ -356,6 +365,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_test();
   bool inline_vector_blend();
   bool inline_vector_rearrange();
+  bool inline_vector_select_from();
   bool inline_vector_compare();
   bool inline_vector_broadcast_int();
   bool inline_vector_convert();
@@ -364,8 +374,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_compress_expand();
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();
+  bool inline_vector_select_from_two_vectors();
 
-  Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
+  Node* gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
     VecMaskUseLoad  = 1 << 0,

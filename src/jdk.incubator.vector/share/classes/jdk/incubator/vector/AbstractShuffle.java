@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     }
 
     @ForceInline
-    public final VectorShuffle<E> wrapIndexes() {
+    public final VectorShuffle<E> wrapIndexesTemplate() {
         Vector<E> shufvec = this.toVector();
         VectorMask<E> vecmask = shufvec.compare(VectorOperators.LT, vspecies().zero());
         if (vecmask.anyTrue()) {

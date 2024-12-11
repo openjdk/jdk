@@ -44,11 +44,13 @@
 #define REMOVE_METHOD_ID(method) JfrTraceId::remove(method);
 #define RESTORE_ID(k) JfrTraceId::restore(k);
 
+static constexpr const uint16_t cleared_epoch_bits = 512 | 256;
+
 class JfrTraceFlag {
  private:
   mutable uint16_t _flags;
  public:
-  JfrTraceFlag() : _flags(0) {}
+  JfrTraceFlag() : _flags(cleared_epoch_bits) {}
   bool is_set(uint16_t flag) const {
     return (_flags & flag) != 0;
   }
@@ -96,9 +98,8 @@ class JfrTraceFlag {
   uint8_t* trace_meta_addr() const {               \
     return _trace_flags.meta_addr();               \
   }                                                \
-  void copy_trace_flags(uint8_t src_flags) const { \
-    uint8_t flags = *_trace_flags.flags_addr();    \
-    _trace_flags.set_flags(flags | src_flags);     \
+  void copy_trace_flags(uint16_t rhs_flags) const { \
+    _trace_flags.set_flags(_trace_flags.flags() | rhs_flags); \
   }
 
 #endif // SHARE_JFR_SUPPORT_JFRTRACEIDEXTENSION_HPP

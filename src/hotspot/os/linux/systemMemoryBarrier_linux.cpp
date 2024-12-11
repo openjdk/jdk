@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@
   #define SYS_membarrier 365
   #elif defined(AARCH64)
   #define SYS_membarrier 283
+  #elif defined(ARM32)
+  #define SYS_membarrier 389
   #elif defined(ALPHA)
   #define SYS_membarrier 517
   #else

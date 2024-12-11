@@ -349,11 +349,9 @@ void LIRGenerator::do_NegateOp(NegateOp* x) {
   if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
     if (x->type()->tag() == doubleTag) {
       tmp = new_register(T_DOUBLE);
-      __ move(LIR_OprFact::doubleConst(-0.0), tmp);
     }
     else if (x->type()->tag() == floatTag) {
       tmp = new_register(T_FLOAT);
-      __ move(LIR_OprFact::floatConst(-0.0), tmp);
     }
   }
 #endif
@@ -807,7 +805,11 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   if (x->id() == vmIntrinsics::_dexp || x->id() == vmIntrinsics::_dlog ||
       x->id() == vmIntrinsics::_dpow || x->id() == vmIntrinsics::_dcos ||
       x->id() == vmIntrinsics::_dsin || x->id() == vmIntrinsics::_dtan ||
-      x->id() == vmIntrinsics::_dlog10) {
+      x->id() == vmIntrinsics::_dlog10
+#ifdef _LP64
+      || x->id() == vmIntrinsics::_dtanh
+#endif
+      ) {
     do_LibmIntrinsic(x);
     return;
   }
@@ -830,12 +832,10 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   if (UseAVX > 2 && (!VM_Version::supports_avx512vl()) &&
       (x->id() == vmIntrinsics::_dabs)) {
     tmp = new_register(T_DOUBLE);
-    __ move(LIR_OprFact::doubleConst(-0.0), tmp);
   }
 #endif
   if (x->id() == vmIntrinsics::_floatToFloat16) {
     tmp = new_register(T_FLOAT);
-    __ move(LIR_OprFact::floatConst(-0.0), tmp);
   }
 
   switch(x->id()) {
@@ -989,9 +989,15 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dtan:
        if (StubRoutines::dtan() != nullptr) {
-      __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
+        __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
+      }
+      break;
+    case vmIntrinsics::_dtanh:
+       assert(StubRoutines::dtanh() != nullptr, "tanh intrinsic not found");
+       if (StubRoutines::dtanh() != nullptr) {
+        __ call_runtime_leaf(StubRoutines::dtanh(), getThreadTemp(), result_reg, cc->args());
       }
       break;
     default:  ShouldNotReachHere();
@@ -1004,7 +1010,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
 
   // Make all state_for calls early since they can emit code
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem src(x->argument_at(0), this);
   LIRItem src_pos(x->argument_at(1), this);
@@ -1016,6 +1028,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   // LinearScan will fail allocation (because arraycopy always needs a
   // call)
 
+  int flags;
+  ciArrayKlass* expected_type;
+  arraycopy_helper(x, &flags, &expected_type);
+  if (x->check_flag(Instruction::OmitChecksFlag)) {
+    flags = 0;
+  }
+
 #ifndef _LP64
   src.load_item_force     (FrameMap::rcx_oop_opr);
   src_pos.load_item_force (FrameMap::rdx_opr);
@@ -1023,6 +1042,11 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   dst_pos.load_item_force (FrameMap::rbx_opr);
   length.load_item_force  (FrameMap::rdi_opr);
   LIR_Opr tmp =           (FrameMap::rsi_opr);
+
+  if (expected_type != nullptr && flags == 0) {
+    FrameMap* f = Compilation::current()->frame_map();
+    f->update_reserved_argument_area_size(3 * BytesPerWord);
+  }
 #else
 
   // The java calling convention will give us enough registers
@@ -1043,10 +1067,6 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
 #endif // LP64
 
   set_no_result(x);
-
-  int flags;
-  ciArrayKlass* expected_type;
-  arraycopy_helper(x, &flags, &expected_type);
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp, expected_type, flags, info); // does add_safepoint
 }
@@ -1310,7 +1330,13 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 
 
 void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::rbx_opr);
@@ -1327,7 +1353,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, x->zero_array());
 
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
@@ -1410,7 +1436,7 @@ void LIRGenerator::do_NewMultiArray(NewMultiArray* x) {
   args->append(rank);
   args->append(varargs);
   LIR_Opr reg = result_register_for(x->type());
-  __ call_runtime(Runtime1::entry_for(Runtime1::new_multi_array_id),
+  __ call_runtime(Runtime1::entry_for(C1StubId::new_multi_array_id),
                   LIR_OprFact::illegalOpr,
                   reg, args, info);
 
@@ -1443,12 +1469,12 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   CodeStub* stub;
   if (x->is_incompatible_class_change_check()) {
     assert(patching_info == nullptr, "can't patch this");
-    stub = new SimpleExceptionStub(Runtime1::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_incompatible_class_change_error_id, LIR_OprFact::illegalOpr, info_for_exception);
   } else if (x->is_invokespecial_receiver_check()) {
     assert(patching_info == nullptr, "can't patch this");
     stub = new DeoptimizeStub(info_for_exception, Deoptimization::Reason_class_check, Deoptimization::Action_none);
   } else {
-    stub = new SimpleExceptionStub(Runtime1::throw_class_cast_exception_id, obj.result(), info_for_exception);
+    stub = new SimpleExceptionStub(C1StubId::throw_class_cast_exception_id, obj.result(), info_for_exception);
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;

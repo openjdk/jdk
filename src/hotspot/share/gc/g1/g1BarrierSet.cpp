@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
   // skip young gen cards
   if (*byte == G1CardTable::g1_young_card_val()) {
     // MemRegion should not span multiple regions for the young gen.
-    DEBUG_ONLY(HeapRegion* containing_hr = G1CollectedHeap::heap()->heap_region_containing(mr.start());)
+    DEBUG_ONLY(G1HeapRegion* containing_hr = G1CollectedHeap::heap()->heap_region_containing(mr.start());)
     assert(containing_hr->is_young(), "it should be young");
     assert(containing_hr->is_in(mr.start()), "it should contain start");
     assert(containing_hr->is_in(mr.last()), "it should also contain last");

@@ -164,10 +164,9 @@ class frame {
   void   patch_pc(Thread* thread, address pc);
 
   // Every frame needs to return a unique id which distinguishes it from all other frames.
-  // For sparc and ia32 use sp. ia64 can have memory frames that are empty so multiple frames
-  // will have identical sp values. For ia64 the bsp (fp) value will serve. No real frame
-  // should have an id() of null so it is a distinguishing value for an unmatchable frame.
-  // We also have relationals which allow comparing a frame to anoth frame's id() allow
+  // For sparc and ia32 use sp.
+  // No real frame should have an id() of null so it is a distinguishing value for an unmatchable frame.
+  // We also have relationals which allow comparing a frame to another frame's id() allowing
   // us to distinguish younger (more recent activation) from older (less recent activations)
   // A null id is only valid when comparing for equality.
 
@@ -337,8 +336,8 @@ class frame {
   // Return the monitor owner and BasicLock for compiled synchronized
   // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
-  BasicLock* get_native_monitor();
-  oop        get_native_receiver();
+  BasicLock* get_native_monitor() const;
+  oop        get_native_receiver() const;
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is
   // not setup)
@@ -387,7 +386,9 @@ class frame {
   static int interpreter_frame_monitor_size();
   static int interpreter_frame_monitor_size_in_bytes();
 
+#ifdef ASSERT
   void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
+#endif
 
   // Return/result value from this interpreter frame
   // If the method return type is T_OBJECT or T_ARRAY populates oop_result
@@ -424,6 +425,8 @@ class frame {
   oop saved_oop_result(RegisterMap* map) const;
   void set_saved_oop_result(RegisterMap* map, oop obj);
 
+  static JavaThread** saved_thread_address(const frame& f);
+
   // For debugging
  private:
   const char* print_name() const;
@@ -431,15 +434,17 @@ class frame {
   void describe_pd(FrameValues& values, int frame_no);
 
  public:
-  void print_value() const { print_value_on(tty,nullptr); }
-  void print_value_on(outputStream* st, JavaThread *thread) const;
+  void print_value() const { print_value_on(tty); }
+  void print_value_on(outputStream* st) const;
   void print_on(outputStream* st) const;
   void interpreter_frame_print_on(outputStream* st) const;
   void print_on_error(outputStream* st, char* buf, int buflen, bool verbose = false) const;
   static void print_C_frame(outputStream* st, char* buf, int buflen, address pc);
 
+#ifndef PRODUCT
   // Add annotated descriptions of memory locations belonging to this frame to values
-  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr);
+  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr, bool top = false);
+#endif
 
   // Conversion from a VMReg to physical stack location
   template <typename RegisterMapT>
@@ -460,6 +465,7 @@ class frame {
                         const RegisterMap* map, bool use_interpreter_oop_map_cache) const;
 
   void oops_entry_do(OopClosure* f, const RegisterMap* map) const;
+  void oops_upcall_do(OopClosure* f, const RegisterMap* map) const;
   void oops_nmethod_do(OopClosure* f, NMethodClosure* cf,
                        DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                        const RegisterMap* map) const;
@@ -492,9 +498,11 @@ class frame {
 
   // Verification
   void verify(const RegisterMap* map) const;
+#ifdef ASSERT
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
+#endif
 
 #include CPU_HEADER(frame)
 

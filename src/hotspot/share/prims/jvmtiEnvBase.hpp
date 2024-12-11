@@ -216,8 +216,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
-  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
-                                                 JavaThread** jt_pp, oop* thread_oop_p);
 
   // Return true if java thread is a carrier thread with a mounted virtual thread.
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
@@ -360,7 +358,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                    JavaThread* java_thread,
                                    javaVFrame *jvf,
                                    GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list,
-                                   jint depth);
+                                   jint depth, oop vthread = nullptr);
  public:
   static javaVFrame* jvf_for_thread_and_depth(JavaThread* java_thread, jint depth);
 
@@ -368,9 +366,9 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static bool get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd);
 
   // check and skip frames hidden in mount/unmount transitions
+  static javaVFrame* skip_yield_frames_for_unmounted_vthread(oop vthread, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(bool is_in_VTMS_transition, javaVFrame* jvf);
   static javaVFrame* check_and_skip_hidden_frames(JavaThread* jt, javaVFrame* jvf);
-  static javaVFrame* check_and_skip_hidden_frames(oop vthread, javaVFrame* jvf);
 
   // check if virtual thread is not terminated (alive)
   static bool is_vthread_alive(oop vt);
@@ -424,8 +422,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
                                            jobject* monitor_ptr, bool is_virtual);
   jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread,
                                 GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
-  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* java_thread, javaVFrame* jvf,
-                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list);
+  jvmtiError get_owned_monitors(JavaThread* calling_thread, JavaThread* carrier, javaVFrame* jvf,
+                                GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list, oop vthread);
   static jvmtiError check_top_frame(Thread* current_thread, JavaThread* java_thread,
                                     jvalue value, TosState tos, Handle* ret_ob_h);
   jvmtiError force_early_return(jthread thread, jvalue value, TosState tos);
@@ -782,24 +780,6 @@ public:
       _location_ptr(location_ptr) {}
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);
-};
-
-// HandshakeClosure to get virtual thread thread at safepoint.
-class VirtualThreadGetThreadClosure : public HandshakeClosure {
-private:
-  Handle _vthread_h;
-  jthread* _carrier_thread_ptr;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetThreadClosure(Handle vthread_h, jthread* carrier_thread_ptr)
-    : HandshakeClosure("VirtualThreadGetThread"),
-      _vthread_h(vthread_h),
-      _carrier_thread_ptr(carrier_thread_ptr),
-      _result(JVMTI_ERROR_NONE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
 };
 
 // ResourceTracker

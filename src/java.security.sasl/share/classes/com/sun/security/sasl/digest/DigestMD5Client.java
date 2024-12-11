@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ final class DigestMD5Client extends DigestMD5Base implements SaslClient {
      * combined protocol and host being used for authentication.
      * @param props The possibly null properties to be used by the SASL
      * mechanism to configure the authentication exchange.
-     * @param cbh The non-null CallbackHanlder object for callbacks
+     * @param cbh The non-null CallbackHandler object for callbacks
      * @throws SaslException if no authentication ID or password is supplied
      */
     DigestMD5Client(String authzid, String protocol, String serverName,

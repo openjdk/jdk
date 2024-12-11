@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ void VM_G1PauseConcurrent::doit() {
 
   G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
-  IsGCActiveMark x;
+  IsSTWGCActiveMark x;
 
   work();
 }

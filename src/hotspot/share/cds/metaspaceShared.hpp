@@ -31,10 +31,15 @@
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"
 
+class ArchiveBuilder;
+class ArchiveHeapInfo;
 class FileMapInfo;
+class Method;
 class outputStream;
 class SerializeClosure;
+class StaticArchiveBuilder;
 
+template<class E> class Array;
 template<class E> class GrowableArray;
 
 enum MapArchiveResult {
@@ -53,6 +58,7 @@ class MetaspaceShared : AllStatic {
   static intx _relocation_delta;
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
+  static Array<Method*>* _archived_method_handle_intrinsics;
 
  public:
   enum {
@@ -66,13 +72,14 @@ class MetaspaceShared : AllStatic {
   };
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
-  static void preload_and_dump() NOT_CDS_RETURN;
+  static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
   static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
-  static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;
+  static void exercise_runtime_cds_code(TRAPS) NOT_CDS_RETURN;
+  static void preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) NOT_CDS_RETURN;
   static void preload_classes(TRAPS) NOT_CDS_RETURN;
 
 public:
@@ -105,7 +112,12 @@ public:
 
   static void unrecoverable_loading_error(const char* message = nullptr);
   static void unrecoverable_writing_error(const char* message = nullptr);
+  static void writing_error(const char* message = nullptr);
 
+  static void make_method_handle_intrinsics_shareable() NOT_CDS_RETURN;
+  static void write_method_handle_intrinsics() NOT_CDS_RETURN;
+  static Array<Method*>* archived_method_handle_intrinsics() { return _archived_method_handle_intrinsics; }
+  static void early_serialize(SerializeClosure* sc) NOT_CDS_RETURN;
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
   // JVM/TI RedefineClasses() support:
@@ -166,6 +178,7 @@ public:
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
+  static bool write_static_archive(ArchiveBuilder* builder, FileMapInfo* map_info, ArchiveHeapInfo* heap_info);
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

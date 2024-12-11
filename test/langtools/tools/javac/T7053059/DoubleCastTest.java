@@ -25,9 +25,7 @@
  * @test
  * @bug 8015499
  * @summary javac, Gen is generating extra checkcast instructions in some corner cases
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
- *          jdk.compiler/com.sun.tools.javac.util
+ * @modules jdk.compiler/com.sun.tools.javac.util
  * @run main DoubleCastTest
  */
 
@@ -68,7 +66,7 @@ public class DoubleCastTest {
     static void check(MethodModel m) throws Exception {
         boolean last_is_cast = false;
         ClassEntry last_ref = null;
-        CodeAttribute ea = m.findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute ea = m.findAttribute(Attributes.code()).orElseThrow();
         for (int i = 0; i < ea.elementList().size(); ++i) {
             CodeElement ce = ea.elementList().get(i);
             if (ce instanceof TypeCheckInstruction ins && ins.opcode() == Opcode.CHECKCAST) {

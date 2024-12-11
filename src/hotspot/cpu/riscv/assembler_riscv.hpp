@@ -46,8 +46,10 @@
 class Argument {
  public:
   enum {
-    n_int_register_parameters_c   = 8, // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
-    n_float_register_parameters_c = 8, // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
+    n_int_register_parameters_c   = 8,   // x10, x11, ... x17 (c_rarg0, c_rarg1, ...)
+    n_float_register_parameters_c = 8,   // f10, f11, ... f17 (c_farg0, c_farg1, ... )
+    n_vector_register_parameters_c = 16,  // v8, v9, ... v23
 
     n_int_register_parameters_j   = 8, // x11, ... x17, x10 (j_rarg0, j_rarg1, ...)
     n_float_register_parameters_j = 8  // f10, f11, ... f17 (j_farg0, j_farg1, ...)
@@ -143,6 +145,10 @@ constexpr Register x19_sender_sp = x19; // Sender's SP while in interpreter
 constexpr Register t0 = x5;
 constexpr Register t1 = x6;
 constexpr Register t2 = x7;
+constexpr Register t3 = x28;
+constexpr Register t4 = x29;
+constexpr Register t5 = x30;
+constexpr Register t6 = x31;
 
 const Register g_INTArgReg[Argument::n_int_register_parameters_c] = {
   c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7
@@ -656,39 +662,35 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, op)                                                                \
-  void NAME(Register Rd, const int32_t offset) {                                      \
-    guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");        \
-    unsigned insn = 0;                                                                \
-    patch((address)&insn, 6, 0, op);                                                  \
-    patch_reg((address)&insn, 7, Rd);                                                 \
-    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));                 \
-    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));                      \
-    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));                 \
-    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));                      \
-    emit(insn);                                                                       \
+ private:
+  // All calls and jumps must go via MASM.
+  // Format J-type
+  void _jal(Register Rd, const int32_t offset) {
+    guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");
+    unsigned insn = 0;
+    patch((address)&insn, 6, 0, 0b1101111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 19, 12, (uint32_t)((offset >> 12) & 0xff));
+    patch((address)&insn, 20, (uint32_t)((offset >> 11) & 0x1));
+    patch((address)&insn, 30, 21, (uint32_t)((offset >> 1) & 0x3ff));
+    patch((address)&insn, 31, (uint32_t)((offset >> 20) & 0x1));
+    emit(insn);
   }
 
-  INSN(jal, 0b1101111);
-
-#undef INSN
-
-#define INSN(NAME, op, funct)                                                         \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                         \
-    guarantee(is_simm12(offset), "offset is invalid.");                               \
-    unsigned insn = 0;                                                                \
-    patch((address)&insn, 6, 0, op);                                                  \
-    patch_reg((address)&insn, 7, Rd);                                                 \
-    patch((address)&insn, 14, 12, funct);                                             \
-    patch_reg((address)&insn, 15, Rs);                                                \
-    int32_t val = offset & 0xfff;                                                     \
-    patch((address)&insn, 31, 20, val);                                               \
-    emit(insn);                                                                       \
+  // Format I-type
+  void _jalr(Register Rd, Register Rs, const int32_t offset) {
+    guarantee(is_simm12(offset), "offset is invalid.");
+    unsigned insn = 0;
+    patch((address)&insn, 6, 0, 0b1100111);
+    patch_reg((address)&insn, 7, Rd);
+    patch((address)&insn, 14, 12, 0b000);
+    patch_reg((address)&insn, 15, Rs);
+    int32_t val = offset & 0xfff;
+    patch((address)&insn, 31, 20, val);
+    emit(insn);
   }
 
-  INSN(_jalr, 0b1100111, 0b000);
-
-#undef INSN
+ public:
 
   enum barrier {
     i = 0b1000, o = 0b0100, r = 0b0010, w = 0b0001,
@@ -706,6 +708,16 @@ public:
     patch((address)&insn, 23, 20, successor);   // succ
     patch((address)&insn, 27, 24, predecessor); // pred
     patch((address)&insn, 31, 28, 0b0000);      // fm
+    emit(insn);
+  }
+
+  void fencei() {
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, 0b0001111);      // opcode
+    patch((address)&insn, 11,  7, 0b00000);        // rd
+    patch((address)&insn, 14, 12, 0b001);          // func
+    patch((address)&insn, 19, 15, 0b00000);        // rs1
+    patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
 
@@ -1271,6 +1283,7 @@ enum VectorMask {
   INSN(viota_m,   0b1010111, 0b010, 0b10000, 0b010100);
 
   // Vector Single-Width Floating-Point/Integer Type-Convert Instructions
+  INSN(vfcvt_x_f_v,      0b1010111, 0b001, 0b00001, 0b010010);
   INSN(vfcvt_f_x_v,      0b1010111, 0b001, 0b00011, 0b010010);
   INSN(vfcvt_rtz_x_f_v,  0b1010111, 0b001, 0b00111, 0b010010);
 
@@ -1419,6 +1432,10 @@ enum VectorMask {
   INSN(vredmaxu_vs,   0b1010111, 0b010, 0b000110);
   INSN(vredmax_vs,    0b1010111, 0b010, 0b000111);
 
+  // Vector Widening Integer Reduction Instructions
+  INSN(vwredsum_vs,    0b1010111, 0b000, 0b110001);
+  INSN(vwredsumu_vs,   0b1010111, 0b000, 0b110000);
+
   // Vector Floating-Point Compare Instructions
   INSN(vmfle_vv, 0b1010111, 0b001, 0b011001);
   INSN(vmflt_vv, 0b1010111, 0b001, 0b011011);
@@ -1456,6 +1473,10 @@ enum VectorMask {
   INSN(vmulhu_vv,  0b1010111, 0b010, 0b100100);
   INSN(vmulh_vv,   0b1010111, 0b010, 0b100111);
   INSN(vmul_vv,    0b1010111, 0b010, 0b100101);
+
+  // Vector Widening Integer Multiply Instructions
+  INSN(vwmul_vv,    0b1010111, 0b010, 0b111011);
+  INSN(vwmulu_vv,   0b1010111, 0b010, 0b111000);
 
   // Vector Integer Min/Max Instructions
   INSN(vmax_vv,  0b1010111, 0b000, 0b000111);
@@ -1824,6 +1845,21 @@ enum Nf {
 
 #undef INSN
 
+#define INSN(NAME, op, width, umop, mop, mew, nf)                                               \
+  void NAME(VectorRegister Vd_or_Vs3, Register Rs1, VectorMask vm = unmasked) { \
+    patch_VLdSt(op, Vd_or_Vs3, width, Rs1, umop, vm, mop, mew, nf);                         \
+  }
+
+  // Vector Unit-Stride Segment Load Instructions
+  INSN(vlseg3e8_v, 0b0000111, 0b000, 0b00000, 0b00, 0b0, g3);
+  INSN(vlseg4e8_v, 0b0000111, 0b000, 0b00000, 0b00, 0b0, g4);
+
+  // Vector Unit-Stride Segment Store Instructions
+  INSN(vsseg3e8_v, 0b0100111, 0b000, 0b00000, 0b00, 0b0, g3);
+  INSN(vsseg4e8_v, 0b0100111, 0b000, 0b00000, 0b00, 0b0, g4);
+
+#undef INSN
+
 #define INSN(NAME, op, width, mop, mew)                                                                  \
   void NAME(VectorRegister Vd, Register Rs1, VectorRegister Vs2, VectorMask vm = unmasked, Nf nf = g1) { \
     patch_VLdSt(op, Vd, width, Rs1, Vs2->raw_encoding(), vm, mop, mew, nf);                              \
@@ -1832,10 +1868,12 @@ enum Nf {
   // Vector unordered indexed load instructions
   INSN( vluxei8_v, 0b0000111, 0b000, 0b01, 0b0);
   INSN(vluxei32_v, 0b0000111, 0b110, 0b01, 0b0);
+  INSN(vluxei64_v, 0b0000111, 0b111, 0b01, 0b0);
 
   // Vector unordered indexed store instructions
   INSN( vsuxei8_v, 0b0100111, 0b000, 0b01, 0b0);
   INSN(vsuxei32_v, 0b0100111, 0b110, 0b01, 0b0);
+  INSN(vsuxei64_v, 0b0100111, 0b111, 0b01, 0b0);
 
 #undef INSN
 
@@ -1867,19 +1905,52 @@ enum Nf {
     patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);                            \
   }
 
-  // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
+  // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
   INSN(vandn_vv,   0b1010111, 0b000, 0b000001);
-  INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
-  INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
-  INSN(vclmul_vx,  0b1010111, 0b110, 0b001100);
-  INSN(vclmulh_vv, 0b1010111, 0b010, 0b001101);
-  INSN(vclmulh_vx, 0b1010111, 0b110, 0b001101);
   INSN(vror_vv,    0b1010111, 0b000, 0b010100);
-  INSN(vror_vx,    0b1010111, 0b100, 0b010100);
   INSN(vrol_vv,    0b1010111, 0b000, 0b010101);
-  INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
+
+  // Vector Bit-manipulation used in Cryptography (Zvbc) Extension
+  INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
+  INSN(vclmulh_vv, 0b1010111, 0b010, 0b001101);
 
 #undef INSN
+
+#define INSN(NAME, op, funct3, funct6)                                                             \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, Register Rs1, VectorMask vm = unmasked) {       \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
+  }
+
+  // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
+  INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
+  INSN(vror_vx,    0b1010111, 0b100, 0b010100);
+
+#undef INSN
+
+#define patch_VArith_imm6(op, Reg, funct3, Reg_or_Imm5, I5, Vs2, vm, funct6)   \
+    unsigned insn = 0;                                                         \
+    patch((address)&insn, 6, 0, op);                                           \
+    patch((address)&insn, 14, 12, funct3);                                     \
+    patch((address)&insn, 19, 15, Reg_or_Imm5);                                \
+    patch((address)&insn, 25, vm);                                             \
+    patch((address)&insn, 26, I5);                                             \
+    patch((address)&insn, 31, 27, funct6);                                     \
+    patch_reg((address)&insn, 7, Reg);                                         \
+    patch_reg((address)&insn, 20, Vs2);                                        \
+    emit(insn)
+
+#define INSN(NAME, op, funct3, funct6)                                                             \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {       \
+    guarantee(is_uimm6(imm), "uimm is invalid");                                                   \
+    patch_VArith_imm6(op, Vd, funct3, (uint32_t)(imm & 0x1f), (uint32_t)((imm >> 5) & 0x1), Vs2, vm, funct6);  \
+  }
+
+  // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
+  // NOTE: there is no corresponding vrol.vi supplied by the extension, but it can be emulated with vror.vi easily.
+  INSN(vror_vi,    0b1010111, 0b011, 0b01010);
+
+#undef INSN
+#undef patch_VArith_imm6
 
 #define INSN(NAME, op, funct3, Vs1, funct6)                                    \
   void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
@@ -1887,8 +1958,19 @@ enum Nf {
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
-  INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010);
-  INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010);
+  INSN(vbrev_v,  0b1010111, 0b010, 0b01010, 0b010010); // reverse bits in every element
+  INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010); // reverse bits in every byte of element
+  INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010); // reverse bytes in every elememt
+
+  // Vector AES instructions (Zvkned extension)
+  INSN(vaesem_vv,   0b1110111, 0b010, 0b00010, 0b101000);
+  INSN(vaesef_vv,   0b1110111, 0b010, 0b00011, 0b101000);
+
+  INSN(vaesdm_vv,   0b1110111, 0b010, 0b00000, 0b101000);
+  INSN(vaesdf_vv,   0b1110111, 0b010, 0b00001, 0b101000);
+
+  INSN(vclz_v,  0b1010111, 0b010, 0b01100, 0b010010); // count leading zeros
+  INSN(vctz_v,  0b1010111, 0b010, 0b01101, 0b010010); // count trailing zeros
 
 #undef INSN
 
@@ -1901,6 +1983,16 @@ enum Nf {
   INSN(vsha2ms_vv,  0b1110111, 0b010, 0b1, 0b101101);
   INSN(vsha2ch_vv,  0b1110111, 0b010, 0b1, 0b101110);
   INSN(vsha2cl_vv,  0b1110111, 0b010, 0b1, 0b101111);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, Vs1, funct6)                                    \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1, Vs2, vm, funct6);                        \
+  }
+
+  // Vector Basic Bit-manipulation (Zvbb) Extension
+  INSN(vcpop_v,  0b1010111, 0b010, 0b01110, 0b010010);
 
 #undef INSN
 
@@ -2285,21 +2377,23 @@ public:
 
 #undef INSN
 
-#define INSN(NAME, funct4, op)                                                               \
-  void NAME(Register Rs1) {                                                                  \
-    assert_cond(Rs1 != x0);                                                                  \
-    uint16_t insn = 0;                                                                       \
-    c_patch((address)&insn, 1, 0, op);                                                       \
-    c_patch_reg((address)&insn, 2, x0);                                                      \
-    c_patch_reg((address)&insn, 7, Rs1);                                                     \
-    c_patch((address)&insn, 15, 12, funct4);                                                 \
-    emit_int16(insn);                                                                        \
+ private:
+  // All calls and jumps must go via MASM.
+  // Format CR, c.jr/c.jalr
+  // Note C instruction can't be changed, i.e. relocation patching.
+  template <uint8_t InstructionType, uint8_t FunctionType>
+  void c_cr_if(Register Rs1) {
+    assert_cond(Rs1 != x0);
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, FunctionType);
+    c_patch_reg((address)&insn, 2, x0);
+    c_patch_reg((address)&insn, 7, Rs1);
+    c_patch((address)&insn, 15, 12, InstructionType);
+    emit_int16(insn);
   }
 
-  INSN(c_jr,   0b1000, 0b10);
-  INSN(c_jalr, 0b1001, 0b10);
-
-#undef INSN
+  void c_jr(Register Rs1)   { c_cr_if<0b1000, 0b10>(Rs1); }
+  void c_jalr(Register Rs1) { c_cr_if<0b1001, 0b10>(Rs1); }
 
   typedef void (Assembler::* j_c_insn)(address dest);
   typedef void (Assembler::* compare_and_branch_c_insn)(Register Rs1, address dest);
@@ -2322,35 +2416,36 @@ public:
     }
   }
 
-#define INSN(NAME, funct3, op)                                                               \
-  void NAME(int32_t offset) {                                                                \
-    assert(is_simm12(offset) && ((offset % 2) == 0), "invalid encoding");                    \
-    uint16_t insn = 0;                                                                       \
-    c_patch((address)&insn, 1, 0, op);                                                       \
-    c_patch((address)&insn, 2, 2, (offset & nth_bit(5)) >> 5);                               \
-    c_patch((address)&insn, 5, 3, (offset & right_n_bits(4)) >> 1);                          \
-    c_patch((address)&insn, 6, 6, (offset & nth_bit(7)) >> 7);                               \
-    c_patch((address)&insn, 7, 7, (offset & nth_bit(6)) >> 6);                               \
-    c_patch((address)&insn, 8, 8, (offset & nth_bit(10)) >> 10);                             \
-    c_patch((address)&insn, 10, 9, (offset & right_n_bits(10)) >> 8);                        \
-    c_patch((address)&insn, 11, 11, (offset & nth_bit(4)) >> 4);                             \
-    c_patch((address)&insn, 12, 12, (offset & nth_bit(11)) >> 11);                           \
-    c_patch((address)&insn, 15, 13, funct3);                                                 \
-    emit_int16(insn);                                                                        \
-  }                                                                                          \
-  void NAME(address dest) {                                                                  \
-    assert_cond(dest != nullptr);                                                            \
-    int64_t distance = dest - pc();                                                          \
-    assert(is_simm12(distance) && ((distance % 2) == 0), "invalid encoding");                \
-    c_j(distance);                                                                           \
-  }                                                                                          \
-  void NAME(Label &L) {                                                                      \
-    wrap_label(L, &Assembler::NAME);                                                         \
+  // Format CJ, c.j (c.jal)
+  // Note C instruction can't be changed, i.e. relocation patching.
+  void c_j(int32_t offset) {
+    assert(is_simm12(offset) && ((offset % 2) == 0), "invalid encoding");
+    uint16_t insn = 0;
+    c_patch((address)&insn, 1, 0, 0b01);
+    c_patch((address)&insn, 2, 2, (offset & nth_bit(5)) >> 5);
+    c_patch((address)&insn, 5, 3, (offset & right_n_bits(4)) >> 1);
+    c_patch((address)&insn, 6, 6, (offset & nth_bit(7)) >> 7);
+    c_patch((address)&insn, 7, 7, (offset & nth_bit(6)) >> 6);
+    c_patch((address)&insn, 8, 8, (offset & nth_bit(10)) >> 10);
+    c_patch((address)&insn, 10, 9, (offset & right_n_bits(10)) >> 8);
+    c_patch((address)&insn, 11, 11, (offset & nth_bit(4)) >> 4);
+    c_patch((address)&insn, 12, 12, (offset & nth_bit(11)) >> 11);
+    c_patch((address)&insn, 15, 13, 0b101);
+    emit_int16(insn);
   }
 
-  INSN(c_j, 0b101, 0b01);
+  void c_j(address dest) {
+    assert_cond(dest != nullptr);
+    int64_t distance = dest - pc();
+    assert(is_simm12(distance) && ((distance % 2) == 0), "invalid encoding");
+    c_j(distance);
+  }
 
-#undef INSN
+  void c_j(Label &L) {
+    wrap_label(L, &Assembler::c_j);
+  }
+
+  public:
 
 #define INSN(NAME, funct3, op)                                                               \
   void NAME(Register Rs1, int32_t imm) {                                                     \
@@ -2803,24 +2898,36 @@ public:
 // --------------------------
 // Unconditional branch instructions
 // --------------------------
-#define INSN(NAME)                                                                           \
-  void NAME(Register Rd, Register Rs, const int32_t offset) {                                \
-    /* jalr -> c.jr/c.jalr */                                                                \
-    if (do_compress() && (offset == 0 && Rs != x0)) {                                        \
-      if (Rd == x1) {                                                                        \
-        c_jalr(Rs);                                                                          \
-        return;                                                                              \
-      } else if (Rd == x0) {                                                                 \
-        c_jr(Rs);                                                                            \
-        return;                                                                              \
-      }                                                                                      \
-    }                                                                                        \
-    _jalr(Rd, Rs, offset);                                                                   \
+ protected:
+  // All calls and jumps must go via MASM. Only use x1 (aka ra) as link register for now.
+  void jalr(Register Rd, Register Rs, const int32_t offset) {
+    assert(Rd != x5 && Rs != x5, "Register x5 must not be used for calls/jumps.");
+    /* jalr -> c.jr/c.jalr */
+    if (do_compress() && (offset == 0 && Rs != x0)) {
+      if (Rd == x1) {
+        c_jalr(Rs);
+        return;
+      } else if (Rd == x0) {
+        c_jr(Rs);
+        return;
+      }
+    }
+    _jalr(Rd, Rs, offset);
   }
 
-  INSN(jalr);
+  void jal(Register Rd, const int32_t offset) {
+    assert(Rd != x5, "Register x5 must not be used for calls/jumps.");
+    /* jal -> c.j, note c.jal is RV32C only */
+    if (do_compress() &&
+        Rd == x0 &&
+        is_simm12(offset) && ((offset % 2) == 0)) {
+      c_j(offset);
+      return;
+    }
+    _jal(Rd, offset);
+  }
 
-#undef INSN
+  public:
 
 // --------------------------
 // Miscellaneous Instructions
@@ -3000,17 +3107,37 @@ public:
 
 #undef INSN
 
-// ---------------------------------------------------------------------------------------
+// --------------  Zicond Instruction Definitions  --------------
+// Zicond conditional operations extension
+  private:
+  enum CZERO_OP : unsigned int {
+    CZERO_NEZ = 0b111,
+    CZERO_EQZ = 0b101
+  };
 
-#define INSN(NAME, REGISTER)                       \
-  void NAME(Register Rs) {                         \
-    jalr(REGISTER, Rs, 0);                         \
+  template <CZERO_OP OP_VALUE>
+  void czero(Register Rd, Register Rs1, Register Rs2) {
+    assert_cond(UseZicond);
+    uint32_t insn = 0;
+    patch    ((address)&insn,  6,  0, 0b0110011);  // bits:  7, name: 0x33, attr: ['OP']
+    patch_reg((address)&insn,      7, Rd);         // bits:  5, name: 'rd'
+    patch    ((address)&insn, 14, 12, OP_VALUE);   // bits:  3, name: 0x7, attr: ['CZERO.NEZ'] / 0x5, attr: ['CZERO.EQZ']}
+    patch_reg((address)&insn,     15, Rs1);        // bits:  5, name: 'rs1', attr: ['value']
+    patch_reg((address)&insn,     20, Rs2);        // bits:  5, name: 'rs2', attr: ['condition']
+    patch    ((address)&insn, 31, 25, 0b0000111);  // bits:  7, name: 0x7, attr: ['CZERO']
+    emit_int32(insn);
   }
 
-  INSN(jr,   x0);
-  INSN(jalr, x1);
+  public:
+  // Moves zero to a register rd, if the condition rs2 is equal to zero, otherwise moves rs1 to rd.
+  void czero_eqz(Register rd, Register rs1_value, Register rs2_condition) {
+    czero<CZERO_EQZ>(rd, rs1_value, rs2_condition);
+  }
 
-#undef INSN
+  // Moves zero to a register rd, if the condition rs2 is nonzero, otherwise moves rs1 to rd.
+  void czero_nez(Register rd, Register rs1_value, Register rs2_condition) {
+    czero<CZERO_NEZ>(rd, rs1_value, rs2_condition);
+  }
 
 // --------------  ZCB Instruction Definitions  --------------
 // Zcb additional C instructions
