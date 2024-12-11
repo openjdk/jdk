@@ -1255,7 +1255,7 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   // The handshake won't touch non-java threads, so do those separately.
   Threads::non_java_threads_do(&prepare_for_update_refs);
 
-  // A degenerated cycle won't attempt to use LABs from the mutator threads
+  // Now retire gclabs and plabs and propagate gc_state for mutator threads
   Handshake::execute(&prepare_for_update_refs);
 
   _update_refs_iterator.reset();
