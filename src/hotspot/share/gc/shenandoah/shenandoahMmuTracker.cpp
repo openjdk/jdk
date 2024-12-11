@@ -48,7 +48,9 @@ class ThreadTimeAccumulator : public ThreadClosure {
   size_t total_time;
   ThreadTimeAccumulator() : total_time(0) {}
   void do_thread(Thread* thread) override {
-    total_time += os::thread_cpu_time(thread);
+    if (!thread->has_terminated()) {
+      total_time += os::thread_cpu_time(thread);
+    }
   }
 };
 
