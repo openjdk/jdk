@@ -46,7 +46,6 @@ import static org.testng.Assert.fail;
  * @test
  * @bug 8318144
  * @enablePreview
- * @modules java.base/jdk.internal.classfile
  * @compile SwitchBootstrapsTest.java
  * @run testng/othervm SwitchBootstrapsTest
  */

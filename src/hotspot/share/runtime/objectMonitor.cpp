@@ -124,7 +124,7 @@ ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 //
 // * A thread acquires ownership of a monitor by successfully
 //   CAS()ing the _owner field from NO_OWNER/DEFLATER_MARKER to
-//   its tid (return value from owner_from()).
+//   its owner_id (return value from owner_id_from()).
 //
 // * Invariant: A thread appears on at most one monitor list --
 //   cxq, EntryList or WaitSet -- at any one time.
@@ -331,7 +331,7 @@ bool ObjectMonitor::TryLockWithContentionMark(JavaThread* locking_thread, Object
   if (prev_owner == NO_OWNER) {
     assert(_recursions == 0, "invariant");
     success = true;
-  } else if (prev_owner == owner_from(locking_thread)) {
+  } else if (prev_owner == owner_id_from(locking_thread)) {
     _recursions++;
     success = true;
   } else if (prev_owner == DEFLATER_MARKER) {
@@ -1548,7 +1548,7 @@ void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter* Wakee) {
 }
 
 // Exits the monitor returning recursion count. _owner should
-// be set to current's tid, i.e. no ANONYMOUS_OWNER allowed.
+// be set to current's owner_id, i.e. no ANONYMOUS_OWNER allowed.
 intx ObjectMonitor::complete_exit(JavaThread* current) {
   assert(InitDone, "Unexpectedly not initialized");
   guarantee(has_owner(current), "complete_exit not owner");
@@ -1580,7 +1580,7 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
 bool ObjectMonitor::check_owner(TRAPS) {
   JavaThread* current = THREAD;
   int64_t cur = owner_raw();
-  if (cur == owner_from(current)) {
+  if (cur == owner_id_from(current)) {
     return true;
   }
   THROW_MSG_(vmSymbols::java_lang_IllegalMonitorStateException(),

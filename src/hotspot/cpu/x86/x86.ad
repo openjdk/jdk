@@ -2762,20 +2762,40 @@ void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
 }
 
 template <class T>
-static inline GrowableArray<jvalue>* vreplicate_imm(BasicType bt, T con, int len) {
-  GrowableArray<jvalue>* val = new GrowableArray<jvalue>(len);
-  jvalue ele;
-  switch (bt) {
-    case T_BYTE:   ele.b = con; break;
-    case T_SHORT:  ele.s = con; break;
-    case T_INT:    ele.i = con; break;
-    case T_LONG:   ele.j = con; break;
-    case T_FLOAT:  ele.f = con; break;
-    case T_DOUBLE: ele.d = con; break;
-    default: ShouldNotReachHere();
-  }
+static inline GrowableArray<jbyte>* vreplicate_imm(BasicType bt, T con, int len) {
+  int size = type2aelembytes(bt) * len;
+  GrowableArray<jbyte>* val = new GrowableArray<jbyte>(size, size, 0);
   for (int i = 0; i < len; i++) {
-    val->append(ele);
+    int offset = i * type2aelembytes(bt);
+    switch (bt) {
+      case T_BYTE: val->at(i) = con; break;
+      case T_SHORT: {
+        jshort c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jshort));
+        break;
+      }
+      case T_INT: {
+        jint c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jint));
+        break;
+      }
+      case T_LONG: {
+        jlong c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jlong));
+        break;
+      }
+      case T_FLOAT: {
+        jfloat c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jfloat));
+        break;
+      }
+      case T_DOUBLE: {
+        jdouble c = con;
+        memcpy(val->adr_at(offset), &c, sizeof(jdouble));
+        break;
+      }
+      default: assert(false, "%s", type2name(bt));
+    }
   }
   return val;
 }
@@ -4060,7 +4080,8 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ load_vector(bt, $dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4543,10 +4564,9 @@ instruct ReplI_imm(vec dst, immI con) %{
   match(Set dst (Replicate con));
   format %{ "replicateI $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(Matcher::vector_element_basic_type(this),
-        vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
-            (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 8) /
-                type2aelembytes(Matcher::vector_element_basic_type(this))));
+    InternalAddress addr = $constantaddress(vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
+                                                           (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 16) /
+                                                                   type2aelembytes(Matcher::vector_element_basic_type(this))));
     BasicType bt = Matcher::vector_element_basic_type(this);
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(bt, $dst$$XMMRegister, addr, vlen);
@@ -4684,7 +4704,7 @@ instruct ReplL_imm(vec dst, immL con) %{
   match(Set dst (Replicate con));
   format %{ "replicateL $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, $con$$constant, 1));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_LONG, $con$$constant, VM_Version::supports_sse3() ? 1 : 2));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_LONG, $dst$$XMMRegister, addr, vlen);
   %}
@@ -4766,8 +4786,8 @@ instruct ReplF_imm(vec dst, immF con) %{
   match(Set dst (Replicate con));
   format %{ "replicateF $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_FLOAT, vreplicate_imm(T_FLOAT, $con$$constant,
-        VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 2));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_FLOAT, $con$$constant,
+                                                           VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 4));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_FLOAT, $dst$$XMMRegister, addr, vlen);
   %}
@@ -4843,7 +4863,7 @@ instruct ReplD_imm(vec dst, immD con) %{
   match(Set dst (Replicate con));
   format %{ "replicateD $dst,$con" %}
   ins_encode %{
-    InternalAddress addr = $constantaddress(T_DOUBLE, vreplicate_imm(T_DOUBLE, $con$$constant, 1));
+    InternalAddress addr = $constantaddress(vreplicate_imm(T_DOUBLE, $con$$constant, VM_Version::supports_sse3() ? 1 : 2));
     int vlen = Matcher::vector_length_in_bytes(this);
     __ load_constant_vector(T_DOUBLE, $dst$$XMMRegister, addr, vlen);
   %}
@@ -9755,7 +9775,7 @@ instruct vreverse_reg_gfni(vec dst, vec src, vec xtmp) %{
   ins_encode %{
     int vec_enc = vector_length_encoding(this);
     BasicType bt  = Matcher::vector_element_basic_type(this);
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, 0x8040201008040201L, 1));
+    InternalAddress addr = $constantaddress(jlong(0x8040201008040201));
     __ vector_reverse_bit_gfni(bt, $dst$$XMMRegister, $src$$XMMRegister, addr, vec_enc,
                                $xtmp$$XMMRegister);
   %}
