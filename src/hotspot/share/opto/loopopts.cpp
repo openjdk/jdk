@@ -278,10 +278,14 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
   switch (n->Opcode()) {
     case Op_DivI:
     case Op_ModI:
+    case Op_UDivI:
+    case Op_UModI:
       zero = TypeInt::ZERO;
       break;
     case Op_DivL:
     case Op_ModL:
+    case Op_UDivL:
+    case Op_UModL:
       zero = TypeLong::ZERO;
       break;
     default:
