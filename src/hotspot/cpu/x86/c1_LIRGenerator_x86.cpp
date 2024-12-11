@@ -349,9 +349,11 @@ void LIRGenerator::do_NegateOp(NegateOp* x) {
   if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
     if (x->type()->tag() == doubleTag) {
       tmp = new_register(T_DOUBLE);
+      __ move(LIR_OprFact::doubleConst(-0.0), tmp);
     }
     else if (x->type()->tag() == floatTag) {
       tmp = new_register(T_FLOAT);
+      __ move(LIR_OprFact::floatConst(-0.0), tmp);
     }
   }
 #endif
@@ -832,10 +834,12 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   if (UseAVX > 2 && (!VM_Version::supports_avx512vl()) &&
       (x->id() == vmIntrinsics::_dabs)) {
     tmp = new_register(T_DOUBLE);
+    __ move(LIR_OprFact::doubleConst(-0.0), tmp);
   }
 #endif
   if (x->id() == vmIntrinsics::_floatToFloat16) {
     tmp = new_register(T_FLOAT);
+    __ move(LIR_OprFact::floatConst(-0.0), tmp);
   }
 
   switch(x->id()) {
