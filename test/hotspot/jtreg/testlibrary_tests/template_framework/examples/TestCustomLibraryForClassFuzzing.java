@@ -67,7 +67,7 @@ public class TestCustomLibraryForClassFuzzing {
         public final String name;
         public final Klass superKlass;
         public final HashSet<Klass> subKlasses;
-        public final HashSet<KField> fields;
+        public final ArrayList<KField> fields;
 
         public Klass(String name, Klass superKlass) {
             this.name = name;
@@ -76,7 +76,27 @@ public class TestCustomLibraryForClassFuzzing {
             if (superKlass != null) {
                 superKlass.subKlasses.add(this);
             }
-            this.fields = new HashSet<KField>();
+            this.fields = new ArrayList<KField>();
+        }
+
+        private int countFields() {
+            int count = fields.size();
+            if (superKlass != null) {
+                count += superKlass.countFields();
+            }
+            return count;
+        }
+
+        private KField pickField(int r) {
+            if (r < fields.size()) {
+                return fields.get(r);
+            }
+            return superKlass.pickField(r - fields.size());
+        }
+
+        public KField randomField() {
+            int r = RANDOM.nextInt(countFields());
+            return pickField(r);
         }
     }
 
@@ -84,11 +104,13 @@ public class TestCustomLibraryForClassFuzzing {
         private static int ID = 0;
 
         private final HashSet<Klass> rootKlasses;
-        private final HashMap<String,Klass> klasses;
+        private final HashMap<String,Klass> klasses; // for finding
+        private final ArrayList<Klass> klassesList;  // for sampling
 
         public KlassHierarchy() {
             this.rootKlasses = new HashSet<Klass>();
             this.klasses = new HashMap<String,Klass>();
+            this.klassesList = new ArrayList<Klass>();
         }
 
         public Klass makeKlass(String superKlassName, Scope scope) {
@@ -96,11 +118,13 @@ public class TestCustomLibraryForClassFuzzing {
                 Klass klass = new Klass("K" + (ID++) + "K", null);
                 rootKlasses.add(klass);
                 klasses.put(klass.name, klass);
+                klassesList.add(klass);
                 return klass;
             } else {
                 Klass superKlass = find(superKlassName, scope);
                 Klass klass = new Klass(superKlassName + "_" + (ID++) + "K", superKlass);
                 klasses.put(klass.name, klass);
+                klassesList.add(klass);
                 return klass;
             }
         }
@@ -119,6 +143,17 @@ public class TestCustomLibraryForClassFuzzing {
             String name = "field" + (ID++);
             klass.fields.add(new KField(name, type));
             return name;
+        }
+
+        public Klass randomKlass() {
+            int r = RANDOM.nextInt(klassesList.size());
+            return klassesList.get(r);
+        }
+
+        public String randomField(String klassName, Scope scope) {
+            Klass klass = find(klassName, scope);
+            KField field = klass.randomField();
+            return field.name;
         }
     }
 
@@ -149,7 +184,12 @@ public class TestCustomLibraryForClassFuzzing {
         );
         Template testTemplate = new Template("my_test",
             """
-            public static void $test() {
+            public static Object $test() {
+                // Allocate Object of klass #{klass:my_random_klass}.
+                #{klass} k = new #{klass}();
+                // Set random field #{field:my_random_field(klass=#klass)}
+                k.#{field} = #{:int_con};
+                return k;
             }
             """
         );
@@ -187,8 +227,8 @@ public class TestCustomLibraryForClassFuzzing {
 
         codeGenerators.add(new Template("my_define_new_field",
             """
-            // $my_define_new_field for #{klass}.
-            public int #{:my_new_field(klass=#klass,type=int)} = 0;
+            // $my_define_new_field for #{klass} of type #{type:choose(from=int|long)}.
+            public #{type} #{:my_new_field(klass=#klass,type=#type)} = 0;
             """
         ));
 
@@ -206,6 +246,19 @@ public class TestCustomLibraryForClassFuzzing {
             String klassName = parameters.get("klass", scope, " for generator call to 'my_new_field'");
             String type = parameters.get("type", scope, " for generator call to 'my_new_field'");
             String fieldName = hierarchy.makeField(klassName, type, scope);
+            scope.stream.addCodeToLine(fieldName);
+        }, 0));
+
+        codeGenerators.add(new ProgrammaticCodeGenerator("my_random_klass", (Scope scope, Parameters parameters) -> {
+            parameters.checkOnlyHas(scope); // no agrs
+            Klass klass = hierarchy.randomKlass();
+            scope.stream.addCodeToLine(klass.name);
+        }, 0));
+
+        codeGenerators.add(new ProgrammaticCodeGenerator("my_random_field", (Scope scope, Parameters parameters) -> {
+            parameters.checkOnlyHas(scope, "klass");
+            String klassName = parameters.get("klass", scope, " for generator call to 'my_random_field'");
+            String fieldName = hierarchy.randomField(klassName, scope);
             scope.stream.addCodeToLine(fieldName);
         }, 0));
 

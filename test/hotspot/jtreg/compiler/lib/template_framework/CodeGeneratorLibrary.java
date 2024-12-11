@@ -231,7 +231,17 @@ public class CodeGeneratorLibrary {
                     int v = RANDOM.nextInt(loVal, hiVal);
                     scope.stream.addCodeToLine(String.valueOf(v));
                 }
-           }, 0));
+        }, 0));
+
+        // Random choice from a list "aaa|bbb|ccc" -> return either "aaa", "bbb" or "ccc"
+        codeGenerators.add(new ProgrammaticCodeGenerator("choose",
+            (Scope scope, Parameters parameters) -> {
+                parameters.checkOnlyHas(scope, "from");
+                String list = parameters.get("from", scope, " for generator call to 'choose'");
+                String[] elements = list.split("\\|");
+                int r = RANDOM.nextInt(elements.length);
+                scope.stream.addCodeToLine(elements[r]);
+        }, 0));
 
         // Variable load/store.
         codeGenerators.add(factoryLoadStore(false));

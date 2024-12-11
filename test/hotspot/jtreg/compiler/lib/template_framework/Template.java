@@ -53,7 +53,7 @@ public final class Template extends CodeGenerator {
     //   #{name:generator(arg1=$var,arg2=v2)}
     //   #{name:generator(arg1=#param,arg2=v2)}
     //   #{:generator}
-    private static final String KEY_VALUE_PATTERN = "\\w+=[\\$#]?\\w*";
+    private static final String KEY_VALUE_PATTERN = "\\w+=[\\$#]?[\\w\\|]*";
     private static final String KEY_VALUE_LIST_PATTERN = "(?:" + // open non-capturing group 1
                                                              KEY_VALUE_PATTERN +
                                                              "(?:" + // open non-capturing group 1
