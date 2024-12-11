@@ -28,12 +28,16 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config) :
+G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint gid) :
   _candidates(4, mtGCCardSet),
-  _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
+  _card_set_mm(config, card_set_freelist_pool),
   _card_set(config, &_card_set_mm),
-  _gc_efficiency(0.0)
+  _reclaimable_bytes(size_t(0)),
+  _gc_efficiency(0.0),
+  _gid(gid)
 { }
+
+G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, uint gid): G1CSetCandidateGroup(config, G1CollectedHeap::heap()->card_set_freelist_pool(), gid) {}
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
   G1CollectionSetCandidateInfo c(hr, hr->calc_gc_efficiency());
@@ -42,40 +46,34 @@ void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
 
 void G1CSetCandidateGroup::add(G1CollectionSetCandidateInfo& hr_info) {
   G1HeapRegion* hr = hr_info._r;
-  assert(hr->is_old(), "Should be flagged as survivor region");
-
   _candidates.append(hr_info);
-  hr->install_group_cardset(&_card_set);
+  hr->install_cset_group(this);
 }
 
 void G1CSetCandidateGroup::calculate_efficiency() {
-  size_t reclaimable_bytes = 0;
+  _reclaimable_bytes = 0;
   uint num_candidates = _candidates.length();
   for (uint i = 0; i < num_candidates; i++) {
     G1HeapRegion* hr = region_at(i);
-    reclaimable_bytes += hr->reclaimable_bytes();
+    _reclaimable_bytes += hr->reclaimable_bytes();
   }
+  _gc_efficiency = _reclaimable_bytes / predict_group_total_time_ms();
+}
 
-  double group_total_time_ms = predict_group_total_time_ms();
-  _gc_efficiency = reclaimable_bytes / group_total_time_ms;
+size_t G1CSetCandidateGroup::liveness() const {
+  size_t capacity = length() * G1HeapRegion::GrainBytes;
+
+  return (size_t) ceil(((capacity - _reclaimable_bytes) * 100.0) / capacity);
 }
 
 void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
   if (uninstall_group_cardset) {
     for (G1CollectionSetCandidateInfo ci : _candidates) {
       G1HeapRegion* r = ci._r;
-      r->uninstall_group_cardset();
+      r->uninstall_cset_group();
       r->rem_set()->clear(true /* only_cardset */);
     }
   }
-#ifdef ASSERT
-  else {
-    for (G1CollectionSetCandidateInfo ci : _candidates) {
-      G1HeapRegion* r = ci._r;
-      assert(r->rem_set()->card_set() != &_card_set , "Pre-condition!");
-    }
-  }
-#endif
   _card_set.clear();
   _candidates.clear();
 }
@@ -292,9 +290,11 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
   uint group_limit = p->calc_min_old_cset_length(num_infos);
 
   uint num_added_to_group = 0;
+  // ids 0 and 1 are reserved for region default group and young regions group respectively.
+  uint gid = 2;
   G1CSetCandidateGroup* current = nullptr;
 
-  current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config());
+  current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), gid++);
 
   for (uint i = 0; i < num_infos; i++) {
     G1HeapRegion* r = candidate_infos[i]._r;
@@ -308,7 +308,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 
       _from_marking_groups.append(current);
 
-      current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config());
+      current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), gid++);
       num_added_to_group = 0;
     }
     current->add(candidate_infos[i]);

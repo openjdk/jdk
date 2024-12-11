@@ -982,6 +982,8 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
     return (double) val / (double) M;
   }
 
+  void do_cset_groups();
+
 public:
   // The header and footer are printed in the constructor and
   // destructor respectively.

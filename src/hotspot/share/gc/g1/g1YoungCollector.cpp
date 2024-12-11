@@ -297,7 +297,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // Sample card set sizes for humongous before GC: this makes the policy to give
       // back memory to the OS keep the most recent amount of memory for these regions.
       if (hr->is_starts_humongous()) {
-        guarantee(!hr->rem_set()->has_group_cardset(), "Humongous regions should not have group card sets");
+        guarantee(!hr->rem_set()->is_added_to_cset_group(), "Humongous regions should not have group card sets");
         _card_set_stats.add(hr->rem_set()->card_set_memory_stats());
       }
     }
@@ -517,7 +517,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->young_regions_card_set_mm()->memory_stats());
+    sampled_card_set_stats.add(_g1h->young_regions_card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
 
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());

@@ -37,7 +37,7 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1
 }
 
 bool G1FullGCResetMetadataTask::G1ResetMetadataClosure::do_heap_region(G1HeapRegion* hr) {
-  hr->uninstall_group_cardset();
+  hr->uninstall_cset_group();
 
   uint const region_idx = hr->hrm_index();
   if (!_collector->is_compaction_target(region_idx)) {

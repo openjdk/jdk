@@ -71,10 +71,12 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
   // The set of cards in the Java heap
   G1CardSet _card_set;
 
+  size_t _reclaimable_bytes;
   double _gc_efficiency;
-
+  const uint _gid;
 public:
-  G1CSetCandidateGroup(G1CardSetConfiguration* config);
+  G1CSetCandidateGroup(G1CardSetConfiguration* config, uint gid = 0);
+  G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint gid);
   ~G1CSetCandidateGroup() {
     assert(length() == 0, "post condition!");
   }
@@ -86,8 +88,11 @@ public:
 
   G1CardSet* card_set() { return &_card_set; }
 
+  uint gid() const { return _gid; }
+
   void calculate_efficiency();
 
+  size_t liveness() const;
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
@@ -95,7 +100,7 @@ public:
 
   static int compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
-  double gc_efficiency() { return _gc_efficiency; }
+  double gc_efficiency() const { return _gc_efficiency; }
 
   G1HeapRegion* region_at(uint i) const { return _candidates.at(i)._r; }
 
