@@ -887,7 +887,7 @@ void ShenandoahBarrierC2Support::test_gc_state(Node*& ctrl, Node* raw_mem, Node*
   phase->register_new_node(gc_state_cmp,  old_ctrl);
   phase->register_new_node(gc_state_bool, old_ctrl);
 
-  phase->set_ctrl(gc_state_offset, phase->C->root());
+  phase->set_root_as_ctrl(gc_state_offset);
 
   assert(is_gc_state_test(gc_state_iff, flags), "Should match the shape");
 }
@@ -945,7 +945,7 @@ void ShenandoahBarrierC2Support::test_in_cset(Node*& ctrl, Node*& not_cset_ctrl,
   phase->register_control(ctrl,          loop, cset_iff);
   phase->register_control(not_cset_ctrl, loop, cset_iff);
 
-  phase->set_ctrl(cset_addr_ptr, phase->C->root());
+  phase->set_root_as_ctrl(cset_addr_ptr);
 
   phase->register_new_node(raw_val,        old_ctrl);
   phase->register_new_node(cset_idx,       old_ctrl);
