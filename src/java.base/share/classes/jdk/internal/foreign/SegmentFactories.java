@@ -176,8 +176,14 @@ public class SegmentFactories {
         return new OfDouble(offset, base, length, readOnly, bufferScope);
     }
 
-    public static long allocateNative(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
-                                      boolean shouldReserve, boolean init) {
+    public static NativeMemorySegmentImpl allocateNativeSegment(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
+                                                                boolean shouldReserve, boolean init) {
+        long address = SegmentFactories.allocateNativeInternal(byteSize, byteAlignment, sessionImpl, shouldReserve, false);
+        return new NativeMemorySegmentImpl(address, byteSize, false, sessionImpl);
+    }
+
+    private static long allocateNativeInternal(long byteSize, long byteAlignment, MemorySessionImpl sessionImpl,
+                                               boolean shouldReserve, boolean init) {
         ensureInitialized();
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         sessionImpl.checkValidState();
