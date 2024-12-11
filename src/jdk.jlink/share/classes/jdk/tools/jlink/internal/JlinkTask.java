@@ -549,7 +549,6 @@ public class JlinkTask {
      * version.
      */
     private static void checkVersion(ModuleFinder finder) {
-        assert LinkableRuntimeImage.isLinkableRuntime() == false;
         assert finder.find("java.base").isPresent();
 
         // use the version of java.base module, if present, as
