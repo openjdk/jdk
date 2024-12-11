@@ -1548,6 +1548,9 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
   }
 
   try_sink_out_of_loop(n);
+  if (C->failing()) {
+    return;
+  }
 
   try_move_store_after_loop(n);
 }
@@ -1735,7 +1738,11 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
       Node* early_ctrl = compute_early_ctrl(n, n_ctrl);
       if (n_loop->is_member(get_loop(early_ctrl)) && // check that this one can't be hoisted now
           ctrl_of_all_uses_out_of_loop(n, early_ctrl, n_loop)) { // All uses in outer loops!
-        assert(!n->is_Store() && !n->is_LoadStore(), "no node with a side effect");
+        if (n->is_Store() || n->is_LoadStore()) {
+            assert(false, "no node with a side effect");
+            C->record_failure("no node with a side effect");
+            return;
+        }
         Node* outer_loop_clone = nullptr;
         for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin;) {
           Node* u = n->last_out(j); // Clone private computation per use
@@ -1983,6 +1990,9 @@ void PhaseIdealLoop::split_if_with_blocks(VectorSet &visited, Node_Stack &nstack
       if (cnt != 0 && !n->is_Con()) {
         assert(has_node(n), "no dead nodes");
         split_if_with_blocks_post(n);
+        if (C->failing()) {
+          return;
+        }
       }
       if (must_throttle_split_if()) {
         nstack.clear();

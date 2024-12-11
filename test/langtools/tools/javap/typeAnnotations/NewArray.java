@@ -29,7 +29,6 @@ import java.lang.classfile.attribute.*;
  * @test NewArray
  * @bug 6843077
  * @summary Test type annotations on local array are in method's code attribute.
- * @enablePreview
  */
 
 public class NewArray {
