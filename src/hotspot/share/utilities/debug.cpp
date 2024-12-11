@@ -650,7 +650,7 @@ extern "C" DEBUGEXPORT void pns(void* sp, void* fp, void* pc) { // print native 
   frame fr(sp, fp, pc);
   NativeStackPrinter nsp(Thread::current_or_null());
   nsp.print_stack_from_frame(tty, fr, buf, sizeof(buf),
-                  false /* print_source_info */, -1 /* max stack */);
+                             false /* print_source_info */, -1 /* max stack */);
 }
 
 //
