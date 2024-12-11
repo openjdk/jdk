@@ -482,8 +482,13 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     DEBUG_CFLAGS_JDK="-DDEBUG"
 
     if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      DEBUG_CFLAGS_JDK="$DEBUG_CFLAGS_JDK -ftrivial-auto-var-init=pattern"
-      DEBUG_CFLAGS_JVM="-ftrivial-auto-var-init=pattern"
+      INIT_PATTERN_FLAG="-ftrivial-auto-var-init=pattern"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_PATTERN_FLAG],
+          IF_TRUE: [
+            DEBUG_CFLAGS_JDK="$DEBUG_CFLAGS_JDK $INIT_PATTERN_FLAG"
+            DEBUG_CFLAGS_JVM="$INIT_PATTERN_FLAG"
+          ]
+      )
     fi
 
     if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
