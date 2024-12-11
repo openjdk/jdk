@@ -29,9 +29,12 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/enableIf.hpp"
 #include "runtime/orderAccess.hpp"
 #include "threadHelper.inline.hpp"
 #include "unittest.hpp"
+
+#include <limits>
 
 typedef int64_t (*zicond_func)(int64_t cmp1, int64_t cmp2, int64_t dst, int64_t src);
 typedef void (MacroAssembler::*cmov_func)(Register cmp1, Register cmp2, Register dst, Register src);
@@ -287,6 +290,19 @@ TEST_VM(RiscV, cmpxchg_int32_maybe_zacas) {
   }
 }
 
+TEST_VM(RiscV, cmpxchg_uint32_lr_sc) {
+  bool zacas = UseZacas;
+  UseZacas = false;
+  run_plain_cmpxchg_tests<uint32_t, Assembler::uint32>();
+  UseZacas = zacas;
+}
+
+TEST_VM(RiscV, cmpxchg_uint32_maybe_zacas) {
+  if (UseZacas) {
+    run_plain_cmpxchg_tests<uint32_t, Assembler::uint32>();
+  }
+}
+
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_narrow_cmpxchg_tests() {
   CmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg(0, false);
@@ -351,7 +367,7 @@ TESTSIZE next_count(TESTSIZE now, TESTSIZE add) {
     return now + add;
   }
   TESTSIZE diff = std::numeric_limits<TESTSIZE>::max() - now;
-  add -= diff;
+  add -= diff + 1; // add one to the diff for the wrap around.
   return std::numeric_limits<TESTSIZE>::min() + add;
 }
 
@@ -359,20 +375,16 @@ constexpr int64_t PAR_IT_END       = 10000;
 constexpr int64_t NUMBER_THREADS   = 4;
 constexpr int64_t TOTAL_ITERATIONS = NUMBER_THREADS * PAR_IT_END;
 
-template <typename TESTSIZE>
+template <typename TESTSIZE, ENABLE_IF(std::numeric_limits<TESTSIZE>::max() < (std::numeric_limits<TESTSIZE>::min() + TOTAL_ITERATIONS))>
 constexpr TESTSIZE result_count() {
-  if (std::numeric_limits<TESTSIZE>::max() > (std::numeric_limits<TESTSIZE>::min() + TOTAL_ITERATIONS)) {
-    return std::numeric_limits<TESTSIZE>::min() + TOTAL_ITERATIONS;
-  }
-  int64_t range = std::numeric_limits<TESTSIZE>::max();
-  range -= std::numeric_limits<TESTSIZE>::min();
+  int64_t range = std::numeric_limits<TESTSIZE>::max() - std::numeric_limits<TESTSIZE>::min() + 1;
   int64_t rest = TOTAL_ITERATIONS % range;
   return std::numeric_limits<TESTSIZE>::min() + rest;
 }
 
-template<>
-constexpr int64_t result_count<int64_t>() {
-    return std::numeric_limits<int64_t>::min() + TOTAL_ITERATIONS;
+template <typename TESTSIZE, ENABLE_IF(std::numeric_limits<TESTSIZE>::max() > (std::numeric_limits<TESTSIZE>::min() + TOTAL_ITERATIONS))>
+constexpr TESTSIZE result_count() {
+  return std::numeric_limits<TESTSIZE>::min() + TOTAL_ITERATIONS;
 }
 
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
@@ -446,6 +458,21 @@ TEST_VM(RiscV, cmpxchg_int32_concurrent_maybe_zacas) {
   if (UseZacas) {
     run_concurrent_cmpxchg_tests<int32_t, Assembler::int32>();
     run_concurrent_alt_cmpxchg_tests<int32_t, Assembler::int32>();
+  }
+}
+
+TEST_VM(RiscV, cmpxchg_uint32_concurrent_lr_sc) {
+  bool zacas = UseZacas;
+  UseZacas = false;
+  run_concurrent_cmpxchg_tests<uint32_t, Assembler::uint32>();
+  run_concurrent_alt_cmpxchg_tests<uint32_t, Assembler::uint32>();
+  UseZacas = zacas;
+}
+
+TEST_VM(RiscV, cmpxchg_uint32_concurrent_maybe_zacas) {
+  if (UseZacas) {
+    run_concurrent_cmpxchg_tests<uint32_t, Assembler::uint32>();
+    run_concurrent_alt_cmpxchg_tests<uint32_t, Assembler::uint32>();
   }
 }
 
@@ -532,13 +559,13 @@ void run_weak_cmpxchg_tests() {
   WeakCmpxchgTester<TESTSIZE, ASMSIZE> cmpxchg;
   TESTSIZE data = 121;
   TESTSIZE ret = cmpxchg.weak_cmpxchg((intptr_t)&data, 121, 42);
-  ASSERT_EQ(ret, 1);
-  ASSERT_EQ(data, 42);
+  ASSERT_EQ(ret, (TESTSIZE)1);
+  ASSERT_EQ(data, (TESTSIZE)42);
 
   data = 121;
   ret = cmpxchg.weak_cmpxchg((intptr_t)&data, 120, 42);
-  ASSERT_EQ(ret, 0);
-  ASSERT_EQ(data, 121);
+  ASSERT_EQ(ret, (TESTSIZE)0);
+  ASSERT_EQ(data, (TESTSIZE)121);
 }
 
 TEST_VM(RiscV, weak_cmpxchg_int64_lr_sc) {
@@ -564,6 +591,19 @@ TEST_VM(RiscV, weak_cmpxchg_int32_lr_sc) {
 TEST_VM(RiscV, weak_cmpxchg_int32_maybe_zacas) {
   if (UseZacas) {
     run_weak_cmpxchg_tests<int32_t, Assembler::int32>();
+  }
+}
+
+TEST_VM(RiscV, weak_cmpxchg_uint32_lr_sc) {
+  bool zacas = UseZacas;
+  UseZacas = false;
+  run_weak_cmpxchg_tests<uint32_t, Assembler::uint32>();
+  UseZacas = zacas;
+}
+
+TEST_VM(RiscV, weak_cmpxchg_uint32_maybe_zacas) {
+  if (UseZacas) {
+    run_weak_cmpxchg_tests<uint32_t, Assembler::uint32>();
   }
 }
 
