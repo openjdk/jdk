@@ -29,6 +29,13 @@
  * @run main/othervm -XX:CompileCommand=compileonly,*TestLoopPredicationDivZeroCheck*::* -XX:-TieredCompilation -Xbatch TestLoopPredicationDivZeroCheck
  */
 
+/*
+ * The division 2 / i4 requires a non-zero check. As the result is an array access, it will be the input to a range
+ * check. Loop predication will try to move the range check and the division to right before the loop as the division
+ * appears to be invariant (i4 is always 0). However, the division is not truly invariant as it requires the zero
+ * check for i4 that can throw an exception. The bug fixed 8331717 caused the division to still be moved before the
+ * for loop with the range check.
+ */
 public class TestLoopPredicationDivZeroCheck {
     static int iArr[] = new int[100];
 
@@ -44,8 +51,8 @@ public class TestLoopPredicationDivZeroCheck {
         for (int i4 : iArr) {
             i4 = i1;
             try {
-                iArr[0] = 1 / i4;  // Also reproduces with %
-                i4 = iArr[2 / i4]; // Also reproduces with %
+                iArr[0] = 1 / i4;
+                i4 = iArr[2 / i4];
            } catch (ArithmeticException a_e) {
            }
        }
