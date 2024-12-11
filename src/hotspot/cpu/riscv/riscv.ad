@@ -2364,7 +2364,7 @@ encode %{
     Label miss;
     Label done;
     __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
-                                     nullptr, &miss, true /*set_cond_codes:*/);
+                                     nullptr, &miss, /*set_cond_codes*/ true);
     if ($primary) {
       __ mv(result_reg, zr);
     } else {

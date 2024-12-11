@@ -4357,7 +4357,7 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
                                     tmp1_reg, tmp2_reg, tmp3_reg,
                                     tmp4_reg, nullptr);
 
-  // We will Unspill the tmp registers, so we should mark the result_reg to t1.
+  // Move the result to t1 as we are about to unspill the tmp registers.
   mv(t1, result_reg);
 
   // Unspill the tmp. registers:
