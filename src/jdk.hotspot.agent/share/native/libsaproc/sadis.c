@@ -66,6 +66,7 @@
 
 #include "jni_util.h"
 
+DEF_STATIC_Agent_OnLoad
 DEF_STATIC_JNI_OnLoad
 
 /*

@@ -543,27 +543,37 @@ void* os::native_java_library() {
 }
 
 /*
- * Support for finding Agent_On(Un)Load/Attach<_lib_name> if it exists.
+ * Support for finding Agent_On(Un)Load/Attach<_lib_name> if it exists. JDK
+ * code always uses Agent_On(Un)Load/Attach<_lib_name>.
+ *
  * If check_lib == true then we are looking for an
  * Agent_OnLoad_lib_name or Agent_OnAttach_lib_name function to determine if
  * this library is statically linked into the image.
  * If check_lib == false then we will look for the appropriate symbol in the
  * executable if agent_lib->is_static_lib() == true or in the shared library
- * referenced by 'handle'.
+ * referenced by 'handle':
+ * - If agent_lib->is_static_lib() == true, only lookup
+ *   Agent_On(Un)Load/Attach<_lib_name>.
+ * - If agent_lib->is_static_lib() == false, also lookup Agent_On(Un)Load/Attach
+ *   when Agent_On(Un)Load/Attach<_lib_name> cannot be found.
  */
 void* os::find_agent_function(JvmtiAgent *agent_lib, bool check_lib, const char *sym) {
   assert(agent_lib != nullptr, "sanity check");
   void *handle = agent_lib->os_lib();
   void *entryName = nullptr;
 
-  // If checking then use the agent name otherwise test is_static_lib() to
-  // see how to process this lookup
-  const char *lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : nullptr);
+  // Lookup using Agent_On(Un)Load/Attach<_lib_name>.
+  const char *lib_name = agent_lib->name();
 
   char* agent_function_name = build_agent_function_name(sym, lib_name, agent_lib->is_absolute_path());
   if (agent_function_name != nullptr) {
     entryName = dll_lookup(handle, agent_function_name);
     FREE_C_HEAP_ARRAY(char, agent_function_name);
+  }
+  if (entryName == nullptr && !check_lib && !agent_lib->is_static_lib()) {
+    // If 'entryName' is NULL and not checking, also try lookup using
+    // Agent_On(Un)Load/Attach for dynamically linked agent library.
+    entryName = dll_lookup(handle, sym);
   }
   return entryName;
 }
