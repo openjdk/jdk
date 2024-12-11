@@ -830,17 +830,15 @@ void InstanceKlass::initialize_with_aot_initialized_mirror(TRAPS) {
 
 #ifdef ASSERT
   {
-    Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, THREAD);
+    RecursiveLocker rl(_init_lock, THREAD);
     assert(!is_initialized(), "sanity");
     assert(!is_being_initialized(), "sanity");
     assert(!is_in_error_state(), "sanity");
   }
 #endif
 
-  set_init_thread(THREAD);
   AOTClassInitializer::call_runtime_setup(THREAD, this);
-  set_initialization_state_and_notify(fully_initialized, CHECK);
+  set_initialization_thread_and_state(fully_initialized, THREAD);
 }
 #endif
 

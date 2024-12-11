@@ -506,7 +506,7 @@ public:
                                        ClassLoaderData* loader_data,
                                        TRAPS);
 
-  JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
+  JavaThread* init_thread() const { return Atomic::load(&_init_thread); }
   const char* init_thread_name();
 
  public:
@@ -520,6 +520,7 @@ public:
   bool is_reentrant_initialization(Thread *thread)  { return thread == _init_thread; }
   ClassState  init_state() const           { return Atomic::load_acquire(&_init_state); }
   const char* init_state_name() const;
+  bool is_init_thread(JavaThread* thread) const { return init_thread() == thread; }
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
 
   // is this a sealed class
