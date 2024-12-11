@@ -1222,13 +1222,15 @@ private:
 
 class ShenandoahPrepareForUpdateRefs : public HandshakeClosure {
 public:
-  explicit ShenandoahPrepareForUpdateRefs(const ShenandoahGCStatePropagator& propagator) :
+  explicit ShenandoahPrepareForUpdateRefs(char gc_state) :
     HandshakeClosure("Shenandoah Prepare for Update Refs"),
-    _retire(ResizeTLAB), _propagator(propagator) {}
+    _retire(ResizeTLAB), _propagator(gc_state) {}
 
   void do_thread(Thread* thread) override {
     _propagator.do_thread(thread);
-    _retire.do_thread(thread);
+    if (ShenandoahThreadLocalData::gclab(thread) != nullptr) {
+      _retire.do_thread(thread);
+    }
   }
 private:
   ShenandoahRetireGCLABClosure _retire;
@@ -1247,25 +1249,11 @@ void ShenandoahHeap::concurrent_prepare_for_update_refs() {
   _gc_state.set_cond(WEAK_ROOTS, false);
   _gc_state.set_cond(UPDATEREFS, true);
 
-  ShenandoahGCStatePropagator propagate_gc_state(_gc_state.raw_value());
-  ShenandoahPrepareForUpdateRefs prepare_for_update_refs(propagate_gc_state);
+  // This will propagate the gc state and retire gclabs and plabs for threads that require it.
+  ShenandoahPrepareForUpdateRefs prepare_for_update_refs(_gc_state.raw_value());
 
-  // The control thread handles transferring the reference processing list and may go through
-  // the LRB. It must therefore also keep the gc state locally.
-  prepare_for_update_refs.do_thread(control_thread());
-
-  // The VM thread will run barriers during a full GC or a degenerated cycle. It may also go
-  // through barriers for certain diagnostic commands that run during concurrent phases.
-  propagate_gc_state.do_thread(VMThread::vm_thread());
-
-  // Workers need gclabs and state updated
-  workers()->threads_do(&prepare_for_update_refs);
-
-  // Safepoint workers may be asked to evacuate objects if they are visiting oops to create a heap dump
-  // during a concurrent evacuation phase. These threads will _not_ be used during a degenerated cycle.
-  if (safepoint_workers() != nullptr) {
-    safepoint_workers()->threads_do(&prepare_for_update_refs);
-  }
+  // The handshake won't touch non-java threads, so do those separately.
+  Threads::non_java_threads_do(&prepare_for_update_refs);
 
   // A degenerated cycle won't attempt to use LABs from the mutator threads
   Handshake::execute(&prepare_for_update_refs);
