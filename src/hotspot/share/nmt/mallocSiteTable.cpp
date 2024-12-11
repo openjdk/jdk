@@ -26,6 +26,8 @@
 #include "memory/allocation.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;
@@ -41,9 +43,7 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = n
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
-
-  ALLOW_C_FUNCTION(::calloc,
-                   _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry*));)
+  _table = (MallocSiteHashtableEntry**)permit_forbidden_functions::calloc(table_size, sizeof(MallocSiteHashtableEntry*));
   if (_table == nullptr) {
     return false;
   }

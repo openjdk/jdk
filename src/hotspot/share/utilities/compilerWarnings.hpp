@@ -86,25 +86,58 @@
 #define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED
 #endif
 
+//////////////////////////////////////////////////////////////////////////////
 // Support warnings for use of certain C functions, except where explicitly
 // permitted.
-//
-// FORBID_C_FUNCTION(signature, alternative)
-// - signature: the function that should not normally be used.
-// - alternative: a string that may be used in a warning about a use, typically
-//   suggesting an alternative.
-//
-// ALLOW_C_FUNCTION(name, ... using statement ...)
-// - name: the name of a forbidden function whose use is permitted in statement.
-// - statement: a use of the otherwise forbidden function.  Using a variadic
-//   tail allows the statement to contain non-nested commas.
 
-#ifndef FORBID_C_FUNCTION
-#define FORBID_C_FUNCTION(signature, alternative)
+// FORBID_C_FUNCTION(Signature, Alternative)
+// - Signature: the function that should not normally be used.
+// - Alternative: a string literal that may be used in a warning about a use,
+//   often suggesting an alternative.
+// Declares the C-linkage function designated by Signature to be deprecated,
+// using the `deprecated` attribute with Alternative as an argument.
+//
+// The variants with IMPORTED in the name are to deal with Windows requirements.
+// See the Visual Studio definitions for more details.  The default definitions
+// provided here don't do anything additional and just expand to a non-IMPORTED
+// variant.
+//
+// FORBID_NORETURN_C_FUNCTION deals with a clang issue.  See the clang
+// definition for more details.  The default definition provided here expands
+// to the non-NORETURN variant with a `[[noreturn]]` attribute added to the
+// signature.
+#define FORBID_C_FUNCTION(Signature, Alternative) \
+  extern "C" { [[deprecated(Alternative)]] Signature; }
+
+#ifndef FORBID_IMPORTED_C_FUNCTION
+#define FORBID_IMPORTED_C_FUNCTION(Signature, Alternative) \
+  FORBID_C_FUNCTION(Signature, Alternative)
 #endif
 
-#ifndef ALLOW_C_FUNCTION
-#define ALLOW_C_FUNCTION(name, ...) __VA_ARGS__
+#ifndef FORBID_NORETURN_C_FUNCTION
+#define FORBID_NORETURN_C_FUNCTION(Signature, Alternative) \
+  FORBID_C_FUNCTION([[noreturn]] Signature, Alternative)
 #endif
+
+#ifndef FORBID_IMPORTED_NORETURN_C_FUNCTION
+#define FORBID_IMPORTED_NORETURN_C_FUNCTION(Signature, Alternative) \
+  FORBID_NORETURN_C_FUNCTION(Signature, Alternative)
+#endif
+
+// A BEGIN/END_ALLOW_FORBIDDEN_FUNCTIONS pair establishes a scope in which the
+// deprecation warnings used to forbid the use of certain functions are
+// suppressed.  These macros are not intended for warning suppression at
+// individual call sites; see permitForbiddenFunctions.hpp for the approach
+// taken for that where needed.  Rather, these are used to suppress warnings
+// from 3rd-party code included by HotSpot, such as the gtest framework and
+// C++ Standard Library headers, which may refer to functions that are
+// disallowed in other parts of HotSpot.  They are also used in the
+// implementation of the "permit" mechanism.
+#define BEGIN_ALLOW_FORBIDDEN_FUNCTIONS         \
+  PRAGMA_DIAG_PUSH                              \
+  PRAGMA_DEPRECATED_IGNORED
+
+#define END_ALLOW_FORBIDDEN_FUNCTIONS           \
+  PRAGMA_DIAG_POP
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_HPP

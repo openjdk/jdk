@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #ifndef UNITTEST_HPP
 #define UNITTEST_HPP
 
+#include "utilities/globalDefinitions.hpp"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -49,8 +50,10 @@
 #undef F2
 
 #include "utilities/vmassert_uninstall.hpp"
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 
 #ifdef UNDEFINED_Log

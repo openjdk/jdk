@@ -70,32 +70,19 @@
 #define PRAGMA_ZERO_AS_NULL_POINTER_CONSTANT_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wzero-as-null-pointer-constant")
 
-#if (__GNUC__ >= 10)
-// TODO: Re-enable warning attribute for Clang once
-// https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
-// || (defined(__clang_major__) && (__clang_major__ >= 14))
+#define PRAGMA_DEPRECATED_IGNORED \
+  PRAGMA_DISABLE_GCC_WARNING("-Wdeprecated-declarations")
 
-// Use "warning" attribute to detect uses of "forbidden" functions.
-//
-// Note: The warning attribute is available since GCC 9, but disabling pragmas
-// does not work reliably in ALLOW_C_FUNCTION. GCC 10+ and up work fine.
-//
-// Note: _FORTIFY_SOURCE transforms calls to certain functions into calls to
-// associated "checking" functions, and that transformation seems to occur
-// *before* the attribute check.  We use fortification in fastdebug builds,
-// so uses of functions that are both forbidden and fortified won't cause
-// forbidden warnings in such builds.
-#define FORBID_C_FUNCTION(signature, alternative) \
-  extern "C" __attribute__((__warning__(alternative))) signature;
-
-// Disable warning attribute over the scope of the affected statement.
-// The name serves only to document the intended function.
-#define ALLOW_C_FUNCTION(name, ...)                     \
-  PRAGMA_DIAG_PUSH                                      \
-  PRAGMA_DISABLE_GCC_WARNING("-Wattribute-warning")     \
-  __VA_ARGS__                                           \
-  PRAGMA_DIAG_POP
-
-#endif // gcc10+
+// This variant of FORBID_C_FUNCTION overrides the default variant.  Clang
+// seems to make a distinction between [[noreturn]] and the old-style noreturn
+// attribute.  For example, if <stdlib.h> has already been included, using
+// [[noreturn]] when forbidding exit(int) gives "error: 'noreturn' attribute
+// does not appear on the first declaration", with the previous declaration
+// reported as being "void exit(int) __dead2;". __dead2 is an old-style
+// noreturn attribute.
+#ifdef __clang__
+#define FORBID_NORETURN_C_FUNCTION(Signature, Alternative) \
+  FORBID_C_FUNCTION(__attribute__((__noreturn__)) Signature, Alternative)
+#endif // __clang__
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP
