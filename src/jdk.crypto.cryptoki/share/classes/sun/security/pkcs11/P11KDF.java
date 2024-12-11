@@ -43,7 +43,7 @@ final class P11KDF extends KDFSpi {
     private final Token token;
     private final P11SecretKeyFactory.HKDFKeyInfo svcKi;
     private final long hmacMechanism;
-    private final SecretKey EMPTY_KEY = new SecretKey() {
+    private static final SecretKey EMPTY_KEY = new SecretKey() {
         @Override
         public String getAlgorithm() {
             return "Generic";
