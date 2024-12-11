@@ -1195,9 +1195,9 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
 
   const TypeClass* type_dividend = t1->cast<TypeClass>();
   if (type_dividend->is_con() && type_divisor->is_con()) {
-    Unsigned au = static_cast<Unsigned>(type_dividend->get_con());
-    Unsigned bu = static_cast<Unsigned>(type_divisor->get_con());
-    return TypeClass::make(static_cast<Signed>(au % bu));
+    Unsigned dividend = static_cast<Unsigned>(type_dividend->get_con());
+    Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con());
+    return TypeClass::make(static_cast<Signed>(dividend % divisor));
   }
 
   return bot;
