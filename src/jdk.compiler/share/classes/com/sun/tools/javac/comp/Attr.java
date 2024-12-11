@@ -2594,8 +2594,7 @@ public class Attr extends JCTree.Visitor {
                     attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
                 }
 
-                if (methName == names._super &&
-                        tree.meth.hasTag(IDENT)) {
+                if (tree.meth.hasTag(IDENT)) {
                     // non-qualified super(...) call; check whether explicit constructor
                     // invocation is well-formed. If the super class is an inner class,
                     // make sure that an appropriate implicit qualifier exists. If the super
