@@ -23,6 +23,8 @@
 
 package compiler.lib.generators;
 
+import java.lang.foreign.*;
+
 /**
  * Define interface of int generators.
  */
@@ -44,5 +46,23 @@ public abstract class IntGenerator {
      */
     public final int nextInt(int hi) {
         return nextInt(0, hi);
+    }
+
+    /**
+     * Fill the memory segments with ints in range [lo, hi], where the bounds are inclusive,
+     * Fill it with ints from the generators distribution.
+     */
+    public void fill(MemorySegment ms, int lo, int hi) {
+        for (long i = 0; i < ms.byteSize() / 4; i++ ) {
+            ms.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * i, nextInt(lo, hi));
+        }
+    }
+
+    /**
+     * Fill the array with ints in range [lo, hi], where the bounds are inclusive,
+     * Fill it with ints from the generators distribution.
+     */
+    public void fill(int[] a, int lo, int hi) {
+        fill(MemorySegment.ofArray(a), lo, hi);
     }
 }

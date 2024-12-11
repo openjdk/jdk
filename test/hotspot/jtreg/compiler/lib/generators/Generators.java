@@ -40,10 +40,13 @@ public final class Generators {
      * Randomly pick an int generator.
      */
     public static IntGenerator ints() {
-        switch(RANDOM.nextInt(2)) {
+        switch(RANDOM.nextInt(4)) {
             // TODO add more
             case 0  -> { return new UniformIntGenerator(); }
-            default -> { return new UniformIntGenerator(); }
+            case 1  -> { return new SpecialIntGenerator(0); }
+            case 2  -> { return new SpecialIntGenerator(2); }
+            case 3  -> { return new SpecialIntGenerator(16); }
+            default -> { throw new RuntimeException("impossible"); }
         }
     }
 }

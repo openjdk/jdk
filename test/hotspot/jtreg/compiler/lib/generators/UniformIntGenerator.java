@@ -40,7 +40,7 @@ public final class UniformIntGenerator extends IntGenerator {
             if (lo == Integer.MIN_VALUE) {
                 return RANDOM.nextInt();
             }
-            return RANDOM.nextInt(lo-1, hi) + 1;
+            return RANDOM.nextInt(lo - 1, hi) + 1;
         }
         return RANDOM.nextInt(lo, hi + 1);
     }
