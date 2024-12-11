@@ -429,7 +429,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (is_dumping_static_archive()) {
-    if (!mode_flag_cmd_line JVMCI_ONLY(&& !UseJVMCICompiler && !UseGraalJIT && !EnableJVMCIProduct)) {
+    if (!mode_flag_cmd_line JVMCI_ONLY(&& !UseJVMCICompiler && !UseGraalJIT && !EnableJVMCIProduct && !EnableJVMCI)) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for
       // generating deterministic archives when building the JDK.
       //
