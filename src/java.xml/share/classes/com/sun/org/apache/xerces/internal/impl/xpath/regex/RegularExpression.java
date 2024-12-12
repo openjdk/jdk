@@ -704,11 +704,13 @@ public class RegularExpression implements java.io.Serializable {
      */
     public boolean matches(char[] target, int start, int end, Match match) {
 
-        synchronized (this) {
-            if (this.operations == null)
-                this.prepare();
-            if (this.context == null)
-                this.context = new Context();
+        if (this.operations == null || this.context == null) {
+            synchronized (this) {
+                if (this.operations == null)
+                    this.prepare();
+                if (this.context == null)
+                    this.context = new Context();
+            }
         }
         Context con = null;
         synchronized (this.context) {
@@ -889,11 +891,13 @@ public class RegularExpression implements java.io.Serializable {
      */
     public boolean matches(String  target, int start, int end, Match match) {
 
-        synchronized (this) {
-            if (this.operations == null)
-                this.prepare();
-            if (this.context == null)
-                this.context = new Context();
+        if (this.operations == null || this.context == null) {
+            synchronized (this) {
+                if (this.operations == null)
+                    this.prepare();
+                if (this.context == null)
+                    this.context = new Context();
+            }
         }
         Context con = null;
         synchronized (this.context) {
@@ -1569,11 +1573,13 @@ public class RegularExpression implements java.io.Serializable {
 
 
 
-        synchronized (this) {
-            if (this.operations == null)
-                this.prepare();
-            if (this.context == null)
-                this.context = new Context();
+        if (this.operations == null || this.context == null) {
+            synchronized (this) {
+                if (this.operations == null)
+                    this.prepare();
+                if (this.context == null)
+                    this.context = new Context();
+            }
         }
         Context con = null;
         synchronized (this.context) {
@@ -1738,9 +1744,9 @@ public class RegularExpression implements java.io.Serializable {
     boolean hasBackReferences = false;
 
     transient int minlength;
-    transient Op operations = null;
+    transient volatile Op operations = null;
     transient int numberOfClosures;
-    transient Context context = null;
+    transient volatile Context context = null;
     transient RangeToken firstChar = null;
 
     transient String fixedString = null;
