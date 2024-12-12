@@ -38,6 +38,9 @@ hotspot_all_no_apps = \
 hotspot_compiler = \
   compiler
 
+hotspot_compiler_resourcehogs = \
+  resourcehogs/compiler
+
 hotspot_gc = \
   gc
 
@@ -160,7 +163,6 @@ hotspot_slow_compiler = \
   compiler/gcbarriers/PreserveFPRegistersTest.java \
   compiler/memoryinitialization/ZeroTLABTest.java \
   compiler/classUnloading/methodUnloading/TestOverloadCompileQueues.java \
-  resourcehogs/compiler \
   :hotspot_compiler_arraycopy
 
 tier1_compiler_1 = \
@@ -250,18 +252,7 @@ tier2_compiler = \
   -:hotspot_slow_compiler
 
 tier3_compiler = \
-  applications/ctw/modules \
-  compiler/c2/ \
-  compiler/ciReplay/ \
-  compiler/compilercontrol/ \
-  compiler/debug/ \
-  compiler/oracle/ \
-  compiler/print/ \
-  compiler/relocations/ \
-  compiler/tiered/ \
-  compiler/vectorapi/ \
-  compiler/whitebox/ \
-  :hotspot_slow_compiler \
+  :hotspot_compiler \
   -:tier1_compiler \
   -:tier2_compiler
 
@@ -281,6 +272,9 @@ ctw_3 = \
   applications/ctw/modules/jdk_compiler.java \
   applications/ctw/modules/jdk_localedata.java \
   applications/ctw/modules/jdk_localedata_2.java
+
+tier2_ctw = \
+  :ctw_1
 
 tier1_gc = \
   :tier1_gc_1 \
@@ -634,6 +628,7 @@ tier2 = \
   :hotspot_tier2_runtime_platform_agnostic \
   :hotspot_tier2_serviceability \
   :tier2_compiler \
+  :tier2_ctw \
   :tier2_gc_epsilon \
   :tier2_gc_shenandoah
 
