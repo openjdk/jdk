@@ -73,7 +73,7 @@
  * @spec https://www.rfc-editor.org/info/rfc7540
  *      RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
  * @spec https://www.rfc-editor.org/info/rfc2616
- *      RFC 2616: Hypertext Transfer Protocol (HTTP/1.1)
+ *      RFC 2616: Hypertext Transfer Protocol -- HTTP/1.1
  * @spec https://www.rfc-editor.org/info/rfc6455
  *      RFC 6455: The WebSocket Protocol
  *
