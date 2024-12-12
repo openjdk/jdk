@@ -466,5 +466,20 @@ public class TestVerify {
             Verify.checkEQ(new Object[] {mI}, new Object[] {mC});
             throw new RuntimeException("Should have thrown");
         } catch (VerifyException e) {}
+
+        // Verify boxed primitives:
+        Byte bb1 = 42;
+        Byte bb2 = 42;
+        Byte bb3 = 11;
+
+        Verify.checkEQ(new Object[] {(byte)42}, new Object[] {(byte)42});
+        Verify.checkEQ(new Object[] {(byte)42}, new Object[] {bb1});
+        Verify.checkEQ(new Object[] {bb1},      new Object[] {bb2});
+
+        // Second level value mismatch: 42 vs 11
+        try {
+            Verify.checkEQ(new Object[] {bb1},      new Object[] {bb3});
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
     }
 }
