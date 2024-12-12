@@ -231,20 +231,22 @@ char* ClassLoaderExt::get_class_path_attr(const char* jar_path, char* manifest, 
   return found;
 }
 
-bool ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry) {
+void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* entry) {
   ResourceMark rm(current);
   jint manifest_size;
   char* manifest = read_manifest(current, entry, &manifest_size);
 
   if (manifest == nullptr) {
-    return false;
+    return;
   }
 
   if (strstr(manifest, "Extension-List:") != nullptr) {
     vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", entry->name()));
   }
 
-  bool is_multi_release = (strstr(manifest, "Multi-Release: true") != nullptr);
+  if (strstr(manifest, "Multi-Release: true") != nullptr) {
+    entry->set_multi_release_jar();
+  }
 
   char* cp_attr = get_class_path_attr(entry->name(), manifest, manifest_size);
 
@@ -301,7 +303,7 @@ bool ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
       file_start = file_end;
     }
   }
-  return is_multi_release;
+  return;
 }
 
 void ClassLoaderExt::setup_search_paths(JavaThread* current) {

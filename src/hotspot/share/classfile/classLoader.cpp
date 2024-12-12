@@ -854,10 +854,7 @@ bool ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   }
 
   if (entry->is_jar_file()) {
-    bool is_multi_release = ClassLoaderExt::process_jar_manifest(current, entry);
-    if (is_multi_release) {
-      entry->set_multi_release_jar();
-    }
+    ClassLoaderExt::process_jar_manifest(current, entry);
   }
 #endif
   return true;
