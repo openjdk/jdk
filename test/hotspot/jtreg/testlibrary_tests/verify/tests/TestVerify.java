@@ -72,30 +72,18 @@ public class TestVerify {
         Verify.checkEQ(MemorySegment.ofArray(c), MemorySegment.ofArray(a));
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
 
         c[RANDOM.nextInt(c.length)] = 1;
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
     }
 
 
@@ -115,30 +103,18 @@ public class TestVerify {
         Verify.checkEQ(MemorySegment.ofArray(c), MemorySegment.ofArray(a));
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
 
         c[RANDOM.nextInt(c.length)] = 1;
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
     }
 
 
@@ -158,30 +134,18 @@ public class TestVerify {
         Verify.checkEQ(MemorySegment.ofArray(c), MemorySegment.ofArray(a));
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
 
         c[RANDOM.nextInt(c.length)] = 1;
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
     }
 
 
@@ -201,30 +165,18 @@ public class TestVerify {
         Verify.checkEQ(MemorySegment.ofArray(c), MemorySegment.ofArray(a));
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
 
         c[RANDOM.nextInt(c.length)] = 1;
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
     }
 
 
@@ -244,30 +196,18 @@ public class TestVerify {
         Verify.checkEQ(MemorySegment.ofArray(c), MemorySegment.ofArray(a));
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
 
         c[RANDOM.nextInt(c.length)] = 1;
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
     }
 
 
@@ -287,30 +227,18 @@ public class TestVerify {
         Verify.checkEQ(MemorySegment.ofArray(c), MemorySegment.ofArray(a));
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
 
         c[RANDOM.nextInt(c.length)] = 1;
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
     }
 
 
@@ -330,30 +258,18 @@ public class TestVerify {
         Verify.checkEQ(MemorySegment.ofArray(c), MemorySegment.ofArray(a));
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
 
         c[RANDOM.nextInt(c.length)] = 1;
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(MemorySegment.ofArray(a), MemorySegment.ofArray(c));
     }
 
     public static void testNativeMemorySegment() {
@@ -367,28 +283,19 @@ public class TestVerify {
         Verify.checkEQ(c, a);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(a, b);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, b);
 
         c.set(ValueLayout.JAVA_BYTE, RANDOM.nextLong(c.byteSize()), (byte)1);
 
         // Value mismatch
-        try {
-            Verify.checkEQ(a, c);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(a, c);
     }
 
     public static void testRecursive() {
         Verify.checkEQ(null, null);
 
         // Null mismatch
-        try {
-            Verify.checkEQ(42, null);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(42, null);
 
         byte[] a = new byte[1000];
         int[]  b = new int[1000];
@@ -408,36 +315,21 @@ public class TestVerify {
         Verify.checkEQ(o4, o6);
 
         // Size mismatch
-        try {
-            Verify.checkEQ(o1, o2);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(o1, o2);
 
         // First level value mismatch: a vs null on position 2
-        try {
-            Verify.checkEQ(o2, o3);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(o2, o3);
 
         // First level class mismatch: byte[] vs int[]
-        try {
-            Verify.checkEQ(o2, o4);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(o2, o4);
 
         // Second level length mismatch on arrays b and c.
-        try {
-            Verify.checkEQ(o4, o5);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(o4, o5);
 
         d[RANDOM.nextInt(d.length)] = 1;
 
         // Second level value mismatch between b and d.
-        try {
-            Verify.checkEQ(o4, o6);
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(o4, o6);
 
         // Now test all primitive array types.
         byte[]   aB = new byte[100];
@@ -451,10 +343,7 @@ public class TestVerify {
         Verify.checkEQ(new Object[] {aB, aC, aS, aI, aL, aF, aD}, new Object[] {aB, aC, aS, aI, aL, aF, aD});
 
         // First level class mismatch: char[] vs short[]
-        try {
-            Verify.checkEQ(new Object[] {aC}, new Object[] {aS});
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(new Object[] {aC}, new Object[] {aS});
 
         // Verify MemorySegment
         MemorySegment mC = MemorySegment.ofArray(aC);
@@ -463,17 +352,11 @@ public class TestVerify {
         Verify.checkEQ(new Object[] {mS}, new Object[] {mS});
 
         // Second level type mismatch: backing type short[] vs char[]
-        try {
-            Verify.checkEQ(new Object[] {mC}, new Object[] {mS});
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(new Object[] {mC}, new Object[] {mS});
 
         // Second level type mismatch: backing type int[] vs char[]
         MemorySegment mI = MemorySegment.ofArray(aI);
-        try {
-            Verify.checkEQ(new Object[] {mI}, new Object[] {mC});
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(new Object[] {mI}, new Object[] {mC});
 
         // Verify boxed primitives:
         Byte bb1 = 42;
@@ -485,10 +368,7 @@ public class TestVerify {
         Verify.checkEQ(new Object[] {bb1},      new Object[] {bb2});
 
         // Second level value mismatch: 42 vs 11
-        try {
-            Verify.checkEQ(new Object[] {bb1},      new Object[] {bb3});
-            throw new RuntimeException("Should have thrown");
-        } catch (VerifyException e) {}
+        checkNE(new Object[] {bb1},      new Object[] {bb3});
 
         Verify.checkEQ((byte)42,   (byte)42);
         Verify.checkEQ((short)42,  (short)42);
@@ -497,5 +377,22 @@ public class TestVerify {
         Verify.checkEQ((long)42,   (long)42);
         Verify.checkEQ((float)42,  (float)42);
         Verify.checkEQ((double)42, (double)42);
+
+        // Boxed type mismatch: float vs int
+        checkNE((int)42, (float)42);
+
+        // Boxed value mismatch.
+        for (int i = 0; i < 10; i++) {
+            byte b1 = (byte)RANDOM.nextInt();
+            byte b2 = (byte)(b1 ^ (1 << RANDOM.nextInt(8)));
+            checkNE(b1, b2);
+        }
+    }
+
+    public static void checkNE(Object a, Object b) {
+         try {
+            Verify.checkEQ(a, b);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
     }
 }

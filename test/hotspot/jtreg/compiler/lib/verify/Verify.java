@@ -62,7 +62,8 @@ public final class Verify {
         Class ca = a.getClass();
         Class cb = b.getClass();
         if (ca != cb) {
-            System.err.println("ERROR: Verify.checkEQ failed: class mismatch");
+            System.err.println("ERROR: Verify.checkEQ failed: class mismatch.");
+            System.err.println("       " + ca.getName() + " vs " + cb.getName());
             print(a, "a " + context);
             print(b, "b " + context);
             throw new VerifyException("Object array class mismatch.");
