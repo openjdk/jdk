@@ -28,7 +28,7 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/rbTree.hpp"
+#include "utilities/rbTree.inline.hpp"
 
 
 class RBTreeTest : public testing::Test {
@@ -139,9 +139,9 @@ public:
 
     Node* n = nullptr;
     auto test = [&](float f) {
-      EXPECT_EQ(nullptr, rbtree.find(rbtree._root, f));
+      EXPECT_EQ(nullptr, rbtree.find(f));
       rbtree.upsert(f, Empty{});
-      Node* n = rbtree.find(rbtree._root, f);
+      Node* n = rbtree.find_node(rbtree._root, f);
       EXPECT_NE(nullptr, n);
       EXPECT_EQ(f, n->key());
     };
@@ -310,7 +310,7 @@ public:
     // Create random values
     for (int i = 0; i < size; i++) {
       int r = os::random() % size;
-      allocations.append(r % size);
+      allocations.append(r);
     }
 
     // Insert ~half of the values
