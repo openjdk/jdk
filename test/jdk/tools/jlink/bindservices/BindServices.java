@@ -69,14 +69,12 @@ public class BindServices {
     private static String[] modules = new String[] {"m1", "m2", "m3"};
 
 
-    private static boolean isApplicable() {
-        if (!JMODS_EXIST) {
-            if (!LINKABLE_RUNTIME) {
-                System.err.println("Test skipped. Not a linkable runtime and no JMODs");
-                return false;
-            }
+    private static boolean isExplodedJDKImage() {
+        if (!JMODS_EXIST && !LINKABLE_RUNTIME) {
+            System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+            return true;
         }
-        return true;
+        return false;
     }
 
     /*
@@ -84,7 +82,7 @@ public class BindServices {
      */
     @BeforeTest
     public void compileAll() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
@@ -95,7 +93,7 @@ public class BindServices {
 
     @Test
     public void noServiceBinding() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("noServiceBinding");
 
@@ -109,7 +107,7 @@ public class BindServices {
 
     @Test
     public void fullServiceBinding() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("fullServiceBinding");
 
@@ -128,7 +126,7 @@ public class BindServices {
 
     @Test
     public void testVerbose() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("verbose");
 
@@ -159,7 +157,7 @@ public class BindServices {
 
     @Test
     public void testVerboseAndNoBindServices() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         Path dir = Paths.get("verboseNoBind");
 

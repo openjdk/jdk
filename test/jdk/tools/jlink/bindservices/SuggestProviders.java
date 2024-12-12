@@ -69,14 +69,12 @@ public class SuggestProviders {
     private static String[] modules = new String[] {"m1", "m2", "m3"};
 
 
-    private static boolean isApplicable() {
-        if (!JMODS_EXIST) {
-            if (!LINKABLE_RUNTIME) {
-                System.err.println("Test skipped. Not a linkable runtime and no JMODs");
-                return false;
-            }
+    private static boolean isExplodedJDKImage() {
+        if (!JMODS_EXIST && !LINKABLE_RUNTIME) {
+            System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+            return true;
         }
-        return true;
+        return false;
     }
 
     /*
@@ -84,7 +82,7 @@ public class SuggestProviders {
      */
     @BeforeTest
     public void compileAll() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
@@ -134,7 +132,7 @@ public class SuggestProviders {
 
     @Test
     public void suggestProviders() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output = JLink.run("--module-path", MODULE_PATH,
                                         "--suggest-providers").output();
@@ -154,7 +152,7 @@ public class SuggestProviders {
      */
     @Test
     public void observableModules() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output = JLink.run("--module-path", MODULE_PATH,
                                         "--add-modules", "m1",
@@ -174,7 +172,7 @@ public class SuggestProviders {
      */
     @Test
     public void limitModules() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output = JLink.run("--module-path", MODULE_PATH,
                                         "--limit-modules", "m1",
@@ -193,7 +191,7 @@ public class SuggestProviders {
 
     @Test
     public void providersForServices() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -212,7 +210,7 @@ public class SuggestProviders {
 
     @Test
     public void unusedService() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -230,7 +228,7 @@ public class SuggestProviders {
 
     @Test
     public void nonExistentService() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -245,7 +243,7 @@ public class SuggestProviders {
 
     @Test
     public void noSuggestProviders() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -259,7 +257,7 @@ public class SuggestProviders {
 
     @Test
     public void suggestTypeNotRealProvider() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,
@@ -277,7 +275,7 @@ public class SuggestProviders {
 
     @Test
     public void addNonObservableModule() throws Throwable {
-        if (!isApplicable()) return;
+        if (isExplodedJDKImage()) return;
 
         List<String> output =
             JLink.run("--module-path", MODULE_PATH,

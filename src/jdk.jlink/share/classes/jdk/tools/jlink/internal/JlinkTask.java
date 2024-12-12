@@ -373,13 +373,13 @@ public class JlinkTask {
         if (options.addMods.contains(ALL_MODULE_PATH) && options.modulePath.isEmpty()) {
             throw taskHelper.newBadArgs("err.no.module.path");
         }
-
         List<Path> originalModulePath = new ArrayList<>(options.modulePath);
-        ModuleFinder appModulePathFinder = createFinderFromPath(options.modulePath);
-        ModuleFinder finder = appModulePathFinder;
+        ModuleFinder appModuleFinder = newModuleFinder(options.modulePath);
+        ModuleFinder finder = appModuleFinder;
+
         boolean isLinkFromRuntime = false;
-        if (!appModulePathFinder.find("java.base").isPresent()) {
-            // If the application module path finder doesn't contain the
+        if (!appModuleFinder.find("java.base").isPresent()) {
+            // If the application module finder doesn't contain the
             // java.base module we have one of two cases:
             // 1. A custom module is being linked into a runtime, but the JDK
             //    modules have not been provided on the module path.
@@ -392,24 +392,33 @@ public class JlinkTask {
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
                 options.modulePath.add(defModPath);
-                finder = createFinderFromPath(options.modulePath);
+                finder = newModuleFinder(options.modulePath);
             }
             // We've just added the default module path ('jmods'). If we still
             // don't find java.base, we must resolve JDK modules from the
             // current run-time image.
             if (!finder.find("java.base").isPresent()) {
+                // If we don't have a linkable run-time image this is an error
+                if (!LinkableRuntimeImage.isLinkableRuntime()) {
+                    throw taskHelper.newBadArgs("err.runtime.link.not.linkable.runtime");
+                }
                 isLinkFromRuntime = true;
                 // JDK modules come from the system module path
-                finder = ModuleFinder.compose(ModuleFinder.ofSystem(), appModulePathFinder);
+                finder = ModuleFinder.compose(ModuleFinder.ofSystem(), appModuleFinder);
             }
+        }
+
+        // Sanity check version if we use JMODs
+        if (!isLinkFromRuntime) {
+            checkJavaBaseVersion(finder);
         }
 
         // Determine the roots set
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
-                // all observable modules in app module path are roots
-                Set<String> initialRoots = appModulePathFinder.findAll()
+                // all observable modules in the app module path are roots
+                Set<String> initialRoots = appModuleFinder.findAll()
                         .stream()
                         .map(ModuleReference::descriptor)
                         .map(ModuleDescriptor::name)
@@ -418,8 +427,8 @@ public class JlinkTask {
                 // Error if no module is found on the app module path
                 if (initialRoots.isEmpty()) {
                     String modPath = originalModulePath.stream()
-                                                       .map(a -> a.toString())
-                                                       .collect(Collectors.joining(","));
+                            .map(a -> a.toString())
+                            .collect(Collectors.joining(","));
                     throw taskHelper.newBadArgs("err.empty.module.path", modPath);
                 }
 
@@ -429,8 +438,9 @@ public class JlinkTask {
                 // not include JDK modules from the default module path or the
                 // run-time image. Only do this if no --limit-modules has been
                 // specified to begin with.
-                ModuleFinder mf = newModuleFinder(finder, options.limitMods.isEmpty() ? initialRoots : options.limitMods,
-                                                  Set.of(), isLinkFromRuntime);
+                ModuleFinder mf = newLimitedFinder(finder,
+                                                   options.limitMods.isEmpty() ? initialRoots : options.limitMods,
+                                                   Set.of());
                 mf.findAll()
                   .stream()
                   .map(ModuleReference::descriptor)
@@ -440,7 +450,7 @@ public class JlinkTask {
                 roots.add(mod);
             }
         }
-        finder = newModuleFinder(finder, options.limitMods, roots, isLinkFromRuntime);
+        finder = newLimitedFinder(finder, options.limitMods, roots);
 
         // --keep-packaged-modules doesn't make sense as we are not linking
         // from packaged modules to begin with.
@@ -459,7 +469,7 @@ public class JlinkTask {
     /*
      * Creates a ModuleFinder for the given module paths.
      */
-    public static ModuleFinder createFinderFromPath(List<Path> paths) {
+    public static ModuleFinder newModuleFinder(List<Path> paths) {
         Runtime.Version version = Runtime.version();
         Path[] entries = paths.toArray(new Path[0]);
         return ModulePath.of(version, true, entries);
@@ -506,44 +516,77 @@ public class JlinkTask {
      * observable modules to those in the transitive closure of the modules
      * specified in {@code limitMods} plus other modules specified in the
      * {@code roots} set.
-     *
-     * @throws IllegalArgumentException if java.base module is present
-     * but its descriptor has no version or the java.base version is not the
-     * same as the current runtime.
      */
-    public static ModuleFinder newModuleFinder(ModuleFinder original,
-                                               Set<String> limitMods,
-                                               Set<String> roots,
-                                               boolean isRuntimeLink)
-    {
-        Runtime.Version version = Runtime.version();
-        ModuleFinder finder = original;
-        if (!isRuntimeLink && finder.find("java.base").isPresent()) {
-            // use the version of java.base module, if present, as
-            // the release version for multi-release JAR files
-            ModuleDescriptor.Version v = finder.find("java.base").get()
-                .descriptor().version().orElseThrow(() ->
-                    new IllegalArgumentException("No version in java.base descriptor")
-                );
-
-            // java.base version is different than the current runtime version
-            version = Runtime.Version.parse(v.toString());
-            if (Runtime.version().feature() != version.feature() ||
-                Runtime.version().interim() != version.interim())
-            {
-                // jlink version and java.base version do not match.
-                // We do not (yet) support this mode.
-                throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
-                    Runtime.version().feature(), Runtime.version().interim(),
-                    version.feature(), version.interim()));
-            }
-        }
-
-        // if limitmods is specified then limit the universe
+    public static ModuleFinder newLimitedFinder(ModuleFinder finder,
+                                           Set<String> limitMods,
+                                           Set<String> roots) {
+        // if limitMods is specified then limit the universe
         if (limitMods != null && !limitMods.isEmpty()) {
-            finder = limitFinder(finder, limitMods, Objects.requireNonNull(roots));
+            Objects.requireNonNull(roots);
+            // resolve all root modules
+            Configuration cf = Configuration.empty()
+                    .resolve(finder,
+                             ModuleFinder.of(),
+                             limitMods);
+
+            // module name -> reference
+            Map<String, ModuleReference> map = new HashMap<>();
+            cf.modules().forEach(m -> {
+                ModuleReference mref = m.reference();
+                map.put(mref.descriptor().name(), mref);
+            });
+
+            // add the other modules
+            roots.stream()
+                .map(finder::find)
+                .flatMap(Optional::stream)
+                .forEach(mref -> map.putIfAbsent(mref.descriptor().name(), mref));
+
+            // set of modules that are observable
+            Set<ModuleReference> mrefs = new HashSet<>(map.values());
+
+            return new ModuleFinder() {
+                @Override
+                public Optional<ModuleReference> find(String name) {
+                    return Optional.ofNullable(map.get(name));
+                }
+
+                @Override
+                public Set<ModuleReference> findAll() {
+                    return mrefs;
+                }
+            };
         }
         return finder;
+    }
+
+    /*
+     * Checks the version of the module descriptor of java.base for compatibility
+     * with the current runtime version.
+     *
+     * @throws IllegalArgumentException the descriptor of java.base has no
+     * version or the java.base version is not the same as the current runtime's
+     * version.
+     */
+    private static void checkJavaBaseVersion(ModuleFinder finder) {
+        assert finder.find("java.base").isPresent();
+
+        // use the version of java.base module, if present, as
+        // the release version for multi-release JAR files
+        ModuleDescriptor.Version v = finder.find("java.base").get()
+                .descriptor().version().orElseThrow(() ->
+                new IllegalArgumentException("No version in java.base descriptor")
+                        );
+
+        Runtime.Version version = Runtime.Version.parse(v.toString());
+        if (Runtime.version().feature() != version.feature() ||
+                Runtime.version().interim() != version.interim()) {
+            // jlink version and java.base version do not match.
+            // We do not (yet) support this mode.
+            throw new IllegalArgumentException(taskHelper.getMessage("err.jlink.version.mismatch",
+                    Runtime.version().feature(), Runtime.version().interim(),
+                    version.feature(), version.interim()));
+        }
     }
 
     private static void deleteDirectory(Path dir) throws IOException {
@@ -603,10 +646,6 @@ public class JlinkTask {
 
         // Perform some sanity checks for linking from the run-time image
         if (config.linkFromRuntimeImage()) {
-            if (!LinkableRuntimeImage.isLinkableRuntime()) {
-                String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
-                throw new IllegalArgumentException(msg);
-            }
             // Do not permit linking from run-time image and also including jdk.jlink module
             if (cf.findModule(JlinkTask.class.getModule().getName()).isPresent()) {
                 String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
@@ -763,49 +802,6 @@ public class JlinkTask {
             throw new IllegalArgumentException(taskHelper.getMessage(
                     "err.cannot.read.module.info", modInfoPath), exp);
         }
-    }
-
-    /*
-     * Returns a ModuleFinder that limits observability to the given root
-     * modules, their transitive dependences, plus a set of other modules.
-     */
-    public static ModuleFinder limitFinder(ModuleFinder finder,
-                                           Set<String> roots,
-                                           Set<String> otherMods) {
-
-        // resolve all root modules
-        Configuration cf = Configuration.empty()
-                .resolve(finder,
-                         ModuleFinder.of(),
-                         roots);
-
-        // module name -> reference
-        Map<String, ModuleReference> map = new HashMap<>();
-        cf.modules().forEach(m -> {
-            ModuleReference mref = m.reference();
-            map.put(mref.descriptor().name(), mref);
-        });
-
-        // add the other modules
-        otherMods.stream()
-            .map(finder::find)
-            .flatMap(Optional::stream)
-            .forEach(mref -> map.putIfAbsent(mref.descriptor().name(), mref));
-
-        // set of modules that are observable
-        Set<ModuleReference> mrefs = new HashSet<>(map.values());
-
-        return new ModuleFinder() {
-            @Override
-            public Optional<ModuleReference> find(String name) {
-                return Optional.ofNullable(map.get(name));
-            }
-
-            @Override
-            public Set<ModuleReference> findAll() {
-                return mrefs;
-            }
-        };
     }
 
     private static Platform targetPlatform(Configuration cf,
