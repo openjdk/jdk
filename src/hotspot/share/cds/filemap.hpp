@@ -468,7 +468,7 @@ public:
   size_t  read_bytes(void* buffer, size_t count);
   static size_t readonly_total();
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
-  void  unmap_regions(int regions[], int num_regions);
+  void  unmap_regions(int regions[], int num_regions, ReservedSpace rs);
   void  map_or_load_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;

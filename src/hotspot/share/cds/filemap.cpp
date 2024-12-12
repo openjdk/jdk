@@ -2409,10 +2409,15 @@ void FileMapInfo::dealloc_heap_region() {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-void FileMapInfo::unmap_regions(int regions[], int num_regions) {
+void FileMapInfo::unmap_regions(int regions[], int num_regions, ReservedSpace rs) {
   for (int r = 0; r < num_regions; r++) {
     int idx = regions[r];
-    unmap_region(idx);
+
+    // If the region is inside an active ReservedSpace, its memory and address space will be
+    // freed when the ReservedSpace is released.
+    if (!rs.is_reserved()) {
+      unmap_region(idx);
+    }
   }
 }
 
