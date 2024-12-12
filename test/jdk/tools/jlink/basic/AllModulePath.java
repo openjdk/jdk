@@ -63,7 +63,7 @@ import tests.Result;
  * @build jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.compiler.CompilerUtils
- * @run testng/othervm -Duser.lang=en -Duser.country=US AllModulePath
+ * @run testng/othervm -Duser.language=en -Duser.country=US AllModulePath
  */
 public class AllModulePath {
 

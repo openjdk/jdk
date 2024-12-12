@@ -77,18 +77,16 @@ public class BasicTest {
         new BasicTest().run();
     }
 
-    private static boolean isApplicable() {
-        if (!JMODS_EXIST) {
-            if (!LINKABLE_RUNTIME) {
-                System.err.println("Test skipped. Not a linkable runtime and no JMODs");
-                return false;
-            }
+    private static boolean isExplodedJDKImage() {
+        if (!JMODS_EXIST && !LINKABLE_RUNTIME) {
+            System.err.println("Test skipped. Not a linkable runtime and no JMODs");
+            return true;
         }
-        return true;
+        return false;
     }
 
     public void run() throws Throwable {
-        if (!isApplicable()) {
+        if (isExplodedJDKImage()) {
             return;
         }
 
