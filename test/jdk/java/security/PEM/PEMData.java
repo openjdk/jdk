@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.security.DEREncodable;
+import java.security.KeyPair;
+import java.security.PEMRecord;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
 import java.util.ArrayList;
@@ -43,7 +45,7 @@ class PEMData {
         KwDdi3cNwu7YYD/QtJ+9+AEBdoqhRANCAASL+REY4vvAI9M3gonaml5K3lRgHq5w
         +OO4oO0VNduC44gUN1nrk7/wdNSpL+xXNEX52Dsff+2RD/fop224ANvB
         -----END PRIVATE KEY-----
-        """, ECPrivateKey.class);
+        """, KeyPair.class);
 
     public static final Entry rsapriv = new Entry("rsapriv",
         """
@@ -150,7 +152,7 @@ class PEMData {
         P4c4mySRy5N3plFQUp3pIB7wqshi1t6hkdg7gRGjMtJpIPIXynEqRy2mIw2GrKTtu3dqrW+ndarb
         D6D4yRY1hWHluiuOtzhxuueCuf9hXCYEHZS1cqd8wokFPwIDAQAB
         -----END PRIVATE KEY-----
-        """, DEREncodable.class);
+        """, KeyPair.class);
 
     public static final Entry oasrfc8410 = new Entry("oasrfc8410",
         """
@@ -159,7 +161,7 @@ class PEMData {
         oB8wHQYKKoZIhvcNAQkJFDEPDA1DdXJkbGUgQ2hhaXJzgSEAGb9ECWmEzf6FQbrB
         Z9w7lshQhqowtrbLDFw4rXAxZuE=
         -----END PRIVATE KEY-----
-        """, DEREncodable.class);
+        """, KeyPair.class);
 
     public static final Entry rsaOpenSSL = new Entry("rsaOpenSSL",
         """
@@ -192,7 +194,7 @@ class PEMData {
         -----END RSA PRIVATE KEY-----
         """, RSAPrivateKey.class);
 
-    private static final Entry ed25519ep8 = new Entry("ed25519ep8",
+    static final Entry ed25519ep8 = new Entry("ed25519ep8",
         """
         -----BEGIN ENCRYPTED PRIVATE KEY-----
         MIGqMGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDArBBRyYnoNyrcqvubzch00
@@ -203,10 +205,10 @@ class PEMData {
         """, EdECPrivateKey.class, "fish".toCharArray());
 
     // This is not meant to be decrypted and to stay as an EKPI
-    private static final Entry ed25519ekpi = new Entry("ed25519ekpi",
+    static final Entry ed25519ekpi = new Entry("ed25519ekpi",
         ed25519ep8.pem(), EncryptedPrivateKeyInfo.class, null);
 
-    private static final Entry rsaCert = new Entry("rsaCert",
+    static final Entry rsaCert = new Entry("rsaCert",
         """
         -----BEGIN CERTIFICATE-----
         MIIErDCCApQCCQD7ndjWbI/x0DANBgkqhkiG9w0BAQsFADAXMRUwEwYDVQQDDAxQ
@@ -237,7 +239,7 @@ class PEMData {
         -----END CERTIFICATE-----
         """, X509Certificate.class);
 
-    private static final Entry ecCert = new Entry("ecCert",
+    static final Entry ecCert = new Entry("ecCert",
         """
         -----BEGIN CERTIFICATE-----
         MIIBFzCBvgIJAOGVk/ky59ojMAoGCCqGSM49BAMCMBMxETAPBgNVBAMMCFBFTSB0
@@ -250,7 +252,7 @@ class PEMData {
         """, X509Certificate.class);
 
     // EC cert with explicit parameters -- Not currently supported by SunEC
-    private static final String ecCertEX = """
+    static final String ecCertEX = """
         -----BEGIN CERTIFICATE-----
         MIICrDCCAjMCCQDKAlI7uc1CVDAKBggqhkjOPQQDAjATMREwDwYDVQQDDAhQRU0g
         dGVzdDAgFw0yNDAxMDkyMzIxNTlaGA8yMDUxMDUyNjIzMjE1OVowEzERMA8GA1UE
@@ -270,7 +272,7 @@ class PEMData {
         -----END CERTIFICATE-----
         """;
 
-    private static final Entry ecsecp384 = new Entry("ecsecp384",
+    static final Entry ecsecp384 = new Entry("ecsecp384",
         """
         -----BEGIN PRIVATE KEY-----
         MIG2AgEAMBAGByqGSM49AgEGBSuBBAAiBIGeMIGbAgEBBDBVS52ZSKZ0oES7twD2
@@ -278,7 +280,45 @@ class PEMData {
         8pYVjvwbfvDF9f+Oa9w6JjrfpWwFAUI6b1OPgrNUh+yXtUXnQNXnfUcIu0Os53bM
         8fTqPkQl6RyWEDHeXqJK8zTBHMeBq9nLfDPSbzQgLDyC64Orn0D8exM=
         -----END PRIVATE KEY-----
-        """, ECPrivateKey.class);
+        """, KeyPair.class);
+
+    public static final Entry ecCSR = new Entry("ecCSR",
+        """
+        -----BEGIN CERTIFICATE REQUEST-----
+        MIICCTCCAbACAQAwRTELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3QxFDASBgNV
+        BAcMC1NhbnRhIENsYXJhMREwDwYDVQQDDAhUZXN0IENTUjCCAUswggEDBgcqhkjO
+        PQIBMIH3AgEBMCwGByqGSM49AQECIQD/////AAAAAQAAAAAAAAAAAAAAAP//////
+        /////////zBbBCD/////AAAAAQAAAAAAAAAAAAAAAP///////////////AQgWsY1
+        2Ko6k+ez671VdpiGvGUdBrDMU7D2O848PifSYEsDFQDEnTYIhucEk2pmeOETnSa3
+        gZ9+kARBBGsX0fLhLEJH+Lzm5WOkQPJ3A32BLeszoPShOUXYmMKWT+NC4v4af5uO
+        5+tKfA+eFivOM1drMV7Oy7ZAaDe/UfUCIQD/////AAAAAP//////////vOb6racX
+        noTzucrC/GMlUQIBAQNCAAT3UJgGXD7xMwFSzBnkhsEXz3eJLjIE0HTP1Ax6x7QX
+        G3/+Z/qgOZ6UQCxeHOWMEgF1Ufc/tZkzgbvxWJ6gokeToBUwEwYJKoZIhvcNAQkH
+        MQYMBGZpc2gwCgYIKoZIzj0EAwIDRwAwRAIgUBTdrMDE4BqruYRh1rRyKQBf48WR
+        kIX8R4dBK9h1VRcCIEBR2Mzvku/huTbWTwKVlXBZeEmwIlxKwpRepPtViXcW
+        -----END CERTIFICATE REQUEST-----
+        """, PEMRecord.class);
+
+    public static final String preData = "TEXT BLAH TEXT BLAH" +
+        System.lineSeparator();
+    public static final String postData = "FINISHED" + System.lineSeparator();
+
+    public static final Entry ecCSRWithData = new Entry("ecCSRWithData",
+        preData + """
+        -----BEGIN CERTIFICATE REQUEST-----
+        MIICCTCCAbACAQAwRTELMAkGA1UEBhMCVVMxDTALBgNVBAgMBFRlc3QxFDASBgNV
+        BAcMC1NhbnRhIENsYXJhMREwDwYDVQQDDAhUZXN0IENTUjCCAUswggEDBgcqhkjO
+        PQIBMIH3AgEBMCwGByqGSM49AQECIQD/////AAAAAQAAAAAAAAAAAAAAAP//////
+        /////////zBbBCD/////AAAAAQAAAAAAAAAAAAAAAP///////////////AQgWsY1
+        2Ko6k+ez671VdpiGvGUdBrDMU7D2O848PifSYEsDFQDEnTYIhucEk2pmeOETnSa3
+        gZ9+kARBBGsX0fLhLEJH+Lzm5WOkQPJ3A32BLeszoPShOUXYmMKWT+NC4v4af5uO
+        5+tKfA+eFivOM1drMV7Oy7ZAaDe/UfUCIQD/////AAAAAP//////////vOb6racX
+        noTzucrC/GMlUQIBAQNCAAT3UJgGXD7xMwFSzBnkhsEXz3eJLjIE0HTP1Ax6x7QX
+        G3/+Z/qgOZ6UQCxeHOWMEgF1Ufc/tZkzgbvxWJ6gokeToBUwEwYJKoZIhvcNAQkH
+        MQYMBGZpc2gwCgYIKoZIzj0EAwIDRwAwRAIgUBTdrMDE4BqruYRh1rRyKQBf48WR
+        kIX8R4dBK9h1VRcCIEBR2Mzvku/huTbWTwKVlXBZeEmwIlxKwpRepPtViXcW
+        -----END CERTIFICATE REQUEST-----
+        """ + postData, PEMRecord.class);
 
     public record Entry(String name, String pem, Class clazz, char[] password,
                         byte[] der) {
@@ -365,7 +405,6 @@ class PEMData {
         privList.add(ec25519priv);
         privList.add(ed25519ekpi);  // The non-EKPI version needs decryption
         privList.add(rsaOpenSSL);
-        privList.add(ecsecp384);
         oasList.add(oasrfc8410);
         oasList.add(oasbcpem);
 

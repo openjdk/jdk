@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,19 @@ public class PEMEncoderTest {
     public static void main(String[] args) throws Exception {
         PEMEncoder encoder = PEMEncoder.of();
 
-        PEMData.entryList.remove(PEMData.getEntry("rsaOpenSSL"));
-        keymap = generateObjKeyMap(PEMData.entryList);
-        System.out.println("Same instance Encoder test:");
+        // These entries are removed
+        var newEntryList = new ArrayList<>(PEMData.entryList);
+        newEntryList.remove(PEMData.getEntry("rsaOpenSSL"));
+        newEntryList.remove(PEMData.getEntry("ecsecp256"));
+        newEntryList.remove(PEMData.getEntry("ecsecp384"));
+        keymap = generateObjKeyMap(newEntryList);
+        System.out.println("Same instance re-encode test:");
         keymap.keySet().stream().forEach(key -> test(key, encoder));
-        System.out.println("New instance Encoder test:");
+        System.out.println("New instance re-encode test:");
         keymap.keySet().stream().forEach(key -> test(key, PEMEncoder.of()));
-        System.out.println("Same instance Encoder testToString:");
+        System.out.println("Same instance re-encode testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, encoder));
-        System.out.println("New instance Encoder testToString:");
+        System.out.println("New instance re-encode testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key,
             PEMEncoder.of()));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,13 @@ import sun.security.x509.AlgorithmId;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
+import java.security.PEMRecord;
 import java.security.Security;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Objects;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -58,6 +57,14 @@ public class Pem {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
         pbePattern = Pattern.compile("^PBEWith.*And.*");
     }
+
+    public static final String CERTIFICATE = "CERTIFICATE";
+    public static final String X509_CERTIFICATE = "X509 CERTIFICATE";
+    public static final String X509_CRL = "X509 CRL";
+    public static final String PUBLIC_KEY = "PUBLIC KEY";
+    public static final String RSA_PRIVATE_KEY = "RSA PRIVATE KEY";
+    public static final String ENCRYPTED_PRIVATE_KEY = "ENCRYPTED PRIVATE KEY";
+    public static final String PRIVATE_KEY = "PRIVATE KEY";
 
     /**
      * Decodes a PEM-encoded block.
@@ -119,6 +126,7 @@ public class Pem {
      *                    for the CertificateFactory X509 implementation.
      * @return A new Pem object containing the three components
      * @throws IOException on read errors
+     * @throws EOFException when there is nothing to read
      */
     public static PEMRecord readPEM(InputStream is, boolean shortHeader)
         throws IOException {
@@ -134,7 +142,10 @@ public class Pem {
             switch (d) {
                 case '-' -> hyphen++;
                 case -1 -> {
-                    return null;
+                    if (os.size() == 0) {
+                        throw new EOFException("No data available");
+                    }
+                    return new PEMRecord(null, null, os.toByteArray());
                 }
                 default -> hyphen = 0;
             }
@@ -178,7 +189,7 @@ public class Pem {
         sb = new StringBuilder(1024);
 
         // Determine the line break using the char after the last hyphen
-        switch (c = is.read()) {
+        switch (is.read()) {
             case WS -> {} // skip whitespace
             case '\r' -> {
                 c = is.read();
