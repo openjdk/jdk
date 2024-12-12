@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ double G1AdaptiveIHOPControl::last_mutator_period_old_allocation_rate() const {
   assert(_last_allocation_time_s > 0, "This should not be called when the last GC is full");
 
   return _old_gen_alloc_tracker->last_period_old_gen_growth() / _last_allocation_time_s;
- }
+}
 
 void G1AdaptiveIHOPControl::update_allocation_info(double allocation_time_s,
                                                    size_t additional_buffer_size) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -271,8 +271,8 @@ static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStub
     __ mv(c_rarg0, arg);
   }
   __ mv(c_rarg1, xthread);
-  __ mv(t0, runtime_path);
-  __ jalr(t0);
+  __ mv(t1, runtime_path);
+  __ jalr(t1);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,

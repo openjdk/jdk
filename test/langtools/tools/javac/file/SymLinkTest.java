@@ -28,10 +28,8 @@
  *      class.public.should.be.in.file diagnostic and SourceFile
  *      attribute content
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  * @build toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SymLinkTest
  */

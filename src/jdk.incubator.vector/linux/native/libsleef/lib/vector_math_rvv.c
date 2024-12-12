@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -30,6 +32,8 @@
 // vector intrinsics (gcc < 14), then the bridge functions won't be compiled.
 // At run-time, if the library is found and the bridge functions are available in the
 // library, then the java vector API will call into the bridge functions and sleef.
+
+#if __GNUC__ >= 14 || (defined(__clang_major__) && __clang_major__ >= 17)
 
 #ifdef __riscv_v_intrinsic
 
@@ -117,4 +121,6 @@ DEFINE_VECTOR_MATH_BINARY_RVV(hypotdx_u05, vdouble_rvvm1_sleef)
 
 #undef DEFINE_VECTOR_MATH_BINARY_RVV
 
-#endif /* __riscv_v_intrinsic */
+#endif  /* __riscv_v_intrinsic */
+
+#endif  /* check gcc and clang version */

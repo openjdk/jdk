@@ -26,7 +26,6 @@
  * @bug 8042947
  * @summary Checking AnnotationDefault attribute.
  * @library /tools/lib /tools/javac/lib ../lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          java.base/jdk.internal.classfile.impl
@@ -88,7 +87,7 @@ public class AnnotationDefaultTest extends TestResult {
                 checkEquals(countNumberOfAttributes(method.attributes()),
                         1L,
                         "Number of AnnotationDefault attribute");
-                checkEquals(attr.attributeName(),
+                checkEquals(attr.attributeName().stringValue(),
                         "AnnotationDefault", "attribute_name_index");
 
                 ExpectedValues expectedValue = expectedValues.get(methodName);

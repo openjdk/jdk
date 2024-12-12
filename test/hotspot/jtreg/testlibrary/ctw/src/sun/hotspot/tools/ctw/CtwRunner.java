@@ -172,8 +172,14 @@ public class CtwRunner {
 
         long classStart = start(totalClassCount);
         long classStop = stop(totalClassCount);
-
         long classCount = classStop - classStart;
+
+        boolean allowZeroClassCount = Boolean.getBoolean("sun.hotspot.tools.ctw.allow_zero_class_count");
+        if (allowZeroClassCount && totalClassCount == 0L) {
+            System.out.println("WARN: " + target + "(at " + targetPath + ") has no classes. Ignoring.");
+            return;
+        }
+
         Asserts.assertGreaterThan(classCount, 0L,
                 target + "(at " + targetPath + ") does not have any classes");
 
@@ -308,6 +314,13 @@ public class CtwRunner {
                 // Do not fail on huge methods where StressGCM makes register
                 // allocation allocate lots of memory
                 "-XX:CompileCommand=memlimit,*.*,0"));
+
+        // Use this stress mode 10% of the time as it could make some long-running compilations likely to abort.
+        if (rng.nextInt(10) == 0) {
+            Args.add("-XX:+StressBailout");
+            Args.add("-XX:StressBailoutMean=100000");
+            Args.add("-XX:+CaptureBailoutInformation");
+        }
 
         for (String arg : CTW_EXTRA_ARGS.split(",")) {
             Args.add(arg);

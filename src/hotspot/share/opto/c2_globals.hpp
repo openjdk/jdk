@@ -70,6 +70,14 @@
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
+  develop(bool, StressBailout, false,                                       \
+          "Perform bailouts randomly at C2 failing() checks")               \
+                                                                            \
+  develop(uint, StressBailoutMean, 100000,                                  \
+          "The expected number of failing() checks made until "             \
+          "a random bailout.")                                              \
+          range(1, max_juint)                                               \
+                                                                            \
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
           "in the prologue of every nmethod")                               \
@@ -347,6 +355,12 @@
   product(bool, SuperWordReductions, true,                                  \
           "Enable reductions support in superword.")                        \
                                                                             \
+  product_pd(uint, SuperWordStoreToLoadForwardingFailureDetection, DIAGNOSTIC, \
+          "if >0, auto-vectorization detects possible store-to-load "       \
+          "forwarding failures. The number specifies over how many "        \
+          "loop iterations this detection spans.")                          \
+          range(0, 4096)                                                    \
+                                                                            \
   product(bool, UseCMoveUnconditionally, false,                             \
           "Use CMove (scalar and vector) ignoring profitability test.")     \
                                                                             \
@@ -358,9 +372,6 @@
                                                                             \
   product(bool, MergeStores, true, DIAGNOSTIC,                              \
           "Optimize stores by combining values into larger store")          \
-                                                                            \
-  develop(bool, TraceMergeStores, false,                                    \
-          "Trace creation of merged stores")                                \
                                                                             \
   product_pd(bool, OptoBundling,                                            \
           "Generate nops to fill i-cache lines")                            \
@@ -414,7 +425,7 @@
                                                                             \
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
-          range(5, 43)                                                      \
+          range(5, max_jint)                                                \
                                                                             \
   product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
           "Optimize UnstableIf traps")                                      \

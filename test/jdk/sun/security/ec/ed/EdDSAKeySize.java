@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class EdDSAKeySize {
     private static final String OID25519 = "OID.1.3.101.112";
     private static final String OIDN448 = "1.3.101.113";
     private static final String OID448 = "OID.1.3.101.113";
-    private static final String PROVIDER = "SunEC";
+    private static final String PROVIDER = System.getProperty("test.provider.name", "SunEC");
     private static final SecureRandom RND = new SecureRandom(new byte[]{0x1});
 
     public static void main(String[] args) throws Exception {

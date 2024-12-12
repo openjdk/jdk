@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@ import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 
 import static java.lang.String.format;
+import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.Authenticator.RequestorType.SERVER;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -91,7 +93,6 @@ class Http1Request {
         }
     }
 
-
     public void collectHeaders0(StringBuilder sb) {
         BiPredicate<String,String> filter =
                 connection.headerFilter(request);
@@ -104,7 +105,9 @@ class Http1Request {
 
         // Filter overridable headers from userHeaders
         userHeaders = HttpHeaders.of(userHeaders.map(),
-                      connection.contextRestricted(request, client));
+                      connection.contextRestricted(request));
+
+        Utils.setUserAuthFlags(request, userHeaders);
 
         final HttpHeaders uh = userHeaders;
 

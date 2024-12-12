@@ -527,20 +527,11 @@ public class ConcurrentSkipListSet<E>
 
     /** Initializes map field; for use in clone. */
     private void setMap(ConcurrentNavigableMap<E,Object> map) {
-        @SuppressWarnings("removal")
-        Field mapField = java.security.AccessController.doPrivileged(
-            (java.security.PrivilegedAction<Field>) () -> {
-                try {
-                    Field f = ConcurrentSkipListSet.class
-                        .getDeclaredField("m");
-                    f.setAccessible(true);
-                    return f;
-                } catch (ReflectiveOperationException e) {
-                    throw new Error(e);
-                }});
         try {
+            Field mapField = ConcurrentSkipListSet.class.getDeclaredField("m");
+            mapField.setAccessible(true);
             mapField.set(this, map);
-        } catch (IllegalAccessException e) {
+        } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new Error(e);
         }
     }

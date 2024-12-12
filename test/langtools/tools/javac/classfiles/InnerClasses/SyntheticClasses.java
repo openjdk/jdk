@@ -25,8 +25,6 @@
  *  @bug 8034854
  *  @summary Verify that the InnerClasses attribute has outer_class_info_index zero if it has
  *           inner_name_index zero (for synthetic classes)
- *  @enablePreview
- *  @modules java.base/jdk.internal.classfile.impl
  *  @compile SyntheticClasses.java
  *  @run main SyntheticClasses
  */

@@ -999,11 +999,11 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
-const RegMask* Matcher::predicate_reg_mask(void) {
-  return nullptr;
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
+const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
 
@@ -4220,18 +4220,6 @@ instruct storeB(memoryB mem, store_RegI src) %{
 
   size(4);
   format %{ "STRB    $src,$mem\t! byte" %}
-  ins_encode %{
-    __ strb($src$$Register, $mem$$Address);
-  %}
-  ins_pipe(istore_mem_reg);
-%}
-
-instruct storeCM(memoryB mem, store_RegI src) %{
-  match(Set mem (StoreCM mem src));
-  ins_cost(MEMORY_REF_COST);
-
-  size(4);
-  format %{ "STRB    $src,$mem\t! CMS card-mark byte" %}
   ins_encode %{
     __ strb($src$$Register, $mem$$Address);
   %}

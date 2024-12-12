@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "compiler/disassembler.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
@@ -67,7 +68,7 @@
 // Max size with JVMTI
 int TemplateInterpreter::InterpreterCodeSize = 200 * 1024;
 
-#define __ _masm->
+#define __ Disassembler::hook<InterpreterMacroAssembler>(__FILE__, __LINE__, _masm)->
 
 address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   address entry = __ pc();
@@ -605,6 +606,40 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
 }
+
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Restore constant pool cache
+  __ ldr(rcpool, Address(rfp, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Restore Java expression stack pointer
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
+  // and null it as marker that esp is now tos until next java call
+  __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  // Restore machine SP
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ lea(sp, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
+
+  // Restore method
+  __ ldr(rmethod, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
+
+  // Restore dispatch
+  uint64_t offset;
+  __ adrp(rdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
+  __ add(rdispatch, rdispatch, offset);
+
+  __ ret(lr);
+
+  return start;
+}
+
 
 // Helpers for commoning out cases in the various type of method entries.
 //
@@ -1313,6 +1348,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in r0
   // set result handler
   __ mov(result_handler, r0);
+  // Save it in the frame in case of preemption; we cannot rely on callee saved registers.
+  __ str(r0, Address(rfp, frame::interpreter_frame_result_handler_offset * wordSize));
+
   // pass mirror handle if static call
   {
     Label L;
@@ -1348,9 +1386,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // pass JNIEnv
   __ add(c_rarg0, rthread, in_bytes(JavaThread::jni_environment_offset()));
 
-  // Set the last Java PC in the frame anchor to be the return address from
-  // the call to the native method: this will allow the debugger to
-  // generate an accurate stack trace.
+  // It is enough that the pc() points into the right code
+  // segment. It does not have to be the correct return pc.
+  // For convenience we use the pc we want to resume to in
+  // case of preemption on Object.wait.
   Label native_return;
   __ set_last_Java_frame(esp, rfp, native_return, rscratch1);
 
@@ -1371,9 +1410,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ blr(r10);
-  __ bind(native_return);
+
+  __ pop_cont_fastpath();
+
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
@@ -1430,6 +1473,23 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
+
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ cbz(rscratch1, not_preempted);
+    __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ br(rscratch1);
+    __ bind(native_return);
+    __ restore_after_resume(true /* is_native */);
+    // reload result_handler
+    __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
@@ -1998,13 +2058,21 @@ void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
                                                          address& vep) {
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
-  aep = __ pc();  __ push_ptr();  __ b(L);
-  fep = __ pc();  __ push_f();    __ b(L);
-  dep = __ pc();  __ push_d();    __ b(L);
-  lep = __ pc();  __ push_l();    __ b(L);
-  bep = cep = sep =
-  iep = __ pc();  __ push_i();
-  vep = __ pc();
+  aep = __ pc();     // atos entry point
+      __ push_ptr();
+      __ b(L);
+  fep = __ pc();     // ftos entry point
+      __ push_f();
+      __ b(L);
+  dep = __ pc();     // dtos entry point
+      __ push_d();
+      __ b(L);
+  lep = __ pc();     // ltos entry point
+      __ push_l();
+      __ b(L);
+  bep = cep = sep = iep = __ pc();     // [bcsi]tos entry point
+      __ push_i();
+  vep = __ pc();     // vtos entry point
   __ bind(L);
   generate_and_dispatch(t);
 }

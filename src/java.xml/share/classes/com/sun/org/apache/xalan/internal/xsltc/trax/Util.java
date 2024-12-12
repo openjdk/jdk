@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -50,7 +50,7 @@ import org.xml.sax.XMLReader;
  *
  * Added Catalog Support for URI resolution
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 @SuppressWarnings("deprecation") //org.xml.sax.helpers.XMLReaderFactory
 public final class Util {
@@ -205,10 +205,6 @@ public final class Util {
         catch (NullPointerException e) {
             ErrorMsg err = new ErrorMsg(ErrorMsg.JAXP_NO_SOURCE_ERR,
                                         "TransformerFactory.newTemplates()");
-            throw new TransformerConfigurationException(err.toString());
-        }
-        catch (SecurityException e) {
-            ErrorMsg err = new ErrorMsg(ErrorMsg.FILE_ACCESS_ERR, systemId);
             throw new TransformerConfigurationException(err.toString());
         }
         return input;

@@ -216,19 +216,13 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
       for (uint i = node->len()-1; i >= node->req(); i--) {
         Node* m = node->in(i);
         if (m == nullptr) continue;
-
-        // Only process precedence edges that are CFG nodes. Safepoints and control projections can be in the middle of a block
-        if (is_CFG(m)) {
-          node->rm_prec(i);
-          if (n == nullptr) {
-            n = m;
-          } else {
-            assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
-            n = is_dominator(n, m) ? m : n;
-          }
+        assert(is_CFG(m), "must be a CFG node");
+        node->rm_prec(i);
+        if (n == nullptr) {
+          n = m;
         } else {
-          assert(node->is_Mach(), "sanity");
-          assert(node->as_Mach()->ideal_Opcode() == Op_StoreCM, "must be StoreCM node");
+          assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
+          n = is_dominator(n, m) ? m : n;
         }
       }
       if (n != nullptr) {
@@ -249,7 +243,6 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
   }
 }
 
-#ifdef ASSERT
 // Assert that new input b2 is dominated by all previous inputs.
 // Check this by by seeing that it is dominated by b1, the deepest
 // input observed until b2.
@@ -261,6 +254,7 @@ static void assert_dom(Block* b1, Block* b2, Node* n, const PhaseCFG* cfg) {
     tmp = tmp->_idom;
   }
   if (tmp != b1) {
+#ifdef ASSERT
     // Detected an unschedulable graph.  Print some nice stuff and die.
     tty->print_cr("!!! Unschedulable graph !!!");
     for (uint j=0; j<n->len(); j++) { // For all inputs
@@ -273,10 +267,11 @@ static void assert_dom(Block* b1, Block* b2, Node* n, const PhaseCFG* cfg) {
     }
     tty->print("Failing node: ");
     n->dump();
-    assert(false, "unscheduable graph");
+    assert(false, "unschedulable graph");
+#endif
+    cfg->C->record_failure("unschedulable graph");
   }
 }
-#endif
 
 static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
   // Find the last input dominated by all other inputs.
@@ -291,7 +286,10 @@ static Block* find_deepest_input(Node* n, const PhaseCFG* cfg) {
       // The new inb must be dominated by the previous deepb.
       // The various inputs must be linearly ordered in the dom
       // tree, or else there will not be a unique deepest block.
-      DEBUG_ONLY(assert_dom(deepb, inb, n, cfg));
+      assert_dom(deepb, inb, n, cfg);
+      if (cfg->C->failing()) {
+        return nullptr;
+      }
       deepb = inb;                      // Save deepest block
       deepb_dom_depth = deepb->_dom_depth;
     }
@@ -378,6 +376,9 @@ bool PhaseCFG::schedule_early(VectorSet &visited, Node_Stack &roots) {
         if (!parent_node->pinned()) {
           // Set earliest legal block.
           Block* earliest_block = find_deepest_input(parent_node, this);
+          if (C->failing()) {
+            return false;
+          }
           map_node_to_block(parent_node, earliest_block);
         } else {
           assert(get_block_for_node(parent_node) == get_block_for_node(parent_node->in(0)), "Pinned Node should be at the same block as its control edge");
@@ -529,7 +530,10 @@ static Block* memory_early_block(Node* load, Block* early, const PhaseCFG* cfg) 
         // The new inb must be dominated by the previous deepb.
         // The various inputs must be linearly ordered in the dom
         // tree, or else there will not be a unique deepest block.
-        DEBUG_ONLY(assert_dom(deepb, inb, load, cfg));
+        assert_dom(deepb, inb, load, cfg);
+        if (cfg->C->failing()) {
+          return nullptr;
+        }
         deepb = inb;                      // Save deepest block
         deepb_dom_depth = deepb->_dom_depth;
       }
@@ -721,6 +725,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // dominator tree, and allow for a broader discovery of anti-dependences.
   if (C->subsume_loads()) {
     early = memory_early_block(load, early, this);
+    if (C->failing()) {
+      return nullptr;
+    }
   }
 
   ResourceArea* area = Thread::current()->resource_area();
@@ -746,6 +753,21 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // The anti-dependence constraints apply only to the fringe of this tree.
 
   Node* initial_mem = load->in(MemNode::Memory);
+
+  // We don't optimize the memory graph for pinned loads, so we may need to raise the
+  // root of our search tree through the corresponding slices of MergeMem nodes to
+  // get to the node that really creates the memory state for this slice.
+  if (load_alias_idx >= Compile::AliasIdxRaw) {
+    while (initial_mem->is_MergeMem()) {
+      MergeMemNode* mm = initial_mem->as_MergeMem();
+      Node* p = mm->memory_at(load_alias_idx);
+      if (p != mm->base_memory()) {
+        initial_mem = p;
+      } else {
+        break;
+      }
+    }
+  }
   worklist_def_use_mem_states.push(nullptr, initial_mem);
   while (worklist_def_use_mem_states.is_nonempty()) {
     // Examine a nearby store to see if it might interfere with our load.
@@ -754,7 +776,17 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     worklist_def_use_mem_states.pop();
 
     uint op = use_mem_state->Opcode();
-    assert(!use_mem_state->needs_anti_dependence_check(), "no loads");
+
+#ifdef ASSERT
+    // CacheWB nodes are peculiar in a sense that they both are anti-dependent and produce memory.
+    // Allow them to be treated as a store.
+    bool is_cache_wb = false;
+    if (use_mem_state->is_Mach()) {
+      int ideal_op = use_mem_state->as_Mach()->ideal_Opcode();
+      is_cache_wb = (ideal_op == Op_CacheWB);
+    }
+    assert(!use_mem_state->needs_anti_dependence_check() || is_cache_wb, "no loads");
+#endif
 
     // MergeMems do not directly have anti-deps.
     // Treat them as internal nodes in a forward tree of memory states,
@@ -1500,6 +1532,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
       // Hoist LCA above possible-defs and insert anti-dependences to
       // defs in new LCA block.
       LCA = insert_anti_dependences(LCA, self);
+      if (C->failing()) {
+        return;
+      }
     }
 
     if (early->_dom_depth > LCA->_dom_depth) {
@@ -1512,8 +1547,8 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         C->record_failure(C2Compiler::retry_no_subsuming_loads());
       } else {
         // Bailout without retry when (early->_dom_depth > LCA->_dom_depth)
-        assert(false, "graph should be schedulable");
-        C->record_method_not_compilable("late schedule failed: incorrect graph");
+        assert(C->failure_is_artificial(), "graph should be schedulable");
+        C->record_method_not_compilable("late schedule failed: incorrect graph" DEBUG_ONLY(COMMA true));
       }
       return;
     }
@@ -1592,8 +1627,8 @@ void PhaseCFG::global_code_motion() {
   Node_Stack stack((C->live_nodes() >> 2) + 16); // pre-grow
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
-    assert(false, "early schedule failed");
-    C->record_method_not_compilable("early schedule failed");
+    assert(C->failure_is_artificial(), "early schedule failed");
+    C->record_method_not_compilable("early schedule failed" DEBUG_ONLY(COMMA true));
     return;
   }
 
@@ -1638,6 +1673,9 @@ void PhaseCFG::global_code_motion() {
       // uncommon trap.  Combined with the too_many_traps guards
       // above, this prevents SEGV storms reported in 6366351,
       // by recompiling offending methods without this optimization.
+      if (C->failing()) {
+        return;
+      }
     }
   }
 
@@ -1662,7 +1700,7 @@ void PhaseCFG::global_code_motion() {
   PhaseIFG ifg(&live_arena);
   if (OptoRegScheduling && block_size_threshold_ok) {
     regalloc.mark_ssa();
-    Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+    Compile::TracePhase tp(_t_computeLive);
     rm_live.reset_to_mark();           // Reclaim working storage
     IndexSet::reset_memory(C, &live_arena);
     uint node_size = regalloc._lrg_map.max_lrg_id();
@@ -1693,8 +1731,8 @@ void PhaseCFG::global_code_motion() {
     Block* block = get_block(i);
     if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
-        assert(false, "local schedule failed");
-        C->record_method_not_compilable("local schedule failed");
+        assert(C->failure_is_artificial(), "local schedule failed");
+        C->record_method_not_compilable("local schedule failed" DEBUG_ONLY(COMMA true));
       }
       _regalloc = nullptr;
       return;
@@ -1707,6 +1745,9 @@ void PhaseCFG::global_code_motion() {
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
     call_catch_cleanup(block);
+    if (C->failing()) {
+      return;
+    }
   }
 
 #ifndef PRODUCT

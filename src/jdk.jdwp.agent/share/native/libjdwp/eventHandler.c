@@ -681,23 +681,14 @@ event_callback(JNIEnv *env, EventInfo *evinfo)
         bagDestroyBag(eventBag);
     }
 
-    /* Always restore any exception that was set beforehand.  If
-     * there is a pending async exception, StopThread will be
-     * called from threadControl_onEventHandlerExit immediately
-     * below.  Depending on VM implementation and state, the async
-     * exception might immediately overwrite the currentException,
-     * or it might be delayed until later.  */
-    if (currentException != NULL) {
-        JNI_FUNC_PTR(env,Throw)(env, currentException);
-    } else {
-        JNI_FUNC_PTR(env,ExceptionClear)(env);
-    }
+    /* Clear any exception thrown while handling the event. */
+    JNI_FUNC_PTR(env,ExceptionClear)(env);
 
     /*
      * Release thread resources and perform any delayed operations.
      */
     if (thread != NULL) {
-        threadControl_onEventHandlerExit(evinfo->ei, thread, eventBag);
+        threadControl_onEventHandlerExit(evinfo->ei, thread, eventBag, currentException);
     }
 }
 

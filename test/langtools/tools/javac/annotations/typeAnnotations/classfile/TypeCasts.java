@@ -33,7 +33,6 @@ import java.lang.classfile.*;
  * @bug 6843077 8006775
  * @summary test that typecasts annotation are emitted if only the cast
  *          expression is optimized away
- * @enablePreview
  */
 
 public class TypeCasts extends ClassfileTestHelper{

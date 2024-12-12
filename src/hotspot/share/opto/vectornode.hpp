@@ -75,10 +75,10 @@ class VectorNode : public TypeNode {
 
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask = false);
+  static VectorNode* scalar2vector(Node* s, uint vlen, BasicType bt, bool is_mask = false);
   static VectorNode* shift_count(int opc, Node* cnt, uint vlen, BasicType bt);
   static VectorNode* make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt, bool is_var_shift = false);
-  static VectorNode* make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask = false, bool is_var_shift = false);
+  static VectorNode* make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask = false, bool is_var_shift = false, bool is_unsigned = false);
   static VectorNode* make(int opc, Node* n1, Node* n2, Node* n3, uint vlen, BasicType bt);
   static VectorNode* make(int vopc, Node* n1, Node* n2, Node* n3, const TypeVect* vt);
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
@@ -144,6 +144,32 @@ class VectorNode : public TypeNode {
 };
 
 //===========================Vector=ALU=Operations=============================
+// Base IR node for saturating signed / unsigned operations.
+// Saturating operation prevents wrapping result value in over/underflowing
+// scenarios, instead returns delimiting MAX/MIN value of result type.
+class SaturatingVectorNode : public VectorNode {
+ private:
+  const bool _is_unsigned;
+
+ public:
+  SaturatingVectorNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : VectorNode(in1, in2, vt), _is_unsigned(is_unsigned) {
+    init_class_id(Class_SaturatingVector);
+  }
+
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
+
+#ifndef PRODUCT
+  // Print node specific info
+  virtual void dump_spec(outputStream *st) const {
+    TypeNode::dump_spec(st);
+    st->print("%s", _is_unsigned ? "{unsigned_vector_node}" : "{signed_vector_node}");
+  }
+#endif
+  virtual uint hash() const { return Node::hash() + _is_unsigned; }
+
+  bool is_unsigned() { return _is_unsigned; }
+};
 
 //------------------------------AddVBNode--------------------------------------
 // Vector add byte
@@ -355,6 +381,22 @@ class SubVLNode : public VectorNode {
   virtual int Opcode() const;
 };
 
+//------------------------------SaturatingAddVNode-----------------------------
+// Vector saturating addition.
+class SaturatingAddVNode : public SaturatingVectorNode {
+ public:
+  SaturatingAddVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------SaturatingSubVNode-----------------------------
+// Vector saturating subtraction.
+class SaturatingSubVNode : public SaturatingVectorNode {
+ public:
+  SaturatingSubVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------SubVFNode--------------------------------------
 // Vector subtract float
 class SubVFNode : public VectorNode {
@@ -399,8 +441,12 @@ class MulVINode : public VectorNode {
 // Vector multiply long
 class MulVLNode : public VectorNode {
 public:
-  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+    init_class_id(Class_MulVL);
+  }
   virtual int Opcode() const;
+  bool has_int_inputs() const;
+  bool has_uint_inputs() const;
 };
 
 //------------------------------MulVFNode--------------------------------------
@@ -561,11 +607,27 @@ public:
   virtual int Opcode() const;
 };
 
+class UMinVNode : public VectorNode {
+ public:
+  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
+    assert(is_integral_type(vt->element_basic_type()), "");
+  }
+  virtual int Opcode() const;
+};
+
 //------------------------------MaxVNode--------------------------------------
 // Vector Max
 class MaxVNode : public VectorNode {
  public:
   MaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+class UMaxVNode : public VectorNode {
+ public:
+  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
+    assert(is_integral_type(vt->element_basic_type()), "");
+  }
   virtual int Opcode() const;
 };
 
@@ -1612,14 +1674,32 @@ class VectorRearrangeNode : public VectorNode {
   Node* vec_shuffle() const { return in(2); }
 };
 
+
+// Select elements from two source vectors based on the wrapped indexes held in
+// the first vector.
+class SelectFromTwoVectorNode : public VectorNode {
+public:
+  SelectFromTwoVectorNode(Node* indexes, Node* src1, Node* src2, const TypeVect* vt)
+  : VectorNode(indexes, src1, src2, vt) {
+      assert(is_integral_type(indexes->bottom_type()->is_vect()->element_basic_type()),
+             "indexes must be an integral vector");
+  }
+
+  virtual int Opcode() const;
+};
+
+// The target may not directly support the rearrange operation for an element type. In those cases,
+// we can transform the rearrange into a different element type. For example, on x86 before AVX512,
+// there is no rearrange instruction for short elements, what we will then do is to transform the
+// shuffle vector into one that we can do byte rearrange such that it would provide the same
+// result. This could have been done in VectorRearrangeNode during code emission but we eagerly
+// expand this out because it is often the case that an index vector is reused in many rearrange
+// operations. This allows the index preparation to be GVN-ed as well as hoisted out of loops, etc.
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
-    : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be BYTE");
-  }
+    : VectorNode(in, vt) {}
 
-  int GetOutShuffleSize() const { return type2aelembytes(vect_type()->element_basic_type()); }
   virtual int Opcode() const;
 };
 
@@ -1858,14 +1938,11 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 };
 
 class VectorUnboxNode : public VectorNode {
- private:
-  bool _shuffle_to_vector;
  protected:
   uint size_of() const { return sizeof(*this); }
  public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem, bool shuffle_to_vector)
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
-    _shuffle_to_vector = shuffle_to_vector;
     init_class_id(Class_VectorUnbox);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -1876,7 +1953,6 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  bool is_shuffle_to_vector() { return _shuffle_to_vector; }
 };
 
 class RotateRightVNode : public VectorNode {

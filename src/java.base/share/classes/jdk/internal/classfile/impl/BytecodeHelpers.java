@@ -25,6 +25,10 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.constantpool.*;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
@@ -35,18 +39,7 @@ import java.lang.invoke.MethodHandleInfo;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.constantpool.ConstantDynamicEntry;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
-import java.lang.classfile.constantpool.LoadableConstantEntry;
-import java.lang.classfile.constantpool.MemberRefEntry;
-import java.lang.classfile.constantpool.MethodHandleEntry;
-import java.lang.classfile.constantpool.NameAndTypeEntry;
-import java.util.Objects;
-
+import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 /**
@@ -264,6 +257,11 @@ public class BytecodeHelpers {
         };
     }
 
+    public static int returnBytecode(TypeKind tk) {
+        int kind = Math.max(0, tk.ordinal() - 4); // BYTE, SHORT, CHAR, BOOLEAN becomes INT
+        return IRETURN + kind;
+    }
+
     public static Opcode arrayLoadOpcode(TypeKind tk) {
         return switch (tk) {
             case BYTE, BOOLEAN -> Opcode.BALOAD;
@@ -278,6 +276,20 @@ public class BytecodeHelpers {
         };
     }
 
+    public static int arrayLoadBytecode(TypeKind tk) {
+        return switch (tk) {
+            case BYTE, BOOLEAN -> BALOAD;
+            case SHORT -> SALOAD;
+            case INT -> IALOAD;
+            case FLOAT -> FALOAD;
+            case LONG -> LALOAD;
+            case DOUBLE -> DALOAD;
+            case REFERENCE -> AALOAD;
+            case CHAR -> CALOAD;
+            case VOID -> throw new IllegalArgumentException("void not an allowable array type");
+        };
+    }
+
     public static Opcode arrayStoreOpcode(TypeKind tk) {
         return switch (tk) {
             case BYTE, BOOLEAN -> Opcode.BASTORE;
@@ -288,6 +300,20 @@ public class BytecodeHelpers {
             case DOUBLE -> Opcode.DASTORE;
             case REFERENCE -> Opcode.AASTORE;
             case CHAR -> Opcode.CASTORE;
+            case VOID -> throw new IllegalArgumentException("void not an allowable array type");
+        };
+    }
+
+    public static int arrayStoreBytecode(TypeKind tk) {
+        return switch (tk) {
+            case BYTE, BOOLEAN -> BASTORE;
+            case SHORT -> SASTORE;
+            case INT -> IASTORE;
+            case FLOAT -> FASTORE;
+            case LONG -> LASTORE;
+            case DOUBLE -> DASTORE;
+            case REFERENCE -> AASTORE;
+            case CHAR -> CASTORE;
             case VOID -> throw new IllegalArgumentException("void not an allowable array type");
         };
     }
@@ -311,6 +337,29 @@ public class BytecodeHelpers {
             case IFNULL -> Opcode.IFNONNULL;
             case IFNONNULL -> Opcode.IFNULL;
             default -> throw Util.badOpcodeKindException(op, Opcode.Kind.BRANCH);
+        };
+    }
+
+    public static int reverseBranchOpcode(int bytecode) {
+        return switch (bytecode) {
+            case IFEQ -> IFNE;
+            case IFNE -> IFEQ;
+            case IFLT -> IFGE;
+            case IFGE -> IFLT;
+            case IFGT -> IFLE;
+            case IFLE -> IFGT;
+            case IF_ICMPEQ -> IF_ICMPNE;
+            case IF_ICMPNE -> IF_ICMPEQ;
+            case IF_ICMPLT -> IF_ICMPGE;
+            case IF_ICMPGE -> IF_ICMPLT;
+            case IF_ICMPGT -> IF_ICMPLE;
+            case IF_ICMPLE -> IF_ICMPGT;
+            case IF_ACMPEQ -> IF_ACMPNE;
+            case IF_ACMPNE -> IF_ACMPEQ;
+            case IFNULL -> IFNONNULL;
+            case IFNONNULL -> IFNULL;
+            default -> throw new IllegalArgumentException(
+                    String.format("Wrong opcode kind specified; found %d, expected %s", bytecode, Opcode.Kind.BRANCH));
         };
     }
 
@@ -407,7 +456,7 @@ public class BytecodeHelpers {
         if (opcode == Opcode.RET && (slot & ~0xFF) == 0 ||
                 opcode == Opcode.RET_W && (slot & ~0xFFFF) == 0)
             return;
-        Objects.requireNonNull(opcode);
+        requireNonNull(opcode);
         throw slotOutOfBounds(opcode, slot);
     }
 
@@ -495,7 +544,7 @@ public class BytecodeHelpers {
         } if (constantValue instanceof DynamicConstantDesc<?> value) {
             return handleConstantDescToHandleInfo(constantPool, value);
         }
-        throw new UnsupportedOperationException("not yet: " + constantValue);
+        throw new UnsupportedOperationException("not yet: " + requireNonNull(constantValue));
     }
 
     public static ConstantDesc intrinsicConstantValue(Opcode opcode) {

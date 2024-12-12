@@ -88,6 +88,7 @@ class BasicObjectLock {
  public:
   // Manipulation
   oop      obj() const                                { return _obj;  }
+  oop*     obj_adr()                                  { return &_obj; }
   void set_obj(oop obj)                               { _obj = obj; }
   BasicLock* lock()                                   { return &_lock; }
 
