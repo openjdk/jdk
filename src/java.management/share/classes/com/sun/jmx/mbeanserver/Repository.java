@@ -44,8 +44,6 @@ import javax.management.ObjectName;
 import javax.management.QueryExp;
 import javax.management.RuntimeOperationsException;
 
-import static sun.management.Util.newObjectName;
-
 /**
  * This repository does not support persistency.
  *
@@ -283,7 +281,7 @@ public class Repository {
 
         // Set domain to default if domain is empty and not already set
         if (dom.length() == 0)
-            name = newObjectName(domain + name.toString());
+            name = sun.management.Util.newObjectName(domain + name.toString());
 
         // Do we have default domain ?
         if (dom == domain) {  // ES: OK (dom & domain are interned)
@@ -440,10 +438,9 @@ public class Repository {
                 if (allNames)
                     result.addAll(moiTb.values());
                 else
-                    addAllMatching(moiTb, result, newObjectName(domain + name.getCanonicalName()));
+                    addAllMatching(moiTb, result, sun.management.Util.newObjectName(domain + name.getCanonicalName()));
                 return result;
             }
-
             if (!name.isDomainPattern()) {
                 final Map<String,NamedObject> moiTb = domainTb.get(dom2Match);
                 if (moiTb == null) return Collections.emptySet();

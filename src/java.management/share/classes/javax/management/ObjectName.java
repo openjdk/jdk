@@ -37,8 +37,6 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
-import static sun.management.Util.newObjectName;
-
 /**
  * <p>Represents the object name of an MBean, or a pattern that can
  * match the names of several MBeans.  Instances of this class are
@@ -1224,7 +1222,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     public static ObjectName getInstance(ObjectName name) {
         if (name.getClass().equals(ObjectName.class))
             return name;
-        return newObjectName(name.getSerializedNameString());
+        return sun.management.Util.newObjectName(name.getSerializedNameString());
     }
 
     /**
@@ -1815,7 +1813,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *
      * @since 1.6
      */
-    public static final ObjectName WILDCARD = newObjectName("*:*");
+    public static final ObjectName WILDCARD = sun.management.Util.newObjectName("*:*");
 
     // Category : Utilities <===================================
 
