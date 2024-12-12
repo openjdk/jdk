@@ -108,7 +108,7 @@ final class P11KDF extends KDFSpi {
     private <T> T derive(String alg, AlgorithmParameterSpec derivationSpec,
             Class<T> retType) throws InvalidAlgorithmParameterException {
         SecretKey baseKey;
-        SecretKey salt = null;
+        SecretKey salt = EMPTY_KEY;
         byte[] info = null;
         int outLen;
         boolean isExtract = false, isExpand = false;
