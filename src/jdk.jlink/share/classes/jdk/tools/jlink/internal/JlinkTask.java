@@ -428,7 +428,7 @@ public class JlinkTask {
                 if (initialRoots.isEmpty()) {
                     String modPath = originalModulePath.stream()
                             .map(a -> a.toString())
-                            .collect(Collectors.joining(","));
+                            .collect(Collectors.joining(", "));
                     throw taskHelper.newBadArgs("err.empty.module.path", modPath);
                 }
 
