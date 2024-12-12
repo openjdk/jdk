@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8337109
- * @summary Check doctype and character encoding on the full docs
+ * @summary Check the html in the generated documentation
  * @library /test/langtools/tools/lib ../../doccheck /test/lib ../../../../tools/tester
  * @build DocTester toolbox.TestRunner
- * @run main/othervm -Ddoccheck.dir= -Ddoccheck.checks=doctype,badchars DocCheck
+ * @run main/othervm -Ddoccheck.checks=html DocCheck
  */

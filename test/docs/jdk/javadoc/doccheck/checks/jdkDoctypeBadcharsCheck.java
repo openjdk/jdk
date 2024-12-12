@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8337109
- * @summary Running Doccheck on generated HTML
+ * @summary Check doctype and character encoding in the generated documentation
  * @library /test/langtools/tools/lib ../../doccheck /test/lib ../../../../tools/tester
  * @build DocTester toolbox.TestRunner
- * @run main/othervm -Ddoccheck.dir=api/java.base -Ddoccheck.checks=links,html,badchars,doctype DocCheck
+ * @run main/othervm -Ddoccheck.checks=doctype,badchars DocCheck
  */

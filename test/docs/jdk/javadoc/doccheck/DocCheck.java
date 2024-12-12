@@ -37,7 +37,7 @@ import java.util.*;
 /**
  * DocCheck
  * <p>
- * For the sake of brefity, to run all of these checkers use
+ * For the sake of brevity, to run all of these checkers use
  * <p>
  * `make test-docs_all TEST_DEPS=docs-jdk`
  * <p>
@@ -66,7 +66,6 @@ import java.util.*;
  * *Links* -- We check links within a set of files, and reports on links
  * to external resources, without otherwise checking them.
  * <p>
- *  TODO (not yet added)
  *  *External Links* -- We scan the files for URLs that refer to
  *     external resources, and validates those references using a "golden file" that includes a list of vetted links.
  * <p>
@@ -74,7 +73,9 @@ import java.util.*;
  * reference will be reported.
  */
 public class DocCheck extends TestRunner {
-    private static final Path DIR = Path.of(System.getProperty("doccheck.dir"));
+
+    private static final String DOCCHECK_DIR = System.getProperty("doccheck.dir");
+    private static final Path DIR = Path.of(DOCCHECK_DIR != null ? DOCCHECK_DIR : "");
     private static final Set<String> CHECKS_LIST = new HashSet<>();
     private static Path DOCS_DIR;
 
@@ -82,6 +83,7 @@ public class DocCheck extends TestRunner {
     private static boolean links;
     private static boolean badchars;
     private static boolean doctype;
+    private static boolean extlinks;
 
     private List<Path> files;
 
@@ -112,6 +114,7 @@ public class DocCheck extends TestRunner {
             links = true;
             badchars = true;
             doctype = true;
+            extlinks = true;
         } else {
             if (CHECKS_LIST.contains("html")) {
                 html = true;
@@ -124,6 +127,9 @@ public class DocCheck extends TestRunner {
             }
             if (CHECKS_LIST.contains("doctype")) {
                 doctype = true;
+            }
+            if (CHECKS_LIST.contains("extlinks")) {
+                extlinks = true;
             }
         }
     }
@@ -148,6 +154,10 @@ public class DocCheck extends TestRunner {
             checkers.add(new HtmlFileChecker(linkChecker, DOCS_DIR));
         }
 
+        if (extlinks) {
+            checkers.add(new HtmlFileChecker(new ExtLinkChecker(), DOCS_DIR));
+        }
+
         // there should be almost nothing reported from these two checkers
         // most reports should be broken anchors/links, missing files and errors in html
         if (badchars) {
@@ -156,10 +166,6 @@ public class DocCheck extends TestRunner {
         if (doctype) {
             checkers.add(new HtmlFileChecker(new DocTypeChecker(), DOCS_DIR));
         }
-
-//        if (extlinks) {
-//            checkers.add(new HtmlFileChecker(new ExtLinkChecker(), DOCS_DIR));
-//        }
 
         return checkers;
     }

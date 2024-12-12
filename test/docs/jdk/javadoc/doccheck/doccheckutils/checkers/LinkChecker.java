@@ -182,11 +182,11 @@ public class LinkChecker implements HtmlChecker {
             }
         }
 
-        if (hostCounts.size() > 0) {
-            log.log("");
-            log.log("Hosts");
-            hostCounts.forEach((h, n) -> log.log("%6d %s", n, h));
-        }
+//        if (hostCounts.size() > 0) {
+//            log.log("");
+//            log.log("Hosts");
+//            hostCounts.forEach((h, n) -> log.log("%6d %s", n, h));
+//        }
 
 
         for (String message : log.getErrors()) {
