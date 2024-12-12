@@ -639,6 +639,9 @@ public:
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
+  // Schedule periodic task to report on gc thread CPU utilization
+  _mmu_tracker.initialize();
+
   MutexLocker ml(Threads_lock);
 
   ShenandoahInitWorkerGCLABClosure init_gclabs;
@@ -652,8 +655,6 @@ void ShenandoahHeap::post_initialize() {
     _safepoint_workers->set_initialize_gclab();
   }
 
-  // Schedule periodic task to report on gc thread CPU utilization
-  _mmu_tracker.initialize();
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
 
@@ -1466,15 +1467,19 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   }
 
   if (_control_thread != nullptr) {
+    log_info(gc)("Do control thread");
     tcl->do_thread(_control_thread);
   }
 
   if (_uncommit_thread != nullptr) {
+    log_info(gc)("Do uncommit thread");
     tcl->do_thread(_uncommit_thread);
   }
 
+  log_info(gc)("Do workers");
   workers()->threads_do(tcl);
   if (_safepoint_workers != nullptr) {
+    log_info(gc)("Do safepoint workers");
     _safepoint_workers->threads_do(tcl);
   }
 }
