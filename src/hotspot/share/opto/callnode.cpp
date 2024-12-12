@@ -1103,6 +1103,9 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     } else {
       assert(IncrementalInline, "required");
       assert(cg->method()->is_method_handle_intrinsic() == false, "required");
+      if (phase->C->print_inlining()) {
+        cg->print_inlining_late(InliningResult::FAILURE, "static call node changed: trying again");
+      }
       phase->C->prepend_late_inline(cg);
       set_generator(nullptr);
     }
@@ -1209,6 +1212,9 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     } else {
       assert(IncrementalInline, "required");
+      if (phase->C->print_inlining()) {
+        cg->print_inlining_late(InliningResult::FAILURE, "dynamic call node changed: trying again");
+      }
       phase->C->prepend_late_inline(cg);
       set_generator(nullptr);
     }
