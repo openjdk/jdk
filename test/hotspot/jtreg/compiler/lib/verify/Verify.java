@@ -56,7 +56,7 @@ public final class Verify {
             print(a, "a " + context);
             print(b, "b " + context);
             throw new VerifyException("Object array null mismatch.");
-	}
+        }
 
         // Class mismatch
         Class ca = a.getClass();
@@ -67,7 +67,7 @@ public final class Verify {
             print(a, "a " + context);
             print(b, "b " + context);
             throw new VerifyException("Object array class mismatch.");
-	}
+        }
 
         switch (a) {
             case Object[]  x -> checkEQimpl(x, (Object[])b,                context);
