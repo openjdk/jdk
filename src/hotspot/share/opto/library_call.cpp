@@ -712,14 +712,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(3);
   case vmIntrinsics::_VectorFromBitsCoerced:
     return inline_vector_frombits_coerced();
-  case vmIntrinsics::_VectorShuffleIota:
-    return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:
     return inline_vector_mask_operation();
-  case vmIntrinsics::_VectorShuffleToVector:
-    return inline_vector_shuffle_to_vector();
-  case vmIntrinsics::_VectorWrapShuffleIndexes:
-    return inline_vector_wrap_shuffle_indexes();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
   case vmIntrinsics::_VectorLoadMaskedOp:
@@ -3682,10 +3676,10 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
   access_store_at(nullptr, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
-  // Change the lock_id of the JavaThread
+  // Change the _monitor_owner_id of the JavaThread
   Node* tid = load_field_from_object(arr, "tid", "J");
-  Node* thread_id_offset = basic_plus_adr(thread, in_bytes(JavaThread::lock_id_offset()));
-  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, MemNode::unordered, true);
+  Node* monitor_owner_id_offset = basic_plus_adr(thread, in_bytes(JavaThread::monitor_owner_id_offset()));
+  store_to_memory(control(), monitor_owner_id_offset, tid, T_LONG, MemNode::unordered, true);
 
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;

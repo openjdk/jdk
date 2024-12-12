@@ -3834,7 +3834,7 @@ public class Resolve {
      */
     Symbol findLocalClassOwner(Env<AttrContext> env, TypeSymbol c) {
         Symbol owner = c.owner;
-        Assert.check(owner.kind == MTH);
+        Assert.check(owner.kind == MTH || owner.kind == VAR);
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
@@ -3846,7 +3846,9 @@ public class Resolve {
             if (isStatic(env1)) staticOnly = true;
             env1 = env1.outer;
         }
-        return methodNotFound;
+        return owner.kind == MTH ?
+                methodNotFound :
+                varNotFound;
     }
 
     /**

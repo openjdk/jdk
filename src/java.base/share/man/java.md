@@ -279,7 +279,8 @@ contain whitespace characters. All content between the open quote and the
 first matching close quote are preserved by simply removing the pair of quotes.
 In case a matching quote is not found, the launcher will abort with an error
 message. `@`-files are supported as they are specified in the command line.
-However, as in `@`-files, use of a wildcard is not supported. In order to
+Any wildcard literal `*` in the `JDK_JAVA_OPTIONS` environment variable
+content isn't expanded and is passed as-is to the starting VM. In order to
 mitigate potential misuse of `JDK_JAVA_OPTIONS` behavior, options that specify
 the main class (such as `-jar`) or cause the `java` launcher to exit without
 executing the main class (such as `-h`) are disallowed in the environment
@@ -2894,6 +2895,12 @@ when they're used.
     396](https://openjdk.org/jeps/396) and made obsolete in JDK 17
     by [JEP 403](https://openjdk.org/jeps/403).
 
+## Removed Java Options
+
+These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
+
+>   `Unrecognized VM option` *option-name*
+
 `-XX:RTMAbortRatio=`*abort\_ratio*
 :   Specifies the RTM abort ratio is specified as a percentage (%) of all
     executed RTM transactions. If a number of aborted transactions becomes
@@ -2953,57 +2960,9 @@ when they're used.
     processors, which forces them to read from main memory instead of their
     cache.
 
-## Removed Java Options
-
-These `java` options have been removed in JDK @@VERSION_SPECIFICATION@@ and using them results in an error of:
-
->   `Unrecognized VM option` *option-name*
-
-`-XX:InitialRAMFraction=`*ratio*
-:   Sets the initial amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a ratio of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is
-    64.
-
-    Use the option `-XX:InitialRAMPercentage` instead.
-
-`-XX:MaxRAMFraction=`*ratio*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a fraction of the maximum amount
-    determined as described in the `-XX:MaxRAM` option. The default value is 4.
-
-    Specifying this option disables automatic use of compressed oops if
-    the combined result of this and other options influencing the maximum amount
-    of memory is larger than the range of memory addressable by compressed oops.
-    See `-XX:UseCompressedOops` for further information about compressed oops.
-
-    Use the option `-XX:MaxRAMPercentage` instead.
-
-`-XX:MinRAMFraction=`*ratio*
-:   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics as a fraction of the maximum amount
-    determined as described in the `-XX:MaxRAM` option for small heaps. A small
-    heap is a heap of approximately 125 MB. The default value is 2.
-
-    Use the option `-XX:MinRAMPercentage` instead.
-
-`-XX:+ScavengeBeforeFullGC`
-:   Enables GC of the young generation before each full GC. This option is
-    enabled by default. It is recommended that you *don't* disable it, because
-    scavenging the young generation before a full GC can reduce the number of
-    objects reachable from the old generation space into the young generation
-    space. To disable GC of the young generation before each full GC, specify
-    the option `-XX:-ScavengeBeforeFullGC`.
-
-`-Xfuture`
-:   Enables strict class-file format checks that enforce close conformance to
-    the class-file format specification. Developers should use this flag when
-    developing new code. Stricter checks may become the default in future
-    releases.
-
-    Use the option `-Xverify:all` instead.
-
 For the lists and descriptions of options removed in previous releases see the *Removed Java Options* section in:
+
+-   [The `java` Command, Release 24](https://docs.oracle.com/en/java/javase/24/docs/specs/man/java.html)
 
 -   [The `java` Command, Release 23](https://docs.oracle.com/en/java/javase/23/docs/specs/man/java.html)
 
@@ -3073,9 +3032,9 @@ The following items describe the syntax of `java` argument files:
 -   The argument file size must not exceed MAXINT (2,147,483,647) bytes.
 
 -   The launcher doesn't expand wildcards that are present within an argument
-    file. That means, an asterisk  `*` is passed on as-is to the starting VM.
-    For example `*.java` stays `*.java` and is not expanded to `Foo.java`,
-    `Bar.java`, etc. like on some command line shell.
+    file. That means an asterisk (`*`) is passed on as-is to the starting VM.
+    For example `*.java` stays `*.java` and is not expanded to
+    `Foo.java Bar.java ...`, as would happen with some command line shells.
 
 -   Use white space or new line characters to separate arguments included in
     the file.
@@ -3117,8 +3076,6 @@ The following items describe the syntax of `java` argument files:
 
 -   An open quote stops at end-of-line unless `\` is the last character, which
     then joins the next line by removing all leading white space characters.
-
--   Wildcards (\*) aren't allowed in these lists (such as specifying `*.java`).
 
 -   Use of the at sign (`@`) to recursively interpret files isn't supported.
 
