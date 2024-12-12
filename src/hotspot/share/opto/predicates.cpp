@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,8 +274,7 @@ bool InitializedAssertionPredicate::is_predicate(Node* node) {
 }
 
 void InitializedAssertionPredicate::kill(PhaseIdealLoop* phase) const {
-  Node* true_con = phase->igvn().intcon(1);
-  phase->set_ctrl(true_con, phase->C->root());
+  Node* true_con = phase->intcon(1);
   phase->igvn().replace_input_of(_if_node, 1, true_con);
 }
 

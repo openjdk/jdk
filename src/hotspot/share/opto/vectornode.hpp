@@ -1688,15 +1688,18 @@ public:
   virtual int Opcode() const;
 };
 
-
+// The target may not directly support the rearrange operation for an element type. In those cases,
+// we can transform the rearrange into a different element type. For example, on x86 before AVX512,
+// there is no rearrange instruction for short elements, what we will then do is to transform the
+// shuffle vector into one that we can do byte rearrange such that it would provide the same
+// result. This could have been done in VectorRearrangeNode during code emission but we eagerly
+// expand this out because it is often the case that an index vector is reused in many rearrange
+// operations. This allows the index preparation to be GVN-ed as well as hoisted out of loops, etc.
 class VectorLoadShuffleNode : public VectorNode {
  public:
   VectorLoadShuffleNode(Node* in, const TypeVect* vt)
-    : VectorNode(in, vt) {
-    assert(in->bottom_type()->is_vect()->element_basic_type() == T_BYTE, "must be BYTE");
-  }
+    : VectorNode(in, vt) {}
 
-  int GetOutShuffleSize() const { return type2aelembytes(vect_type()->element_basic_type()); }
   virtual int Opcode() const;
 };
 
@@ -1935,14 +1938,11 @@ class VectorBoxAllocateNode : public CallStaticJavaNode {
 };
 
 class VectorUnboxNode : public VectorNode {
- private:
-  bool _shuffle_to_vector;
  protected:
   uint size_of() const { return sizeof(*this); }
  public:
-  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem, bool shuffle_to_vector)
+  VectorUnboxNode(Compile* C, const TypeVect* vec_type, Node* obj, Node* mem)
     : VectorNode(mem, obj, vec_type) {
-    _shuffle_to_vector = shuffle_to_vector;
     init_class_id(Class_VectorUnbox);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -1953,7 +1953,6 @@ class VectorUnboxNode : public VectorNode {
   Node* mem() const { return in(1); }
   virtual Node* Identity(PhaseGVN* phase);
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
-  bool is_shuffle_to_vector() { return _shuffle_to_vector; }
 };
 
 class RotateRightVNode : public VectorNode {

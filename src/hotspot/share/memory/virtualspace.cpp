@@ -329,20 +329,6 @@ ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size, siz
   return result;
 }
 
-size_t ReservedSpace::page_align_size_up(size_t size) {
-  return align_up(size, os::vm_page_size());
-}
-
-
-size_t ReservedSpace::page_align_size_down(size_t size) {
-  return align_down(size, os::vm_page_size());
-}
-
-
-size_t ReservedSpace::allocation_align_size_up(size_t size) {
-  return align_up(size, os::vm_allocation_granularity());
-}
-
 void ReservedSpace::release() {
   if (is_reserved()) {
     char *real_base = _base - _noaccess_prefix;
