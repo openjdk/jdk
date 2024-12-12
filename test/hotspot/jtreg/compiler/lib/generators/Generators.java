@@ -50,4 +50,19 @@ public final class Generators {
             default -> { throw new RuntimeException("impossible"); }
         }
     }
+
+    /**
+     * Randomly pick an long generator.
+     */
+    public static LongGenerator longs() {
+        switch(RANDOM.nextInt(6)) {
+            case 0  -> { return new UniformLongGenerator(); }
+            case 1  -> { return new SpecialLongGenerator(0); }
+            case 2  -> { return new SpecialLongGenerator(2); }
+            case 3  -> { return new SpecialLongGenerator(16); }
+            case 4  -> { return new MixedLongGenerator(1, 1, 16); }
+            case 5  -> { return new MixedLongGenerator(1, 2, 2); }
+            default -> { throw new RuntimeException("impossible"); }
+        }
+    }
 }
