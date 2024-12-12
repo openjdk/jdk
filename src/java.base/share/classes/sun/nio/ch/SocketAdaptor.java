@@ -35,6 +35,7 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
+import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
 
@@ -85,6 +86,14 @@ class SocketAdaptor
     public void connect(SocketAddress remote, int timeout) throws IOException {
         if (remote == null)
             throw new IllegalArgumentException("connect: The address can't be null");
+        if (remote instanceof InetSocketAddress isa && isa.isUnresolved()) {
+            if (!sc.isOpen())
+                throw new SocketException("Socket is closed");
+            if (sc.isConnected())
+                throw new SocketException("Already connected");
+            close();
+            throw new UnknownHostException(remote.toString());
+        }
         if (timeout < 0)
             throw new IllegalArgumentException("connect: timeout can't be negative");
         try {
@@ -95,7 +104,7 @@ class SocketAdaptor
                 sc.blockingConnect(remote, Long.MAX_VALUE);
             }
         } catch (Exception e) {
-            Net.translateException(e, true);
+            Net.translateException(e);
         }
     }
 

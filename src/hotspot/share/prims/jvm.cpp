@@ -2977,8 +2977,8 @@ JVM_ENTRY(void, JVM_SetCurrentThread(JNIEnv* env, jobject thisThread,
   oop threadObj = JNIHandles::resolve(theThread);
   thread->set_vthread(threadObj);
 
-  // Set lock id of new current Thread
-  thread->set_lock_id(java_lang_Thread::thread_id(threadObj));
+  // Set _monitor_owner_id of new current Thread
+  thread->set_monitor_owner_id(java_lang_Thread::thread_id(threadObj));
 
   JFR_ONLY(Jfr::on_set_current_thread(thread, threadObj);)
 JVM_END
@@ -3299,7 +3299,7 @@ JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
   return ForeignGlobals::is_foreign_linker_supported() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
-JVM_ENTRY_NO_ENV(jboolean, JVM_IsStaticallyLinked(void))
+JVM_LEAF(jboolean, JVM_IsStaticallyLinked(void))
   return is_vm_statically_linked() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 

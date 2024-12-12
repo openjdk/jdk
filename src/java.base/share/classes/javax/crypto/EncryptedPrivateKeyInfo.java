@@ -55,7 +55,7 @@ import java.util.Objects;
  *
  * @author Valerie Peng
  *
- * @see PKCS8EncodedKeySpec
+ * @see java.security.spec.PKCS8EncodedKeySpec
  *
  * @since 1.4
  */

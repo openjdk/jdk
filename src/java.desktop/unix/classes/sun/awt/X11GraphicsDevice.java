@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.awt;
 
-import java.awt.AWTPermission;
 import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -65,7 +64,6 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private volatile int screen;
     Map<SurfaceType, SurfaceManager.ProxyCache> x11ProxyCacheMap = Collections.synchronizedMap(new HashMap<>());
 
-    private static AWTPermission fullScreenExclusivePermission;
     private static Boolean xrandrExtSupported;
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
@@ -335,23 +333,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     @Override
     public boolean isFullScreenSupported() {
-        boolean fsAvailable = isXrandrExtensionSupported();
-        if (fsAvailable) {
-            @SuppressWarnings("removal")
-            SecurityManager security = System.getSecurityManager();
-            if (security != null) {
-                if (fullScreenExclusivePermission == null) {
-                    fullScreenExclusivePermission =
-                        new AWTPermission("fullScreenExclusive");
-                }
-                try {
-                    security.checkPermission(fullScreenExclusivePermission);
-                } catch (SecurityException e) {
-                    return false;
-                }
-            }
-        }
-        return fsAvailable;
+        return isXrandrExtensionSupported();
     }
 
     @Override

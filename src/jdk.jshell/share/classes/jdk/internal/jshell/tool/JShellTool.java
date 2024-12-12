@@ -72,6 +72,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -805,46 +806,46 @@ public class JShellTool implements MessageHandler {
     }
 
     /**
-     * Add normal prefixing/postfixing to embedded newlines in a string,
+     * Add normal prefixing/postfixing to embedded newlines in a format string,
      * bracketing with normal prefix/postfix
      *
-     * @param s the string to prefix
-     * @return the pre/post-fixed and bracketed string
+     * @param format the format string to prefix/postfix
+     * @return the pre/post-fixed and bracketed format string
      */
-    String prefix(String s) {
-         return prefix(s, feedback.getPre(), feedback.getPost());
+    String prefix(String format) {
+         return prefix(format, feedback.getPre(), feedback.getPost());
     }
 
     /**
-     * Add error prefixing/postfixing to embedded newlines in a string,
+     * Add error prefixing/postfixing to embedded newlines in a format string,
      * bracketing with error prefix/postfix
      *
-     * @param s the string to prefix
-     * @return the pre/post-fixed and bracketed string
+     * @param format the format string to prefix/postfix
+     * @return the pre/post-fixed and bracketed format string
      */
-    String prefixError(String s) {
-         return prefix(s, feedback.getErrorPre(), feedback.getErrorPost());
+    String prefixError(String format) {
+         return prefix(format, feedback.getErrorPre(), feedback.getErrorPost());
     }
 
     /**
-     * Add prefixing/postfixing to embedded newlines in a string,
+     * Add prefixing/postfixing to embedded newlines in a format string,
      * bracketing with prefix/postfix.  No prefixing when non-interactive.
-     * Result is expected to be the format for a printf.
+     * Both input and result strings are expected to be the format for a printf.
      *
-     * @param s the string to prefix
-     * @param pre the string to prepend to each line
-     * @param post the string to append to each line (replacing newline)
-     * @return the pre/post-fixed and bracketed string
+     * @param format the format string to prefix
+     * @param pre the string to prepend to each line (printf safe)
+     * @param post the string to append to each line (replacing newline; printf safe)
+     * @return the pre/post-fixed and bracketed format string
      */
-    String prefix(String s, String pre, String post) {
-        if (s == null) {
+    String prefix(String format, String pre, String post) {
+        if (format == null) {
             return "";
         }
         if (!interactiveModeBegun) {
             // messages expect to be new-line terminated (even when not prefixed)
-            return s + "%n";
+            return format + "%n";
         }
-        String pp = s.replaceAll("\\R", post + pre);
+        String pp = format.replaceAll("\\R", post + pre);
         if (pp.endsWith(post + pre)) {
             // prevent an extra prefix char and blank line when the string
             // already terminates with newline
@@ -859,7 +860,7 @@ public class JShellTool implements MessageHandler {
      * @param key the resource key
      */
     void hardrb(String key) {
-        hard(getResourceString(key));
+        hard(escape(getResourceString(key)));
     }
 
     /**
@@ -882,7 +883,7 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void hardmsg(String key, Object... args) {
-        hard(messageFormat(key, args));
+        hard(escape(messageFormat(key, args)));
     }
 
     /**
@@ -912,13 +913,20 @@ public class JShellTool implements MessageHandler {
     }
 
     <T> void hardPairs(Stream<T> stream, Function<T, String> a, Function<T, String> b) {
-        Map<String, String> a2b = stream.collect(toMap(a, b,
+        Map<String, String> a2b = stream.collect(toMap(a, b.andThen(this::escape),
                 (m1, m2) -> m1,
                 LinkedHashMap::new));
         for (Entry<String, String> e : a2b.entrySet()) {
             hard("%s", e.getKey());
             cmdout.printf(prefix(e.getValue(), feedback.getPre() + "\t", feedback.getPost()));
         }
+    }
+
+    /**
+     * Escape '%' signs in a plain string to make it a valid format string.
+     */
+    String escape(Object s) {
+        return s.toString().replace("%", "%%");
     }
 
     /**
@@ -2332,7 +2340,7 @@ public class JShellTool implements MessageHandler {
             sb.append(startup.show(false));
             sb.append(startup.showDetail());
         }
-        hard(sb.toString());
+        hard(escape(sb));
     }
 
     private void showIndent() {
@@ -3262,7 +3270,7 @@ public class JShellTool implements MessageHandler {
                 sb.append(a);
             }
             if (sb.length() > 0) {
-                hard(sb.toString());
+                hard(escape(sb));
             }
             return false;
         }
@@ -3777,7 +3785,7 @@ public class JShellTool implements MessageHandler {
             case NONEXISTENT:
             default:
                 // Should not occur
-                error("Unexpected status: " + previousStatus.toString() + "=>" + status.toString());
+                error("Unexpected status: %s=>%s", previousStatus, status);
                 act = FormatAction.DROPPED;
         }
         return act;
