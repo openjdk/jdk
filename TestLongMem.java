@@ -87,8 +87,12 @@ public class TestLongMem {
         return a * b;
     }
 
-    public static long testSub(int a, int b) {
-        return a - b;
+    public static long testSub2(long x, int i) {
+        return b[i] - x;
+    }
+
+    public static long testSub1(long x, int i) {
+        return x - b[i];
     }
 
     public static long testAdd2(long x, int i) {

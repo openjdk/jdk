@@ -87,8 +87,12 @@ public class TestIntMem {
         return a * b;
     }
 
-    public static int testSub(int a, int b) {
-        return a - b;
+    public static  int testSub2(int x, int i) {
+        return b[i] - x;
+    }
+
+    public static int testSub1(int x, int i) {
+        return x - b[i];
     }
 
     public static int testAdd2(int x, int i) {

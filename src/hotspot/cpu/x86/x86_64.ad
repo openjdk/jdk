@@ -7937,6 +7937,7 @@ instruct subI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 
 instruct subI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (SubI dst (LoadI src)));
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
@@ -7945,6 +7946,32 @@ instruct subI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   format %{ "subl    $dst, $src\t# int" %}
   ins_encode %{
     __ subl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct subI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (SubI src1 (LoadI src2)));
+
+  ins_cost(150);
+  format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ esubl($dst$$Register, $src1$$Register, $src2$$Address, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct subI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (SubI (LoadI src1) src2));
+
+  ins_cost(150);
+  format %{ "esubl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ esubl($dst$$Register, $src1$$Address, $src2$$Register, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -7991,6 +8018,7 @@ instruct subL_rReg_ndd(rRegL dst, rRegL src1, rRegL src2)
 
 instruct subL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (SubL dst (LoadL src)));
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
@@ -7999,6 +8027,32 @@ instruct subL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   format %{ "subq    $dst, $src\t# long" %}
   ins_encode %{
     __ subq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct subL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (SubL src1 (LoadL src2)));
+
+  ins_cost(150);
+  format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ esubq($dst$$Register, $src1$$Register, $src2$$Address, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct subL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (SubL (LoadL src1) src2));
+
+  ins_cost(150);
+  format %{ "esubq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ esubq($dst$$Register, $src1$$Address, $src2$$Register, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
