@@ -22,13 +22,16 @@
  */
 
 import jdk.test.lib.Utils;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.Authenticator;
 import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.Proxy;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -36,6 +39,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 
+import static java.net.InetAddress.getLoopbackAddress;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,9 +47,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
- * @bug 8343791
+ * @bug 8343791 8346017
  * @summary verifies that `connect()` failures throw the expected exception and leave socket in the expected state
- * @library /test/lib
+ * @library /test/lib /java/net/Socks
+ * @build SocksServer
  * @run junit ConnectFailTest
  */
 class ConnectFailTest {
@@ -57,9 +62,36 @@ class ConnectFailTest {
     private static final InetSocketAddress UNRESOLVED_ADDRESS =
             InetSocketAddress.createUnresolved("no.such.host", DEAD_SERVER_PORT);
 
-    @Test
-    void testUnresolvedAddress() {
-        assertTrue(UNRESOLVED_ADDRESS.isUnresolved());
+    private static final String SOCKS_AUTH_USERNAME = "foo";
+
+    private static final String SOCKS_AUTH_PASSWORD = "bar";
+
+    private static SocksServer SOCKS_SERVER;
+
+    private static Proxy SOCKS_PROXY;
+
+    @BeforeAll
+    static void initAuthenticator() {
+        Authenticator.setDefault(new Authenticator() {
+            @Override
+            protected PasswordAuthentication getPasswordAuthentication() {
+                return new PasswordAuthentication(SOCKS_AUTH_USERNAME, SOCKS_AUTH_PASSWORD.toCharArray());
+            }
+        });
+    }
+
+    @BeforeAll
+    static void initSocksServer() throws IOException {
+        SOCKS_SERVER = new SocksServer(0);
+        SOCKS_SERVER.addUser(SOCKS_AUTH_USERNAME, SOCKS_AUTH_PASSWORD);
+        SOCKS_SERVER.start();
+        InetSocketAddress proxyAddress = new InetSocketAddress(getLoopbackAddress(), SOCKS_SERVER.getPort());
+        SOCKS_PROXY = new Proxy(Proxy.Type.SOCKS, proxyAddress);
+    }
+
+    @AfterAll
+    static void stopSocksServer() {
+        SOCKS_SERVER.close();
     }
 
     /**
@@ -67,8 +99,8 @@ class ConnectFailTest {
      */
     @ParameterizedTest
     @MethodSource("sockets")
-    void testUnboundSocket(Socket socket) throws IOException {
-        try (socket) {
+    void testUnboundSocket(SocketArg socketArg) throws IOException {
+        try (Socket socket = socketArg.socket) {
             assertFalse(socket.isBound());
             assertFalse(socket.isConnected());
             assertThrows(IOException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
@@ -81,8 +113,8 @@ class ConnectFailTest {
      */
     @ParameterizedTest
     @MethodSource("sockets")
-    void testBoundSocket(Socket socket) throws IOException {
-        try (socket) {
+    void testBoundSocket(SocketArg socketArg) throws IOException {
+        try (Socket socket = socketArg.socket) {
             socket.bind(new InetSocketAddress(0));
             assertTrue(socket.isBound());
             assertFalse(socket.isConnected());
@@ -96,8 +128,9 @@ class ConnectFailTest {
      */
     @ParameterizedTest
     @MethodSource("sockets")
-    void testConnectedSocket(Socket socket) throws Throwable {
-        try (socket; ServerSocket serverSocket = createEphemeralServerSocket()) {
+    void testConnectedSocket(SocketArg socketArg) throws Throwable {
+        try (Socket socket = socketArg.socket;
+             ServerSocket serverSocket = createEphemeralServerSocket()) {
             socket.connect(serverSocket.getLocalSocketAddress());
             try (Socket _ = serverSocket.accept()) {
                 assertTrue(socket.isBound());
@@ -112,29 +145,49 @@ class ConnectFailTest {
     }
 
     /**
-     * Verifies that an unbound socket is closed when {@code connect()} is invoked using an unresolved address.
+     * Delegates to {@link #testUnconnectedSocketWithUnresolvedAddress(boolean, SocketArg)} using an unbound socket.
      */
     @ParameterizedTest
     @MethodSource("sockets")
-    void testUnboundSocketWithUnresolvedAddress(Socket socket) throws IOException {
-        try (socket) {
+    void testUnboundSocketWithUnresolvedAddress(SocketArg socketArg) throws IOException {
+        try (Socket socket = socketArg.socket) {
             assertFalse(socket.isBound());
             assertFalse(socket.isConnected());
-            assertThrows(UnknownHostException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
-            assertTrue(socket.isClosed());
+            testUnconnectedSocketWithUnresolvedAddress(false, socketArg);
         }
     }
 
     /**
-     * Verifies that a bound socket is closed when {@code connect()} is invoked using an unresolved address.
+     * Delegates to {@link #testUnconnectedSocketWithUnresolvedAddress(boolean, SocketArg)} using a bound socket.
      */
     @ParameterizedTest
     @MethodSource("sockets")
-    void testBoundSocketWithUnresolvedAddress(Socket socket) throws IOException {
-        try (socket) {
+    void testBoundSocketWithUnresolvedAddress(SocketArg socketArg) throws IOException {
+        try (Socket socket = socketArg.socket) {
             socket.bind(new InetSocketAddress(0));
-            assertTrue(socket.isBound());
-            assertFalse(socket.isConnected());
+            testUnconnectedSocketWithUnresolvedAddress(true, socketArg);
+        }
+    }
+
+    /**
+     * Verifies the behaviour of an unconnected socket when {@code connect()} is invoked using an unresolved address.
+     */
+    private static void testUnconnectedSocketWithUnresolvedAddress(boolean bound, SocketArg socketArg) throws IOException {
+        Socket socket = socketArg.socket;
+        assertEquals(bound, socket.isBound());
+        assertFalse(socket.isConnected());
+        if (socketArg.proxied) {
+            try (ServerSocket serverSocket = createEphemeralServerSocket()) {
+                InetSocketAddress unresolvedAddress =
+                        InetSocketAddress.createUnresolved("localhost", serverSocket.getLocalPort());
+                socket.connect(unresolvedAddress);
+                try (Socket _ = serverSocket.accept()) {
+                    assertTrue(socket.isBound());
+                    assertTrue(socket.isConnected());
+                    assertFalse(socket.isClosed());
+                }
+            }
+        } else {
             assertThrows(UnknownHostException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
             assertTrue(socket.isClosed());
         }
@@ -145,27 +198,37 @@ class ConnectFailTest {
      */
     @ParameterizedTest
     @MethodSource("sockets")
-    void testConnectedSocketWithUnresolvedAddress(Socket socket) throws Throwable {
-        try (socket; ServerSocket serverSocket = createEphemeralServerSocket()) {
+    void testConnectedSocketWithUnresolvedAddress(SocketArg socketArg) throws Throwable {
+        try (Socket socket = socketArg.socket;
+             ServerSocket serverSocket = createEphemeralServerSocket()) {
             socket.connect(serverSocket.getLocalSocketAddress());
             try (Socket _ = serverSocket.accept()) {
                 assertTrue(socket.isBound());
                 assertTrue(socket.isConnected());
-                assertThrows(IOException.class, () -> socket.connect(UNRESOLVED_ADDRESS));
+                SocketException exception = assertThrows(
+                        SocketException.class,
+                        () -> socket.connect(UNRESOLVED_ADDRESS));
+                assertEquals("Already connected", exception.getMessage());
                 assertFalse(socket.isClosed());
             }
         }
     }
 
-    static List<Socket> sockets() throws Exception {
+    static List<SocketArg> sockets() throws Exception {
         Socket socket = new Socket();
+        Socket proxiedSocket = new Socket(SOCKS_PROXY);
         @SuppressWarnings("resource")
         Socket channelSocket = SocketChannel.open().socket();
-        return List.of(socket, channelSocket);
+        return List.of(
+                new SocketArg(socket, false),
+                new SocketArg(proxiedSocket, true),
+                new SocketArg(channelSocket, false));
     }
 
+    private record SocketArg(Socket socket, boolean proxied) {}
+
     private static ServerSocket createEphemeralServerSocket() throws IOException {
-        return new ServerSocket(0, 0, InetAddress.getLoopbackAddress());
+        return new ServerSocket(0, 0, getLoopbackAddress());
     }
 
 }

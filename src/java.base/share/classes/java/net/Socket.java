@@ -591,8 +591,6 @@ public class Socket implements java.io.Closeable {
      * @param   endpoint the {@code SocketAddress}
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
-     * @throws  UnknownHostException if the endpoint is an unresolved
-     *          {@link InetSocketAddress}
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -634,8 +632,6 @@ public class Socket implements java.io.Closeable {
      * @throws  IOException if an error occurs during the connection, the socket
      *          is already connected or the socket is closed
      * @throws  SocketTimeoutException if timeout expires before connecting
-     * @throws  UnknownHostException if the endpoint is an unresolved
-     *          {@link InetSocketAddress}
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -659,12 +655,6 @@ public class Socket implements java.io.Closeable {
 
         if (!(endpoint instanceof InetSocketAddress epoint))
             throw new IllegalArgumentException("Unsupported address type");
-
-        if (epoint.isUnresolved()) {
-            var uhe = new UnknownHostException(epoint.getHostName());
-            closeSuppressingExceptions(uhe);
-            throw uhe;
-        }
 
         InetAddress addr = epoint.getAddress();
         checkAddress(addr, "connect");
