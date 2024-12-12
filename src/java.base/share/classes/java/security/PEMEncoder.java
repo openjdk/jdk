@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,15 @@
 package java.security;
 
 import jdk.internal.javac.PreviewFeature;
-
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
-import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 import sun.security.x509.AlgorithmId;
 
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
-import java.io.*;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
 import java.security.spec.AlgorithmParameterSpec;
@@ -47,27 +45,33 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * PEMEncoder is an immutable Privacy-Enhanced Mail (PEM) encoding class.
- * PEM is a textual encoding used for storing and transferring security
+ * PEMEncoder is an immutable class for Privacy-Enhanced Mail (PEM)
+ * data.  PEM is a textual encoding used to store and transfer security
  * objects, such as asymmetric keys, certificates, and certificate revocation
- * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
- * Base64-formatted binary encoding surrounded by a type identifying header
+ * lists (CRL).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
+ * Base64-formatted binary encoding enclosed by a type-identifying header
  * and footer.
- * <p>
- * Encoding may be performed on objects that implement {@link DEREncodable}.
- * <p>
- * Encrypted private key PEM data can be built by calling the encode methods
+ *
+ * <p> Encoding may be performed on Java Cryptographic Extension (JCE) objects
+ * that implement {@link DEREncodable} and support
+ * {@linkplain PKCS8EncodedKeySpec PKCS#8} or
+ * {@linkplain X509EncodedKeySpec X509} formats.
+ *
+ * <p> Encrypted private key PEM data can be built by calling the encode methods
  * on a PEMEncoder instance returned by {@link #withEncryption(char[])} or
  * by passing an {@link EncryptedPrivateKeyInfo} object into the encode methods.
- * <p>
- * PKCS8 v2.0 allows OneAsymmetric encoding, which is a private and public
+ *
+ * <p>PKCS8 v2.0 allows OneAsymmetricKey encoding, which is a private and public
  * key in the same PEM.  This is supported by using the {@link KeyPair} class
  * with the encode methods.
- * <p>
- * PEMEncoder supports the follow types:
- * <pre>
- *     PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and ENCRYPTED PRIVATE KEY.
- * </pre>
+ *
+ * <p> When encoding a {@link PEMRecord}, the API surrounds the
+ * {@linkplain PEMRecord#pem()} with a generated the PEM header and footer
+ * from {@linkplain PEMRecord#type()}.  It will not check the validity of
+ * the data.
+ *
+ * <p>{@code String} values returned by this class use character set
+ * {@link java.nio.charset.StandardCharsets#ISO_8859_1 ISO-8859-1}.
  *
  * @apiNote
  * Here is an example of encoding a PrivateKey object:
@@ -75,6 +79,14 @@ import java.util.concurrent.locks.ReentrantLock;
  *     PEMEncoder pe = PEMEncoder.of();
  *     byte[] pemData = pe.encode(privKey);
  * }
+ *
+ * @see PKCS8EncodedKeySpec
+ * @see X509EncodedKeySpec
+ *
+ * @spec https://www.rfc-editor.org/info/rfc1421
+ *       RFC 1421: Privacy Enhancement for Internet Electronic Mail
+ * @spec https://www.rfc-editor.org/info/rfc7468
+ *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
  * @since 25
  */
@@ -114,12 +126,12 @@ public final class PEMEncoder {
     }
 
     /**
-     * Construct a String-based encoding based off the id type.
+     * Construct a String-based encoding based off the type type.
      * @return the string
      */
     private String pemEncoded(PEMRecord pem) {
         StringBuilder sb = new StringBuilder(1024);
-        sb.append("-----BEGIN ").append(pem.id()).append("-----");
+        sb.append("-----BEGIN ").append(pem.type()).append("-----");
         sb.append(System.lineSeparator());
         if (b64Encoder == null) {
             b64Encoder = Base64.getMimeEncoder(64,
@@ -128,7 +140,7 @@ public final class PEMEncoder {
         sb.append(b64Encoder.encodeToString(
             pem.pem().getBytes(StandardCharsets.ISO_8859_1)));
         sb.append(System.lineSeparator());
-        sb.append("-----END ").append(pem.id()).append("-----");
+        sb.append("-----END ").append(pem.type()).append("-----");
         sb.append(System.lineSeparator());
         return sb.toString();
     }
@@ -171,7 +183,7 @@ public final class PEMEncoder {
             case EncryptedPrivateKeyInfo epki -> {
                 try {
                     yield pemEncoded(new PEMRecord(
-                        PEMRecord.ENCRYPTED_PRIVATE_KEY, epki.getEncoded()));
+                        Pem.ENCRYPTED_PRIVATE_KEY, epki.getEncoded()));
                 } catch (IOException e) {
                     throw new IllegalArgumentException(e);
                 }
@@ -182,7 +194,7 @@ public final class PEMEncoder {
                         throw new IllegalArgumentException("Certificates " +
                             "cannot be encrypted");
                     }
-                    yield pemEncoded(new PEMRecord(PEMRecord.CERTIFICATE,
+                    yield pemEncoded(new PEMRecord(Pem.CERTIFICATE,
                         c.getEncoded()));
                 } catch (CertificateEncodingException e) {
                     throw new IllegalArgumentException(e);
@@ -194,12 +206,14 @@ public final class PEMEncoder {
                         throw new IllegalArgumentException("CRLs cannot be " +
                             "encrypted");
                     }
-                    yield pemEncoded(new PEMRecord(PEMRecord.X509_CRL,
+                    yield pemEncoded(new PEMRecord(Pem.X509_CRL,
                         crl.getEncoded()));
                 } catch (CRLException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
+            case PEMRecord rec -> pemEncoded(rec);
+
             default -> throw new IllegalArgumentException("PEM does not " +
                 "support " + de.getClass().getCanonicalName());
         };
@@ -302,7 +316,7 @@ public final class PEMEncoder {
 
             try {
                 out.putOctetString(cipher.doFinal(privateBytes));
-                return pemEncoded(new PEMRecord(PEMRecord.ENCRYPTED_PRIVATE_KEY,
+                return pemEncoded(new PEMRecord(Pem.ENCRYPTED_PRIVATE_KEY,
                     DerValue.wrap(DerValue.tag_Sequence, out).toByteArray()));
             } catch (GeneralSecurityException e) {
                 throw new IllegalArgumentException(e);
@@ -316,7 +330,7 @@ public final class PEMEncoder {
                     "given by the DEREncodable.");
             }
 
-            return pemEncoded(new PEMRecord(PEMRecord.PUBLIC_KEY, publicBytes));
+            return pemEncoded(new PEMRecord(Pem.PUBLIC_KEY, publicBytes));
         }
 
         // PKCS8 only
@@ -326,8 +340,7 @@ public final class PEMEncoder {
                     "given by the DEREncodable.");
             }
 
-            return pemEncoded(new PEMRecord(PEMRecord.PRIVATE_KEY,
-                privateBytes));
+            return pemEncoded(new PEMRecord(Pem.PRIVATE_KEY, privateBytes));
         }
 
         // OneAsymmetricKey
@@ -342,7 +355,7 @@ public final class PEMEncoder {
                     "given by the DEREncodable.");
             }
 
-            return pemEncoded(new PEMRecord(PEMRecord.PRIVATE_KEY,
+            return pemEncoded(new PEMRecord(Pem.PRIVATE_KEY,
                 PKCS8Key.getEncoded(publicBytes, privateBytes)));
         } catch (IOException e) {
             throw new IllegalArgumentException(e);

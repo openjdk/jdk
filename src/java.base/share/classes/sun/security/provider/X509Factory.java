@@ -27,6 +27,7 @@ package sun.security.provider;
 
 import java.io.*;
 
+import java.security.PEMRecord;
 import java.security.cert.*;
 import java.util.*;
 
@@ -36,7 +37,6 @@ import sun.security.provider.certpath.X509CertPath;
 import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.Cache;
 import sun.security.util.DerValue;
-import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 import sun.security.x509.X509CRLImpl;
 import sun.security.x509.X509CertImpl;
@@ -559,11 +559,16 @@ public class X509Factory extends CertificateFactorySpi {
             return bout.toByteArray();
         } else {
             try {
-                PEMRecord pem = Pem.readPEM(is, (c == '-' ? true : false));
-                if (pem == null) {
+                PEMRecord rec;
+                try {
+                    rec = Pem.readPEM(is, (c == '-' ? true : false));
+                    if (rec.pem() == null) {
+                        return null;
+                    }
+                } catch (EOFException e) {
                     return null;
                 }
-                return Base64.getDecoder().decode(pem.pem());
+                return Base64.getDecoder().decode(rec.pem());
             } catch (IllegalArgumentException e) {
                 throw new IOException(e);
             }

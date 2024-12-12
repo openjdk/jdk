@@ -27,19 +27,24 @@
  * @test
  * @bug 8298420
  * @modules java.base/sun.security.pkcs
- * @summary Testing basic PEM API decodings
+ *          java.base/sun.security.util
+ * @summary Testing basic PEM API decoding
  * @enablePreview
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import java.io.*;
 import java.lang.Class;
-import java.io.IOException;
 import java.security.*;
+import java.security.cert.X509CRL;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.Arrays;
+
+import sun.security.util.Pem;
 
 public class PEMDecoderTest {
 
@@ -55,43 +60,168 @@ public class PEMDecoderTest {
         System.out.println("Decoder test with OAS:");
         testTwoKeys();
         System.out.println("Decoder test RSA PEM setting RSAKey.class returned:");
-        test(PEMData.getEntry("rsapriv"), RSAKey.class);
+        test(PEMData.rsapriv, RSAKey.class);
         System.out.println("Decoder test failures:");
         PEMData.failureEntryList.forEach(PEMDecoderTest::testFailure);
         System.out.println("Decoder test ecsecp256 PEM asking for ECPublicKey.class returned:");
-        testFailure(PEMData.getEntry("ecsecp256"), ECPublicKey.class);
+        testFailure(PEMData.ecsecp256, ECPublicKey.class);
         System.out.println("Decoder test rsapriv PEM setting P8EKS.class returned:");
-        testClass(PEMData.getEntry("rsapriv"), RSAPrivateKey.class);
+        testClass(PEMData.rsapriv, RSAPrivateKey.class);
         System.out.println("Decoder test rsaOpenSSL P1 PEM asking for RSAPublicKey.class returned:");
-        testFailure(PEMData.getEntry(PEMData.privList, "rsaOpenSSL"), RSAPublicKey.class);
+        testFailure(PEMData.rsaOpenSSL, RSAPublicKey.class);
         System.out.println("Decoder test rsapub PEM asking X509EKS.class returned:");
-        testClass(PEMData.getEntry("rsapub"), X509EncodedKeySpec.class, true);
+        testClass(PEMData.rsapub, X509EncodedKeySpec.class, true);
         System.out.println("Decoder test rsapriv PEM asking X509EKS.class returned:");
-        testClass(PEMData.getEntry("rsapriv"), X509EncodedKeySpec.class, false);
+        testClass(PEMData.rsapriv, X509EncodedKeySpec.class, false);
         System.out.println("Decoder test RSAcert PEM asking X509EKS.class returned:");
-        testClass(PEMData.getEntry("rsaCert"), X509EncodedKeySpec.class, false);
+        testClass(PEMData.rsaCert, X509EncodedKeySpec.class, false);
         System.out.println("Decoder test OAS RFC PEM asking PrivateKey.class returned:");
-        testClass(PEMData.getEntry("oasrfc8410"), PrivateKey.class, true);
-        testClass(PEMData.getEntry("oasrfc8410"), PublicKey.class, true);
+        testClass(PEMData.oasrfc8410, PrivateKey.class, true);
+        testClass(PEMData.oasrfc8410, PublicKey.class, true);
         System.out.println("Decoder test ecsecp256:");
         testFailure(PEMData.ecsecp256pub.makeNoCRLF("pubecpem-no"));
         System.out.println("Decoder test RSAcert with decryption Decoder:");
         PEMDecoder d = PEMDecoder.of().withDecryption("123".toCharArray());
-        d.decode(PEMData.getEntry("rsaCert").pem());
+        d.decode(PEMData.rsaCert.pem());
         System.out.println("Decoder test ecsecp256 with decryption Decoder:");
-        PrivateKey pkey = ((KeyPair)d.decode(PEMData.getEntry("ecsecp256").pem())).getPrivate();
+        PrivateKey pkey = ((KeyPair) d.decode(PEMData.ecsecp256.pem())).getPrivate();
         System.out.println("Decoder test ecsecp256 to P8EKS:");
-        PKCS8EncodedKeySpec p8 = d.decode(PEMData.getEntry("ecsecp256").pem(),
+        PKCS8EncodedKeySpec p8 = d.decode(PEMData.ecsecp256.pem(),
             PKCS8EncodedKeySpec.class);
 
         System.out.println("Checking if decode() returns the same encoding:");
         PEMData.privList.forEach(PEMDecoderTest::testDERCheck);
         PEMData.oasList.forEach(PEMDecoderTest::testDERCheck);
 
-        System.out.println("Signature/Verify:");
+        System.out.println("Check a Signature/Verify op is successful:");
         PEMData.privList.forEach(PEMDecoderTest::testSignature);
         PEMData.oasList.forEach(PEMDecoderTest::testSignature);
+
+
+        // PEMRecord tests
+        System.out.println("Checking if ecCSR:");
+        test(PEMData.ecCSR);
+
+        System.out.println("Checking if ecCSR with preData:");
+        DEREncodable result = test(PEMData.ecCSRWithData);
+        if (result instanceof PEMRecord rec) {
+            if (PEMData.preData.compareTo(new String(rec.leadingData())) != 0) {
+                System.err.println("expected: " + PEMData.preData);
+                System.err.println("received: " + new String(rec.leadingData()));
+                throw new AssertionError("ecCSRWithData preData wrong");
+            }
+            if (rec.pem().lastIndexOf("F") > rec.pem().length() - 5) {
+                System.err.println("received: " + rec.pem());
+                throw new AssertionError("ecCSRWithData: " +
+                    "End of PEM data has an unexpected character");
+            }
+        } else {
+            throw new AssertionError("ecCSRWithData didn't return a PEMRecord");
+        }
+
+        System.out.println("Decoding RSA pub using class PEMRecord:");
+        result = PEMDecoder.of().decode(PEMData.rsapub.pem(), PEMRecord.class);
+        if (!(result instanceof PEMRecord)) {
+            throw new AssertionError("pubecpem didn't return a PEMRecord");
+        }
+        if (((PEMRecord) result).type().compareTo(Pem.PUBLIC_KEY) != 0) {
+            throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
+        }
+
+        testInputStream();
+        testPEMRecord(PEMData.rsapub);
+        testPEMRecord(PEMData.ecCert);
+        testPEMRecord(PEMData.ec25519priv);
+        testPEMRecord(PEMData.ecCSR);
+        testPEMRecord(PEMData.ecCSRWithData);
     }
+
+    static void testInputStream() throws IOException {
+        ByteArrayOutputStream ba = new ByteArrayOutputStream(2048);
+        OutputStreamWriter os = new OutputStreamWriter(ba);
+        os.write(PEMData.preData);
+        os.write(PEMData.rsapub.pem());
+        os.write(PEMData.preData);
+        os.write(PEMData.rsapub.pem());
+        os.write(PEMData.postData);
+        os.flush();
+        ByteArrayInputStream is = new ByteArrayInputStream(ba.toByteArray());
+
+        System.out.println("Decoding 2 RSA pub with pre & post data:");
+        PEMRecord obj;
+        int keys = 0;
+        while (keys++ < 2) {
+            obj = PEMDecoder.of().decode(is, PEMRecord.class);
+            if (!PEMData.preData.equalsIgnoreCase(
+                new String(obj.leadingData()))) {
+                System.out.println("expected: \"" + PEMData.preData + "\"");
+                System.out.println("returned: \"" +
+                    new String(obj.leadingData()) + "\"");
+                throw new AssertionError("Leading data incorrect");
+            }
+            System.out.println("  Read public key.");
+        }
+        obj = PEMDecoder.of().decode(is, PEMRecord.class);
+        if (obj.pem() != null) {
+            throw new AssertionError("3rd PEMRecord shouldn't have PEM data");
+        }
+
+        System.out.println("  Checking post data...");
+        if (!PEMData.postData.equalsIgnoreCase(new String(obj.leadingData()))) {
+            System.out.println("expected: \"" + PEMData.postData + "\"");
+            System.out.println("returned: \"" + new String(obj.leadingData()) +
+                "\"");
+            throw new AssertionError("Post bytes incorrect");
+        }
+
+        // End of stream
+        try {
+            System.out.println("Failed: There should be no PEMRecord: " +
+                PEMDecoder.of().decode(is, PEMRecord.class));
+        } catch (EOFException e) {
+            System.out.println("Success");
+            return;
+        } catch (Exception e) {
+            throw new AssertionError("Caught unexpected exception " +
+                "should have been IOE EOF.");
+        }
+
+        throw new AssertionError("Failed");
+    }
+
+    static void testPEMRecord(PEMData.Entry entry) {
+        PEMRecord r = PEMDecoder.of().decode(entry.pem(), PEMRecord.class);
+        String expected = entry.pem().split("-----")[2].replace(System.lineSeparator(), "");
+        if (!r.pem().equalsIgnoreCase(expected)) {
+            System.err.println("expected: " + expected);
+            System.err.println("received: " + r.pem());
+            throw new AssertionError("PEMRecord expected pem " +
+                "does not match.");
+        }
+
+        boolean result = switch(r.type()) {
+            case Pem.PRIVATE_KEY ->
+                PrivateKey.class.isAssignableFrom(entry.clazz());
+            case Pem.PUBLIC_KEY ->
+                PublicKey.class.isAssignableFrom(entry.clazz());
+            case Pem.CERTIFICATE, Pem.X509_CERTIFICATE ->
+                entry.clazz().isAssignableFrom(X509Certificate.class);
+            case Pem.X509_CRL ->
+                entry.clazz().isAssignableFrom(X509CRL.class);
+            case "CERTIFICATE REQUEST" ->
+                entry.clazz().isAssignableFrom(PEMRecord.class);
+            default -> false;
+        };
+
+        if (!result) {
+            System.err.println("PEMRecord type is a " + r.type());
+            System.err.println("Entry is a " + entry.clazz().getName());
+            throw new AssertionError("PEMRecord class didn't match:" +
+                entry.name());
+        }
+        System.out.println("Success (" + entry.name() + ")");
+    }
+
 
     static void testFailure(PEMData.Entry entry) {
         testFailure(entry, entry.clazz());
@@ -173,9 +303,9 @@ public class PEMDecoderTest {
         throws IOException {
         DEREncodable pk = decoder.decode(pem);
 
-        if (pk instanceof KeyPair kp) {
-            pk = kp.getPrivate();
-        }
+//        if (pk instanceof KeyPair kp) {
+//            pk = kp.getPrivate();
+//        }
 
         // Check that clazz matches what pk returned.
         if (pk.getClass().equals(clazz)) {
