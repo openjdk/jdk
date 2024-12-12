@@ -423,7 +423,7 @@ void VM_Version::check_virtualizations() {
 
   while (fgets(line, sizeof(line), fp) != nullptr) {
     if (strncmp(line, system_type, strlen(system_type)) == 0) {
-      if (strstr(line, "qemu") != 0) {
+      if (strstr(line, "qemu") != nullptr) {
         Abstract_VM_Version::_detected_virtualization = PowerKVM;
         fclose(fp);
         return;

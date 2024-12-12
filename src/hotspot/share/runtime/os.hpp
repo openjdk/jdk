@@ -27,6 +27,7 @@
 
 #include "jvm_md.h"
 #include "runtime/osInfo.hpp"
+#include "utilities/align.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -405,6 +406,9 @@ class os: AllStatic {
   // Return the default page size.
   static size_t vm_page_size() { return OSInfo::vm_page_size(); }
 
+  static size_t align_up_vm_page_size(size_t size)   { return align_up  (size, os::vm_page_size()); }
+  static size_t align_down_vm_page_size(size_t size) { return align_down(size, os::vm_page_size()); }
+
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
   static const PageSizes& page_sizes() { return _page_sizes; }
@@ -444,6 +448,8 @@ class os: AllStatic {
                                                   const size_t page_size);
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
+
+  static size_t align_up_vm_allocation_granularity(size_t size) { return align_up(size, os::vm_allocation_granularity()); }
 
   // Returns the lowest address the process is allowed to map against.
   static size_t vm_min_address();

@@ -41,26 +41,13 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
       return false;
     }
     for (int i = 0; i < get_array()->length(); i++) {
-      jvalue ele1 = get_array()->at(i);
-      jvalue ele2 = other.get_array()->at(i);
-      bool is_eq;
-      switch (type()) {
-        case T_BOOLEAN: is_eq = ele1.z == ele2.z; break;
-        case T_BYTE:    is_eq = ele1.b == ele2.b; break;
-        case T_CHAR:    is_eq = ele1.c == ele2.c; break;
-        case T_SHORT:   is_eq = ele1.s == ele2.s; break;
-        case T_INT:     is_eq = ele1.i == ele2.i; break;
-        case T_LONG:    is_eq = ele1.j == ele2.j; break;
-        case T_FLOAT:   is_eq = jint_cast(ele1.f)  == jint_cast(ele2.f);  break;
-        case T_DOUBLE:  is_eq = jlong_cast(ele1.d) == jlong_cast(ele2.d); break;
-        default: ShouldNotReachHere(); is_eq = false;
-      }
-      if (!is_eq) {
+      if (get_array()->at(i) != other.get_array()->at(i)) {
         return false;
       }
     }
     return true;
   }
+
   // For floating point values we compare the bit pattern.
   switch (type()) {
   case T_INT:     return (_v._value.i == other._v._value.i);
@@ -75,16 +62,45 @@ bool ConstantTable::Constant::operator==(const Constant& other) {
   }
 }
 
+int ConstantTable::alignment() const {
+  int res = 1;
+  for (int i = 0; i < _constants.length(); i++) {
+    const Constant& c = _constants.at(i);
+    res = MAX2(res, c.alignment());
+  }
+  return res;
+}
+
 int ConstantTable::qsort_comparator(Constant* a, Constant* b) {
-  // sort descending
-  if (a->freq() > b->freq())  return -1;
-  if (a->freq() < b->freq())  return  1;
-  return 0;
+  // put the ones with large alignments first
+  if (a->alignment() > 8 && b->alignment() > 8) {
+    // sort them by alignment
+    if (a->alignment() > b->alignment()) {
+      return -1;
+    } else if (a->alignment() < b->alignment()) {
+      return 1;
+    } else {
+      return 0;
+    }
+  } else if (a->alignment() > 8) {
+    return -1;
+  } else if (b->alignment() > 8) {
+    return 1;
+  } else {
+    // for constants with small alignments, sort them by frequency
+    if (a->freq() > b->freq()) {
+      return -1;
+    } else if (a->freq() < b->freq()) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
 }
 
 static int constant_size(ConstantTable::Constant* con) {
   if (con->is_array()) {
-    return type2aelembytes(con->type()) * con->get_array()->length();
+    return con->get_array()->length();
   }
   switch (con->type()) {
   case T_INT:     return sizeof(jint   );
@@ -149,7 +165,7 @@ bool ConstantTable::emit(C2_MacroAssembler* masm) const {
     Constant con = _constants.at(i);
     address constant_addr = nullptr;
     if (con.is_array()) {
-      constant_addr = masm->array_constant(con.type(), con.get_array(), con.alignment());
+      constant_addr = masm->array_constant(con.get_array(), con.alignment());
     } else {
       switch (con.type()) {
       case T_INT:    constant_addr = masm->int_constant(   con.get_jint()   ); break;
@@ -251,16 +267,14 @@ ConstantTable::Constant ConstantTable::add(Metadata* metadata) {
   return con;
 }
 
-ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt,
-                                           GrowableArray<jvalue>* array, int alignment) {
-  Constant con(bt, array, alignment);
+ConstantTable::Constant ConstantTable::add(MachConstantNode* n, GrowableArray<jbyte>* array, int alignment) {
+  Constant con(array, alignment);
   add(con);
   return con;
 }
 
-ConstantTable::Constant ConstantTable::add(MachConstantNode* n, BasicType bt,
-                                           GrowableArray<jvalue>* array) {
-  return add(n, bt, array, array->length() * type2aelembytes(bt));
+ConstantTable::Constant ConstantTable::add(MachConstantNode* n, GrowableArray<jbyte>* array) {
+  return add(n, array, array->length());
 }
 
 ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) {
