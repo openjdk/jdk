@@ -27,7 +27,7 @@
  * @compile GetPermittedSubclasses.jcod
  * @compile noSubclass/BaseC.java noSubclass/BaseI.java noSubclass/Impl1.java
  * @compile noSubclass/Impl2.java
- * @run main/othervm -Xlog:class+sealed=trace GetPermittedSubclassesTest
+ * @run main GetPermittedSubclassesTest
  */
 
 import java.util.ArrayList;
