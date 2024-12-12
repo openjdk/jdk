@@ -66,7 +66,7 @@ public class bug4506788 {
             dim = jep.getSize();
         });
 
-        robot.mouseMove(p.x + dim.width / 2, p.y + dim.height / 2); 
+        robot.mouseMove(p.x + dim.width / 2, p.y + dim.height / 2);
         robot.waitForIdle();
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
