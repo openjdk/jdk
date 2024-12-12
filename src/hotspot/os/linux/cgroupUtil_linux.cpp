@@ -51,8 +51,9 @@ int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
 void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   assert(mem->cgroup_path() != nullptr, "invariant");
   if (strstr(mem->cgroup_path(), "../") != nullptr) {
+    log_warning(os, container)("Cgroup memory controller path at '%s' seems to have moved to '%s', detected limits won't be accurate",
+      mem->mount_point(), mem->cgroup_path());
     mem->set_subsystem_path("/");
-    log_warning(os, container)("Cgroup memory controller path includes '../', detected limits won't be accurate");
     return;
   }
   if (!mem->needs_hierarchy_adjustment()) {
@@ -113,8 +114,9 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
 void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   assert(cpu->cgroup_path() != nullptr, "invariant");
   if (strstr(cpu->cgroup_path(), "../") != nullptr) {
+    log_warning(os, container)("Cgroup cpu controller path at '%s' seems to have moved to '%s', detected limits won't be accurate",
+      cpu->mount_point(), cpu->cgroup_path());
     cpu->set_subsystem_path("/");
-    log_warning(os, container)("Cgroup cpu controller path includes '../', detected limits won't be accurate");
     return;
   }
   if (!cpu->needs_hierarchy_adjustment()) {
