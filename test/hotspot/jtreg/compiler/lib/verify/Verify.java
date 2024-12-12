@@ -110,8 +110,8 @@ public final class Verify {
      */
     private static void checkEQimpl(char a, char b, String context) {
         if (a != b) {
-            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
-            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b + " for " + context);
+            throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
         }
     }
 
@@ -120,8 +120,8 @@ public final class Verify {
      */
     private static void checkEQimpl(short a, short b, String context) {
         if (a != b) {
-            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
-            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + (int)a + " vs " + (int)b + " for " + context);
+            throw new VerifyException("Value mismatch: " + (int)a + " vs " + (int)b);
         }
     }
 

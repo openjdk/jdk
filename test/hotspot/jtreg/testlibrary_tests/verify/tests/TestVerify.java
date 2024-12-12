@@ -383,9 +383,31 @@ public class TestVerify {
 
         // Boxed value mismatch.
         for (int i = 0; i < 10; i++) {
-            byte b1 = (byte)RANDOM.nextInt();
-            byte b2 = (byte)(b1 ^ (1 << RANDOM.nextInt(8)));
-            checkNE(b1, b2);
+            byte v1 = (byte)RANDOM.nextInt();
+            byte v2 = (byte)(v1 ^ (1 << RANDOM.nextInt(8)));
+            checkNE(v1, v2);
+        }
+        for (int i = 0; i < 10; i++) {
+            char v1 = (char)RANDOM.nextInt();
+            char v2 = (char)(v1 ^ (1 << RANDOM.nextInt(16)));
+            checkNE(v1, v2);
+        }
+        for (int i = 0; i < 10; i++) {
+            char v1 = (char)RANDOM.nextInt();
+            char v2 = (char)(v1 ^ (1 << RANDOM.nextInt(16)));
+            checkNE(v1, v2);
+        }
+        for (int i = 0; i < 10; i++) {
+            int v1 = (int)RANDOM.nextInt();
+            int v2 = (int)(v1 ^ (1 << RANDOM.nextInt(32)));
+            checkNE(v1, v2);
+            checkNE(Float.intBitsToFloat(v1), Float.intBitsToFloat(v2));
+        }
+        for (int i = 0; i < 10; i++) {
+            long v1 = (long)RANDOM.nextLong();
+            long v2 = (long)(v1 ^ (1L << RANDOM.nextInt(64)));
+            checkNE(v1, v2);
+            checkNE(Double.longBitsToDouble(v1), Double.longBitsToDouble(v2));
         }
     }
 
