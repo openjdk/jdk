@@ -412,14 +412,14 @@ public class JlinkTask {
 
         // Sanity check version if we use JMODs
         if (!isLinkFromRuntime) {
-            checkVersion(finder);
+            checkJavaBaseVersion(finder);
         }
 
         // Determine the roots set
         Set<String> roots = new HashSet<>();
         for (String mod : options.addMods) {
             if (mod.equals(ALL_MODULE_PATH)) {
-                ModuleFinder mf = limitFinder(finder, options.limitMods,
+                ModuleFinder mf = newLimitedFinder(finder, options.limitMods,
                                               Set.of());
                 mf.findAll()
                   .stream()
@@ -430,7 +430,7 @@ public class JlinkTask {
                 roots.add(mod);
             }
         }
-        finder = limitFinder(finder, options.limitMods, roots);
+        finder = newLimitedFinder(finder, options.limitMods, roots);
 
         // --keep-packaged-modules doesn't make sense as we are not linking
         // from packaged modules to begin with.
@@ -497,7 +497,7 @@ public class JlinkTask {
      * specified in {@code limitMods} plus other modules specified in the
      * {@code roots} set.
      */
-    public static ModuleFinder limitFinder(ModuleFinder finder,
+    public static ModuleFinder newLimitedFinder(ModuleFinder finder,
                                            Set<String> limitMods,
                                            Set<String> roots) {
         // if limitMods is specified then limit the universe
@@ -548,7 +548,7 @@ public class JlinkTask {
      * version or the java.base version is not the same as the current runtime's
      * version.
      */
-    private static void checkVersion(ModuleFinder finder) {
+    private static void checkJavaBaseVersion(ModuleFinder finder) {
         assert finder.find("java.base").isPresent();
 
         // use the version of java.base module, if present, as
