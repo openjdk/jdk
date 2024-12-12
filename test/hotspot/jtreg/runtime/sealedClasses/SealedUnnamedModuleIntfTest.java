@@ -26,7 +26,7 @@
  * @bug 8225056
  * @compile Pkg/SealedInterface.jcod Pkg/NotPermitted.jcod
  * @compile Pkg/Permitted.java otherPkg/WrongPackage.java otherPkg/WrongPackageNotPublic.java
- * @run main SealedUnnamedModuleIntfTest
+ * @run main/othervm SealedUnnamedModuleIntfTest
  */
 
 public class SealedUnnamedModuleIntfTest {

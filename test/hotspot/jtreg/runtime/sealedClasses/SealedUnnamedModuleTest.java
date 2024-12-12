@@ -26,7 +26,7 @@
  * @bug 8225056
  * @compile planets/OuterPlanets.jcod planets/Mars.jcod
  * @compile planets/Neptune.java asteroids/Pluto.java asteroids/Charon.java
- * @run main SealedUnnamedModuleTest
+ * @run main/othervm SealedUnnamedModuleTest
  */
 
 public class SealedUnnamedModuleTest {
