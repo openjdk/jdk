@@ -80,7 +80,7 @@ static jboolean extractLibName(JNIEnv *env, const char *cname, char **libName) {
         }
         p2 = strstr(p1, JNI_LIB_SUFFIX);
         if (p2 != NULL) {
-            int libNameLen = p2 - p1;
+            size_t libNameLen = p2 - p1;
             char *p = malloc(libNameLen + 1);
             if (p != NULL) {
                 strncpy(p, p1, libNameLen);
