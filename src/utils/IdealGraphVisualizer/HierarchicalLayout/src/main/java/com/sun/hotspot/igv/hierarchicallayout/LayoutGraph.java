@@ -169,7 +169,7 @@ public class LayoutGraph {
      * Retrieves a combined list of all nodes in the graph,
      * including both layout nodes and dummy nodes.
      *
-     * @return An unmodifiable list containing all nodes in the graph.
+     * @return An unmodifiable list containing all nodes in the graph
      */
     public List<LayoutNode> getAllNodes() {
         List<LayoutNode> allNodes = new ArrayList<>();
