@@ -3,7 +3,11 @@ import java.util.Random;
 import java.lang.reflect.Method;
 import java.util.*;
 
-public class TestInt {
+public class TestIntMem {
+
+    static int[] a;
+    static int[] b;
+    static int[] c;
 
     public static int testKernel(int a, int b) {
         int ans;
@@ -14,16 +18,16 @@ public class TestInt {
         return ans;
     }
 
-    public static int testTzcnt(int a, int b) {
-        return  Integer.numberOfTrailingZeros(a);
+    public static int testTzcnt(int x, int i) {
+        return  Integer.numberOfTrailingZeros(a[i]);
     }
 
-    public static int testLzcnt(int a, int b) {
-        return  Integer.numberOfLeadingZeros(b);
+    public static int testLzcnt(int x, int i) {
+        return  Integer.numberOfLeadingZeros(b[i]);
     }
 
-    public static int testPopcnt(int a, int b) {
-        return  Integer.bitCount(a);
+    public static int testPopcnt(int x, int i) {
+        return  Integer.bitCount(a[i]);
     }
 
     public static int testRor(int a, int b) {
@@ -87,8 +91,23 @@ public class TestInt {
         return a - b;
     }
 
-    public static int testAdd(int a, int b) {
-        return a + b;
+    public static int testAdd2(int x, int i) {
+        return b[i] + x;
+    }
+
+    public static int testAdd1(int x, int i) {
+        return x + b[i];
+    }
+
+    public static void init(int size) {
+        a = new int[size];
+        b = new int[size];
+        c = new int[size];
+        Random rand = new Random(0);
+        for (int i = 0; i < a.length; i++) {
+            a[i] = rand.nextInt();
+            b[i] = rand.nextInt();
+        }
     }
 
     public static void main(String[] args) {
@@ -98,27 +117,19 @@ public class TestInt {
             int iters = Integer.parseInt(args[0]);
             int factor = 10_000;
             int size = factor * iters;
-            int[] a = new int[size];
-            int[] b = new int[size];
-            int[] c = new int[size];
-            Random rand = new Random(0);
-            for (int i = 0; i < a.length; i++) {
-                a[i] = rand.nextInt();
-                b[i] = rand.nextInt();
-            }
+            init(size);
 
-            Method method = TestInt.class.getMethod("test" + args[1], int.class, int.class);
+            Method method = TestIntMem.class.getMethod("test" + args[1], int.class, int.class);
 
             // warmup
             for (int i = 0; i < factor; i++) {
-                //c[i] = testKernel(a[i], b[i]);
-                c[i] = (int) method.invoke(null, a[i], b[i]);
+                c[i] = (int) method.invoke(null, a[i], i);
             }
             System.out.println("Warmup done>");
 
             // main iter
             for (int i = 0; i < factor * iters; i++) {
-                c[i] = (int) method.invoke(null, a[i], b[i]);
+                c[i] = (int) method.invoke(null, a[i], i);
             }
             System.out.println("------------- MAIN DONE ----------------");
 

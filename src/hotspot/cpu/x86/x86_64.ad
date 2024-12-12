@@ -6898,8 +6898,23 @@ instruct addI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe( ialu_reg );
 %}
 
+/*
+instruct addI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AddI src1 src2));
+
+  format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eaddl($dst$$Register, $src1$$Register, $src2$$constant, true);
+  %}
+  ins_pipe( ialu_reg );
+%}*/
+
+
 instruct addI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (AddI dst (LoadI src)));
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
@@ -6911,6 +6926,33 @@ instruct addI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   %}
   ins_pipe(ialu_reg_mem);
 %}
+
+instruct addI_rReg_mem_rReg_ndd(rRegI dst, memory src1, rRegI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AddI (LoadI src1) src2));
+
+  ins_cost(150); // XXX
+  format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eaddl($dst$$Register, $src1$$Address, $src2$$Register, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct addI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AddI src1 (LoadI src2)));
+
+  ins_cost(150); // XXX
+  format %{ "eaddl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eaddl($dst$$Register, $src1$$Register, $src2$$Address, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 
 instruct addI_mem_rReg(memory dst, rRegI src, rFlagsReg cr)
 %{
@@ -7113,6 +7155,7 @@ instruct addL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 
 instruct addL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (AddL dst (LoadL src)));
   effect(KILL cr);
   flag(PD::Flag_sets_overflow_flag, PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_carry_flag, PD::Flag_sets_parity_flag);
@@ -7121,6 +7164,32 @@ instruct addL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   format %{ "addq    $dst, $src\t# long" %}
   ins_encode %{
     __ addq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct addL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AddL src1 (LoadL src2)));
+
+  ins_cost(150); // XXX
+  format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eaddq($dst$$Register, $src1$$Register, $src2$$Address, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct addL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AddL (LoadL src1) src2));
+
+  ins_cost(150); // XXX
+  format %{ "eaddq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eaddq($dst$$Register, $src1$$Address, $src2$$Register, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
