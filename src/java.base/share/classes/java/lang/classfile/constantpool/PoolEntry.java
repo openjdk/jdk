@@ -41,11 +41,11 @@ import java.lang.classfile.TypeKind;
  * referred by unbound {@linkplain Attribute attributes} not read from a {@code
  * class} file.  Their {@link #index() index()} return a non-positive invalid
  * value, and behaviors of their {@link #constantPool() constantPool()} are
- * unspecified.  They are considered foreign to any {@linkplain
+ * unspecified.  They are considered alien to any {@linkplain
  * ClassFileBuilder#constantPool() contextual constant pool} and will be
  * converted when they are written to {@code class} files.
  *
- * @see ConstantPoolBuilder##foreign Foreign constant pool entries
+ * @see ConstantPoolBuilder##alien Alien Constant Pool Entries
  * @sealedGraph
  * @since 24
  */

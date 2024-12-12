@@ -58,25 +58,25 @@ import static java.util.Objects.requireNonNull;
  * ClassFile.ConstantPoolSharingOption} controls how the constant pool builder
  * of the resulting {@code class} is created.
  *
- * <h2 id="foreign">Foreign constant pool entries</h2>
+ * <h2 id="alien">Alien Constant Pool Entries</h2>
  * In {@code class} file building and constant pool building, some constant pool
- * entries supplied will be {@linkplain #canWriteDirect(ConstantPool) foreign}
+ * entries supplied may be {@linkplain #canWriteDirect(ConstantPool) alien}
  * to this constant pool builder of the active class file builder.  For example,
- * {@link #classEntry(Utf8Entry) classEntry(Utf8Entry)} may be called with a
- * foreign UTF8 entry.  Foreign entries will be converted to a pool entry in
+ * {@link #classEntry(Utf8Entry) classEntry(Utf8Entry)} may be called with an
+ * alien UTF8 entry.  Alien entries will be converted to a pool entry in
  * this constant pool builder, reusing equivalent entries or adding new entries
  * if there is none.  As a result, all pool entries returned by entry-bearing
  * methods in this constant pool builder belong to this constant pool.
  * <p>
  * Some {@link ClassFileBuilder} methods may have their outputs adjusted if they
- * receive pool entries foreign to {@linkplain ClassFileBuilder#constantPool
+ * receive pool entries alien to {@linkplain ClassFileBuilder#constantPool
  * their constant pools}.  For example, if an {@link ConstantInstruction#ofLoad
- * ldc_w} instruction with a foreign entry is written to a {@link CodeBuilder},
+ * ldc_w} instruction with an alien entry is written to a {@link CodeBuilder},
  * the {@code CodeBuilder} may emit a functionally equivalent {@code ldc}
  * instruction instead, if the converted entry can be encoded in such an
  * instruction.
  * <p>
- * To avoid the conversion of foreign constant pool entries, such as for the
+ * To avoid the conversion of alien constant pool entries, such as for the
  * accuracy of the generated {@code class} file, users can always supply
  * constant pool entries obtained by calling the constant pool builder
  * entry-bearing methods of the constant pools associated with the {@code
@@ -122,12 +122,12 @@ public sealed interface ConstantPoolBuilder
      * #of(ClassModel) pre-populated} from the given constant pool.
      * <p>
      * If the constant pool of an entry is not directly writable to this pool,
-     * it is foreign to this pool, and a {@link ClassFileBuilder} associated
-     * with this constant pool will convert that foreign constant pool entry.
+     * it is alien to this pool, and a {@link ClassFileBuilder} associated
+     * with this constant pool will convert that alien constant pool entry.
      *
      * @param constantPool the given constant pool
      * @see ClassFileBuilder#constantPool() ClassFileBuilder::constantPool
-     * @see ##foreign Foreign constant pool entries
+     * @see ##alien Alien Constant Pool Entries
      */
     boolean canWriteDirect(ConstantPool constantPool);
 

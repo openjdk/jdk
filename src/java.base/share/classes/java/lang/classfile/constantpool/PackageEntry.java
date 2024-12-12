@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * // @link substring="PackageEntry" target="ConstantPoolBuilder#packageEntry(Utf8Entry)" :
  * PackageEntry(Utf8Entry name) // @link substring="name" target="#name()"
  * }
- * where {@code name} is the {@linkplain ClassEntry##internal-name internal form}
+ * where {@code name} is the {@linkplain ClassEntry##internalname internal form}
  * of a binary package name and is not empty.
  *
  * @jvms 4.4.12 The {@code CONSTANT_Package_info} Structure
@@ -51,7 +51,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 public sealed interface PackageEntry extends PoolEntry
         permits AbstractPoolEntry.PackageEntryImpl {
     /**
-     * {@return the {@linkplain ClassEntry##internal-name internal form} of the
+     * {@return the {@linkplain ClassEntry##internalname internal form} of the
      * {@linkplain #asSymbol() package} name}
      */
     Utf8Entry name();

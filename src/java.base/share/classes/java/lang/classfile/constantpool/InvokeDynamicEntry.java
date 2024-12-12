@@ -49,7 +49,6 @@ import jdk.internal.classfile.impl.Util;
  *     BootstrapMethodEntry bootstrap, // @link substring="bootstrap" target="#bootstrap()"
  *     NameAndTypeEntry nameAndType // @link substring="nameAndType" target="#nameAndType()"
  * )
- * // @end
  * }
  * where the {@link #type() type} in the {@code nameAndType} is a {@linkplain
  * #typeSymbol() method descriptor} string.

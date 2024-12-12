@@ -33,8 +33,8 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * Models a {@code CONSTANT_Class_info} structure, representing a reference
  * type, in the constant pool of a {@code class} file.
  * <p>
- * The use of a {@code ClassEntry} is modeled by a {@link ClassDesc}, which must
- * not be primitive.  Conversions are through {@link ConstantPoolBuilder#classEntry(
+ * The use of a {@code ClassEntry} is modeled by a {@link ClassDesc} that is not
+ * primitive.  Conversions are through {@link ConstantPoolBuilder#classEntry(
  * ClassDesc)} and {@link #asSymbol()}.
  * <p>
  * A {@code ClassEntry} is composite:
@@ -84,7 +84,7 @@ public sealed interface ClassEntry
      * {@return the {@code Utf8Entry} referred by this structure}  If the
      * value of the UTF8 starts with a {@code [}, this represents an array type
      * and the value is a descriptor string; otherwise, this represents a class
-     * or interface and the value is the {@linkplain ##internal-name internal
+     * or interface and the value is the {@linkplain ##internalname internal
      * form} of a binary name.
      *
      * @see ConstantPoolBuilder#classEntry(Utf8Entry)
@@ -94,7 +94,7 @@ public sealed interface ClassEntry
 
     /**
      * {@return the represented reference type, as the {@linkplain
-     * ##internal-name internal form} of a binary name or an array descriptor
+     * ##internalname internal form} of a binary name or an array descriptor
      * string}  This is a shortcut for {@link #name() name().stringValue()}.
      */
     String asInternalName();
