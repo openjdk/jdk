@@ -26,7 +26,6 @@
  * @bug 8318913
  * @summary Verify correct module versions are recorded when --release is used.
  * @library /tools/lib
- * @enablePreview
  * @modules
  *          jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main

@@ -25,8 +25,6 @@
  * @test
  * @bug 8006582 8037546 8138729
  * @summary javac should generate method parameters correctly.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @build MethodParametersTester ClassFileVisitor ReflectionVisitor
  * @compile -parameters LambdaTest.java
  * @run main MethodParametersTester LambdaTest LambdaTest.out

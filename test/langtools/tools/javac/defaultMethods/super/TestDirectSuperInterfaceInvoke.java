@@ -25,8 +25,6 @@
  * @test
  * @bug 8027281
  * @summary As per JVMS 4.9.2, invokespecial can only refer to direct superinterfaces
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  * @compile TestDirectSuperInterfaceInvoke.java
  * @run main TestDirectSuperInterfaceInvoke
  */

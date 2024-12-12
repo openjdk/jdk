@@ -32,8 +32,6 @@ import java.lang.classfile.attribute.*;
  * @test
  * @bug 6843077 8006775
  * @summary Qualified inner type annotation accessible to the class.
- * @enablePreview
- * @modules java.base/jdk.internal.classfile.impl
  */
 
 @Scopes.UniqueInner

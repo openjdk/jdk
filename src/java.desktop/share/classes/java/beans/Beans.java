@@ -189,12 +189,7 @@ public class Beans {
         // Note that calls on the system class loader will
         // look in the bootstrap class loader first.
         if (cls == null) {
-            try {
-                cls = ClassLoader.getSystemClassLoader();
-            } catch (SecurityException ex) {
-                // We're not allowed to access the system class loader.
-                // Drop through.
-            }
+            cls = ClassLoader.getSystemClassLoader();
         }
 
         // Try to find a serialized object with this name
@@ -438,11 +433,6 @@ public class Beans {
      */
 
     public static void setDesignTime(boolean isDesignTime) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
         ThreadGroupContext.getContext().setDesignTime(isDesignTime);
     }
 
@@ -454,11 +444,6 @@ public class Beans {
      */
 
     public static void setGuiAvailable(boolean isGuiAvailable) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPropertiesAccess();
-        }
         ThreadGroupContext.getContext().setGuiAvailable(isGuiAvailable);
     }
 }

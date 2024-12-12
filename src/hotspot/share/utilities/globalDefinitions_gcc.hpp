@@ -71,24 +71,6 @@
 #include <sys/time.h>
 #endif // LINUX || _ALLBSD_SOURCE
 
-// NULL vs NULL_WORD:
-// On Linux NULL is defined as a special type '__null'. Assigning __null to
-// integer variable will cause gcc warning. Use NULL_WORD in places where a
-// pointer is stored as integer value.  On some platforms, sizeof(intptr_t) >
-// sizeof(void*), so here we want something which is integer type, but has the
-// same size as a pointer.
-#ifdef __GNUC__
-  #ifdef _LP64
-    #define NULL_WORD  0L
-  #else
-    // Cast 0 to intptr_t rather than int32_t since they are not the same type
-    // on platforms such as Mac OS X.
-    #define NULL_WORD  ((intptr_t)0)
-  #endif
-#else
-  #define NULL_WORD  NULL
-#endif
-
 // checking for nanness
 #if defined(__APPLE__)
 inline int g_isnan(double f) { return isnan(f); }

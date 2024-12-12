@@ -1352,7 +1352,7 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
     // Calculate the offsets of the constants and the size of the
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
-    const_req = constant_table().size() + add_size;
+    const_req = constant_table().alignment() + constant_table().size() + add_size;
   }
 
   // Initialize the space for the BufferBlob used to find and verify
@@ -1392,6 +1392,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
     total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
+  cb->set_const_section_alignment(constant_table().alignment());
   cb->initialize(total_req, _buf_sizes._reloc);
 
   // Have we run out of code space?
