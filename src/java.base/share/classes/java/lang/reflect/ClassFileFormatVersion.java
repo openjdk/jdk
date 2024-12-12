@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,41 @@ package java.lang.reflect;
  */
 @SuppressWarnings("doclint:reference") // cross-module links
 public enum ClassFileFormatVersion {
+    /*
+     * Summary of class file format evolution; previews are listed for
+     * convenience, but they are not modeled by this enum
+     *  1: InnerClasses; Synthetic; Deprecated
+     *  2: ACC_STRICT
+     *  3: no changes
+     *  4: no changes
+     *  5: annotations (Runtime(Inv/V)isible(Parameter)Annotations);
+     *     generics (Signature, LocalVariableTypeTable); EnclosingMethod
+     *  6: verification by type checking (StackMapTable)
+     *  7: verification by type checking enforced (jsr and ret obsolete);
+     *     JSR 292 support (java.lang.invoke) (CONSTANT_MethodHandle,
+     *     CONSTANT_MethodType, CONSTANT_InvokeDynamic, BoostrapMethods);
+     *     <clinit> must be ACC_STATIC
+     *  8: private, static, and non-abstract (default) methods in interfaces;
+     *     type annotations (Runtime(Inv/V)isibleTypeAnnotations);
+     *     MethodParameters
+     *  9: modules (Module, ModuleMainClass, ModulePackages, CONSTANT_Module,
+     *     CONSTANT_Package, ACC_MODULE)
+     * 10: minor tweak to requires_flags in Module attribute
+     * 11: nestmate (NestHost, NestMembers); CONSTANT_Dynamic
+     * 12: preview features (minor version must be 0 or 65535)
+     * 13: no changes
+     * 14: no changes; (record in preview)
+     * 15: no changes; (record in 2nd preview, sealed classes in preview)
+     * 16: record (Record); (sealed classes in 2nd preview)
+     * 17: sealed classes (PermittedSubclasses); ACC_STRICT obsolete
+     * 18: no changes
+     * 19: no changes
+     * 20: no changes
+     * 21: no changes
+     * 22: no changes
+     * 23: no changes
+     * 24: no changes
+     */
 
     /**
      * The original version.
