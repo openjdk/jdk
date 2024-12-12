@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import java.awt.Dimension;
 import java.beans.PropertyChangeListener;
 
 import sun.reflect.misc.MethodUtil;
-import sun.reflect.misc.ReflectUtil;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
@@ -702,7 +701,6 @@ public class UIDefaults extends Hashtable<Object,Object>
         try {
             String className = (String)get(uiClassID);
             if (className != null) {
-                ReflectUtil.checkPackageAccess(className);
 
                 Class<?> cls = (Class)get(className);
                 if (cls == null) {
@@ -1142,9 +1140,7 @@ public class UIDefaults extends Hashtable<Object,Object>
                         cl = ClassLoader.getSystemClassLoader();
                     }
                 }
-                ReflectUtil.checkPackageAccess(className);
                 c = Class.forName(className, true, (ClassLoader)cl);
-                SwingUtilities2.checkAccess(c.getModifiers());
                 if (methodName != null) {
                     Class<?>[] types = getClassArray(args);
                     Method m = c.getMethod(methodName, types);
@@ -1152,7 +1148,6 @@ public class UIDefaults extends Hashtable<Object,Object>
                 } else {
                     Class<?>[] types = getClassArray(args);
                     Constructor<?> constructor = c.getConstructor(types);
-                    SwingUtilities2.checkAccess(constructor.getModifiers());
                     return constructor.newInstance(args);
                 }
             } catch(Exception e) {

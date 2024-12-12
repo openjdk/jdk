@@ -289,7 +289,8 @@ public class StampedLock implements java.io.Serializable {
      * Nearly all of these mechanics are carried out in methods
      * acquireWrite and acquireRead, that, as typical of such code,
      * sprawl out because actions and retries rely on consistent sets
-     * of locally cached reads.
+     * of locally cached reads, and include fall-backs for exceptional
+     * cases including OutOfMemoryErrors and JVM exceptions.
      *
      * For an explanation of the use of acquireFence, see
      * http://gee.cs.oswego.edu/dl/html/j9mm.html as well as Boehm's
@@ -1182,8 +1183,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     /** tries once to CAS a new dummy node for head */
-    private void tryInitializeHead() {
-        Node h = new WriterNode();
+    private void tryInitializeHead(Node h) {
         if (U.compareAndSetReference(this, HEAD, null, h))
             tail = h;
     }
@@ -1203,6 +1203,7 @@ public class StampedLock implements java.io.Serializable {
         boolean interrupted = false, first = false;
         WriterNode node = null;
         Node pred = null;
+        long nanos = 0L;
         for (long s, nextState;;) {
             if (!first && (pred = (node == null) ? null : node.prev) != null &&
                 !(first = (head == pred))) {
@@ -1227,12 +1228,23 @@ public class StampedLock implements java.io.Serializable {
                 }
                 return nextState;
             } else if (node == null) {          // retry before enqueuing
-                node = new WriterNode();
+                try {
+                    node = new WriterNode();
+                } catch (OutOfMemoryError oome) {
+                    return spinLockOnOOME(true, interruptible, timed, time);
+                }
             } else if (pred == null) {          // try to enqueue
                 Node t = tail;
                 node.setPrevRelaxed(t);
-                if (t == null)
-                    tryInitializeHead();
+                if (t == null) {                // try to initialize
+                    Node h;
+                    try {
+                        h = new WriterNode();
+                    } catch (OutOfMemoryError oome) {
+                        return spinLockOnOOME(true, interruptible, timed, time);
+                    }
+                    tryInitializeHead(h);
+                }
                 else if (!casTail(t, node))
                     node.setPrevRelaxed(null);  // back out
                 else
@@ -1244,21 +1256,25 @@ public class StampedLock implements java.io.Serializable {
                 if (node.waiter == null)
                     node.waiter = Thread.currentThread();
                 node.status = WAITING;
-            } else {
-                long nanos;
-                spins = postSpins = (byte)((postSpins << 1) | 1);
-                if (!timed)
-                    LockSupport.park(this);
-                else if ((nanos = time - System.nanoTime()) > 0L)
-                    LockSupport.parkNanos(this, nanos);
-                else
-                    break;
+            } else if (!timed || (nanos = time - System.nanoTime()) > 0L) {
+                try {
+                    if (!timed)
+                        LockSupport.park(this);
+                    else
+                        LockSupport.parkNanos(this, nanos);
+                } catch (Error | RuntimeException ex) {
+                    cancelAcquire(node);
+                    throw ex;
+                }
                 node.clearStatus();
                 if ((interrupted |= Thread.interrupted()) && interruptible)
                     break;
-            }
+                spins = postSpins = (byte)((postSpins << 1) | 1);
+            } else
+                break;
         }
-        return cancelAcquire(node, interrupted);
+        cancelAcquire(node);
+        return (interrupted || Thread.interrupted()) ? INTERRUPTED : 0L;
     }
 
     /**
@@ -1285,11 +1301,23 @@ public class StampedLock implements java.io.Serializable {
             if ((t == null || (tailPred = t.prev) == null) &&
                 (nextState = tryAcquireRead()) != 0L) // try now if empty
                 return nextState;
-            else if (t == null)
-                tryInitializeHead();
+            else if (t == null) {
+                 Node h;
+                 try {
+                     h = new WriterNode();
+                 } catch (OutOfMemoryError oome) {
+                     return spinLockOnOOME(false, interruptible, timed, time);
+                 }
+                 tryInitializeHead(h);
+            }
             else if (tailPred == null || !(t instanceof ReaderNode)) {
-                if (node == null)
-                    node = new ReaderNode();
+                if (node == null) {
+                    try {
+                        node = new ReaderNode();
+                    } catch (OutOfMemoryError oome) {
+                        return spinLockOnOOME(false, interruptible, timed, time);
+                    }
+                }
                 if (tail == t) {
                     node.setPrevRelaxed(t);
                     if (casTail(t, node)) {
@@ -1302,8 +1330,13 @@ public class StampedLock implements java.io.Serializable {
                 for (boolean attached = false;;) {
                     if (leader.status < 0 || leader.prev == null)
                         break;
-                    else if (node == null)
-                        node = new ReaderNode();
+                    else if (node == null) {
+                        try {
+                            node = new ReaderNode();
+                        } catch (OutOfMemoryError oome) {
+                            return spinLockOnOOME(false, interruptible, timed, time);
+                        }
+                    }
                     else if (node.waiter == null)
                         node.waiter = Thread.currentThread();
                     else if (!attached) {
@@ -1313,15 +1346,22 @@ public class StampedLock implements java.io.Serializable {
                         if (!attached)
                             node.setCowaitersRelaxed(null);
                     } else {
-                        long nanos = 0L;
-                        if (!timed)
-                            LockSupport.park(this);
-                        else if ((nanos = time - System.nanoTime()) > 0L)
-                            LockSupport.parkNanos(this, nanos);
+                        long nanos = (timed) ? time - System.nanoTime(): 0L;
+                        try {
+                            if (!timed)
+                                LockSupport.park(this);
+                            else if (nanos > 0L)
+                                LockSupport.parkNanos(this, nanos);
+                        } catch (Error | RuntimeException ex) {
+                            cancelCowaiter(node, leader);
+                            throw ex;
+                        }
                         interrupted |= Thread.interrupted();
                         if ((interrupted && interruptible) ||
-                            (timed && nanos <= 0L))
-                            return cancelCowaiter(node, leader, interrupted);
+                            (timed && nanos <= 0L)) {
+                            cancelCowaiter(node, leader);
+                            return (interrupted) ? INTERRUPTED : 0L;
+                        }
                     }
                 }
                 if (node != null)
@@ -1341,6 +1381,7 @@ public class StampedLock implements java.io.Serializable {
         byte spins = 0, postSpins = 0;   // retries upon unpark of first thread
         boolean first = false;
         Node pred = null;
+        long nanos = 0L;
         for (long nextState;;) {
             if (!first && (pred = node.prev) != null &&
                 !(first = (head == pred))) {
@@ -1371,21 +1412,25 @@ public class StampedLock implements java.io.Serializable {
                 if (node.waiter == null)
                     node.waiter = Thread.currentThread();
                 node.status = WAITING;
-            } else {
-                long nanos;
-                spins = postSpins = (byte)((postSpins << 1) | 1);
-                if (!timed)
-                    LockSupport.park(this);
-                else if ((nanos = time - System.nanoTime()) > 0L)
-                    LockSupport.parkNanos(this, nanos);
-                else
-                    break;
+            } else if (!timed || (nanos = time - System.nanoTime()) > 0) {
+                try {
+                    if (!timed)
+                        LockSupport.park(this);
+                    else
+                        LockSupport.parkNanos(this, nanos);
+                } catch (Error | RuntimeException ex) {
+                    cancelAcquire(node);
+                    throw ex;
+                }
                 node.clearStatus();
                 if ((interrupted |= Thread.interrupted()) && interruptible)
                     break;
-            }
+                spins = postSpins = (byte)((postSpins << 1) | 1);
+            } else
+                break;
         }
-        return cancelAcquire(node, interrupted);
+        cancelAcquire(node);
+        return (interrupted || Thread.interrupted()) ? INTERRUPTED : 0L;
     }
 
     // Cancellation support
@@ -1450,10 +1495,8 @@ public class StampedLock implements java.io.Serializable {
      * to recheck status.
      *
      * @param node the waiter (may be null if not yet enqueued)
-     * @param interrupted if already interrupted
-     * @return INTERRUPTED if interrupted or Thread.interrupted, else zero
      */
-    private long cancelAcquire(Node node, boolean interrupted) {
+    private void cancelAcquire(Node node) {
         if (node != null) {
             node.waiter = null;
             node.status = CANCELLED;
@@ -1461,7 +1504,6 @@ public class StampedLock implements java.io.Serializable {
             if (node instanceof ReaderNode)
                 signalCowaiters((ReaderNode)node);
         }
-        return (interrupted || Thread.interrupted()) ? INTERRUPTED : 0L;
     }
 
     /**
@@ -1470,17 +1512,33 @@ public class StampedLock implements java.io.Serializable {
      *
      * @param node if non-null, the waiter
      * @param leader if non-null, the node heading cowaiters list
-     * @param interrupted if already interrupted
-     * @return INTERRUPTED if interrupted or Thread.interrupted, else zero
      */
-    private long cancelCowaiter(ReaderNode node, ReaderNode leader,
-                                boolean interrupted) {
+    private void cancelCowaiter(ReaderNode node, ReaderNode leader) {
         if (node != null) {
             node.waiter = null;
             node.status = CANCELLED;
             unlinkCowaiter(node, leader);
         }
-        return (interrupted || Thread.interrupted()) ? INTERRUPTED : 0L;
+    }
+
+    /**
+     * Fallback upon encountering OutOfMemoryErrors
+     */
+    private long spinLockOnOOME(boolean write, boolean interruptible,
+                                boolean timed, long time) {
+        long startTime = (timed) ? System.nanoTime() : 0L;
+        for (int spins = 0;;) {
+            long s =  (write) ? tryAcquireWrite() : tryAcquireRead();
+            if (s != 0L)
+                return s;
+            Thread.onSpinWait();
+            if ((++spins & (1 << 8)) == 0) {  // occasionally check
+                if (interruptible && Thread.interrupted())
+                    return INTERRUPTED;
+                if (timed && System.nanoTime() - startTime > time)
+                    return 0L;
+            }
+        }
     }
 
     // Unsafe
