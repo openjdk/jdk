@@ -1276,7 +1276,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
 #if INCLUDE_JVMTI
-  STEP_IF("printing jvmti agent infos", _verbose)
+  STEP_IF("printing jvmti agent info", _verbose)
     os::print_jvmti_agent_info(st);
     st->cr();
 #endif
