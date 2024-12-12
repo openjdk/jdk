@@ -29,22 +29,27 @@
  * @run main/othervm -XX:CompileCommand=compileonly,*TestLoopPredicationDivZeroCheck*::* -XX:-TieredCompilation -Xbatch TestLoopPredicationDivZeroCheck
  */
 
-/*
- * The division 2 / i4 requires a non-zero check. As the result is an array access, it will be the input to a range
- * check. Loop predication will try to move the range check and the division to right before the loop as the division
- * appears to be invariant (i4 is always 0). However, the division is not truly invariant as it requires the zero
- * check for i4 that can throw an exception. The bug fixed in 8331717 caused the division to still be moved before the
- * for loop with the range check.
- */
 public class TestLoopPredicationDivZeroCheck {
     static int iArr[] = new int[100];
+    static volatile long lFld;
+    static int iFld;
 
     public static void main(String[] strArr) {
         for (int i = 0; i < 10000; i++) {
             test();
         }
+        for (int i = 0; i < 10000; i++) {
+            test2();
+        }
     }
 
+    /*
+     * The division 2 / i4 requires a non-zero check. As the result is an array access, it will be the input to a range
+     * check. Loop predication will try to move the range check and the division to right before the loop as the division
+     * appears to be invariant (i4 is always 0). However, the division is not truly invariant as it requires the zero
+     * check for i4 that can throw an exception. The bug fixed in 8331717 caused the division to still be moved before the
+     * for loop with the range check.
+     */
     static void test() {
         int i1 = 0;
 
@@ -56,5 +61,29 @@ public class TestLoopPredicationDivZeroCheck {
            } catch (ArithmeticException a_e) {
            }
        }
+    }
+
+    /*
+     * Loop predication will try to move 3 / y (input to the range check for bArr[x / 30]) before its containing for loop
+     * but it may not as y must be zero-checked. The same problem as above occurred before the fix in 8331717.
+     */
+    static void test2() {
+        int x = 0;
+        int y = iFld;
+        long lArr[] = new long[400];
+        boolean bArr[] = new boolean[400];
+        for (int i = 0; i < 10000; i++) {
+            for (int j = 1; j < 13; j++) {
+                for (int k = 1; k < 2; k++) {
+                    lFld = 0;
+                    lArr[1] = 7;
+                    try {
+                        x = 3 / y;
+                    } catch (ArithmeticException a_e) {
+                    }
+                    bArr[x / 30] = true;
+                }
+            }
+        }
     }
 }
