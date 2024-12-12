@@ -175,9 +175,9 @@ abstract class Function {
         @Override
         public Object result() {
             if (count != 0) {
-                long s = seconds / count;
-                long n = nanos / count;
-                return Duration.ofSeconds(s, n);
+                double total = 1_000_000_000.0 * seconds + nanos;
+                double average = total / count;
+                return Duration.ofNanos(Math.round(average));
             } else {
                 return null;
             }
