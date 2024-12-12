@@ -3143,6 +3143,11 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
   // Replace them with a fused divmod if supported
   if (Matcher::has_match_rule(Op_DivModIL(bt, is_unsigned))) {
     DivModNode* divmod = DivModNode::make(n, bt, is_unsigned);
+    // If the divisor input for a Div (or Mod etc.) is not null, then the control input of the Div is set to null.
+    // It could be that the divisor input is found not null because its type is narrowed down by a CastII in the
+    // subgraph for that input. Range check CastIIs are removed during final graph reshape. To preserve the dependency
+    // carried by a CastII, precedence edges are added to the Div node. We need to transfer the precedence edges to the
+    // DivMod node so the dependency is not lost.
     divmod->add_prec_from(n);
     divmod->add_prec_from(d);
     d->subsume_by(divmod->div_proj(), this);
