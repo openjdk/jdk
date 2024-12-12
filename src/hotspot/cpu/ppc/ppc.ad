@@ -2153,6 +2153,10 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
+bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return nullptr;
 }
@@ -3338,7 +3342,7 @@ encode %{
       // The trampoline stub.
       // No entry point given, use the current pc.
       // Make sure branch fits into
-      if (entry_point == 0) entry_point = __ pc();
+      if (entry_point == nullptr) entry_point = __ pc();
 
       // Put the entry point as a constant into the constant pool.
       const address entry_point_toc_addr = __ address_constant(entry_point, RelocationHolder::none);
@@ -3377,7 +3381,7 @@ encode %{
   enc_class enc_java_dynamic_call_sched(method meth) %{
     if (!ra_->C->output()->in_scratch_emit_size()) {
       // Create a call trampoline stub for the given method.
-      const address entry_point = !($meth$$method) ? 0 : (address)$meth$$method;
+      const address entry_point = !($meth$$method) ? nullptr : (address)$meth$$method;
       const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
       if (entry_point_const == nullptr) {
         ciEnv::current()->record_out_of_memory_failure();
@@ -3610,7 +3614,7 @@ encode %{
     MachNode *mtctr = new CallLeafDirect_mtctrNode();
 
     assert(loadConLNodes_Entry._last != nullptr, "entry must exist");
-    mtctr->add_req(0, loadConLNodes_Entry._last);
+    mtctr->add_req(nullptr, loadConLNodes_Entry._last);
 
     mtctr->_opnds[0] = new iRegLdstOper();
     mtctr->_opnds[1] = new iRegLdstOper();

@@ -70,8 +70,8 @@ jint ParallelScavengeHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
   // Layout the reserved space for the generations.
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
-  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, GenAlignment);
+  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
   PSCardTable* card_table = new PSCardTable(heap_rs.region());

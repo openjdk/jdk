@@ -157,6 +157,5 @@ class VectorSupport : AllStatic {
 
   static bool is_vector(Klass* klass);
   static bool is_vector_mask(Klass* klass);
-  static bool is_vector_shuffle(Klass* klass);
 };
 #endif // SHARE_PRIMS_VECTORSUPPORT_HPP
