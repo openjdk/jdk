@@ -61,7 +61,6 @@ import static java.lang.constant.ConstantDescs.INIT_NAME;
  * @requires vm.opt.Inline == true | vm.opt.Inline == null
  * @library /test/lib
  * @modules jdk.jfr
- * @enablePreview
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

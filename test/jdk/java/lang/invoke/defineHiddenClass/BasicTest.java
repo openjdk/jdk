@@ -26,8 +26,6 @@
  * @bug 8330467
  * @modules jdk.compiler
  * @library /test/lib
- * @enablePreview
- * @comment Change enablePreview with the flag in setup's compileSources
  * @compile BadClassFile.jcod
  *          BadClassFile2.jcod
  *          BadClassFileVersion.jcod
@@ -79,8 +77,7 @@ public class BasicTest {
 
     @BeforeTest
     static void setup() throws IOException {
-        compileSources(SRC_DIR, CLASSES_DIR, "--enable-preview",
-                       "--release", Integer.toString(Runtime.version().feature()));
+        compileSources(SRC_DIR, CLASSES_DIR);
         hiddenClassBytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenClass.class"));
 
         // compile with --release 10 with no NestHost and NestMembers attribute
