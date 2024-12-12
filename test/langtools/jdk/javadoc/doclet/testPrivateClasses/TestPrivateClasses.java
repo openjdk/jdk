@@ -158,14 +158,14 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicChild.html", true,
                 // Field inheritance from non-public superclass.
                 """
-                    Fields inherited from class&nbsp;pkg.<a href="PrivateParent.html" title="class in pkg">PrivateParent</a>""",
+                    Fields inherited from class&nbsp;<a href="PrivateParent.html#field-summary" title="class in pkg">PrivateParent</a>""",
                 """
                     <a href="PrivateParent.html#fieldInheritedFromParent">fieldInheritedFromParent</a>""",
                 // Method inheritance from non-public superclass.
                 """
-                    Methods inherited from class&nbsp;pkg.<a href="PrivateParent.html" title="class in pkg">PrivateParent</a>""",
+                    Methods inherited from class&nbsp;<a href="PrivateParent.html#method-summary" title="class in pkg">PrivateParent</a>""",
                 """
-                    <a href="PrivateParent.html#methodInheritedFromParent(int)">methodInheritedFromParent</a>""",
+                    <a href="PrivateParent.html#methodInheritedFromParent(int)" title="methodInheritedFromParent(int)">methodInheritedFromParent</a>""",
                 // Should document that a method overrides method from private class.
                 """
                     <dt>Overrides:</dt>
@@ -197,12 +197,12 @@ public class TestPrivateClasses extends JavadocTester {
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritance from non-public superinterface.
                 """
-                    Fields inherited from interface&nbsp;pkg.<a href="PrivateInterface.html" title="interface in pkg">PrivateInterface</a>""",
+                    Fields inherited from interface&nbsp;<a href="PrivateInterface.html#field-summary" title="interface in pkg">PrivateInterface</a>""",
                 """
                     <a href="PrivateInterface.html#fieldInheritedFromInterface">fieldInheritedFromInterface</a>""",
                 // Method inheritance from non-public superinterface.
                 """
-                    Methods inherited from interface&nbsp;pkg.<a href="PrivateInterface.html" title="interface in pkg">PrivateInterface</a>""",
+                    Methods inherited from interface&nbsp;<a href="PrivateInterface.html#method-summary" title="interface in pkg">PrivateInterface</a>""",
                 // Extend documented private classes or interfaces
                 "extends",
                 "All Superinterfaces",

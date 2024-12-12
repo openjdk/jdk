@@ -70,10 +70,11 @@ public class TestHiddenTag extends JavadocTester {
                 """
                     <code><a href="A.html#visibleField">visibleField</a></code>""",
                 """
-                    <code><a href="A.html#visibleMethod()">visibleMethod</a></code>""",
+                    <code><a href="A.html#visibleMethod()" title="visibleMethod()">visibleMethod</a></code>""",
                 """
                     <h3 id="nested-classes-inherited-from-class-pkg1.A">Nested classes/interfaces in\
-                    herited from class&nbsp;pkg1.<a href="A.html" title="class in pkg1">A</a></h3>
+                    herited from class&nbsp;<a href="A.html#nested-class-summary" title="class in pk\
+                    g1">A</a></h3>
                     <code><a href="A.VisibleInner.html" title="class in pkg1">A.VisibleInner</a>, <a\
                      href="A.VisibleInnerExtendsInvisibleInner.html" title="class in pkg1">A.Visible\
                     InnerExtendsInvisibleInner</a></code></div>
@@ -92,7 +93,7 @@ public class TestHiddenTag extends JavadocTester {
                 """
                     <code><a href="A.html#visibleField">visibleField</a></code>""",
                 """
-                    <code><a href="A.html#visibleMethod()">visibleMethod</a></code>""");
+                    <code><a href="A.html#visibleMethod()" title="visibleMethod()">visibleMethod</a></code>""");
 
         checkOutput("pkg1/A.VisibleInnerExtendsInvisibleInner.html", false,
                 "invisibleField",
@@ -127,7 +128,7 @@ public class TestHiddenTag extends JavadocTester {
                 """
                     <a href="#visibleMethod(pkg1.InvisibleParent)" class="member-name-link">visibleMethod</a>""",
                 """
-                    <a href="Intf.html#visibleDefaultMethod()">visibleDefaultMethod</a>""",
+                    <a href="Intf.html#visibleDefaultMethod()" title="visibleDefaultMethod()">visibleDefaultMethod</a>""",
                 // Invisible return or parameter types must not be linked
                 """
                     <span class="return-type">pkg1.InvisibleParent</span>""",
