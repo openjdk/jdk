@@ -248,6 +248,9 @@ public class AllModulePath {
      */
     @Test
     public void modulePath() throws Exception {
+        if (isExplodedJDKImage()) {
+            return;
+        }
         Path targetPath = HELPER.createNewImageDir("all-mod-path-w-mod-path");
         String moduleName = "com.foo.runtime";
         Result result = HELPER.generateDefaultJModule(moduleName, "jdk.jfr");
