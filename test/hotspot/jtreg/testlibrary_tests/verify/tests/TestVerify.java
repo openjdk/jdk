@@ -42,6 +42,7 @@ public class TestVerify {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
+        // Test consecutive memory: array, MemorySegment, etc.
         testArrayByte();
         testArrayChar();
         testArrayShort();
@@ -50,6 +51,9 @@ public class TestVerify {
         testArrayFloat();
         testArrayDouble();
         testNativeMemorySegment();
+
+        // Test recursive data: Object array of values, etc.
+        testRecursive();
     }
 
     public static void testArrayByte() {
@@ -373,6 +377,93 @@ public class TestVerify {
         // Value mismatch
         try {
             Verify.checkEQ(a, c);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+    }
+
+    public static void testRecursive() {
+        byte[] a = new byte[1000];
+        int[]  b = new int[1000];
+        int[]  c = new int[1001];
+        int[]  d = new int[1000];
+
+        Object[] o1 = new Object[]{a, a};
+        Object[] o2 = new Object[]{a, a, a};
+        Object[] o3 = new Object[]{a, a, null};
+        Object[] o4 = new Object[]{a, a, b};
+        Object[] o5 = new Object[]{a, a, c};
+        Object[] o6 = new Object[]{a, a, d};
+
+        Verify.checkEQ(o1, o1);
+        Verify.checkEQ(o2, o2);
+        Verify.checkEQ(o3, o3);
+        Verify.checkEQ(o4, o6);
+
+        // Size mismatch
+        try {
+            Verify.checkEQ(o1, o2);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
+        // First level value mismatch: a vs null on position 2
+        try {
+            Verify.checkEQ(o2, o3);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
+        // First level class mismatch: byte[] vs int[]
+        try {
+            Verify.checkEQ(o2, o4);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
+        // Second level length mismatch on arrays b and c.
+        try {
+            Verify.checkEQ(o4, o5);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
+        d[RANDOM.nextInt(d.length)] = 1;
+
+        // Second level value mismatch between b and d.
+        try {
+            Verify.checkEQ(o4, o6);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
+        // Now test all primitive array types.
+        byte[]   aB = new byte[100];
+        char[]   aC = new char[100];
+        short[]  aS = new short[100];
+        int[]    aI = new int[100];
+        long[]   aL = new long[100];
+        float[]  aF = new float[100];
+        double[] aD = new double[100];
+
+        Verify.checkEQ(new Object[] {aB, aC, aS, aI, aL, aF, aD}, new Object[] {aB, aC, aS, aI, aL, aF, aD});
+
+        // First level class mismatch: char[] vs short[]
+        try {
+            Verify.checkEQ(new Object[] {aC}, new Object[] {aS});
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
+        // Verify MemorySegment
+        MemorySegment mC = MemorySegment.ofArray(aC);
+        MemorySegment mS = MemorySegment.ofArray(aS);
+        Verify.checkEQ(new Object[] {mC}, new Object[] {mC});
+        Verify.checkEQ(new Object[] {mS}, new Object[] {mS});
+
+        // Second level type mismatch: backing type short[] vs char[]
+        try {
+            Verify.checkEQ(new Object[] {mC}, new Object[] {mS});
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
+        // Second level type mismatch: backing type int[] vs char[]
+        MemorySegment mI = MemorySegment.ofArray(aI);
+        try {
+            Verify.checkEQ(new Object[] {mI}, new Object[] {mC});
             throw new RuntimeException("Should have thrown");
         } catch (VerifyException e) {}
     }

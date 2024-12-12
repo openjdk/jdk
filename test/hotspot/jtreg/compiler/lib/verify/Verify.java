@@ -36,7 +36,8 @@ import java.lang.foreign.*;
 public final class Verify {
 
     /**
-     * Verify that the content of two MemorySegments is identical.
+     * Verify that the content of two MemorySegments is identical. Note: we do not check the
+     * backing type, only the size and content.
      */
     public static void checkEQ(MemorySegment a, MemorySegment b) {
         long offset = a.mismatch(b);
@@ -45,8 +46,8 @@ public final class Verify {
         // Print some general info
         System.err.println("ERROR: Verify.checkEQ failed.");
 
-        print(a, "a");
-        print(b, "b");
+        printMemorySegment(a, "a");
+        printMemorySegment(b, "b");
 
         // (1) Mismatch on size
         if (a.byteSize() != b.byteSize()) {
@@ -55,44 +56,131 @@ public final class Verify {
 
         // (2) Value mismatch
         System.err.println("  Value mismatch at byte offset: " + offset);
-        printValue(a, offset, 16);
-        printValue(b, offset, 16);
+        printMemorySegmentValue(a, offset, 16);
+        printMemorySegmentValue(b, offset, 16);
         throw new VerifyException("MemorySegment value mismatch.");
     }
 
+    /**
+     * Verify that the content of two byte arrays is identical.
+     */
     public static void checkEQ(byte[] a, byte[] b) {
         checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
     }
 
+    /**
+     * Verify that the content of two char arrays is identical.
+     */
     public static void checkEQ(char[] a, char[] b) {
         checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
     }
 
+    /**
+     * Verify that the content of two short arrays is identical.
+     */
     public static void checkEQ(short[] a, short[] b) {
         checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
     }
 
+    /**
+     * Verify that the content of two int arrays is identical.
+     */
     public static void checkEQ(int[] a, int[] b) {
         checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
     }
 
+    /**
+     * Verify that the content of two long arrays is identical.
+     */
     public static void checkEQ(long[] a, long[] b) {
         checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
     }
 
+    /**
+     * Verify that the content of two float arrays is identical.
+     */
     public static void checkEQ(float[] a, float[] b) {
         checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
     }
 
+    /**
+     * Verify that the content of two double arrays is identical.
+     */
     public static void checkEQ(double[] a, double[] b) {
         checkEQ(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
     }
 
-    private static void print(MemorySegment a, String name) {
+    /**
+     * Verify that the content of two Object arrays is identical, recursively:
+     * every element is compared with checkEQ for the corresponding type.
+     */
+    public static void checkEQ(Object[] a, Object[] b) {
+        // (1) Length mismatch
+        if (a.length != b.length) {
+            System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length);
+            throw new VerifyException("Object array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            checkEQimpl(a[i], b[i], "Object[" + i + "]");
+        }
+    }
+
+    private static void checkEQimpl(Object a, Object b, String context) {
+        // Both null
+        if (a == null && b == null) {
+            return;
+        }
+
+        // Null mismatch
+        if (a == null || b == null) {
+            System.err.println("ERROR: Verify.checkEQ failed: null mismatch");
+            print(a, "a " + context);
+            print(b, "b " + context);
+            throw new VerifyException("Object array null mismatch.");
+	}
+
+        // Class mismatch
+        Class ca = a.getClass();
+        Class cb = b.getClass();
+        if (ca != cb) {
+            System.err.println("ERROR: Verify.checkEQ failed: class mismatch");
+            print(a, "a " + context);
+            print(b, "b " + context);
+            throw new VerifyException("Object array class mismatch.");
+	}
+
+        switch (a) {
+            case byte[]   x -> checkEQ(x, (byte[])b);
+            case char[]   x -> checkEQ(x, (char[])b);
+            case short[]  x -> checkEQ(x, (short[])b);
+            case int[]    x -> checkEQ(x, (int[])b);
+            case long[]   x -> checkEQ(x, (long[])b);
+            case float[]  x -> checkEQ(x, (float[])b);
+            case double[] x -> checkEQ(x, (double[])b);
+            case MemorySegment x -> checkEQ(x, (MemorySegment) b);
+            default -> {
+                System.err.println("ERROR: Verify.checkEQ failed: type not supported");
+                print(a, "a " + context);
+                print(b, "b " + context);
+                throw new VerifyException("Object array type not supported.");
+            }
+        }
+    }
+
+    private static void print(Object a, String context) {
+        if (a == null) {
+            System.err.println("  " + context + ": null");
+        } else {
+            System.err.println("  " + context + ": " + a);
+        }
+    }
+
+    private static void printMemorySegment(MemorySegment a, String context) {
         Optional<Object> maybeBase = a.heapBase();
-        System.err.println("  MemorySegment " + name + ":");
+        System.err.println("  " + context + " via MemorySegment:");
         if (maybeBase.isEmpty()) {
-            System.err.println("    no heap base.");
+            System.err.println("    no heap base (native).");
         } else {
             Object base = maybeBase.get();
             System.err.println("    heap base: " + base);
@@ -101,7 +189,7 @@ public final class Verify {
         System.err.println("    byteSize: " + a.byteSize());
     }
 
-    private static void printValue(MemorySegment a, long offset, int range) {
+    private static void printMemorySegmentValue(MemorySegment a, long offset, int range) {
         long start = Long.max(offset - range, 0);
         long end   = Long.min(offset + range, a.byteSize());
         for (long i = start; i < end; i++) {
