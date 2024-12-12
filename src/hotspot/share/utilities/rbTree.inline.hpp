@@ -29,10 +29,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/rbTree.hpp"
 
-// ----------------
-// RBNode functions
-// ----------------
-
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::replace_child(
     RBNode* old_child, RBNode* new_child) {
@@ -161,10 +157,6 @@ inline size_t RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode::count_nodes() const {
 }
 
 #endif // ASSERT
-
-// ----------------
-// RBTree functions
-// ----------------
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 inline typename RBTree<K, V, COMPARATOR, ALLOCATOR>::RBNode*
@@ -484,10 +476,6 @@ inline void RBTree<K, V, COMPARATOR, ALLOCATOR>::verify_self() {
   assert(_root->is_correct(black_nodes, maximum_depth, 1), "rbtree does not hold rb-properties");
 }
 #endif // ASSERT
-
-// ------------------
-// Iterator functions
-// ------------------
 
 template <typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
 template <bool Forward>
