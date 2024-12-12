@@ -1,0 +1,22 @@
+diff --git a/src/jdk.jfr/share/classes/jdk/jfr/internal/query/Function.java b/src/jdk.jfr/share/classes/jdk/jfr/internal/query/Function.java
+index 29d55e95673..4e7884106f9 100644
+--- a/src/jdk.jfr/share/classes/jdk/jfr/internal/query/Function.java
++++ b/src/jdk.jfr/share/classes/jdk/jfr/internal/query/Function.java
+@@ -89,7 +89,7 @@ public static Function create(Field field) {
+             return createPercentile(field, 0.99);
+         }
+         if (aggregator == Aggregator.P999) {
+-            return createPercentile(field, 0.9999);
++            return createPercentile(field, 0.999);
+         }
+         if (aggregator == Aggregator.MAXIMUM) {
+             return new Maximum();
+@@ -578,7 +578,7 @@ public Object result() {
+             double doubleIndex = (size + 1) * percentile;
+             int valueIndex = (int) doubleIndex - 1;
+             int valueNextIndex = (int) doubleIndex;
+-            double fraction = doubleIndex - valueIndex;
++            double fraction = doubleIndex - (int) doubleIndex;
+ 
+             if (valueIndex < 0) {
+                 return numbers.getFirst();
