@@ -67,7 +67,6 @@ ShenandoahMmuTracker::ShenandoahMmuTracker() :
 }
 
 ShenandoahMmuTracker::~ShenandoahMmuTracker() {
-  _mmu_periodic_task->disenroll();
   delete _mmu_periodic_task;
 }
 
@@ -175,6 +174,10 @@ void ShenandoahMmuTracker::report() {
   double mu = mutator_delta / (_active_processors * time_delta);
   double gcu = gc_delta / (_active_processors * time_delta);
   log_debug(gc)("Periodic Sample: GCU = %.3f%%, MU = %.3f%% during most recent %.1fs", gcu * 100, mu * 100, time_delta);
+}
+
+void ShenandoahMmuTracker::stop() const {
+  _mmu_periodic_task->disenroll();
 }
 
 void ShenandoahMmuTracker::initialize() {

@@ -545,7 +545,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _pacer(nullptr),
   _verifier(nullptr),
   _phase_timings(nullptr),
-  _mmu_tracker(),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
   _stw_memory_manager("Shenandoah Pauses"),
@@ -639,7 +638,6 @@ public:
 
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
-  _mmu_tracker.initialize();
 
   MutexLocker ml(Threads_lock);
 
@@ -654,6 +652,8 @@ void ShenandoahHeap::post_initialize() {
     _safepoint_workers->set_initialize_gclab();
   }
 
+  // Schedule periodic task to report on gc thread CPU utilization
+  _mmu_tracker.initialize();
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers();)
 }
 
@@ -2049,6 +2049,9 @@ void ShenandoahHeap::stop() {
 
   // Step 0. Notify policy to disable event recording and prevent visiting gc threads during shutdown
   _shenandoah_policy->record_shutdown();
+
+  // Step 0a. Stop reporting on gc thread cpu utilization
+  mmu_tracker()->stop();
 
   // Step 1. Notify control thread that we are in shutdown.
   // Note that we cannot do that with stop(), because stop() is blocking and waits for the actual shutdown.
