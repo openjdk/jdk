@@ -92,6 +92,12 @@ void ClassFileParser::classfile_icce_error(const char* msg,
                      msg, _class_name->as_klass_external_name(), k->external_name());
 }
 
+void ClassFileParser::classfile_icce_error(const char* msg,
+                                           TRAPS) const {
+  ResourceMark rm(THREAD);
+  Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), msg);
+}
+
 void ClassFileParser::classfile_ucve_error(const char* msg,
                                            const Symbol* class_name,
                                            u2 major,
