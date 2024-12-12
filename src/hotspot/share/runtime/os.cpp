@@ -1148,8 +1148,6 @@ void os::print_jvmti_agent_info(outputStream* st) {
       st->print_cr("%s path:%s, %s, %s %s %s options:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
     }
   }
-#else
-  st->print_cr("JVMTI support not included in this JVM.");
 #endif
 }
 
