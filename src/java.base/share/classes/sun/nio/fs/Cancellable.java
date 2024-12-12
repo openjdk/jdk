@@ -32,8 +32,8 @@ import jdk.internal.misc.Unsafe;
 /**
  * Base implementation of a task (typically native) that polls a memory location
  * during execution so that it may be aborted/cancelled before completion. The
- * task is executed by invoking the {@link runInterruptibly} method defined
- * here and cancelled by invoking Thread.interrupt.
+ * task is executed by invoking the {@linkplain #runInterruptibly} method
+ * defined here and cancelled by invoking Thread.interrupt.
  */
 
 abstract class Cancellable implements Runnable {
@@ -118,7 +118,7 @@ abstract class Cancellable implements Runnable {
      * thread by writing into the memory location that it polls cooperatively.
      */
     static void runInterruptibly(Cancellable task) throws ExecutionException {
-        Thread t = InnocuousThread.newThread("NIO-Task", task);
+        Thread t = InnocuousThread.newThread("CancellableOp", task);
         t.start();
         boolean cancelledByInterrupt = false;
         while (t.isAlive()) {
