@@ -27,14 +27,14 @@
  * @requires vm.compiler2.enabled
  * @summary Allow C2 to also optimize non-fluid string builder calls.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.stringopts.FluidAndNonFluid
+ * @run driver compiler.c2.irTests.stringopts.TestFluidAndNonFluid
  */
 package compiler.c2.irTests.stringopts;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
 
-public class FluidAndNonFluid {
+public class TestFluidAndNonFluid {
 
     public static int unknown = 1;
 
