@@ -379,6 +379,7 @@ class PinnedEventDuration {
      * Pinned events recorded at the following classes/methods should be ignored.
      */
     private final Set<String> FILTERED = Set.of(
+            "java.lang.VirtualThread.*",
             "java.lang.ref.ReferenceQueue.poll",
             "java.lang.invoke.*",
             "jdk.internal.ref.*"
