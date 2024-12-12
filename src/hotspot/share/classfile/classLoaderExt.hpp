@@ -59,7 +59,7 @@ private:
   static bool has_jar_suffix(const char* filename);
 
 public:
-  static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry);
+  static bool process_jar_manifest(JavaThread* current, ClassPathEntry* entry);
 
   // Called by JVMTI code to add boot classpath
   static void append_boot_classpath(ClassPathEntry* new_entry);
