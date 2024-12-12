@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,10 +307,12 @@ public class Resources extends java.util.ListResourceBundle {
                 "Specifying -keysize for generating EC keys is deprecated, please use \"-groupname %s\" instead."},
         {"Key.pair.not.generated.alias.alias.already.exists",
                 "Key pair not generated, alias <{0}> already exists"},
-        {"Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
-                "Generating {0} bit {1} key pair and self-signed certificate ({2}) with a validity of {3} days\n\tfor: {4}"},
-        {"Generating.keysize.bit.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
-                "Generating {0} bit {1} key pair and a certificate ({2}) issued by <{3}> with a validity of {4} days\n\tfor: {5}"},
+        {"size.bit.alg",
+                "%1$d-bit %2$s"},
+        {"Generating.full.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for",
+                "Generating {0} key pair and self-signed certificate ({1}) with a validity of {2} days\n\tfor: {3}"},
+        {"Generating.full.keyAlgName.key.pair.and.a.certificate.sigAlgName.issued.by.signerAlias.with.a.validity.of.validality.days.for",
+                "Generating {0} key pair and a certificate ({1}) issued by <{2}> with a validity of {3} days\n\tfor: {4}"},
         {"Enter.key.password.for.alias.", "Enter key password for <{0}>"},
         {".RETURN.if.same.as.keystore.password.",
                 "\t(RETURN if same as keystore password):  "},
@@ -479,10 +481,9 @@ public class Resources extends java.util.ListResourceBundle {
         {"alias.in.keystore", "Issuer <%s>"},
         {"with.weak", "%s (weak)"},
         {"with.disabled", "%s (disabled)"},
-        {"key.bit", "%1$d-bit %2$s key"},
-        {"key.bit.weak", "%1$d-bit %2$s key (weak)"},
-        {"key.bit.disabled", "%1$d-bit %2$s key (disabled)"},
-        {"unknown.size.1", "%s key of unknown size"},
+        {"key.bit", "%s key"},
+        {"key.bit.weak", "%s key (weak)"},
+        {"key.bit.disabled", "%s key (disabled)"},
         {".PATTERN.printX509Cert.with.weak",
                 "Owner: {0}\nIssuer: {1}\nSerial number: {2}\nValid from: {3} until: {4}\nCertificate fingerprints:\n\t SHA1: {5}\n\t SHA256: {6}\nSignature algorithm name: {7}\nSubject Public Key Algorithm: {8}\nVersion: {9}"},
         {"PKCS.10.with.weak",

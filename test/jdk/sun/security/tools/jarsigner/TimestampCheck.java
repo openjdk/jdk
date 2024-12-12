@@ -448,8 +448,8 @@ public class TimestampCheck {
                         .shouldNotContain("The SHA-256 algorithm specified " +
                             "for the -tsadigestalg option is considered a " +
                             "security risk")
-                        .shouldContain("The RSA signing key has a keysize " +
-                            "of 1024 which is considered a security risk")
+                        .shouldContain("The 1024-bit RSA signing key " +
+                            "is considered a security risk")
                         .shouldHaveExitValue(0);
                 checkMultipleWeak("sign2.jar");
 
