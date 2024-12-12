@@ -69,16 +69,16 @@ public final class Verify {
 	}
 
         switch (a) {
-            case Object[] x -> checkEQimpl(x, (Object[])b);
-            case Byte     x -> checkEQimpl(x, ((Byte)b).byteValue(), context);
-            case byte[]   x -> checkEQimpl(x, (byte[])b);
-            case char[]   x -> checkEQimpl(x, (char[])b);
-            case short[]  x -> checkEQimpl(x, (short[])b);
-            case int[]    x -> checkEQimpl(x, (int[])b);
-            case long[]   x -> checkEQimpl(x, (long[])b);
-            case float[]  x -> checkEQimpl(x, (float[])b);
-            case double[] x -> checkEQimpl(x, (double[])b);
-            case MemorySegment x -> checkEQimpl(x, (MemorySegment) b);
+            case Object[] x -> checkEQimpl(x, (Object[])b,            context);
+            case Byte     x -> checkEQimpl(x, ((Byte)b).byteValue(),  context);
+            case byte[]   x -> checkEQimpl(x, (byte[])b,              context);
+            case char[]   x -> checkEQimpl(x, (char[])b,              context);
+            case short[]  x -> checkEQimpl(x, (short[])b,             context);
+            case int[]    x -> checkEQimpl(x, (int[])b,               context);
+            case long[]   x -> checkEQimpl(x, (long[])b,              context);
+            case float[]  x -> checkEQimpl(x, (float[])b,             context);
+            case double[] x -> checkEQimpl(x, (double[])b,            context);
+            case MemorySegment x -> checkEQimpl(x, (MemorySegment) b, context);
             default -> {
                 System.err.println("ERROR: Verify.checkEQ failed: type not supported");
                 print(a, "a " + context);
@@ -102,15 +102,15 @@ public final class Verify {
      * Verify that the content of two MemorySegments is identical. Note: we do not check the
      * backing type, only the size and content.
      */
-    private static void checkEQimpl(MemorySegment a, MemorySegment b) {
+    private static void checkEQimpl(MemorySegment a, MemorySegment b, String context) {
         long offset = a.mismatch(b);
         if (offset == -1) { return; }
 
         // Print some general info
-        System.err.println("ERROR: Verify.checkEQ failed.");
+        System.err.println("ERROR: Verify.checkEQ failed for: " + context);
 
-        printMemorySegment(a, "a");
-        printMemorySegment(b, "b");
+        printMemorySegment(a, "a " + context);
+        printMemorySegment(b, "b " + context);
 
         // (1) Mismatch on size
         if (a.byteSize() != b.byteSize()) {
@@ -127,57 +127,57 @@ public final class Verify {
     /**
      * Verify that the content of two byte arrays is identical.
      */
-    private static void checkEQimpl(byte[] a, byte[] b) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
+    private static void checkEQimpl(byte[] a, byte[] b, String context) {
+        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
     }
 
     /**
      * Verify that the content of two char arrays is identical.
      */
-    private static void checkEQimpl(char[] a, char[] b) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
+    private static void checkEQimpl(char[] a, char[] b, String context) {
+        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
     }
 
     /**
      * Verify that the content of two short arrays is identical.
      */
-    private static void checkEQimpl(short[] a, short[] b) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
+    private static void checkEQimpl(short[] a, short[] b, String context) {
+        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
     }
 
     /**
      * Verify that the content of two int arrays is identical.
      */
-    private static void checkEQimpl(int[] a, int[] b) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
+    private static void checkEQimpl(int[] a, int[] b, String context) {
+        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
     }
 
     /**
      * Verify that the content of two long arrays is identical.
      */
-    private static void checkEQimpl(long[] a, long[] b) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
+    private static void checkEQimpl(long[] a, long[] b, String context) {
+        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
     }
 
     /**
      * Verify that the content of two float arrays is identical.
      */
-    private static void checkEQimpl(float[] a, float[] b) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
+    private static void checkEQimpl(float[] a, float[] b, String context) {
+        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
     }
 
     /**
      * Verify that the content of two double arrays is identical.
      */
-    private static void checkEQimpl(double[] a, double[] b) {
-        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b));
+    private static void checkEQimpl(double[] a, double[] b, String context) {
+        checkEQimpl(MemorySegment.ofArray(a), MemorySegment.ofArray(b), context);
     }
 
     /**
      * Verify that the content of two Object arrays is identical, recursively:
      * every element is compared with checkEQimpl for the corresponding type.
      */
-    private static void checkEQimpl(Object[] a, Object[] b) {
+    private static void checkEQimpl(Object[] a, Object[] b, String context) {
         // (1) Length mismatch
         if (a.length != b.length) {
             System.err.println("ERROR: Verify.checkEQ failed: length mismatch: " + a.length + " vs " + b.length);
@@ -186,7 +186,7 @@ public final class Verify {
 
         for (int i = 0; i < a.length; i++) {
             // Recursive checkEQ call.
-            checkEQ(a[i], b[i], "Object[" + i + "]");
+            checkEQ(a[i], b[i], "[" + i + "]" + context);
         }
     }
 
