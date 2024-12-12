@@ -34,7 +34,6 @@ package verify.tests;
 import java.lang.foreign.*;
 import java.util.Random;
 import jdk.test.lib.Utils;
-import java.nio.ByteBuffer;
 
 import compiler.lib.verify.*;
 
