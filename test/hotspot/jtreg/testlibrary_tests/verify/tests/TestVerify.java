@@ -382,6 +382,14 @@ public class TestVerify {
     }
 
     public static void testRecursive() {
+        Verify.checkEQ(null, null);
+
+        // Null mismatch
+        try {
+            Verify.checkEQ(42, null);
+            throw new RuntimeException("Should have thrown");
+        } catch (VerifyException e) {}
+
         byte[] a = new byte[1000];
         int[]  b = new int[1000];
         int[]  c = new int[1001];
@@ -481,5 +489,13 @@ public class TestVerify {
             Verify.checkEQ(new Object[] {bb1},      new Object[] {bb3});
             throw new RuntimeException("Should have thrown");
         } catch (VerifyException e) {}
+
+        Verify.checkEQ((byte)42,   (byte)42);
+        Verify.checkEQ((short)42,  (short)42);
+        Verify.checkEQ((char)42,   (char)42);
+        Verify.checkEQ((int)42,    (int)42);
+        Verify.checkEQ((long)42,   (long)42);
+        Verify.checkEQ((float)42,  (float)42);
+        Verify.checkEQ((double)42, (double)42);
     }
 }

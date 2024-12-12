@@ -69,21 +69,27 @@ public final class Verify {
 	}
 
         switch (a) {
-            case Object[] x -> checkEQimpl(x, (Object[])b,            context);
-            case Byte     x -> checkEQimpl(x, ((Byte)b).byteValue(),  context);
-            case byte[]   x -> checkEQimpl(x, (byte[])b,              context);
-            case char[]   x -> checkEQimpl(x, (char[])b,              context);
-            case short[]  x -> checkEQimpl(x, (short[])b,             context);
-            case int[]    x -> checkEQimpl(x, (int[])b,               context);
-            case long[]   x -> checkEQimpl(x, (long[])b,              context);
-            case float[]  x -> checkEQimpl(x, (float[])b,             context);
-            case double[] x -> checkEQimpl(x, (double[])b,            context);
-            case MemorySegment x -> checkEQimpl(x, (MemorySegment) b, context);
+            case Object[]  x -> checkEQimpl(x, (Object[])b,                context);
+            case Byte      x -> checkEQimpl(x, ((Byte)b).byteValue(),      context);
+            case Character x -> checkEQimpl(x, ((Character)b).charValue(), context);
+            case Short     x -> checkEQimpl(x, ((Short)b).shortValue(),    context);
+            case Integer   x -> checkEQimpl(x, ((Integer)b).intValue(),    context);
+            case Long      x -> checkEQimpl(x, ((Long)b).longValue(),      context);
+            case Float     x -> checkEQimpl(x, ((Float)b).floatValue(),    context);
+            case Double    x -> checkEQimpl(x, ((Double)b).doubleValue(),  context);
+            case byte[]    x -> checkEQimpl(x, (byte[])b,                  context);
+            case char[]    x -> checkEQimpl(x, (char[])b,                  context);
+            case short[]   x -> checkEQimpl(x, (short[])b,                 context);
+            case int[]     x -> checkEQimpl(x, (int[])b,                   context);
+            case long[]    x -> checkEQimpl(x, (long[])b,                  context);
+            case float[]   x -> checkEQimpl(x, (float[])b,                 context);
+            case double[]  x -> checkEQimpl(x, (double[])b,                context);
+            case MemorySegment x -> checkEQimpl(x, (MemorySegment) b,      context);
             default -> {
-                System.err.println("ERROR: Verify.checkEQ failed: type not supported");
+                System.err.println("ERROR: Verify.checkEQ failed: type not supported: " + ca.getName());
                 print(a, "a " + context);
                 print(b, "b " + context);
-                throw new VerifyException("Object array type not supported.");
+                throw new VerifyException("Object array type not supported: " + ca.getName());
             }
         }
     }
@@ -94,6 +100,70 @@ public final class Verify {
     private static void checkEQimpl(byte a, byte b, String context) {
         if (a != b) {
             System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two chars are identical.
+     */
+    private static void checkEQimpl(char a, char b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two shorts are identical.
+     */
+    private static void checkEQimpl(short a, short b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two ints are identical.
+     */
+    private static void checkEQimpl(int a, int b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two longs are identical.
+     */
+    private static void checkEQimpl(long a, long b, String context) {
+        if (a != b) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch: " + a + " vs " + b + " for " + context);
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two floats have identical bits.
+     */
+    private static void checkEQimpl(float a, float b, String context) {
+        if (Float.floatToRawIntBits(a) != Float.floatToRawIntBits(b)) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch for " + context);
+            System.err.println("       Values: " + a + " vs " + b);
+            System.err.println("       Values: " + Float.floatToRawIntBits(a) + " vs " + Float.floatToRawIntBits(b));
+            throw new VerifyException("Value mismatch: " + a + " vs " + b);
+        }
+    }
+
+    /**
+     * Verify that two doubles have identical bits.
+     */
+    private static void checkEQimpl(double a, double b, String context) {
+        if (Double.doubleToRawLongBits(a) != Double.doubleToRawLongBits(b)) {
+            System.err.println("ERROR: Verify.checkEQ failed: value mismatch for " + context);
+            System.err.println("       Values: " + a + " vs " + b);
+            System.err.println("       Values: " + Double.doubleToRawLongBits(a) + " vs " + Double.doubleToRawLongBits(b));
             throw new VerifyException("Value mismatch: " + a + " vs " + b);
         }
     }
