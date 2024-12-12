@@ -28,6 +28,7 @@
  * @bug 8340836
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
+ * @requires !vm.jvmci.enabled
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
  * @build AOTLinkedLambdas
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar

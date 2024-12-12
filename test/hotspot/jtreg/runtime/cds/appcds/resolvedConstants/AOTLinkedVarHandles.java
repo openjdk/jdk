@@ -28,6 +28,7 @@
  * @bug 8343245
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
+ * @requires !vm.jvmci.enabled
  * @library /test/lib
  * @build AOTLinkedVarHandles
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar

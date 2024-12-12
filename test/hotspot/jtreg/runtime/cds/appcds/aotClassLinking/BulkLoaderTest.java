@@ -29,6 +29,7 @@
 /*
  * @test id=static
  * @requires vm.cds.supports.aot.class.linking
+ * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build InitiatingLoaderTester
  * @build BulkLoaderTest
@@ -39,6 +40,7 @@
 /*
  * @test id=dynamic
  * @requires vm.cds.supports.aot.class.linking
+ * @requires !vm.jvmci.enabled
  * @library /test/jdk/lib/testlibrary /test/lib
  * @build InitiatingLoaderTester
  * @build jdk.test.whitebox.WhiteBox BulkLoaderTest
