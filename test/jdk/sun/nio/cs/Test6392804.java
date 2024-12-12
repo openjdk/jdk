@@ -22,6 +22,7 @@
  */
 
 /*
+   @test
    @bug 6392804
    @summary Decoder fails to detect decoding error
 */
