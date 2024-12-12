@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,9 @@ public class ReleaseBeforeFiles {
         touch("testfile");
         jar("--create --file=test.jar testfile");
         jar("--describe-module --release 9 --file test.jar");
+        jar("--describe-module --file test.jar --release 9");
         jar("--validate        --release 9 --file test.jar");
+        jar("--validate        --file test.jar --release 9");
         rm("test.jar testfile");
     }
 
