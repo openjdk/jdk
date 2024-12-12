@@ -39,6 +39,11 @@ import compiler.lib.ir_framework.*;
  */
 public class TestVerifyInCheckMethod {
     public static int[] INPUT_A = new int[100];
+    static {
+        for (int i = 0; i < INPUT_A.length; i++) {
+            INPUT_A[i] = i;
+        }
+    }
     public static float INPUT_B = 42;
 
     // Must make sure to clone input arrays, if it is mutated in the test.
