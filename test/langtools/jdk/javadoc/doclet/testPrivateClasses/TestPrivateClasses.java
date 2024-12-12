@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,8 +187,8 @@ public class TestPrivateClasses extends JavadocTester {
                     <dl class="notes">
                     <dt>All Implemented Interfaces:</dt>
                     <dd><code><a href="PrivateInterface.html" title="interface in pkg">PrivateInterf\
-                    ace</a></code>, <code><a href="PublicInterface.html" title="interface in pkg">Pu\
-                    blicInterface</a></code></dd>
+                    ace</a>, <a href="PublicInterface.html" title="interface in pkg">PublicInterface\
+                    </a></code></dd>
                     </dl>""",
                 """
                     <div class="type-signature"><span class="modifiers">public class </span><span cl\
@@ -210,9 +210,8 @@ public class TestPrivateClasses extends JavadocTester {
                 """
                     <dl class="notes">
                     <dt>All Known Implementing Classes:</dt>
-                    <dd><code><a href="PrivateParent.html" title="class in pkg">PrivateParent</a></c\
-                    ode>, <code><a href="PublicChild.html" title="class in pkg">PublicChild</a></cod\
-                    e></dd>
+                    <dd><code><a href="PrivateParent.html" title="class in pkg">PrivateParent</a>, <\
+                    a href="PublicChild.html" title="class in pkg">PublicChild</a></code></dd>
                     </dl>""");
 
         checkOutput("pkg/PrivateInterface.html", true,

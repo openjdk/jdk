@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,8 @@ public class TestHiddenTag extends JavadocTester {
                 """
                     <dt>Direct Known Subclasses:</dt>
                     <dd><code><a href="A.VisibleInner.html" title="class in pkg1">A.VisibleInner</a>\
-                    </code>, <code><a href="A.VisibleInnerExtendsInvisibleInner.html" title="class i\
-                    n pkg1">A.VisibleInnerExtendsInvisibleInner</a></code></dd>""");
+                    , <a href="A.VisibleInnerExtendsInvisibleInner.html" title="class in pkg1">A.Vis\
+                    ibleInnerExtendsInvisibleInner</a></code></dd>""");
 
         checkOutput("pkg1/A.html", false,
                 "invisibleField",
