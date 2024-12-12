@@ -436,7 +436,6 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
   }
 }
 
-ATTRIBUTE_NO_UBSAN
 void ReservedHeapSpace::try_reserve_range(char *highest_start,
                                           char *lowest_start,
                                           size_t attach_point_alignment,
@@ -459,7 +458,7 @@ void ReservedHeapSpace::try_reserve_range(char *highest_start,
   while (attach_point >= lowest_start  &&
          attach_point <= highest_start &&  // Avoid wrap around.
          ((_base == nullptr) ||
-          (_base < aligned_heap_base_min_address || _base + size > upper_bound))) {
+          (_base < aligned_heap_base_min_address || size > (uintptr_t)(upper_bound - _base)))) {
     try_reserve_heap(size, alignment, page_size, attach_point);
     attach_point -= stepsize;
   }
