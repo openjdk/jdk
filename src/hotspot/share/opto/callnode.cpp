@@ -1101,7 +1101,6 @@ Node* CallStaticJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         }
       }
     } else {
-      // TODO: additional checks to ensure the call is actually "inlineable" now
       assert(IncrementalInline, "required");
       assert(cg->method()->is_method_handle_intrinsic() == false, "required");
       phase->C->prepend_late_inline(cg);
@@ -1209,7 +1208,6 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         set_generator(nullptr);
       }
     } else {
-      // TODO: additional checks to ensure the call is "inlineable" now
       assert(IncrementalInline, "required");
       phase->C->prepend_late_inline(cg);
       set_generator(nullptr);
