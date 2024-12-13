@@ -4486,34 +4486,23 @@ void os::Linux::numa_init() {
   // numa_all_nodes_ptr holds bitmask of all nodes.
   // numa_get_interleave_mask(v2) and numa_get_membind(v2) APIs returns correct
   // bitmask when externally configured to run on all or fewer nodes.
-  // TBD Add notes about other policies and cpunodebind.
 
   if (!Linux::libnuma_init()) {
     if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
         (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
       // Only issue a warning if the user explicitly asked for NUMA support
-      log_warning(os)("NUMA support is disabled as libnuma not initialized");
+      log_warning(os)("NUMA support is disabled as libnuma failed to initialize");
     }
     FLAG_SET_ERGO(UseNUMA, false);
     FLAG_SET_ERGO(UseNUMAInterleaving, false); // Also depends on libnuma.
   } else {
     Linux::set_configured_numa_policy(Linux::identify_numa_policy());
-    if (Linux::numa_max_node() < 1 ||
-        Linux::is_bound_to_single_mem_node() ||
-        Linux::mem_and_cpu_node_mismatch()) {
-      // Disable NUMA support if:
-      // 1. Only a single NUMA node is available
-      // 2. The process is bound to a single NUMA node
-      // 3. The process memory and cpu node configuration is misaligned
-      if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
-          (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
-        // Only issue a warning if the user explicitly asked for NUMA support
-       log_warning(os)("NUMA support is disabled as the process bound to a single"
-                       " numa node or cpu and memory nodes are not aligned");
-      }
-      FLAG_SET_ERGO(UseNUMA, false);
-      FLAG_SET_ERGO(UseNUMAInterleaving, false);
-
+    if (Linux::numa_max_node() < 1) {
+      disable_numa("Only a single NUMA node is available");
+    } else if (Linux::is_bound_to_single_mem_node()) {
+      disable_numa("The process is bound to a single NUMA node");
+    } else if (Linux::mem_and_cpu_node_mismatch()) {
+      disable_numa("The process memory and cpu node configuration does not match");
     } else {
       LogTarget(Info,os) log;
       LogStream ls(log);
@@ -4553,6 +4542,16 @@ void os::Linux::numa_init() {
       UseAdaptiveNUMAChunkSizing = false;
     }
   }
+}
+
+void os::Linux::disable_numa(const char* reason) {
+  if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
+      (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
+    // Only issue a warning if the user explicitly asked for NUMA support
+    log_warning(os)("NUMA support disabled: %s", reason);
+  }
+  FLAG_SET_ERGO(UseNUMA, false);
+  FLAG_SET_ERGO(UseNUMAInterleaving, false);
 }
 
 #if defined(IA32) && !defined(ZERO)
