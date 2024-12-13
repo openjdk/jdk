@@ -82,7 +82,7 @@ public final class TestClassInstantiator {
         private final Template staticsTemplate = null;
         private final Template mainTemplate = null;
         private final Template testTemplate = null;
-        private final HashMap<String,List<String>> argumentsMap = new HashMap<String,List<String>>();
+        private final HashMap<String,List<String>> parameterMap = new HashMap<String,List<String>>();
         private int repeatCount = 1;
 
         Instantiator(TestClassInstantiator parent) {
@@ -106,7 +106,7 @@ public final class TestClassInstantiator {
         }
 
         private ArrayList<Parameters> parametersCrossProduct() {
-            String[] keys = argumentsMap.keySet().toArray(new String[0]);
+            String[] keys = parameterMap.keySet().toArray(new String[0]);
             ArrayList<Parameters> setOfParameters = new ArrayList<Parameters>();
             setOfParameters.add(new Parameters());
             return parametersCrossProduct(keys, 0, setOfParameters);
@@ -118,7 +118,7 @@ public final class TestClassInstantiator {
             }
             ArrayList<Parameters> newSet = new ArrayList<Parameters>();
             String key = keys[keysPos];
-            List<String> values = argumentsMap.get(key);
+            List<String> values = parameterMap.get(key);
             for (Parameters pOld : setOfParameters) {
                 for (String v : values) {
                     Parameters p = new Parameters(pOld.getArguments());
@@ -159,18 +159,18 @@ public final class TestClassInstantiator {
         }
 
         public Instantiator where(String paramKey, String paramValue) {
-            if (argumentsMap.containsKey(paramKey)) {
+            if (parameterMap.containsKey(paramKey)) {
                 throw new TemplateFrameworkException("Duplicate parameter key: " + paramKey);
             }
-            argumentsMap.put(paramKey, Arrays.asList(paramValue));
+            parameterMap.put(paramKey, Arrays.asList(paramValue));
             return this;
         }
 
         public Instantiator where(String paramKey, List<String> paramValues) {
-            if (argumentsMap.containsKey(paramKey)) {
+            if (parameterMap.containsKey(paramKey)) {
                 throw new TemplateFrameworkException("Duplicate parameter key: " + paramKey);
             }
-            argumentsMap.put(paramKey, paramValues);
+            parameterMap.put(paramKey, paramValues);
             return this;
         }
 

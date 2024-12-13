@@ -88,11 +88,11 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
         /**
          * Add all parameter key-value pairs.
          *
-         * @param argumentsMap Map containing the key-value pairs.
+         * @param parameterMap Map containing the key-value pairs.
          * @return The Instantiator for chaining.
          */
-        public Instantiator where(Map<String,String> argumentsMap) {
-            parameters.add(argumentsMap);
+        public Instantiator where(Map<String,String> parameterMap) {
+            parameters.add(parameterMap);
             return this;
         }
 
@@ -135,8 +135,8 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
     /**
      * TODO
      */
-    public final Instantiator where(Map<String,String> argumentsMap) {
-        return new Instantiator(this).where(argumentsMap);
+    public final Instantiator where(Map<String,String> parameterMap) {
+        return new Instantiator(this).where(parameterMap);
     }
 
     /**

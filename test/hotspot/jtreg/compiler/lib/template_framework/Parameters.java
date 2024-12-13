@@ -41,7 +41,7 @@ import java.util.Set;
 public class Parameters {
     private static int instantiationIDCounter = 0;
 
-    private HashMap<String,String> argumentsMap;
+    private HashMap<String,String> parameterMap;
     public final int instantiationID;
 
     /**
@@ -51,27 +51,27 @@ public class Parameters {
         this(new HashMap<String,String>());
     }
 
-    public Parameters(Map<String,String> argumentsMap) {
-        this.argumentsMap = new HashMap<String,String>(argumentsMap);
+    public Parameters(Map<String,String> parameterMap) {
+        this.parameterMap = new HashMap<String,String>(parameterMap);
         this.instantiationID = instantiationIDCounter++;
     }
 
     public void add(String name, String value) {
-        if (argumentsMap.containsKey(name)) {
+        if (parameterMap.containsKey(name)) {
             throw new TemplateFrameworkException("Parameter " + name + " cannot be added as " + value +
-                                                 ", is already added as " + argumentsMap.get(name));
+                                                 ", is already added as " + parameterMap.get(name));
         }
-        argumentsMap.put(name, value);
+        parameterMap.put(name, value);
     }
 
-    public void add(Map<String,String> argumentsMap) {
-        for (Map.Entry<String,String> e : argumentsMap.entrySet()) {
+    public void add(Map<String,String> parameterMap) {
+        for (Map.Entry<String,String> e : parameterMap.entrySet()) {
             add(e.getKey(), e.getValue());
         }
     }
 
     public String getOrNull(String name) {
-        return argumentsMap.get(name);
+        return parameterMap.get(name);
     }
 
     public String get(String name, Scope scope, String errorMessage) {
@@ -98,19 +98,19 @@ public class Parameters {
     }
 
     public HashMap<String,String> getArguments() {
-        return argumentsMap;
+        return parameterMap;
     }
 
     public void print() {
         System.out.println("  Parameters ID=" + instantiationID);
-        for (Map.Entry<String,String> e : argumentsMap.entrySet()) {
+        for (Map.Entry<String,String> e : parameterMap.entrySet()) {
             System.out.println("    " + e.getKey() + "=" + e.getValue());
         }
     }
 
     public void checkOnlyHas(Scope scope, String... names) {
         Set<String> set = Set.of(names);
-        for (String key : argumentsMap.keySet()) {
+        for (String key : parameterMap.keySet()) {
             if (!set.contains(key)) {
                 scope.print();
                 throw new TemplateFrameworkException("Parameters have unexpected entry: " + key);

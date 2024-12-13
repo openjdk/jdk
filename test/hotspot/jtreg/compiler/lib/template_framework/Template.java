@@ -214,7 +214,7 @@ public final class Template extends CodeGenerator {
 
         public void handleGeneratorCall(String name,
                                         String generatorName,
-                                        Map<String,String> argumentsMap,
+                                        Map<String,String> parameterMap,
                                         List<String> variableList,
                                         String templated) {
             replacementState.checkHasNot(name, currentScope, templated);
@@ -235,7 +235,7 @@ public final class Template extends CodeGenerator {
                 nestedScope.addVariable(variable, typeAndMutability.type, typeAndMutability.mutable);
             }
 
-            Parameters parameters = new Parameters(argumentsMap);
+            Parameters parameters = new Parameters(parameterMap);
             generator.instantiate(nestedScope, parameters);
             nestedScope.close();
 
@@ -440,8 +440,8 @@ public final class Template extends CodeGenerator {
                 //   arg=$var
                 //   arg=#param
                 //   arg=#repeat_replacement
-                Map<String,String> argumentsMap = parseKeyValuePairs(generatorArguments, state);
-                argumentsMap = argumentsMap.entrySet().stream().collect(Collectors.toMap(
+                Map<String,String> parameterMap = parseKeyValuePairs(generatorArguments, state);
+                parameterMap = parameterMap.entrySet().stream().collect(Collectors.toMap(
                     e -> e.getKey(),
                     e -> {
                         String val = e.getValue();
@@ -465,7 +465,7 @@ public final class Template extends CodeGenerator {
                 // Pattern: "$v1,$v2,$v3" -> v1 v2 v3
                 String[] variableArray = variables.equals("") ? new String[0] : variables.split(",");
                 List<String> variableList = Arrays.stream(variableArray).map(s -> s.substring(1)).toList();
-                state.handleGeneratorCall(name, generatorName, argumentsMap, variableList, templated);
+                state.handleGeneratorCall(name, generatorName, parameterMap, variableList, templated);
                 return;
             }
 

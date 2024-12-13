@@ -105,18 +105,18 @@ public class CodeGeneratorLibrary {
             CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
 
             // Copy arguments, and remove the 2 args we just used. Forward the other args to the dispatch.
-            HashMap<String,String> argumentsMap = new HashMap<String,String>(parameters.getArguments());
-            argumentsMap.remove("scope");
-            argumentsMap.remove("call");
+            HashMap<String,String> parameterMap = new HashMap<String,String>(parameters.getArguments());
+            parameterMap.remove("scope");
+            parameterMap.remove("call");
 
             switch(scopeKind) {
                 case "class" -> {
                     ClassScope classScope = scope.classScope(" in dispatch for " + generatorName);
-                    classScope.dispatch(scope, generator, argumentsMap);
+                    classScope.dispatch(scope, generator, parameterMap);
                 }
                 case "method" -> {
                     MethodScope methodScope = scope.methodScope(" in dispatch for " + generatorName);
-                    methodScope.dispatch(scope, generator, argumentsMap);
+                    methodScope.dispatch(scope, generator, parameterMap);
                 }
                 default -> {
                     scope.print();
@@ -173,12 +173,12 @@ public class CodeGeneratorLibrary {
             CodeGenerator generator = scope.library().find(generatorName, " for repeat");
 
             // Copy arguments, and remove the 2 args we just used. Forward the other args to the repeat.
-            HashMap<String,String> argumentsMap = new HashMap<String,String>(parameters.getArguments());
-            argumentsMap.remove("call");
-            argumentsMap.remove("repeat");
+            HashMap<String,String> parameterMap = new HashMap<String,String>(parameters.getArguments());
+            parameterMap.remove("call");
+            parameterMap.remove("repeat");
 
             for (int i = 0; i < repeat; i++) {
-                generator.where(argumentsMap).instantiate(scope);
+                generator.where(parameterMap).instantiate(scope);
             }
         }, 0);
     }
