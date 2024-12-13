@@ -83,4 +83,20 @@ public final class Generators {
         }
     }
 
+    /**
+     * Randomly pick a double generator.
+     */
+    public static DoubleGenerator doubles() {
+        switch(RANDOM.nextInt(5)) {
+            case 0  -> { return new UniformDoubleGenerator(-1, 1); }
+            // Well balanced, so that multiplication reduction never explodes or collapses to zero:
+            case 1  -> { return new UniformDoubleGenerator(0.999f, 1.001f); }
+            case 2  -> { return new AnyBitsDoubleGenerator(); }
+            // A tame distribution, mixed in with the occasional special double value:
+            case 3  -> { return new SpecialDoubleGenerator(new UniformDoubleGenerator(0.999f, 1.001f), 10, 1000); }
+            // Generating any bits, but special values are more frequent.
+            case 4  -> { return new SpecialDoubleGenerator(new AnyBitsDoubleGenerator(), 100, 200); }
+            default -> { throw new RuntimeException("impossible"); }
+        }
+    }
 }
