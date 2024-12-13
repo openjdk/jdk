@@ -373,7 +373,6 @@ public class JlinkTask {
         if (options.addMods.contains(ALL_MODULE_PATH) && options.modulePath.isEmpty()) {
             throw taskHelper.newBadArgs("err.no.module.path");
         }
-        List<Path> originalModulePath = new ArrayList<>(options.modulePath);
         ModuleFinder appModuleFinder = newModuleFinder(options.modulePath);
         ModuleFinder finder = appModuleFinder;
 
@@ -391,8 +390,9 @@ public class JlinkTask {
             // include the java.base module.
             Path defModPath = getDefaultModulePath();
             if (defModPath != null) {
-                options.modulePath.add(defModPath);
-                finder = newModuleFinder(options.modulePath);
+                List<Path> combinedPaths = new ArrayList<>(options.modulePath);
+                combinedPaths.add(defModPath);
+                finder = newModuleFinder(combinedPaths);
             }
             // We've just added the default module path ('jmods'). If we still
             // don't find java.base, we must resolve JDK modules from the
@@ -426,7 +426,7 @@ public class JlinkTask {
 
                 // Error if no module is found on the app module path
                 if (initialRoots.isEmpty()) {
-                    String modPath = originalModulePath.stream()
+                    String modPath = options.modulePath.stream()
                             .map(a -> a.toString())
                             .collect(Collectors.joining(", "));
                     throw taskHelper.newBadArgs("err.empty.module.path", modPath);
