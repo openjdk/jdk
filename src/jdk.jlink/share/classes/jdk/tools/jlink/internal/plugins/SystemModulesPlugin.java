@@ -57,7 +57,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -87,9 +86,7 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 
 import static java.lang.classfile.ClassFile.*;
-
 import static jdk.tools.jlink.internal.Snippets.*;
-
 
 /**
  * Jlink plugin to reconstitute module descriptors and other attributes for system
@@ -528,12 +525,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
     static class SystemModulesClassGenerator {
         private static final ClassDesc CD_MODULE_DESCRIPTOR =
             ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor");
-        private static final ClassDesc CD_REQUIRES_MODIFIER =
-            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires$Modifier");
-        private static final ClassDesc CD_EXPORTS_MODIFIER =
-            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports$Modifier");
-        private static final ClassDesc CD_OPENS_MODIFIER =
-            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens$Modifier");
         private static final ClassDesc CD_MODULE_TARGET =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleTarget");
         private static final ClassDesc CD_MODULE_HASHES =
@@ -624,7 +615,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         genConstructor(clb);
 
                         // generate dedup set fields and provider methods
-                        genConstants(clb);
+                        var dedupSets = genConstants(clb);
 
                         // generate hasSplitPackages
                         genHasSplitPackages(clb);
@@ -633,7 +624,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         genIncubatorModules(clb);
 
                         // generate moduleDescriptors
-                        genModuleDescriptorsMethod(clb);
+                        genModuleDescriptorsMethod(clb, dedupSets);
 
                         // generate moduleTargets
                         genModuleTargetsMethod(clb);
@@ -664,18 +655,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                               .return_());
         }
 
-        private void genConstants(ClassBuilder clb) {
-            var clinitSnippets = dedupSetBuilder.buildConstants(clb);
-            if (!clinitSnippets.isEmpty()) {
+        private DedupSet genConstants(ClassBuilder clb) {
+            var dedupSet = dedupSetBuilder.build(clb);
+            var clinitSnippet = dedupSet.cacheSetupSnippet();
+            if (!clinitSnippet.isEmpty()) {
                 clb.withMethodBody(
                         CLASS_INIT_NAME,
                         MTD_void,
                         ACC_STATIC,
                         cob -> {
-                            clinitSnippets.get().accept(cob);
+                            clinitSnippet.get().emit(cob);
                             cob.return_();
                         });
             }
+            return dedupSet;
         }
 
         /**
@@ -714,19 +707,16 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                               .ireturn());
         }
 
-        private void genModuleDescriptorsMethod(ClassBuilder clb) {
-            var converter = new ModuleDescriptorBuilder(dedupSetBuilder, classDesc);
-            var moduleDescriptors = LoadableArray.of(CD_MODULE_DESCRIPTOR,
-                    moduleInfos,
-                    converter::build,
-                    moduleDescriptorsPerMethod,
-                    classDesc,
-                    "sub",
-                    moduleDescriptorsPerMethod);
-
-            // This setup helpers needed by the LoadableArray, but element loader is responsible
-            // to setup elements.
-            moduleDescriptors.setup(clb);
+        private void genModuleDescriptorsMethod(ClassBuilder clb, DedupSet dedupSets) {
+            var converter = new ModuleDescriptorBuilder(clb, dedupSets, classDesc);
+            var elementSnippets = converter.buildAll(moduleInfos);
+            var moduleDescriptors = new ArraySnippetBuilder(CD_MODULE_DESCRIPTOR)
+                    .classBuilder(clb)
+                    .activatePagingThreshold(moduleDescriptorsPerMethod)
+                    .ownerClassDesc(classDesc)
+                    .methodNamePrefix("sub")
+                    .pageSize(moduleDescriptorsPerMethod)
+                    .build(elementSnippets);
 
             clb.withMethodBody(
                     "moduleDescriptors",
@@ -943,8 +933,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate code to generate an immutable set.
          */
         private void genImmutableSet(CodeBuilder cob, Set<String> set) {
-            var loadableSet = LoadableSet.of(sorted(set), STRING_LOADER);
-            loadableSet.emit(cob);
+            var snippets = Snippet.buildAll(sorted(set), Snippet::loadConstant);
+            new SetSnippetBuilder(CD_String)
+                    .build(snippets)
+                    .emit(cob);
         }
 
         class ModuleHashesBuilder {
@@ -1042,160 +1034,101 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         /*
          * Wraps set creation, ensuring identical sets are properly deduplicated.
          */
+        static record DedupSet(Map<Set<String>, Snippet> stringSets,
+                               Map<Set<Requires.Modifier>, Snippet> requiresModifiersSets,
+                               Map<Set<Opens.Modifier>, Snippet> opensModifiersSets,
+                               Map<Set<Exports.Modifier>, Snippet> exportsModifiersSets,
+                               Optional<Snippet> cacheSetupSnippet) {};
+
         static class DedupSetBuilder {
-            // map Set<String> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<String>, SetReference> stringSets = new HashMap<>();
-
-            // map Set<Requires.Modifier> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<Requires.Modifier>, SetReference>
+            final Map<Set<String>, SetReference<String>> stringSets = new HashMap<>();
+            final Map<Set<Requires.Modifier>, SetReference<Requires.Modifier>>
                 requiresModifiersSets = new HashMap<>();
-
-            // map Set<Exports.Modifier> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<Exports.Modifier>, SetReference>
+            final Map<Set<Exports.Modifier>, SetReference<Exports.Modifier>>
                 exportsModifiersSets = new HashMap<>();
-
-            // map Set<Opens.Modifier> to a specialized builder to allow them to be
-            // deduplicated as they are requested
-            final Map<Set<Opens.Modifier>, SetReference>
+            final Map<Set<Opens.Modifier>, SetReference<Opens.Modifier>>
                 opensModifiersSets = new HashMap<>();
 
-            private static final String VALUES_ARRAY = "dedupSetValues";
-
             final ClassDesc owner;
-            private final ArrayList<SetReference> values = new ArrayList<>();
+            final CacheBuilder cacheBuilder = new CacheBuilder();
+            int setBuilt = 0;
 
             DedupSetBuilder(ClassDesc owner) {
                 this.owner = owner;
             }
 
-            <T extends Comparable<T>> SetReference createLoadableSet(Set<T> elements, CollectionElementBuilder<T> elementLoader) {
-                var loadableSet = LoadableSet.of(sorted(elements),
-                                                 elementLoader,
-                                                 PAGING_THRESHOLD,
-                                                 owner,
-                                                 "dedupSet" + values.size(),
-                                                 // Safe for String and Enum within 64K
-                                                 3000);
-                var ref = new SetReference(loadableSet);
-                values.add(ref);
-                return ref;
-            }
-
             /*
-             * Add the given set of strings to this builder.
-             */
+            * Add the given set of strings to this builder.
+            */
             void stringSet(Set<String> strings) {
-                stringSets.computeIfAbsent(strings,
-                        s -> createLoadableSet(s, STRING_LOADER)
-                ).increment();
+                stringSets.computeIfAbsent(strings, SetReference<String>::new).increment();
             }
 
             /*
-             * Add the given set of Exports.Modifiers
-             */
+            * Add the given set of Exports.Modifiers
+            */
             void exportsModifiers(Set<Exports.Modifier> mods) {
-                exportsModifiersSets.computeIfAbsent(mods,
-                        s -> createLoadableSet(s, (export, _) -> new EnumConstant(export))
-                ).increment();
+                exportsModifiersSets.computeIfAbsent(mods, SetReference<Exports.Modifier>::new).increment();
             }
 
             /*
-             * Add the given set of Opens.Modifiers
-             */
+            * Add the given set of Opens.Modifiers
+            */
             void opensModifiers(Set<Opens.Modifier> mods) {
-                opensModifiersSets.computeIfAbsent(mods,
-                        s -> createLoadableSet(s, (open, _) -> new EnumConstant(open))
-                ).increment();
+                opensModifiersSets.computeIfAbsent(mods, SetReference::new).increment();
             }
 
             /*
-             * Add the given set of Requires.Modifiers
-             */
+            * Add the given set of Requires.Modifiers
+            */
             void requiresModifiers(Set<Requires.Modifier> mods) {
-                requiresModifiersSets.computeIfAbsent(mods,
-                        s -> createLoadableSet(s, (require, _) -> new EnumConstant(require))
-                ).increment();
+                requiresModifiersSets.computeIfAbsent(mods, SetReference::new).increment();
             }
 
-            /*
-             * Load the given set to the top of operand stack.
-             */
-            void loadStringSet(CodeBuilder cob, Set<String> names) {
-                stringSets.get(names).emit(cob);
+            private Snippet buildStringSet(ClassBuilder clb, SetReference<String> setRef) {
+                return cacheBuilder.transform(setRef,
+                        new SetSnippetBuilder(CD_String)
+                                .classBuilder(clb)
+                                .activatePagingThreshold(PAGING_THRESHOLD)
+                                .ownerClassDesc(owner)
+                                .methodNamePrefix("dedupSet" + setBuilt++)
+                                .pageSize(STRING_PAGE_SIZE)
+                                .build(Snippet.buildAll(setRef.elements(), Snippet::loadConstant)));
             }
 
-            /*
-             * Load the given set to the top of operand stack.
-             */
-            void loadExportsModifiers(CodeBuilder cob, Set<Exports.Modifier> mods) {
-                exportsModifiersSets.get(mods).emit(cob);
+            private <T extends Enum<T>> Snippet buildEnumSet(ClassBuilder clb, SetReference<T> setRef) {
+                return cacheBuilder.transform(setRef,
+                        new SetSnippetBuilder(CD_Object)
+                                .classBuilder(clb)
+                                .activatePagingThreshold(PAGING_THRESHOLD)
+                                .ownerClassDesc(owner)
+                                .methodNamePrefix("dedupSet" + setBuilt++)
+                                .pageSize(ENUM_PAGE_SIZE)
+                                .build(Snippet.buildAll(setRef.elements(), Snippet::loadEnum)));
             }
 
-            /*
-             * Load the given set to the top of operand stack.
-             */
-            void loadOpensModifiers(CodeBuilder cob, Set<Opens.Modifier> mods) {
-                opensModifiersSets.get(mods).emit(cob);
+            private Map<Set<String>, Snippet> buildStringSets(ClassBuilder clb, Map<Set<String>, SetReference<String>> map) {
+                Map<Set<String>, Snippet> snippets = new HashMap<>(map.size());
+                map.entrySet().forEach(entry -> snippets.put(entry.getKey(),
+                        buildStringSet(clb, entry.getValue())));
+                return snippets;
             }
 
-
-            /*
-             * Load the given set to the top of operand stack.
-             */
-            void loadRequiresModifiers(CodeBuilder cob, Set<Requires.Modifier> mods) {
-                requiresModifiersSets.get(mods).emit(cob);
+            private <T extends Enum<T>> Map<Set<T>, Snippet> buildEnumSets(ClassBuilder clb, Map<Set<T>, SetReference<T>> map) {
+                Map<Set<T>, Snippet> snippets = new HashMap<>(map.size());
+                map.entrySet().forEach(entry -> snippets.put(entry.getKey(),
+                        buildEnumSet(clb, entry.getValue())));
+                return snippets;
             }
 
-            /*
-             * Adding provider methods to the class. For those set used more than once, built
-             * once and keep the reference for later access.
-             * Return a snippet to setup the cache <clinit>.
-             *
-             * The returned snippet would set up the set referenced more than once,
-             *
-             * static final Set[] dedupSetValues;
-             *
-             * static {
-             *     dedupSetValues = new Set[countOfStoredValues];
-             *     dedupSetValues[0] = Set.of(elements); // elements no more than SET_SIZE_THRESHOLD
-             *     dedupSetValues[1] = dedup<setWithIndex>Provider(); // set elements more than SET_SIZE_THRESHOLD
-             *     ...
-             *     dedupSetValues[countOfStoredValues - 1] = ...
-             * }
-             */
-            Optional<Consumer<CodeBuilder>> buildConstants(ClassBuilder clb) {
-                var staticCache = new ArrayList<SetReference>();
-
-                for (var set: values) {
-                    set.setup(clb);
-                    if (set.refCount() > 1) {
-                        staticCache.add(set);
-                    }
-                }
-
-                if (staticCache.isEmpty()) {
-                    return Optional.empty();
-                }
-
-                var cacheValuesArray = LoadableArray.of(
-                        CD_Set,
-                        staticCache,
-                        SetReference::build,
-                        PAGING_THRESHOLD,
-                        owner,
-                        VALUES_ARRAY,
-                        2000);
-
-                cacheValuesArray.setup(clb);
-                clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);
-
-                return Optional.of(cob -> {
-                        cacheValuesArray.emit(cob);
-                        cob.putstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
-                });
+            DedupSet build(ClassBuilder clb) {
+                return new DedupSet(
+                    buildStringSets(clb, stringSets),
+                    buildEnumSets(clb, requiresModifiersSets),
+                    buildEnumSets(clb, opensModifiersSets),
+                    buildEnumSets(clb, exportsModifiersSets),
+                    cacheBuilder.build(clb)
+                );
             }
 
             /*
@@ -1205,16 +1138,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * and load from there. Otherwise, the set is built in place and load onto the operand
              * stack.
              */
-            class SetReference implements Snippet {
+            class SetReference<T extends Comparable<T>> {
                 // sorted elements of the set to ensure same generated code
-                private final LoadableSet loadableSet;
-
+                private final List<T> elements;
                 private int refCount;
-                // The index for this set value in the cache array
-                private int index = -1;
 
-                SetReference(LoadableSet set) {
-                    this.loadableSet = set;
+                SetReference(Set<T> elements) {
+                    this.elements = sorted(elements);
                 }
 
                 int increment() {
@@ -1225,37 +1155,73 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     return refCount;
                 }
 
+                List<T> elements() {
+                    return elements;
+                }
+            }
+
+            class CacheBuilder {
+                private static final String VALUES_ARRAY = "dedupSetValues";
+                final ArrayList<Snippet> cachedValues = new ArrayList<>();
+
                 // Load the set to the operand stack.
                 // When referenced more than once, the value is pre-built with static initialzer
                 // and is load from the cache array with
                 //   dedupSetValues[index]
                 // Otherwise, LoadableSet will load the set onto the operand stack.
-                @Override
-                public void emit(CodeBuilder cob) {
-                    if (refCount > 1) {
-                        assert index >= 0;
-                        cob.getstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
-                        cob.loadConstant(index);
-                        cob.aaload();
+                private Snippet loadFromCache(int index) {
+                    assert index >= 0;
+                    return cob ->
+                        cob.getstatic(owner, VALUES_ARRAY, CD_Set.arrayType())
+                           .loadConstant(index)
+                           .aaload();
+                }
+
+                Snippet transform(SetReference<?> setRef, Snippet loadSnippet) {
+                    if (setRef.refCount() > 1) {
+                        cachedValues.add(loadSnippet);
+                        return loadFromCache(cachedValues.size() - 1);
                     } else {
-                        loadableSet.emit(cob);
+                        return loadSnippet;
                     }
                 }
 
-                @Override
-                public void setup(ClassBuilder clb) {
-                    loadableSet.setup(clb);
-                }
+                /*
+                * Adding provider methods to the class. For those set used more than once, built
+                * once and keep the reference for later access.
+                * Return a snippet to setup the cache <clinit>.
+                *
+                * The returned snippet would set up the set referenced more than once,
+                *
+                * static final Set[] dedupSetValues;
+                *
+                * static {
+                *     dedupSetValues = new Set[countOfStoredValues];
+                *     dedupSetValues[0] = Set.of(elements); // elements no more than SET_SIZE_THRESHOLD
+                *     dedupSetValues[1] = dedup<setWithIndex>Provider(); // set elements more than SET_SIZE_THRESHOLD
+                *     ...
+                *     dedupSetValues[countOfStoredValues - 1] = ...
+                * }
+                */
+                Optional<Snippet> build(ClassBuilder clb) {
+                    if (cachedValues.isEmpty()) {
+                        return Optional.empty();
+                    }
 
-                /**
-                 * Build the snippet to load the set onto the operand stack for storing into cache
-                 * to be later accessed by the SetReference::emit
-                 */
-                Snippet build(int index) {
-                    this.index = index;
-                    return cob -> {
-                        loadableSet.emit(cob);
-                    };
+                    var cacheValuesArray = new ArraySnippetBuilder(CD_Set)
+                            .classBuilder(clb)
+                            .activatePagingThreshold(PAGING_THRESHOLD)
+                            .ownerClassDesc(owner)
+                            .methodNamePrefix(VALUES_ARRAY)
+                            .pageSize(2000)
+                            .build(cachedValues.toArray(Snippet[]::new));
+
+                    clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);
+
+                    return Optional.of(cob -> {
+                            cacheValuesArray.emit(cob);
+                            cob.putstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
+                    });
                 }
             }
         }

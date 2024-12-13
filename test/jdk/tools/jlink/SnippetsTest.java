@@ -24,6 +24,7 @@
  */
 
 import java.io.IOException;
+import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import static java.lang.classfile.ClassFile.ACC_PUBLIC;
 import java.lang.constant.ClassDesc;
@@ -40,6 +41,7 @@ import java.lang.reflect.AccessFlag;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -49,7 +51,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jdk.tools.jlink.internal.Snippets.*;
-import static jdk.tools.jlink.internal.Snippets.*;
 
 /*
  * @test
@@ -91,40 +92,6 @@ public class SnippetsTest {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = { true, false })
-    void testLoadableProvider(boolean isStatic) throws NoSuchMethodException {
-        var expected = IntStream.range(0, 1234)
-                                 .mapToObj(i -> "WrapperTestString" + i)
-                                 .toList();
-        var className = "WrapperLoadableTest" + (isStatic ? "Static" : "Public");
-        ClassDesc testClassDesc = ClassDesc.of(className);
-
-        var loadable = new PaginatedArray<>(
-                CD_String, expected, STRING_LOADER, testClassDesc, "page", 100);
-        // 1234 with 10 per page, should have 13 pages with last page 34 elements
-        assertEquals(13, loadable.pageCount());
-        assertTrue(loadable.isLastPagePartial());
-
-        var provider = new LoadableProvider(loadable, testClassDesc, "wrapper", isStatic);
-        Supplier<String[]> supplier = generateSupplier(className, provider, loadable);
-        verifyPaginationMethods(supplier.getClass(), String.class, "page", 13);
-        assertArrayEquals(expected.toArray(), supplier.get());
-
-        // check wrapper function
-        var methodType = MethodType.methodType(String[].class);
-        try {
-            lookup().findStatic(supplier.getClass(), provider.methodName(), methodType);
-        } catch (IllegalAccessException ex) {
-            assertFalse(isStatic);
-        }
-        try {
-            lookup().findVirtual(supplier.getClass(), provider.methodName(), methodType);
-        } catch (IllegalAccessException ex) {
-            assertTrue(isStatic);
-        }
-    }
-
     @Test
     void testLoadableEnum() {
         Enum<?>[] enums = {
@@ -134,78 +101,82 @@ public class SnippetsTest {
             ModuleDescriptor.Requires.Modifier.TRANSITIVE
         };
 
-        var loadable = new SimpleArray<EnumConstant>(
-                Enum.class.describeConstable().get(),
-                Arrays.stream(enums).map(EnumConstant::new).toList(),
-                (enumConstant, _) -> enumConstant);
+        Snippet[] elementSnippets = Snippet.buildAll(Arrays.asList(enums), Snippet::loadEnum);
 
-        Supplier<Enum<?>[]> supplier = generateSupplier("LoadableEnumTest", loadable);
+        var loadable = new ArraySnippetBuilder(Enum.class.describeConstable().get())
+                .build(elementSnippets);
+
+        Supplier<Enum<?>[]> supplier = generateSupplier("LoadableEnumTest", clb -> loadable);
         assertArrayEquals(enums, supplier.get());
     }
 
     @Test
-    void testLoadableArrayOf() {
+    void testArraySnippetBuilder() {
         Integer[] expected = IntStream.range(0, 200)
                                 .boxed()
                                 .toArray(Integer[]::new);
         var className = "LoadableArrayOf200Paged";
-        var loadable = LoadableArray.of(CD_Integer,
-                Arrays.asList(expected),
-                INTEGER_LOADER,
-                expected.length - 1,
-                ClassDesc.of(className),
-                "page",
-                100);
-        assertTrue(loadable instanceof PaginatedArray);
+        var elementSnippets = Snippet.buildAll(Arrays.asList(expected), Snippet::loadInteger);
+        var instance = new ArraySnippetBuilder(CD_Integer)
+                .activatePagingThreshold(expected.length - 1)
+                .ownerClassDesc(ClassDesc.of(className))
+                .methodNamePrefix("page")
+                .pageSize(100);
 
-        Supplier<Integer[]> supplier = generateSupplier(className, loadable);
+        Supplier<Integer[]> supplier = generateSupplier(className, clb -> instance.classBuilder(clb).build(elementSnippets));
         verifyPaginationMethods(supplier.getClass(), Integer.class, "page", 2);
         assertArrayEquals(expected, supplier.get());
 
-        loadable = LoadableArray.of(
-                CD_Integer,
-                Arrays.asList(expected),
-                INTEGER_LOADER,
-                expected.length,
-                ClassDesc.of("LoadableArrayOf200NotPaged"),
-                "page",
-                100);
-        assertTrue(loadable instanceof SimpleArray);
+        var loadable = instance.activatePagingThreshold(expected.length)
+                .ownerClassDesc(ClassDesc.of("LoadableArrayOf200NotPaged"))
+                .methodNamePrefix("page")
+                .pageSize(100)
+                .build(elementSnippets);
 
         // SimpleArray generate bytecode inline, so can be generated in any class
-        supplier = generateSupplier("TestLoadableArrayFactory", loadable);
+        supplier = generateSupplier("TestLoadableArrayFactory", clb -> loadable);
+        verifyPaginationMethods(supplier.getClass(), Integer.class, "page", 0);
         assertArrayEquals(expected, supplier.get());
     }
 
     @Test
-    void testLoadableSetOf() {
+    void testSetSnippetBuilder() {
         String[] data = IntStream.range(0, 100)
                                  .mapToObj(i -> "SetData" + i)
                                  .toArray(String[]::new);
 
         var tiny = Set.of(data[0], data[1], data[2]);
         var all = Set.of(data);
+        var setBuilder = new SetSnippetBuilder(CD_String);
 
-        Supplier<Set<String>> supplier = generateSupplier("TinySetTest", LoadableSet.of(tiny, STRING_LOADER));
+        Supplier<Set<String>> supplier = generateSupplier("TinySetTest", clb ->
+                setBuilder.build(Snippet.buildAll(tiny, Snippet::loadConstant)));
         // Set does not guarantee ordering, so not assertIterableEquals
         assertEquals(tiny, supplier.get());
 
-        supplier = generateSupplier("AllSetTestNoPage", LoadableSet.of(all, STRING_LOADER));
+        var allSnippets = Snippet.buildAll(all, Snippet::loadConstant);
+
+        supplier = generateSupplier("AllSetTestNoPage", clb ->
+                setBuilder.build(allSnippets));
         assertEquals(all, supplier.get());
 
         var className = "AllSetTestPageNotActivated";
         var methodNamePrefix = "page";
-        var loadable = LoadableSet.of(all, STRING_LOADER, all.size(),
-                ClassDesc.of(className), methodNamePrefix, 10);
-        supplier = generateSupplier(className, loadable);
+        var loadable = setBuilder.activatePagingThreshold(all.size())
+                .ownerClassDesc(ClassDesc.of(className))
+                .methodNamePrefix(methodNamePrefix)
+                .pageSize(10)
+                .build(allSnippets);
+        supplier = generateSupplier(className, clb -> loadable);
         assertEquals(all, supplier.get());
 
         className = "AllSetTestPageSize20";
-        loadable = LoadableSet.of(all, STRING_LOADER, all.size() - 1,
-                ClassDesc.of(className), methodNamePrefix, 20);
-        supplier = generateSupplier(className, loadable);
-        // Set erased element type and use Object as element type
-        verifyPaginationMethods(supplier.getClass(), Object.class, methodNamePrefix, 5);
+        setBuilder.ownerClassDesc(ClassDesc.of(className));
+        supplier = generateSupplier(className, clb -> setBuilder.classBuilder(clb)
+                .activatePagingThreshold(all.size() - 1)
+                .pageSize(20)
+                .build(allSnippets));
+        verifyPaginationMethods(supplier.getClass(), String.class, methodNamePrefix, 5);
         assertEquals(all, supplier.get());
     }
 
@@ -215,12 +186,17 @@ public class SnippetsTest {
                                  .toArray(String[]::new);
         var className = String.format("SnippetArrayProviderTest%dPagedBy%d", elementCount, pageSize);
         ClassDesc testClassDesc = ClassDesc.of(className);
-        var loadable = new PaginatedArray<>(CD_String, expected, STRING_LOADER,
-                testClassDesc, "ArrayPage", pageSize);
+        var builder = new ArraySnippetBuilder(CD_String)
+                .activatePagingThreshold(1)
+                .ownerClassDesc(testClassDesc)
+                .methodNamePrefix("ArrayPage")
+                .pageSize(pageSize);
+        var snippets = Snippet.buildAll(Arrays.asList(expected), Snippet::loadConstant);
+        var pagingContext = new PagingContext(expected.length, pageSize);
 
-        Supplier<String[]> supplier = generateSupplier(className, loadable);
-        verifyPaginationMethods(supplier.getClass(), String.class, "ArrayPage", loadable.pageCount());
-        assertEquals((elementCount % pageSize) != 0, loadable.isLastPagePartial());
+        Supplier<String[]> supplier = generateSupplier(className, clb -> builder.classBuilder(clb).build(snippets));
+        verifyPaginationMethods(supplier.getClass(), String.class, "ArrayPage", pagingContext.pageCount());
+        assertEquals((elementCount % pageSize) != 0, pagingContext.isLastPagePartial());
         assertArrayEquals(expected, supplier.get());
     }
 
@@ -229,15 +205,16 @@ public class SnippetsTest {
                                  .mapToObj(i -> "NoPage" + i)
                                  .toArray(String[]::new);
         String className = "SnippetArrayProviderTest" + elementCount;
-        var array = new SimpleArray<>(CD_String, Arrays.asList(expected), STRING_LOADER);
+        var array = new ArraySnippetBuilder(CD_String)
+                .build(Snippet.buildAll(Arrays.asList(expected), Snippet::loadConstant));
 
-        Supplier<String[]> supplier = generateSupplier(className, array);
+        Supplier<String[]> supplier = generateSupplier(className, clb -> array);
         assertArrayEquals(expected, supplier.get());
     }
 
-    <T> Supplier<T> generateSupplier(String className, Loadable loadable, Loadable... extra) {
+    <T> Supplier<T> generateSupplier(String className, Function<ClassBuilder, Loadable> builder) {
         var testClassDesc = ClassDesc.of(className);
-        byte[] classBytes = generateSupplierClass(testClassDesc, loadable, extra);
+        byte[] classBytes = generateSupplierClass(testClassDesc, builder);
         try {
             writeClassFile(className, classBytes);
             var testClass = lookup().defineClass(classBytes);
@@ -249,17 +226,24 @@ public class SnippetsTest {
     }
 
     void verifyPaginationMethods(Class<?> testClass, Class<?> elementType, String methodNamePrefix, int pageCount) {
+        var methodType = MethodType.methodType(elementType.arrayType(), elementType.arrayType());
+        if (pageCount <= 0) {
+            try {
+                lookup().findStatic(testClass, methodNamePrefix + 0, methodType);
+                fail("Unexpected paginate helper function");
+            } catch (Exception ex) {}
+        }
+
         for (int i = 0; i < pageCount; i++) {
             try {
-                lookup().findStatic(testClass, methodNamePrefix + i,
-                        MethodType.methodType(elementType.arrayType(), elementType.arrayType()));
+                lookup().findStatic(testClass, methodNamePrefix + i, methodType);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
         }
     }
 
-    byte[] generateSupplierClass(ClassDesc testClassDesc, Loadable loadable, Loadable... extra) {
+    byte[] generateSupplierClass(ClassDesc testClassDesc, Function<ClassBuilder, Loadable> builder) {
         return ClassFile.of().build(testClassDesc,
                 clb -> {
                     clb.withSuperclass(CD_Object);
@@ -270,13 +254,7 @@ public class SnippetsTest {
                         cob.return_();
                     });
 
-                    loadable.setup(clb);
-
-                    for (var e: extra) {
-                        // always call setup should be no harm
-                        // it suppose to be nop if not required.
-                        e.setup(clb);
-                    }
+                    var loadable = builder.apply(clb);
 
                     clb.withMethodBody("get", MethodTypeDesc.of(CD_Object), ACC_PUBLIC, cob -> {
                         loadable.emit(cob);

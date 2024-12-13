@@ -41,32 +41,31 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import jdk.tools.jlink.internal.Snippets.LoadableArray;
-import jdk.tools.jlink.internal.Snippets.LoadableSet;
-import static jdk.tools.jlink.internal.Snippets.STRING_LOADER;
-import static jdk.tools.jlink.internal.Snippets.STRING_PAGE_SIZE;
-import jdk.tools.jlink.internal.Snippets.Snippet;
+import static jdk.tools.jlink.internal.Snippets.*;
 
 import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.ModuleInfo;
-import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.SystemModulesClassGenerator.DedupSetBuilder;
+import jdk.tools.jlink.internal.plugins.SystemModulesPlugin.SystemModulesClassGenerator.DedupSet;
 
-class ModuleDescriptorBuilder {
+class ModuleDescriptorBuilder implements IndexedElementSnippetBuilder<ModuleInfo> {
     private static final ClassDesc CD_MODULE_DESCRIPTOR =
         ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor");
     private static final ClassDesc CD_MODULE_BUILDER =
         ClassDesc.ofInternalName("jdk/internal/module/Builder");
 
     private static final int PAGING_THRESHOLD = 512;
-    private final DedupSetBuilder dedupSetBuilder;
+    private final DedupSet dedupSet;
     private final ClassDesc ownerClassDesc;
+    private final ClassBuilder clb;
 
-    ModuleDescriptorBuilder(DedupSetBuilder dedupSetBuilder, ClassDesc ownerClassDesc) {
-        this.dedupSetBuilder = dedupSetBuilder;
+    ModuleDescriptorBuilder(ClassBuilder clb, DedupSet dedupSet, ClassDesc ownerClassDesc) {
+        this.clb = clb;
+        this.dedupSet = dedupSet;
         this.ownerClassDesc = ownerClassDesc;
     }
 
+    @Override
     public Snippet build(ModuleInfo moduleInfo, int index) {
-        return new ModuleDescriptorSnippet(moduleInfo.descriptor(), moduleInfo.packages(), index);
+        return new ModuleDescriptorSnippet(clb, moduleInfo.descriptor(), moduleInfo.packages(), index);
     }
 
     class ModuleDescriptorSnippet implements Snippet {
@@ -121,18 +120,18 @@ class ModuleDescriptorBuilder {
         final Snippet providesArray;
         final Snippet packagesSet;
 
-        ModuleDescriptorSnippet(ModuleDescriptor md, Set<String> packages, int index) {
+        ModuleDescriptorSnippet(ClassBuilder clb, ModuleDescriptor md, Set<String> packages, int index) {
             if (md.isAutomatic()) {
                 throw new InternalError("linking automatic module is not supported");
             }
 
             this.md = md;
             this.index = index;
-            requiresArray = buildRequiresArray();
-            exportsArray = buildExportsArray();
-            opensArray = buildOpensArray();
-            providesArray = buildProvidesArray();
-            packagesSet = buildPackagesSet(packages);
+            requiresArray = buildRequiresArray(clb);
+            exportsArray = buildExportsArray(clb);
+            opensArray = buildOpensArray(clb);
+            providesArray = buildProvidesArray(clb);
+            packagesSet = buildPackagesSet(clb, packages);
         }
 
         /*
@@ -141,9 +140,9 @@ class ModuleDescriptorBuilder {
          * Set<Modifier> mods = ...
          * Builder.newRequires(mods, mn, compiledVersion);
          */
-        Snippet loadRequire(Requires require, int unused) {
+        Snippet loadRequire(Requires require) {
             return cob -> {
-                dedupSetBuilder.loadRequiresModifiers(cob, require.modifiers());
+                dedupSet.requiresModifiersSets().get(require.modifiers()).emit(cob);
                 cob.loadConstant(require.name());
                 if (require.compiledVersion().isPresent()) {
                     cob.loadConstant(require.compiledVersion().get().toString())
@@ -158,16 +157,14 @@ class ModuleDescriptorBuilder {
             };
         }
 
-        private LoadableArray buildRequiresArray() {
-            return LoadableArray.of(
-                    CD_REQUIRES,
-                    sorted(md.requires()),
-                    this::loadRequire,
-                    PAGING_THRESHOLD,
-                    ownerClassDesc,
-                    "module" + index + "Requires",
-                    // number safe for a single page helper under 64K size limit
-                    2000);
+        private Snippet buildRequiresArray(ClassBuilder clb) {
+            return new ArraySnippetBuilder(CD_REQUIRES)
+                    .classBuilder(clb)
+                    .activatePagingThreshold(PAGING_THRESHOLD)
+                    .ownerClassDesc(ownerClassDesc)
+                    .methodNamePrefix("module" + index + "Requires")
+                    .pageSize(2000) // number safe for a single page helper under 64K size limit
+                    .build(Snippet.buildAll(sorted(md.requires()), this::loadRequire));
         }
 
         /*
@@ -181,13 +178,13 @@ class ModuleDescriptorBuilder {
          * pn = export.source()
          * targets = export.targets()
          */
-        Snippet loadExports(Exports export, int unused) {
+        Snippet loadExports(Exports export) {
             return cob -> {
-                dedupSetBuilder.loadExportsModifiers(cob, export.modifiers());
+                dedupSet.exportsModifiersSets().get(export.modifiers()).emit(cob);
                 cob.loadConstant(export.source());
                 var targets = export.targets();
                 if (!targets.isEmpty()) {
-                    dedupSetBuilder.loadStringSet(cob, targets);
+                    dedupSet.stringSets().get(targets).emit(cob);
                     cob.invokestatic(CD_MODULE_BUILDER,
                                     "newExports",
                                     MTD_EXPORTS_MODIFIER_SET_STRING_SET);
@@ -199,16 +196,14 @@ class ModuleDescriptorBuilder {
             };
         }
 
-        private LoadableArray buildExportsArray() {
-            return LoadableArray.of(
-                    CD_EXPORTS,
-                    sorted(md.exports()),
-                    this::loadExports,
-                    PAGING_THRESHOLD,
-                    ownerClassDesc,
-                    "module" + index + "Exports",
-                    // number safe for a single page helper under 64K size limit
-                    2000);
+        private Snippet buildExportsArray(ClassBuilder clb) {
+            return new ArraySnippetBuilder(CD_EXPORTS)
+                    .classBuilder(clb)
+                    .activatePagingThreshold(PAGING_THRESHOLD)
+                    .ownerClassDesc(ownerClassDesc)
+                    .methodNamePrefix("module" + index + "Exports")
+                    .pageSize(2000) // number safe for a single page helper under 64K size limit
+                    .build(Snippet.buildAll(sorted(md.exports()), this::loadExports));
         }
 
         /*
@@ -223,13 +218,13 @@ class ModuleDescriptorBuilder {
          * targets = open.targets()
          * Builder.newOpens(mods, pn, targets);
          */
-        Snippet loadOpens(Opens open, int unused) {
+        Snippet loadOpens(Opens open) {
             return cob -> {
-                dedupSetBuilder.loadOpensModifiers(cob, open.modifiers());
+                dedupSet.opensModifiersSets().get(open.modifiers()).emit(cob);
                 cob.loadConstant(open.source());
                 var targets = open.targets();
                 if (!targets.isEmpty()) {
-                    dedupSetBuilder.loadStringSet(cob, targets);
+                    dedupSet.stringSets().get(targets).emit(cob);
                     cob.invokestatic(CD_MODULE_BUILDER,
                                     "newOpens",
                                     MTD_OPENS_MODIFIER_SET_STRING_SET);
@@ -241,16 +236,14 @@ class ModuleDescriptorBuilder {
             };
         }
 
-        private LoadableArray buildOpensArray() {
-            return LoadableArray.of(
-                    CD_OPENS,
-                    sorted(md.opens()),
-                    this::loadOpens,
-                    PAGING_THRESHOLD,
-                    ownerClassDesc,
-                    "module" + index + "Opens",
-                    // number safe for a single page helper under 64K size limit
-                    2000);
+        private Snippet buildOpensArray(ClassBuilder clb) {
+            return new ArraySnippetBuilder(CD_OPENS)
+                    .classBuilder(clb)
+                    .activatePagingThreshold(PAGING_THRESHOLD)
+                    .ownerClassDesc(ownerClassDesc)
+                    .methodNamePrefix("module" + index + "Opens")
+                    .pageSize(2000) // number safe for a single page helper under 64K size limit
+                    .build(Snippet.buildAll(sorted(md.opens()), this::loadOpens));
         }
 
         /*
@@ -260,16 +253,15 @@ class ModuleDescriptorBuilder {
          * providers = List.of(new String[] { provide.providers() }
          * Builder.newProvides(service, providers);
          */
-        private Snippet loadProvides(Provides provide, int offset) {
+        private Snippet loadProvides(ClassBuilder clb, Provides provide, int offset) {
             return cob -> {
-                var providersArray = LoadableArray.of(
-                        CD_String,
-                        provide.providers(),
-                        STRING_LOADER,
-                        PAGING_THRESHOLD,
-                        ownerClassDesc,
-                        "module" + index + "Provider" + offset,
-                        STRING_PAGE_SIZE);
+                var providersArray = new ArraySnippetBuilder(CD_String)
+                        .classBuilder(clb)
+                        .activatePagingThreshold(PAGING_THRESHOLD)
+                        .ownerClassDesc(ownerClassDesc)
+                        .methodNamePrefix("module" + index + "Provider" + offset)
+                        .pageSize(STRING_PAGE_SIZE)
+                        .build(Snippet.buildAll(provide.providers(), Snippet::loadConstant));
 
                 cob.loadConstant(provide.service());
                 providersArray.emit(cob);
@@ -283,35 +275,25 @@ class ModuleDescriptorBuilder {
             };
         }
 
-        private LoadableArray buildProvidesArray() {
-            return LoadableArray.of(
-                    CD_PROVIDES,
-                    sorted(md.provides()),
-                    this::loadProvides,
-                    PAGING_THRESHOLD,
-                    ownerClassDesc,
-                    "module" + index + "Provides",
-                    // number safe for a single page helper under 64K size limit
-                    2000);
+        private Snippet buildProvidesArray(ClassBuilder clb) {
+            IndexedElementSnippetBuilder<Provides> builder = (e, i) -> loadProvides(clb, e, i);
+            return new ArraySnippetBuilder(CD_PROVIDES)
+                    .classBuilder(clb)
+                    .activatePagingThreshold(PAGING_THRESHOLD)
+                    .ownerClassDesc(ownerClassDesc)
+                    .methodNamePrefix("module" + index + "Provides")
+                    .pageSize(2000) // number safe for a single page helper under 64K size limit
+                    .build(builder.buildAll(md.provides()));
         }
 
-        private LoadableSet buildPackagesSet(Collection<String> packages) {
-            return LoadableSet.of(
-                    sorted(packages),
-                    STRING_LOADER,
-                    PAGING_THRESHOLD,
-                    ownerClassDesc,
-                    "module" + index + "Packages",
-                    STRING_PAGE_SIZE);
-        }
-
-        @Override
-        public void setup(ClassBuilder clb) {
-            requiresArray.setup(clb);
-            exportsArray.setup(clb);
-            opensArray.setup(clb);
-            providesArray.setup(clb);
-            packagesSet.setup(clb);
+        private Snippet buildPackagesSet(ClassBuilder clb, Collection<String> packages) {
+            return new SetSnippetBuilder(CD_String)
+                    .classBuilder(clb)
+                    .activatePagingThreshold(PAGING_THRESHOLD)
+                    .ownerClassDesc(ownerClassDesc)
+                    .methodNamePrefix("module" + index + "Packages")
+                    .pageSize(STRING_PAGE_SIZE)
+                    .build(Snippet.buildAll(sorted(packages), Snippet::loadConstant));
         }
 
         @Override
@@ -352,7 +334,7 @@ class ModuleDescriptorBuilder {
                               MTD_OPENS_ARRAY);
 
             // uses
-            dedupSetBuilder.loadStringSet(cob, md.uses());
+            dedupSet.stringSets().get(md.uses()).emit(cob);
             cob.invokevirtual(CD_MODULE_BUILDER,
                               "uses",
                               MTD_SET);
