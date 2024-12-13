@@ -24,9 +24,11 @@
 package compiler.lib.template_framework;
 
 /**
- * TODO public?
+ * The ClassScope sets the scope of a class body, i.e. after its opening bracked and before its closing
+ * bracket. This allows dispatching CodeGenerators to the top of the class body, for example for field
+ * declarations.
  */
-public class ClassScope extends DispatchScope {
+class ClassScope extends DispatchScope {
     public ClassScope(Scope parent, long fuel) {
         super(parent, fuel);
     }

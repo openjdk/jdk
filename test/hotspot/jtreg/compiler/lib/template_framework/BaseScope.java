@@ -24,9 +24,9 @@
 package compiler.lib.template_framework;
 
 /**
- * TODO public?
+ * BaseScope is the outer-most scope, and determines the CodeGeneratorLibrary which is used.
  */
-public class BaseScope extends Scope {
+class BaseScope extends Scope {
     public static final int DEFAULT_FUEL = 50;
     private final CodeGeneratorLibrary codeGeneratorLibrary;
 

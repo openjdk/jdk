@@ -26,33 +26,62 @@ package compiler.lib.template_framework;
 import java.util.Map;
 
 /**
- * TODO public?
+ * A CodeGenerator is used to instantiate code into a scope. This instantiated code may be genrated recursively
+ * i.e. the CodeGenerator instantiation may recursively instantiate other CodeGenerators.
  */
-public abstract class CodeGenerator {
+public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGenerator, SelectorCodeGenerator {
+
+    /**
+     * Every CodeGenerator must have an unique name. The name is used to find CodeGenerators in the library,
+     * and also in the Scope trace printed if the Template Framework encounters an error.
+     */
     public abstract String name();
+
+    /**
+     * TODO
+     */
     public abstract int fuelCost();
+
+    /**
+     * TODO
+     */
     public abstract void instantiate(Scope scope, Parameters parameters);
 
+    /**
+     * TODO
+     */
     public final class Instantiator {
-        CodeGenerator codeGenerator;
-        Parameters parameters;
-        boolean isUsed;
+        private final CodeGenerator codeGenerator;
+        private final Parameters parameters;
+        private boolean isUsed;
 
+        /**
+         * TODO
+         */
 	Instantiator(CodeGenerator codeGenerator) {
             this.codeGenerator = codeGenerator;
             parameters = new Parameters();
         }
 
+        /**
+         * TODO
+         */
         public Instantiator where(String paramKey, String paramValue) {
             parameters.add(paramKey, paramValue);
             return this;
         }
 
+        /**
+         * TODO
+         */
         public Instantiator where(Map<String,String> argumentsMap) {
             parameters.add(argumentsMap);
             return this;
         }
 
+        /**
+         * TODO
+         */
         public String instantiate() {
             if (isUsed) {
                 throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
@@ -64,6 +93,9 @@ public abstract class CodeGenerator {
             return scope.toString();
         }
 
+        /**
+         * TODO
+         */
         public void instantiate(Scope scope) {
             if (isUsed) {
                 throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
@@ -76,18 +108,30 @@ public abstract class CodeGenerator {
         }
     }
 
+    /**
+     * TODO
+     */
     public final Instantiator where(String paramKey, String paramValue) {
         return new Instantiator(this).where(paramKey, paramValue);
     }
 
+    /**
+     * TODO
+     */
     public final Instantiator where(Map<String,String> argumentsMap) {
         return new Instantiator(this).where(argumentsMap);
     }
 
+    /**
+     * TODO
+     */
     public final String instantiate() {
         return new Instantiator(this).instantiate();
     }
 
+    /**
+     * TODO
+     */
     public final void instantiate(Scope scope) {
         new Instantiator(this).instantiate(scope);
     }
