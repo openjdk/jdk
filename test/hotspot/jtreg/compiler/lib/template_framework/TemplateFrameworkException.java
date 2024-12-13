@@ -27,10 +27,22 @@ package compiler.lib.template_framework;
  * Exception thrown in the Template Framework. Most likely, the user is responsible for the failure.
  */
 public class TemplateFrameworkException extends RuntimeException {
+
+    /**
+     * Exception thrown by the Template Framework.
+     *
+     * @param message Exception message, speficying where something went wrong.
+     */
     public TemplateFrameworkException(String message) {
         super("Exception in Template Framework:" + System.lineSeparator() + message);
     }
 
+    /**
+     * Exception thrown by the Template Framework.
+     *
+     * @param message Exception message, speficying where something went wrong.
+     * @param e Nexted exception: the reason why this exception was thrown.
+     */
     public TemplateFrameworkException(String message, Throwable e) {
         super("Exception in Template Framework:" + System.lineSeparator() + message, e);
     }
