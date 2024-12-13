@@ -2124,7 +2124,7 @@ public class FloatingDecimal{
          * where integer f = <f_1 ... f_n> consists of the n digits found
          * in the portion [lz, tnz) of the input, and f_1 != 0, f_n != 0.
          * Define e' = n + ep, which leads to
-         *      x = 0.f 10^e', 10^(e'-1) <= x < 10^e'
+         *      x = <0 . f_1 ... f_n> 10^e', 10^(e'-1) <= x < 10^e'
          * If e' <= EP_MIN then x rounds to zero.
          * Similarly, if e' >= EP_MAX then x rounds to infinity.
          * (See the comments on the fields for their semantics.)
@@ -2142,11 +2142,6 @@ public class FloatingDecimal{
         }
 
         /*
-         * The magnitude x of the input can be seen as:
-         *      x = f 10^ep = 0.f 10^e, EP_MIN < e < EP_MAX
-         * f = <f_1 ... f_n> consists of the n digits found in the portion
-         * [lz, tnz) of the input, and f_1 != 0, f_n != 0.
-         *
          * For further considerations, x also needs to be seen as
          *      x = beta 2^q
          * with real beta and integer q meeting
