@@ -27,33 +27,21 @@ package compiler.lib.template_framework;
  * TODO
  *
  * - Extend library
- * - int_con etc - better sampling and inclusive limits?
- * - generators for other int types
- * - generators for float types
- * - maybe also test utilities - for verification, data generation, etc
- *   - that utility could be the base of my samplers/generators
- * - boolean generators
- * - templates that delay constant folding
- * - templates that generate ranges - maybe later constant fold?
+ *   - Delay constant folding - boolean or int?
+ *   - Generate ranges
+ *   - State class: could trigger state change for every test invocation?
+ * - constants:
+ *   - Use Generators!
  *
- * - Convenience Classes:
- *   - Repeat test, maybe with set of values for parameters
- *   - Integrate with IR Framework
- *   - Wrap whole class in Template
  * - Easy generation of programmatic CodeGenerator
  *   - improve API for recursive calls, parameter checks/load, etc
  *
  * Tests:
  * - IR test
- * - random distribution tests
+ * - random distribution tests: need Verify and Generators!
  *
- * Many test instantiator:
- * - static block
- * - main block
- * - test block
- * - parameter: test name
- * - for each parameter
- * - repeated adding - so different versions are generated
+ * General refactoring / simplification?
+ *
  */
 public final class TemplateFramework {
 
