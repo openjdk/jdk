@@ -29,7 +29,12 @@ import java.util.List;
 import java.util.HashMap;
 
 /**
- * TODO
+ * The {@code TestClassInstantiator} is a utility class, which generates a class, and allows instantiating
+ * multiple {@code Template}s, for example in the static block, the main method, or further below in the
+ * test section.
+ *
+ * First create a {@code TestClassInstantiator}, then {@code add} one or multiple {@code Template}s to it
+ * and finally {@code instantiate} the class which generates a {@code String} from all generated code.
  */
 public final class TestClassInstantiator {
     private boolean isUsed = false;
@@ -38,10 +43,23 @@ public final class TestClassInstantiator {
     private final Scope staticsScope;
     private final Scope mainScope;
 
+    /**
+     * Create a new {@code TestClassInstantiator} for a specific class, using the {@code CodeGeneratorLibrary.standard}.
+     *
+     * @param packageName Name of the package for the class.
+     * @param className Name of the class.
+     */
     public TestClassInstantiator(String packageName, String className) {
         this(packageName, className, null);
     }
 
+    /**
+     * Create a new {@code TestClassInstantiator} for a specific class, using the specified library.
+     *
+     * @param packageName Name of the package for the class.
+     * @param className Name of the class.
+     * @param codeGeneratorLibrary The library to be used for finding CodeGenerators in recursive instantiations.
+     */
     public TestClassInstantiator(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary) {
         // Open the base scope, and open the class.
         baseScope = new BaseScope(BaseScope.DEFAULT_FUEL, codeGeneratorLibrary);
@@ -76,10 +94,13 @@ public final class TestClassInstantiator {
         mainScope.stream.indent();
     }
 
+    /**
+     * Helper class for adding templates into the static, main or test block.
+     */
     public class Instantiator {
         private boolean isUsed = false;
         private TestClassInstantiator parent;
-        private final Template staticsTemplate = null;
+        private final Template staticTemplate = null;
         private final Template mainTemplate = null;
         private final Template testTemplate = null;
         private final HashMap<String,List<String>> parameterMap = new HashMap<String,List<String>>();
@@ -89,7 +110,15 @@ public final class TestClassInstantiator {
             this.parent = parent;
         }
 
-        public void add(Template staticsTemplate, Template mainTemplate, Template testTemplate) {
+        /**
+         * Add templates to the static, main and test block of the {@code TestClassInstantiator} class.
+         * One can selectively provide a {@code Template} if one is to be added, or {@code null} if not.
+         *
+         * @param staticTemplate Template for static block, or {@code null} if not to be added.
+         * @param mainTemplate Template for main block, or {@code null} if not to be added.
+         * @param testTemplate Template for test block, or {@code null} if not to be added.
+         */
+        public void add(Template staticTemplate, Template mainTemplate, Template testTemplate) {
             if (isUsed) {
                 throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
             }
@@ -100,7 +129,7 @@ public final class TestClassInstantiator {
                 for (int i = 0; i < repeatCount; i++) {
                     // If we have more than 1 set, we must clone the parameters, so that we get a unique ID.
                     p = (i == 0) ? p : new Parameters(p.getArguments());
-                    generate(staticsTemplate, mainTemplate, testTemplate, p);
+                    generate(staticTemplate, mainTemplate, testTemplate, p);
                 }
             }
         }
@@ -129,14 +158,14 @@ public final class TestClassInstantiator {
             return parametersCrossProduct(keys, keysPos + 1, newSet);
         }
 
-        private void generate(Template staticsTemplate, Template mainTemplate, Template testTemplate,
+        private void generate(Template staticTemplate, Template mainTemplate, Template testTemplate,
                               Parameters parameters) {
             // The 3 instantiations share the same parameters, and the ReplacementState. This ensures
             // that the variable names and replacements are shared among the 3 instantiations.
             Template.ReplacementState replacementState = new Template.ReplacementState();
-            if (staticsTemplate != null) {
+            if (staticTemplate != null) {
                 Scope staticsSubScope = new Scope(staticsScope, staticsScope.fuel);
-                staticsTemplate.instantiate(staticsSubScope, parameters, replacementState);
+                staticTemplate.instantiate(staticsSubScope, parameters, replacementState);
                 staticsSubScope.stream.addNewline();
                 staticsSubScope.close();
                 staticsScope.stream.addCodeStream(staticsSubScope.stream);
@@ -158,6 +187,13 @@ public final class TestClassInstantiator {
             }
         }
 
+        /**
+         * Add a parameter key-value pair.
+         *
+         * @param paramKey The name of the parameter.
+         * @param paramValue The value to be set.
+         * @return The Instantiator for chaining.
+         */
         public Instantiator where(String paramKey, String paramValue) {
             if (parameterMap.containsKey(paramKey)) {
                 throw new TemplateFrameworkException("Duplicate parameter key: " + paramKey);
@@ -166,6 +202,15 @@ public final class TestClassInstantiator {
             return this;
         }
 
+        /**
+         * Add a list of values for a given parameter name, creating an instantiation for every value.
+         * Note: if multiple {@code where} specify a list, then the cross-product of all these parameter
+         *       sets is generated, and an instantiation is created for each.
+         *
+         * @param paramKey The name of the parameter.
+         * @param paramValues List of parameter values.
+         * @return The Instantiator for chaining.
+         */
         public Instantiator where(String paramKey, List<String> paramValues) {
             if (parameterMap.containsKey(paramKey)) {
                 throw new TemplateFrameworkException("Duplicate parameter key: " + paramKey);
@@ -174,6 +219,13 @@ public final class TestClassInstantiator {
             return this;
         }
 
+        /**
+         * Repeat every instantiation {@code repeatCount} times, which is useful to instantiate {@code Template}s
+         * with random components multiple times.
+         *
+         * @param repeatCount Number of times every instantiation is repeated.
+         * @return The Instantiator for chaining.
+         */
         public Instantiator repeat(int repeatCount) {
             if (repeatCount <= 2 || repeatCount > 1000) {
                 throw new TemplateFrameworkException("Bad repeat count: " + repeatCount + " should be 2..1000");
@@ -186,22 +238,58 @@ public final class TestClassInstantiator {
         }
     }
 
-    public void add(Template staticsTemplate, Template mainTemplate, Template testTemplate) {
-        new Instantiator(this).add(staticsTemplate, mainTemplate, testTemplate);
+    /**
+     * Add templates to the static, main and test block of the {@code TestClassInstantiator} class.
+     * One can selectively provide a {@code Template} if one is to be added, or {@code null} if not.
+     *
+     * @param staticTemplate Template for static block, or {@code null} if not to be added.
+     * @param mainTemplate Template for main block, or {@code null} if not to be added.
+     * @param testTemplate Template for test block, or {@code null} if not to be added.
+     */
+    public void add(Template staticTemplate, Template mainTemplate, Template testTemplate) {
+        new Instantiator(this).add(staticTemplate, mainTemplate, testTemplate);
     }
 
+    /**
+     * Create an {@code Instantiator}, which already has a first parameter key-value pair.
+     *
+     * @param paramKey The name of the parameter.
+     * @param paramValue The value to be set.
+     * @return The Instantiator.
+     */
     public Instantiator where(String paramKey, String paramValue) {
         return new Instantiator(this).where(paramKey, paramValue);
     }
 
+    /**
+     * Create an {@code Instantiator}, which already has a list of values for a parameter name.
+     * Note: if multiple {@code where} specify a list, then the cross-product of all these parameter
+     *       sets is generated, and an instantiation is created for each.
+     *
+     * @param paramKey The name of the parameter.
+     * @param paramValues List of parameter values.
+     * @return The Instantiator for chaining.
+     */
     public Instantiator where(String paramKey, List<String> paramValues) {
         return new Instantiator(this).where(paramKey, paramValues);
     }
 
+    /**
+     * Repeat every instantiation {@code repeatCount} times, which is useful to instantiate {@code Template}s
+     * with random components multiple times.
+     *
+     * @param repeatCount Number of times every instantiation is repeated.
+     * @return The Instantiator for chaining.
+     */
     public Instantiator repeat(int repeatCount) {
         return new Instantiator(this).repeat(repeatCount);
     }
 
+    /**
+     * Instantiate the class with all the added templates, and return all the generated code in a String.
+     *
+     * @return The {@code String} of generated code.
+     */
     public String instantiate() {
         if (isUsed) {
             throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
