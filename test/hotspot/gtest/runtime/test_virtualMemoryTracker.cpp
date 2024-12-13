@@ -94,6 +94,9 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs(size, mtTest);
+
+    MemTracker::NmtVirtualMemoryLocker ml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -168,6 +171,9 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs(size, mtTest);
+
+    MemTracker::NmtVirtualMemoryLocker ml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -255,6 +261,9 @@ public:
 
     size_t size  = 0x01000000;
     ReservedSpace rs(size, mtTest);
+
+    MemTracker::NmtVirtualMemoryLocker ml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;
@@ -423,9 +432,11 @@ public:
   }
 
   static void test_remove_uncommitted_region() {
-
     size_t size  = 0x01000000;
     ReservedSpace rs(size, mtTest);
+
+    MemTracker::NmtVirtualMemoryLocker ml;
+
     address addr = (address)rs.base();
 
     address frame1 = (address)0x1234;

@@ -61,6 +61,14 @@ class MemTracker : AllStatic {
     return _tracking_level != NMT_unknown;
   }
 
+  static inline bool is_done_bootstrap()  {
+    return _done_bootstrap;
+  }
+
+  static inline void set_done_bootstrap()  {
+    _done_bootstrap = true;
+  }
+
   static inline NMT_TrackingLevel tracking_level() {
     return _tracking_level;
   }
@@ -124,7 +132,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtVirtualMemoryLocker ml;
+      MemTracker::NmtVirtualMemoryLocker ml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
     }
   }
@@ -150,7 +158,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtVirtualMemoryLocker ml;
+      MemTracker::NmtVirtualMemoryLocker ml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, mem_tag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -161,7 +169,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtVirtualMemoryLocker ml;
+      MemTracker::NmtVirtualMemoryLocker ml;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -169,7 +177,7 @@ class MemTracker : AllStatic {
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
-    NmtVirtualMemoryLocker ml;
+    MemTracker::NmtVirtualMemoryLocker ml;
     return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
@@ -177,7 +185,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    NmtVirtualMemoryLocker ml;
+    MemTracker::NmtVirtualMemoryLocker ml;
     MemoryFileTracker::Instance::free_file(file);
   }
 
@@ -186,7 +194,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    NmtVirtualMemoryLocker ml;
+    MemTracker::NmtVirtualMemoryLocker ml;
     MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, mem_tag);
   }
 
@@ -195,7 +203,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    NmtVirtualMemoryLocker ml;
+    MemTracker::NmtVirtualMemoryLocker ml;
     MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
@@ -209,7 +217,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtVirtualMemoryLocker ml;
+      MemTracker::NmtVirtualMemoryLocker ml;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, mem_tag, split_tag);
     }
   }
@@ -218,7 +226,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtVirtualMemoryLocker ml;
+      MemTracker::NmtVirtualMemoryLocker ml;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, mem_tag);
     }
   }
@@ -268,6 +276,15 @@ class MemTracker : AllStatic {
   // and return true; false if not found.
   static bool print_containing_region(const void* p, outputStream* out);
 
+  // Same as MutexLocker but can be used during VM init while single threaded and before mutexes are ready or current thread has been assigned.
+  // Performs no action during VM init.
+  class NmtVirtualMemoryLocker: public ConditionalMutexLocker {
+  public:
+      NmtVirtualMemoryLocker() :
+              ConditionalMutexLocker(NmtVirtualMemory_lock, _done_bootstrap, Mutex::_no_safepoint_check_flag) {
+      }
+  };
+
  private:
   static void report(bool summary_only, outputStream* output, size_t scale);
 
@@ -276,8 +293,7 @@ class MemTracker : AllStatic {
   static NMT_TrackingLevel   _tracking_level;
   // Stored baseline
   static MemBaseline      _baseline;
-  // Query lock
-  static Mutex*           _query_lock;
+  static bool             _done_bootstrap;
 };
 
 #endif // SHARE_NMT_MEMTRACKER_HPP

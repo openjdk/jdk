@@ -52,6 +52,8 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
+bool MemTracker::_done_bootstrap;
+
 void MemTracker::initialize() {
   bool rc = true;
   assert(_tracking_level == NMT_unknown, "only call once");
