@@ -1558,6 +1558,39 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
 
 #endif
 
+/**
+ * Gets the caller frame of `fr` for thread `t`.
+ *
+ * @returns an invalid frame (i.e. fr.pc() === 0) if the caller cannot be obtained
+ */
+frame frame::next_frame(frame fr, Thread* t) {
+  // Compiled code may use EBP register on x86 so it looks like
+  // non-walkable C frame. Use frame.sender() for java frames.
+  frame invalid;
+  if (t != nullptr && t->is_Java_thread()) {
+    // Catch very first native frame by using stack address.
+    // For JavaThread stack_base and stack_size should be set.
+    if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
+      return invalid;
+    }
+    if (fr.is_interpreted_frame() || (fr.cb() != nullptr && fr.cb()->frame_size() > 0)) {
+      RegisterMap map(JavaThread::cast(t),
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip); // No update
+      return fr.sender(&map);
+    } else {
+      // is_first_C_frame() does only simple checks for frame pointer,
+      // it will pass if java compiled code has a pointer in EBP.
+      if (os::is_first_C_frame(&fr)) return invalid;
+      return os::get_sender_for_C_frame(&fr);
+    }
+  } else {
+    if (os::is_first_C_frame(&fr)) return invalid;
+    return os::get_sender_for_C_frame(&fr);
+  }
+}
+
 #ifndef PRODUCT
 
 void FrameValues::describe(int owner, intptr_t* location, const char* description, int priority) {
