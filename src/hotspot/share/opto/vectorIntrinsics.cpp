@@ -1385,6 +1385,12 @@ bool LibraryCallKit::inline_vector_reduction() {
   int num_elem = vlen->get_con();
   int opc  = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
   int sopc = ReductionNode::opcode(opc, elem_bt);
+  if (sopc == opc) {
+    // No corresponding reduction operation for lanewise operation
+    log_if_needed("  ** not supported: arity=1 op=%d/reduce vlen=%d etype=%s is_masked_op=%d",
+                    sopc, num_elem, type2name(elem_bt), is_masked_op ? 1 : 0);
+    return false;
+  }
 
   // When using mask, mask use type needs to be VecMaskUseLoad.
   if (!arch_supports_vector(sopc, num_elem, elem_bt, is_masked_op ? VecMaskUseLoad : VecMaskNotUsed)) {

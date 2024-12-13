@@ -2719,6 +2719,10 @@ public abstract class LongVector extends AbstractVector<Long> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (long) Math.min(a, b)));
             case VECTOR_OP_MAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (long) Math.max(a, b)));
+            case VECTOR_OP_UMIN: return (v, m) ->
+                    toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (long) VectorMath.minUnsigned(a, b)));
+            case VECTOR_OP_UMAX: return (v, m) ->
+                    toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (long) VectorMath.maxUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((long)-1, m, (i, a, b) -> (long)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
