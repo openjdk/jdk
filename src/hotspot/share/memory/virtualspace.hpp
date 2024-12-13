@@ -103,10 +103,6 @@ class ReservedSpace {
   inline ReservedSpace last_part (size_t partition_size);
   inline ReservedSpace partition (size_t offset, size_t partition_size);
 
-  // Alignment
-  static size_t page_align_size_up(size_t size);
-  static size_t page_align_size_down(size_t size);
-  static size_t allocation_align_size_up(size_t size);
   bool contains(const void* p) const {
     return (base() <= ((char*)p)) && (((char*)p) < (base() + size()));
   }
