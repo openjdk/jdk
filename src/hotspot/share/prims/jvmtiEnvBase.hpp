@@ -540,7 +540,7 @@ private:
   JvmtiEnvBase *_env;
   JvmtiThreadState* _state;
   bool _set;
-  jint _depth; // used for NotiftyFramePop only 
+  jint _depth; // used for NotiftyFramePop only
 
 public:
   SetOrClearFramePopClosure(JvmtiEnv *env, JvmtiThreadState* state, bool set, jint depth = 0)
