@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "runtime/javaThread.hpp"
@@ -78,6 +79,13 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       __ pop_reg(saved_regs, sp);
       __ bind(done);
     }
+  }
+}
+
+void ShenandoahBarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
+                                                       Register start, Register count, Register tmp, RegSet saved_regs) {
+  if (ShenandoahCardBarrier && is_oop) {
+    gen_write_ref_array_post_barrier(masm, decorators, start, count, tmp, saved_regs);
   }
 }
 
@@ -382,6 +390,27 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm,
   }
 }
 
+void ShenandoahBarrierSetAssembler::store_check(MacroAssembler* masm, Register obj) {
+  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
+
+  __ srli(obj, obj, CardTable::card_shift());
+
+  assert(CardTable::dirty_card_val() == 0, "must be");
+
+  __ load_byte_map_base(t1);
+  __ add(t1, obj, t1);
+
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    __ lbu(t0, Address(t1));
+    __ beqz(t0, L_already_dirty);
+    __ sb(zr, Address(t1));
+    __ bind(L_already_dirty);
+  } else {
+    __ sb(zr, Address(t1));
+  }
+}
+
 void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                              Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool on_oop = is_reference_type(type);
@@ -407,16 +436,12 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
                                val != noreg /* tosca_live */,
                                false /* expand_call */);
 
-  if (val == noreg) {
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), noreg, noreg, noreg, noreg);
-  } else {
-    // Barrier needs uncompressed oop for region cross check.
-    Register new_val = val;
-    if (UseCompressedOops) {
-      new_val = t1;
-      __ mv(new_val, val);
-    }
-    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
+  BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
+
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool needs_post_barrier = (val != noreg) && in_heap && ShenandoahCardBarrier;
+  if (needs_post_barrier) {
+    store_check(masm, tmp3);
   }
 }
 
@@ -522,6 +547,37 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   }
 
   __ bind(done);
+}
+
+void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                                                     Register start, Register count, Register tmp, RegSet saved_regs) {
+  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
+
+  Label L_loop, L_done;
+  const Register end = count;
+
+  // Zero count? Nothing to do.
+  __ beqz(count, L_done);
+
+  // end = start + count << LogBytesPerHeapOop
+  // last element address to make inclusive
+  __ shadd(end, count, start, tmp, LogBytesPerHeapOop);
+  __ sub(end, end, BytesPerHeapOop);
+  __ srli(start, start, CardTable::card_shift());
+  __ srli(end, end, CardTable::card_shift());
+
+  // number of bytes to copy
+  __ sub(count, end, start);
+
+  __ load_byte_map_base(tmp);
+  __ add(start, start, tmp);
+
+  __ bind(L_loop);
+  __ add(tmp, start, count);
+  __ sb(zr, Address(tmp));
+  __ sub(count, count, 1);
+  __ bgez(count, L_loop);
+  __ bind(L_done);
 }
 
 #undef __

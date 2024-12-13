@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,25 @@ package java.lang.invoke;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Supplier;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Stream;
 
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.ReferenceKey;
+import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
-import sun.security.util.SecurityConstants;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
@@ -231,7 +227,7 @@ class MethodType
     }
 
     static final ReferencedKeySet<MethodType> internTable =
-        ReferencedKeySet.create(false, true, new Supplier<>() {
+        ReferencedKeySet.create(false, new Supplier<>() {
             @Override
             public Map<ReferenceKey<MethodType>, ReferenceKey<MethodType>> get() {
                 return new ConcurrentHashMap<>(512);
@@ -398,6 +394,17 @@ class MethodType
             ptypes = NO_PTYPES; trusted = true;
         }
         MethodType primordialMT = new MethodType(rtype, ptypes);
+        if (archivedMethodTypes != null) {
+            // If this JVM process reads from archivedMethodTypes, it never
+            // modifies the table. So there's no need for synchronization.
+            // See copyInternTable() below.
+            assert CDS.isUsingArchive();
+            MethodType mt = archivedMethodTypes.get(primordialMT);
+            if (mt != null) {
+                return mt;
+            }
+        }
+
         MethodType mt = internTable.get(primordialMT);
         if (mt != null)
             return mt;
@@ -416,7 +423,9 @@ class MethodType
         mt.form = MethodTypeForm.findForm(mt);
         return internTable.intern(mt);
     }
+
     private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
+    private static @Stable HashMap<MethodType,MethodType> archivedMethodTypes;
 
     /**
      * Finds or creates a method type whose components are {@code Object} with an optional trailing {@code Object[]} array.
@@ -1178,21 +1187,11 @@ class MethodType
      * @throws NullPointerException if the string is {@code null}
      * @throws IllegalArgumentException if the string is not a method descriptor
      * @throws TypeNotPresentException if a named type cannot be found
-     * @throws SecurityException if the security manager is present and
-     *         {@code loader} is {@code null} and the caller does not have the
-     *         {@link RuntimePermission}{@code ("getClassLoader")}
      * @jvms 4.3.3 Method Descriptors
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
-        if (loader == null) {
-            @SuppressWarnings("removal")
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
-            }
-        }
         return fromDescriptor(descriptor,
                               (loader == null) ? ClassLoader.getSystemClassLoader() : loader);
     }
@@ -1396,5 +1395,31 @@ s.writeObject(this.parameterArray());
         MethodType mt = ((MethodType[])wrapAlt)[0];
         wrapAlt = null;
         return mt;
+    }
+
+    static HashMap<MethodType,MethodType> copyInternTable() {
+        HashMap<MethodType,MethodType> copy = new HashMap<>();
+
+        for (Iterator<MethodType> i = internTable.iterator(); i.hasNext(); ) {
+            MethodType t = i.next();
+            copy.put(t, t);
+        }
+
+        return copy;
+    }
+
+    // This is called from C code, at the very end of Java code execution
+    // during the AOT cache assembly phase.
+    static void createArchivedObjects() {
+        // After the archivedMethodTypes field is assigned, this table
+        // is never modified. So we don't need synchronization when reading from
+        // it (which happens only in a future JVM process, never in the current process).
+        //
+        // @implNote CDS.isDumpingStaticArchive() is mutually exclusive with
+        // CDS.isUsingArchive(); at most one of them can return true for any given JVM
+        // process.
+        assert CDS.isDumpingStaticArchive();
+        archivedMethodTypes = copyInternTable();
+        internTable.clear();
     }
 }

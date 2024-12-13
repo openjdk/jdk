@@ -517,12 +517,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       // https://msdn.microsoft.com/en-us/library/9z1stfyw.aspx
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm7, Assembler::AVX_512bit);
-#ifdef _LP64
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm8, Assembler::AVX_512bit);
       __ subptr(rsp, 64);
       __ evmovdqul(Address(rsp, 0), xmm31, Assembler::AVX_512bit);
-#endif // _LP64
 #endif // _WINDOWS
 
       // load value into all 64 bytes of zmm7 register
@@ -546,12 +544,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #ifdef _WINDOWS
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm7);
-#ifdef _LP64
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm8);
     __ subptr(rsp, 32);
     __ vmovdqu(Address(rsp, 0), xmm15);
-#endif // _LP64
 #endif // _WINDOWS
 
     // load value into all 32 bytes of ymm7 register
@@ -611,12 +607,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
       __ evmovdqul(xmm31, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
       __ evmovdqul(xmm8, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
-#endif // _LP64
       __ evmovdqul(xmm7, Address(rsp, 0), Assembler::AVX_512bit);
       __ addptr(rsp, 64);
 #endif // _WINDOWS
@@ -641,12 +635,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #endif
 
 #ifdef _WINDOWS
-#ifdef _LP64
     __ vmovdqu(xmm15, Address(rsp, 0));
     __ addptr(rsp, 32);
     __ vmovdqu(xmm8, Address(rsp, 0));
     __ addptr(rsp, 32);
-#endif // _LP64
     __ vmovdqu(xmm7, Address(rsp, 0));
     __ addptr(rsp, 32);
 #endif // _WINDOWS
@@ -1316,9 +1308,16 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (UseSHA3Intrinsics) {
-    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+#ifdef _LP64
+  if (supports_evex() && supports_avx512bw()) {
+      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+          UseSHA3Intrinsics = true;
+      }
+  } else
+#endif
+   if (UseSHA3Intrinsics) {
+      warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+      FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {

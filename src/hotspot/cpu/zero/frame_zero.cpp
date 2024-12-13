@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -70,6 +70,11 @@ UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) cons
 bool frame::upcall_stub_frame_is_first() const {
   ShouldNotCallThis();
   return false;
+}
+
+JavaThread** frame::saved_thread_address(const frame& f) {
+  Unimplemented();
+  return nullptr;
 }
 
 frame frame::sender_for_nonentry_frame(RegisterMap *map) const {

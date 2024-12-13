@@ -696,14 +696,6 @@ void os::print_active_locale(outputStream* st) {
   }
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
   int retcode = uname(&name);
@@ -816,7 +808,7 @@ void* os::dll_lookup(void* handle, const char* name) {
   void* ret = ::dlsym(handle, name);
   if (ret == nullptr) {
     const char* tmp = ::dlerror();
-    // It is possible that we found a NULL symbol, hence no error.
+    // It is possible that we found a null symbol, hence no error.
     if (tmp != nullptr) {
       log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
     }
@@ -860,6 +852,12 @@ void os::dll_unload(void *lib) {
     JFR_ONLY(unload_event.set_error_msg(ebuf);)
   }
   LINUX_ONLY(os::free(l_pathdup));
+}
+
+void* os::lookup_function(const char* name) {
+  // This returns the global symbol in the main executable and its dependencies,
+  // as well as shared objects dynamically loaded with RTLD_GLOBAL flag.
+  return dlsym(RTLD_DEFAULT, name);
 }
 
 jlong os::lseek(int fd, jlong offset, int whence) {
@@ -939,57 +937,8 @@ void os::_exit(int num) {
   ALLOW_C_FUNCTION(::_exit, ::_exit(num);)
 }
 
-bool os::dont_yield() {
-  return DontYieldALot;
-}
-
 void os::naked_yield() {
   sched_yield();
-}
-
-// Builds a platform dependent Agent_OnLoad_<lib_name> function name
-// which is used to find statically linked in agents.
-// Parameters:
-//            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, null for shared libs.
-//            is_absolute_path == true if lib_name is absolute path to agent
-//                                     such as "/a/b/libL.so"
-//            == false if only the base name of the library is passed in
-//               such as "L"
-char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
-                                    bool is_absolute_path) {
-  char *agent_entry_name;
-  size_t len;
-  size_t name_len;
-  size_t prefix_len = strlen(JNI_LIB_PREFIX);
-  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
-  const char *start;
-
-  if (lib_name != nullptr) {
-    name_len = strlen(lib_name);
-    if (is_absolute_path) {
-      // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
-        lib_name = ++start;
-      }
-      if (strlen(lib_name) <= (prefix_len + suffix_len)) {
-        return nullptr;
-      }
-      lib_name += prefix_len;
-      name_len = strlen(lib_name) - suffix_len;
-    }
-  }
-  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
-  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == nullptr) {
-    return nullptr;
-  }
-  strcpy(agent_entry_name, sym_name);
-  if (lib_name != nullptr) {
-    strcat(agent_entry_name, "_");
-    strncat(agent_entry_name, lib_name, name_len);
-  }
-  return agent_entry_name;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
@@ -2123,7 +2072,7 @@ void os::shutdown() {
 // easily trigger secondary faults in those threads. To reduce the likelihood
 // of that we use _exit rather than exit, so that no atexit hooks get run.
 // But note that os::shutdown() could also trigger secondary faults.
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
     LINUX_ONLY(if (DumpPrivateMappingsInCore) ClassLoader::close_jrt_image();)
@@ -2197,4 +2146,43 @@ char* os::pd_map_memory(int fd, const char* unused,
 // Unmap a block of memory. Uses munmap.
 bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return munmap(addr, bytes) == 0;
+}
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+static ucontext_t _saved_assert_context;
+static bool _has_saved_context = false;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+
+void os::save_assert_context(const void* ucVoid) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  memcpy(&_saved_assert_context, ucVoid, sizeof(ucontext_t));
+  // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
+  //  after copying the context (see comment in sys/ucontext.h):
+#if defined(PPC64)
+  *((void**)&_saved_assert_context.uc_mcontext.regs) = &(_saved_assert_context.uc_mcontext.gp_regs);
+#elif defined(AMD64)
+  // In the copied version, fpregs should point to the copied contents.
+  // Sanity check: fpregs should point into the context.
+  if ((address)((const ucontext_t*)ucVoid)->uc_mcontext.fpregs > (address)ucVoid) {
+    size_t fpregs_offset = pointer_delta(((const ucontext_t*)ucVoid)->uc_mcontext.fpregs, ucVoid, 1);
+    if (fpregs_offset < sizeof(ucontext_t)) {
+      // Preserve the offset.
+      *((void**)&_saved_assert_context.uc_mcontext.fpregs) = (void*)((address)(void*)&_saved_assert_context + fpregs_offset);
+    }
+  }
+#endif
+  _has_saved_context = true;
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  assert(sigInfo != nullptr, "invariant");
+  *sigInfo = nullptr;
+  return _has_saved_context ? &_saved_assert_context : nullptr;
+#endif
+  *sigInfo = nullptr;
+  return nullptr;
 }

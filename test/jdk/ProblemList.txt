@@ -465,9 +465,10 @@ java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsol
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
-java/awt/security/WarningWindowDisposeTest/WarningWindowDisposeTest.java 8266059 macosx-all
 java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
+java/awt/Robot/InfiniteLoopException.java 8342638 windows-all,linux-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
+java/awt/Robot/ScreenCaptureRobotTest.java 8344581 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
 java/awt/Graphics2D/DrawString/RotTransText.java 8316878 linux-all
@@ -557,8 +558,6 @@ sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc6
 
 javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
-javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
-
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
 
 ############################################################################
@@ -585,8 +584,6 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 ############################################################################
 
 # jdk_nio
-
-java/nio/Buffer/LimitDirectMemory.java                          8342849 generic-all
 
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
@@ -710,7 +707,6 @@ javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
 
 # This test fails on macOS 14
 javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
-javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8316151 macosx-all
 
 ############################################################################
 
@@ -773,6 +769,7 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 # jdk_jfr
 
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
+jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 
@@ -794,6 +791,7 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 javax/swing/JTabbedPane/4666224/bug4666224.java 8144124  macosx-all
+javax/swing/JTabbedPane/TestJTabbedPaneOpaqueColor.java 8345090 windows-all,linux-all
 javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
 
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
@@ -806,6 +804,7 @@ java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/Frame/FrameStateTest/FrameStateTest.java 8203920 macosx-all,linux-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
+java/awt/print/PrinterJob/PrintTextTest.java 8148334 generic-all
 java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all

@@ -101,13 +101,10 @@ findClass(JNIEnv *env, const char * name)
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"findClass name");
     }
     x = JNI_FUNC_PTR(env,FindClass)(env, name);
-    if (x == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find class %s", name));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
-        ERROR_MESSAGE(("JDWP Exception occurred finding class %s", name));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred finding class %s", name));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return x;
 }
@@ -130,15 +127,11 @@ getMethod(JNIEnv *env, jclass clazz, const char * name, const char *signature)
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"getMethod signature");
     }
     method = JNI_FUNC_PTR(env,GetMethodID)(env, clazz, name, signature);
-    if (method == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
-        ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
+        ERROR_MESSAGE(("JNI Exception occurred finding method %s with signature %s",
+                       name, signature));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return method;
 }
@@ -161,15 +154,11 @@ getStaticMethod(JNIEnv *env, jclass clazz, const char * name, const char *signat
         EXIT_ERROR(AGENT_ERROR_ILLEGAL_ARGUMENT,"getStaticMethod signature");
     }
     method = JNI_FUNC_PTR(env,GetStaticMethodID)(env, clazz, name, signature);
-    if (method == NULL) {
-        ERROR_MESSAGE(("JDWP Can't find method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
-    }
-    if ( JNI_FUNC_PTR(env,ExceptionOccurred)(env) ) {
+    if ( JNI_FUNC_PTR(env,ExceptionCheck)(env) ) {
+        JNI_FUNC_PTR(env,ExceptionClear)(env); // keep -Xcheck:jni happy
         ERROR_MESSAGE(("JDWP Exception occurred finding method %s with signature %s",
-                                name, signature));
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER,NULL);
+                       name, signature));
+        EXIT_ERROR(AGENT_ERROR_JNI_EXCEPTION,NULL);
     }
     return method;
 }
@@ -266,7 +255,7 @@ util_initialize(JNIEnv *env)
                                           (env, "jdk/internal/vm/VMSupport");
         if (localVMSupportClass == NULL) {
             gdata->agent_properties = NULL;
-            if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
             }
         } else {
@@ -276,7 +265,7 @@ util_initialize(JNIEnv *env)
             localAgentProperties =
                 JNI_FUNC_PTR(env,CallStaticObjectMethod)
                             (env, localVMSupportClass, getAgentProperties);
-            if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+            if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
                 JNI_FUNC_PTR(env,ExceptionClear)(env);
                 EXIT_ERROR(AGENT_ERROR_INTERNAL,
                     "Exception occurred calling VMSupport.getAgentProperties");
@@ -855,7 +844,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
         jstring nameString;
 
         nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, name);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_OUT_OF_MEMORY;
             goto err;
@@ -864,7 +853,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
         thread = JNI_FUNC_PTR(env,NewObject)
                         (env, gdata->threadClass, gdata->threadConstructor,
                                    gdata->systemThreadGroup, nameString);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_OUT_OF_MEMORY;
             goto err;
@@ -875,7 +864,7 @@ spawnNewThread(jvmtiStartFunction func, void *arg, char *name)
          */
         JNI_FUNC_PTR(env,CallVoidMethod)
                         (env, thread, gdata->threadSetDaemon, JNI_TRUE);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             error = AGENT_ERROR_JNI_EXCEPTION;
             goto err;
@@ -1593,14 +1582,14 @@ getPropertyValue(JNIEnv *env, char *propertyName)
 
     /* Create new String object to hold the property name */
     nameString = JNI_FUNC_PTR(env,NewStringUTF)(env, propertyName);
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         JNI_FUNC_PTR(env,ExceptionClear)(env);
         /* NULL will be returned below */
     } else {
         /* Call valueString = System.getProperty(nameString) */
         valueString = JNI_FUNC_PTR(env,CallStaticObjectMethod)
             (env, gdata->systemClass, gdata->systemGetProperty, nameString);
-        if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+        if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
             JNI_FUNC_PTR(env,ExceptionClear)(env);
             valueString = NULL;
         }
@@ -1647,7 +1636,7 @@ setAgentPropertyValue(JNIEnv *env, char *propertyName, char* propertyValue)
             }
         }
     }
-    if (JNI_FUNC_PTR(env,ExceptionOccurred)(env)) {
+    if (JNI_FUNC_PTR(env,ExceptionCheck)(env)) {
         JNI_FUNC_PTR(env,ExceptionClear)(env);
     }
 }

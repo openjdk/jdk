@@ -134,8 +134,7 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
-Note: The Windows 32-bit x86 port is deprecated and may be removed in a future
-release.
+Note: The 32-bit x86 port is deprecated and may be removed in a future release.
 
 ### Building on aarch64
 
@@ -191,8 +190,7 @@ on different platforms.
 ### Windows
 
 Windows XP is not a supported platform, but all newer Windows should be able to
-build the JDK. (Note: The Windows 32-bit x86 port is deprecated and may be
-removed in a future release.)
+build the JDK.
 
 On Windows, it is important that you pay attention to the instructions in the
 [Special Considerations](#special-considerations).
@@ -682,9 +680,9 @@ At least version 3.2 of GNU Bash must be used.
 
 ### Graphviz and Pandoc
 
-In order to build the full docs (see the `--enable-full-docs`
-configure option) [Graphviz](https://www.graphviz.org) and
-[Pandoc](https://pandoc.org) are required. Any recent versions should
+In order to build man pages and the full docs (see the `--enable-full-docs`
+configure option) [Pandoc](https://pandoc.org) is required. For full docs also
+[Graphviz](https://www.graphviz.org) is required. Any recent versions should
 work. For reference, and subject to change, Oracle builds use Graphviz
 9.0.0 and Pandoc 2.19.2.
 
@@ -1800,9 +1798,17 @@ temporarily.
 On Windows, when configuring, `fixpath.sh` may report that some directory names
 have spaces. Usually, it assumes those directories have [short
 paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
-You can run `fsutil file setshortname` in `cmd` on certain directories, such as
-`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
-`configure` can access them.
+You can run `fsutil file setshortname` in `cmd` on directories to assign
+arbitrary short paths so `configure` can access them. If the result says "Access
+denied", it may be that there are processes running in that directory; in this
+case, you can reboot Windows in safe mode and run the command on those directories
+again.
+
+The only directories required to have short paths are `Microsoft Visual Studio`
+and `Windows Kits`; the rest of the "contains space" warnings from `configure`,
+such as `IntelliJ IDEA`, can be ignored. You can choose any short name; once it
+is set, `configure`'s tools like `cygpath` can convert the directory with spaces
+to your chosen short name and pass it to the build system.
 
 ### Getting Help
 

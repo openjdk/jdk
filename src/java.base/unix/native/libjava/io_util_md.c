@@ -264,3 +264,13 @@ handleGetLength(FD fd)
 #endif
     return sb.st_size;
 }
+
+jboolean
+handleIsRegularFile(JNIEnv* env, FD fd)
+{
+    struct stat fbuf;
+    if (fstat(fd, &fbuf) == -1)
+        JNU_ThrowIOExceptionWithLastError(env, "fstat failed");
+
+    return S_ISREG(fbuf.st_mode) ? JNI_TRUE : JNI_FALSE;
+}

@@ -155,6 +155,9 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBJPEG), false)
     LIBSPLASHSCREEN_EXTRA_SRC += libjavajpeg
+    LIBJAVA_JPEG_OBJS := $(sort $(patsubst %.c,%.o, $(filter-out imageioJPEG.c, \
+        $(notdir $(wildcard $(TOPDIR)/src/java.desktop/share/native/libjavajpeg/*.c)))))
+    LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += $(LIBJAVA_JPEG_OBJS)
   endif
 
   ifeq ($(USE_EXTERNAL_LIBPNG), false)
@@ -165,6 +168,10 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(USE_EXTERNAL_LIBZ), false)
     LIBSPLASHSCREEN_EXTRA_SRC += java.base:libzip/zlib
+    LIBZIP_SRC_PATH := $(TOPDIR)/src/java.base/share/native/libzip
+    LIBZIP_OBJS := $(sort $(patsubst %.c,%.o, $(notdir \
+        $(wildcard $(LIBZIP_SRC_PATH)/*.c $(LIBZIP_SRC_PATH)/zlib/*.c))))
+    LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += $(LIBZIP_OBJS)
   endif
 
   LIBSPLASHSCREEN_CFLAGS += -DSPLASHSCREEN -DPNG_NO_MMX_CODE \
@@ -206,6 +213,8 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
   else
     LIBSPLASHSCREEN_CFLAGS += -DWITH_X11 $(X_CFLAGS)
   endif
+
+  LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS += systemScale.o
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBSPLASHSCREEN, \
       NAME := splashscreen, \
@@ -257,6 +266,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           -framework Security, \
       LIBS_aix := $(LIBDL) -liconv $(X_LIBS) -lX11 -lXext, \
       LIBS_windows := delayimp.lib gdi32.lib kernel32.lib user32.lib, \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBSPLASHSCREEN_STATIC_LIB_EXCLUDE_OBJS), \
   ))
 
   TARGETS += $(BUILD_LIBSPLASHSCREEN)
