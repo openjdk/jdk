@@ -1125,26 +1125,22 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 void os::print_jvmti_agent_info(outputStream* st) {
 #if INCLUDE_JVMTI
   // should return all kinds of JVMTI agents, but no xrun agents
-  const JvmtiAgentList::Iterator it =JvmtiAgentList::agents();
+  const JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
   bool first_agent = true;
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     if (agent != nullptr) {
       if (first_agent) st->print_cr("JVMTI agents:");
       first_agent = false;
-      const char* dyninfo = "";
-      const char* instrumentinfo = "";
-      const char* loadinfo = "not loaded";
-      const char* initinfo = "not initialized";
+      const char* dyninfo = agent->is_dynamic() ? "dynamic" : "";
+      const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib" : "";
+      const char* loadinfo = agent->is_loaded() ? "loaded" : "not loaded";
+      const char* initinfo = agent->is_initialized() ? "initialized" : "not initialized";
       const char* optionsinfo = agent->options();
       const char* pathinfo = agent->os_lib_path();
-      if (agent->is_dynamic()) dyninfo = "dynamic";
-      if (agent->is_instrument_lib()) instrumentinfo = "instrumentlib";
-      if (agent->is_loaded()) loadinfo = "loaded";
       if (optionsinfo == nullptr) optionsinfo = "none";
       if (pathinfo == nullptr) pathinfo = "none";
       // jplis output too?
-      if (agent->is_initialized()) initinfo = "initialized";
       st->print_cr("%s path:%s, %s, %s %s %s options:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
     }
   }
