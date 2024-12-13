@@ -35,6 +35,7 @@
  * @run main/othervm/timeout=6000 -javaagent:redefineagent.jar -XX:MetaspaceSize=25m -XX:MaxMetaspaceSize=25m RedefineLeakThrowable
  */
 
+// MaxMetaspaceSize=23m allows InMemoryJavaCompiler to load even if CDS is off.
 class Tester {
     void test() {
         try {
