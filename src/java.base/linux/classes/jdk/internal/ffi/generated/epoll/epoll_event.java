@@ -58,13 +58,13 @@ public class epoll_event {
     // between Linux-x64 and Linux-aarch64
     static {
         $LAYOUT = Architecture.isAARCH64() ?
-                // Linux-aarch64 - expanded
+                // Linux-aarch64 - not packed
                 MemoryLayout.structLayout(
-                        FFMUtils.align(BindingUtils.C_INT, 1).withName("events"),
+                        BindingUtils.C_INT.withName("events"),
                         MemoryLayout.paddingLayout(4),
-                        FFMUtils.align(epoll_data.layout(), 1).withName("data")
+                        epoll_data.layout().withName("data")
                 ).withName("epoll_event") :
-                // Linux-x64 - compacted
+                // Linux-x64 - packed
                 MemoryLayout.structLayout(
                         FFMUtils.align(BindingUtils.C_INT, 1).withName("events"),
                         FFMUtils.align(epoll_data.layout(), 1).withName("data")
