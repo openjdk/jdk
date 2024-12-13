@@ -269,11 +269,14 @@ private:
     void push_right(RBNode* node);
 
   public:
+    NONCOPYABLE(IteratorImpl);
+
     IteratorImpl(const RBTree* tree) : _tree(tree) {
       Forward ? push_left(tree->_root) : push_right(tree->_root);
     }
 
     bool has_next() { return !_to_visit.is_empty(); }
+
     RBNode* next() {
       RBNode* node = _to_visit.pop();
       if (node != nullptr) {
