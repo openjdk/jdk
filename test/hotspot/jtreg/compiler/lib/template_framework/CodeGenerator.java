@@ -51,28 +51,34 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
     }
 
     /**
-     * TODO
+     * Instantiate a CodeGenerator.
+     *
+     * @param scope Scope into which the code is generated.
+     * @param parameters Provides the parameters for the instantiation, as well as a unique ID for identifier
+     *                   name generation (e.g. variable of method names).
      */
     public abstract void instantiate(Scope scope, Parameters parameters);
 
     /**
-     * TODO
+     * Helper facility to instantiate CodeGenerators more easily. It creates a unique Parameter set which can
+     * be further populated with {@code where}.
      */
     public final class Instantiator {
         private final CodeGenerator codeGenerator;
         private final Parameters parameters;
         private boolean isUsed;
 
-        /**
-         * TODO
-         */
 	Instantiator(CodeGenerator codeGenerator) {
             this.codeGenerator = codeGenerator;
             parameters = new Parameters();
         }
 
         /**
-         * TODO
+         * Add a parameter key-value pair.
+         *
+         * @param paramKey The name of the parameter.
+         * @param paramValue The value to be set.
+         * @return The Instantiator for chaining.
          */
         public Instantiator where(String paramKey, String paramValue) {
             parameters.add(paramKey, paramValue);
@@ -80,7 +86,10 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
         }
 
         /**
-         * TODO
+         * Add all parameter key-value pairs.
+         *
+         * @param argumentsMap Map containing the key-value pairs.
+         * @return The Instantiator for chaining.
          */
         public Instantiator where(Map<String,String> argumentsMap) {
             parameters.add(argumentsMap);
