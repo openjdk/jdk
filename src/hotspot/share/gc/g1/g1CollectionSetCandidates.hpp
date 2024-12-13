@@ -154,6 +154,11 @@ public:
 
   void remove_selected(uint count, uint num_regions);
 
+  // Removes any candidate groups stored in this list and also in the other list. The other
+  // list may only contain candidate groups in this list, sorted by gc efficiency. It need
+  // not be a prefix of this list.
+  // E.g. if this list is "A B G H", the other list may be "A G H", but not "F" (not in
+  // this list) or "A H G" (wrong order).
   void remove(G1CSetCandidateGroupList* other);
 
   void prepare_for_scan();

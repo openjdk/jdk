@@ -266,7 +266,7 @@ void G1CollectionSetCandidates::clear() {
 }
 
 void G1CollectionSetCandidates::sort_marking_by_efficiency() {
-  for(G1CSetCandidateGroup* gr : _from_marking_groups){
+  for (G1CSetCandidateGroup* gr : _from_marking_groups) {
     gr->calculate_efficiency();
   }
   _from_marking_groups.sort_by_efficiency();
@@ -276,7 +276,7 @@ void G1CollectionSetCandidates::sort_marking_by_efficiency() {
 
 void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
                                                             uint num_infos) {
-  if(num_infos == 0) {
+  if (num_infos == 0) {
     log_debug(gc, ergo, cset) ("No regions selected from marking.");
     return;
   }
@@ -406,7 +406,7 @@ void G1CollectionSetCandidates::verify_helper(G1CSetCandidateGroupList* list, ui
       }
       const uint hrm_index = r->hrm_index();
       assert(_contains_map[hrm_index] == CandidateOrigin::Marking || _contains_map[hrm_index] == CandidateOrigin::Retained,
-            "must be %u is %u", hrm_index, (uint)_contains_map[hrm_index]);
+             "must be %u is %u", hrm_index, (uint)_contains_map[hrm_index]);
       assert(verify_map[hrm_index] == CandidateOrigin::Invalid, "already added");
 
       verify_map[hrm_index] = CandidateOrigin::Verify;
