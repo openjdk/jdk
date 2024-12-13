@@ -51,7 +51,6 @@ import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 
 import sun.awt.X11.XBaseWindow;
 import com.sun.java.swing.plaf.gtk.GTKConstants.TextDirection;
@@ -521,6 +520,18 @@ public abstract class UNIXToolkit extends SunToolkit
     // application icons).
     private static final WindowFocusListener waylandWindowFocusListener;
 
+    private static boolean containsWaylandWindowFocusListener(Window window) {
+        if (window == null) {
+            return false;
+        }
+        for (WindowFocusListener focusListener : window.getWindowFocusListeners()) {
+            if (focusListener == waylandWindowFocusListener) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static {
         if (isOnWayland()) {
             waylandWindowFocusListener = new WindowAdapter() {
@@ -530,10 +541,10 @@ public abstract class UNIXToolkit extends SunToolkit
                     Window oppositeWindow = e.getOppositeWindow();
 
                     // The focus can move between the window calling the popup,
-                    // and the popup window itself.
+                    // and the popup window itself or its children.
                     // We only dismiss the popup in other cases.
                     if (oppositeWindow != null) {
-                        if (window == oppositeWindow.getParent() ) {
+                        if (containsWaylandWindowFocusListener(oppositeWindow.getOwner())) {
                             addWaylandWindowFocusListenerToWindow(oppositeWindow);
                             return;
                         }
@@ -557,10 +568,7 @@ public abstract class UNIXToolkit extends SunToolkit
     }
 
     private static void addWaylandWindowFocusListenerToWindow(Window window) {
-        if (!Arrays
-                .asList(window.getWindowFocusListeners())
-                .contains(waylandWindowFocusListener)
-        ) {
+        if (!containsWaylandWindowFocusListener(window)) {
             window.addWindowFocusListener(waylandWindowFocusListener);
         }
     }

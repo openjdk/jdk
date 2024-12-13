@@ -24,7 +24,7 @@
  /*
   * @test
   * @key headful
-  * @bug 8319103
+  * @bug 8319103 8342096
   * @requires (os.family == "linux")
   * @library /java/awt/regtesthelpers
   * @build PassFailJFrame
@@ -35,6 +35,7 @@
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import java.awt.Window;
@@ -47,14 +48,15 @@ public class FocusablePopupDismissTest {
 
             Click on the "Click me" button.
 
-            If the JTextField popup with "Some text" is not showing on the screen,
-            click Fail.
+            A menu should appear next to the window. If you move the cursor over it,
+            the JTextField popup with "Some text" should appear on the screen.
+            If it doesn't, click Fail.
 
             The following steps require some focusable system window to be displayed
             on the screen. This could be a system settings window, file manager, etc.
 
             Click on the "Click me" button if the popup is not displayed
-            on the screen.
+            on the screen, move the mouse pointer over the menu.
 
             While the popup is displayed, click on some other window on the desktop.
             If the popup has disappeared, click Pass, otherwise click Fail.
@@ -84,7 +86,10 @@ public class FocusablePopupDismissTest {
         button.addActionListener(e -> {
             JPopupMenu popupMenu = new JPopupMenu();
             JTextField textField = new JTextField("Some text", 10);
-            popupMenu.add(textField);
+
+            JMenu menu = new JMenu("Menu");
+            menu.add(textField);
+            popupMenu.add(menu);
             popupMenu.show(button, 0, button.getHeight());
         });
         frame.pack();
