@@ -74,41 +74,48 @@ void ArenaCounterTable::reset() {
   memset(_v, 0, sizeof(_v));
 }
 
-void ArenaCounterTable::print_on(outputStream* ss, bool human_readable) const {
-/*
+void ArenaCounterTable::summarize(size_t out[ArenaTag::max]) const {
+  memset(out, 0, ArenaTag::max * sizeof(size_t));
+  for (int i = 0; i < PhaseTrcId::max; i++) {
+    for (int j = 0; j < ArenaTag::max; j++) {
+      out[j] += _v[i][j];
+    }
+  }
+}
+
+void ArenaCounterTable::print_on(outputStream* st, bool human_readable) const {
   bool header_printed = false;
-    for (int phaseid = 0; phaseid < (int)Phase::PhaseTraceId::max_phase_timers; phaseid++) {
-      size_t sum = 0;
-      for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
-        sum += _v[arenatag][phaseid];
-      }
-      if (sum > 0) { // omit phases that did not contribute to allocation load
-        if (!header_printed) {
-          st->print("%20s %24s %10s", "by C2 phase:", "", "total");
-          for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
-            st->print("%10s", Arena::tag_name[arenatag]);
-          }
-          st->cr();
-          header_printed = true;
-        }
-        st->print("%45s ", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phaseid));
-        if (human_readable) {
-          st->print(PROPERFMT_W(10), PROPERFMTARGS(sum));
-        } else {
-          st->print(SIZE_FORMAT_W(10), sum);
-        }
+  for (int phaseid = 0; phaseid < (int)Phase::PhaseTraceId::max_phase_timers; phaseid++) {
+    size_t sum = 0;
+    for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
+      sum += at(phaseid, arenatag);
+    }
+    if (sum > 0) { // omit phases that did not contribute to allocation load
+      if (!header_printed) {
+        st->print("%24s %10s", "phase name", "total");
         for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
-          const size_t v = _v[arenatag][phaseid];
-          if (human_readable) {
-            st->print(PROPERFMT_W(10), PROPERFMTARGS(v));
-          } else {
-            st->print(SIZE_FORMAT_W(10), v);
-          }
+          st->print("%10s", Arena::tag_name[arenatag]);
         }
         st->cr();
+        header_printed = true;
       }
+      st->print("%45s ", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phaseid));
+      if (human_readable) {
+        st->print(PROPERFMT_W(10), PROPERFMTARGS(sum));
+      } else {
+        st->print(SIZE_FORMAT_W(10), sum);
+      }
+      for (int arenatag = 0; arenatag < Arena::tag_count(); arenatag++) {
+        const size_t v = at(phaseid, arenatag);
+        if (human_readable) {
+          st->print(PROPERFMT_W(10), PROPERFMTARGS(v));
+        } else {
+          st->print(SIZE_FORMAT_W(10), v);
+        }
+      }
+      st->cr();
     }
-  }*/
+  }
 }
 
 PhaseIdStack::PhaseIdStack() {
@@ -138,8 +145,10 @@ void ArenaState::reset() {
   _comp_type = CompilerType::compiler_none;
 }
 
-void ArenaState::start(size_t limit) {
+void ArenaState::start(CompilerType comp_type, int comp_id, size_t limit) {
   reset();
+  _comp_type = comp_type;
+  _comp_id = comp_id;
   _active = true;
   _limit = limit;
 }
@@ -158,10 +167,10 @@ void ArenaState::on_phase_end(PhaseTrcId id) {
   _phase_id_stack.pop(id);
 }
 
-int ArenaState::retrieve_live_node_count() {
+int ArenaState::retrieve_live_node_count() const {
   int result = 0;
 #ifdef COMPILER2
-  if (_comp_type == CompilerType::compiler_c2) {
+  if (_comp_type == compiler_c2) {
     // Update C2 node count
     // Careful, Compile::current() may be NULL in a short time window when Compile itself
     // is still being constructed.
@@ -182,10 +191,10 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
   _current += size;
   assert(_current >= old_current, "Overflow");
 
-  const ArenaTag arena_tag(arenatagid);
   const PhaseTrcId phase_id = _phase_id_stack.top();
+  const ArenaTag arena_tag(arenatagid);
 
-  _counters_current.add(size, arena_tag, phase_id);
+  _counters_current.add(size, phase_id, arena_tag);
   _live_nodes_current = retrieve_live_node_count();
 
   // Did we reach a global peak?
@@ -202,11 +211,17 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
     rc = true;
   }
 
+  // Did we reach a phase-local peak?
+  const size_t s = _counters_current.at(phase_id, arena_tag);
+  if (_counters_local_peaks.at(phase_id, arena_tag) < s) {
+    _counters_local_peaks.set(s, phase_id, arena_tag);
+  }
+
   // calculate arena chunk stamp
   chunkstamp_t cs;
   cs.tracked = 1;
   cs.arena_tag = (uint16_t)arenatagid;
-  cs.phase_id = (uint16_t)_phase_id_stack.top();
+  cs.phase_id = (uint16_t)_phase_id_stack.top().raw();
   *stamp = cs.raw;
 
   return rc;
@@ -220,27 +235,49 @@ void ArenaState::on_arena_chunk_deallocation(size_t size, uint64_t stamp) {
   chunkstamp_t cs;
   cs.raw = stamp;
   assert(cs.tracked == 1, "Sanity");
+  const PhaseTrcId phase_id(cs.phase_id);
   const ArenaTag arena_tag(cs.arena_tag);
-  const PhaseTrcId phase_id = cs.phase_id;
 
   _current -= size;
-  _counters_current.sub(size, arena_tag, phase_id);
+  _counters_current.sub(size, phase_id, arena_tag);
   _live_nodes_current = retrieve_live_node_count();
 }
 
-//bool ArenaState::is_c2_compilation() {
-//  CompilerThread* const th = Thread::current()->as_Compiler_thread();
-//  const CompileTask* const task = th->task();
-//  if (task != nullptr &&
-//      th->task()->compiler() != nullptr &&
-//      th->task()->compiler()->type() == compiler_c2) {
-//    return true;
-//  }
-//  return false;
-//}
+// Used for logging, not for the report table generated with jcmd Compiler.memory
+void ArenaState::print_peak_state_on(outputStream* st) const {
+  st->print("%zu ", _peak);
+  if (_peak > 0) {
+    st->print("[");
+    size_t sums[ArenaTag::max];
+    _counters_at_global_peak.summarize(sums);
+    for (int i = 0; i < ArenaTag::max; i++) {
+      if (sums[i] > 0) {
+        st->print("%*s%s %zu", i, ",", Arena::tag_name[i], sums[i]);
+      }
+    }
+    st->print_cr("]");
+#ifdef COMPILER2
+    if (_comp_type == CompilerType::compiler_c2) {
+      st->print_cr("----- Peak composition by phase and arena type -----");
+      _counters_at_global_peak.print_on(st, false);
+      st->print_cr("----- Phase-local peaks ----------------------------");
+      _counters_local_peaks.print_on(st, false);
+      st->print_cr("----------------------------------------------------");
+    }
+#endif
+  }
+}
 
 //////////////////////////
 // Backend
+
+// The backend is a hashtable.
+//
+// Key is a combination of method name (see FullMethodName) and compiler type. So, for each
+// compiler type, we keep information about the last compilation of a given method
+// (and if you need to know footprint of previous compilations, use Memstat print option).
+//
+// Value is a collection of various information
 
 class FullMethodName {
   Symbol* const _k;
@@ -298,18 +335,36 @@ class MemStatEntry : public CHeapObj<mtInternal /* (sic) */> {
   // active limit for this compilation, if any
   size_t _limit;
 
-  // The counters for this compilation when memory usage peaked
-  ArenaState::Counters _peak_counters;
-
   const char* _result;
+
+  // Bytes total at global peak
+  size_t _peak;
+  // Bytes per arena tag.
+  size_t _peak_composition_per_arena_tag[ArenaTag::max];
+  // Number of live nodes at global peak (C2 only)
+  unsigned _live_nodes_at_global_peak;
+
+  struct PerPhaseCounters {
+    // Bytes at global peak broken down on per phase and per arena type
+    ArenaCounterTable counters_at_global_peak;
+    // Phase-local peaks per phase and per arena type
+    ArenaCounterTable counters_local_peaks;
+  };
+  PerPhaseCounters* _per_phase_counters; // we only carry these if needed
 
 public:
 
   MemStatEntry(FullMethodName method)
-    : _method(method), _comptype(compiler_c1), _comp_id(-1),
+    : _method(method), _comptype(compiler_none), _comp_id(-1),
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
-      _result(nullptr) {
-    _peak_counters.reset();
+      _result(nullptr), _peak(0), _live_nodes_at_global_peak(0),
+      _per_phase_counters(nullptr) {
+  }
+
+  ~MemStatEntry() {
+    if (_per_phase_counters != nullptr) {
+      FREE_C_HEAP_ARRAY(PerPhaseCounters, _per_phase_counters);
+    }
   }
 
   void set_comp_id(int comp_id) { _comp_id = comp_id; }
@@ -319,13 +374,24 @@ public:
   void set_limit(size_t limit) { _limit = limit; }
   void inc_recompilation() { _num_recomp++; }
 
-  void set_peak_counters(const ArenaState::Counters& counters) {
-    memcpy(&_peak_counters, &counters, sizeof(_peak_counters));
+  void set_from_state(const ArenaState* state) {
+    _comptype = state->comp_type();
+    _comp_id = state->comp_id();
+    _limit = state->limit();
+    _peak = state->peak();
+    state->counters_at_global_peak().summarize(_peak_composition_per_arena_tag);
+    if (_comp_id == CompilerType::compiler_c2) {
+      // Only store per phase details for C2 to save memory. Should we ever introduce something like phases for
+      // other compilers, this needs to be changed to a possibly more generic solution.
+      _per_phase_counters = NEW_C_HEAP_OBJ(PerPhaseCounters, mtInternal);
+      _per_phase_counters->counters_at_global_peak.copy_from(state->counters_at_global_peak());
+      _per_phase_counters->counters_local_peaks.copy_from(state->counters_local_peaks());
+    }
   }
 
   void set_result(const char* s) { _result = s; }
 
-  const ArenaState::Counters& peak_counters() const { return _peak_counters; }
+  size_t peak() const { return _peak; }
 
   static void print_legend(outputStream* st) {
 #define LEGEND_KEY_FMT "%11s"
@@ -363,7 +429,7 @@ public:
     int col = 0;
 
     // Total
-    size_t v = _peak_counters._total;
+    size_t v = _peak;
     if (human_readable) {
       st->print(PROPERFMT " ", PROPERFMTARGS(v));
     } else {
@@ -371,8 +437,8 @@ public:
     }
     col += 10; st->fill_to(col);
 
-    for (int tag = 0; tag < Arena::tag_count(); tag++) {
-      v = _peak_counters._by_tag.counter(tag);
+    for (int tag = 0; tag < ArenaTag::max; tag++) {
+      v = _peak_composition_per_arena_tag[tag];
       if (human_readable) {
         st->print(PROPERFMT " ", PROPERFMTARGS(v));
       } else {
@@ -386,8 +452,8 @@ public:
     col += 8; st->fill_to(col);
 
     // Number of Nodes when memory peaked
-    if (_peak_counters._live_nodes > 0) {
-      st->print("%u ", _peak_counters._live_nodes);
+    if (_live_nodes_at_global_peak > 0) {
+      st->print("%u ", _live_nodes_at_global_peak);
     } else {
       st->print("-");
     }
@@ -425,16 +491,21 @@ public:
     st->print("%s ", _method.as_C_string(buf, sizeof(buf)));
     st->cr();
 
-#ifdef COMPILER2
-    if (by_phase && _comptype == CompilerType::compiler_c2) {
-      _peak_counters._by_tag_and_c2_phase.print_on(st, human_readable);
+    // If we have detail information, print two additional tables in the next lines:
+    // One containing the counter composition at global peak, one containing the phase-local
+    // counters
+    if (_per_phase_counters != nullptr && by_phase) {
+      st->print_cr("----- Peak composition by phase and arena type -----");
+      _per_phase_counters->counters_at_global_peak.print_on(st, human_readable);
+      st->print_cr("----- Phase-local peaks ----------------------------");
+      _per_phase_counters->counters_local_peaks.print_on(st, human_readable);
+      st->print_cr("----------------------------------------------------");
     }
-#endif
   }
 
   int compare_by_size(const MemStatEntry* b) const {
-    const size_t x1 = b->_peak_counters._total;
-    const size_t x2 = _peak_counters._total;
+    const size_t x1 = b->_peak;
+    const size_t x2 = _peak;
     return x1 < x2 ? -1 : x1 == x2 ? 0 : 1;
   }
 };
@@ -468,11 +539,9 @@ class MemStatTable :
 {
 public:
 
-  void add(const FullMethodName& fmn, CompilerType comptype, int compid,
-           size_t limit, const ArenaState::Counters& peak_counters,
-           const char* result) {
+  void add(const FullMethodName& fmn, const ArenaState* state, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
-    MemStatTableKey key(fmn, comptype);
+    MemStatTableKey key(fmn, state->comp_type());
     MemStatEntry** pe = get(key);
     MemStatEntry* e = nullptr;
     if (pe == nullptr) {
@@ -483,14 +552,12 @@ public:
       e = *pe;
       assert(e != nullptr, "Sanity");
     }
-    e->set_comp_id(compid);
     e->set_current_time();
     e->set_current_thread();
-    e->set_comptype(comptype);
     e->inc_recompilation();
-    e->set_limit(limit);
-    e->set_peak_counters(peak_counters);
     e->set_result(result);
+
+    e->set_from_state(state);
   }
 
   // Returns a C-heap-allocated SortMe array containing all entries from the table,
@@ -502,7 +569,7 @@ public:
     MemStatEntry** flat = NEW_C_HEAP_ARRAY(MemStatEntry*, num_all, mtInternal);
     int i = 0;
     auto do_f = [&] (const MemStatTableKey& ignored, MemStatEntry* e) {
-      if (e->peak_counters()._total >= min_size) {
+      if (e->peak() >= min_size) {
         flat[i] = e;
         assert(i < num_all, "Sanity");
         i ++;
@@ -532,8 +599,13 @@ void CompilationMemoryStatistic::initialize() {
 
 void CompilationMemoryStatistic::on_start_compilation(const DirectiveSet* directive) {
   assert(enabled(), "Not enabled?");
+  CompilerThread* const th = Thread::current()->as_Compiler_thread();
+  ArenaState* const arena_stat = th->arena_stat();
+  CompileTask* const task = th->task();
+  const CompilerType comp_type = task->compiler()->type();
+  const int comp_id = task->compile_id();
   const size_t limit = directive->mem_limit();
-  Thread::current()->as_Compiler_thread()->arena_stat()->start(limit);
+  arena_stat->start(comp_type, comp_id, limit);
 }
 
 void CompilationMemoryStatistic::on_end_compilation() {
@@ -542,8 +614,6 @@ void CompilationMemoryStatistic::on_end_compilation() {
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaState* const arena_stat = th->arena_stat();
   CompileTask* const task = th->task();
-  const CompilerType ct = task->compiler()->type();
-  const int comp_id = task->compile_id();
 
   const Method* const m = th->task()->method();
   FullMethodName fmn(m);
@@ -554,7 +624,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   const bool print = directive->should_print_memstat();
 
   // Store memory used in task, for later processing by JFR
-  task->set_arena_bytes(arena_stat->peak_counters()._total);
+  task->set_arena_bytes(arena_stat->peak());
 
   // Store result
   // For this to work, we must call on_end_compilation() at a point where
@@ -573,16 +643,13 @@ void CompilationMemoryStatistic::on_end_compilation() {
     MutexLocker ml(NMTCompilationCostHistory_lock, Mutex::_no_safepoint_check_flag);
     assert(_the_table != nullptr, "not initialized");
 
-    _the_table->add(fmn, ct, comp_id,
-                    arena_stat->limit(),
-                    arena_stat->peak_counters(),
-                    result);
+    _the_table->add(fmn, arena_stat, result);
   }
 
   if (print) {
     // Pre-assemble string to prevent tearing
     stringStream ss;
-    ss.print("%s (%d) Arena usage", compilertype2name(ct), comp_id);
+    ss.print("%s (%d) Arena usage", compilertype2name(arena_stat->comp_type()), arena_stat->comp_id());
     fmn.print_on(&ss);
     ss.print_raw(": ");
     arena_stat->print_peak_state_on(&ss);
@@ -677,7 +744,7 @@ void CompilationMemoryStatistic::on_arena_chunk_allocation(size_t size, int tag,
         }
         ss.print("Hit MemLimit %s(limit: %zu now: %zu)",
                  (hit_limit_before ? "again " : ""),
-                 arena_stat->limit(), arena_stat->peak_counters()._total);
+                 arena_stat->limit(), arena_stat->peak());
       }
 
       // log if needed
@@ -713,24 +780,21 @@ void CompilationMemoryStatistic::on_arena_chunk_deallocation(size_t size, uint64
   arena_stat->on_arena_chunk_deallocation(size, stamp);
 }
 
-#ifdef COMPILER2
-// C2 only: inform statistic about start and end of a compilation phase
-void CompilationMemoryStatistic::on_c2_phase_start_0(Phase::PhaseTraceId id) {
+void CompilationMemoryStatistic::on_phase_start_0(int phasetraceid) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaState* const arena_stat = th->arena_stat();
   assert(arena_stat != nullptr, "A compilation should be in process?");
-  arena_stat->on_c2_phase_start(id);
+  arena_stat->on_phase_start(phasetraceid);
 }
 
-void CompilationMemoryStatistic::on_c2_phase_end_0() {
+void CompilationMemoryStatistic::on_phase_end_0(int phasetraceid) {
   assert(enabled(), "Not enabled?");
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   ArenaState* const arena_stat = th->arena_stat();
   assert(arena_stat != nullptr, "A compilation should be in process?");
-  arena_stat->on_c2_phase_end();
+  arena_stat->on_phase_end(phasetraceid);
 }
-#endif
 
 static inline ssize_t diff_entries_by_size(const MemStatEntry* e1, const MemStatEntry* e2) {
   return e1->compare_by_size(e2);

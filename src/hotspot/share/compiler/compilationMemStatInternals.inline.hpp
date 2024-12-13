@@ -31,7 +31,7 @@
 inline void PhaseIdStack::push(PhaseTrcId id) {
   assert(_depth < max_depth, "Sanity");
   assert(_depth == 0 || top() != id, "Nesting identical phases?");
-  _stack[_depth++] = id;
+  _stack[_depth++] = id.raw();
 }
 
 inline void PhaseIdStack::pop(PhaseTrcId id) {
@@ -45,23 +45,23 @@ inline PhaseTrcId PhaseIdStack::top() const {
   return _stack[_depth - 1];
 }
 
-inline size_t ArenaCounterTable::at(ArenaTag tag, PhaseTrcId id) const {
-  return _v[tag.raw()][id.raw()];
+inline size_t ArenaCounterTable::at(PhaseTrcId id, ArenaTag tag) const {
+  return _v[id.raw()][tag.raw()];
 }
 
-inline void ArenaCounterTable::set(size_t size, ArenaTag tag, PhaseTrcId id) {
-  _v[tag.raw()][id.raw()] = size;
+inline void ArenaCounterTable::set(size_t size, PhaseTrcId id, ArenaTag tag) {
+  _v[id.raw()][tag.raw()] = size;
 }
 
-inline void ArenaCounterTable::add(size_t size, ArenaTag tag, PhaseTrcId id) {
-  const size_t old = _v[tag.raw(), id.raw()];
-  _v[tag.raw()][id.raw()] += size;
-  assert(at(tag, id) >= old, "Overflow");
+inline void ArenaCounterTable::add(size_t size, PhaseTrcId id, ArenaTag tag) {
+  const size_t old = at(id, tag);
+  _v[id.raw()][tag.raw()] += size;
+  assert(at(id, tag) >= old, "Overflow");
 }
 
-inline void ArenaCounterTable::sub(size_t size, ArenaTag tag, PhaseTrcId id) {
-  assert(at(tag, id) >= size, "Underflow");
-  _v[tag.raw()][id.raw()] += size;
+inline void ArenaCounterTable::sub(size_t size, PhaseTrcId id, ArenaTag tag) {
+  assert(at(id, tag) >= size, "Underflow");
+  _v[id.raw()][tag.raw()] += size;
 }
 
 #endif // SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_INLINE_HPP

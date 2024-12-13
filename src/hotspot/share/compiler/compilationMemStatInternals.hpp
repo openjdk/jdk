@@ -44,7 +44,7 @@ class EnumWrapper {
   typedef EnumWrapper<max_val, init_val> Type;
   const int _v;
 public:
-  constexpr int max = max_val;
+  static constexpr int max = max_val;
   EnumWrapper() : _v(init_val) {}
   EnumWrapper(int v) : _v(v) { assert(v >= 0 && v < max_val, "OOM (%d)", v); }
   EnumWrapper(const Type& e) : _v(e._v) {}
@@ -64,16 +64,17 @@ typedef EnumWrapper<(int)Arena::Tag::tag_count, 0> ArenaTag;
 
 // A table containing counters per arena Tag and per compilation Phase
 class ArenaCounterTable {
-  size_t _v[ArenaTag::max][PhaseTrcId::max];
+  size_t _v[PhaseTrcId::max][ArenaTag::max];
 public:
   ArenaCounterTable();
   void copy_from(const ArenaCounterTable& other);
-  inline size_t at(ArenaTag tag, PhaseTrcId id) const;
-  inline void set(size_t size, ArenaTag tag, PhaseTrcId id);
-  inline void add(size_t size, ArenaTag tag, PhaseTrcId id);
-  inline void sub(size_t size, ArenaTag tag, PhaseTrcId id);
+  inline size_t at(PhaseTrcId id, ArenaTag tag) const;
+  inline void set(size_t size, PhaseTrcId id, ArenaTag tag);
+  inline void add(size_t size, PhaseTrcId id, ArenaTag tag);
+  inline void sub(size_t size, PhaseTrcId id, ArenaTag tag);
   void reset();
   void print_on(outputStream* ss, bool human_readable) const;
+  void summarize(size_t out[ArenaTag::max]) const;
 };
 
 // A stack keeping track of the current compilation phase. For simplicity,
@@ -133,16 +134,17 @@ class ArenaState : public CHeapObj<mtCompiler> {
   PhaseIdStack _phase_id_stack;
 
   CompilerType _comp_type;
+  int _comp_id;
 
   void reset();
 
-  static int retrieve_live_node_count();
+  int retrieve_live_node_count() const;
 
 public:
   ArenaState();
 
   // Mark the start and end of a compilation.
-  void start(size_t limit);
+  void start(CompilerType comp_type, int comp_id, size_t limit);
   void end();
 
   void on_phase_start(PhaseTrcId id);
@@ -155,13 +157,24 @@ public:
   void on_arena_chunk_deallocation(size_t size, uint64_t stamp);
 
   void print_peak_state_on(outputStream* st) const;
-  void print_current_state_on(outputStream* st) const;
 
   size_t limit() const              { return _limit; }
   bool   hit_limit() const          { return _hit_limit; }
   bool   limit_in_process() const     { return _limit_in_process; }
   void   set_limit_in_process(bool v) { _limit_in_process = v; }
   bool   is_active() const          { return _active; }
+
+  CompilerType comp_type() const { return _comp_type; }
+  int comp_id() const { return _comp_id; }
+
+  // Bytes total at last global peak
+  size_t peak() const { return _peak; }
+  // Bytes per arena/phase when we last reached the global peak
+  const ArenaCounterTable& counters_at_global_peak() const { return _counters_at_global_peak; }
+  // Phase-local peaks per arena/phase
+  const ArenaCounterTable& counters_local_peaks() const { return _counters_local_peaks; }
+  // Number of live nodes at global peak (C2 only)
+  unsigned live_nodes_at_global_peak() const { return _live_nodes_at_global_peak; }
 };
 
 #endif // SHARE_COMPILER_COMPILATIONMEMSTATINTERNALS_HPP
