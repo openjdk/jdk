@@ -97,7 +97,10 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
         }
 
         /**
-         * TODO
+         * Instantiate the CodeGenerator to a String, using the prepared parameters.
+         * This is useful for the outer-most instantiation, as it directly results in a String.
+         *
+         * @return The String resulting from the instantiation.
          */
         public String instantiate() {
             if (isUsed) {
@@ -111,7 +114,10 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
         }
 
         /**
-         * TODO
+         * Instantiate the CodeGenerator into a specified scope, using the prepared parameters.
+         * This is useful for recursive instantiations.
+         *
+         * @param scope Scope into which the code is generated.
          */
         public void instantiate(Scope scope) {
             if (isUsed) {
@@ -126,28 +132,42 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
     }
 
     /**
-     * TODO
+     * Create an {@code Instantiator}, which already has a first parameter key-value pair.
+     *
+     * @param paramKey The name of the parameter.
+     * @param paramValue The value to be set.
+     * @return The Instantiator.
      */
     public final Instantiator where(String paramKey, String paramValue) {
         return new Instantiator(this).where(paramKey, paramValue);
     }
 
     /**
-     * TODO
+     * Create an {@code Instantiator}, which already has all parameter key-value pairs from the provided map.
+     *
+     * @param parameterMap Map containing the key-value pairs.
+     * @return The Instantiator.
      */
     public final Instantiator where(Map<String,String> parameterMap) {
         return new Instantiator(this).where(parameterMap);
     }
 
+
     /**
-     * TODO
+     * Instantiate the CodeGenerator to a String, using the prepared parameters.
+     * This is useful for the outer-most instantiation, as it directly results in a String.
+     *
+     * @return The String resulting from the instantiation.
      */
     public final String instantiate() {
         return new Instantiator(this).instantiate();
     }
 
     /**
-     * TODO
+     * Instantiate the CodeGenerator into a specified scope, using the prepared parameters.
+     * This is useful for recursive instantiations.
+     *
+     * @param scope Scope into which the code is generated.
      */
     public final void instantiate(Scope scope) {
         new Instantiator(this).instantiate(scope);
