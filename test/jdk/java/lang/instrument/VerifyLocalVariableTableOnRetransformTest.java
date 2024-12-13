@@ -256,9 +256,9 @@ VerifyLocalVariableTableOnRetransformTest
                 System.out.println(this + ".transform() sees '" + className
                     + "' of " + classfileBuffer.length + " bytes.");
             } catch (Throwable t) {
-                // try to log, save the error for handling by main thread if the logging fails
+                // Try to log. Save the error for handling by main thread if the logging fails.
                 try {
-                    transformerException.printStackTrace();
+                    t.printStackTrace();
                 } catch (Throwable t1) {
                     transformerException = t;
                 }
