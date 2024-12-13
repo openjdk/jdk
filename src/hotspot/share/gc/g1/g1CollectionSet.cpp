@@ -652,7 +652,7 @@ void G1CollectionSet::add_group_to_collection_set(G1CSetCandidateGroup* gr) {
   for (G1CollectionSetCandidateInfo ci : *gr) {
     G1HeapRegion* r = ci._r;
     r->uninstall_cset_group();
-    r->rem_set()->set_state_complete();
+    assert(r->rem_set()->is_complete(), "must be");
     add_region_to_collection_set(r);
   }
   _collection_set_groups.append(gr);
