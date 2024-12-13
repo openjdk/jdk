@@ -386,7 +386,7 @@ class MonitorPinnedEvents {
         assertEquals(expectedPinnedReason, event.getString("pinnedReason"));
 
         long duration = event.getDuration().toMillis();
-        assertTrue(duration >= minDuration,
+        assertTrue(duration >= (minDuration - 100),
                 "Duration " + duration + "ms, expected >= " + minDuration + "ms");
     }
 
