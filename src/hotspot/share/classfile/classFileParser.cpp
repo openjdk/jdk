@@ -5173,7 +5173,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   Handle module_handle(THREAD, module_entry->module());
 
   // Allocate mirror and initialize static fields
-  // The create_mirror() call will also call compute_modifiers()
   java_lang_Class::create_mirror(ik,
                                  Handle(THREAD, _loader_data->class_loader()),
                                  module_handle,
