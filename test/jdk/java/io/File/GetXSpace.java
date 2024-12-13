@@ -108,7 +108,7 @@ public class GetXSpace {
             long[] sizes = new long[4];
             if (Platform.isWindows() & isCDDrive(name)) {
                 try {
-                    sizes = getCDDriveSpace(name);
+                    getCDDriveSpace(name, sizes);
                 } catch (IOException e) {
                     e.printStackTrace();
                     throw new RuntimeException("can't get CDDrive sizes");
@@ -412,8 +412,7 @@ public class GetXSpace {
 
     private static native boolean isCDDrive(String root);
 
-    private static long[] getCDDriveSpace(String root) throws IOException {
-        long[] sizes = new long[4];
+    private static void getCDDriveSpace(String root, long[] sizes) throws IOException {
         String cmd = "df -k -P " + root;
         StringBuilder sb = new StringBuilder();
         ProcessBuilder pb = new ProcessBuilder("bash", "-c", cmd);;
@@ -446,7 +445,5 @@ public class GetXSpace {
                                            + sb.charAt(j) + "'");
             }
         }
-
-        return sizes;
     }
 }
