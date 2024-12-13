@@ -2981,8 +2981,8 @@ G1CMTask::G1CMTask(uint worker_id,
 #define G1PPRL_DOUBLE_FORMAT          "%14.1f"
 #define G1PPRL_GCEFF_FORMAT           "  %14s"
 #define G1PPRL_GCEFF_H_FORMAT         "  %14s"
-#define G1PPRL_GID_H_FORMAT           "  %5s"
-#define G1PPRL_GID_FORMAT             "  " UINT32_FORMAT_W(5)
+#define G1PPRL_GID_H_FORMAT           "  %9s"
+#define G1PPRL_GID_FORMAT             "  " UINT32_FORMAT_W(9)
 #define G1PPRL_LEN_FORMAT             "  " UINT32_FORMAT_W(14)
 #define G1PPRL_LEN_H_FORMAT           "  %14s"
 #define G1PPRL_GID_GCEFF_FORMAT       "  %14.1f"
@@ -3037,7 +3037,7 @@ G1PrintRegionLivenessInfoClosure::G1PrintRegionLivenessInfoClosure(const char* p
                           "type", "address-range",
                           "used", "live", "gc-eff",
                           "remset", "state", "code-roots",
-                          "gid");
+                          "group-id");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_TYPE_H_FORMAT
                           G1PPRL_ADDR_BASE_H_FORMAT
@@ -3068,7 +3068,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_groud_gid     = r->rem_set()->cset_group()->gid();
+  uint cset_groud_gid     = r->rem_set()->cset_group()->group_id();
   FormatBuffer<16> gc_efficiency("");
 
   if (r->is_young()) {
@@ -3146,7 +3146,7 @@ void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
                           G1PPRL_GCEFF_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT,
-                          "gid", "num-regions",
+                          "groud-id", "num-regions",
                           "gc-eff", "liveness",
                           "remset");
 
@@ -3169,7 +3169,7 @@ void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
                           G1PPRL_GCEFF_FORMAT
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_BYTE_FORMAT,
-                          young_only_cset_group->gid(), young_only_cset_group->length(),
+                          young_only_cset_group->group_id(), young_only_cset_group->length(),
                           "-",
                           0l, young_only_cset_group->card_set()->mem_size());
 
@@ -3180,7 +3180,7 @@ void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
                             G1PPRL_GID_GCEFF_FORMAT
                             G1PPRL_BYTE_FORMAT
                             G1PPRL_BYTE_FORMAT,
-                            group->gid(), group->length(),
+                            group->group_id(), group->length(),
                             group->gc_efficiency(),
                             group->liveness(), group->card_set()->mem_size());
   }

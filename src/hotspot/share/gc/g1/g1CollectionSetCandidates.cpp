@@ -28,16 +28,18 @@
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/growableArray.hpp"
 
-G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint gid) :
+G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
   _candidates(4, mtGCCardSet),
   _card_set_mm(config, card_set_freelist_pool),
   _card_set(config, &_card_set_mm),
   _reclaimable_bytes(size_t(0)),
   _gc_efficiency(0.0),
-  _gid(gid)
+  _group_id(group_id)
 { }
 
-G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, uint gid): G1CSetCandidateGroup(config, G1CollectedHeap::heap()->card_set_freelist_pool(), gid) {}
+G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, uint group_id) :
+  G1CSetCandidateGroup(config, G1CollectedHeap::heap()->card_set_freelist_pool(), group_id)
+{ }
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
   G1CollectionSetCandidateInfo c(hr, hr->calc_gc_efficiency());
@@ -290,11 +292,11 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
   uint group_limit = p->calc_min_old_cset_length(num_infos);
 
   uint num_added_to_group = 0;
-  // ids 0 and 1 are reserved for region default group and young regions group respectively.
-  uint gid = 2;
+
+  uint group_id = 2;
   G1CSetCandidateGroup* current = nullptr;
 
-  current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), gid++);
+  current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), group_id++);
 
   for (uint i = 0; i < num_infos; i++) {
     G1HeapRegion* r = candidate_infos[i]._r;
@@ -308,7 +310,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 
       _from_marking_groups.append(current);
 
-      current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), gid++);
+      current = new G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), group_id++);
       num_added_to_group = 0;
     }
     current->add(candidate_infos[i]);

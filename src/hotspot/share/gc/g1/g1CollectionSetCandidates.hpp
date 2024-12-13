@@ -73,10 +73,17 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
 
   size_t _reclaimable_bytes;
   double _gc_efficiency;
-  const uint _gid;
+
+  // The _group_id is primarily used when printing out per-region liveness information,
+  // making it easier to associate regions with their assigned G1CSetCandidateGroup, if any.
+  // Note:
+  // * _group_id 0 is reserved for special G1CSetCandidateGroups that hold only a single region,
+  //    such as G1CSetCandidateGroups for retained regions.
+  // * _group_id 1 is reserved for the G1CSetCandidateGroup that contains all young regions.
+  const uint _group_id;
 public:
-  G1CSetCandidateGroup(G1CardSetConfiguration* config, uint gid = 0);
-  G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint gid);
+  G1CSetCandidateGroup(G1CardSetConfiguration* config, uint group_id = 0);
+  G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
   ~G1CSetCandidateGroup() {
     assert(length() == 0, "post condition!");
   }
@@ -88,7 +95,7 @@ public:
 
   G1CardSet* card_set() { return &_card_set; }
 
-  uint gid() const { return _gid; }
+  uint group_id() const { return _group_id; }
 
   void calculate_efficiency();
 
@@ -123,7 +130,6 @@ public:
   }
 };
 
-
 using G1CSetCandidateGroupListIterator = GrowableArrayIterator<G1CSetCandidateGroup*>;
 
 class G1CSetCandidateGroupList {
@@ -135,7 +141,7 @@ public:
   void append(G1CSetCandidateGroup* group);
 
   // Delete all groups from the list. The cardset cleanup for regions within the
-  // groups could have been done elsewhere  (e.g. when adding groups to the
+  // groups could have been done elsewhere (e.g. when adding groups to the
   // collection set or to retained regions). The uninstall_group_cardset is set to
   // true if cleanup needs to happen as we clear the groups from the list.
   void clear(bool uninstall_group_cardset = false);
@@ -198,7 +204,7 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   CandidateOrigin* _contains_map;
   G1CSetCandidateGroupList _from_marking_groups; // Set of regions selected by concurrent marking.
   // Set of regions retained due to evacuation failure. Groups added to this list
-  // should contain only one region, making it easier to evacuate retained regions
+  // should contain only one region each, making it easier to evacuate retained regions
   // in any young collection.
   G1CSetCandidateGroupList _retained_groups;
   uint _max_regions;

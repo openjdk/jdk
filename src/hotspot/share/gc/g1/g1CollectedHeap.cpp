@@ -1159,7 +1159,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, 1u /* gid */),
+  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, 1u /* group_id */),
   _cm(nullptr),
   _cm_thread(nullptr),
   _cr(nullptr),
