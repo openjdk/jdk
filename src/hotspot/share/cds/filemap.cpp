@@ -347,6 +347,7 @@ void SharedClassPathEntry::init(bool is_modules_image,
         _type = jar_entry;
         _timestamp = st.st_mtime;
         _from_class_path_attr = cpe->from_class_path_attr();
+        _is_multi_release = cpe->is_multi_release_jar();
       }
       _filesize = st.st_size;
       _is_module_path = is_module_path;
@@ -2680,7 +2681,7 @@ ClassPathEntry* FileMapInfo::get_classpath_entry_for_jvmti(int i, TRAPS) {
       jio_snprintf(msg, strlen(path) + 127, "error in finding JAR file %s", path);
       THROW_MSG_(vmSymbols::java_io_IOException(), msg, nullptr);
     } else {
-      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false);
+      ent = ClassLoader::create_class_path_entry(THREAD, path, &st, false, false, scpe->is_multi_release());
       if (ent == nullptr) {
         char *msg = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(path) + 128);
         jio_snprintf(msg, strlen(path) + 127, "error in opening JAR file %s", path);
@@ -2715,7 +2716,7 @@ ClassFileStream* FileMapInfo::open_stream_for_jvmti(InstanceKlass* ik, Handle cl
                                                                       name->utf8_length());
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   ClassFileStream* cfs;
-  if (class_loader() != nullptr && !cpe->is_modules_image()) {
+  if (class_loader() != nullptr && !cpe->is_modules_image() && cpe->is_multi_release_jar()) {
     cfs = get_stream_from_class_loader(class_loader, cpe, file_name, CHECK_NULL);
   } else {
     cfs = cpe->open_stream_for_loader(THREAD, file_name, loader_data);
