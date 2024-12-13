@@ -1863,8 +1863,8 @@ public class FloatingDecimal{
 
         /* Determine whether we are facing a symbolic value or hex notation.
          * In some places the idiom
-                *      (ch | 0b10_0000) == lowercase-letter
-                * is used as a shortcut for
+         *      (ch | 0b10_0000) == lowercase-letter
+         * is used as a shortcut for
          *      ch == lowercase-letter || ch == that-same-letter-as-uppercase
          */
         boolean isDec = true;  // decimal input until proven to the contrary
@@ -2013,7 +2013,7 @@ public class FloatingDecimal{
         }
         /*
          * n = number of significant digits (that is, not counting leading nor
-         * trailing zeros).
+         * trailing zeros)
          * |ep| < 10^13
          *
          * For decimal input, the magnitude x of the input meets
@@ -2131,7 +2131,7 @@ public class FloatingDecimal{
          * We return immediately in these cases.
          * Otherwise, e' fits in an int named e.
          *
-         * |e'| < 10^14, no overflows.
+         * |e'| < 10^14
          */
         int e = Math.clamp(ep + n, EP_MIN[ix], EP_MAX[ix]);
         if (e == EP_MIN[ix]) {  // e' <= E_MIN
@@ -2271,7 +2271,7 @@ public class FloatingDecimal{
     }
 
     /*
-     * Arithmetically "appends" the "digit" ch to v >= 0.
+     * Arithmetically "appends the digit" ch to v >= 0, up to 10^12.
      * Returns 10^12 on overflow, and keeps returning it on subsequent invocations.
      */
     private static long appendDigit(long v, int ch) {
@@ -2285,12 +2285,15 @@ public class FloatingDecimal{
                 !isDec && 'a' <= (lch = ch | 0b10_0000) && lch <= 'f';
     }
 
-    /* Returns the numeric value of ch, assuming it is a "hexdigit". */
+    /* Returns the numeric value of ch, assuming it is a hexdigit. */
     private static int digitFor(int ch) {
         return ch <= '9' ? ch - '0' : (ch | 0b10_0000) - ('a' - 10);
     }
 
-    /* Starting at i, skip all chars in ['\0', ' ']. Return the index after. */
+    /*
+     * Starting at i, skips all chars in ['\0', ' '].
+     * Returns the index after the whitespaces.
+     */
     private static int skipWhitespaces(String in, int i) {
         int len = in.length();
         while (i < len && in.charAt(i) <= ' ') {
@@ -2356,7 +2359,7 @@ public class FloatingDecimal{
      * EP_MIN = max{e : 10^e <= MIN_VALUE/2}.
      * Note that MIN_VALUE/2 is the 0 threshold.
      * Less or equal values round to 0 when using roundTiesToEven.
-     * Equivalently EP_MIN = floor(log10(2^(Q_MIN-1))).
+     * Equivalently, EP_MIN = floor(log10(2^(Q_MIN-1))).
      */
     private static final int[] EP_MIN = {
             -8, -46, -324, // -4_966, -78_985,
@@ -2366,7 +2369,7 @@ public class FloatingDecimal{
      * EP_MAX = min{e : MAX_VALUE + ulp(MAX_VALUE)/2 <= 10^(e-1)}.
      * Note that MAX_VALUE + ulp(MAX_VALUE)/2 is the infinity threshold.
      * Greater or equal values round to infinity when using roundTiesToEven.
-     * Equivalently EP_MAX = ceil(log10((2^P - 1/2) 2^Q_MAX)) + 1.
+     * Equivalently, EP_MAX = ceil(log10((2^P - 1/2) 2^Q_MAX)) + 1.
      */
     private static final int[] EP_MAX = {
             6, 40, 310, // 4_934, 78_915,
@@ -2411,7 +2414,7 @@ public class FloatingDecimal{
     /*
      * HEX_COUNT = maximum number of hex digits required to host P +1 rounding
      * bit +1 sticky bit = P + 2 adjacent one bits with arbitrary alignment.
-     * HEX_COUNT = floor(P / 4) + 2
+     * HEX_COUNT = floor(P/4) + 2
      */
     private static final int[] HEX_COUNT = {
             P[BINARY_16_IX] / 4 + 2,
