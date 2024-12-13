@@ -134,7 +134,7 @@ public:
   }
 };
 
-// Class encapsulating behavior specific of memory space reserved for Java heap.
+// Class encapsulating behavior specific to memory reserved for the Java heap.
 class ReservedHeapSpace : public ReservedSpace {
 private:
   const size_t _noaccess_prefix;
