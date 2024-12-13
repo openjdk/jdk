@@ -40,10 +40,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public abstract class JdpTestCase {
+
+    private static final int MAGIC = 0xC0FFEE42;              // Jdp magic number.
+    private static final int BUFFER_LENGTH = 64 * 1024;       // max UDP size, except for IPv6 jumbograms.
+    private static final int TIME_OUT_FACTOR = 10;            // Socket times out after a multiple of the jdp pause.
+
     final Logger log = Logger.getLogger("sun.management.jdp");
-    final int MAGIC = 0xC0FFEE42;                       // Jdp magic number.
-    private static final int BUFFER_LENGTH = 64 * 1024; // max UDP size, except for IPv6 jumbograms.
-    private final int TIME_OUT_FACTOR = 50;             // Socket times out after a multiple of the jdp pause.
     protected int timeOut;
     private long startTime;
     protected ClientConnection connection;
@@ -74,7 +76,7 @@ public abstract class JdpTestCase {
                 socket.receive(datagram);
                 onReceived(extractUDPpayload(datagram));
             } catch (SocketTimeoutException e) {
-                onSocketTimeOut(e);
+                onSocketTimeout(e); // throws Exception on failure
             }
 
             if (!shouldContinue()) {
@@ -117,7 +119,7 @@ public abstract class JdpTestCase {
     /**
      * This method is executed when the socket has not received any packet for timeOut seconds.
      */
-    abstract protected void onSocketTimeOut(SocketTimeoutException e) throws Exception;
+    abstract protected void onSocketTimeout(SocketTimeoutException e) throws Exception;
 
     /**
      * This method is executed after a correct Jdp packet has been received.

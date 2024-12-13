@@ -64,7 +64,7 @@ public class JdpJmxRemoteDynamicPortTestCase extends JdpTestCase {
      * It is set to wait for 10 times the defined pause between Jdp packet. See JdpOnTestCase.TIME_OUT_FACTOR.
      */
     @Override
-    protected void onSocketTimeOut(SocketTimeoutException e) throws Exception {
+    protected void onSocketTimeout(SocketTimeoutException e) throws Exception {
         String message = "Timed out waiting for JDP packet. Should arrive within " +
                 connection.pauseInSeconds + " seconds, but waited for " +
                 timeOut + " seconds.";

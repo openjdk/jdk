@@ -67,7 +67,7 @@ public class JdpOnTestCase extends JdpTestCase {
      * It is set to wait for a multiple of the defined pause between Jdp packets. See JdpTestCase.TIME_OUT_FACTOR.
      */
     @Override
-    protected void onSocketTimeOut(SocketTimeoutException e) throws Exception {
+    protected void onSocketTimeout(SocketTimeoutException e) throws Exception {
         String message = "Timed out waiting for JDP packet. Should arrive within " +
                 connection.pauseInSeconds + " seconds, but waited for " +
                 timeOut + " seconds.";

@@ -46,17 +46,17 @@ public class ClientConnection {
         String discoveryPort = System.getProperty("com.sun.management.jdp.port", IANA_JDP_PORT);
         port = Integer.parseInt(discoveryPort);
 
-        String pause = System.getProperty("com.sun.management.jdp.pause", "2");
+        String pause = System.getProperty("com.sun.management.jdp.pause", "1");
         pauseInSeconds = Integer.parseUnsignedInt(pause);
 
         instanceName = System.getProperty("com.sun.management.jdp.name", UNDEFINED_NAME);
 
     }
 
-    public MulticastSocket connectWithTimeout(int msTimeOut) throws IOException {
+    public MulticastSocket connectWithTimeout(int msTimeout) throws IOException {
         MulticastSocket socket = new MulticastSocket(port);
         socket.joinGroup(address);
-        socket.setSoTimeout(msTimeOut);
+        socket.setSoTimeout(msTimeout);
         return socket;
     }
 }
