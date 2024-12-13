@@ -213,7 +213,10 @@ public class Basic extends MRTestBase {
         jarTool("uf", jarfile, "-C", classes.resolve("v9").toString(), "version",
                 "--release", "9", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
-                .shouldContain("classfile release value of META-INF/versions/9/version/Version.class too high: 10");
+                .shouldContain("META-INF/versions/9/version/Version.class")
+                .shouldContain(" has class file version 54 (Java 10),")
+                .shouldContain(" but class file version 53 or less is required")
+                .shouldContain(" to target release 9 of the Java Platform");
 
         FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
         FileUtils.deleteFileTreeWithRetry(Paths.get(usr, "classes"));

@@ -51,7 +51,6 @@ import static sun.tools.jar.Main.VERSIONS_DIR_LENGTH;
 import static sun.tools.jar.Main.MODULE_INFO;
 import static sun.tools.jar.Main.getMsg;
 import static sun.tools.jar.Main.formatMsg;
-import static sun.tools.jar.Main.formatMsg2;
 import static sun.tools.jar.Main.toBinaryName;
 
 final class Validator {
@@ -166,8 +165,12 @@ final class Validator {
         fps.values().forEach( fp -> {
             // all versioned entries must be compatible with their release target number
             if (fp.mrversion() < fp.classReleaseVersion()) {
-                errorAndInvalid(formatMsg2("error.release.value.toohigh.versioned.entry",
-                        fp.entryName(), String.valueOf(fp.classReleaseVersion())));
+                String actual = fp.classMajorVersion() + " (Java " + fp.classReleaseVersion() + ")";
+                errorAndInvalid(formatMsg("error.release.value.toohigh.versioned.entry",
+                        fp.entryName(), // META-INF/versions/9/com/foo/Bar.class has class file version
+                        actual, // 69 (Java 25), but class file version
+                        String.valueOf(fp.mrversion() + 44), // 53 or less is required to target release
+                        String.valueOf(fp.mrversion()))); // 9 of the Java Platform
                 return;
             }
             // validate the versioned module-info
@@ -315,7 +318,7 @@ final class Validator {
         if (fp.className().equals(className(fp.basename()))) {
             return true;
         }
-        error(formatMsg2("error.validator.names.mismatch",
+        error(formatMsg("error.validator.names.mismatch",
                          fp.entryName(), fp.className().replace("/", ".")));
         return isValid = false;
     }
