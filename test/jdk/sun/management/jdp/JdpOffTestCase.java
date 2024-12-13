@@ -50,7 +50,7 @@ public class JdpOffTestCase extends JdpTestCase {
      */
     @Override
     protected void onSocketTimeOut(SocketTimeoutException e) throws Exception {
-        log.fine("No packages received. Test passed!");
+        log.fine("No packets received. Test passed!");
         testPassed = true;
     }
 

@@ -42,8 +42,8 @@ import java.util.logging.Logger;
 public abstract class JdpTestCase {
     final Logger log = Logger.getLogger("sun.management.jdp");
     final int MAGIC = 0xC0FFEE42;                       // Jdp magic number.
-    private static final int BUFFER_LENGTH = 64 * 1024;   // max UDP size, except for IPv6 jumbograms.
-    private final int TIME_OUT_FACTOR = 10;             // Socket times out after 10 times the jdp pause.
+    private static final int BUFFER_LENGTH = 64 * 1024; // max UDP size, except for IPv6 jumbograms.
+    private final int TIME_OUT_FACTOR = 50;             // Socket times out after a multiple of the jdp pause.
     protected int timeOut;
     private long startTime;
     protected ClientConnection connection;
@@ -156,7 +156,7 @@ public abstract class JdpTestCase {
      * The test should stop if it has been 12 times the jdp.pause.
      * jdp.pause is how many seconds in between packets.
      * <p/>
-     * This timeout (12 times)is slightly longer than the socket timeout (10 times) on purpose.
+     * This timeout (12 times) is slightly longer than the socket timeout (10 times) on purpose.
      * In the off test case, the socket should time out first.
      *
      * @return

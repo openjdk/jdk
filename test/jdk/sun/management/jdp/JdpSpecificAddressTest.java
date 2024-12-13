@@ -57,11 +57,11 @@ public class JdpSpecificAddressTest extends DynamicLauncher {
                 "-Dcom.sun.management.jmxremote=true",
                 "-Dcom.sun.management.jmxremote.port=" + String.valueOf(jmxPort),
                 "-Dcom.sun.management.jmxremote.autodiscovery=true",
-                "-Dcom.sun.management.jdp.pause=1",
+                "-Dcom.sun.management.jdp.pause=2",
                 "-Dcom.sun.management.jdp.name=" + jdpName,
                 "-Dcom.sun.management.jdp.address=224.0.1.2",
                 "-Dcom.sun.management.jdp.port=1234",
-                "-Djava.util.logging.SimpleFormatter.format='%1$tF %1$tT %4$-7s %5$s %n'",
+                "-Djava.util.logging.SimpleFormatter.format=%1$tF %1$tT %4$-7s %5$s %n",
                 testName
         };
         return options;

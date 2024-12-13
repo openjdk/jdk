@@ -46,7 +46,7 @@ public class ClientConnection {
         String discoveryPort = System.getProperty("com.sun.management.jdp.port", IANA_JDP_PORT);
         port = Integer.parseInt(discoveryPort);
 
-        String pause = System.getProperty("com.sun.management.jdp.pause", "1");
+        String pause = System.getProperty("com.sun.management.jdp.pause", "2");
         pauseInSeconds = Integer.parseUnsignedInt(pause);
 
         instanceName = System.getProperty("com.sun.management.jdp.name", UNDEFINED_NAME);

@@ -64,7 +64,7 @@ public class JdpOnTestCase extends JdpTestCase {
 
     /**
      * The socket should not timeout.
-     * It is set to wait for 10 times the defined pause between Jdp packet. See JdpOnTestCase.TIME_OUT_FACTOR.
+     * It is set to wait for a multiple of the defined pause between Jdp packets. See JdpTestCase.TIME_OUT_FACTOR.
      */
     @Override
     protected void onSocketTimeOut(SocketTimeoutException e) throws Exception {

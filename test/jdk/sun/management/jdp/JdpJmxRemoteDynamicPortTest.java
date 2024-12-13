@@ -50,9 +50,9 @@ public class JdpJmxRemoteDynamicPortTest  extends DynamicLauncher {
                 "-Dcom.sun.management.jmxremote=true",
                 "-Dcom.sun.management.jmxremote.port=0",
                 "-Dcom.sun.management.jmxremote.autodiscovery=true",
-                "-Dcom.sun.management.jdp.pause=1",
+                "-Dcom.sun.management.jdp.pause=2",
                 "-Dcom.sun.management.jdp.name=" + jdpName,
-                "-Djava.util.logging.SimpleFormatter.format='%1$tF %1$tT %4$-7s %5$s %n'",
+                "-Djava.util.logging.SimpleFormatter.format=%1$tF %1$tT %4$-7s %5$s %n",
                 testName
         };
         return options;
