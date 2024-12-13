@@ -35,18 +35,13 @@ import jdk.test.lib.Utils;
 public final class SelectorCodeGenerator extends CodeGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
 
-    private final String generatorName;
     private HashMap<String,Float> choiceWeights;
     private String defaultGeneratorName;
 
-    public SelectorCodeGenerator(String generatorName, String defaultGeneratorName) {
-        this.generatorName = generatorName;
+    public SelectorCodeGenerator(String selectorName, String defaultGeneratorName) {
+        super(selectorName, 0);
         this.defaultGeneratorName = defaultGeneratorName;
         this.choiceWeights = new HashMap<String,Float>();
-    }
-
-    public String name() {
-        return generatorName;
     }
 
     public void add(String name, float weight) {
@@ -66,7 +61,7 @@ public final class SelectorCodeGenerator extends CodeGenerator {
             String name = entry.getKey();
             float weight = entry.getValue().floatValue();
             CodeGenerator codeGenerator = scope.library().find(name, " in selector");
-            if (scope.fuel < codeGenerator.fuelCost()) { continue; }
+            if (scope.fuel < codeGenerator.fuelCost) { continue; }
             total += weight;
         }
 
@@ -81,7 +76,7 @@ public final class SelectorCodeGenerator extends CodeGenerator {
             String name = entry.getKey();
             float weight = entry.getValue().floatValue();
             CodeGenerator codeGenerator = scope.library().find(name, " in selector");
-            if (scope.fuel < codeGenerator.fuelCost()) { continue; }
+            if (scope.fuel < codeGenerator.fuelCost) { continue; }
             total2 += weight;
             if (r <= total2) {
                 return name;
@@ -91,18 +86,14 @@ public final class SelectorCodeGenerator extends CodeGenerator {
         throw new TemplateFrameworkException("Failed to select total=" + total + ", r=" + r);
     }
 
-    public int fuelCost() {
-        return 0; // We only forward, at no cost.
-    }
-
     public void instantiate(Scope scope, Parameters parameters) {
-        scope.setDebugContext(name(), parameters);
+        scope.setDebugContext(name, parameters);
         // Sample a generator.
 	String generatorName = choose(scope);
         CodeGenerator generator = scope.library().find(generatorName, " in selector");
 
         // Dispatch via with new scope, but the same parameters.
-        Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost());
+        Scope nestedScope = new Scope(scope, scope.fuel - generator.fuelCost);
         generator.instantiate(nestedScope, parameters);
         nestedScope.close();
 

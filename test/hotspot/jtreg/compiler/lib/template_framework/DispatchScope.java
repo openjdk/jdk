@@ -37,7 +37,7 @@ public abstract class DispatchScope extends Scope {
     }
 
     public void dispatch(Scope sourceScope, CodeGenerator generator, HashMap<String,String> argumentsMap) {
-        Scope dispatchScope = new Scope(this, this.fuel - generator.fuelCost());
+        Scope dispatchScope = new Scope(this, this.fuel - generator.fuelCost);
         Parameters parameters = new Parameters(argumentsMap);
         generator.instantiate(dispatchScope, parameters);
         dispatchScope.stream.addNewline();

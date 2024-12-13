@@ -44,10 +44,10 @@ public class CodeGeneratorLibrary {
         this.parent = parent;
         this.library = new HashMap<String,CodeGenerator>();
         for (CodeGenerator generator : generators) {
-            if (findOrNull(generator.name()) != null) {
-                throw new TemplateFrameworkException("Code library already has a generator for name " + generator.name());
+            if (findOrNull(generator.name) != null) {
+                throw new TemplateFrameworkException("Code library already has a generator for name " + generator.name);
             }
-            this.library.put(generator.name(), generator);
+            this.library.put(generator.name, generator);
         }
     }
 
@@ -77,7 +77,7 @@ public class CodeGeneratorLibrary {
     public void print() {
         System.out.println("Library");
         for (Map.Entry<String,CodeGenerator> e : library.entrySet()) {
-            System.out.println("  " + e.getKey() + ":   fuelCost=" + e.getValue().fuelCost());
+            System.out.println("  " + e.getKey() + ":   fuelCost=" + e.getValue().fuelCost);
         }
         if (parent != null) {
             parent.print();

@@ -31,26 +31,15 @@ public final class ProgrammaticCodeGenerator extends CodeGenerator {
         public void call(Scope scope, Parameters parameters);
     }
 
-    private final String generatorName;
-    private final int generatorFuelCost;
     private final Instantiator instantiator;
 
     public ProgrammaticCodeGenerator(String generatorName, Instantiator instantiator, int fuelCost) {
-        this.generatorName = generatorName;
-        this.generatorFuelCost = fuelCost;
+        super(generatorName, fuelCost);
         this.instantiator = instantiator;
     }
 
-    public String name() {
-        return generatorName;
-    }
-
-    public int fuelCost() {
-        return generatorFuelCost;
-    }
-
     public void instantiate(Scope scope, Parameters parameters) {
-        scope.setDebugContext(name(), parameters);
+        scope.setDebugContext(name, parameters);
         instantiator.call(scope, parameters);
     };
 }

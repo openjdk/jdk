@@ -114,25 +114,16 @@ public final class Template extends CodeGenerator {
 
     private final String templateName;
     private final String templateString;
-    private final int templateFuelCost;
 
 
     public Template(String templateName, String templateString, int fuelCost) {
+        super(templateName, fuelCost);
         this.templateName = templateName;
         this.templateString = templateString;
-        this.templateFuelCost = fuelCost;
-    }
-
-    public String name() {
-        return templateName;
     }
 
     public Template(String templateName, String templateString) {
         this(templateName, templateString, DEFAULT_FUEL_COST);
-    }
-
-    public int fuelCost() {
-        return templateFuelCost;
     }
 
     static class ReplacementState {
@@ -231,7 +222,7 @@ public final class Template extends CodeGenerator {
             CodeGenerator generator = templateScope.library().find(generatorName, ", got " + templated);
 
             // Create nested scope, and add the new variables to it.
-            Scope nestedScope = new Scope(currentScope, currentScope.fuel - generator.fuelCost());
+            Scope nestedScope = new Scope(currentScope, currentScope.fuel - generator.fuelCost);
             for (String variable : variableList) {
                 variable = wrapVariable(variable, templated);
                 TypeAndMutability typeAndMutability = getVariable(variable);
@@ -307,7 +298,7 @@ public final class Template extends CodeGenerator {
     }
 
     public void instantiate(Scope scope, Parameters parameters, ReplacementState replacementState) {
-        scope.setDebugContext(name(), parameters);
+        scope.setDebugContext(name, parameters);
         InstantiationState state = new InstantiationState(scope, parameters, replacementState);
 
         // Parse the templateString, detect templated and nonTemplated segments.
