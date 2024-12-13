@@ -41,8 +41,7 @@ size_t PartialArraySplitter::start(Queue* queue,
                                    objArrayOop destination,
                                    size_t length) {
   PartialArrayTaskStepper::Step step = _stepper.start(length);
-  // Push any needed partial scan tasks.  Pushed before processing the initial
-  // chunk to allow other workers to steal while we're processing.
+  // Push initial partial scan tasks.
   if (step._ncreate > 0) {
     TASKQUEUE_STATS_ONLY(_stats.inc_split(););
     TASKQUEUE_STATS_ONLY(_stats.inc_pushed(step._ncreate);)
@@ -67,8 +66,7 @@ PartialArraySplitter::step(PartialArrayState* state, Queue* queue, bool stolen) 
 
   // Claim a chunk and get number of additional tasks to enqueue.
   PartialArrayTaskStepper::Step step = _stepper.next(state);
-  // Push additional tasks before processing chunk, to allow other workers to
-  // steal some of those tasks while we processing the chunk.
+  // Push additional tasks.
   if (step._ncreate > 0) {
     TASKQUEUE_STATS_ONLY(_stats.inc_pushed(step._ncreate);)
     // Adjust reference count for tasks being added to the queue.

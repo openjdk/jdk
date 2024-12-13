@@ -66,9 +66,11 @@ public:
   // caller.
   //
   // Adds PartialArrayState ScannerTasks to the queue if needed to process the
-  // array in chunks. If length doesn't exceed the chunk size then the result
-  // will be length, indicating the caller is to process the entire array.  In
-  // this case, no tasks will have been added to the queue.
+  // array in chunks. This permits other workers to steal and process them
+  // even while the caller is processing the initial chunk.  If length doesn't
+  // exceed the chunk size then the result will be length, indicating the
+  // caller is to process the entire array.  In this case, no tasks will have
+  // been added to the queue.
   template<typename Queue>
   size_t start(Queue* queue,
                objArrayOop from_array,
@@ -84,7 +86,8 @@ public:
 
   // Claims a chunk from state, returning the index range for that chunk.  The
   // caller is expected to process that chunk.  Adds more state-based tasks to
-  // the queue if needed.
+  // the queue if needed, permitting other workers to steal and process them
+  // even while the caller is processing this claim.
   //
   // Releases the state. Callers must not use state after the call to this
   // function. The state may have been recycled and reused.
