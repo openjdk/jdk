@@ -1054,13 +1054,13 @@ public class Main {
                                         rb.getString("history.with.ts"),
                                         signer.getSubjectX500Principal(),
                                         verifyWithWeak(digestAlg, DIGEST_PRIMITIVE_SET, false, jcp, null),
-                                        mixString(key, verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp, sigAlgParams),
-                                                verifyWithWeak(key, jcp)),
+                                        verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp, sigAlgParams),
+                                        verifyWithWeak(key, jcp),
                                         c,
                                         tsSigner.getSubjectX500Principal(),
                                         verifyWithWeak(tsDigestAlg, DIGEST_PRIMITIVE_SET, true, jcpts, null),
-                                        mixString(tsKey, verifyWithWeak(tsSigAlg, SIG_PRIMITIVE_SET, true, jcpts, tsSigAlgParams),
-                                                verifyWithWeak(tsKey, jcpts)));
+                                        verifyWithWeak(tsSigAlg, SIG_PRIMITIVE_SET, true, jcpts, tsSigAlgParams),
+                                        verifyWithWeak(tsKey, jcpts));
                             } else {
                                 JarConstraintsParameters jcp =
                                     new JarConstraintsParameters(chain, null);
@@ -1068,8 +1068,8 @@ public class Main {
                                         rb.getString("history.without.ts"),
                                         signer.getSubjectX500Principal(),
                                         verifyWithWeak(digestAlg, DIGEST_PRIMITIVE_SET, false, jcp, null),
-                                        mixString(key, verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp, sigAlgParams),
-                                                verifyWithWeak(key, jcp)));
+                                        verifyWithWeak(sigAlg, SIG_PRIMITIVE_SET, false, jcp, sigAlgParams),
+                                        verifyWithWeak(key, jcp));
                             }
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -1124,14 +1124,6 @@ public class Main {
             if (jf != null) {
                 jf.close();
             }
-        }
-    }
-
-    private static String mixString(PublicKey key, String left, String right) {
-        if (key.getParams() instanceof NamedParameterSpec) {
-            return left;
-        } else {
-            return left + rb.getString("COMMA") + right;
         }
     }
 
@@ -1475,7 +1467,6 @@ public class Main {
 
     /**
      * Returns the full display name of the given key object. Could be
-     * - "null", if its null
      * - "X25519", if its getParams() is NamedParameterSpec
      * - "EC (secp256r1)", if it's an EC key
      * - "1024-bit RSA", other known keys

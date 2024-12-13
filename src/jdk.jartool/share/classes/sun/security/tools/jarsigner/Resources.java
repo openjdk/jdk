@@ -162,8 +162,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"jar.verified.", "jar verified."},
         {"jar.verified.with.signer.errors.", "jar verified, with signer errors."},
 
-        {"history.with.ts", "- Signed by \"%1$s\"\n    Digest algorithm: %2$s\n    Signature algorithm: %3$s\n  Timestamped by \"%5$s\" on %4$tc\n    Timestamp digest algorithm: %6$s\n    Timestamp signature algorithm: %7$s"},
-        {"history.without.ts", "- Signed by \"%1$s\"\n    Digest algorithm: %2$s\n    Signature algorithm: %3$s"},
+        {"history.with.ts", "- Signed by \"%1$s\"\n    Digest algorithm: %2$s\n    Signature algorithm: %3$s, %4$s\n  Timestamped by \"%6$s\" on %5$tc\n    Timestamp digest algorithm: %7$s\n    Timestamp signature algorithm: %8$s, %9$s"},
+        {"history.without.ts", "- Signed by \"%1$s\"\n    Digest algorithm: %2$s\n    Signature algorithm: %3$s, %4$s"},
         {"history.nonexistent.entries", "    Warning: nonexistent signed entries: "},
         {"history.unparsable", "- Unparsable signature-related file %s"},
         {"history.nosf", "- Missing signature-related file META-INF/%s.SF"},
