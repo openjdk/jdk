@@ -98,17 +98,10 @@ class RegionsTree : public VMATree {
     NodeHelper prev;
     visit_range_in_order(start, end, [&](Node* node) {
       NodeHelper curr(node);
-      if (prev.is_valid()) {
-        if (prev.is_committed_begin()) {
-          comm_size += curr.distance_from(prev);
-          if (!curr.is_committed_begin()) {
-            auto st = stack(curr);
-            CommittedMemoryRegion cmr((address)prev.position(), comm_size, st);
-            comm_size = 0;
-            if (!func(cmr))
-              return false;
-          }
-        }
+      if (prev.is_valid() && prev.is_committed_begin()) {
+        CommittedMemoryRegion cmr((address)prev.position(), curr.distance_from(prev), stack(curr));
+        if (!func(cmr))
+          return false;
       }
       prev = curr;
       return true;
