@@ -599,15 +599,15 @@ public:
     void print_on(outputStream* st) const {
       switch (_kind) {
       case Object:
-          tty->print("object  ");
-          tty->print("%d %s", _base->_idx, _base->Name());
+          st->print("object  ");
+          st->print("%d %s", _base->_idx, _base->Name());
           break;
       case Native:
-          tty->print("native  ");
-          tty->print("%d %s", _base->_idx, _base->Name());
+          st->print("native  ");
+          st->print("%d %s", _base->_idx, _base->Name());
           break;
       default:
-          tty->print("unknown ");
+          st->print("unknown ");
       };
     }
 #endif
