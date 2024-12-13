@@ -72,6 +72,7 @@
 #include "services/runtimeService.hpp"
 #include "symbolengine.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -133,7 +134,7 @@ static FILETIME process_kernel_time;
 #elif defined(_M_AMD64)
   #define __CPU__ amd64
 #else
-  #define __CPU__ i486
+  #error "Unknown CPU"
 #endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
@@ -282,11 +283,6 @@ void os::run_periodic_checks(outputStream* st) {
   return;
 }
 
-#ifndef _WIN64
-// previous UnhandledExceptionFilter, if there is one
-static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = nullptr;
-#endif
-
 static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 void os::init_system_properties_values() {
@@ -398,11 +394,6 @@ void os::init_system_properties_values() {
   #undef EXT_DIR
   #undef BIN_DIR
   #undef PACKAGE_DIR
-
-#ifndef _WIN64
-  // set our UnhandledExceptionFilter and save any previous one
-  prev_uef_handler = SetUnhandledExceptionFilter(Uncaught_Exception_Handler);
-#endif
 
   // Done
   return;
@@ -517,7 +508,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 // Thread start routine for all newly created threads.
 // Called with the associated Thread* as the argument.
-static unsigned __stdcall thread_native_entry(void* t) {
+static unsigned thread_native_entry(void* t) {
   Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
@@ -797,9 +788,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 void os::free_thread(OSThread* osthread) {
   assert(osthread != nullptr, "osthread not set");
 
-  // We are told to free resources of the argument thread,
-  // but we can only really operate on the current thread.
-  assert(Thread::current()->osthread() == osthread,
+  // We are told to free resources of the argument thread, but we can only really operate
+  // on the current thread. The current thread may be already detached at this point.
+  assert(Thread::current_or_null() == nullptr || Thread::current()->osthread() == osthread,
          "os::free_thread but not current thread");
 
   CloseHandle(osthread->thread_handle());
@@ -876,14 +867,8 @@ bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   GlobalMemoryStatusEx(&ms);
-#ifdef _LP64
   *limit = (size_t)ms.ullAvailVirtual;
   return true;
-#else
-  // Limit to 1400m because of the 2gb address space wall
-  *limit = MIN2((size_t)1400*M, (size_t)ms.ullAvailVirtual);
-  return true;
-#endif
 }
 
 int os::active_processor_count() {
@@ -1333,7 +1318,7 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
   }
 }
 
-void os::abort(bool dump_core, void* siginfo, const void* context) {
+void os::abort(bool dump_core, const void* siginfo, const void* context) {
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
   MINIDUMP_EXCEPTION_INFORMATION* pmei;
@@ -1414,6 +1399,12 @@ void* os::dll_lookup(void *lib, const char *name) {
     }
   }
   return ret;
+}
+
+void* os::lookup_function(const char* name) {
+  // This is needed only for static builds which are not supported on Windows
+  ShouldNotReachHere();
+  return nullptr; // Satisfy compiler
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -1549,7 +1540,7 @@ void os::prepare_native_symbols() {
 
 //-----------------------------------------------------------
 // Helper functions for fatal error handler
-#ifdef _WIN64
+
 // Helper routine which returns true if address in
 // within the NTDLL address space.
 //
@@ -1571,7 +1562,6 @@ static bool _addr_in_ntdll(address addr) {
     return false;
   }
 }
-#endif
 
 struct _modinfo {
   address addr;
@@ -1749,7 +1739,6 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   } arch_t;
 
   static const arch_t arch_array[] = {
-    {IMAGE_FILE_MACHINE_I386,      (char*)"IA 32"},
     {IMAGE_FILE_MACHINE_AMD64,     (char*)"AMD 64"},
     {IMAGE_FILE_MACHINE_ARM64,     (char*)"ARM 64"}
   };
@@ -1757,11 +1746,9 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_ARM64;
 #elif (defined _M_AMD64)
   static const uint16_t running_arch = IMAGE_FILE_MACHINE_AMD64;
-#elif (defined _M_IX86)
-  static const uint16_t running_arch = IMAGE_FILE_MACHINE_I386;
 #else
   #error Method os::dll_load requires that one of following \
-         is defined :_M_AMD64 or _M_IX86 or _M_ARM64
+         is defined :_M_AMD64 or _M_ARM64
 #endif
 
 
@@ -2101,13 +2088,6 @@ void os::print_memory_info(outputStream* st) {
              (int64_t) ms.ullTotalPageFile >> 20);
     st->print("(AvailPageFile size " INT64_FORMAT "M)",
              (int64_t) ms.ullAvailPageFile >> 20);
-
-    // on 32bit Total/AvailVirtual are interesting (show us how close we get to 2-4 GB per process borders)
-#if defined(_M_IX86)
-    st->print(", user-mode portion of virtual address-space " INT64_FORMAT "M ",
-             (int64_t) ms.ullTotalVirtual >> 20);
-    st->print("(" INT64_FORMAT "M free)", (int64_t) ms.ullAvailVirtual >> 20);
-#endif
   } else {
     st->print(", GlobalMemoryStatusEx did not succeed so we miss some memory values.");
   }
@@ -2139,7 +2119,17 @@ bool os::signal_sent_by_kill(const void* siginfo) {
 }
 
 void os::print_siginfo(outputStream *st, const void* siginfo) {
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  // If we are here because of an assert/guarantee, we suppress
+  // printing the siginfo, because it is only an implementation
+  // detail capturing the context for said assert/guarantee.
+  if (VMError::was_assert_poison_crash(siginfo)) {
+    return;
+  }
+#endif
+
   const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
+
   st->print("siginfo:");
 
   char tmp[64];
@@ -2227,19 +2217,6 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[MAX_PATH - 1] = '\0';
 }
 
-
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-#ifndef _WIN64
-  st->print("_");
-#endif
-}
-
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-#ifndef _WIN64
-  st->print("@%d", args_size  * sizeof(int));
-#endif
-}
 
 // This method is a copy of JDK's sysGetLastErrorString
 // from src/windows/hpi/src/system_md.c
@@ -2465,8 +2442,6 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   #define PC_NAME Pc
 #elif defined(_M_AMD64)
   #define PC_NAME Rip
-#elif defined(_M_IX86)
-  #define PC_NAME Eip
 #else
   #error unknown architecture
 #endif
@@ -2590,21 +2565,12 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   ctx->Rdx = (DWORD)0;             // remainder
   // Continue the execution
 #else
-  PCONTEXT ctx = exceptionInfo->ContextRecord;
-  address pc = (address)ctx->Eip;
-  guarantee(pc[0] == 0xF7, "not an idiv opcode(0xF7), the actual value = 0x%x", pc[1]);
-  guarantee((pc[1] & ~0x7) == 0xF8, "cannot handle non-register operands, the actual value = 0x%x", pc[1]);
-  guarantee(ctx->Eax == min_jint, "unexpected idiv exception, the actual value = %d while the expected is %d", ctx->Eax, min_jint);
-  // set correct result values and continue after idiv instruction
-  ctx->Eip = (DWORD)pc + 2;        // idiv reg, reg  is 2 bytes
-  ctx->Eax = (DWORD)min_jint;      // result
-  ctx->Edx = (DWORD)0;             // remainder
-  // Continue the execution
+  #error unknown architecture
 #endif
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-#if defined(_M_AMD64) || defined(_M_IX86)
+#if defined(_M_AMD64)
 //-----------------------------------------------------------------------------
 static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by native method modifying control word
@@ -2619,16 +2585,6 @@ static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   case EXCEPTION_FLT_STACK_CHECK:
   case EXCEPTION_FLT_UNDERFLOW: {
     PCONTEXT ctx = exceptionInfo->ContextRecord;
-#ifndef  _WIN64
-    jint fp_control_word = (* (jint*) StubRoutines::x86::addr_fpu_cntrl_wrd_std());
-    if (fp_control_word != ctx->FloatSave.ControlWord) {
-      // Restore FPCW and mask out FLT exceptions
-      ctx->FloatSave.ControlWord = fp_control_word | 0xffffffc0;
-      // Mask out pending FLT exceptions
-      ctx->FloatSave.StatusWord &=  0xffffff00;
-      return true;
-    }
-#else // !_WIN64
     // On Windows, the mxcsr control bits are non-volatile across calls
     // See also CR 6192333
     //
@@ -2639,28 +2595,10 @@ static bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
       ctx->MxCsr = MxCsr;
       return true;
     }
-#endif // !_WIN64
   }
   }
 
   return false;
-}
-#endif
-
-#ifndef _WIN64
-static LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  if (handle_FLT_exception(exceptionInfo)) {
-    return EXCEPTION_CONTINUE_EXECUTION;
-  }
-
-  // we only override this on 32 bits, so only check it there
-  if (prev_uef_handler != nullptr) {
-    // We didn't handle this exception so pass it to the previous
-    // UnhandledExceptionFilter.
-    return (prev_uef_handler)(exceptionInfo);
-  }
-
-  return EXCEPTION_CONTINUE_SEARCH;
 }
 #endif
 
@@ -2683,98 +2621,18 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
-  address pc = (address) exceptionInfo->ContextRecord->Eip;
+  #error unknown architecture
 #endif
   Thread* t = Thread::current_or_null_safe();
 
-#ifndef _WIN64
-  // Execution protection violation - win32 running on AMD64 only
-  // Handled first to avoid misdiagnosis as a "normal" access violation;
-  // This is safe to do because we have a new/unique ExceptionInformation
-  // code for this condition.
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    int exception_subcode = (int) exception_record->ExceptionInformation[0];
-    address addr = (address) exception_record->ExceptionInformation[1];
-
-    if (exception_subcode == EXCEPTION_INFO_EXEC_VIOLATION) {
-      size_t page_size = os::vm_page_size();
-
-      // Make sure the pc and the faulting address are sane.
-      //
-      // If an instruction spans a page boundary, and the page containing
-      // the beginning of the instruction is executable but the following
-      // page is not, the pc and the faulting address might be slightly
-      // different - we still want to unguard the 2nd page in this case.
-      //
-      // 15 bytes seems to be a (very) safe value for max instruction size.
-      bool pc_is_near_addr =
-        (pointer_delta((void*) addr, (void*) pc, sizeof(char)) < 15);
-      bool instr_spans_page_boundary =
-        (align_down((intptr_t) pc ^ (intptr_t) addr,
-                         (intptr_t) page_size) > 0);
-
-      if (pc == addr || (pc_is_near_addr && instr_spans_page_boundary)) {
-        static volatile address last_addr =
-          (address) os::non_memory_address_word();
-
-        // In conservative mode, don't unguard unless the address is in the VM
-        if (UnguardOnExecutionViolation > 0 && addr != last_addr &&
-            (UnguardOnExecutionViolation > 1 || os::address_is_in_vm(addr))) {
-
-          // Set memory to RWX and retry
-          address page_start = align_down(addr, page_size);
-          bool res = os::protect_memory((char*) page_start, page_size,
-                                        os::MEM_PROT_RWX);
-
-          log_debug(os)("Execution protection violation "
-                        "at " INTPTR_FORMAT
-                        ", unguarding " INTPTR_FORMAT ": %s", p2i(addr),
-                        p2i(page_start), (res ? "success" : os::strerror(errno)));
-
-          // Set last_addr so if we fault again at the same address, we don't
-          // end up in an endless loop.
-          //
-          // There are two potential complications here.  Two threads trapping
-          // at the same address at the same time could cause one of the
-          // threads to think it already unguarded, and abort the VM.  Likely
-          // very rare.
-          //
-          // The other race involves two threads alternately trapping at
-          // different addresses and failing to unguard the page, resulting in
-          // an endless loop.  This condition is probably even more unlikely
-          // than the first.
-          //
-          // Although both cases could be avoided by using locks or thread
-          // local last_addr, these solutions are unnecessary complication:
-          // this handler is a best-effort safety net, not a complete solution.
-          // It is disabled by default and should only be used as a workaround
-          // in case we missed any no-execute-unsafe VM code.
-
-          last_addr = addr;
-
-          return EXCEPTION_CONTINUE_EXECUTION;
-        }
-      }
-
-      // Last unguard failed or not unguarding
-      tty->print_raw_cr("Execution protection violation");
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
-      report_error(t, exception_code, addr, exception_record,
-                   exceptionInfo->ContextRecord);
-#endif
-      return EXCEPTION_CONTINUE_SEARCH;
-    }
-  }
-#endif // _WIN64
-
-#if defined(_M_AMD64) || defined(_M_IX86)
+#if defined(_M_AMD64)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#if !defined(PRODUCT) && defined(_LP64)
+#if !defined(PRODUCT)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
@@ -2782,6 +2640,14 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
 #endif
+#endif
+
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if (VMError::was_assert_poison_crash(exception_record)) {
+    if (handle_assert_poison_fault(exceptionInfo)) {
+      return EXCEPTION_CONTINUE_EXECUTION;
+    }
+  }
 #endif
 
   if (t != nullptr && t->is_Java_thread()) {
@@ -2842,7 +2708,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
             return Handle_Exception(exceptionInfo, stub);
           }
         }
-#ifdef _WIN64
         // If it's a legal stack address map the entire region in
         if (thread->is_in_usable_stack(addr)) {
           addr = (address)((uintptr_t)addr &
@@ -2851,7 +2716,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                             !ExecMem);
           return EXCEPTION_CONTINUE_EXECUTION;
         }
-#endif
         // Null pointer exception.
         if (MacroAssembler::uses_implicit_null_check((void*)addr)) {
           address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
@@ -2862,7 +2726,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return EXCEPTION_CONTINUE_SEARCH;
       }
 
-#ifdef _WIN64
       // Special care for fast JNI field accessors.
       // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks
       // in and the heap gets shrunk before the field access.
@@ -2870,7 +2733,6 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       if (slowcase_pc != (address)-1) {
         return Handle_Exception(exceptionInfo, slowcase_pc);
       }
-#endif
 
       // Stack overflow or null pointer exception in native code.
 #if !defined(USE_VECTORED_EXCEPTION_HANDLING)
@@ -2923,7 +2785,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       } // switch
     }
 
-#if defined(_M_AMD64) || defined(_M_IX86)
+#if defined(_M_AMD64)
     if ((in_java || in_native) && handle_FLT_exception(exceptionInfo)) {
       return EXCEPTION_CONTINUE_EXECUTION;
     }
@@ -2967,7 +2829,7 @@ LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptio
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
-  address pc = (address) exceptionInfo->ContextRecord->Eip;
+  #error unknown architecture
 #endif
 
   // Fast path for code part of the code cache
@@ -3006,63 +2868,6 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
   }
 
   return previousUnhandledExceptionFilter ? previousUnhandledExceptionFilter(exceptionInfo) : EXCEPTION_CONTINUE_SEARCH;
-}
-#endif
-
-#ifndef _WIN64
-// Special care for fast JNI accessors.
-// jni_fast_Get<Primitive>Field can trap at certain pc's if a GC kicks in and
-// the heap gets shrunk before the field access.
-// Need to install our own structured exception handler since native code may
-// install its own.
-LONG WINAPI fastJNIAccessorExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
-  if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    address pc = (address) exceptionInfo->ContextRecord->Eip;
-    address addr = JNI_FastGetField::find_slowcase_pc(pc);
-    if (addr != (address)-1) {
-      return Handle_Exception(exceptionInfo, addr);
-    }
-  }
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#define DEFINE_FAST_GETFIELD(Return, Fieldname, Result)                     \
-  Return JNICALL jni_fast_Get##Result##Field_wrapper(JNIEnv *env,           \
-                                                     jobject obj,           \
-                                                     jfieldID fieldID) {    \
-    __try {                                                                 \
-      return (*JNI_FastGetField::jni_fast_Get##Result##Field_fp)(env,       \
-                                                                 obj,       \
-                                                                 fieldID);  \
-    } __except(fastJNIAccessorExceptionFilter((_EXCEPTION_POINTERS*)        \
-                                              _exception_info())) {         \
-    }                                                                       \
-    return 0;                                                               \
-  }
-
-DEFINE_FAST_GETFIELD(jboolean, bool,   Boolean)
-DEFINE_FAST_GETFIELD(jbyte,    byte,   Byte)
-DEFINE_FAST_GETFIELD(jchar,    char,   Char)
-DEFINE_FAST_GETFIELD(jshort,   short,  Short)
-DEFINE_FAST_GETFIELD(jint,     int,    Int)
-DEFINE_FAST_GETFIELD(jlong,    long,   Long)
-DEFINE_FAST_GETFIELD(jfloat,   float,  Float)
-DEFINE_FAST_GETFIELD(jdouble,  double, Double)
-
-address os::win32::fast_jni_accessor_wrapper(BasicType type) {
-  switch (type) {
-  case T_BOOLEAN: return (address)jni_fast_GetBooleanField_wrapper;
-  case T_BYTE:    return (address)jni_fast_GetByteField_wrapper;
-  case T_CHAR:    return (address)jni_fast_GetCharField_wrapper;
-  case T_SHORT:   return (address)jni_fast_GetShortField_wrapper;
-  case T_INT:     return (address)jni_fast_GetIntField_wrapper;
-  case T_LONG:    return (address)jni_fast_GetLongField_wrapper;
-  case T_FLOAT:   return (address)jni_fast_GetFloatField_wrapper;
-  case T_DOUBLE:  return (address)jni_fast_GetDoubleField_wrapper;
-  default:        ShouldNotReachHere();
-  }
-  return (address)-1;
 }
 #endif
 
@@ -3341,12 +3146,7 @@ size_t os::win32::large_page_init_decide_size() {
     return 0;
   }
 
-#if defined(IA32)
-  if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
-    WARN("JVM cannot use large pages bigger than 4mb.");
-    return 0;
-  }
-#elif defined(AMD64)
+#if defined(AMD64)
   if (!EnableAllLargePageSizesForWindows) {
     if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
       WARN("JVM cannot use large pages bigger than 4mb.");
@@ -3430,13 +3230,8 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
-#ifdef _LP64
   HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
     (DWORD)(size >> 32), (DWORD)(size & 0xFFFFFFFF), nullptr);
-#else
-  HANDLE fileMapping = CreateFileMapping(fh, nullptr, PAGE_READWRITE,
-    0, (DWORD)size, nullptr);
-#endif
   if (fileMapping == nullptr) {
     if (GetLastError() == ERROR_DISK_FULL) {
       vm_exit_during_initialization(err_msg("Could not allocate sufficient disk space for Java heap"));
@@ -3825,8 +3620,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
     if (err != nullptr) {
       log_warning(os)("bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #ifdef ASSERT
-      fileStream fs(stdout);
-      os::print_memory_mappings((char*)start, bytes, &fs);
+      os::print_memory_mappings((char*)start, bytes, tty);
       assert(false, "bad release: [" PTR_FORMAT "-" PTR_FORMAT "): %s", p2i(start), p2i(end), err);
 #endif
       return false;
@@ -4151,7 +3945,7 @@ void getWindowsInstallationType(char* buffer, int bufferSize) {
   }
 
   // Query the value
-  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
     RegCloseKey(hKey);
     buffer[0] = '\0';
     return;
@@ -4619,32 +4413,6 @@ bool os::message_box(const char* title, const char* message) {
   return result == IDYES;
 }
 
-#ifndef PRODUCT
-#ifndef _WIN64
-// Helpers to check whether NX protection is enabled
-int nx_exception_filter(_EXCEPTION_POINTERS *pex) {
-  if (pex->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION &&
-      pex->ExceptionRecord->NumberParameters > 0 &&
-      pex->ExceptionRecord->ExceptionInformation[0] ==
-      EXCEPTION_INFO_EXEC_VIOLATION) {
-    return EXCEPTION_EXECUTE_HANDLER;
-  }
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-void nx_check_protection() {
-  // If NX is enabled we'll get an exception calling into code on the stack
-  char code[] = { (char)0xC3 }; // ret
-  void *code_ptr = (void *)code;
-  __try {
-    __asm call code_ptr
-  } __except(nx_exception_filter((_EXCEPTION_POINTERS*)_exception_info())) {
-    tty->print_raw_cr("NX protection detected.");
-  }
-}
-#endif // _WIN64
-#endif // PRODUCT
-
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
   _initial_pid = _getpid();
@@ -4664,9 +4432,6 @@ void os::init(void) {
     fatal("DuplicateHandle failed\n");
   }
   main_thread_id = (int) GetCurrentThreadId();
-
-  // initialize fast thread access - only used for 32-bit
-  win32::initialize_thread_ptr_offset();
 }
 
 // To install functions for atexit processing
@@ -4682,11 +4447,7 @@ static jint initSock();
 // HotSpot guard pages is added later.
 size_t os::_compiler_thread_min_stack_allowed = 48 * K;
 size_t os::_java_thread_min_stack_allowed = 40 * K;
-#ifdef _LP64
 size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
-#else
-size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-#endif // _LP64
 
 // If stack_commit_size is 0, windows will reserve the default size,
 // but only commit a small portion of it.  This stack size is the size of this
@@ -4714,16 +4475,6 @@ jint os::init_2(void) {
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
 #endif
 
-  // for debugging float code generation bugs
-#if defined(ASSERT) && !defined(_WIN64)
-  static long fp_control_word = 0;
-  __asm { fstcw fp_control_word }
-  // see Intel PPro Manual, Vol. 2, p 7-16
-  const long invalid   = 0x01;
-  fp_control_word |= invalid;
-  __asm { fldcw fp_control_word }
-#endif
-
   // Check and sets minimum stack sizes against command line options
   if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
@@ -4746,11 +4497,6 @@ jint os::init_2(void) {
       warning("os::init_2 atexit(perfMemory_exit_helper) failed");
     }
   }
-
-#ifndef _WIN64
-  // Print something if NX is enabled (win32 on AMD64)
-  NOT_PRODUCT(if (PrintMiscellaneous && Verbose) nx_check_protection());
-#endif
 
   // initialize thread priority policy
   prio_init();
@@ -5133,12 +4879,6 @@ bool os::is_thread_cpu_time_supported() {
 // Note that sampling thread starvation could affect both (b) and (c).
 int os::loadavg(double loadavg[], int nelem) {
   return -1;
-}
-
-
-// DontYieldALot=false by default: dutifully perform all yields as requested by JVM_Yield()
-bool os::dont_yield() {
-  return DontYieldALot;
 }
 
 int os::open(const char *path, int oflag, int mode) {
@@ -6007,13 +5747,6 @@ ssize_t os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
   return ::send(fd, buf, (int)nBytes, flags);
 }
 
-// WINDOWS CONTEXT Flags for THREAD_SAMPLING
-#if defined(IA32)
-  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT | CONTEXT_EXTENDED_REGISTERS)
-#elif defined(AMD64) || defined(_M_ARM64)
-  #define sampling_context_flags (CONTEXT_FULL | CONTEXT_FLOATING_POINT)
-#endif
-
 // returns true if thread could be suspended,
 // false otherwise
 static bool do_suspend(HANDLE* h) {
@@ -6058,7 +5791,7 @@ void SuspendedThreadTask::internal_do_task() {
 
   // suspend the thread
   if (do_suspend(&h)) {
-    ctxt.ContextFlags = sampling_context_flags;
+    ctxt.ContextFlags = (CONTEXT_FULL | CONTEXT_FLOATING_POINT);
     // get thread context
     GetThreadContext(h, &ctxt);
     SuspendedThreadTaskContext context(_thread, &ctxt);
@@ -6102,71 +5835,6 @@ void* os::get_default_process_handle() {
   return (void*)GetModuleHandle(nullptr);
 }
 
-// Builds a platform dependent Agent_OnLoad_<lib_name> function name
-// which is used to find statically linked in agents.
-// Additionally for windows, takes into account __stdcall names.
-// Parameters:
-//            sym_name: Symbol in library we are looking for
-//            lib_name: Name of library to look in, null for shared libs.
-//            is_absolute_path == true if lib_name is absolute path to agent
-//                                     such as "C:/a/b/L.dll"
-//            == false if only the base name of the library is passed in
-//               such as "L"
-char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
-                                    bool is_absolute_path) {
-  char *agent_entry_name;
-  size_t len;
-  size_t name_len;
-  size_t prefix_len = strlen(JNI_LIB_PREFIX);
-  size_t suffix_len = strlen(JNI_LIB_SUFFIX);
-  const char *start;
-
-  if (lib_name != nullptr) {
-    len = name_len = strlen(lib_name);
-    if (is_absolute_path) {
-      // Need to strip path, prefix and suffix
-      if ((start = strrchr(lib_name, *os::file_separator())) != nullptr) {
-        lib_name = ++start;
-      } else {
-        // Need to check for drive prefix
-        if ((start = strchr(lib_name, ':')) != nullptr) {
-          lib_name = ++start;
-        }
-      }
-      if (len <= (prefix_len + suffix_len)) {
-        return nullptr;
-      }
-      lib_name += prefix_len;
-      name_len = strlen(lib_name) - suffix_len;
-    }
-  }
-  len = (lib_name != nullptr ? name_len : 0) + strlen(sym_name) + 2;
-  agent_entry_name = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len, mtThread);
-  if (agent_entry_name == nullptr) {
-    return nullptr;
-  }
-  if (lib_name != nullptr) {
-    const char *p = strrchr(sym_name, '@');
-    if (p != nullptr && p != sym_name) {
-      // sym_name == _Agent_OnLoad@XX
-      strncpy(agent_entry_name, sym_name, (p - sym_name));
-      agent_entry_name[(p-sym_name)] = '\0';
-      // agent_entry_name == _Agent_OnLoad
-      strcat(agent_entry_name, "_");
-      strncat(agent_entry_name, lib_name, name_len);
-      strcat(agent_entry_name, p);
-      // agent_entry_name == _Agent_OnLoad_lib_name@XX
-    } else {
-      strcpy(agent_entry_name, sym_name);
-      strcat(agent_entry_name, "_");
-      strncat(agent_entry_name, lib_name, name_len);
-    }
-  } else {
-    strcpy(agent_entry_name, sym_name);
-  }
-  return agent_entry_name;
-}
-
 /*
   All the defined signal names for Windows.
 
@@ -6199,19 +5867,6 @@ int os::get_signal_number(const char* name) {
     }
   }
   return -1;
-}
-
-// Fast current thread access
-
-int os::win32::_thread_ptr_offset = 0;
-
-static void call_wrapper_dummy() {}
-
-// We need to call the os_exception_wrapper once so that it sets
-// up the offset from FS of the thread pointer.
-void os::win32::initialize_thread_ptr_offset() {
-  os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
-                           nullptr, methodHandle(), nullptr, nullptr);
 }
 
 bool os::supports_map_sync() {
@@ -6288,7 +5943,7 @@ bool os::win32::find_mapping(address addr, mapping_info_t* mi) {
 // Helper for print_one_mapping: print n words, both as hex and ascii.
 // Use Safefetch for all values.
 static void print_snippet(const void* p, outputStream* st) {
-  static const int num_words = LP64_ONLY(3) NOT_LP64(6);
+  static const int num_words = 3;
   static const int num_bytes = num_words * sizeof(int);
   intptr_t v[num_words];
   const int errval = 0xDE210244;
@@ -6331,8 +5986,7 @@ static address print_one_mapping(MEMORY_BASIC_INFORMATION* minfo, address start,
     if (first_line) {
       st->print("Base " PTR_FORMAT ": ", p2i(allocation_base));
     } else {
-      st->print_raw(NOT_LP64 ("                 ")
-                    LP64_ONLY("                         "));
+      st->print_raw("                         ");
     }
     address region_start = (address)minfo->BaseAddress;
     address region_end = region_start + minfo->RegionSize;
@@ -6432,7 +6086,7 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
       // Here, we advance the probe pointer by alloc granularity. But if the range to print
       //  is large, this may take a long time. Therefore lets stop right away if the address
       //  is outside of what we know are valid addresses on Windows. Also, add a loop fuse.
-      static const address end_virt = (address)(LP64_ONLY(0x7ffffffffffULL) NOT_LP64(3*G));
+      static const address end_virt = (address)(0x7ffffffffffULL);
       if (p >= end_virt) {
         break;
       } else {
@@ -6484,4 +6138,27 @@ void os::print_user_info(outputStream* st) {
 
 void os::print_active_locale(outputStream* st) {
   // not implemented yet
+}
+
+static CONTEXT _saved_assert_context;
+static EXCEPTION_RECORD _saved_exception_record;
+static bool _has_saved_context = false;
+
+void os::save_assert_context(const void* ucVoid) {
+  assert(ucVoid != nullptr, "invariant");
+  assert(!_has_saved_context, "invariant");
+  const EXCEPTION_POINTERS* ep = static_cast<const EXCEPTION_POINTERS*>(ucVoid);
+  memcpy(&_saved_assert_context, ep->ContextRecord, sizeof(CONTEXT));
+  memcpy(&_saved_exception_record, ep->ExceptionRecord, sizeof(EXCEPTION_RECORD));
+  _has_saved_context = true;
+}
+
+const void* os::get_saved_assert_context(const void** sigInfo) {
+  assert(sigInfo != nullptr, "invariant");
+  if (_has_saved_context) {
+    *sigInfo = &_saved_exception_record;
+    return &_saved_assert_context;
+  }
+  *sigInfo = nullptr;
+  return nullptr;
 }

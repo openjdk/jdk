@@ -383,7 +383,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
 bool PhaseOutput::need_register_stack_bang() const {
   // Determine if we need to generate a register stack overflow check.
   // This is only used on architectures which have split register
-  // and memory stacks (ie. IA64).
+  // and memory stacks.
   // Bang if the method is not a stub function and has java calls
   return (C->stub_function() == nullptr && C->has_java_calls());
 }
@@ -437,7 +437,7 @@ void PhaseOutput::compute_loop_first_inst_sizes() {
 // branch instructions. Replace eligible long branches with short branches.
 void PhaseOutput::shorten_branches(uint* blk_starts) {
 
-  Compile::TracePhase tp("shorten branches", &timers[_t_shortenBranches]);
+  Compile::TracePhase tp(_t_shortenBranches);
 
   // Compute size of each block, method size, and relocation information size
   uint nblocks  = C->cfg()->number_of_blocks();
@@ -1352,7 +1352,7 @@ void PhaseOutput::estimate_buffer_size(int& const_req) {
     // Calculate the offsets of the constants and the size of the
     // constant table (including the padding to the next section).
     constant_table().calculate_offsets_and_size();
-    const_req = constant_table().size() + add_size;
+    const_req = constant_table().alignment() + constant_table().size() + add_size;
   }
 
   // Initialize the space for the BufferBlob used to find and verify
@@ -1392,6 +1392,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
     total_req += deopt_handler_req;  // deopt MH handler
 
   CodeBuffer* cb = code_buffer();
+  cb->set_const_section_alignment(constant_table().alignment());
   cb->initialize(total_req, _buf_sizes._reloc);
 
   // Have we run out of code space?
@@ -1418,7 +1419,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
   // Compute the size of first NumberOfLoopInstrToAlign instructions at head
   // of a loop. It is used to determine the padding for loop alignment.
-  Compile::TracePhase tp("fill buffer", &timers[_t_fillBuffer]);
+  Compile::TracePhase tp(_t_fillBuffer);
 
   compute_loop_first_inst_sizes();
 
@@ -2162,7 +2163,7 @@ void PhaseOutput::ScheduleAndBundle() {
     return;
   }
 
-  Compile::TracePhase tp("isched", &timers[_t_instrSched]);
+  Compile::TracePhase tp(_t_instrSched);
 
   // Create a data structure for all the scheduling information
   Scheduling scheduling(Thread::current()->resource_area(), *C);
@@ -3428,7 +3429,7 @@ void PhaseOutput::install_code(ciMethod*         target,
       return;
     }
 #endif
-    Compile::TracePhase tp("install_code", &timers[_t_registerMethod]);
+    Compile::TracePhase tp(_t_registerMethod);
 
     if (C->is_osr_compilation()) {
       _code_offsets.set_value(CodeOffsets::Verified_Entry, 0);

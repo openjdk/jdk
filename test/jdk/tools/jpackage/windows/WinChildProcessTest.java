@@ -25,13 +25,10 @@
  * @bug 8325203
  * @summary Test that Jpackage windows executable application kills the launched 3rd party application
  *          when System.exit(0) is invoked along with terminating java program.
- * @library ../helpers
- * @library /test/lib
+ * @library /test/jdk/tools/jpackage/helpers
  * @requires os.family == "windows"
- * @build WinChildProcessTest
  * @build jdk.jpackage.test.*
  * @build WinChildProcessTest
- * @modules jdk.jpackage/jdk.jpackage.internal
  * @run main/othervm -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinChildProcessTest
  *
@@ -46,13 +43,14 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.TKit;
+import static jdk.jpackage.test.WindowsHelper.killProcess;
 
 public class WinChildProcessTest {
     private static final Path TEST_APP_JAVA = TKit.TEST_SRC_ROOT
             .resolve("apps/ChildProcessAppLauncher.java");
 
     @Test
-    public static void test() throws Throwable {
+    public static void test() {
         long childPid = 0;
         try {
             JPackageCommand cmd = JPackageCommand
@@ -78,10 +76,12 @@ public class WinChildProcessTest {
             Optional<ProcessHandle> processHandle = ProcessHandle.of(childPid);
             boolean isAlive = processHandle.isPresent()
                     && processHandle.get().isAlive();
-            TKit.assertTrue(isAlive, "Check is child process is alive");
+            TKit.assertTrue(isAlive, "Check child process is alive");
         } finally {
-            // Kill only a specific child instance
-            Runtime.getRuntime().exec("taskkill /F /PID " + childPid);
+            if (childPid != 0) {
+                // Kill only a specific child instance
+                killProcess(childPid);
+            }
         }
     }
 }

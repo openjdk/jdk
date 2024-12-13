@@ -31,7 +31,6 @@
  * @deprecated The jdk.jsobject module will be delivered with JavaFX.
  */
 @Deprecated(since = "24", forRemoval = true)
-@SuppressWarnings("removal")
 module jdk.jsobject {
     exports netscape.javascript;
 }

@@ -92,6 +92,7 @@ serviceability/sa/TestIntConstant.java                        8307393   generic-
 serviceability/sa/TestJhsdbJstackLineNumbers.java             8307393   generic-all
 serviceability/sa/TestJhsdbJstackLock.java                    8307393   generic-all
 serviceability/sa/TestJhsdbJstackMixed.java                   8307393   generic-all
+serviceability/sa/TestJhsdbJstackPrintVMLocks.java            8307393   generic-all
 serviceability/sa/TestJhsdbJstackUpcall.java                  8307393   generic-all
 serviceability/sa/TestJmapCore.java                           8307393   generic-all
 serviceability/sa/TestJmapCoreMetaspace.java                  8307393   generic-all
@@ -116,3 +117,11 @@ serviceability/sa/sadebugd/RunCommandOnServerTest.java        8307393   generic-
 serviceability/sa/sadebugd/SADebugDTest.java                  8307393   generic-all
 
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
+
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java                   8343233 generic-all
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/InterpreterFrameSizeTest.java        8343233 generic-aarch64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/MaxOopMapStackOffsetTest.java        8343233 generic-aarch64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/NativeCallTest.java                  8343233 generic-aarch64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/SimpleCodeInstallationTest.java      8343233 generic-aarch64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/SimpleDebugInfoTest.java             8343233 generic-aarch64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/VirtualObjectDebugInfoTest.java      8343233 generic-aarch64

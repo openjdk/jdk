@@ -41,12 +41,12 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Warmup(iterations = 3, time = 3)
-@Measurement(iterations = 3, time = 3)
-@Fork(value = 3, jvmArgs = {
+@Warmup(iterations = 2, time = 1)
+@Measurement(iterations = 3, time = 1)
+@Fork(value = 1, jvmArgs = {
         "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.util=ALL-UNNAMED"})
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class MergeStores {
 
     public static final int RANGE = 100;
@@ -66,6 +66,7 @@ public class MergeStores {
     public static byte[]  aB = new byte[RANGE];
     public static short[] aS = new short[RANGE];
     public static int[]   aI = new int[RANGE];
+    public static long native_adr = UNSAFE.allocateMemory(RANGE * 8);
 
     // -------------------------------------------
     // -------     Little-Endian API    ----------
@@ -691,4 +692,59 @@ public class MergeStores {
         aI[offset + 1] = 0;
         return aI;
     }
+
+    @Benchmark
+    public void store_unsafe_B8_L_offs_noalloc_direct() {
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, (byte)(vL >> 0 ));
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 1, (byte)(vL >> 8 ));
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 2, (byte)(vL >> 16));
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 3, (byte)(vL >> 24));
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, (byte)(vL >> 32));
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 5, (byte)(vL >> 40));
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 6, (byte)(vL >> 48));
+        UNSAFE.putByte(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 7, (byte)(vL >> 56));
+    }
+
+    @Benchmark
+    public void store_unsafe_B8_L_offs_noalloc_unsafe() {
+        UNSAFE.putLongUnaligned(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, vL);
+    }
+
+    @Benchmark
+    public void store_unsafe_C4_L_offs_noalloc_direct() {
+        UNSAFE.putChar(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 0, (char)(vL >> 0 ));
+        UNSAFE.putChar(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 2, (char)(vL >> 16));
+        UNSAFE.putChar(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 4, (char)(vL >> 32));
+        UNSAFE.putChar(aB, Unsafe.ARRAY_BYTE_BASE_OFFSET + offset + 6, (char)(vL >> 48));
+    }
+
+    @Benchmark
+    public void store_unsafe_native_B8_L_offs_noalloc_direct() {
+        UNSAFE.putByte(null, native_adr + offset + 0, (byte)(vL >> 0 ));
+        UNSAFE.putByte(null, native_adr + offset + 1, (byte)(vL >> 8 ));
+        UNSAFE.putByte(null, native_adr + offset + 2, (byte)(vL >> 16));
+        UNSAFE.putByte(null, native_adr + offset + 3, (byte)(vL >> 24));
+        UNSAFE.putByte(null, native_adr + offset + 4, (byte)(vL >> 32));
+        UNSAFE.putByte(null, native_adr + offset + 5, (byte)(vL >> 40));
+        UNSAFE.putByte(null, native_adr + offset + 6, (byte)(vL >> 48));
+        UNSAFE.putByte(null, native_adr + offset + 7, (byte)(vL >> 56));
+    }
+
+    @Benchmark
+    public void store_unsafe_native_C4_L_offs_noalloc_direct() {
+        UNSAFE.putChar(null, native_adr + offset + 0, (char)(vL >> 0 ));
+        UNSAFE.putChar(null, native_adr + offset + 2, (char)(vL >> 16));
+        UNSAFE.putChar(null, native_adr + offset + 4, (char)(vL >> 32));
+        UNSAFE.putChar(null, native_adr + offset + 6, (char)(vL >> 48));
+    }
+
+    @Benchmark
+    public void store_unsafe_native_B8_L_offs_noalloc_unsafe() {
+        UNSAFE.putLongUnaligned(null, native_adr + offset + 0, vL);
+    }
+
+    @Fork(value = 1, jvmArgsPrepend = {
+        "-XX:+UnlockDiagnosticVMOptions", "-XX:-MergeStores"
+    })
+    public static class MergeStoresDisabled extends MergeStores {}
 }

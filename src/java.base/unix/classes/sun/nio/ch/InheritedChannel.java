@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,18 +150,6 @@ class InheritedChannel {
     }
 
     /*
-     * If there's a SecurityManager then check for the appropriate
-     * RuntimePermission.
-     */
-    private static void checkAccess() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("inheritedChannel"));
-        }
-    }
-
-    /*
      * If standard inherited channel is connected to a socket then return a Channel
      * of the appropriate type based standard input.
      */
@@ -252,11 +240,6 @@ class InheritedChannel {
             haveChannel = true;
         }
 
-        // if there is a channel then do the security check before
-        // returning it.
-        if (channel != null) {
-            checkAccess();
-        }
         return channel;
     }
 

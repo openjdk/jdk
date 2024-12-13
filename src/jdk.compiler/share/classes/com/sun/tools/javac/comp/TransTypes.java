@@ -813,8 +813,7 @@ public class TransTypes extends TreeTranslator {
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
             selsuper.tsym == syms.enumSym;
-        Type target = enumSwitch ? erasure(tree.selector.type) : syms.intType;
-        tree.selector = translate(tree.selector, target);
+        tree.selector = translate(tree.selector, erasure(tree.selector.type));
         tree.cases = translateCases(tree.cases);
         result = tree;
     }
@@ -852,8 +851,7 @@ public class TransTypes extends TreeTranslator {
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
             selsuper.tsym == syms.enumSym;
-        Type target = enumSwitch ? erasure(tree.selector.type) : syms.intType;
-        tree.selector = translate(tree.selector, target);
+        tree.selector = translate(tree.selector, erasure(tree.selector.type));
         tree.cases = translate(tree.cases, tree.type);
         tree.type = erasure(tree.type);
         result = retype(tree, tree.type, pt);
@@ -1067,8 +1065,14 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        tree.expr = translate(tree.expr, null);
         tree.pattern = translate(tree.pattern, null);
+        if (tree.pattern.type.isPrimitive()) {
+            tree.erasedExprOriginalType = erasure(tree.expr.type);
+            tree.expr = translate(tree.expr, null);
+        }
+        else {
+            tree.expr = translate(tree.expr, null);
+        }
         result = tree;
     }
 

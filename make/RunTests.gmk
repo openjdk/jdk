@@ -45,7 +45,7 @@ ifneq ($(TEST_VM_OPTS), )
 endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
-    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET AOT_JDK, \
     STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS, \
 ))
 
@@ -202,11 +202,12 @@ $(eval $(call SetTestOpt,JOBS,JTREG))
 $(eval $(call SetTestOpt,TIMEOUT_FACTOR,JTREG))
 $(eval $(call SetTestOpt,FAILURE_HANDLER_TIMEOUT,JTREG))
 $(eval $(call SetTestOpt,REPORT,JTREG))
+$(eval $(call SetTestOpt,AOT_JDK,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT AOT_JDK $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -604,7 +605,7 @@ define SetupRunMicroTestBody
     $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)
   endif
 
-  $1_MICRO_VM_OPTIONS := -jvmArgs $(call ShellQuote,$$($1_JMH_JVM_ARGS))
+  $1_MICRO_VM_OPTIONS := -jvmArgsPrepend $(call ShellQuote,$$($1_JMH_JVM_ARGS))
 
   ifneq ($$(MICRO_ITER), )
     $1_MICRO_ITER := -i $$(MICRO_ITER)
@@ -702,6 +703,58 @@ define SetJtregValue
   endif
 endef
 
+
+# Parameter 1 is the name of the rule.
+#
+# Remaining parameters are named arguments.
+#   VM_OPTIONS  List of JVM arguments to use when creating AOT cache
+#
+#  After calling this, the following variables are defined
+#   $1_AOT_TARGETS   List of all targets that the test rule will need to depend on
+#   $1_AOT_JDK_CACHE The AOT cache file to be used to run the test with
+#
+SetupAot = $(NamedParamsMacroTemplate)
+define SetupAotBody
+  $1_AOT_JDK_CONF  := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotconf
+  $1_AOT_JDK_CACHE := $$($1_TEST_SUPPORT_DIR)/aot/jdk.aotcache
+
+  $1_JAVA_TOOL_OPTS := $$(addprefix -J, $$($1_VM_OPTIONS))
+
+  $$($1_AOT_JDK_CACHE): $$(JDK_IMAGE_DIR)/release
+	$$(call MakeDir, $$($1_TEST_SUPPORT_DIR)/aot)
+
+	$(foreach jtool, javac javap jlink jar, \
+	    $(info AOT: Create cache configuration for $(jtool)) \
+	    $$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot.$(jtool), ( \
+	        $$(FIXPATH) $(JDK_UNDER_TEST)/bin/$(jtool) $$($1_JAVA_TOOL_OPTS) \
+	                    -J-XX:AOTMode=record -J-XX:AOTConfiguration=$$($1_AOT_JDK_CONF).$(jtool) --help \
+	    ))
+	)
+
+	$$(info AOT: Copy $(JDK_UNDER_TEST)/lib/classlist to $$($1_AOT_JDK_CONF).jdk )
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
+		$$(FIXPATH) $(CP) $(JDK_UNDER_TEST)/lib/classlist $$($1_AOT_JDK_CONF).jdk \
+	))
+
+	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).* > $$($1_AOT_JDK_CONF).temp
+	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) -v '#' | $(GREP) -v '@' | $(SORT) | \
+	        $(SED) -e 's/id:.*//g' | uniq \
+		> $$($1_AOT_JDK_CONF)
+	$$(FIXPATH) $$(CAT) $$($1_AOT_JDK_CONF).temp | $(GREP) '@cp' | $(SORT) \
+	        >> $$($1_AOT_JDK_CONF)
+
+	$$(info AOT: Generate AOT cache $$($1_AOT_JDK_CACHE) with flags: $$($1_VM_OPTIONS))
+	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/aot, ( \
+		$$(FIXPATH) $(JDK_UNDER_TEST)/bin/java \
+	        $$($1_VM_OPTIONS) -Xlog:cds,cds+class=debug:file=$$($1_AOT_JDK_CACHE).log \
+		-XX:AOTMode=create -XX:AOTConfiguration=$$($1_AOT_JDK_CONF) -XX:AOTCache=$$($1_AOT_JDK_CACHE) \
+	))
+
+  $1_AOT_TARGETS += $$($1_AOT_JDK_CACHE)
+
+endef
+
+
 SetupRunJtregTest = $(NamedParamsMacroTemplate)
 define SetupRunJtregTestBody
   $1_TEST_RESULTS_DIR := $$(TEST_RESULTS_DIR)/$1
@@ -762,6 +815,7 @@ define SetupRunJtregTestBody
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
   JTREG_REPORT ?= files
+  JTREG_AOT_JDK ?= false
 
   ifneq ($$(JTREG_RETRY_COUNT), 0)
     ifneq ($$(JTREG_REPEAT_COUNT), 0)
@@ -856,6 +910,10 @@ define SetupRunJtregTestBody
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-zgc.txt
   endif
 
+  ifneq ($$(findstring -XX:+UseShenandoahGC, $$(JTREG_ALL_OPTIONS)), )
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-shenandoah.txt
+  endif
+
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
     # Accept both absolute paths as well as relative to the current test root.
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
@@ -887,6 +945,17 @@ define SetupRunJtregTestBody
     endif
   endif
 
+  ifeq ($$(JTREG_AOT_JDK), true)
+    $$(info Add AOT target for $1)
+    $$(eval $$(call SetupAot, $1, VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
+
+    $$(info AOT_TARGETS=$$($1_AOT_TARGETS))
+    $$(info AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
+
+    $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
+  endif
+
+
   $$(eval $$(call SetupRunJtregTestCustom, $1))
 
   # SetupRunJtregTestCustom might also adjust JTREG_AUTO_ variables
@@ -902,6 +971,7 @@ define SetupRunJtregTestBody
   JTREG_TIMEOUT_FACTOR ?= $$(JTREG_AUTO_TIMEOUT_FACTOR)
 
   clean-outputdirs-$1:
+	$$(call LogWarn, Clean up dirs for $1)
 	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
 	$$(RM) -r $$($1_TEST_RESULTS_DIR)
 
@@ -949,7 +1019,7 @@ define SetupRunJtregTestBody
         done
   endif
 
-  run-test-$1: pre-run-test clean-outputdirs-$1
+  run-test-$1: clean-outputdirs-$1 pre-run-test $$($1_AOT_TARGETS)
 	$$(call LogWarn)
 	$$(call LogWarn, Running test '$$($1_TEST)')
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \

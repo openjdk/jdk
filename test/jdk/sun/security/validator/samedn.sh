@@ -82,5 +82,5 @@ $KT -delete -alias user
 
 EXTRAOPTS="--add-exports java.base/sun.security.validator=ALL-UNNAMED"
 $JAVAC ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${EXTRAOPTS} -d . ${TESTSRC}${FS}CertReplace.java
-$JAVA ${TESTVMOPTS} ${EXTRAOPTS} CertReplace samedn.jks samedn1.certs || exit 1
-$JAVA ${TESTVMOPTS} ${EXTRAOPTS} CertReplace samedn.jks samedn2.certs || exit 2
+$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} ${EXTRAOPTS} CertReplace samedn.jks samedn1.certs || exit 1
+$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} ${EXTRAOPTS} CertReplace samedn.jks samedn2.certs || exit 2

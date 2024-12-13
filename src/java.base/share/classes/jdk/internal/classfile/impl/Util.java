@@ -26,7 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.CodeAttribute;
-import java.lang.classfile.components.ClassPrinter;
+import jdk.internal.classfile.components.ClassPrinter;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.PoolEntry;
@@ -280,6 +280,11 @@ public class Util {
                                     b.writeInt(bytecode.length());
                                     b.writeBytes(bytecode.array(), 0, bytecode.length());
                                     b.writeU2U2(0, 0);//exception handlers & attributes
+                                }
+
+                                @Override
+                                public Utf8Entry attributeName() {
+                                    return cp.utf8Entry(Attributes.NAME_CODE);
                                 }
                     }))));
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);

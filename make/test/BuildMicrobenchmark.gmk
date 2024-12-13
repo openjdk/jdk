@@ -30,6 +30,7 @@ include $(SPEC)
 include MakeBase.gmk
 
 include CopyFiles.gmk
+include JarArchive.gmk
 include JavaCompilation.gmk
 include TestFilesCompilation.gmk
 
@@ -49,7 +50,6 @@ MICROBENCHMARK_CLASSES := $(MICROBENCHMARK_OUTPUT)/classes
 MICROBENCHMARK_JAR_BIN := $(MICROBENCHMARK_OUTPUT)/jar
 
 MICROBENCHMARK_TOOLS_CLASSES := $(MICROBENCHMARK_OUTPUT)/tools-classes
-MICROBENCHMARK_INDIFY_DONE := $(MICROBENCHMARK_CLASSES)/_indify.marker
 
 JMH_UNPACKED_DIR := $(MICROBENCHMARK_OUTPUT)/jmh_jars
 JMH_UNPACKED_JARS_DONE := $(JMH_UNPACKED_DIR)/_unpacked.marker
@@ -71,17 +71,6 @@ MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
 \nJMH-Version: $(JMH_VERSION)\n\
 \nName: OpenJDK Microbenchmark Suite
 
-#### Compile Indify tool
-
-$(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
-    TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
-    SRC := $(TOPDIR)/test/jdk/java/lang/invoke, \
-    INCLUDE_FILES := indify/Indify.java, \
-    DISABLED_WARNINGS := this-escape rawtypes serial options, \
-    BIN := $(MICROBENCHMARK_TOOLS_CLASSES), \
-    JAVAC_FLAGS := -XDstringConcat=inline -Xprefer:newer, \
-))
-
 #### Compile Targets
 
 # Building microbenchmark requires the jdk.unsupported and java.management modules.
@@ -100,6 +89,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     SRC := $(MICROBENCHMARK_SRC), \
     BIN := $(MICROBENCHMARK_CLASSES), \
     JAVAC_FLAGS := \
+        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.event=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED \
@@ -124,14 +114,6 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
 
 $(BUILD_JDK_MICROBENCHMARK): $(JMH_COMPILE_JARS)
 
-# Run Indify
-$(MICROBENCHMARK_INDIFY_DONE): $(BUILD_INDIFY) $(BUILD_JDK_MICROBENCHMARK)
-	$(call LogWarn, Running Indify on microbenchmark classes)
-	$(JAVA_SMALL) -cp $(MICROBENCHMARK_TOOLS_CLASSES) \
-	    indify.Indify --overwrite $(MICROBENCHMARK_CLASSES) \
-	    $(LOG_DEBUG) 2>&1
-	$(TOUCH) $@
-
 # Unpacking dependencies for inclusion in the benchmark JARs
 $(JMH_UNPACKED_JARS_DONE): $(JMH_RUNTIME_JARS)
 	$(RM) -r $(JMH_UNPACKED_DIR)
@@ -144,8 +126,7 @@ $(JMH_UNPACKED_JARS_DONE): $(JMH_RUNTIME_JARS)
 
 # Create benchmarks JAR file with benchmarks for both the old and new JDK
 $(eval $(call SetupJarArchive, BUILD_JDK_JAR, \
-    DEPENDENCIES := $(BUILD_JDK_MICROBENCHMARK) $(JMH_UNPACKED_JARS_DONE) \
-        $(MICROBENCHMARK_INDIFY_DONE), \
+    DEPENDENCIES := $(BUILD_JDK_MICROBENCHMARK) $(JMH_UNPACKED_JARS_DONE), \
     SRCS := $(MICROBENCHMARK_CLASSES) $(JMH_UNPACKED_DIR), \
     BIN := $(MICROBENCHMARK_JAR_BIN), \
     SUFFIXES := .*, \
