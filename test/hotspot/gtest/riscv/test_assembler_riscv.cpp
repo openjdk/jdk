@@ -198,7 +198,7 @@ static void plain_cmpxchg_test(int variant, TESTSIZE dv, TESTSIZE ex, TESTSIZE n
 template <typename TESTSIZE, Assembler::operand_size ASMSIZE>
 static void run_plain_cmpxchg_tests() {
   TESTSIZE max = std::numeric_limits<TESTSIZE>::max();
-  TESTSIZE min = std::numeric_limits<TESTSIZE>::max();
+  TESTSIZE min = std::numeric_limits<TESTSIZE>::min();
   TESTSIZE val[] = {1337, min, max};
   for (int i = 0; i < 3; i++) {
     // Normal
