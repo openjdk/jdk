@@ -354,15 +354,11 @@ Node* IdealLoopTree::reassociate_add_sub_cmp(Node* n1, int inv1_idx, int inv2_id
   Node* inv1_c = phase->get_ctrl(inv1);
   Node* n_inv1;
   if (neg_inv1) {
-    Node* zero;
     if (is_int) {
-      zero = phase->_igvn.intcon(0);
-      n_inv1 = new SubINode(zero, inv1);
+      n_inv1 = new SubINode(phase->intcon(0), inv1);
     } else {
-      zero = phase->_igvn.longcon(0L);
-      n_inv1 = new SubLNode(zero, inv1);
+      n_inv1 = new SubLNode(phase->longcon(0L), inv1);
     }
-    phase->set_ctrl(zero, phase->C->root());
     phase->register_new_node(n_inv1, inv1_c);
   } else {
     n_inv1 = inv1;
@@ -1711,8 +1707,7 @@ void PhaseIdealLoop::update_main_loop_assertion_predicates(CountedLoopNode* main
   // Compute the value of the loop induction variable at the end of the
   // first iteration of the unrolled loop: init + new_stride_con - init_inc
   int unrolled_stride_con = main_loop_head->stride_con() * 2;
-  Node* unrolled_stride = _igvn.intcon(unrolled_stride_con);
-  set_ctrl(unrolled_stride, C->root());
+  Node* unrolled_stride = intcon(unrolled_stride_con);
 
   Node* loop_entry = main_loop_head->skip_strip_mined()->in(LoopNode::EntryControl);
   PredicateIterator predicate_iterator(loop_entry);
@@ -1879,23 +1874,20 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     if (limit->is_Con()) {
       // The check in policy_unroll and the assert above guarantee
       // no underflow if limit is constant.
-      new_limit = _igvn.intcon(limit->get_int() - stride_con);
-      set_ctrl(new_limit, C->root());
+      new_limit = intcon(limit->get_int() - stride_con);
     } else {
       // Limit is not constant. Int subtraction could lead to underflow.
       // (1) Convert to long.
       Node* limit_l = new ConvI2LNode(limit);
       register_new_node_with_ctrl_of(limit_l, limit);
-      Node* stride_l = _igvn.longcon(stride_con);
-      set_ctrl(stride_l, C->root());
+      Node* stride_l = longcon(stride_con);
 
       // (2) Subtract: compute in long, to prevent underflow.
       Node* new_limit_l = new SubLNode(limit_l, stride_l);
       register_new_node(new_limit_l, ctrl);
 
       // (3) Clamp to int range, in case we had subtraction underflow.
-      Node* underflow_clamp_l = _igvn.longcon((stride_con > 0) ? min_jint : max_jint);
-      set_ctrl(underflow_clamp_l, C->root());
+      Node* underflow_clamp_l = longcon((stride_con > 0) ? min_jint : max_jint);
       Node* new_limit_no_underflow_l = nullptr;
       if (stride_con > 0) {
         // limit = MaxL(limit - stride, min_jint)
@@ -1985,8 +1977,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   // Kill the clone's backedge
   Node *newcle = old_new[loop_end->_idx];
   _igvn.hash_delete(newcle);
-  Node *one = _igvn.intcon(1);
-  set_ctrl(one, C->root());
+  Node* one = intcon(1);
   newcle->set_req(1, one);
   // Force clone into same loop body
   uint max = loop->_body.size();
@@ -2122,8 +2113,7 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
   // Only do this for the pre-loop, one less iteration of the main loop doesn't hurt.
   bool round = ABS(scale_con) > 1;
 
-  Node* scale = _igvn.longcon(scale_con);
-  set_ctrl(scale, C->root());
+  Node* scale = longcon(scale_con);
 
   if ((stride_con^scale_con) >= 0) { // Use XOR to avoid overflow
     // Positive stride*scale: the affine function is increasing,
@@ -2162,8 +2152,7 @@ void PhaseIdealLoop::add_constraint(jlong stride_con, jlong scale_con, Node* off
     //     else /* scale > 0 and stride < 0 */
     //       I > (upper_limit-(offset+1))/scale
     //   )
-    Node* one = _igvn.longcon(1);
-    set_ctrl(one, C->root());
+    Node* one = longcon(1);
     Node* plus_one = new AddLNode(offset, one);
     register_new_node(plus_one, pre_ctrl);
     *pre_limit = adjust_limit(!is_positive_stride, scale, plus_one, upper_limit, *pre_limit, pre_ctrl, round);
@@ -2368,8 +2357,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       *p_scale = scale;
     }
     if (p_offset != nullptr) {
-      Node *zero = _igvn.zerocon(bt);
-      set_ctrl(zero, C->root());
+      Node* zero = zerocon(bt);
       *p_offset = zero;
     }
     return true;
@@ -2420,8 +2408,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, BasicType bt,
       }
       if (p_offset != nullptr) {
         if (which == 1) {  // must negate the extracted offset
-          Node *zero = _igvn.integercon(0, exp_bt);
-          set_ctrl(zero, C->root());
+          Node* zero = integercon(0, exp_bt);
           Node *ctrl_off = get_ctrl(offset);
           offset = SubNode::make(zero, offset, exp_bt);
           register_new_node(offset, ctrl_off);
@@ -2540,13 +2527,10 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
   int stride_con = cl->stride_con();
   bool abs_stride_is_one = stride_con == 1 || stride_con == -1;
-  Node* zero = _igvn.longcon(0);
-  Node* one  = _igvn.longcon(1);
+  Node* zero = longcon(0);
+  Node* one  = longcon(1);
   // Use symmetrical int range [-max_jint,max_jint]
-  Node* mini = _igvn.longcon(-max_jint);
-  set_ctrl(zero, C->root());
-  set_ctrl(one,  C->root());
-  set_ctrl(mini, C->root());
+  Node* mini = longcon(-max_jint);
 
   Node* loop_entry = cl->skip_strip_mined()->in(LoopNode::EntryControl);
   assert(loop_entry->is_Proj() && loop_entry->in(0)->is_If(), "if projection only");
@@ -2745,8 +2729,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
       // Kill the eliminated test
       C->set_major_progress();
-      Node *kill_con = _igvn.intcon(1-flip);
-      set_ctrl(kill_con, C->root());
+      Node* kill_con = intcon(1-flip);
       _igvn.replace_input_of(iff, 1, kill_con);
       // Find surviving projection
       assert(iff->is_If(), "");

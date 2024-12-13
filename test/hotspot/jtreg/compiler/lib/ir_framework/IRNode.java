@@ -565,6 +565,11 @@ public class IRNode {
         beforeMatchingNameRegex(DIV, "Div(I|L|F|D)");
     }
 
+    public static final String UDIV = PREFIX + "UDIV" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(UDIV, "UDiv(I|L|F|D)");
+    }
+
     public static final String DIV_BY_ZERO_TRAP = PREFIX + "DIV_BY_ZERO_TRAP" + POSTFIX;
     static {
         trapNodes(DIV_BY_ZERO_TRAP, "div0_check");
