@@ -443,7 +443,7 @@ ReservedSpace HeapReserver::Instance::try_reserve_range(char *highest_start,
 
     if (reserved.is_reserved()) {
       if (reserved.base() >= aligned_heap_base_min_address &&
-          reserved.base() + size <= upper_bound) {
+          size <= (uintptr_t)(upper_bound - reserved.base())) {
         // Got a successful reservation.
         return reserved;
       }

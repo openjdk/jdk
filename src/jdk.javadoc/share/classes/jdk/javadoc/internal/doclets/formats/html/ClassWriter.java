@@ -740,16 +740,14 @@ public class ClassWriter extends SubWriterHolderWriter {
             }
             // TODO: should we simply split this method up to avoid instanceof ?
             if (type instanceof TypeElement te) {
-                Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, te));
-                content.add(HtmlTree.CODE(link));
+                content.add(getLink(
+                        new HtmlLinkInfo(configuration, context, te)));
             } else {
-                Content link = getLink(
-                        new HtmlLinkInfo(configuration, context, ((TypeMirror)type)));
-                content.add(HtmlTree.CODE(link));
+                content.add(getLink(
+                        new HtmlLinkInfo(configuration, context, ((TypeMirror)type))));
             }
         }
-        return content;
+        return HtmlTree.CODE(content);
     }
 
     /**
