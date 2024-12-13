@@ -1056,14 +1056,26 @@ define SetupRunJtregTestBody
 	  $$(if $$($1_RUNTIME_SKIPPED), , $$(eval $1_RUNTIME_SKIPPED := 0)) \
 	  $$(eval $1_SKIPPED := $$(shell \
 	      $$(AWK) \
-	        '{ \
-	            overall_skipped = 0; \
-	            split($$$$0, arr, ";"); \
-	            for (item in arr) { \
-	                match(arr[item], /(skipped|excluded|not in match-list|did not .*): ([0-9]+)/, m); \
-	                overall_skipped += m[2]; \
+	        'BEGIN { \
+	          overall_skipped = 0; \
+	          patterns[1] = "skipped"; \
+	          patterns[2] = "excluded"; \
+	          patterns[3] = "not in match-list"; \
+	          patterns[4] = "did not match keywords"; \
+	          patterns[5] = "did not meet module requirements"; \
+	          patterns[6] = "did not meet platform requirements"; \
+	          patterns[7] = "did not match prior status"; \
+	          patterns[8] = "did not meet time-limit requirements"; \
+	        } { \
+	          split($$$$0, arr, ";"); \
+	          for (item in arr) { \
+	            for (p in patterns) { \
+	              if (match(arr[item], patterns[p] ": [0-9]+")) { \
+	                overall_skipped += substr(arr[item], RSTART + length(patterns[p]) + 2, RLENGTH); \
+	              } \
 	            } \
-	            print overall_skipped; \
+	          } \
+	          print overall_skipped; \
 	        }' \
 	        $$($1_RESULT_FILE) \
 	  )) \
