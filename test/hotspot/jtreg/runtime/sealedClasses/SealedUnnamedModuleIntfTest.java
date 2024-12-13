@@ -63,9 +63,9 @@ public class SealedUnnamedModuleIntfTest {
             Class notPermitted = Class.forName("otherPkg.WrongPackageNotPublic");
             throw new RuntimeException("Expected IncompatibleClassChangeError exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().equals("Failed same run-time package check: non-public subclass otherPkg.WrongPackageNotPublic " +
-                                       "is in package \"otherPkg\" with classloader 'app',and sealed class Pkg.SealedInterface " +
-                                       "is in package \"Pkg\" with classloader 'app'")) {
+            if (!e.getMessage().equals("Failed same package check: non-public subclass otherPkg.WrongPackageNotPublic " +
+                                       "is in package 'otherPkg' with classloader 'app', and sealed class Pkg.SealedInterface " +
+                                       "is in package 'Pkg' with classloader 'app'")) {
                 throw new RuntimeException("Wrong IncompatibleClassChangeError exception thrown: " + e.getMessage());
             }
         }

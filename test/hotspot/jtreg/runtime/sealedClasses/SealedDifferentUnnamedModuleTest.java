@@ -46,9 +46,9 @@ public class SealedDifferentUnnamedModuleTest {
             Class<?> c2 = Class.forName("SealedSub");
             throw new RuntimeException("Expected IncompatibleClassChangeError exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().equals("Failed same module check: subclass SealedSub is in module \"unnamed module\" " +
-                                       "for loader 'app' and sealed class SealedSuper is in module \"unnamed module\" " +
-                                       "for loader 'bootstrap'")) {
+            if (!e.getMessage().equals("Failed same module check: subclass SealedSub is in module 'unnamed module' " +
+                                       "with loader 'app', and sealed class SealedSuper is in module 'unnamed module' " +
+                                       "with loader 'bootstrap'")) {
                 throw new RuntimeException("Wrong IncompatibleClassChangeError exception thrown: " + e.getMessage());
             }
         }

@@ -58,9 +58,9 @@ public class SealedUnnamedModuleTest {
             Class pluto = Class.forName("asteroids.Pluto");
             throw new RuntimeException("Expected IncompatibleClassChangeError exception not thrown");
         } catch (IncompatibleClassChangeError e) {
-            if (!e.getMessage().equals("Failed same run-time package check: non-public subclass asteroids.Pluto is " +
-                                       "in package \"asteroids\" with classloader 'app',and sealed class " +
-                                       "planets.OuterPlanets is in package \"planets\" with classloader 'app'")) {
+            if (!e.getMessage().equals("Failed same package check: non-public subclass asteroids.Pluto is " +
+                                       "in package 'asteroids' with classloader 'app', and sealed class " +
+                                       "planets.OuterPlanets is in package 'planets' with classloader 'app'")) {
                 throw new RuntimeException("Wrong IncompatibleClassChangeError exception thrown: " + e.getMessage());
             }
         }
