@@ -51,48 +51,57 @@ public class bug4506788 {
     private static volatile Point p;
     private static volatile Dimension dim;
     private static JEditorPane jep;
+    private static JFrame f;
 
     public static void main(final String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(100);
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
 
-        SwingUtilities.invokeAndWait(() -> createAndShowGUI());
+            SwingUtilities.invokeAndWait(() -> createAndShowGUI());
 
-        robot.waitForIdle();
-        robot.delay(1000);
+            robot.waitForIdle();
+            robot.delay(1000);
 
-        SwingUtilities.invokeAndWait(() -> {
-            p = jep.getLocationOnScreen();
-            dim = jep.getSize();
-        });
+            SwingUtilities.invokeAndWait(() -> {
+                p = jep.getLocationOnScreen();
+                dim = jep.getSize();
+            });
 
-        robot.mouseMove(p.x + dim.width / 2, p.y + dim.height / 2);
-        robot.waitForIdle();
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_HOME);
-        robot.keyRelease(KeyEvent.VK_HOME);
-        robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_RIGHT);
-        robot.keyRelease(KeyEvent.VK_RIGHT);
-        robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_X);
-        robot.keyRelease(KeyEvent.VK_X);
-        robot.waitForIdle();
-        robot.keyPress(KeyEvent.VK_RIGHT);
-        robot.keyRelease(KeyEvent.VK_RIGHT);
-        robot.waitForIdle();
+            robot.mouseMove(p.x + dim.width / 2, p.y + dim.height / 2);
+            robot.waitForIdle();
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_HOME);
+            robot.keyRelease(KeyEvent.VK_HOME);
+            robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_RIGHT);
+            robot.keyRelease(KeyEvent.VK_RIGHT);
+            robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_X);
+            robot.keyRelease(KeyEvent.VK_X);
+            robot.waitForIdle();
+            robot.keyPress(KeyEvent.VK_RIGHT);
+            robot.keyRelease(KeyEvent.VK_RIGHT);
+            robot.waitForIdle();
 
-        if (!passed) {
-            throw new RuntimeException("Test failed.");
+            if (!passed) {
+                throw new RuntimeException("Test failed.");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (f != null) {
+                    f.dispose();
+                }
+            });
         }
     }
 
     private static void createAndShowGUI() {
         jep = new JEditorPane();
         String text = "abc";
-        JFrame f = new JFrame("bug4506788");
+        f = new JFrame("bug4506788");
         jep.setEditorKit(new StyledEditorKit());
         jep.setText(text);
         jep.addCaretListener(new CaretListener() {
