@@ -160,11 +160,11 @@ Java_GetXSpace_getSpace0
     return totalSpaceIsEstimated;
 }
 
-#ifdef WINDOWS
 JNIEXPORT jboolean JNICALL
 Java_GetXSpace_isCDDrive
     (JNIEnv *env, jclass cls, jstring root)
 {
+#ifdef WINDOWS
     const jchar* strchars = (*env)->GetStringChars(env, root, NULL);
     if (strchars == NULL) {
         JNU_ThrowByNameWithLastError(env, "java/lang/RuntimeException",
@@ -182,9 +182,10 @@ Java_GetXSpace_isCDDrive
     }
 
     return JNI_TRUE;
-}
+#else
+    return JNI_FALSE;
 #endif
-
+}
 #ifdef __cplusplus
 }
 #endif
