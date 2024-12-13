@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public abstract class JdpTestCase {
                 socket.receive(datagram);
                 onReceived(extractUDPpayload(datagram));
             } catch (SocketTimeoutException e) {
-                onSocketTimeout(e); // throws Exception on failure
+                onSocketTimeout(e);
             }
 
             if (!shouldContinue()) {
