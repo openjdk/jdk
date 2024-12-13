@@ -33,6 +33,8 @@
   void fast_lock_lightweight(Register obj, Register box, Register temp1, Register temp2);
   void fast_unlock_lightweight(Register obj, Register box, Register temp1, Register temp2);
 
+  void load_narrow_klass_compact_c2(Register dst, Address src);
+
   //-------------------------------------------
   // Special String Intrinsics Implementation.
   //-------------------------------------------

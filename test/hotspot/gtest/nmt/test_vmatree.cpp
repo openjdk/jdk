@@ -31,7 +31,7 @@
 #include "unittest.hpp"
 
 using Tree = VMATree;
-using Node = Tree::TreapNode;
+using TNode = Tree::TreapNode;
 using NCS = NativeCallStackStorage;
 
 class NMTVMATreeTest : public testing::Test {
@@ -77,7 +77,7 @@ public:
 
   int count_nodes(Tree& tree) {
     int count = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       ++count;
     });
     return count;
@@ -130,7 +130,7 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       VMATree::StateType in = in_type_of(x);
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
@@ -155,7 +155,7 @@ public:
     };
 
     int i = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       if (i < 16) {
         found[i] = x->key();
       }
@@ -187,7 +187,7 @@ TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
   tree.reserve_mapping(0, 100, rd1);
   tree.commit_mapping(20, 50, rd2, true);
   tree.uncommit_mapping(30, 10, rd2);
-  tree.visit_in_order([&](Node* node) {
+  tree.visit_in_order([&](TNode* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
       if (node->key() != 20 && node->key() != 40) {
@@ -227,7 +227,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.regiondata().mem_tag, mtTest);
@@ -264,7 +264,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(0, 100, rd2);
-    treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
+    treap(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.regiondata().mem_tag);
       }
@@ -281,6 +281,188 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     EXPECT_EQ(nullptr, treap_root(tree));
     tree.commit_mapping(0, 0, rd);
     EXPECT_EQ(nullptr, treap_root(tree));
+  }
+}
+
+TEST_VM_F(NMTVMATreeTest, SetTag) {
+  using State = VMATree::StateType;
+  struct testrange {
+    VMATree::position from;
+    VMATree::position to;
+    MemTag tag;
+    NCS::StackIndex stack;
+    State state;
+  };
+
+  // Take a sorted list of testranges and check that those and only those are found in the tree.
+  auto expect_equivalent_form = [&](auto& expected, VMATree& tree) {
+    // With auto& our arrays do not deteriorate to pointers but are kept as testrange[N]
+    // so this actually works!
+    int len = sizeof(expected) / sizeof(testrange);
+    VMATree::position previous_to = 0;
+    for (int i = 0; i < len; i++) {
+      testrange expect = expected[i];
+      assert(previous_to == 0 || previous_to <= expect.from, "the expected list must be sorted");
+      previous_to = expect.to;
+
+      VMATree::VMATreap::Range found = tree.tree().find_enclosing_range(expect.from);
+      ASSERT_NE(nullptr, found.start);
+      ASSERT_NE(nullptr, found.end);
+      // Same region
+      EXPECT_EQ(expect.from, found.start->key());
+      EXPECT_EQ(expect.to, found.end->key());
+      // Same tag
+      EXPECT_EQ(expect.tag, found.start->val().out.mem_tag());
+      EXPECT_EQ(expect.tag, found.end->val().in.mem_tag());
+      // Same stack
+      EXPECT_EQ(expect.stack, found.start->val().out.stack());
+      EXPECT_EQ(expect.stack, found.end->val().in.stack());
+      // Same state
+      EXPECT_EQ(expect.state, found.start->val().out.type());
+      EXPECT_EQ(expect.state, found.end->val().in.type());
+    }
+    // expected must cover all nodes
+    EXPECT_EQ(len+1, tree.tree().size());
+  };
+  NCS::StackIndex si = NCS::StackIndex();
+  Tree::RegionData rd(si, mtNone);
+
+  { // The gc/cds case with only reserved data
+    testrange expected[2]{
+        {  0, 500,          mtGC, si, State::Reserved},
+        {500, 600, mtClassShared, si, State::Reserved}
+    };
+    VMATree tree;
+
+    tree.reserve_mapping(0, 600, rd);
+
+    tree.set_tag(0, 500, mtGC);
+    tree.set_tag(500, 100, mtClassShared);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Now let's add in some committed data
+    testrange expected[]{
+        {  0, 100,          mtGC, si, State::Reserved},
+        {100, 225,          mtGC, si, State::Committed},
+        {225, 500,          mtGC, si, State::Reserved},
+        {500, 550, mtClassShared, si, State::Reserved},
+        {550, 560, mtClassShared, si, State::Committed},
+        {560, 565, mtClassShared, si, State::Reserved},
+        {565, 575, mtClassShared, si, State::Committed},
+        {575, 600, mtClassShared, si, State::Reserved}
+    };
+    VMATree tree;
+
+    tree.reserve_mapping(0, 600, rd);
+    // The committed areas
+    tree.commit_mapping(100, 125, rd);
+    tree.commit_mapping(550, 10, rd);
+    tree.commit_mapping(565, 10, rd);
+    // OK, set tag
+    tree.set_tag(0, 500, mtGC);
+    tree.set_tag(500, 100, mtClassShared);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag for adjacent regions with same stacks should merge the regions
+    testrange expected[]{
+        {0, 200, mtGC, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData gc(si, mtGC);
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(0, 200, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag for adjacent regions with different stacks should NOT merge the regions
+    NCS::StackIndex si1 = 1;
+    NCS::StackIndex si2 = 2;
+    testrange expected[]{
+        {  0, 100, mtGC, si1, State::Reserved},
+        {100, 200, mtGC, si2, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData gc(si1, mtGC);
+    Tree::RegionData compiler(si2, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(0, 200, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag in the middle of a range causes a split
+    testrange expected[]{
+        {  0, 100, mtCompiler, si, State::Reserved},
+        {100, 150,       mtGC, si, State::Reserved},
+        {150, 200, mtCompiler, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 200, compiler);
+    tree.set_tag(100, 50, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Setting the tag in between two ranges causes a split
+    testrange expected[]{
+        {  0,  75,       mtGC, si, State::Reserved},
+        { 75, 125,    mtClass, si, State::Reserved},
+        {125, 200, mtCompiler, si, State::Reserved},
+    };
+    VMATree tree;
+    Tree::RegionData gc(si, mtGC);
+    Tree::RegionData compiler(si, mtCompiler);
+    tree.reserve_mapping(0, 100, gc);
+    tree.reserve_mapping(100, 100, compiler);
+    tree.set_tag(75, 50, mtClass);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Holes in the address range are acceptable and untouched
+    testrange expected[]{
+        { 0,  50,          mtGC, si, State::Reserved},
+        {50,  75,        mtNone, si, State::Released},
+        {75,  80,          mtGC, si, State::Reserved},
+        {80, 100, mtClassShared, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(0, 50, class_shared);
+    tree.reserve_mapping(75, 25, class_shared);
+    tree.set_tag(0, 80, mtGC);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Check that setting tag with 'hole' not consisting of any regions work
+    testrange expected[]{
+        {10, 20, mtCompiler, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(10, 10, class_shared);
+    tree.set_tag(0, 100, mtCompiler);
+    expect_equivalent_form(expected, tree);
+  }
+
+  { // Check that multiple holes still work
+    testrange expected[]{
+        { 0,   1,   mtGC, si, State::Reserved},
+        { 1,  50, mtNone, si, State::Released},
+        {50,  75,   mtGC, si, State::Reserved},
+        {75,  99, mtNone, si, State::Released},
+        {99, 100,   mtGC, si, State::Reserved}
+    };
+    VMATree tree;
+    Tree::RegionData class_shared(si, mtClassShared);
+    tree.reserve_mapping(0, 100, class_shared);
+    tree.release_mapping(1, 49);
+    tree.release_mapping(75, 24);
+    tree.set_tag(0, 100, mtGC);
+    expect_equivalent_form(expected, tree);
   }
 }
 
@@ -330,7 +512,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
   }
-  { // Adjacent reserved mappings with different flags
+  { // Adjacent reserved mappings with different tags
   Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;

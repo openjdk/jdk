@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,10 +357,12 @@ public class CipherInputStreamExceptions {
     static byte[] encryptedText(String mode, byte[] pt) throws Exception{
         Cipher c;
         if (mode.compareTo("GCM") == 0) {
-            c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+            c = Cipher.getInstance("AES/GCM/NoPadding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             c.init(Cipher.ENCRYPT_MODE, key, gcmspec);
         } else if (mode.compareTo("CBC") == 0) {
-            c = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+            c = Cipher.getInstance("AES/CBC/PKCS5Padding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             c.init(Cipher.ENCRYPT_MODE, key, iv);
         } else {
             return null;
@@ -380,10 +382,12 @@ public class CipherInputStreamExceptions {
         Cipher c;
 
         if (mode.compareTo("GCM") == 0) {
-            c = Cipher.getInstance("AES/GCM/NoPadding", "SunJCE");
+            c = Cipher.getInstance("AES/GCM/NoPadding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             c.init(Cipher.DECRYPT_MODE, key, gcmspec);
         } else if (mode.compareTo("CBC") == 0) {
-            c = Cipher.getInstance("AES/CBC/PKCS5Padding", "SunJCE");
+            c = Cipher.getInstance("AES/CBC/PKCS5Padding",
+                    System.getProperty("test.provider.name", "SunJCE"));
             c.init(Cipher.DECRYPT_MODE, key, iv);
         } else {
             return null;

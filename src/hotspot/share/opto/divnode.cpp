@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,6 +447,47 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
   return q;
 }
 
+template <typename TypeClass, typename Unsigned>
+Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
+  // Check for dead control input
+  if (div->in(0) != nullptr && div->remove_dead_region(phase, can_reshape)) {
+    return div;
+  }
+  // Don't bother trying to transform a dead node
+  if (div->in(0) != nullptr && div->in(0)->is_top()) {
+    return nullptr;
+  }
+
+  const Type* t = phase->type(div->in(2));
+  if (t == Type::TOP) {
+    return nullptr;
+  }
+  const TypeClass* type_divisor = t->cast<TypeClass>();
+
+  // Check for useless control input
+  // Check for excluding div-zero case
+  if (div->in(0) != nullptr && (type_divisor->_hi < 0 || type_divisor->_lo > 0)) {
+    div->set_req(0, nullptr); // Yank control input
+    return div;
+  }
+
+  if (!type_divisor->is_con()) {
+    return nullptr;
+  }
+  Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con()); // Get divisor
+
+  if (divisor == 0 || divisor == 1) {
+    return nullptr; // Dividing by zero constant does not idealize
+  }
+
+  if (is_power_of_2(divisor)) {
+    return make_urshift<TypeClass>(div->in(1), phase->intcon(log2i_graceful(divisor)));
+  }
+
+  return nullptr;
+}
+
+
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If the divisor is 1, we are an identity on the dividend.
@@ -873,11 +914,8 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  return nullptr;
+  return unsigned_div_ideal<TypeInt, juint>(phase, can_reshape, this);
 }
-
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -912,11 +950,8 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if (in(0) && remove_dead_region(phase, can_reshape))  return this;
-  return nullptr;
+  return unsigned_div_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
-
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
@@ -1084,10 +1119,96 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
-Node *UModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+
+template <typename TypeClass, typename Unsigned>
+static Node* unsigned_mod_ideal(PhaseGVN* phase, bool can_reshape, Node* mod) {
   // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+  if (mod->in(0) != nullptr && mod->remove_dead_region(phase, can_reshape)) {
+    return mod;
+  }
+  // Don't bother trying to transform a dead node
+  if (mod->in(0) != nullptr && mod->in(0)->is_top()) {
+    return nullptr;
+  }
+
+  // Get the modulus
+  const Type* t = phase->type(mod->in(2));
+  if (t == Type::TOP) {
+    return nullptr;
+  }
+  const TypeClass* type_divisor = t->cast<TypeClass>();
+
+  // Check for useless control input
+  // Check for excluding mod-zero case
+  if (mod->in(0) != nullptr && (type_divisor->_hi < 0 || type_divisor->_lo > 0)) {
+    mod->set_req(0, nullptr); // Yank control input
+    return mod;
+  }
+
+  if (!type_divisor->is_con()) {
+    return nullptr;
+  }
+  Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con());
+
+  if (divisor == 0) {
+    return nullptr;
+  }
+
+  if (is_power_of_2(divisor)) {
+    return make_and<TypeClass>(mod->in(1), phase->makecon(TypeClass::make(divisor - 1)));
+  }
+
   return nullptr;
+}
+
+template <typename TypeClass, typename Unsigned, typename Signed>
+static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
+  const Type* t1 = phase->type(mod->in(1));
+  const Type* t2 = phase->type(mod->in(2));
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  if (t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  // 0 MOD X is 0
+  if (t1 == TypeClass::ZERO) {
+    return TypeClass::ZERO;
+  }
+  // X MOD X is 0
+  if (mod->in(1) == mod->in(2)) {
+    return TypeClass::ZERO;
+  }
+
+  // Either input is BOTTOM ==> the result is the local BOTTOM
+  const Type* bot = mod->bottom_type();
+  if ((t1 == bot) || (t2 == bot) ||
+      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
+    return bot;
+  }
+
+  const TypeClass* type_divisor = t2->cast<TypeClass>();
+  if (type_divisor->is_con() && type_divisor->get_con() == 1) {
+    return TypeClass::ZERO;
+  }
+
+  const TypeClass* type_dividend = t1->cast<TypeClass>();
+  if (type_dividend->is_con() && type_divisor->is_con()) {
+    Unsigned dividend = static_cast<Unsigned>(type_dividend->get_con());
+    Unsigned divisor = static_cast<Unsigned>(type_divisor->get_con());
+    return TypeClass::make(static_cast<Signed>(dividend % divisor));
+  }
+
+  return bot;
+}
+
+Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return unsigned_mod_ideal<TypeInt, juint>(phase, can_reshape, this);
+}
+
+const Type* UModINode::Value(PhaseGVN* phase) const {
+  return unsigned_mod_value<TypeInt, juint, jint>(phase, this);
 }
 
 //=============================================================================
@@ -1303,11 +1424,12 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
-  return nullptr;
+  return unsigned_mod_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
 
+const Type* UModLNode::Value(PhaseGVN* phase) const {
+  return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
+}
 
 //=============================================================================
 //------------------------------Value------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,11 +37,9 @@ import jdk.internal.misc.VM.BufferPool;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
 import java.util.List;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -780,6 +778,23 @@ public abstract sealed class Buffer
         return Preconditions.checkIndex(i, limit - nb + 1, IOOBE_FORMATTER);
     }
 
+    /**
+     * {@return the scale shifts for this Buffer}
+     * <p>
+     * The scale shifts are:
+     *   ByteBuffer:               0
+     *   ShortBuffer, CharBuffer:  1
+     *   IntBuffer, FloatBuffer:   2
+     *   LongBuffer, DoubleBuffer: 3
+     */
+    abstract int scaleShifts();
+
+    abstract AbstractMemorySegmentImpl heapSegment(Object base,
+                                                   long offset,
+                                                   long length,
+                                                   boolean readOnly,
+                                                   MemorySessionImpl bufferScope);
+
     final int markValue() {                             // package-private
         return mark;
     }
@@ -832,6 +847,12 @@ public abstract sealed class Buffer
                     return new HeapByteBuffer(hb, -1, 0, capacity, capacity, offset, segment);
                 }
 
+                @Override
+                public ByteBuffer newDirectByteBuffer(long addr, int cap) {
+                    return new DirectByteBuffer(addr, cap);
+                }
+
+                @ForceInline
                 @Override
                 public Object getBufferBase(Buffer buffer) {
                     return buffer.base();
@@ -905,6 +926,23 @@ public abstract sealed class Buffer
                 @Override
                 public int pageSize() {
                     return Bits.pageSize();
+                }
+
+                @ForceInline
+                @Override
+                public int scaleShifts(Buffer buffer) {
+                    return buffer.scaleShifts();
+                }
+
+                @ForceInline
+                @Override
+                public AbstractMemorySegmentImpl heapSegment(Buffer buffer,
+                                                             Object base,
+                                                             long offset,
+                                                             long length,
+                                                             boolean readOnly,
+                                                             MemorySessionImpl bufferScope) {
+                    return buffer.heapSegment(base, offset, length, readOnly, bufferScope);
                 }
             });
     }

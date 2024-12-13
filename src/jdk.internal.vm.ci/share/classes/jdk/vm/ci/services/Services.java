@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,10 +86,12 @@ public final class Services {
     }
 
     /**
-     * Gets an unmodifiable copy of the system properties parsed by {@code arguments.cpp}
-     * plus {@code java.specification.version}, {@code os.name} and {@code os.arch}.
-     * The latter two are forced to be the real OS and architecture. That is, values
-     * for these two properties set on the command line are ignored.
+     * Gets an unmodifiable copy of the system properties as of VM startup.
+     *
+     * If running on Hotspot, this will be the system properties parsed by {@code arguments.cpp}
+     * plus {@code java.specification.version}, {@code os.name} and {@code os.arch}. The latter two
+     * are forced to be the real OS and architecture. That is, values for these two properties set
+     * on the command line are ignored.
      */
     public static Map<String, String> getSavedProperties() {
         checkJVMCIEnabled();

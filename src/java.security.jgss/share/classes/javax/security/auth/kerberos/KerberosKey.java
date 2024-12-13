@@ -61,15 +61,6 @@ import javax.security.auth.DestroyFailedException;
  * A Kerberos service using a keytab to read secret keys should use
  * the {@link KeyTab} class, where latest keys can be read when needed.<p>
  *
- * It might be necessary for the application to be granted a
- * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access the {@code KerberosKey}
- * instance from a Subject. This permission is not needed when the
- * application depends on the default JGSS Kerberos mechanism to access the
- * {@code KerberosKey}. In that case, however, the application will need an
- * appropriate
- * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.<p>
- *
  * When creating a {@code KerberosKey} using the
  * {@link #KerberosKey(KerberosPrincipal, char[], String)} constructor,
  * an implementation may accept non-IANA algorithm names (For example,

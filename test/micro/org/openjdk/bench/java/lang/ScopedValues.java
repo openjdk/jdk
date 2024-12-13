@@ -40,7 +40,7 @@ import static org.openjdk.bench.java.lang.ScopedValuesData.*;
 @Measurement(iterations=10, time=1)
 @Threads(1)
 @Fork(value = 1,
-      jvmArgsPrepend = {"-Djmh.executor.class=org.openjdk.bench.java.lang.ScopedValuesExecutorService",
+      jvmArgs = {"-Djmh.executor.class=org.openjdk.bench.java.lang.ScopedValuesExecutorService",
                         "-Djmh.executor=CUSTOM",
                         "-Djmh.blackhole.mode=COMPILER",
                         "--enable-preview"})
