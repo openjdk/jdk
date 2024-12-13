@@ -226,16 +226,16 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
 
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::do_partial_array(PartialArrayState* state, bool stolen) {
-  // Access state before release by step.
+  // Access state before release by claim().
   objArrayOop to_array = objArrayOop(state->destination());
-  PartialArraySplitter::Step step =
-    _partial_array_splitter.step(state, _task_queue, stolen);
+  PartialArraySplitter::Claim claim =
+    _partial_array_splitter.claim(state, _task_queue, stolen);
   G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
   G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
   // Process claimed task.
   to_array->oop_iterate_range(&_scanner,
-                              checked_cast<int>(step._start),
-                              checked_cast<int>(step._end));
+                              checked_cast<int>(claim._start),
+                              checked_cast<int>(claim._end));
 }
 
 MAYBE_INLINE_EVACUATION

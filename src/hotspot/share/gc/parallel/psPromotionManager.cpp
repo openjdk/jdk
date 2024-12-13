@@ -270,12 +270,12 @@ void PSPromotionManager::process_array_chunk_work(oop obj, int start, int end) {
 }
 
 void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
-  // Access before release by step.
+  // Access before release by claim().
   oop new_obj = state->destination();
-  PartialArraySplitter::Step step =
-    _partial_array_splitter.step(state, &_claimed_stack_depth, stolen);
-  int start = checked_cast<int>(step._start);
-  int end = checked_cast<int>(step._end);
+  PartialArraySplitter::Claim claim =
+    _partial_array_splitter.claim(state, &_claimed_stack_depth, stolen);
+  int start = checked_cast<int>(claim._start);
+  int end = checked_cast<int>(claim._end);
   if (UseCompressedOops) {
     process_array_chunk_work<narrowOop>(new_obj, start, end);
   } else {

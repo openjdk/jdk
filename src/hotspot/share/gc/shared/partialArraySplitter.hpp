@@ -77,9 +77,9 @@ public:
                objArrayOop to_array,
                size_t length);
 
-  // Result type for the step function, carrying multiple values.
-  // Provides the claimed chunk's start and end array indices.
-  struct Step {
+  // Result type for claim(), carrying multiple values.  Provides the claimed
+  // chunk's start and end array indices.
+  struct Claim {
     size_t _start;
     size_t _end;
   };
@@ -97,7 +97,7 @@ public:
   // stolen indicates whether the state task was obtained from this queue or
   // stolen from some other queue.
   template<typename Queue>
-  Step step(PartialArrayState* state, Queue* queue, bool stolen);
+  Claim claim(PartialArrayState* state, Queue* queue, bool stolen);
 
   TASKQUEUE_STATS_ONLY(PartialArrayTaskStats* stats();)
 };

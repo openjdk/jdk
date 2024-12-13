@@ -57,8 +57,8 @@ size_t PartialArraySplitter::start(Queue* queue,
 }
 
 template<typename Queue>
-PartialArraySplitter::Step
-PartialArraySplitter::step(PartialArrayState* state, Queue* queue, bool stolen) {
+PartialArraySplitter::Claim
+PartialArraySplitter::claim(PartialArrayState* state, Queue* queue, bool stolen) {
 #if TASKQUEUE_STATS
   if (stolen) _stats.inc_stolen();
   _stats.inc_processed();
@@ -77,7 +77,7 @@ PartialArraySplitter::step(PartialArrayState* state, Queue* queue, bool stolen) 
   }
   // Release state, decrementing refcount, now that we're done with it.
   _allocator.release(state);
-  return Step{step._index, step._index + _stepper.chunk_size()};
+  return Claim{step._index, step._index + _stepper.chunk_size()};
 }
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYSPLITTER_INLINE_HPP
