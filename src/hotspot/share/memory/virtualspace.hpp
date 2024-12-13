@@ -26,6 +26,7 @@
 #define SHARE_MEMORY_VIRTUALSPACE_HPP
 
 #include "memory/memRegion.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -61,16 +62,16 @@ class ReservedSpace {
                           size_t page_size, bool special, bool executable);
 
   void initialize(size_t size, size_t alignment, size_t page_size,
-                  char* requested_address, bool executable);
+                  char* requested_address, bool executable, MemTag mem_tag = mtNone);
 
   void reserve(size_t size, size_t alignment, size_t page_size,
-               char* requested_address, bool executable);
+               char* requested_address, bool executable, MemTag mem_tag);
  public:
   // Constructor
   ReservedSpace();
   // Initialize the reserved space with the given size. Depending on the size
   // a suitable page size and alignment will be used.
-  explicit ReservedSpace(size_t size);
+  ReservedSpace(size_t size, MemTag mem_tag);
   // Initialize the reserved space with the given size. The preferred_page_size
   // is used as the minimum page size/alignment. This may waste some space if
   // the given size is not aligned to that value, as the reservation will be
@@ -102,10 +103,6 @@ class ReservedSpace {
   inline ReservedSpace last_part (size_t partition_size);
   inline ReservedSpace partition (size_t offset, size_t partition_size);
 
-  // Alignment
-  static size_t page_align_size_up(size_t size);
-  static size_t page_align_size_down(size_t size);
-  static size_t allocation_align_size_up(size_t size);
   bool contains(const void* p) const {
     return (base() <= ((char*)p)) && (((char*)p) < (base() + size()));
   }

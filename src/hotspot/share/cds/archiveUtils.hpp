@@ -33,6 +33,8 @@
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/nonJavaThread.hpp"
+#include "runtime/semaphore.hpp"
 
 class BootstrapInfo;
 class ReservedSpace;
@@ -342,6 +344,76 @@ public:
   // This class is trivially copyable and assignable.
   HeapRootSegments(const HeapRootSegments&) = default;
   HeapRootSegments& operator=(const HeapRootSegments&) = default;
+};
+
+class ArchiveWorkers;
+
+// A task to be worked on by worker threads
+class ArchiveWorkerTask : public CHeapObj<mtInternal> {
+  friend class ArchiveWorkers;
+private:
+  const char* _name;
+  int _max_chunks;
+  volatile int _chunk;
+
+  void run();
+
+  void configure_max_chunks(int max_chunks);
+
+public:
+  ArchiveWorkerTask(const char* name) :
+      _name(name), _max_chunks(0), _chunk(0) {}
+  const char* name() const { return _name; }
+  virtual void work(int chunk, int max_chunks) = 0;
+};
+
+class ArchiveWorkerThread : public NamedThread {
+  friend class ArchiveWorkers;
+private:
+  ArchiveWorkers* const _pool;
+
+  void post_run() override;
+
+public:
+  ArchiveWorkerThread(ArchiveWorkers* pool);
+  const char* type_name() const override { return "Archive Worker Thread"; }
+  void run() override;
+};
+
+// Special archive workers. The goal for this implementation is to startup fast,
+// distribute spiky workloads efficiently, and shutdown immediately after use.
+// This makes the implementation quite different from the normal GC worker pool.
+class ArchiveWorkers : public StackObj {
+  friend class ArchiveWorkerThread;
+private:
+  // Target number of chunks per worker. This should be large enough to even
+  // out work imbalance, and small enough to keep bookkeeping overheads low.
+  static constexpr int CHUNKS_PER_WORKER = 4;
+  static int max_workers();
+
+  Semaphore _end_semaphore;
+
+  int _num_workers;
+  int _started_workers;
+  int _finish_tokens;
+
+  typedef enum { UNUSED, WORKING, SHUTDOWN } State;
+  volatile State _state;
+
+  ArchiveWorkerTask* _task;
+
+  void run_as_worker();
+  void start_worker_if_needed();
+
+  void run_task_single(ArchiveWorkerTask* task);
+  void run_task_multi(ArchiveWorkerTask* task);
+
+  bool is_parallel();
+
+public:
+  ArchiveWorkers();
+  ~ArchiveWorkers();
+  void run_task(ArchiveWorkerTask* task);
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

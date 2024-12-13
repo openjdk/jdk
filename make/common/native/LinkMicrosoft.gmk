@@ -54,7 +54,8 @@ define CreateStaticLibraryMicrosoft
 	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_lib, \
 	    $$($1_LIB) -nologo $$(LIBFLAGS) -out:$$($1_TARGET) \
-	        $$($1_LD_OBJ_ARG) $$($1_RES))
+	        $$($1_LD_OBJ_ARG))
+	$$(ECHO) $$(strip $$($1_LIBS) $$($1_EXTRA_LIBS)) > $$($1_TARGET).lib-flags.txt
 endef
 
 ################################################################################
