@@ -443,7 +443,7 @@ void ReservedHeapSpace::try_reserve_range(char *highest_start,
   while (attach_point >= lowest_start  &&
          attach_point <= highest_start &&  // Avoid wrap around.
          ((_base == nullptr) ||
-          (_base < aligned_heap_base_min_address || _base + size > upper_bound))) {
+          (_base < aligned_heap_base_min_address || size > (uintptr_t)(upper_bound - _base)))) {
     try_reserve_heap(size, alignment, page_size, attach_point);
     attach_point -= stepsize;
   }
