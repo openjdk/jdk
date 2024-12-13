@@ -77,8 +77,4 @@ public abstract class DynamicLauncher {
     }
 
     protected abstract String[] options();
-
-    protected OutputAnalyzer getProcessOutputAnalyzer() {
-        return output;
-    }
 }
