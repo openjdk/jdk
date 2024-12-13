@@ -3056,7 +3056,7 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
   CodeCache::arm_all_nmethods();
 }
 
-void G1CollectedHeap::prepare_group_cardsets_for_scan () {
+void G1CollectedHeap::prepare_group_cardsets_for_scan() {
   young_regions_cardset()->reset_table_scanner_for_groups();
 
   collection_set()->prepare_groups_for_scan();
