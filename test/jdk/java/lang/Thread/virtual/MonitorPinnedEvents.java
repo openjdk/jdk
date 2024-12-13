@@ -23,14 +23,16 @@
 
 /*
  * @test
- * @summary Test duration of JFR event jdk.VirtualThreadPinned
+ * @summary Test JFR jdk.VirtualThreadPinned event recorded for contended monitor enter
+ *     and Object.wait when pinned
  * @requires vm.continuations
  * @modules jdk.jfr jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED PinnedEventDuration
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED MonitorPinnedEvents
  */
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +45,7 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordedFrame;
 import jdk.jfr.consumer.RecordedMethod;
+import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordingFile;
 
 import jdk.test.lib.thread.VThreadPinner;
@@ -53,11 +56,19 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
-class PinnedEventDuration {
-    private static final int DELAY = 2000; // 2s
+class MonitorPinnedEvents {
+    // log to System.err so inlined with JUnit output
+    private static final PrintStream log = System.err;
 
-    // tolerate durations of up to 10ms less than expected
-    private static final int TOLERANCE = 10;
+    // expected values for "blockingOperation" field in event
+    private static final String CONTENDED_MONITOR_ENTER = "Contended monitor enter";
+    private static final String OBJECT_WAIT = "Object.wait";
+
+    // expected value for "pinnedReason" field in event
+    private static final String NATIVE_FRAME = "Native or VM frame on stack";
+
+    // block or wait for 2s to allow minimum event duration be tested
+    private static final int DELAY = 2000;
 
     @BeforeAll
     static void setup() {
@@ -73,32 +84,34 @@ class PinnedEventDuration {
         try (Recording recording = new Recording()) {
             recording.enable("jdk.VirtualThreadPinned");
             recording.start();
+
+            Thread vthread;
             try {
                 Object lock = new Object();
-                Thread thread;
+
                 synchronized (lock) {
+                    // start virtual that blocks trying to acquire monitor while pinned
                     var ready = new AtomicBoolean();
-                    thread = Thread.ofVirtual().start(() -> {
+                    vthread = Thread.ofVirtual().start(() -> {
                         VThreadPinner.runPinned(() -> {
                             ready.set(true);
                             synchronized (lock) {   // <--- blocks here while pinned
                             }
                         });
                     });
-                    // wait for virtual thread to start and block
-                    await(ready, thread, Thread.State.BLOCKED);
+                    await(ready, vthread, Thread.State.BLOCKED);
 
                     // sleep before releasing to ensure virtual thread is blocked for >= 2s
                     Thread.sleep(DELAY);
                 }
-                thread.join();
+                vthread.join();
             } finally {
                 recording.stop();
             }
 
-            // jdk.VirtualThreadPinned event should be recorded with duration >= 2s
+            // jdk.VirtualThreadPinned event should be recorded
             RecordedEvent event = findPinnedEvent(recording);
-            assertPinnedDurationGte(event, DELAY - TOLERANCE);
+            testEvent(event, vthread, CONTENDED_MONITOR_ENTER, NATIVE_FRAME, DELAY);
         }
     }
 
@@ -117,14 +130,15 @@ class PinnedEventDuration {
             // the thread that acquires the monitor after the main thread releases it
             var nextOwner = new AtomicReference<Thread>();
 
+            Thread vthread;
             try {
                 Object lock = new Object();
-                Thread thread1, thread2;
+                Thread thread2;
                 synchronized (lock) {
 
-                    // start virtual thread that blocks trying to acquire lock while pinned
+                    // start virtual that blocks trying to acquire monitor while pinned
                     var ready1 = new AtomicBoolean();
-                    thread1 = Thread.ofVirtual().start(() -> {
+                    vthread = Thread.ofVirtual().start(() -> {
                         VThreadPinner.runPinned(() -> {
                             ready1.set(true);
                             synchronized (lock) {   // <--- blocks here while pinned
@@ -132,10 +146,9 @@ class PinnedEventDuration {
                             }
                         });
                     });
-                    // wait for virtual thread to start and block trying to acquire lock
-                    await(ready1, thread1, Thread.State.BLOCKED);
+                    await(ready1, vthread, Thread.State.BLOCKED);
 
-                    // start platform thread that blocks trying to acquire lock
+                    // start platform thread that blocks trying to acquire monitor
                     thread2 = Thread.ofPlatform().start(() -> {
                         synchronized (lock) {
                             if (nextOwner.compareAndSet(null, Thread.currentThread())) {
@@ -148,21 +161,22 @@ class PinnedEventDuration {
                         }
                     });
 
-                }  // release lock, thread1 or thread2 will acquire
+                }  // release lock, vthread or thread2 will acquire
 
-                thread1.join();
+                vthread.join();
                 thread2.join();
             } finally {
                 recording.stop();
             }
 
-            // If the platform thread acquired the monitor before the virtual thread
-            // entered then the jdk.VirtualThreadPinned event should be recorded
-            // with duration >= DELAY.
+            // jdk.VirtualThreadPinned event should be recorded. If the platform thread
+            // acquired the monitor before the virtual thread then the event duration
+            // should be >= DELAY.
             RecordedEvent event = findPinnedEvent(recording);
             Thread winner = nextOwner.get();
             assertNotNull(winner);
-            assertPinnedDurationGte(event, winner.isVirtual() ? 0 : (DELAY - TOLERANCE));
+            int minDuration = winner.isVirtual() ? 0 : DELAY;
+            testEvent(event, vthread, CONTENDED_MONITOR_ENTER, NATIVE_FRAME, minDuration);
         }
     }
 
@@ -193,11 +207,14 @@ class PinnedEventDuration {
         try (Recording recording = new Recording()) {
             recording.enable("jdk.VirtualThreadPinned");
             recording.start();
+
+            Thread vthread;
             try {
                 Object lock = new Object();
 
+                // start virtual that waits in Object.wait while pinned
                 var ready = new AtomicBoolean();
-                var thread = Thread.ofVirtual().start(() -> {
+                vthread = Thread.ofVirtual().start(() -> {
                     VThreadPinner.runPinned(() -> {
                         synchronized (lock) {
                             ready.set(true);
@@ -213,28 +230,27 @@ class PinnedEventDuration {
                         }
                     });
                 });
-                // wait for virtual thread to start and wait in Object.wait
-                await(ready, thread, timed ? Thread.State.TIMED_WAITING : Thread.State.WAITING);
+                await(ready, vthread, timed ? Thread.State.TIMED_WAITING : Thread.State.WAITING);
 
                 // sleep to ensure virtual thread waits for >= 2s
                 Thread.sleep(DELAY);
 
                 // interrupt or notify thread so it resumes execution
                 if (interrupt) {
-                    thread.interrupt();
+                    vthread.interrupt();
                 } else {
                     synchronized (lock) {
                         lock.notify();
                     }
                 }
-                thread.join();
+                vthread.join();
             } finally {
                 recording.stop();
             }
 
-            // jdk.VirtualThreadPinned event should be recorded with duration >= 2s
+            // jdk.VirtualThreadPinned event should be recorded
             RecordedEvent event = findPinnedEvent(recording);
-            assertPinnedDurationGte(event, DELAY - TOLERANCE);
+            testEvent(event, vthread, OBJECT_WAIT, NATIVE_FRAME, DELAY);
         }
     }
 
@@ -276,12 +292,13 @@ class PinnedEventDuration {
             // the thread that acquires the monitor after the main thread releases it
             var nextOwner = new AtomicReference<Thread>();
 
+            Thread vthread;
             try {
                 Object lock = new Object();
 
-                // virtual thread waits in Object.wait
+                // start virtual that waits in Object.wait while pinned
                 var ready1 = new AtomicBoolean();
-                Thread thread1 = Thread.ofVirtual().start(() -> {
+                vthread = Thread.ofVirtual().start(() -> {
                     VThreadPinner.runPinned(() -> {
                         boolean notify = !interrupt;
                         synchronized (lock) {
@@ -304,8 +321,7 @@ class PinnedEventDuration {
                         }
                     });
                 });
-                // wait for virtual thread to start and wait in Object.wait
-                await(ready1, thread1, timed ? Thread.State.TIMED_WAITING : Thread.State.WAITING);
+                await(ready1, vthread, timed ? Thread.State.TIMED_WAITING : Thread.State.WAITING);
 
                 // platform thread that blocks on monitor enter
                 Thread thread2;
@@ -324,7 +340,7 @@ class PinnedEventDuration {
 
                     // interrupt/notify and release monitor to allow one of the threads to acquire
                     if (interrupt) {
-                        thread1.interrupt();
+                        vthread.interrupt();
                     } else {
                         synchronized (lock) {
                             lock.notify();
@@ -332,45 +348,63 @@ class PinnedEventDuration {
                     }
                 }
 
-                thread1.join();
+                vthread.join();
                 thread2.join();
 
             } finally {
                 recording.stop();
             }
 
-            // If the platform thread acquired the monitor before the virtual thread
-            // re-entered then the jdk.VirtualThreadPinned event should be recorded
-            // with duration >= DELAY.
+            // jdk.VirtualThreadPinned event should be recorded. If the platform thread
+            // acquired the monitor before the virtual thread re-entered then the event
+            // duration should be >= DELAY.
             RecordedEvent event = findPinnedEvent(recording);
             Thread winner = nextOwner.get();
             assertNotNull(winner);
-            assertPinnedDurationGte(event, winner.isVirtual() ? 0 : (DELAY - TOLERANCE));
+            int minDuration = winner.isVirtual() ? 0 : DELAY;
+            testEvent(event, vthread, OBJECT_WAIT, NATIVE_FRAME, minDuration);
         }
     }
 
     /**
-     * Test that the event's duration is >= minDuration.
+     * Test that the event was recorded by the expected virtual thread, the event has a
+     * "carrierThread", the "blockingOperation", and "pinnedReason" fields have the
+     * expected values, and the event duration is >= minDuration.
      */
-    private void assertPinnedDurationGte(RecordedEvent event, int minDuration) {
+    private void testEvent(RecordedEvent event,
+                           Thread vthread,
+                           String expectedBlockingOp,
+                           String expectedPinnedReason,
+                           int minDuration) {
+        assertTrue(vthread.isVirtual());
+        assertEquals(vthread.threadId(), event.getThread().getId());
+
+        RecordedThread carrier = event.getValue("carrierThread");
+        assertFalse(carrier.isVirtual());
+
+        assertEquals(expectedBlockingOp, event.getString("blockingOperation"));
+        assertEquals(expectedPinnedReason, event.getString("pinnedReason"));
+
         long duration = event.getDuration().toMillis();
         assertTrue(duration >= minDuration,
                 "Duration " + duration + "ms, expected >= " + minDuration + "ms");
     }
 
     /**
-     * Find the expected jdk.VirtualThreadPinned event in the recording.
+     * Find the expected jdk.VirtualThreadPinned event in the recording. There may be
+     * several pinned events recorded by other parts of the system that need to be
+     * filtered out.
      */
     private RecordedEvent findPinnedEvent(Recording recording) throws IOException {
         Map<Boolean, List<RecordedEvent>> events = find(recording, "jdk.VirtualThreadPinned")
                 .collect(Collectors.partitioningBy(e -> filtered(topFrameMethod(e)), Collectors.toList()));
         List<RecordedEvent> filteredEvents = events.get(Boolean.TRUE);
         List<RecordedEvent> pinnedEvents = events.get(Boolean.FALSE);
-        System.err.format("%d event(s) recorded, filtered = %d, remaining pinned events = %d%n",
-                (filteredEvents.size() + pinnedEvents.size()),
-                filteredEvents.size(),
-                pinnedEvents.size());
-        System.err.format("Remaining pinned events:%n%s%n", pinnedEvents);
+        log.format("%d event(s) recorded%n", filteredEvents.size() + pinnedEvents.size());
+        log.println("-- filtered events --");
+        log.println(filteredEvents);
+        log.println("-- remaining pinned events --");
+        log.println(pinnedEvents);
         assertEquals(1, pinnedEvents.size());
         return pinnedEvents.get(0);
     }
