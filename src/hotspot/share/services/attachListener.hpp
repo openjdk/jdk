@@ -235,7 +235,7 @@ public:
   // complete operation by sending result code and any result data to the client
   virtual void complete(jint result, bufferedStream* result_stream) = 0;
 
-  class ReplyWriter; //forward declaration
+  class ReplyWriter; // forward declaration
 
   // Helper classes/methods for platform-specific implementations.
   class RequestReader {

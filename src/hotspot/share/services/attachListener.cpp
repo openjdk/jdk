@@ -667,12 +667,12 @@ bool AttachOperation::read_request(RequestReader* reader, ReplyWriter* error_wri
     // We know the whole request does not exceed buffer_size,
     // for v1 also name/arguments should not exceed name_length_max/arg_length_max.
     if (strlen(name()) > AttachOperation::name_length_max) {
-      log_error(attach)("Failed to read request: name is too long");
+      log_error(attach)("Failed to read request: operation name is too long");
       return false;
     }
     for (int i = 0; i < arg_count(); i++) {
       if (strlen(arg(i)) > AttachOperation::arg_length_max) {
-        log_error(attach)("Failed to read request: argument is too long");
+        log_error(attach)("Failed to read request: operation argument is too long");
         return false;
       }
     }
