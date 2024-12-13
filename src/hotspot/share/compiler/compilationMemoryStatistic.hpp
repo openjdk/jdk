@@ -56,7 +56,7 @@ public:
   }
   static inline void on_phase_end(int phasetraceid) {
     if (enabled()) {
-      on_phase_end(phasetraceid);
+      on_phase_end_0(phasetraceid);
     }
   }
 
