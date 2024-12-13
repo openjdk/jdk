@@ -162,8 +162,8 @@ class ConnectFailTest {
         Socket socket = new Socket();
         @SuppressWarnings("resource")
         Socket channelSocket = SocketChannel.open().socket();
-        Socket proxiedSocket = new Socket(Proxy.NO_PROXY);
-        return List.of(socket, channelSocket, proxiedSocket);
+        Socket noProxySocket = new Socket(Proxy.NO_PROXY);
+        return List.of(socket, channelSocket, noProxySocket);
     }
 
     private static ServerSocket createEphemeralServerSocket() throws IOException {
