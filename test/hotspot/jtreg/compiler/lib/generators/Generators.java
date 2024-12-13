@@ -52,7 +52,7 @@ public final class Generators {
     }
 
     /**
-     * Randomly pick an long generator.
+     * Randomly pick a long generator.
      */
     public static LongGenerator longs() {
         switch(RANDOM.nextInt(6)) {
@@ -65,4 +65,18 @@ public final class Generators {
             default -> { throw new RuntimeException("impossible"); }
         }
     }
+
+    /**
+     * Randomly pick a float generator.
+     */
+    public static FloatGenerator floats() {
+        switch(RANDOM.nextInt(2)) {
+            case 0  -> { return new UniformFloatGenerator(-1, 1); }
+            // Well balanced, so that multiplication reduction never explodes or collapses to zero:
+            case 1  -> { return new UniformFloatGenerator(0.99f, 1.01f); }
+            case 2  -> { return new AnyBitsFloatGenerator(); }
+            default -> { throw new RuntimeException("impossible"); }
+        }
+    }
+
 }
