@@ -342,9 +342,7 @@ class MonitorPinnedEvents {
                     if (interrupt) {
                         vthread.interrupt();
                     } else {
-                        synchronized (lock) {
-                            lock.notify();
-                        }
+                        lock.notify();
                     }
                 }
 
