@@ -71,6 +71,13 @@ JvmtiFramePops::clear(JvmtiFramePop& fp) {
   _pops->remove(fp.frame_number());
 }
 
+void
+JvmtiFramePops::clear_all() {
+  for (int idx = _pops->length() - 1; idx >= 0; idx--) {
+    _pops->remove_at(idx);
+  }
+  assert(_pops->length() == 0, "sanity check");
+}
 
 int
 JvmtiFramePops::clear_to(JvmtiFramePop& fp) {
@@ -250,6 +257,14 @@ void JvmtiEnvThreadState::clear_frame_pop(int frame_number) {
   JvmtiEventController::clear_frame_pop(this, fpop);
 }
 
+void JvmtiEnvThreadState::clear_all_frame_pops() {
+#ifdef ASSERT
+  Thread *current = Thread::current();
+#endif
+  assert(get_thread() == nullptr || get_thread()->is_handshake_safe_for(current),
+         "frame pop data only accessible from same or detached thread or direct handshake");
+  JvmtiEventController::clear_all_frame_pops(this);
+}
 
 bool JvmtiEnvThreadState::is_frame_pop(int cur_frame_number) {
 #ifdef ASSERT

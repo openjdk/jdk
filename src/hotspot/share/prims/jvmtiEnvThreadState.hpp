@@ -86,6 +86,7 @@ class JvmtiFramePops : public CHeapObj<mtInternal> {
   friend class JvmtiEventControllerPrivate;
   void set(JvmtiFramePop& fp);
   void clear(JvmtiFramePop& fp);
+  void clear_all();
   int clear_to(JvmtiFramePop& fp);
 
  public:
@@ -184,6 +185,7 @@ public:
 
   void set_frame_pop(int frame_number);
   void clear_frame_pop(int frame_number);
+  void clear_all_frame_pops();
 
 };
 

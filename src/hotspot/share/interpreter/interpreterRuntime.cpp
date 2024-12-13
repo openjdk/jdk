@@ -577,7 +577,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 
   // notify debugger of an exception catch
   // (this is good for exceptions caught in native methods as well)
-  if (JvmtiExport::can_post_on_exceptions()) {
+  if (JvmtiExport::can_post_on_exceptions() || JvmtiExport::can_post_frame_pop()) {
     JvmtiExport::notice_unwind_due_to_exception(current, h_method(), handler_pc, h_exception(), (handler_pc != nullptr));
   }
 
