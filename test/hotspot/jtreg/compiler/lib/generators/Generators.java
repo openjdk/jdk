@@ -70,11 +70,15 @@ public final class Generators {
      * Randomly pick a float generator.
      */
     public static FloatGenerator floats() {
-        switch(RANDOM.nextInt(2)) {
+        switch(RANDOM.nextInt(5)) {
             case 0  -> { return new UniformFloatGenerator(-1, 1); }
             // Well balanced, so that multiplication reduction never explodes or collapses to zero:
-            case 1  -> { return new UniformFloatGenerator(0.99f, 1.01f); }
+            case 1  -> { return new UniformFloatGenerator(0.999f, 1.001f); }
             case 2  -> { return new AnyBitsFloatGenerator(); }
+            // A tame distribution, mixed in with the occasional special float value:
+            case 3  -> { return new SpecialFloatGenerator(new UniformFloatGenerator(0.999f, 1.001f), 10, 1000); }
+            // Generating any bits, but special values are more frequent.
+            case 4  -> { return new SpecialFloatGenerator(new AnyBitsFloatGenerator(), 100, 200); }
             default -> { throw new RuntimeException("impossible"); }
         }
     }
