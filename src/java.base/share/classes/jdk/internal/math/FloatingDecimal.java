@@ -1833,44 +1833,17 @@ public class FloatingDecimal{
          * This means that all scanning errors are detected without consuming
          * any heap, before actually throwing.
          *
-         * Once scanning is complete, the method determines the length p
-         * of a prefix of the significand that is sufficient to round it
-         * correctly to a floating-point value.
-         * The actual value of p partly depends on the input and might not be
-         * optimal, but is always a safe choice.
+         * Once scanning is complete, the method determines the length
+         * of a prefix of the significand that is sufficient for correct
+         * rounding according to roundTiesToEven.
+         * The actual value of the prefix length might not be optimal,
+         * but is always a safe choice.
          *
-         * For hexadecimal input, the prefix is processed by this method,
-         * without allocating objects, except for the returned instance.
+         * For hexadecimal input, the prefix is processed by this method directly,
+         * without allocating objects before creating the returned instance.
          *
-         * For decimal input, the p long prefix is copied to the returned
-         * instance, along with the other information needed for the conversion.
-         *
-         * According to IEEE 754-2019, a finite positive binary floating-point x
-         * of precision P is expressed
-         *      x = c 2^q
-         * where integers c and q meet
-         *      Q_MIN <= q <= Q_MAX
-         *      either      2^(P-1) <= c < 2^P          (x normal)
-         *      or          c < 2^(P-1)  &  q = Q_MIN   (x subnormal)
-         *      c = <d_0 d_1 ... d_(P-1)>, d_i in [0, 2)
-         * Such a representation is unique, and we sometimes use the operator *
-         * to emphasize that c and q meet these inequalities.
-         * Equivalently
-         *      x = m 2^ep
-         * where integer ep and real f meet
-         *      ep = q + P - 1
-         *      m = c 2^(1-P)
-         * Hence,
-         *      E_MIN = Q_MIN + P - 1, E_MAX = Q_MAX + P - 1,
-         *      1 <= m < 2      (x normal)
-         *      m < 1           (x subnormal)
-         *      m = <d_0 . d_1 ... d_(P-1)>, d_i in [0, 2)
-         * with a (binary) point between d_0 and d_1
-         *
-         * In some places the idiom
-         *      (ch | 0b10_0000) == lowercase-letter
-         * is used as a shortcut for
-         *      ch == lowercase-letter || ch == that-same-letter-as-uppercase
+         * For decimal input, the prefix is copied to the returned instance,
+         * along with the other information needed for the conversion.
          */
         int len = in.length();  // fail fast on null
 
@@ -1880,17 +1853,21 @@ public class FloatingDecimal{
             throw new NumberFormatException("empty String");
         }
 
-        int ch;  // running char
-        boolean isDec = true;  // decimal input until proven to the contrary
-
         /* Scan opt significand sign. */
+        int ch;  // running char
         int ssign = ' ';  // ' ' iff sign is implicit
         if ((ch = in.charAt(i)) == '-' || ch == '+') {  // i < len
             ssign = ch;
             ++i;
         }
 
-        /* Determine whether we are facing a symbolic value or hex notation. */
+        /* Determine whether we are facing a symbolic value or hex notation.
+         * In some places the idiom
+                *      (ch | 0b10_0000) == lowercase-letter
+                * is used as a shortcut for
+         *      ch == lowercase-letter || ch == that-same-letter-as-uppercase
+         */
+        boolean isDec = true;  // decimal input until proven to the contrary
         if (i < len) {
             ch = in.charAt(i);
             if (ch == 'I') {
@@ -1950,7 +1927,7 @@ public class FloatingDecimal{
                 ++i;
             }
 
-            /* Scan the exponent digits. Accumulate in ep, clamping at 10^12 - 1. */
+            /* Scan the exponent digits. Accumulate in ep, 10^12 means too large. */
             while (i < len && isDigit(ch = in.charAt(i), true)) {  // ep is decimal
                 ++i;
                 ep = appendDigit(ep, ch);
@@ -1962,7 +1939,7 @@ public class FloatingDecimal{
             }
             hasExp = true;
         }
-        /* |ep| < 10^12 */
+        /* |ep| < 10^12, or |ep| = 10^12 when too large. */
         check(in, isDec | hasExp);
 
         /* Skip opt [FfDd]? suffix. */
@@ -1970,7 +1947,7 @@ public class FloatingDecimal{
             ++i;
         }
 
-        /* Skip opt trailing whitespaces, then must be at the end of input. */
+        /* Skip optional trailing whitespaces, then must be at the end of input. */
         check(in, skipWhitespaces(in, i) == len);
 
         /* By now, the input is syntactically correct. */
@@ -2037,7 +2014,7 @@ public class FloatingDecimal{
         /*
          * n = number of significant digits (that is, not counting leading nor
          * trailing zeros).
-         * |ep| < 10^13.
+         * |ep| < 10^13
          *
          * For decimal input, the magnitude x of the input meets
          *      x = f 10^ep
@@ -2048,6 +2025,27 @@ public class FloatingDecimal{
          *      x = f 2^ep
          * where integer f = <f_1 ... f_n> consists of the n hex digits found
          * in the portion [lz, tnz) of the input, and f_1 != 0, f_n != 0.
+         *
+         * According to IEEE 754-2019, a finite positive binary floating-point
+         * of precision P is expressed as
+         *      c 2^q
+         * where integers c and q meet
+         *      Q_MIN <= q <= Q_MAX
+         *      either      2^(P-1) <= c < 2^P  (normal)
+         *      or          0 < c < 2^(P-1)  &  q = Q_MIN  (subnormal)
+         *      c = <d_0 d_1 ... d_(P-1)>, d_i in [0, 2)
+         * Such a representation is unique.
+         * Equivalently, the fp value can be expressed as
+         *      m 2^ep
+         * where integer ep and real f meet
+         *      ep = q + P - 1
+         *      m = c 2^(1-P)
+         * Hence,
+         *      E_MIN = Q_MIN + P - 1, E_MAX = Q_MAX + P - 1,
+         *      1 <= m < 2      (normal)
+         *      m < 1           (subnormal)
+         *      m = <d_0 . d_1 ... d_(P-1)>
+         * with a (binary) point between d_0 and d_1
          */
 
         if (!isDec) {  // hexadecimal conversion is performed entirely here
@@ -2107,16 +2105,14 @@ public class FloatingDecimal{
                 c <<= -shr;
             }
 
-            /* For now throw on Float16, until it is integrated in java.base */
-            switch (ix) {
-                case BINARY_32_IX -> {
-                    return new PreparedASCIIToBinaryBuffer(Double.NaN, buildFloat(ssign, q, c));
-                }
-                case BINARY_64_IX -> {
-                    return new PreparedASCIIToBinaryBuffer(buildDouble(ssign, q, c), Float.NaN);
-                }
+            /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
+            return switch (ix) {
+                case BINARY_32_IX ->
+                    new PreparedASCIIToBinaryBuffer(Double.NaN, buildFloat(ssign, q, c));
+                case BINARY_64_IX ->
+                    new PreparedASCIIToBinaryBuffer(buildDouble(ssign, q, c), Float.NaN);
                 default -> throw new AssertionError("unexpected");
-            }
+            };
         }
 
         /*
@@ -2220,37 +2216,39 @@ public class FloatingDecimal{
     }
 
     private static PreparedASCIIToBinaryBuffer buildZero(int ix, int ssign) {
-        /* For now throw on Float16, until it is integrated in java.base */
-        switch (ix) {
-            case BINARY_32_IX -> {
-                return new PreparedASCIIToBinaryBuffer(Double.NaN, ssign != '-' ? 0.0f : -0.0f);
-            }
-            case BINARY_64_IX -> {
-                return new PreparedASCIIToBinaryBuffer(ssign != '-' ? 0.0d : -0.0d, Float.NaN);
-            }
+        /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
+        return switch (ix) {
+            case BINARY_32_IX ->
+                new PreparedASCIIToBinaryBuffer(
+                        Double.NaN,
+                        ssign != '-' ? 0.0f : -0.0f);
+            case BINARY_64_IX ->
+                new PreparedASCIIToBinaryBuffer(
+                        ssign != '-' ? 0.0d : -0.0d,
+                        Float.NaN);
             default -> throw new AssertionError("unexpected");
-        }
+        };
     }
 
     private static PreparedASCIIToBinaryBuffer buildInfinity(int ix, int ssign) {
-        /* For now throw on Float16, until it is integrated in java.base */
-        switch (ix) {
-            case BINARY_32_IX -> {
-                return new PreparedASCIIToBinaryBuffer(
+        /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
+        return switch (ix) {
+            case BINARY_32_IX ->
+                new PreparedASCIIToBinaryBuffer(
                         Double.NaN,
                         ssign != '-' ? Float.POSITIVE_INFINITY : Float.NEGATIVE_INFINITY);
-            }
-            case BINARY_64_IX -> {
-                return new PreparedASCIIToBinaryBuffer(
+            case BINARY_64_IX ->
+                new PreparedASCIIToBinaryBuffer(
                         ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY,
                         Float.NaN);
-            }
             default -> throw new AssertionError("unexpected");
-        }
+        };
     }
 
     private static double buildDouble(int ssign, int q, long c) {
-        long be = c < 1L << P[BINARY_64_IX] - 1 ? 0 : q + (DoubleConsts.EXP_BIAS - 1 + P[BINARY_64_IX]);
+        long be = c < 1L << P[BINARY_64_IX] - 1
+                ? 0
+                : q + ((DoubleConsts.EXP_BIAS - 1) + P[BINARY_64_IX]);
         long bits = (ssign != '-' ? 0L : 1L << Double.SIZE - 1)
                 | be << P[BINARY_64_IX] - 1
                 | c & DoubleConsts.SIGNIF_BIT_MASK;
@@ -2258,7 +2256,9 @@ public class FloatingDecimal{
     }
 
     private static float buildFloat(int ssign, int q, long c) {
-        int be = c < 1L << P[BINARY_32_IX] - 1 ? 0 : q + (FloatConsts.EXP_BIAS - 1 + P[BINARY_32_IX]);
+        int be = c < 1L << P[BINARY_32_IX] - 1
+                ? 0
+                : q + ((FloatConsts.EXP_BIAS - 1) + P[BINARY_32_IX]);
         int bits = (ssign != '-' ? 0 : 1 << Float.SIZE - 1)
                 | be << P[BINARY_32_IX] - 1
                 | (int) c & FloatConsts.SIGNIF_BIT_MASK;
@@ -2277,10 +2277,10 @@ public class FloatingDecimal{
 
     /*
      * Arithmetically "appends" the "digit" ch to v >= 0.
-     * Clamp the returned value to the range [0, 10^12).
+     * Returns 10^12 on overflow, and keeps returning it on subsequent invocations.
      */
     private static long appendDigit(long v, int ch) {
-        return v < 1_000_000_000_000L / 10 ? 10 * v + (ch - '0') : v;
+        return v < 1_000_000_000_000L / 10 ? 10 * v + (ch - '0') : 1_000_000_000_000L;
     }
 
     /* Whether ch is a digit char '0-9', 'A-F', or 'a-f', depending on isDec. */
@@ -2416,7 +2416,7 @@ public class FloatingDecimal{
     /*
      * HEX_COUNT = maximum number of hex digits required to host P +1 rounding
      * bit +1 sticky bit = P + 2 adjacent one bits with arbitrary alignment.
-     * Hence, HEX_COUNT = floor(P / 4) + 2
+     * HEX_COUNT = floor(P / 4) + 2
      */
     private static final int[] HEX_COUNT = {
             P[BINARY_16_IX] / 4 + 2,
