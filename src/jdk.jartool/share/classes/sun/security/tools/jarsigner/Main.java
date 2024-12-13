@@ -1250,7 +1250,7 @@ public class Main {
 
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
-                        rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
+                        rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk..It.will.be.disabled.in.a.future.update."),
                         fullDisplayKeyName(privateKey)));
             }
 
@@ -1280,7 +1280,7 @@ public class Main {
 
             if ((legacyAlg & 8) == 8) {
                 warnings.add(String.format(
-                        rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk..This.key.size.will.be.disabled.in.a.future.update."),
+                        rb.getString("The.full.keyAlgName.signing.key.is.considered.a.security.risk..It.will.be.disabled.in.a.future.update."),
                         fullDisplayKeyName(weakPublicKey)));
             }
         }

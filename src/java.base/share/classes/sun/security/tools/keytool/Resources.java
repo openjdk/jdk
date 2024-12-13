@@ -495,7 +495,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"Unable.to.parse.denyAfter.string.in.exception.message", "Unable to parse denyAfter date string in exception message"},
         {"whose.sigalg.weak", "%1$s uses the %2$s signature algorithm which is considered a security risk."},
         {"whose.key.disabled", "%1$s uses a %2$s which is considered a security risk and is disabled."},
-        {"whose.key.weak", "%1$s uses a %2$s which is considered a security risk. This key size will be disabled in a future update."},
+        {"whose.key.weak", "%1$s uses a %2$s which is considered a security risk. It will be disabled in a future update."},
         {"jks.storetype.warning", "The %1$s keystore uses a proprietary format. It is recommended to migrate to PKCS12 which is an industry standard format using \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\"."},
         {"migrate.keystore.warning", "Migrated \"%1$s\" to %4$s. The %2$s keystore is backed up as \"%3$s\"."},
         {"backup.keystore.warning", "The original keystore \"%1$s\" is backed up as \"%3$s\"..."},

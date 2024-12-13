@@ -84,7 +84,7 @@ public class DisableCurveTest {
                 .shouldContain(">>> Signer")
                 .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (weak)")
                 .shouldContain("Warning:")
-                .shouldContain("The 256-bit EC (secp256r1) signing key is considered a security risk. This key size will be disabled in a future update")
+                .shouldContain("The 256-bit EC (secp256r1) signing key is considered a security risk. It will be disabled in a future update")
                 .shouldHaveExitValue(0);
 
         SecurityTools.jarsigner("-verify signeda.jar " +
@@ -94,7 +94,7 @@ public class DisableCurveTest {
                 .shouldContain("- Signed by")
                 .shouldContain("Signature algorithm: SHA384withECDSA, 256-bit EC (secp256r1) key (weak)")
                 .shouldContain("jar verified")
-                .shouldContain("The 256-bit EC (secp256r1) signing key is considered a security risk. This key size will be disabled in a future update")
+                .shouldContain("The 256-bit EC (secp256r1) signing key is considered a security risk. It will be disabled in a future update")
                 .shouldHaveExitValue(0);
     }
 }
