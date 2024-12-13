@@ -67,6 +67,7 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
@@ -97,7 +98,7 @@ Thread*           VMError::_thread;
 address           VMError::_pc;
 const void*       VMError::_siginfo;
 const void*       VMError::_context;
-bool              VMError::_print_native_stack_used = false;
+bool              VMError::_print_stack_from_frame_used = false;
 const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
@@ -416,75 +417,6 @@ static const char* find_code_name(address pc) {
     }
   }
   return nullptr;
-}
-
-/**
- * Gets the caller frame of `fr`.
- *
- * @returns an invalid frame (i.e. fr.pc() === 0) if the caller cannot be obtained
- */
-static frame next_frame(frame fr, Thread* t) {
-  // Compiled code may use EBP register on x86 so it looks like
-  // non-walkable C frame. Use frame.sender() for java frames.
-  frame invalid;
-  if (t != nullptr && t->is_Java_thread()) {
-    // Catch very first native frame by using stack address.
-    // For JavaThread stack_base and stack_size should be set.
-    if (!t->is_in_full_stack((address)(fr.real_fp() + 1))) {
-      return invalid;
-    }
-    if (fr.is_interpreted_frame() || (fr.cb() != nullptr && fr.cb()->frame_size() > 0)) {
-      RegisterMap map(JavaThread::cast(t),
-                      RegisterMap::UpdateMap::skip,
-                      RegisterMap::ProcessFrames::include,
-                      RegisterMap::WalkContinuation::skip); // No update
-      return fr.sender(&map);
-    } else {
-      // is_first_C_frame() does only simple checks for frame pointer,
-      // it will pass if java compiled code has a pointer in EBP.
-      if (os::is_first_C_frame(&fr)) return invalid;
-      return os::get_sender_for_C_frame(&fr);
-    }
-  } else {
-    if (os::is_first_C_frame(&fr)) return invalid;
-    return os::get_sender_for_C_frame(&fr);
-  }
-}
-
-void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info, int max_frames, char* buf, int buf_size) {
-
-  // see if it's a valid frame
-  if (fr.pc()) {
-    st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
-    const int limit = max_frames == -1 ? StackPrintLimit : MIN2(max_frames, StackPrintLimit);
-    int count = 0;
-    while (count++ < limit) {
-      fr.print_on_error(st, buf, buf_size);
-      if (fr.pc()) { // print source file and line, if available
-        char filename[128];
-        int line_no;
-        if (count == 1 && _lineno != 0) {
-          // We have source information of the first frame for internal errors. There is no need to parse it from the symbols.
-          st->print("  (%s:%d)", get_filename_only(), _lineno);
-        } else if (print_source_info &&
-                   Decoder::get_source_info(fr.pc(), filename, sizeof(filename), &line_no, count != 1)) {
-          st->print("  (%s:%d)", filename, line_no);
-        }
-      }
-      st->cr();
-      fr = next_frame(fr, t);
-      if (fr.pc() == nullptr) {
-        break;
-      }
-    }
-
-    if (count > limit) {
-      st->print_cr("...<more frames>...");
-    }
-
-  } else {
-    st->print_cr("Native frames: <unavailable>");
-  }
 }
 
 static void print_oom_reasons(outputStream* st) {
@@ -1008,7 +940,10 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing native stack (with source info)", _verbose)
-    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
+
+    NativeStackPrinter nsp(_thread, _context, _filename != nullptr ? get_filename_only() : nullptr, _lineno);
+    if (nsp.print_stack(st, buf, sizeof(buf), lastpc,
+                        true /*print_source_info */, -1 /* max stack */)) {
       // We have printed the native stack in platform-specific code
       // Windows/x64 needs special handling.
       // Stack walking may get stuck. Try to find the calling code.
@@ -1019,19 +954,16 @@ void VMError::report(outputStream* st, bool _verbose) {
         }
       }
     } else {
-      frame fr = _context ? os::fetch_frame_from_context(_context)
-                          : os::current_frame();
-
-      print_native_stack(st, fr, _thread, true, -1, buf, sizeof(buf));
-      _print_native_stack_used = true;
+      _print_stack_from_frame_used = true; // frame-based native stack walk done
     }
 
   REATTEMPT_STEP_IF("retry printing native stack (no source info)", _verbose)
     st->cr();
     st->print_cr("Retrying call stack printing without source information...");
-    frame fr = _context ? os::fetch_frame_from_context(_context) : os::current_frame();
-    print_native_stack(st, fr, _thread, false, -1, buf, sizeof(buf));
-    _print_native_stack_used = true;
+    NativeStackPrinter nsp(_thread, _context, get_filename_only(), _lineno);
+    nsp.print_stack_from_frame(st, buf, sizeof(buf),
+                               false /*print_source_info */, -1 /* max stack */);
+    _print_stack_from_frame_used = true;
 
   STEP_IF("printing Java stack", _verbose && _thread && _thread->is_Java_thread())
     if (_verbose && _thread && _thread->is_Java_thread()) {
@@ -1141,7 +1073,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       }
 
       // Scan the native stack
-      if (!_print_native_stack_used) {
+      if (!_print_stack_from_frame_used) {
         // Only try to print code of the crashing frame since
         // the native stack cannot be walked with next_frame.
         if (print_code(st, _thread, _pc, true, printed, printed_capacity)) {
@@ -1154,7 +1086,7 @@ void VMError::report(outputStream* st, bool _verbose) {
           if (print_code(st, _thread, fr.pc(), fr.pc() == _pc, printed, printed_capacity)) {
             printed_len++;
           }
-          fr = next_frame(fr, _thread);
+          fr = frame::next_frame(fr, _thread);
         }
       }
 
@@ -1786,12 +1718,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
               st->print_cr("]");
             }
             st->print("[stack: ");
-            frame fr = context ? os::fetch_frame_from_context(context) : os::current_frame();
+            NativeStackPrinter nsp(_thread, context, _filename != nullptr ? get_filename_only() : nullptr, _lineno);
             // Subsequent secondary errors build up stack; to avoid flooding the hs-err file with irrelevant
             // call stacks, limit the stack we print here (we are only interested in what happened before the
             // last assert/fault).
             const int max_stack_size = 15;
-            print_native_stack(st, fr, _thread, true, max_stack_size, tmp, sizeof(tmp));
+            nsp.print_stack_from_frame(st, tmp, sizeof(tmp), true /* print_source_info */, max_stack_size);
             st->print_cr("]");
           } // !recursed
           recursed = false; // Note: reset outside !recursed
