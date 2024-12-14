@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 package com.sun.hotspot.igv.graph;
 
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.Properties;
 import com.sun.hotspot.igv.layout.Cluster;
@@ -33,13 +34,11 @@ import java.util.*;
 
 public class Figure extends Properties.Entity implements Vertex {
 
-    public static final int INSET = 8;
     public static final int SLOT_WIDTH = 10;
-    public static final int OVERLAPPING = 6;
-    public static final int SLOT_START = 4;
-    public static final int SLOT_OFFSET = 8;
-    public static final int TOP_CFG_HEIGHT = 7;
-    public static final int BOTTOM_CFG_HEIGHT = 6;
+    public static final int SLOT_HEIGHT = 10;
+    public static final int BORDER = 1;
+    public static final int PADDING = 4;
+    public static final int SLOT_OFFSET = 16;
     public static final int WARNING_WIDTH = 16;
     public static final double BOLD_LINE_FACTOR = 1.06;
     protected List<InputSlot> inputSlots;
@@ -67,23 +66,21 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     private void updateHeight() {
-        String nodeText = diagram.getNodeText();
-        int lines = nodeText.split("\n").length;
-        if (hasInputList() && lines > 1) {
-            lines++;
-        }
-        if (getProperties().get("extra_label") != null) {
-            lines++;
-        }
-        heightCash = lines * metrics.getHeight() + INSET;
+        heightCash = getLines().length * metrics.getHeight() + 2 * PADDING;
+        heightCash += getSlotsHeight();
+    }
+
+    public int getSlotsHeight() {
+        int slotHeight = 0;
         if (diagram.isCFG()) {
             if (hasNamedInputSlot()) {
-                heightCash += TOP_CFG_HEIGHT;
+                slotHeight += Figure.SLOT_HEIGHT;
             }
             if (hasNamedOutputSlot()) {
-                heightCash += BOTTOM_CFG_HEIGHT;
+                slotHeight += Figure.SLOT_HEIGHT;
             }
         }
+        return slotHeight;
     }
 
     public static <T> List<T> getAllBefore(List<T> inputList, T tIn) {
@@ -117,19 +114,20 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     private void updateWidth() {
-            int max = 0;
-            for (String s : getLines()) {
-                int cur = metrics.stringWidth(s);
-                if (cur > max) {
-                    max = cur;
-                }
+        widthCash = 0;
+        for (String s : getLines()) {
+            int cur = metrics.stringWidth(s);
+            if (cur > widthCash) {
+                widthCash = cur;
             }
-            widthCash = (int)(max * BOLD_LINE_FACTOR) + INSET;
-            if (getWarning() != null) {
-                widthCash += WARNING_WIDTH;
-            }
-            widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
-            widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
+        }
+        widthCash += 2 * PADDING;
+        if (getWarning() != null) {
+            widthCash += WARNING_WIDTH + PADDING;
+        }
+        widthCash = Math.max(widthCash, Figure.getSlotsWidth(inputSlots));
+        widthCash = Math.max(widthCash, Figure.getSlotsWidth(outputSlots));
+        widthCash = (int)(widthCash * BOLD_LINE_FACTOR);
     }
 
     protected Figure(Diagram diagram, int id, InputNode node) {
@@ -156,7 +154,12 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public Color getColor() {
-        return color;
+        Color customColor = inputNode.getCustomColor();
+        if (customColor != null) {
+            return customColor;
+        } else {
+            return color;
+        }
     }
 
     public void setWarning(String warning) {
@@ -231,10 +234,9 @@ public class Figure extends Properties.Entity implements Vertex {
         return inputNode;
     }
 
-    public InputSlot createInputSlot() {
+    public void createInputSlot() {
         InputSlot slot = new InputSlot(this, -1);
         inputSlots.add(slot);
-        return slot;
     }
 
     public void removeSlot(Slot s) {
@@ -341,7 +343,6 @@ public class Figure extends Properties.Entity implements Vertex {
                     }
                     inputLabel = nodeTinyLabel;
                 }
-                assert(inputLabel != null);
                 int gapSize = is.gapSize();
                 if (gapSize == 1) {
                     inputs.add("_");
@@ -379,31 +380,28 @@ public class Figure extends Properties.Entity implements Vertex {
 
     @Override
     public Dimension getSize() {
-        int width = Math.max(getWidth(), Figure.SLOT_WIDTH * (Math.max(inputSlots.size(), outputSlots.size()) + 1));
-        int height = getHeight() + (diagram.isCFG() ? 0 : 2 * Figure.SLOT_WIDTH - 2 * Figure.OVERLAPPING);
+        int width = getWidth();
+        int height = getHeight();
         return new Dimension(width, height);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Figure)) {
+        if (this == o) return true;
+        if (!(o instanceof Figure other)) {
             return false;
         }
-        return getInputNode().equals(((Figure) o).getInputNode());
+        return Objects.equals(this.getInputNode(), other.getInputNode());
     }
 
     @Override
     public int hashCode() {
-        return getInputNode().hashCode();
+        return Objects.hash(getInputNode());
     }
 
     @Override
     public String toString() {
         return idString;
-    }
-
-    public static int getVerticalOffset() {
-        return Figure.SLOT_WIDTH - Figure.OVERLAPPING;
     }
 
     public Cluster getCluster() {
@@ -422,5 +420,17 @@ public class Figure extends Properties.Entity implements Vertex {
     @Override
     public int compareTo(Vertex f) {
         return toString().compareTo(f.toString());
+    }
+
+    public void setCustomColor(Color color) {
+        // Apply custom color not just to this input node but to all
+        // corresponding input nodes in the group.
+        InputGraph graph = diagram.getInputGraph();
+        for (InputGraph g : graph.getGroup().getGraphs()) {
+            InputNode n = g.getNode(inputNode.getId());
+            if (n != null) {
+                n.setCustomColor(color);
+            }
+        }
     }
 }

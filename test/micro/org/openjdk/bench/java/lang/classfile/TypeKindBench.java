@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 3, time = 2)
 @Measurement(iterations = 6, time = 1)
-@Fork(jvmArgs = "--enable-preview", value = 1)
+@Fork(value = 1)
 @State(Scope.Thread)
 public class TypeKindBench {
 

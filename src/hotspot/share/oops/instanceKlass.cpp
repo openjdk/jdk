@@ -97,8 +97,9 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/stringUtils.hpp"
+#include "utilities/nativeStackPrinter.hpp"
 #include "utilities/pair.hpp"
+#include "utilities/stringUtils.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -899,6 +900,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
     // if we are executing Java code. This is not a problem for CDS dumping phase since
     // it doesn't execute any Java code.
     ResourceMark rm(THREAD);
+    // Names are all known to be < 64k so we know this formatted message is not excessively large.
     Exceptions::fthrow(THREAD_AND_LOCATION,
                        vmSymbols::java_lang_NoClassDefFoundError(),
                        "Class %s, or one of its supertypes, failed class initialization",
@@ -919,6 +921,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
   if (super_klass != nullptr) {
     if (super_klass->is_interface()) {  // check if super class is an interface
       ResourceMark rm(THREAD);
+      // Names are all known to be < 64k so we know this formatted message is not excessively large.
       Exceptions::fthrow(
         THREAD_AND_LOCATION,
         vmSymbols::java_lang_IncompatibleClassChangeError(),
@@ -3286,6 +3289,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
         // If the outer class is not an instance klass then it cannot have
         // declared any inner classes.
         ResourceMark rm(THREAD);
+        // Names are all known to be < 64k so we know this formatted message is not excessively large.
         Exceptions::fthrow(
           THREAD_AND_LOCATION,
           vmSymbols::java_lang_IncompatibleClassChangeError(),
@@ -4006,14 +4010,9 @@ void InstanceKlass::print_class_load_cause_logging() const {
       stringStream stack_stream;
       char buf[O_BUFLEN];
       address lastpc = nullptr;
-      if (os::platform_print_native_stack(&stack_stream, nullptr, buf, O_BUFLEN, lastpc)) {
-        // We have printed the native stack in platform-specific code,
-        // so nothing else to do in this case.
-      } else {
-        frame f = os::current_frame();
-        VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
-                                    -1 /* max stack_stream */, buf, O_BUFLEN);
-      }
+      NativeStackPrinter nsp(current);
+      nsp.print_stack(&stack_stream, buf, sizeof(buf), lastpc,
+                      true /* print_source_info */, -1 /* max stack */);
 
       LogMessage(class, load, cause, native) msg;
       NonInterleavingLogStream info_stream{LogLevelType::Info, msg};

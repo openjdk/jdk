@@ -1229,7 +1229,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,$type$,$type$,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,$type$,VectorMask)
@@ -2685,9 +2685,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $abstractvectortype$ that = ($abstractvectortype$) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2715,9 +2721,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     $abstractvectortype$ sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast(($type$)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)(length() - origin));
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2736,10 +2748,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $abstractvectortype$ that = ($abstractvectortype$) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast(($type$)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2776,10 +2793,15 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     $abstractvectortype$
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<$Boxtype$> iota = iotaShuffle();
-        VectorMask<$Boxtype$> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast(($type$)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        $Bitstype$Vector iotaVector = ($Bitstype$Vector) iotaShuffle().toBitsVector();
+#if[FP]
+        $Bitstype$Vector filter = $Bitstype$Vector.broadcast(($Bitstype$Vector.$Bitstype$Species) vspecies().asIntegral(), ($bitstype$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.GE, filter).cast(vspecies());
+#else[FP]
+        $abstractvectortype$ filter = broadcast(($type$)origin);
+        VectorMask<$Boxtype$> blendMask = iotaVector.compare(VectorOperators.GE, filter);
+#end[FP]
+        AbstractShuffle<$Boxtype$> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2802,13 +2824,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     final
     <S extends VectorShuffle<$Boxtype$>>
     $abstractvectortype$ rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, $type$.class, length(),
-            this, ws, null,
+            this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2831,13 +2851,11 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            M m) {
 
         m.check(masktype, this);
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, $type$.class, length(),
-                   this, ws, m,
+                   this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
@@ -2858,48 +2876,61 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
                                            S shuffle,
                                            $abstractvectortype$ v) {
         VectorMask<$Boxtype$> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         $abstractvectortype$ r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, $type$.class, length(),
-                this, ws, null,
+                this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         $abstractvectortype$ r1 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, $type$.class, length(),
-                v, ws, null,
+                v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<$Boxtype$> toShuffle0($Type$Species dsp) {
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+#if[FP]
+        throw new AssertionError();
+#else[FP]
+        assert(dsp.length() == vspecies().length());
         $type$[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(dsp, sa, 0);
+#end[FP]
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<$Boxtype$> toShuffleTemplate(Class<?> shuffleType) {
-        $Type$Species vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), $type$.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     $Type$Vector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+#if[float]
+        IntVector idx = convert(VectorOperators.F2I, 0).reinterpretAsInts();
+#end[float]
+#if[double]
+        LongVector idx = convert(VectorOperators.D2L, 0).reinterpretAsLongs();
+#end[double]
+#if[!FP]
+        $Type$Vector idx = this;
+#end[!FP]
+        $Bitstype$Vector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            $Bitstype$Vector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<$Boxbitstype$> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
@@ -5447,9 +5478,10 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         private $Type$Species(VectorShape shape,
                 Class<? extends $abstractvectortype$> vectorType,
                 Class<? extends AbstractMask<$Boxtype$>> maskType,
+                Class<? extends AbstractShuffle<$Boxtype$>> shuffleType,
                 Function<Object, $abstractvectortype$> vectorFactory) {
             super(shape, LaneType.of($type$.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == $Boxtype$.SIZE);
         }
@@ -5742,6 +5774,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         = new $Type$Species(VectorShape.S_64_BIT,
                             $Type$64Vector.class,
                             $Type$64Vector.$Type$64Mask.class,
+                            $Type$64Vector.$Type$64Shuffle.class,
                             $Type$64Vector::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -5749,6 +5782,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         = new $Type$Species(VectorShape.S_128_BIT,
                             $Type$128Vector.class,
                             $Type$128Vector.$Type$128Mask.class,
+                            $Type$128Vector.$Type$128Shuffle.class,
                             $Type$128Vector::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -5756,6 +5790,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         = new $Type$Species(VectorShape.S_256_BIT,
                             $Type$256Vector.class,
                             $Type$256Vector.$Type$256Mask.class,
+                            $Type$256Vector.$Type$256Shuffle.class,
                             $Type$256Vector::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -5763,6 +5798,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         = new $Type$Species(VectorShape.S_512_BIT,
                             $Type$512Vector.class,
                             $Type$512Vector.$Type$512Mask.class,
+                            $Type$512Vector.$Type$512Shuffle.class,
                             $Type$512Vector::new);
 
     /** Species representing {@link $Type$Vector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -5770,6 +5806,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         = new $Type$Species(VectorShape.S_Max_BIT,
                             $Type$MaxVector.class,
                             $Type$MaxVector.$Type$MaxMask.class,
+                            $Type$MaxVector.$Type$MaxShuffle.class,
                             $Type$MaxVector::new);
 
     /**

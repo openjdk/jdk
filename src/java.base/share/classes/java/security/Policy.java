@@ -43,7 +43,7 @@ import sun.security.jca.GetInstance;
  *       supported. Installing a system-wide {@code Policy} object is no longer
  *       supported. The {@linkplain #setPolicy setPolicy} method has been
  *       changed to always throw {@code UnsupportedOperationException}. The
- *       {@linkplain getPolicy getPolicy} method has been changed to always
+ *       {@linkplain #getPolicy getPolicy} method has been changed to always
  *       return a {@code Policy} object that grants no permissions. There is no
  *       replacement for the Security Manager or this class.
  */

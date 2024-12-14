@@ -2587,15 +2587,20 @@ public class Attr extends JCTree.Visitor {
                         chk.checkRefType(qualifier.pos(),
                                          attribExpr(qualifier, localEnv,
                                                     encl));
-                    } else if (methName == names._super) {
-                        // qualifier omitted; check for existence
-                        // of an appropriate implicit qualifier.
-                        checkNewInnerClass(tree.meth.pos(), localEnv, site, true);
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
                               Errors.IllegalQualNotIcls(site.tsym));
                     attribExpr(((JCFieldAccess) tree.meth).selected, localEnv, site);
+                }
+
+                if (tree.meth.hasTag(IDENT)) {
+                    // non-qualified super(...) call; check whether explicit constructor
+                    // invocation is well-formed. If the super class is an inner class,
+                    // make sure that an appropriate implicit qualifier exists. If the super
+                    // class is a local class, make sure that the current class is defined
+                    // in the same context as the local class.
+                    checkNewInnerClass(tree.meth.pos(), localEnv, site, true);
                 }
 
                 // if we're calling a java.lang.Enum constructor,
@@ -3065,7 +3070,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         void checkNewInnerClass(DiagnosticPosition pos, Env<AttrContext> env, Type type, boolean isSuper) {
-            boolean isLocal = type.tsym.owner.kind == MTH;
+            boolean isLocal = type.tsym.owner.kind == VAR || type.tsym.owner.kind == MTH;
             if ((type.tsym.flags() & (INTERFACE | ENUM | RECORD)) != 0 ||
                     (!isLocal && !type.tsym.isInner()) ||
                     (isSuper && env.enclClass.sym.isAnonymous())) {
@@ -4728,7 +4733,7 @@ public class Attr extends JCTree.Visitor {
                 chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
-                chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
+                chk.checkPreview(tree.pos(), env.info.scope.owner, site, sym);
             }
 
             if (pt.isErroneous()) {
