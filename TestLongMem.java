@@ -83,8 +83,12 @@ public class TestLongMem {
         return Long.bitCount(a) + Long.numberOfLeadingZeros(b) + Long.numberOfTrailingZeros(a-b);
     }
 
-    public static long testMul(int a, int b) {
-        return a * b;
+    public static long testMul2(long x, int i) {
+        return b[i] * x;
+    }
+
+    public static long testMul1(long x, int i) {
+        return x * b[i];
     }
 
     public static long testSub2(long x, int i) {
