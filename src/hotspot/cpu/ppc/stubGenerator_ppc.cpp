@@ -646,6 +646,7 @@ address generate_ghash_processBlocks() {
   Register align = data;
   // Vector Registers
   VectorRegister vH = VR0;
+  VectorSRegister vHS = VSR32;
   VectorRegister vX = VR1;
   VectorRegister vH_shift = VR2;
   VectorRegister vTmp1 = VR3;
@@ -669,68 +670,24 @@ address generate_ghash_processBlocks() {
   VectorRegister vLow = VR21;
   VectorRegister vPerm = VR22;
   VectorRegister vZero_Stored = VR23;
+  VectorSRegister vZero_StoredS = VSR55;
   VectorRegister vMask = VR24;
   VectorRegister vS = VR25;
-
+  VectorSRegister vXS = VSR33;
   Label L_end, L_aligned, L_align_2, L_end_2, L_aligned3;
-  Label L_end3,L_aligned4,L_end4;
+  Label L_end3, L_aligned4, L_end4;
 
-  static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8}; //byte order for double.
-  static const unsigned char perm_pattern2[16] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-
-  // Load the address of perm_pattern
-  #ifdef VM_LITTLE_ENDIAN
-  __ load_const_optimized(temp1, (uintptr_t)&perm_pattern);
-  #else
-  __ load_const_optimized(temp1, (uintptr_t)&perm_pattern2);
-  #endif
-
-  __ li(temp3,0);
-  __ vxor(fromPerm, fromPerm, fromPerm);        // Clear the vector register
-  __ lvxl(fromPerm, temp3,  temp1);             // Lo
+  static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
   __ li(temp1, 0xc2);
   __ sldi(temp1, temp1, 56);
-
   // Load the vector from memory into vConstC2
   __ vxor(vConstC2, vConstC2, vConstC2);
   __ mtvrd(vConstC2, temp1);
   __ vxor(vZero, vZero, vZero);
+  //__ stop("ghash");
   // Checking if address is 16 byte aligned and load accordingly.
-  __ li(temp1, 0);
-  __ andi(temp1, subkeyH, 15);
-  __ cmpwi(CCR0, temp1, 0);
-  __ beq(CCR0, L_aligned);             // Check if 'to' is aligned (mask lower 4 bits)
-  __ li(temp1, 0);
-  __ vxor(vH, vH, vH);
-  __ lvx(vHigh, temp1, subkeyH);
-  __ lvsl(vPerm, temp1, subkeyH);
-  __ addi(subkeyH, subkeyH, 16);
-  __ lvx(vLow, temp1, subkeyH);
-  __ vec_perm(vH, vHigh, vLow, vPerm);
-  __ subi(subkeyH, subkeyH, 16);
-  __ b(L_end);
-  __ bind(L_aligned);
-  __ lvx(vH,temp1,subkeyH);
-  __ bind(L_end);
-  __ vec_perm(vH, vH, vH, fromPerm);
-
-  __ li(temp1, 0);
-  __ andi(temp1, state, 15);
-  __ cmpwi(CCR0, temp1, 0);
-  __ beq(CCR0, L_aligned3);                     // Check if 'to' is aligned (mask lower 4 bits)
-  __ li(temp1, 0);
-  __ vxor(vZero_Stored, vZero_Stored, vZero_Stored);
-  __ lvx(vHigh, temp1, state);
-  __ lvsl(vPerm,temp1,state);
-  __ addi(state, state, 16);
-  __ lvx(vLow, temp1, state);
-  __ vec_perm(vZero_Stored, vHigh, vLow, vPerm);
-  __ subi(state, state, 16);
-  __ b(L_end3);
-  __ bind(L_aligned3);
-  __ lvx(vZero_Stored, temp1, state);
-  __ bind(L_end3);
-  __ vec_perm(vZero_Stored, vZero_Stored, vZero_Stored, fromPerm);
+  __ lxvd2x(vHS, subkeyH);
+  __ lxvd2x(vZero_StoredS, state);
   //Operations to obtain lower and higher bytes of subkey H.
   __ vspltisb(vConst1, 1);
   __ vspltisb(vConst7, 7);
@@ -750,34 +707,18 @@ address generate_ghash_processBlocks() {
   __ vxor(vZero, vZero, vZero);
   __ mtctr(blocks);
   __ li(temp1, 0);
-  __ load_const_optimized(temp2, (uintptr_t)&perm_pattern2);
+  __ load_const_optimized(temp2, (uintptr_t)&perm_pattern);
   __ lvx(loadOrder, temp2);
+  
   Label loop;
   __ bind(loop);
     // Load immediate value 0 into temp
     __ vxor(vX, vX, vX);
     __ vxor(vZero, vZero, vZero);
     __ li(temp1, 0);
-    //alignment
-    __ andi(temp1, data, 15);
-    __ cmpwi(CCR0, temp1,0);
-    __ beq(CCR0, L_align_2);
-    __ li(temp1, 0);
-    __ lvx(vHigh, temp1, align);
-    __ lvsl(vPerm, temp1, align);
-    __ addi(align, align, 16);
-    __ lvx(vLow, temp1, data);
-    __ vec_perm(vHigh, vHigh, vHigh, loadOrder);
-    __ vec_perm(vLow, vLow, vLow, loadOrder);
-    __ vec_perm(vX, vLow, vHigh, vPerm);
-    __ subi(align,align,16);
-    __ b(L_end_2);
-    __ bind(L_align_2);
-    __ lvx(vX, temp1, data);
+    __ lxv(vXS, 0, data);
     __ vec_perm(vX, vX, vX, loadOrder);
-    __ bind(L_end_2);
     __ vxor(vX, vX, vZero_Stored);
-
       // Perform GCM multiplication
     __ vpmsumd(vTmp1, vLowerH, vX);             // L
     __ vpmsumd(vTmp2, vSwappedH, vX);           // M
@@ -794,32 +735,12 @@ address generate_ghash_processBlocks() {
     __ vxor(vTmp7, vTmp7, vTmp3);
     __ vxor(vZero, vTmp1, vTmp7);
     __ vmr(vZero_Stored, vZero);
-    __ addi(data, data , 16);
+    __ addi(data, data, 16);
     __ bdnz(loop);
   __ li(temp4, 0);
 
-  __ vec_perm(vZero, vZero, vZero, fromPerm);
-  __ li(temp1, 0);
-  __ andi(temp1, state, 15);
-  __ cmpwi(CCR0,temp1,0);
-  __ beq(CCR0, L_aligned4);                     // Check if 'to' is aligned (mask lower 4 bits)
-  __ lvx(vHigh, temp4, state);
-  __ lvsr(vPerm, temp4, state);
-  __ addi(state, state, 16);
-  __ lvx(vLow, temp4, state);
-  __ vspltisb(vConst1, -1);                     // Vector with 1s
-  __ vspltisb(vConst7, 0);                      // Vector with 7s
-  __ vec_perm(vMask, vConst7, vConst1, vPerm);
-  __ vec_perm(vZero, vZero, vZero, vPerm);
-  __ vsel(vLow, vZero, vLow, vMask);
-  __ vsel(vHigh, vHigh, vZero, vMask);
-  __ stvx(vLow, temp4, state);
-  __ addi(state, state, -16);
-  __ stvx(vHigh, temp4, state);
-  __ b(L_end4);
-  __ bind(L_aligned4);
-  __ stvx(vZero, temp4, state);
-  __ bind(L_end4);
+  __ stxvd2x(vZero->to_vsr(),state);
+
 
   __ blr();                                     // Return from function
 
