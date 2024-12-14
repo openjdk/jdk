@@ -77,7 +77,7 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for a contended monitor enter.
+     * Test jdk.VirtualThreadPinned recorded for a contended monitor enter.
      */
     @Test
     void testContentedMonitorEnter() throws Exception {
@@ -90,7 +90,7 @@ class MonitorPinnedEvents {
                 Object lock = new Object();
 
                 synchronized (lock) {
-                    // start virtual that blocks trying to acquire monitor while pinned
+                    // start virtual thread that blocks trying to acquire monitor while pinned
                     var ready = new AtomicBoolean();
                     vthread = Thread.ofVirtual().start(() -> {
                         VThreadPinner.runPinned(() -> {
@@ -116,10 +116,10 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for a contended monitor enter where
-     * another thread may acquire the monitor when the main thread releases it. If the other
-     * thread acquires the monitor before the virtual thread then the event duration should
-     * include the time blocked until the other thread releases it.
+     * Test jdk.VirtualThreadPinned recorded for a contended monitor enter where
+     * another thread may acquire the monitor when the main thread releases it. If
+     * the other thread acquires the monitor before the virtual thread then the event
+     * duration should include the time blocked until the other thread releases it.
      */
     @Test
     void testContentedMonitorEnter2() throws Exception {
@@ -136,7 +136,7 @@ class MonitorPinnedEvents {
                 Thread thread2;
                 synchronized (lock) {
 
-                    // start virtual that blocks trying to acquire monitor while pinned
+                    // start virtual thread that blocks trying to acquire monitor while pinned
                     var ready1 = new AtomicBoolean();
                     vthread = Thread.ofVirtual().start(() -> {
                         VThreadPinner.runPinned(() -> {
@@ -181,7 +181,7 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for Object.wait when notified.
+     * Test jdk.VirtualThreadPinned recorded for Object.wait when notified.
      */
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
@@ -190,7 +190,7 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for Object.wait when interrupted.
+     * Test jdk.VirtualThreadPinned recorded for Object.wait when interrupted.
      */
     @ParameterizedTest
     @ValueSource(booleans = { true, false })
@@ -199,7 +199,7 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for Object.wait.
+     * Test jdk.VirtualThreadPinned recorded for Object.wait.
      * @param timed true for a timed-wait, false for an untimed-wait
      * @param interrupt true to interrupt the thread, false to notify
      */
@@ -212,7 +212,7 @@ class MonitorPinnedEvents {
             try {
                 Object lock = new Object();
 
-                // start virtual that waits in Object.wait while pinned
+                // start virtual thread that waits in Object.wait while pinned
                 var ready = new AtomicBoolean();
                 vthread = Thread.ofVirtual().start(() -> {
                     VThreadPinner.runPinned(() -> {
@@ -255,8 +255,8 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for Object.wait where the virtual
-     * thread is notified but may block when attempting to reenter. One event should be
+     * Test jdk.VirtualThreadPinned recorded for Object.wait where the virtual thread
+     * is notified but may block when attempting to reenter. One event should be
      * recorded. The event duration should include both the waiting time and the time
      * blocked to reenter.
      */
@@ -267,8 +267,8 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for Object.wait where the virtual
-     * thread is interrupted but may block when attempting to reenter. One event should be
+     * Test jdk.VirtualThreadPinned recorded for Object.wait where the virtual thread
+     * is interrupted but may block when attempting to reenter. One event should be
      * recorded. The event duration should include both the waiting time and the time
      * blocked to reenter.
      */
@@ -279,8 +279,8 @@ class MonitorPinnedEvents {
     }
 
     /**
-     * Test jdk.VirtualThreadPinned duration recorded for Object.wait where the virtual
-     * thread blocks when attempting to reenter.
+     * Test jdk.VirtualThreadPinned recorded for Object.wait where the virtual thread
+     * blocks when attempting to reenter.
      * @param timed true for a timed-wait, false for an untimed-wait
      * @param interrupt true to interrupt the thread, false to notify
      */
@@ -296,7 +296,7 @@ class MonitorPinnedEvents {
             try {
                 Object lock = new Object();
 
-                // start virtual that waits in Object.wait while pinned
+                // start virtual thread that waits in Object.wait while pinned
                 var ready1 = new AtomicBoolean();
                 vthread = Thread.ofVirtual().start(() -> {
                     VThreadPinner.runPinned(() -> {
