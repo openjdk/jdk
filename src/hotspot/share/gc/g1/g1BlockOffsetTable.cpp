@@ -27,9 +27,14 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "logging/log.hpp"
-#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
+
+size_t G1BlockOffsetTable::compute_size(size_t mem_region_words) {
+  size_t number_of_slots = (mem_region_words / CardTable::card_size_in_words());
+  return os::align_up_vm_allocation_granularity(number_of_slots);
+}
 
 G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* storage) :
   _reserved(heap), _offset_base(nullptr) {

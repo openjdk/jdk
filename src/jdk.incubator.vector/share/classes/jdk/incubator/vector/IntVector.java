@@ -1099,7 +1099,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-   /**
+    /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,int,int,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,int,VectorMask)
@@ -2293,9 +2293,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntVector that = (IntVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = broadcast((int)(length() - origin));
+        VectorMask<Integer> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Integer> iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2323,9 +2324,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @ForceInline
     IntVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = broadcast((int)(length() - origin));
+        VectorMask<Integer> blendMask = iotaVector.compare(VectorOperators.LT, filter);
+        AbstractShuffle<Integer> iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2344,10 +2346,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntVector that = (IntVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
-                                                                  (broadcast((int)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = broadcast((int)origin);
+        VectorMask<Integer> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
+        AbstractShuffle<Integer> iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2384,10 +2386,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector
     unsliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        VectorShuffle<Integer> iota = iotaShuffle();
-        VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.GE,
-                                                                  (broadcast((int)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
+        IntVector filter = broadcast((int)origin);
+        VectorMask<Integer> blendMask = iotaVector.compare(VectorOperators.GE, filter);
+        AbstractShuffle<Integer> iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2410,13 +2412,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
     final
     <S extends VectorShuffle<Integer>>
     IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, int.class, length(),
-            this, ws, null,
+            this, shuffle, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
-                int ei = s_.laneSource(i);
+                int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                 return v1.lane(ei);
             }));
     }
@@ -2439,13 +2439,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                            M m) {
 
         m.check(masktype, this);
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, int.class, length(),
-                   this, ws, m,
+                   this, shuffle, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
-                        int ei = s_.laneSource(i);
+                        int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                         return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
@@ -2466,30 +2464,29 @@ public abstract class IntVector extends AbstractVector<Integer> {
                                            S shuffle,
                                            IntVector v) {
         VectorMask<Integer> valid = shuffle.laneIsValid();
-        @SuppressWarnings("unchecked")
-        S ws = (S) shuffle.wrapIndexes();
         IntVector r0 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, int.class, length(),
-                this, ws, null,
+                this, shuffle, null,
                 (v0, s_, m_) -> v0.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v0.length());
                     return v0.lane(ei);
                 }));
         IntVector r1 =
             VectorSupport.rearrangeOp(
                 getClass(), shuffletype, null, int.class, length(),
-                v, ws, null,
+                v, shuffle, null,
                 (v1, s_, m_) -> v1.uOp((i, a) -> {
-                    int ei = s_.laneSource(i);
+                    int ei = Integer.remainderUnsigned(s_.laneSource(i), v1.length());
                     return v1.lane(ei);
                 }));
         return r1.blend(r0, valid);
     }
 
+    @Override
     @ForceInline
-    private final
-    VectorShuffle<Integer> toShuffle0(IntSpecies dsp) {
+    final <F> VectorShuffle<F> bitsToShuffle0(AbstractSpecies<F> dsp) {
+        assert(dsp.length() == vspecies().length());
         int[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
@@ -2498,16 +2495,18 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return VectorShuffle.fromArray(dsp, sa, 0);
     }
 
-    /*package-private*/
     @ForceInline
-    final
-    VectorShuffle<Integer> toShuffleTemplate(Class<?> shuffleType) {
-        IntSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), int.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     IntVector::toShuffle0);
+    final <F>
+    VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp, boolean wrap) {
+        assert(dsp.elementSize() == vspecies().elementSize());
+        IntVector idx = this;
+        IntVector wrapped = idx.lanewise(VectorOperators.AND, length() - 1);
+        if (!wrap) {
+            IntVector wrappedEx = wrapped.lanewise(VectorOperators.SUB, length());
+            VectorMask<Integer> inBound = wrapped.compare(VectorOperators.EQ, idx);
+            wrapped = wrappedEx.blend(wrapped, inBound);
+        }
+        return wrapped.bitsToShuffle(dsp);
     }
 
     /**
@@ -3849,9 +3848,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
         private IntSpecies(VectorShape shape,
                 Class<? extends IntVector> vectorType,
                 Class<? extends AbstractMask<Integer>> maskType,
+                Class<? extends AbstractShuffle<Integer>> shuffleType,
                 Function<Object, IntVector> vectorFactory) {
             super(shape, LaneType.of(int.class),
-                  vectorType, maskType,
+                  vectorType, maskType, shuffleType,
                   vectorFactory);
             assert(this.elementSize() == Integer.SIZE);
         }
@@ -4137,6 +4137,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         = new IntSpecies(VectorShape.S_64_BIT,
                             Int64Vector.class,
                             Int64Vector.Int64Mask.class,
+                            Int64Vector.Int64Shuffle.class,
                             Int64Vector::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -4144,6 +4145,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         = new IntSpecies(VectorShape.S_128_BIT,
                             Int128Vector.class,
                             Int128Vector.Int128Mask.class,
+                            Int128Vector.Int128Shuffle.class,
                             Int128Vector::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4151,6 +4153,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         = new IntSpecies(VectorShape.S_256_BIT,
                             Int256Vector.class,
                             Int256Vector.Int256Mask.class,
+                            Int256Vector.Int256Shuffle.class,
                             Int256Vector::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4158,6 +4161,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         = new IntSpecies(VectorShape.S_512_BIT,
                             Int512Vector.class,
                             Int512Vector.Int512Mask.class,
+                            Int512Vector.Int512Shuffle.class,
                             Int512Vector::new);
 
     /** Species representing {@link IntVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4165,6 +4169,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         = new IntSpecies(VectorShape.S_Max_BIT,
                             IntMaxVector.class,
                             IntMaxVector.IntMaxMask.class,
+                            IntMaxVector.IntMaxShuffle.class,
                             IntMaxVector::new);
 
     /**
