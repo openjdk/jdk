@@ -140,6 +140,8 @@ class ArenaState : public CHeapObj<mtCompiler> {
 
   int retrieve_live_node_count() const;
 
+  DEBUG_ONLY(void verify() const;)
+
 public:
   ArenaState();
 

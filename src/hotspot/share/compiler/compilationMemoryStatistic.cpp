@@ -99,7 +99,7 @@ void ArenaCounterTable::print_on(outputStream* st, bool human_readable) const {
         st->cr();
         header_printed = true;
       }
-      st->print("%45s ", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phaseid));
+      st->print("%24s ", Phase::get_phase_trace_id_text((Phase::PhaseTraceId)phaseid));
       if (human_readable) {
         st->print(PROPERFMT_W(10), PROPERFMTARGS(sum));
       } else {
@@ -143,6 +143,7 @@ void ArenaState::reset() {
   _active = false;
   _phase_id_stack.reset();
   _comp_type = CompilerType::compiler_none;
+  _comp_id = 0;
 }
 
 void ArenaState::start(CompilerType comp_type, int comp_id, size_t limit) {
@@ -157,6 +158,7 @@ void ArenaState::end() {
   _limit = 0;
   _hit_limit = false;
   _active = false;
+  DEBUG_ONLY(verify();)
 }
 
 void ArenaState::on_phase_start(PhaseTrcId id) {
@@ -199,6 +201,7 @@ bool ArenaState::on_arena_chunk_allocation(size_t size, int arenatagid, uint64_t
 
   // Did we reach a global peak?
   if (_current > _peak) {
+    _peak = _current;
     // snapshot all current counters
     _counters_at_global_peak.copy_from(_counters_current);
     // snapshot live nodes
@@ -250,9 +253,14 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
     st->print("[");
     size_t sums[ArenaTag::max];
     _counters_at_global_peak.summarize(sums);
+    bool print_comma = false;
     for (int i = 0; i < ArenaTag::max; i++) {
+      if (print_comma) {
+        st->put(',');
+      }
       if (sums[i] > 0) {
-        st->print("%*s%s %zu", i, ",", Arena::tag_name[i], sums[i]);
+        st->print("%s %zu", Arena::tag_name[i], sums[i]);
+        print_comma = true;
       }
     }
     st->print_cr("]");
@@ -265,8 +273,24 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
       st->print_cr("----------------------------------------------------");
     }
 #endif
+  } else {
+    st->cr();
   }
 }
+
+#ifdef ASSERT
+void ArenaState::verify() const {
+  assert(_current <= _peak, "Sanity");
+  for (int arenatag = 0; arenatag < ArenaTag::max; arenatag ++) {
+    for (int phaseid = 0; phaseid < PhaseTrcId::max; phaseid ++) {
+      assert(_counters_local_peaks.at(phaseid, arenatag) >=
+             _counters_current.at(phaseid, arenatag), "Sanity");
+      assert(_counters_local_peaks.at(phaseid, arenatag) >=
+             _counters_at_global_peak.at(phaseid, arenatag), "Sanity");
+    }
+  }
+}
+#endif // ASSERT
 
 //////////////////////////
 // Backend
@@ -325,7 +349,7 @@ public:
 // Note: not mtCompiler since we don't want to change what we measure
 class MemStatEntry : public CHeapObj<mtInternal /* (sic) */> {
   const FullMethodName _method;
-  CompilerType _comptype;
+  CompilerType _comp_type;
   int _comp_id;
   double _time;
   // How often this has been recompiled.
@@ -352,10 +376,12 @@ class MemStatEntry : public CHeapObj<mtInternal /* (sic) */> {
   };
   PerPhaseCounters* _per_phase_counters; // we only carry these if needed
 
+  MemStatEntry(const MemStatEntry& e); // deny
+
 public:
 
   MemStatEntry(FullMethodName method)
-    : _method(method), _comptype(compiler_none), _comp_id(-1),
+    : _method(method), _comp_type(compiler_none), _comp_id(-1),
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
       _result(nullptr), _peak(0), _live_nodes_at_global_peak(0),
       _per_phase_counters(nullptr) {
@@ -368,22 +394,25 @@ public:
   }
 
   void set_comp_id(int comp_id) { _comp_id = comp_id; }
-  void set_comptype(CompilerType comptype) { _comptype = comptype; }
+  void set_comptype(CompilerType comptype) { _comp_type = comptype; }
   void set_current_time() { _time = os::elapsedTime(); }
   void set_current_thread() { _thread = Thread::current(); }
   void set_limit(size_t limit) { _limit = limit; }
   void inc_recompilation() { _num_recomp++; }
 
   void set_from_state(const ArenaState* state) {
-    _comptype = state->comp_type();
+    _comp_type = state->comp_type();
     _comp_id = state->comp_id();
     _limit = state->limit();
     _peak = state->peak();
+    _live_nodes_at_global_peak = state->live_nodes_at_global_peak();
     state->counters_at_global_peak().summarize(_peak_composition_per_arena_tag);
-    if (_comp_id == CompilerType::compiler_c2) {
+    if (_comp_type == CompilerType::compiler_c2) {
       // Only store per phase details for C2 to save memory. Should we ever introduce something like phases for
       // other compilers, this needs to be changed to a possibly more generic solution.
-      _per_phase_counters = NEW_C_HEAP_OBJ(PerPhaseCounters, mtInternal);
+      if (_per_phase_counters == nullptr) {
+        _per_phase_counters = NEW_C_HEAP_OBJ(PerPhaseCounters, mtInternal);
+      }
       _per_phase_counters->counters_at_global_peak.copy_from(state->counters_at_global_peak());
       _per_phase_counters->counters_local_peaks.copy_from(state->counters_local_peaks());
     }
@@ -472,7 +501,7 @@ public:
     col += 8; st->fill_to(col);
 
     // Type
-    st->print("%s ", compilertype2name(_comptype));
+    st->print("%s ", compilertype2name(_comp_type));
     col += 6; st->fill_to(col);
 
     // Compile ID

@@ -61,7 +61,7 @@ inline void ArenaCounterTable::add(size_t size, PhaseTrcId id, ArenaTag tag) {
 
 inline void ArenaCounterTable::sub(size_t size, PhaseTrcId id, ArenaTag tag) {
   assert(at(id, tag) >= size, "Underflow");
-  _v[id.raw()][tag.raw()] += size;
+  _v[id.raw()][tag.raw()] -= size;
 }
 
 #endif // SHARE_COMPILER_COMPILATIONMEMORYSTATISTIC_INLINE_HPP
