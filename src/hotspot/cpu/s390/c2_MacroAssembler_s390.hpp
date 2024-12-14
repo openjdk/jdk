@@ -44,10 +44,10 @@
   //   Kills:    tmp, Z_R0, Z_R1.
   //   Early clobber: result.
   //   Boolean precise controls accuracy of result value.
-  unsigned int string_compress(Register result, Register src, Register dst, Register cnt,
-                               Register tmp, bool precise, bool toASCII, VectorRegister v16, VectorRegister v17,
-                               VectorRegister v18, VectorRegister v19, VectorRegister v20, VectorRegister v21,
-                               VectorRegister v22, VectorRegister v23);
+  unsigned int string_compress(Register result, Register Rsrc, Register Rdst, Register Rcnt,
+                               Register tmp, bool precise, bool toASCII, VectorRegister Vtmp1, VectorRegister Vtmp2,
+                               VectorRegister Vmask, VectorRegister Vzero, VectorRegister Vsrc_first, VectorRegister v21,
+                               VectorRegister v22, VectorRegister Vsrc_last);
 
   // Inflate byte[] to char[].
   unsigned int string_inflate_trot(Register src, Register dst, Register cnt, Register tmp);

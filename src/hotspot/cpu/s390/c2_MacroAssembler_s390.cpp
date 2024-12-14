@@ -83,11 +83,11 @@ void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) 
 // Exactly the number of characters indicated by the return value have been written to dst.
 // If precise is false, a few characters more than indicated by the return value may have been
 // written to the dst array. In any failure case, The result value indexes the first invalid character.
-unsigned int C2_MacroAssembler::string_compress(Register result, Register src, Register dst, Register cnt,
-                                                Register tmp, bool precise, bool toASCII, VectorRegister v16, VectorRegister v17,
-                                                VectorRegister v18, VectorRegister v19, VectorRegister v20, VectorRegister v21,
-                                                VectorRegister v22, VectorRegister v23) {
-  assert_different_registers(Z_R0, Z_R1, result, src, dst, cnt, tmp);
+unsigned int C2_MacroAssembler::string_compress(Register result, Register Rsrc, Register Rdst, Register Rcnt,
+                                                Register tmp, bool precise, bool toASCII, VectorRegister Vtmp1, VectorRegister Vtmp2,
+                                                VectorRegister Vmask, VectorRegister Vzero, VectorRegister Vsrc_first, VectorRegister v21,
+                                                VectorRegister v22, VectorRegister Vsrc_last) {
+  assert_different_registers(Z_R0, Z_R1, result, Rsrc, Rdst, Rcnt, tmp);
 
   unsigned short char_mask = 0xff00;  // all selected bits must be '0' for a char to be valid
   unsigned int   mask_ix_l = 0;       // leftmost one bit pos in mask
@@ -106,10 +106,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   }
   int  block_start = offset();
 
-  Register       Rsrc  = src;
-  Register       Rdst  = dst;
   Register       Rix   = tmp;
-  Register       Rcnt  = cnt;
   Register       Rmask = result;  // holds incompatibility check mask until result value is stored.
   Label          ScalarShortcut, AllDone;
 
@@ -179,13 +176,6 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
     const int  log_min_vcnt = exact_log2(min_vcnt);
     Label      VectorLoop, VectorDone, VectorBreak;
 
-    VectorRegister Vtmp1      = v16;
-    VectorRegister Vtmp2      = v17;
-    VectorRegister Vmask      = v18;
-    VectorRegister Vzero      = v19;
-    VectorRegister Vsrc_first = v20;
-    VectorRegister Vsrc_last  = v23;
-
     assert((Vsrc_last->encoding() - Vsrc_first->encoding() + 1) == min_vcnt/8, "logic error");
     assert(VM_Version::has_DistinctOpnds(), "Assumption when has_VectorFacility()");
     z_srak(Rix, Rcnt, log_min_vcnt);       // # vector loop iterations
@@ -200,8 +190,8 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       add2reg(Rsrc, min_vcnt*2);
 
       //---<  check for incompatible character  >---
-      z_vo(Vtmp1, v20, v21);
-      z_vo(Vtmp2, v22, v23);
+      z_vo(Vtmp1, Vsrc_first, v21);
+      z_vo(Vtmp2, v22, Vsrc_last);
       z_vo(Vtmp1, Vtmp1, Vtmp2);
       z_vn(Vtmp1, Vtmp1, Vmask);
       z_vceqhs(Vtmp1, Vtmp1, Vzero);       // all bits selected by mask must be zero for successful compress.
@@ -209,8 +199,8 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
                                            // re-process data from current iteration in break handler.
 
       //---<  pack & store characters  >---
-      z_vpkh(Vtmp1, v20, v21);         // pack (src1, src2) -> tmp1
-      z_vpkh(Vtmp2, v22, v23);         // pack (src3, src4) -> tmp2
+      z_vpkh(Vtmp1, Vsrc_first, v21);      // pack (src1, src2) -> tmp1
+      z_vpkh(Vtmp2, v22, Vsrc_last);       // pack (src3, src4) -> tmp2
       z_vstm(Vtmp1, Vtmp2, 0, Rdst);       // store packed string
       add2reg(Rdst, min_vcnt);
 
