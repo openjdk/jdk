@@ -288,10 +288,12 @@ private:
   ShenandoahRegionPartitions _partitions;
   ShenandoahHeapRegion** _trash_regions;
 
-  // How many words have been allocated by the mutator, since the beginning of time?
-  // Even if this size_t value wraps around, the difference between two measurements effectively represents words allocated between two checkpoints.
-  // This value is modified only under HeapLock.  This is fetched concurrently by the regulator thread to determine allocation rate.
-  size_t _total_mutator_words_allocated;
+  // How many words have been allocated by the mutator since the ShenandoahFreeSet was most recently rebuilt.
+  // This value is modified and fetched only under HeapLock.
+  size_t _mutator_words_allocated;
+
+  // Temporarily holds mutator_Free allocatable bytes between prepare_to_rebuild() and finish_rebuild()
+  size_t _prepare_to_rebuild_mutator_free;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -310,7 +312,7 @@ private:
   // Record that delta words of memory have been allocated by the mutator.
   inline void increase_mutator_allocations(size_t delta_words) {
     shenandoah_assert_heaplocked();
-    _total_mutator_words_allocated += delta_words;
+    _mutator_words_allocated += delta_words;
   }
 
   // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
@@ -403,7 +405,7 @@ public:
   inline size_t get_mutator_allocations() {
     shenandoah_assert_not_heaplocked();
     ShenandoahHeapLocker locker(_heap->lock());
-    return _total_mutator_words_allocated;
+    return _mutator_words_allocated;
   }
 
   // Examine the existing free set representation, capturing the current state into var arguments:
@@ -436,8 +438,10 @@ public:
   // have_evacuation_reserves is true iff the desired values of young-gen and old-gen evacuation reserves and old-gen
   //                    promotion reserve have been precomputed (and can be obtained by invoking
   //                    <generation>->get_evacuation_reserve() or old_gen->get_promoted_reserve()
-  void finish_rebuild(size_t young_cset_regions, size_t old_cset_regions, size_t num_old_regions,
-                      bool have_evacuation_reserves = false);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t finish_rebuild(size_t young_cset_regions, size_t old_cset_regions, size_t num_old_regions,
+                        bool have_evacuation_reserves = false);
 
   // When a region is promoted in place, we add the region's available memory if it is greater than plab_min_size()
   // into the old collector partition by invoking this method.
@@ -512,13 +516,17 @@ public:
   //   first_old_region is the index of the first region that is part of the OldCollector set
   //    last_old_region is the index of the last region that is part of the OldCollector set
   //   old_region_count is the number of regions in the OldCollector set that have memory available to be allocated
-  void find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
-                                        size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t find_regions_with_alloc_capacity(size_t &young_cset_regions, size_t &old_cset_regions,
+                                          size_t &first_old_region, size_t &last_old_region, size_t &old_region_count);
 
   // Ensure that Collector has at least to_reserve bytes of available memory, and OldCollector has at least old_reserve
   // bytes of available memory.  On input, old_region_count holds the number of regions already present in the
   // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition.
-  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count);
+  //
+  // Returns allocatable memory within Mutator partition, in words.
+  size_t reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count);
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right
   // of regions reserved of young evacuations.

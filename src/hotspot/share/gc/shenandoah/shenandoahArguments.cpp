@@ -106,6 +106,11 @@ void ShenandoahArguments::initialize() {
     vm_exit_during_initialization("Shenandoah expects ParallelGCThreads > 0, check -XX:ParallelGCThreads=#");
   }
 
+  if (ShenandoahRateAccelerationSampleSize < ShenandoahMomentaryAllocationRateSpikeSampleSize) {
+    // User settings error, report and ask user to rectify.
+    vm_exit_during_initialization("Shenandoah requires ShenandoahRateAccelerationSampleSize >= ShenandoahMomentaryAllocationRateSpikeSampleSize");
+  }
+
   // Make sure ergonomic decisions do not break the thread count invariants.
   // This may happen when user overrides one of the flags, but not the other.
   // When that happens, we want to adjust the setting that was set ergonomically.

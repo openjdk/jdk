@@ -231,9 +231,6 @@ jint ShenandoahHeap::initialize() {
 
   BarrierSet::set_barrier_set(new ShenandoahBarrierSet(this, _heap_region));
 
-  // Now we know the number of regions and heap sizes, initialize the heuristics.
-  initialize_heuristics();
-
   assert(_heap_region.byte_size() == heap_rs.size(), "Need to know reserved size for card table");
 
   //
@@ -461,6 +458,9 @@ jint ShenandoahHeap::initialize() {
 
   initialize_controller();
 
+  // Now we know the number of regions and heap sizes and have initialized controller, initialize the heuristics.
+  initialize_heuristics();
+
   if (ShenandoahUncommit) {
     _uncommit_thread = new ShenandoahUncommitThread(this);
   }
@@ -474,6 +474,10 @@ jint ShenandoahHeap::initialize() {
 
 void ShenandoahHeap::initialize_controller() {
   _control_thread = new ShenandoahControlThread();
+#define KELVIN_DEBUG
+#ifdef KELVIN_DEBUG
+  log_info(gc)("initialize_controller set _control_thread: " PTR_FORMAT, p2i(_control_thread));
+#endif
 }
 
 void ShenandoahHeap::print_init_logger() const {

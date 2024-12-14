@@ -79,23 +79,23 @@ class ShenandoahRegulatorThread: public ConcurrentGCThread {
 
   // duration of planned regulator sleep period, in ms
   uint _sleep;
-  double _most_recent_regulator_wake_time;
-  double _most_recent_regulator_period;
+  double _most_recent_wake_time;
+  double _most_recent_period;
   double _last_sleep_adjust_time;
 
 public:
-  inline double get_most_recent_regulator_wake_time() const {
-    return _most_recent_regulator_wake_time;
+  inline double get_most_recent_wake_time() const {
+    return _most_recent_wake_time;
   }
 
   // Return actual duration of last regulator period, which is supposed to equal _sleep, but may be higher in case of scheduling jitter.
-  inline double get_most_recent_regulator_period() const {
-    return _most_recent_regulator_period;
+  inline double get_most_recent_period() const {
+    return _most_recent_period;
   }
 
-  // return planned sleep duration, in ms
-  inline uint planned_sleep_interval() const {
-    return _sleep;
+  // return planned sleep duration, in s
+  inline double get_planned_sleep_interval() const {
+    return ((double) _sleep) * 1000.0;
   }
 };
 

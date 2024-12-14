@@ -24,6 +24,25 @@
  *
  */
 
+#ifdef KELVIN_DEPRECATE
+  product(double, ShenandoahInitialAcceleratedAllocationRateGoodnessRatio,  \
+          0.10, EXPERIMENTAL,                                               \
+          "(Generational mode only) "                                       \
+          "If the allocation rate predicted by an acceleration trend "      \
+          "analysis divided by the most recently measured allocation "      \
+          "rate is less than or equal to this value, consider the trend "   \
+          "analysis to represent a reliable predictor.  Otherwise, reject " \
+          "the trend analysis as unreliable because allocation rate is "    \
+          "not accelerating.  A smaller value makes us less likely to "     \
+          "recognize acceleration trends, and less likely to trigger "      \
+          "collection dues to acceleration.  A larger value may result "    \
+          "excessive triggers.")                                            \
+          range(0,1.0)                                                      \
+                                                                            
+#endif
+
+
+
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 
@@ -33,6 +52,37 @@
                             product_pd,                                     \
                             range,                                          \
                             constraint)                                     \
+                                                                            \
+  product(uintx, ShenandoahRateAccelerationSampleSize, 5, EXPERIMENTAL,     \
+          "In selected ShenandoahControlIntervals (e.g. one out of three), "\
+          "we compute the allocation rate since the previous control "      \
+          "interval.  This many samples are analyzed to determine whether " \
+          "allocation rates are accelerating.  Acceleration may occur "     \
+          "due to increasing client demand or due to phase changes in "     \
+          "an application.  A larger value reduces sensitivity to "         \
+          "noise and delays recognition of the accelerating trend.  A "     \
+          "larger value may also cause the heuristic to miss detection "    \
+          "of very quick accelerations.  Smaller values may cause random "  \
+          "noise to be perceived as acceleration of allocation rate, "      \
+          "triggering excess collections.")                                 \
+                                                                            \
+  product(uintx, ShenandoahMomentaryAllocationRateSpikeSampleSize,          \
+          3, EXPERIMENTAL,                                                  \
+          "In selected ShenandoahControlIntervals (e.g. one out of three), "\
+          "we compute the allocation rate since the previous control "      \
+          "interval.  The average of this many most recent samples "        \
+          "is compared against current allocation runway and anticipated "  \
+          "GC time to determine whether a spike in allocation rate "        \
+          "justifies an early GC trigger.  Momentary allocation spike "     \
+          "detection is in addition to previously implemented "             \
+          "ShenandoahAdaptiveInitialSpikeThreshold, the latter of which "   \
+          "is more effective at detecting slower spikes.  The latter "      \
+          "spike detection samples at the rate specifieid by "              \
+          "ShenandoahAdaptiveSampleFrequencyHz.  The value of this "        \
+          "parameter must be less than or equal to the value of "           \
+          "ShenandoahRateAccelerationSampleSize.  A larger value makes "    \
+          "momentary spike detection less sensitive.  A smaller value "     \
+          "may result in excessive GC triggers.")                           \
                                                                             \
   product(uintx, ShenandoahGenerationalHumongousReserve, 0, EXPERIMENTAL,   \
           "(Generational mode only) What percent of the heap should be "    \

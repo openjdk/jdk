@@ -1170,7 +1170,8 @@ void ShenandoahFullGC::phase5_epilog() {
       ShenandoahGenerationalFullGC::compute_balances();
     }
 
-    heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    size_t mutator_free = heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
+    heap->set_mutator_free_after_updaterefs(mutator_free);
 
     heap->clear_cancelled_gc(true /* clear oom handler */);
   }

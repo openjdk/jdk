@@ -45,6 +45,7 @@ ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle) {
+  _planned_sleep_interval = ShenandoahControlIntervalMin;
   set_name("Shenandoah Control Thread");
   create_and_start();
 }
@@ -244,14 +245,24 @@ void ShenandoahControlThread::run_service() {
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
-    const double current = os::elapsedTime();
+    const double before_sleep = _most_recent_wake_time;
     if (heap->has_changed()) {
       sleep = ShenandoahControlIntervalMin;
-    } else if ((current - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
+    } else if ((before_sleep - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
-      last_sleep_adjust_time = current;
+      last_sleep_adjust_time = before_sleep;
     }
     os::naked_short_sleep(sleep);
+    // Record a conservative estimate of the longest anticipated sleep duration until we sample again.
+    _planned_sleep_interval = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
+    _most_recent_wake_time = os::elapsedTime();
+    if (LogTarget(Debug, gc, thread)::is_enabled()) {
+      double elapsed = _most_recent_wake_time - before_sleep;
+      double hiccup = elapsed - double(sleep);
+      if (hiccup > 0.001) {
+        log_debug(gc, thread)("Control Thread hiccup time: %.3fs", hiccup);
+      }
+    }
   }
 
   // Wait for the actual stop(), can't leave run_service() earlier.

@@ -30,6 +30,7 @@
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -42,6 +43,13 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
+  double interval() const {
+    return _interval_sec;
+  }
+  double last_sample_time() const {
+    return _last_sample_time;
+  }
+
  private:
 
   double instantaneous_rate(double time, size_t allocated) const;
@@ -70,9 +78,35 @@ public:
 
   virtual ~ShenandoahAdaptiveHeuristics();
 
+  virtual void initialize();
+
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                      RegionData* data, size_t size,
                                                      size_t actual_free);
+
+  virtual void adjust_penalty(intx step);
+
+  // At the end of GC(N), we idle GC until necessary to start the next GC.  Compute the threshold of memory that can be allocated
+  // before we need to start the next GC.
+  void start_idle_span();
+
+  // If old-generation marking finishes during an idle span and immediate old-generation garbage is identified, we will rebuild
+  // the free set.  If this happens, resume_idle_span() recomputes the threshold of memory that can be allocated before we need
+  // to start the next GC.
+  void resume_idle_span(size_t mutator_available);
+
+  // Having observed a new allocation rate sample, add this to the acceleration history so that we can determine if allocation
+  // rate is accelerating.
+  void add_rate_to_acceleration_history(double timestamp, double rate);
+
+  // Compute and return the current allocation rate, the current rate of acceleration, and the amount of memory that we expect
+  // to consume if we start GC right now and gc takes predicted_cycle_time to complete.
+  size_t accelerated_consumption(double& acceleration, double& current_rate, double predicted_cycle_time) const;
+
+#ifdef FUTURE_SUPPORT_FOR_ALLOCATION_THROTTLE_DURING_GC
+  void start_evac_span(size_t mutator_free);
+  // probably also need start_mark_span(), state_update_span()
+#endif
 
   void record_cycle_start();
   void record_success_concurrent();
@@ -98,6 +132,10 @@ public:
   const static double LOWEST_EXPECTED_AVAILABLE_AT_END;
   const static double HIGHEST_EXPECTED_AVAILABLE_AT_END;
 
+  const static size_t GC_TIME_SAMPLE_SIZE;
+
+  const static double MINIMUM_ALLOC_RATE_SAMPLE_INTERVAL;
+
   friend class ShenandoahAllocationRate;
 
   // Used to record the last trigger that signaled to start a GC.
@@ -112,8 +150,37 @@ public:
   void adjust_margin_of_error(double amount);
   void adjust_spike_threshold(double amount);
 
+  // We recalculate the trigger threshold at the end of update refs and following the end of concurrent marking.  These two events
+  // represents points at which the allocation pool was established (or replenished).  Trigger threshold is only meaningful during
+  // times that GC is idle.  A similar approach might be used to throttle allocations between GC cycles and during GC cycles.
+  void recalculate_trigger_threshold(size_t mutator_available);
+
+  // Queries are issued only by should_start_gc(), approximately once every 3 ms in the default configuration.
+  inline size_t allocated_since_last_query() {
+    size_t allocated_words = _freeset->get_mutator_allocations();
+    size_t result = allocated_words - _allocated_at_previous_query;
+    _allocated_at_previous_query = allocated_words;
+    return result;
+  }
+
+  // Returns number of words that can be allocated before we need to trigger next GC.
+  inline size_t allocatable() const {
+    size_t allocated_words = _freeset->get_mutator_allocations();
+    return (allocated_words < _trigger_threshold)? _trigger_threshold - allocated_words: 0;
+  }
+
+  double get_most_recent_wake_time() const;
+  double get_planned_sleep_interval() const;
+
 protected:
   ShenandoahAllocationRate _allocation_rate;
+
+  // Invocations of should_start_gc() happen approximately once per ms.  Approximately every third invocation  of should_start_gc()
+  // queries the allocation rate.
+  size_t _allocated_at_previous_query;
+
+  double _time_of_previous_allocation_query;
+
 
   // The margin of error expressed in standard deviations to add to our
   // average cycle time and allocation rate. As this value increases we
@@ -141,11 +208,57 @@ protected:
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
 
+  ShenandoahFreeSet* _freeset;
+  bool _is_generational;
+  ShenandoahRegulatorThread* _regulator_thread;
+  ShenandoahController* _control_thread;
+
+  size_t _previous_total_allocations;
+  double _previous_allocation_timestamp;
+  size_t _total_allocations_at_start_of_idle;
+  size_t _trigger_threshold;
+
+  // Keep track of GC_TIME_SAMPLE_SIZE most recent concurrent GC cycle times
+  uint _gc_time_first_sample_index;
+  uint _gc_time_num_samples;
+  double* const _gc_time_timestamps;
+  double* const _gc_time_samples;
+  double* const _gc_time_xy;    // timestamp * sample
+  double* const _gc_time_xx;    // timestamp squared
+  double _gc_time_sum_of_timestamps;
+  double _gc_time_sum_of_samples;
+  double _gc_time_sum_of_xy;
+  double _gc_time_sum_of_xx;
+
+  double _gc_time_m;            // slope
+  double _gc_time_b;            // y-intercept
+  double _gc_time_sd;           // sd on deviance from prediction
+
+  void add_gc_time(double timestamp_at_start, double duration);
+  void add_degenerated_gc_time(double timestamp_at_start, double duration);
+  double predict_gc_time(double timestamp_at_start);
+
+  // Keep track of SPIKE_ACCELERATION_SAMPLE_SIZE most recent spike allocation rate measurements. Note that it is
+  // typical to experience a small spike following end of GC cycle, as mutator threads refresh their TLABs.  But
+  // there is generally an abundance of memory at this time as well, so this will not generally trigger GC.
+  uint _spike_acceleration_first_sample_index;
+  uint _spike_acceleration_num_samples;
+  double* const _spike_acceleration_rate_samples;
+  double* const _spike_acceleration_rate_timestamps;
+
+  size_t _most_recent_headroom_at_start_of_idle;
+
+#ifdef KELVIN_DEPRECATE
+  double _acceleration_goodness_ratio;
+  size_t _consecutive_goodness;
+#endif
+  
   // A conservative minimum threshold of free space that we'll try to maintain when possible.
   // For example, we might trigger a concurrent gc if we are likely to drop below
   // this threshold, or we might consider this when dynamically resizing generations
   // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
   size_t min_free_threshold();
+
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
