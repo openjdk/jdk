@@ -73,8 +73,8 @@ public class DocTypeChecker implements HtmlChecker {
             Pattern p = Pattern.compile("(?i)doctype"
                     + "\\s+html"
                     + "\\s+([a-z]+)"
-                    + "\\s+\"([^\"]+)\""
-                    + "(?:\\s+\"([^\"]+)\")?"
+                    + "\\s+(?:\"([^\"]+)\"|'([^']+)')"
+                    + "(?:\\s+(?:\"([^\"]+)\"|'([^']+)'))?"
                     + "\\s*");
             Matcher m = p.matcher(docType);
             if (m.matches()) {
