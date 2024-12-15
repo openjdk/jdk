@@ -277,7 +277,7 @@ void PhaseLive::add_liveout(Block_List& worklist, Block* p, IndexSet* lo, Vector
 // Add a vector of live-in values to a given blocks live-in set.
 void PhaseLive::add_livein(Block *p, IndexSet *lo) {
   IndexSet *livein = &_livein[p->_pre_order-1];
-  if (!livein->is_empty()) {
+  if (!lo->is_empty()) {
     IndexSetIterator elements(lo);
     uint r;
     while ((r = elements.next()) != 0) {
