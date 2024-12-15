@@ -59,28 +59,28 @@ public class DockerRunOptions {
         this.imageNameAndTag = imageNameAndTag;
         this.command = javaCmd;
         this.classToRun = classToRun;
-        Collections.addAll(this.javaOpts, javaOpts);
+        this.addJavaOpts(javaOpts);
         // always print hserr to stderr in the docker tests to avoid
         // trouble accessing it after a crash in the container
-        this.javaOpts.add("-XX:+ErrorFileToStderr");
+        this.addJavaOpts("-XX:+ErrorFileToStderr");
     }
 
-    public DockerRunOptions addDockerOpts(String... opts) {
+    public final DockerRunOptions addDockerOpts(String... opts) {
         Collections.addAll(dockerOpts, opts);
         return this;
     }
 
-    public DockerRunOptions addJavaOpts(String... opts) {
+    public final DockerRunOptions addJavaOpts(String... opts) {
         Collections.addAll(javaOpts, opts);
         return this;
     }
 
-    public DockerRunOptions addJavaOptsAppended(String... opts) {
+    public final DockerRunOptions addJavaOptsAppended(String... opts) {
         Collections.addAll(javaOptsAppended, opts);
         return this;
     }
 
-    public DockerRunOptions addClassOptions(String... opts) {
+    public final DockerRunOptions addClassOptions(String... opts) {
         Collections.addAll(classParams,opts);
         return this;
     }
