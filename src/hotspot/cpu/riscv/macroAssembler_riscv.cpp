@@ -5854,21 +5854,15 @@ void MacroAssembler::zext(Register dst, Register src, int bits) {
       }
       break;
     case 8:
-      if (UseZbb) {
-        zext_b(dst, src);
-        return;
-      }
+      zext_b(dst, src);
+      return;
       break;
     default:
       break;
   }
 
-  if (bits == 8) {
-    andi(dst, src, 0xFF);
-  } else {
-    slli(dst, src, XLEN - bits);
-    srli(dst, dst, XLEN - bits);
-  }
+  slli(dst, src, XLEN - bits);
+  srli(dst, dst, XLEN - bits);
 }
 
 void MacroAssembler::sext(Register dst, Register src, int bits) {
@@ -5891,6 +5885,7 @@ void MacroAssembler::sext(Register dst, Register src, int bits) {
     default:
       break;
   }
+
   slli(dst, src, XLEN - bits);
   srai(dst, dst, XLEN - bits);
 }
