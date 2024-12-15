@@ -2421,6 +2421,8 @@ private:
       if( _constant_status == LITERAL_NOT_SEEN ) {
         if ( _constant_type == Form::idealD ) {
           fprintf(_fp,"->constantD()");
+        } else if ( _constant_type == Form::idealH ) {
+          fprintf(_fp,"->constantH()");
         } else if ( _constant_type == Form::idealF ) {
           fprintf(_fp,"->constantF()");
         } else if ( _constant_type == Form::idealL ) {
@@ -3789,6 +3791,8 @@ static void path_to_constant(FILE *fp, FormDict &globals,
       fprintf(fp, "_leaf->bottom_type()->is_narrowoop()");
     } else if ( (strcmp(optype,"ConNKlass") == 0) ) {
       fprintf(fp, "_leaf->bottom_type()->is_narrowklass()");
+    } else if ( (strcmp(optype,"ConH") == 0) ) {
+      fprintf(fp, "_leaf->geth()");
     } else if ( (strcmp(optype,"ConF") == 0) ) {
       fprintf(fp, "_leaf->getf()");
     } else if ( (strcmp(optype,"ConD") == 0) ) {

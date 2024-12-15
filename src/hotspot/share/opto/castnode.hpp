@@ -141,6 +141,17 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+class CastHHNode: public ConstraintCastNode {
+public:
+  CastHHNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+          : ConstraintCastNode(ctrl, n, t, dependency, types) {
+    assert(ctrl != nullptr, "control must be set");
+    init_class_id(Class_CastHH);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return in(1)->ideal_reg(); }
+};
+
 class CastFFNode: public ConstraintCastNode {
 public:
   CastFFNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)

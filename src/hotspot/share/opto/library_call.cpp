@@ -542,7 +542,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_longBitsToDouble:
   case vmIntrinsics::_floatToFloat16:
   case vmIntrinsics::_float16ToFloat:           return inline_fp_conversions(intrinsic_id());
-
+  case vmIntrinsics::_sqrt_float16:             return inline_fp16_operations(intrinsic_id(), 1);
+  case vmIntrinsics::_fma_float16:              return inline_fp16_operations(intrinsic_id(), 3);
   case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
   case vmIntrinsics::_doubleIsFinite:
@@ -8614,3 +8615,54 @@ bool LibraryCallKit::inline_blackhole() {
 
   return true;
 }
+
+bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
+  if (!Matcher::match_rule_supported(Op_ReinterpretS2HF) ||
+      !Matcher::match_rule_supported(Op_ReinterpretHF2S)) {
+    return false;
+  }
+
+  // Transformed nodes
+  Node* fld1 = nullptr;
+  Node* fld2 = nullptr;
+  Node* fld3 = nullptr;
+  switch(num_args) {
+    case 3:
+      assert((argument(2)->is_ConI() &&
+              argument(2)->get_int() >= min_jshort &&
+              argument(2)->get_int() <= max_jshort) ||
+             (argument(2)->bottom_type()->array_element_basic_type() == T_SHORT), "");
+      fld3 = _gvn.transform(new ReinterpretS2HFNode(argument(2)));
+    // fall-through
+    case 2:
+      assert((argument(1)->is_ConI() &&
+              argument(1)->get_int() >= min_jshort &&
+              argument(1)->get_int() <= max_jshort) ||
+             (argument(1)->bottom_type()->array_element_basic_type() == T_SHORT), "");
+      fld2 = _gvn.transform(new ReinterpretS2HFNode(argument(1)));
+    // fall-through
+    case 1:
+      assert((argument(0)->is_ConI() &&
+              argument(0)->get_int() >= min_jshort &&
+              argument(0)->get_int() <= max_jshort) ||
+             (argument(0)->bottom_type()->array_element_basic_type() == T_SHORT), "");
+      fld1 = _gvn.transform(new ReinterpretS2HFNode(argument(0)));
+      break;
+    default: fatal("Unsupported number of arguments %d", num_args);
+  }
+
+  Node* result = nullptr;
+  switch (id) {
+  // Unary operations
+  case vmIntrinsics::_sqrt_float16:      result = _gvn.transform(new SqrtHFNode(C, control(), fld1)); break;
+
+  // Ternary operations
+  case vmIntrinsics::_fma_float16:       result = _gvn.transform(new FmaHFNode(control(), fld1, fld2, fld3)); break;
+  default:
+    fatal_unexpected_iid(id);
+    break;
+  }
+  set_result(_gvn.transform(new ReinterpretHF2SNode(result)));
+  return true;
+}
+

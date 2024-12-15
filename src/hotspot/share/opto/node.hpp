@@ -58,6 +58,7 @@ class CallNode;
 class CallRuntimeNode;
 class CallStaticJavaNode;
 class CastFFNode;
+class CastHHNode;
 class CastDDNode;
 class CastVVNode;
 class CastIINode;
@@ -725,6 +726,7 @@ public:
         DEFINE_CLASS_ID(CastDD, ConstraintCast, 4)
         DEFINE_CLASS_ID(CastVV, ConstraintCast, 5)
         DEFINE_CLASS_ID(CastPP, ConstraintCast, 6)
+        DEFINE_CLASS_ID(CastHH, ConstraintCast, 7)
       DEFINE_CLASS_ID(CMove, Type, 3)
       DEFINE_CLASS_ID(SafePointScalarObject, Type, 4)
       DEFINE_CLASS_ID(DecodeNarrowPtr, Type, 5)
@@ -909,6 +911,7 @@ public:
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
+  DEFINE_CLASS_QUERY(CastFF)
   DEFINE_CLASS_QUERY(ConI)
   DEFINE_CLASS_QUERY(CastPP)
   DEFINE_CLASS_QUERY(ConstraintCast)
@@ -1256,6 +1259,7 @@ public:
   intptr_t get_narrowcon() const;
   jdouble getd() const;
   jfloat getf() const;
+  jshort geth() const;
 
   // Nodes which are pinned into basic blocks
   virtual bool pinned() const { return false; }

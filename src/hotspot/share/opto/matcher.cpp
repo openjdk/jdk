@@ -2305,6 +2305,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_EncodeISOArray:
     case Op_FmaD:
     case Op_FmaF:
+    case Op_FmaHF:
     case Op_FmaVD:
     case Op_FmaVF:
     case Op_MacroLogicV:
@@ -2477,6 +2478,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     }
     case Op_FmaD:
     case Op_FmaF:
+    case Op_FmaHF:
     case Op_FmaVD:
     case Op_FmaVF: {
       // Restructure into a binary tree for Matching.
