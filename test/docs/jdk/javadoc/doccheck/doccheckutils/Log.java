@@ -85,7 +85,7 @@ public class Log {
         this.baseDir = baseDir.toAbsolutePath();
     }
 
-    public Path againstBaseDir(Path path) {
+    public Path relativize(Path path) {
         return baseDir != null && path.startsWith(baseDir) ? baseDir.relativize(path) : path;
     }
 

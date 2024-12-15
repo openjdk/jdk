@@ -179,7 +179,7 @@ public class ExtLinkChecker implements HtmlChecker, AutoCloseable {
         int MAX_EXTRA = 10;
         int n = 0;
         while (iter.hasNext()) {
-            log.log("    Also found in %s", log.againstBaseDir(iter.next()));
+            log.log("    Also found in %s", log.relativize(iter.next()));
             if (n++ == MAX_EXTRA) {
                 int rest = 0;
                 while (iter.hasNext()) {

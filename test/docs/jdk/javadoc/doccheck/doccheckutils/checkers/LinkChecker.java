@@ -65,7 +65,7 @@ public class LinkChecker implements HtmlChecker {
     @Override
     public void startFile(Path path) {
         currFile = path.toAbsolutePath().normalize();
-        currTable = allFiles.computeIfAbsent(currFile, p -> new IDTable(log.againstBaseDir(p)));
+        currTable = allFiles.computeIfAbsent(currFile, p -> new IDTable(log.relativize(p)));
         html5 = false;
         files++;
     }
@@ -196,7 +196,7 @@ public class LinkChecker implements HtmlChecker {
     }
 
     private void reportMissingFile(Path file) {
-        log.log(log.againstBaseDir(file).toString());
+        log.log(log.relativize(file).toString());
         IDTable table = allFiles.get(file);
         Set<Path> refs = new TreeSet<>();
         for (IDInfo id : table.map.values()) {
@@ -209,7 +209,7 @@ public class LinkChecker implements HtmlChecker {
         int n = 0;
         int MAX_REFS = 10;
         for (Path ref : refs) {
-            log.log("    in " + log.againstBaseDir(ref));
+            log.log("    in " + log.relativize(ref));
             if (++n == MAX_REFS) {
                 log.log("    ... and %d more", refs.size() - n);
                 break;
@@ -288,7 +288,7 @@ public class LinkChecker implements HtmlChecker {
 
 
     private void foundReference(int line, Path p, String fragment) {
-        IDTable t = allFiles.computeIfAbsent(p, key -> new IDTable(log.againstBaseDir(key)));
+        IDTable t = allFiles.computeIfAbsent(p, key -> new IDTable(log.relativize(key)));
         t.addReference(fragment, currFile, line);
     }
 
@@ -428,7 +428,7 @@ public class LinkChecker implements HtmlChecker {
                 if (info.references != null || !checkInwardReferencesOnly) {
                     // don't report error if we're only checking inbound references
                     // and there are no references to this ID.
-                    log.log(log.againstBaseDir(currFile), line, "name already declared: " + name);
+                    log.log(log.relativize(currFile), line, "name already declared: " + name);
                     duplicateIds++;
                 }
             } else {
@@ -441,7 +441,7 @@ public class LinkChecker implements HtmlChecker {
                 if (name != null) {
                     IDInfo id = map.get(name);
                     if (id == null || !id.declared) {
-                        log.log(log.againstBaseDir(from), line, "id not found: " + this.pathOrURI + "#" + name);
+                        log.log(log.relativize(from), line, "id not found: " + this.pathOrURI + "#" + name);
                     }
                 }
             } else {
@@ -457,7 +457,7 @@ public class LinkChecker implements HtmlChecker {
             map.forEach((name, id) -> {
                 if (name != null && !id.declared) {
                     for (Position ref : id.references) {
-                        log.log(log.againstBaseDir(ref.path), ref.line, "id not found: " + this.pathOrURI + "#" + name);
+                        log.log(log.relativize(ref.path), ref.line, "id not found: " + this.pathOrURI + "#" + name);
                     }
                     missingIds++;
                 }
