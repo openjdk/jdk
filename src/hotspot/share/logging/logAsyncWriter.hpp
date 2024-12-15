@@ -59,7 +59,8 @@ class LogFileStreamOutput;
 class AsyncLogWriter : public NonJavaThread {
   friend class AsyncLogTest;
   friend class AsyncLogTest_logBuffer_vm_Test;
-  class AsyncLogLocker;
+  class OuterLocker;
+  class InnerLocker;
 
   // account for dropped messages
   template <AnyObj::allocation_type ALLOC_TYPE>
@@ -125,7 +126,7 @@ class AsyncLogWriter : public NonJavaThread {
     }
 
     void push_flush_token();
-    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg);
+    bool push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg, const size_t msg_len);
 
     void reset() {
       // Ensure _pos is Message-aligned
@@ -159,7 +160,12 @@ class AsyncLogWriter : public NonJavaThread {
   static AsyncLogWriter* _instance;
   Semaphore _flush_sem;
   // Can't use a Monitor here as we need a low-level API that can be used without Thread::current().
-  PlatformMonitor _lock;
+  // Producers take both locks in the order 0. _outer_lock 1. _inner_lock
+  // The consumer thread only takes the _inner_lock.
+  // The _inner_lock protects the buffers and performs all communication between producer and consumer via wait/notify.
+  // This allows a producer to await progress from the consumer thread (by only releasing the _inner_lock)), whilst preventing all other consumers from progressing.
+  PlatformMonitor _outer_lock;
+  PlatformMonitor _inner_lock;
   bool _data_available;
   volatile bool _initialized;
   AsyncLogMap<AnyObj::C_HEAP> _stats;
@@ -167,6 +173,12 @@ class AsyncLogWriter : public NonJavaThread {
   // ping-pong buffers
   Buffer* _buffer;
   Buffer* _buffer_staging;
+
+  // Stalled message
+  // Stalling is implemented by the producer writing to _stalled_message, notifying the _inner_lock and releasing it.
+  // The consumer will then write all of the current buffers' content and then write the stalled message, at the end notifying the _inner_lock and releasing it for the
+  // owning producer thread of the stalled message. This thread will finally release both locks in order, allowing for other producers to continue.
+  volatile Message* _stalled_message;
 
   static const LogDecorations& None;
 
