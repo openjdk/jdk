@@ -90,9 +90,9 @@ public:
   uint64_t stamp() const     { return _stamp; }
 };
 
+// Arena types (for Compilation Memory Statistic)
 #define DO_ARENA_TAG(FN) \
   FN(ra,          Resource areas) \
-  FN(ha,          Handle area) \
   FN(node,        C2 Node arena) \
   FN(comp,        C2 Compile arena) \
   FN(type,        C2 Type arena) \
