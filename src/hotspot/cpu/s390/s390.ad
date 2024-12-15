@@ -10600,8 +10600,8 @@ instruct string_compress(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI tm
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
                        $tmp$$Register, true, false, $v16$$VectorRegister, $v17$$VectorRegister, $v18$$VectorRegister,
-                     $v19$$VectorRegister, $v20$$VectorRegister, $v21$$VectorRegister, $v22$$VectorRegister,
-                     $v23$$VectorRegister);
+                       $v19$$VectorRegister, $v20$$VectorRegister, $v21$$VectorRegister, $v22$$VectorRegister,
+                       $v23$$VectorRegister);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10673,8 +10673,8 @@ instruct encode_iso_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI t
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
                        $tmp$$Register, true, false, $v16$$VectorRegister, $v17$$VectorRegister, $v18$$VectorRegister,
-                     $v19$$VectorRegister, $v20$$VectorRegister, $v21$$VectorRegister, $v22$$VectorRegister,
-                     $v23$$VectorRegister);
+                       $v19$$VectorRegister, $v20$$VectorRegister, $v21$$VectorRegister, $v22$$VectorRegister,
+                       $v23$$VectorRegister);
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -10691,8 +10691,8 @@ instruct encode_ascii_array(iRegP src, iRegP dst, iRegI result, iRegI len, iRegI
   ins_encode %{
     __ string_compress($result$$Register, $src$$Register, $dst$$Register, $len$$Register,
                        $tmp$$Register, true, true, $v16$$VectorRegister, $v17$$VectorRegister, $v18$$VectorRegister,
-                     $v19$$VectorRegister, $v20$$VectorRegister, $v21$$VectorRegister, $v22$$VectorRegister,
-                     $v23$$VectorRegister);
+                       $v19$$VectorRegister, $v20$$VectorRegister, $v21$$VectorRegister, $v22$$VectorRegister,
+                       $v23$$VectorRegister);
   %}
   ins_pipe(pipe_class_dummy);
 %}
