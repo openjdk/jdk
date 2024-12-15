@@ -2864,6 +2864,24 @@ private:
   void evplzcntd(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
   void evplzcntq(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len);
 
+  // Float16 Vector instructions.
+  void evaddph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evaddph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evsubph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evsubph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evdivph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evdivph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evmulph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evmulph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evminph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evminph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evmaxph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evmaxph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evfmadd132ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evfmadd132ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evsqrtph(XMMRegister dst, XMMRegister src1, int vector_len);
+  void evsqrtph(XMMRegister dst, Address src1, int vector_len);
+
   // Sub packed integers
   void psubb(XMMRegister dst, XMMRegister src);
   void psubw(XMMRegister dst, XMMRegister src);

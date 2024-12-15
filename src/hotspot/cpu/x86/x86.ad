@@ -1726,6 +1726,18 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   //   * 128bit vroundpd instruction is present only in AVX1
   int size_in_bits = vlen * type2aelembytes(bt) * BitsPerByte;
   switch (opcode) {
+    case Op_AddVHF:
+    case Op_DivVHF:
+    case Op_FmaVHF:
+    case Op_MaxVHF:
+    case Op_MinVHF:
+    case Op_MulVHF:
+    case Op_SubVHF:
+    case Op_SqrtVHF:
+      if (!VM_Version::supports_avx512_fp16()) {
+        return false;
+      }
+      break;
     case Op_AbsVF:
     case Op_NegVF:
       if ((vlen == 16) && (VM_Version::supports_avx512dq() == false)) {
@@ -10836,4 +10848,84 @@ instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
     __ select_from_two_vectors_evex(bt, $index$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe(pipe_slow);
+%}
+
+instruct vector_sqrt_HF_reg(vec dst, vec src)
+%{
+  match(Set dst (SqrtVHF src));
+  format %{ "vector_sqrt_fp16 $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evsqrtph($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_sqrt_HF_mem(vec dst, memory src)
+%{
+  match(Set dst (SqrtVHF (VectorReinterpret (LoadVector src))));
+  format %{ "vector_sqrt_fp16_mem $dst, $src" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evsqrtph($dst$$XMMRegister, $src$$Address, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_binOps_HF_reg(vec dst, vec src1, vec src2)
+%{
+  match(Set dst (AddVHF src1 src2));
+  match(Set dst (DivVHF src1 src2));
+  match(Set dst (MaxVHF src1 src2));
+  match(Set dst (MinVHF src1 src2));
+  match(Set dst (MulVHF src1 src2));
+  match(Set dst (SubVHF src1 src2));
+  format %{ "vector_binop_fp16 $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ evfp16ph(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
+%{
+  match(Set dst (AddVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (DivVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (MaxVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (MinVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (MulVHF src1 (VectorReinterpret (LoadVector src2))));
+  match(Set dst (SubVHF src1 (VectorReinterpret (LoadVector src2))));
+  format %{ "vector_binop_fp16_mem $dst, $src1, $src2" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    int opcode = this->ideal_Opcode();
+    __ evfp16ph(opcode, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address, vlen_enc);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vector_fma_HF_reg(vec dst, vec src1, vec src2)
+%{
+  match(Set dst (FmaVHF src2 (Binary dst src1)));
+  effect(DEF dst);
+  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
+%{
+  match(Set dst (FmaVHF src2 (Binary dst (VectorReinterpret (LoadVector src1)))));
+  effect(DEF dst);
+  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  ins_encode %{
+    int vlen_enc = vector_length_encoding(this);
+    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$Address, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
 %}

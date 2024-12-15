@@ -234,6 +234,11 @@ public class IRNode {
         vectorNode(ADD_VI, "AddVI", TYPE_INT);
     }
 
+    public static final String ADD_VHF = PREFIX + "ADD_VHF" + POSTFIX;
+    static {
+        vectorNode(ADD_VHF, "AddVHF", TYPE_SHORT);
+    }
+
     public static final String ADD_VF = VECTOR_PREFIX + "ADD_VF" + POSTFIX;
     static {
         vectorNode(ADD_VF, "AddVF", TYPE_FLOAT);
@@ -595,6 +600,11 @@ public class IRNode {
         beforeMatchingNameRegex(DIV_MOD_L, "DivModL");
     }
 
+    public static final String DIV_VHF = VECTOR_PREFIX + "DIV_VHF" + POSTFIX;
+    static {
+        vectorNode(DIV_VHF, "DivVHF", TYPE_SHORT);
+    }
+
     public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
         vectorNode(DIV_VF, "DivVF", TYPE_FLOAT);
@@ -630,6 +640,11 @@ public class IRNode {
     static {
         String regex = "(.*Field: *" + END;
         optoOnly(FIELD_ACCESS, regex);
+    }
+
+    public static final String FMA_VHF = VECTOR_PREFIX + "FMA_VHF" + POSTFIX;
+    static {
+        vectorNode(FMA_VHF, "FmaVHF", TYPE_SHORT);
     }
 
     public static final String FMA_VF = VECTOR_PREFIX + "FMA_VF" + POSTFIX;
@@ -1059,6 +1074,11 @@ public class IRNode {
         vectorNode(MAX_VI, "MaxV", TYPE_INT);
     }
 
+    public static final String MAX_VHF = VECTOR_PREFIX + "MAX_VHF" + POSTFIX;
+    static {
+        vectorNode(MAX_VHF, "MaxVHF", TYPE_SHORT);
+    }
+
     public static final String MAX_VF = VECTOR_PREFIX + "MAX_VF" + POSTFIX;
     static {
         vectorNode(MAX_VF, "MaxV", TYPE_FLOAT);
@@ -1147,6 +1167,11 @@ public class IRNode {
     public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
         vectorNode(MIN_VI, "MinV", TYPE_INT);
+    }
+
+    public static final String MIN_VHF = VECTOR_PREFIX + "MIN_VHF" + POSTFIX;
+    static {
+        vectorNode(MIN_VHF, "MinVHF", TYPE_SHORT);
     }
 
     public static final String MIN_VF = VECTOR_PREFIX + "MIN_VF" + POSTFIX;
@@ -1243,6 +1268,11 @@ public class IRNode {
     public static final String MUL_VI = VECTOR_PREFIX + "MUL_VI" + POSTFIX;
     static {
         vectorNode(MUL_VI, "MulVI", TYPE_INT);
+    }
+
+    public static final String MUL_VHF = VECTOR_PREFIX + "MUL_VHF" + POSTFIX;
+    static {
+        vectorNode(MUL_VHF, "MulVHF", TYPE_SHORT);
     }
 
     public static final String MUL_VF = VECTOR_PREFIX + "MUL_VF" + POSTFIX;
@@ -1591,6 +1621,11 @@ public class IRNode {
         vectorNode(SIGNUM_VF, "SignumVF", TYPE_FLOAT);
     }
 
+    public static final String SQRT_VHF = VECTOR_PREFIX + "SQRT_VHF" + POSTFIX;
+    static {
+        vectorNode(SQRT_VHF, "SqrtVHF", TYPE_SHORT);
+    }
+
     public static final String SQRT_VF = VECTOR_PREFIX + "SQRT_VF" + POSTFIX;
     static {
         vectorNode(SQRT_VF, "SqrtVF", TYPE_FLOAT);
@@ -1760,6 +1795,11 @@ public class IRNode {
     public static final String SUB_VL = VECTOR_PREFIX + "SUB_VL" + POSTFIX;
     static {
         vectorNode(SUB_VL, "SubVL", TYPE_LONG);
+    }
+
+    public static final String SUB_VHF = VECTOR_PREFIX + "SUB_VHF" + POSTFIX;
+    static {
+        vectorNode(SUB_VHF, "SubVHF", TYPE_SHORT);
     }
 
     public static final String SUB_VF = VECTOR_PREFIX + "SUB_VF" + POSTFIX;

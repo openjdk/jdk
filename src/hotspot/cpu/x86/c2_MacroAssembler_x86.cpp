@@ -7081,3 +7081,28 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
     vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   }
 }
+
+void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
+  switch(opcode) {
+    case Op_AddVHF: evaddph(dst, src1, src2, vlen_enc); break;
+    case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
+    case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
+    case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
+    case Op_MaxVHF: evmaxph(dst, src1, src2, vlen_enc); break;
+    case Op_MinVHF: evminph(dst, src1, src2, vlen_enc); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
+  }
+}
+
+void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, Address src2, int vlen_enc) {
+  switch(opcode) {
+    case Op_AddVHF: evaddph(dst, src1, src2, vlen_enc); break;
+    case Op_SubVHF: evsubph(dst, src1, src2, vlen_enc); break;
+    case Op_MulVHF: evmulph(dst, src1, src2, vlen_enc); break;
+    case Op_DivVHF: evdivph(dst, src1, src2, vlen_enc); break;
+    case Op_MaxVHF: evmaxph(dst, src1, src2, vlen_enc); break;
+    case Op_MinVHF: evminph(dst, src1, src2, vlen_enc); break;
+    default: assert(false, "%s", NodeClassNames[opcode]); break;
+  }
+}
+
