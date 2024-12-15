@@ -3965,7 +3965,7 @@ void MatchNode::count_commutative_op(int& count) {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
     "AndV", "OrV", "XorV",
-    "MaxV", "MinV", "UMax","UMin"
+    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {
