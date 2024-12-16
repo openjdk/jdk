@@ -364,25 +364,13 @@ public class Lint
         }
 
         /**
-         * Get the {@link LintCategory} having the given command line option, if any.
-         *
-         * @param option lint category option string
-         * @return corresponding {@link LintCategory}, or null if none
-         */
-        public static LintCategory get(String option) {
-            return map.get(option);
-        }
-
-        /**
          * Get the {@link LintCategory} having the given command line option.
          *
          * @param option lint category option string
-         * @return corresponding {@link LintCategory}
-         * @throws IllegalArgumentException if no such lint category exists
+         * @return corresponding {@link LintCategory}, or empty if none exists
          */
-        public static LintCategory forOption(String option) {
-            return Optional.ofNullable(get(option))
-              .orElseThrow(() -> new IllegalArgumentException(option));
+        public static Optional<LintCategory> get(String option) {
+            return Optional.ofNullable(map.get(option));
         }
 
         public final String option;
@@ -460,9 +448,8 @@ public class Lint
 
         public void visitConstant(Attribute.Constant value) {
             if (value.type.tsym == syms.stringType.tsym) {
-                LintCategory lc = LintCategory.get((String) (value.value));
-                if (lc != null)
-                    suppress(lc);
+                LintCategory.get((String)value.value)
+                  .ifPresent(this::suppress);
             }
         }
 
