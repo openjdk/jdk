@@ -32,7 +32,7 @@ public final class UnresolvedJavaField implements JavaField {
     private final JavaType type;
 
     /**
-     * The reason method resolution failed. Can be null.
+     * The reason field resolution failed. Can be null.
      */
     private final Throwable cause;
 
