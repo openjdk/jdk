@@ -28,17 +28,23 @@
  *          java.base/sun.security.tools.keytool
  *          jdk.jartool/sun.security.tools.jarsigner
  * @summary Check usages of security-related Resources files
+ * @run main/othervm Usages
  */
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.MalformedURLException;
+
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListResourceBundle;
+import java.util.Locale;
 import java.util.Map;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -104,19 +110,35 @@ public class Usages {
     static Pattern IOEXCEPTION = Pattern.compile(
             "ioException[ \\n]*\\([ \\n]*\"(.*?)\",");
 
+    //    static URL[] PROPERTIES_CLASSPATH;
+    //
+    //    static {
+    //        try {
+    //            PROPERTIES_CLASSPATH = new URL[]{
+    //                    new URL("file://../../../../../../src/java.base/")};
+    //        } catch (MalformedURLException e) {
+    //            throw new RuntimeException(e);
+    //        }
+    //    }
+
     // For each Resources file, where and how the strings are used.
-    static Map<ListResourceBundle, List<Pair>> MAP = Map.of(
-            new sun.security.tools.keytool.Resources(), List.of(
+    static Map<ResourceBundle, List<Pair>> MAP = Map.of(
+            new sun.security.tools.keytool.Resources(),
+            List.of(
                     new Pair("java.base/share/classes/sun/security/tools/keytool/Main.java",
                             List.of(RB_GETSTRING, KT_ENUM)),
                     new Pair("java.base/share/classes/sun/security/tools/KeyStoreUtil.java",
                             List.of(RB_GETSTRING))),
-            new sun.security.util.AuthResources(), List.of(
+
+            ResourceBundle.getBundle("sun.security.util.newresources.auth"),
+            List.of(
                     new Pair("java.base/share/classes/sun/security/provider/ConfigFile.java",
                             List.of(GETAUTHSTRING, IOEXCEPTION)),
                     new Pair("jdk.security.auth/share/classes/com/sun/security/auth/",
                             List.of(GETAUTHSTRING))),
-            new sun.security.tools.jarsigner.Resources(), List.of(
+
+            new sun.security.tools.jarsigner.Resources(),
+            List.of(
                     new Pair("jdk.jartool/share/classes/sun/security/tools/jarsigner/Main.java",
                             List.of(RB_GETSTRING)),
                     new Pair("java.base/share/classes/sun/security/provider/certpath/OCSP.java",
@@ -125,7 +147,9 @@ public class Usages {
                             List.of(EVENT_OCSP_CRL)),
                     new Pair("java.base/share/classes/sun/security/tools/KeyStoreUtil.java",
                             List.of(RB_GETSTRING))),
-            new sun.security.util.Resources(), List.of(
+
+            ResourceBundle.getBundle("sun.security.util.newresources.security"),
+            List.of(
                     new Pair("jdk.crypto.cryptoki/share/classes/sun/security/pkcs11/SunPKCS11.java",
                             List.of(MGR_GETSTRING)),
                     new Pair("java.base/share/classes/sun/security/provider/PolicyParser.java",
@@ -142,7 +166,7 @@ public class Usages {
         }
     }
 
-    private static void check(ListResourceBundle res, List<Pair> fnps) {
+    private static void check(ResourceBundle res, List<Pair> fnps) {
         try {
             System.out.println(">>>> Checking " + res.getClass().getName());
 
