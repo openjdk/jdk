@@ -432,6 +432,19 @@ public class JlinkTask {
                     throw taskHelper.newBadArgs("err.empty.module.path", modPath);
                 }
 
+                // Verify legitimacy of --limit-modules
+                Set<String> depSet = newConfiguration(finder, initialRoots)
+                        .modules()
+                        .stream()
+                        .map(ResolvedModule::name)
+                        .collect(Collectors.toSet());
+                for (String modLim: options.limitMods) {
+                    // If the module limits aren't in the dep tree of the
+                    // root set this is an error.
+                    if (!depSet.contains(modLim)) {
+                        throw taskHelper.newBadArgs("err.limit.modules", modLim);
+                    }
+                }
                 // Use a module finder with limited observability, as determined
                 // by initialRoots, to find the observable modules from the
                 // application module path (--module-path option) only. We must
@@ -473,6 +486,11 @@ public class JlinkTask {
         Runtime.Version version = Runtime.version();
         Path[] entries = paths.toArray(new Path[0]);
         return ModulePath.of(version, true, entries);
+    }
+
+    private Configuration newConfiguration(ModuleFinder finder, Set<String> roots) {
+        return options.bindServices ? Configuration.empty().resolveAndBind(finder, ModuleFinder.of(), roots) :
+                                      Configuration.empty().resolve(finder, ModuleFinder.of(), roots);
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {

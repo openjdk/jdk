@@ -27,6 +27,11 @@ import static org.testng.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.module.Configuration;
+import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +45,7 @@ import java.util.stream.Collectors;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import jdk.internal.module.ModulePath;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -54,6 +60,7 @@ import tests.Result;
  * @library ../../lib /test/lib
  * @modules jdk.compiler
  *          java.base/jdk.internal.jimage
+ *          java.base/jdk.internal.module
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jimage
  * @build jdk.test.lib.process.ProcessTools
@@ -233,6 +240,58 @@ public class AllModulePath {
         assertTrue(allOut.stderr.isEmpty());
         Set<String> expected = Set.of("java.base", "jdk.jfr");
         verifyListModules(targetPath, expected);
+    }
+
+    /*
+     * --add-modules ALL-MODULE-PATH with an existing module path and module
+     * limits applied. This case tests a module limit that does not exist in the
+     * module dependency graph. I.e. a module-limit specified on a module that
+     * would not get included into the image if that --limit-modules clause would
+     * be absent. This is an error.
+     */
+    @Test
+    public void modulePathWithLimitModNotInDepTree() throws Exception {
+        if (isExplodedJDKImage()) {
+            return;
+        }
+        Path targetPath = HELPER.createNewImageDir("all-mods-limit-mods-error");
+        String moduleName = "com.bar.testmod";
+        Result result = HELPER.generateDefaultJModule(moduleName, "jdk.jdeps");
+        Path customModulePath = result.getFile().getParent();
+        ModuleFinder finder = moduleFinder(new Path[] { customModulePath });
+        Set<String> roots = finder.findAll().stream()
+                                .map(ModuleReference::descriptor)
+                                .map(ModuleDescriptor::name)
+                                .collect(Collectors.toSet());
+        Set<String> depSet = Configuration.empty()
+                     .resolve(finder, ModuleFinder.ofSystem(), roots)
+                     .modules()
+                     .stream()
+                     .map(ResolvedModule::name)
+                     .collect(Collectors.toSet());
+        String moduleOutsideDepTree = "jdk.net";
+        if (depSet.contains(moduleOutsideDepTree)) {
+            throw new AssertionError("Invalid test setup! " + moduleOutsideDepTree + " not " +
+                                     "expected in the dependency tree of " + moduleName);
+        }
+        List<String> allArgs = List.of("--add-modules", "ALL-MODULE-PATH",
+                                       "--add-modules", moduleName,
+                                       // jdk.jfr doesn't exist in the module path
+                                       // and is no dependency of com.bar.testmod
+                                       "--limit-modules", moduleOutsideDepTree,
+                                       "--module-path", customModulePath.toString(),
+                                       "--output", targetPath.toString());
+        JlinkOutput allOut = createImage(targetPath, allArgs, false /* success */);
+        String stdOut = allOut.stdout.trim();
+        String expectedMsg = String.format("Error: %s not in module dependency graph," +
+                                           " but specified with --limit-modules", moduleOutsideDepTree);
+        assertEquals(stdOut, expectedMsg);
+        assertTrue(allOut.stderr.isEmpty());
+    }
+
+    private ModuleFinder moduleFinder(Path[] path) {
+        Runtime.Version version = Runtime.version();
+        return ModulePath.of(version, true, path);
     }
 
     /*
