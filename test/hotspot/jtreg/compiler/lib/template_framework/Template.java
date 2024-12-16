@@ -33,7 +33,41 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * TODO
+ * Templates are {@link CodeGenerator}s, which can be conveniently specified as template Strings.
+ * The template Strings can just be plain Strings, but they can also use additional
+ * functionalities.
+ * <p>
+ * When using multiple templates, or the same template multiple times, the same variable
+ * name may be used in different template instantiations, which can lead to variable name
+ * collisions. For this, one can use the Template's variable renaming functionality, by
+ * prepending the dollar sign to a variable name, e.g. {@code $name}. In the instantiation
+ * the we append the unique {@link Parameters#instantiationID} to the variable name, which
+ * ensures that the resulting variable names are distinct.
+ * <p>
+ * The String template may also contain template holes, either to be replaced with a
+ * parameter value or with a recursive {@link CodeGenerator} instantiation. The syntax
+ * for the parameter holes is {@code #{param}}, which is replaced with the String value
+ * of the parameter {@code param}.
+ * <p>
+ * Recursive {@link CodeGenerator} instantiations can be specified with
+ * {@code #{replacement_name:generator_name}}. The {@link CodeGenerator} with the name
+ * {@code generator_name} is looked up in the {@link CodeGeneratorLibrary}, and is then
+ * instantiated. The resulting string is inserted into the hole. One can then repeat
+ * the same exact string with {@code #{replacement_name}}. Since repetition is not always
+ * used, one can omit the {@code replacement_name}, and simply write
+ * {@code #{:generator_name}}.
+ * <p>
+ * Some {@link CodeGenerator}s require parameters, which can be specified in this form:
+ * {@code #{:generator_name(param1=value1,param2=value2)}}, where the String "param1"
+ * is passed for parameter "param1" and the String "value2" is passed for parameter
+ * "param2". One can also pass renamed variable names, or the replacement string of
+ * an earlier recursive {@link CodeGenerator} instantiation, or a parameter value:
+ * {@code #{:generator_name(param1=my_string,param2=$my_var,param3=#my_param,param4=#my_replacement)}},
+ * where "my_string" is simply passed as this literal string, and for "$my_var" the
+ * renamed variable name (e.g. "my_var_42") is passed, and for "#param" the parameter
+ * value for the parameter "my_param" is passed, and for "#my_replacement" the
+ * replacement string for the earlier instantiation with the name "my_replacement"
+ * is passed.
  */
 public final class Template extends CodeGenerator {
     public static final int DEFAULT_FUEL_COST = 10;
