@@ -38,6 +38,8 @@ public final class InnocuousThread extends Thread {
     private static final ThreadGroup INNOCUOUSTHREADGROUP;
     private static final long CONTEXTCLASSLOADER;
 
+    private final boolean isUninterruptible;
+
     private static final AtomicInteger threadNumber = new AtomicInteger(1);
     private static String newName() {
         return "InnocuousThread-" + threadNumber.getAndIncrement();
@@ -49,6 +51,16 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newThread(Runnable target) {
         return newThread(newName(), target);
+    }
+
+    /**
+     * Returns a new InnocuousThread with an auto-generated thread name,
+     * and its context class loader is set to the system class loader, and
+     * it is uninterruptible.
+     */
+    public static Thread newUninterruptibleThread(Runnable target) {
+        return createThread(newName(), target, 0L,
+                ClassLoader.getSystemClassLoader(), -1, true);
     }
 
     /**
@@ -65,7 +77,7 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newThread(String name, Runnable target, int priority) {
         return createThread(name, target, 0L,
-                ClassLoader.getSystemClassLoader(), priority);
+                ClassLoader.getSystemClassLoader(), priority, false);
     }
 
     /**
@@ -88,7 +100,7 @@ public final class InnocuousThread extends Thread {
      * Thread priority is set to the given priority.
      */
     public static Thread newSystemThread(String name, Runnable target, int priority) {
-        return createThread(name, target, 0L, null, priority);
+        return createThread(name, target, 0L, null, priority, false);
     }
 
     /**
@@ -97,13 +109,14 @@ public final class InnocuousThread extends Thread {
      */
     public static Thread newSystemThread(String name, Runnable target,
                                          long stackSize, int priority) {
-        return createThread(name, target, stackSize, null, priority);
+        return createThread(name, target, stackSize, null, priority, false);
     }
 
     private static Thread createThread(String name, Runnable target, long stackSize,
-                                       ClassLoader loader, int priority) {
+                                       ClassLoader loader, int priority,
+                                       boolean isUninterruptible) {
         Thread t = new InnocuousThread(INNOCUOUSTHREADGROUP,
-                target, name, stackSize, loader);
+                target, name, stackSize, loader, isUninterruptible);
         if (priority >= 0) {
             t.setPriority(priority);
         }
@@ -111,9 +124,17 @@ public final class InnocuousThread extends Thread {
     }
 
     private InnocuousThread(ThreadGroup group, Runnable target, String name,
-                            long stackSize, ClassLoader tccl) {
+                            long stackSize, ClassLoader tccl,
+                            boolean isUninterruptible) {
         super(group, target, name, stackSize, false);
+        this.isUninterruptible = isUninterruptible;
         UNSAFE.putReferenceRelease(this, CONTEXTCLASSLOADER, tccl);
+    }
+
+    @Override
+    public void interrupt() {
+        if (!isUninterruptible)
+            super.interrupt();
     }
 
     @Override
