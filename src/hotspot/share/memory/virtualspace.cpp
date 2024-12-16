@@ -329,20 +329,6 @@ ReservedSpace ReservedSpace::partition(size_t offset, size_t partition_size, siz
   return result;
 }
 
-size_t ReservedSpace::page_align_size_up(size_t size) {
-  return align_up(size, os::vm_page_size());
-}
-
-
-size_t ReservedSpace::page_align_size_down(size_t size) {
-  return align_down(size, os::vm_page_size());
-}
-
-
-size_t ReservedSpace::allocation_align_size_up(size_t size) {
-  return align_up(size, os::vm_allocation_granularity());
-}
-
 void ReservedSpace::release() {
   if (is_reserved()) {
     char *real_base = _base - _noaccess_prefix;
@@ -457,7 +443,7 @@ void ReservedHeapSpace::try_reserve_range(char *highest_start,
   while (attach_point >= lowest_start  &&
          attach_point <= highest_start &&  // Avoid wrap around.
          ((_base == nullptr) ||
-          (_base < aligned_heap_base_min_address || _base + size > upper_bound))) {
+          (_base < aligned_heap_base_min_address || size > (uintptr_t)(upper_bound - _base)))) {
     try_reserve_heap(size, alignment, page_size, attach_point);
     attach_point -= stepsize;
   }

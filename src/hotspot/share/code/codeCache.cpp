@@ -433,7 +433,7 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, CodeBlobType code_b
 
   // Reserve Space
   size_t size_initial = MIN2((size_t)InitialCodeCacheSize, rs.size());
-  size_initial = align_up(size_initial, os::vm_page_size());
+  size_initial = align_up(size_initial, rs.page_size());
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space in %s (" SIZE_FORMAT "K)",
                                           heap->name(), size_initial/K));
