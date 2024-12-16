@@ -65,7 +65,7 @@ public final class CodeStream {
     /**
      * Check if the {@link CodeStream} is still open.
      *
-     * @throw TemplateFrameworkException If the stream is already closed.
+     * @throws TemplateFrameworkException If the stream is already closed.
      */
     public void checkOpen() {
         if (closed) {
@@ -76,7 +76,7 @@ public final class CodeStream {
     /**
      * Check if the {@link CodeStream} is already closed.
      *
-     * @throw TemplateFrameworkException If the stream is still open.
+     * @throws TemplateFrameworkException If the stream is still open.
      */
     public void checkClosed() {
         if (!closed) {

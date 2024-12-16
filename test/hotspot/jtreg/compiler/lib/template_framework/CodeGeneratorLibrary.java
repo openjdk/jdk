@@ -32,7 +32,8 @@ import java.util.function.Consumer;
 import jdk.test.lib.Utils;
 
 /**
- * TODO
+ * The {@link CodeGeneratorLibrary} provides a way to map {@link CodeGenerator} names to {@link CodeGenerator},
+ * and provides the lookup facility required for recursive instantiation calls.
  */
 public final class CodeGeneratorLibrary {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -40,6 +41,13 @@ public final class CodeGeneratorLibrary {
     private CodeGeneratorLibrary parent;
     private HashMap<String,CodeGenerator> library;
 
+    /**
+     * Create a new {@link CodeGeneratorLibrary}.
+     *
+     * @param parent The parent library, or null. If a parent library is provided, that library is extended with
+     *               the content of this library.
+     * @param generators The set of generators for this library.
+     */
     public CodeGeneratorLibrary(CodeGeneratorLibrary parent, HashSet<CodeGenerator> generators) {
         this.parent = parent;
         this.library = new HashMap<String,CodeGenerator>();
@@ -52,7 +60,12 @@ public final class CodeGeneratorLibrary {
     }
 
     /**
-     * Recursively find CodeGenerator with given name in this library or parent library.
+     * Recursively find CodeGenerator with given name in this library or a parent library.
+     *
+     * @param name Name of the generator to find.
+     * @param errorMessage Error message added in the exception if no generator is found for the name.
+     * @return The generator from the library with the specified name.
+     * @throws TemplateFrameworkException If no generator is found for the name.
      */
     public CodeGenerator find(String name, String errorMessage) {
         CodeGenerator codeGenerator = findOrNull(name);
@@ -63,6 +76,12 @@ public final class CodeGeneratorLibrary {
         return codeGenerator;
     }
 
+    /**
+     * Recursively find CodeGenerator with given name in this library or a parent library.
+     *
+     * @param name Name of the generator to find.
+     * @return The generator from the library with the specified name, or null if not found.
+     */
     public CodeGenerator findOrNull(String name) {
         CodeGenerator codeGenerator = library.get(name);
         if (codeGenerator != null) {
@@ -74,6 +93,9 @@ public final class CodeGeneratorLibrary {
         }
     }
 
+    /**
+     * Print all generator names in the library.
+     */
     public void print() {
         System.out.println("Library");
         for (Map.Entry<String,CodeGenerator> e : library.entrySet()) {
@@ -84,7 +106,7 @@ public final class CodeGeneratorLibrary {
         }
     }
 
-    public static CodeGenerator factoryLoadStore(boolean mutable) {
+    private static CodeGenerator factoryLoadStore(boolean mutable) {
         String generatorName = mutable ? "store" : "load";
         return new ProgrammaticCodeGenerator(generatorName, (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "type");
@@ -98,7 +120,7 @@ public final class CodeGeneratorLibrary {
         }, 0);
     }
 
-    public static CodeGenerator factoryDispatch() {
+    private static CodeGenerator factoryDispatch() {
         return new ProgrammaticCodeGenerator("dispatch", (Scope scope, Parameters parameters) -> {
             String scopeKind = parameters.get("scope", scope, " for generator call to 'dispatch'");
             String generatorName = parameters.get("call", scope, " for generator call to 'dispatch'");
@@ -127,7 +149,7 @@ public final class CodeGeneratorLibrary {
         }, 0);
     }
 
-    public static CodeGenerator factoryAddVariable() {
+    private static CodeGenerator factoryAddVariable() {
         return new ProgrammaticCodeGenerator("add_variable", (Scope scope, Parameters parameters) -> {
             parameters.checkOnlyHas(scope, "scope", "name", "type", "final");
             String scopeKind = parameters.get("scope", scope, " for generator call to 'add_variable'");
@@ -160,7 +182,7 @@ public final class CodeGeneratorLibrary {
         }, 0);
     }
 
-    public static CodeGenerator factoryRepeat() {
+    private static CodeGenerator factoryRepeat() {
         return new ProgrammaticCodeGenerator("repeat", (Scope scope, Parameters parameters) -> {
             String generatorName = parameters.get("call", scope, " for generator call to 'repeat'");
             int repeat = parameters.getInt("repeat", scope, " In call to 'repeat'");
@@ -183,6 +205,11 @@ public final class CodeGeneratorLibrary {
         }, 0);
     }
 
+    /**
+     * The standard library populated with a large set of {@link CodeGenerator}s.
+     *
+     * @return The standard library.
+     */
     public static CodeGeneratorLibrary standard() {
         HashSet<CodeGenerator> codeGenerators = new HashSet<CodeGenerator>();
 
