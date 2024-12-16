@@ -11,9 +11,11 @@ This allows the test writer to specify just one or a few Templates, possibly wit
 ## How to use the Template Framework
 Please reference the examples found in [examples](../../../testlibrary_tests/template_framework/examples/). Some basic tests can be found in [tests](../../../testlibrary_tests/template_framework/tests/).
 
-Here a simple example:
+### Instantiating a single Template
 
-    // Definie a Template with name "my_example" that has two parameter holes
+One can instantiate a single Template directly using `template.instantiate()`, if it has no parameter holes. If there are template holes, these can be filled with `template.where` chaining calls, and after filling all the template holes, the template can be instantiated. Here a simple example:
+
+    // Defiie a Template with name "my_example" that has two parameter holes
     // "param1" and "param2", and a recursive call to a "int_con" CodeGenerator
     // which takes parameters "lo" with value 0 and "hi" with value 100.
     Template template = new Template("my_example",
@@ -34,11 +36,20 @@ Here a simple example:
     // as a String that could be passed on to the Compile Framework.
     String code = template.where("param1", "42").where("param2", "7").instantiate();
 
+### Conveniently instantiating multiple tests into a single class with the TestClassInstantiator
+
+The [TestClassInstantiator](./TestClassInstantiator.java) is a convenient facility that allows the instantiation of multiple tests into a single test class. Please refer to the example [TestInstantiationOfManyTests.java](../../../testlibrary_tests/template_framework/examples/TestInstantiationOfManyTests.java) for various ways of using this utility.
+
+TODO example with IR framework???
+
 ## Use case: Regression Fest
-TODO
+Hand-written regression tests are very time consuming, and often fewere tests are written than desired due to time constraints of the developer. With Templates, the developer can simply take the reduced regression test, and turn some constants into Template holes that can then be replaced by random constants, or other interesting code shapes that may trigger special cases of the bug or feature under test.
 
 ## Use case: Extensive feature testing (targetted Fuzzer)
 TODO
 
 ## Use case: General purpose Template based Fuzzer.
 TODO
+
+## The Standard CodeGeneratorLibrary
+TODO: list all CodeGenerators
