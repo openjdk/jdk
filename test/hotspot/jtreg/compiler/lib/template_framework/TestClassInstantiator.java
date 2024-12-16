@@ -128,7 +128,7 @@ public final class TestClassInstantiator {
             for (Parameters p : setOfParameters) {
                 for (int i = 0; i < repeatCount; i++) {
                     // If we have more than 1 set, we must clone the parameters, so that we get a unique ID.
-                    p = (i == 0) ? p : new Parameters(p.getArguments());
+                    p = (i == 0) ? p : new Parameters(p.getParameterMap());
                     generate(staticTemplate, mainTemplate, testTemplate, p);
                 }
             }
@@ -150,7 +150,7 @@ public final class TestClassInstantiator {
             List<String> values = parameterMap.get(key);
             for (Parameters pOld : setOfParameters) {
                 for (String v : values) {
-                    Parameters p = new Parameters(pOld.getArguments());
+                    Parameters p = new Parameters(pOld.getParameterMap());
                     p.add(key, v);
                     newSet.add(p);
                 }

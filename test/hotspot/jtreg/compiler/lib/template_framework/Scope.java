@@ -293,7 +293,7 @@ public class Scope {
     /**
      * Printing the "scope-trace" for debbuging.
      */
-    final void print() {
+    public final void print() {
         System.out.println(this.getClass().getSimpleName() + ":");
         if (debugContext != null) {
             debugContext.print();

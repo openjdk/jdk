@@ -28,34 +28,47 @@ import java.util.HashMap;
 import java.util.Set;
 
 /**
- * Parameters is required to instantiate a CodeGenerator (e.g. Template).
- *
- * It has a set of key-value pairs, i.e. pairs of argument-name and argument-value.
- * In templates, these are used to fill free variables (e.g. "#{var1}").
- *
- * It also has a unique instantiationID. This is used to differentiate names from
- * the same CodeGenerator (e.g. Template), the ID is simply appended to local variable
- * names to ensure there are no conflicts.
- * TODO public?
+ * Parameters is required to instantiate a {@link CodeGenerator} (e.g. {@link Template}).
+ * <p>
+ * It has a set of parameter key-value pairs. In {@link Template}s, these are used to fill
+ * parameter holes specified by {@code #{param}}.
+ * <p>
+ * The {@link instantiationID} is unique for an instantiation, and allows the variable renaming
+ * to avoid variable name collisions when multiple {@link Template}s use the same variable name.
  */
 public class Parameters {
     private static int instantiationIDCounter = 0;
 
     private HashMap<String,String> parameterMap;
+
+    /**
+     * Unique ID used for variable renaming, to avoid name collisions between {@link Template}s.
+     */
     public final int instantiationID;
 
     /**
-     * Create an empty Parameters set, then add key-value pairs afterwards.
+     * Create an empty Parameters set, then add parameter key-value pairs later.
      */
     public Parameters() {
         this(new HashMap<String,String>());
     }
 
+    /**
+     * Create a Parameters set that already has some parameter key-value pairs.
+     *
+     * @param parameterMap A list of parameter key-value pairs.
+     */
     public Parameters(Map<String,String> parameterMap) {
         this.parameterMap = new HashMap<String,String>(parameterMap);
         this.instantiationID = instantiationIDCounter++;
     }
 
+    /**
+     * Add a parameter key-value pair to the parameter set.
+     *
+     * @param name Name of the parameter.
+     * @param value Value to be set for the parameter.
+     */
     public void add(String name, String value) {
         if (parameterMap.containsKey(name)) {
             throw new TemplateFrameworkException("Parameter " + name + " cannot be added as " + value +
@@ -64,16 +77,37 @@ public class Parameters {
         parameterMap.put(name, value);
     }
 
-    public void add(Map<String,String> parameterMap) {
+    /**
+     * Add a set of parameter key-value pairs.
+     *
+     * @param parameterMap Map that contains all the parameter key-value pairs to be added.
+     */
+    void add(Map<String,String> parameterMap) {
         for (Map.Entry<String,String> e : parameterMap.entrySet()) {
             add(e.getKey(), e.getValue());
         }
     }
 
+    /**
+     * Get the parameter value for a specified parameter name, or {@code null} if there is no parameter
+     * key-value pair for this parameter name.
+     *
+     * @param name The name of the parameter.
+     * @return Parameter value, or {@code null} if there is no parameter key-value pair for the name.
+     */
     public String getOrNull(String name) {
         return parameterMap.get(name);
     }
 
+    /**
+     * Get the parameter value for a specified parameter name.
+     *
+     * @param name The name of the parameter.
+     * @param scope For debug printing the "scope-trace".
+     * @param errorMessage Message added to exception if parameter for this name does not exist.
+     * @return Parameter value.
+     * @throws TemplateFrameworkException If the parameter for the name does not exist.
+     */
     public String get(String name, Scope scope, String errorMessage) {
         String param = getOrNull(name);
         if (param == null) {
@@ -83,6 +117,17 @@ public class Parameters {
         return param;
     }
 
+
+    /**
+     * Get the parameter value as an int for a specified parameter name.
+     *
+     * @param name The name of the parameter.
+     * @param scope For debug printing the "scope-trace".
+     * @param errorMessage Message added to exception if parameter for this name does not exist.
+     * @return Parameter int value.
+     * @throws TemplateFrameworkException If the parameter for the name does not exist, or cannot be
+     *                                    parsed as an int.
+     */
     public int getInt(String name, Scope scope, String errorMessage) {
         String param = get(name, scope, errorMessage);
         switch (param) {
@@ -97,10 +142,18 @@ public class Parameters {
         }
     }
 
-    public HashMap<String,String> getArguments() {
+    /**
+     * Get the parameter map with all parameter key-value pairs.
+     *
+     * @return Parameter map with all key-value pairs.
+     */
+    HashMap<String,String> getParameterMap() {
         return parameterMap;
     }
 
+    /**
+     * Print all parameter key-value pairs for debugging.
+     */
     public void print() {
         System.out.println("  Parameters ID=" + instantiationID);
         for (Map.Entry<String,String> e : parameterMap.entrySet()) {
@@ -108,6 +161,15 @@ public class Parameters {
         }
     }
 
+
+    /**
+     * Check that only parameter with parameter names from {@code names} are in the parameter set.
+     * Useful for parameter verification in {@link ProgrammaticCodeGenerator}s.
+     *
+     * @param scope For debug printing the "scope-trace".
+     * @param names List of allowed parameter names.
+     * @throws TemplateFrameworkException If parameter names are used that are not in {@code names}.
+     */
     public void checkOnlyHas(Scope scope, String... names) {
         Set<String> set = Set.of(names);
         for (String key : parameterMap.keySet()) {

@@ -105,7 +105,7 @@ public class CodeGeneratorLibrary {
             CodeGenerator generator = scope.library().find(generatorName, " for dispatch in " + scopeKind + " scope");
 
             // Copy arguments, and remove the 2 args we just used. Forward the other args to the dispatch.
-            HashMap<String,String> parameterMap = new HashMap<String,String>(parameters.getArguments());
+            HashMap<String,String> parameterMap = new HashMap<String,String>(parameters.getParameterMap());
             parameterMap.remove("scope");
             parameterMap.remove("call");
 
@@ -173,7 +173,7 @@ public class CodeGeneratorLibrary {
             CodeGenerator generator = scope.library().find(generatorName, " for repeat");
 
             // Copy arguments, and remove the 2 args we just used. Forward the other args to the repeat.
-            HashMap<String,String> parameterMap = new HashMap<String,String>(parameters.getArguments());
+            HashMap<String,String> parameterMap = new HashMap<String,String>(parameters.getParameterMap());
             parameterMap.remove("call");
             parameterMap.remove("repeat");
 
