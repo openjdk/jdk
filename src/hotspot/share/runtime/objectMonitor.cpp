@@ -600,7 +600,6 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread *current, ObjectMonito
   if (current->current_waiting_monitor() == nullptr) {
     ContinuationEntry* ce = current->last_continuation();
     if (ce != nullptr && ce->is_virtual_thread()) {
-      assert(result != freeze_ok, "sanity check");
       current->post_vthread_pinned_event(&vthread_pinned_event, "Contended monitor enter", result);
     }
   }
@@ -1861,7 +1860,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   assert_mark_word_consistency();
 
   if (ce != nullptr && ce->is_virtual_thread()) {
-    assert(result != freeze_ok, "sanity check");
     current->post_vthread_pinned_event(&vthread_pinned_event, "Object.wait", result);
   }
 
