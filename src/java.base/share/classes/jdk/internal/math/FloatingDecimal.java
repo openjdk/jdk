@@ -1844,6 +1844,10 @@ public class FloatingDecimal{
          *
          * For decimal input, the prefix is copied to the returned instance,
          * along with the other information needed for the conversion.
+         * For comparison, the prefix length is at most
+         *       23 for BINARY_16_IX (Float16, once integrated in java.base)
+         *      114 for BINARY_32_IX (float)
+         *      769 for BINARY_64_IX (double)
          */
         int len = in.length();  // fail fast on null
 
@@ -1861,11 +1865,13 @@ public class FloatingDecimal{
             ++i;
         }
 
-        /* Determine whether we are facing a symbolic value or hex notation.
+        /*
          * In some places the idiom
          *      (ch | 0b10_0000) == lowercase-letter
          * is used as a shortcut for
          *      ch == lowercase-letter || ch == that-same-letter-as-uppercase
+         *
+         * Determine whether we are facing a symbolic value or hex notation.
          */
         boolean isDec = true;  // decimal input until proven to the contrary
         if (i < len) {
@@ -1927,7 +1933,7 @@ public class FloatingDecimal{
                 ++i;
             }
 
-            /* Scan the exponent digits. Accumulate in ep, 10^12 means too large. */
+            /* Scan the exponent digits. Accumulate in ep, clamping at 10^10. */
             while (i < len && isDigit(ch = in.charAt(i), true)) {  // ep is decimal
                 ++i;
                 ep = appendDigit(ep, ch);
@@ -1939,7 +1945,10 @@ public class FloatingDecimal{
             }
             hasExp = true;
         }
-        /* |ep| < 10^12, or |ep| = 10^12 when too large. */
+        /*
+         * |ep| < 10^10, or |ep| = 10^10 when considered "large".
+         * A "large" ep either generates a zero or an infinity.
+         */
         check(in, isDec | hasExp);
 
         /* Skip opt [FfDd]? suffix. */
@@ -2014,38 +2023,13 @@ public class FloatingDecimal{
         /*
          * n = number of significant digits (that is, not counting leading nor
          * trailing zeros)
-         * |ep| < 10^13
+         * |ep| < 10^11
          *
-         * For decimal input, the magnitude x of the input meets
-         *      x = f 10^ep
-         * where integer f = <f_1 ... f_n> consists of the n digits found
-         * in the portion [lz, tnz) of the input, and f_1 != 0, f_n != 0.
-
-         * For hexadecimal input, the magnitude x of the input meets
-         *      x = f 2^ep
-         * where integer f = <f_1 ... f_n> consists of the n hex digits found
-         * in the portion [lz, tnz) of the input, and f_1 != 0, f_n != 0.
-         *
-         * According to IEEE 754-2019, a finite positive binary floating-point
-         * of precision P is expressed as
-         *      c 2^q
-         * where integers c and q meet
-         *      Q_MIN <= q <= Q_MAX
-         *      either      2^(P-1) <= c < 2^P  (normal)
-         *      or          0 < c < 2^(P-1)  &  q = Q_MIN  (subnormal)
-         *      c = <d_0 d_1 ... d_(P-1)>, d_i in [0, 2)
-         * Such a representation is unique.
-         * Equivalently, the fp value can be expressed as
-         *      m 2^ep
-         * where integer ep and real f meet
-         *      ep = q + P - 1
-         *      m = c 2^(1-P)
-         * Hence,
-         *      E_MIN = Q_MIN + P - 1, E_MAX = Q_MAX + P - 1,
-         *      1 <= m < 2      (normal)
-         *      m < 1           (subnormal)
-         *      m = <d_0 . d_1 ... d_(P-1)>
-         * with a (binary) point between d_0 and d_1
+         * The magnitude x of the input meets
+         *      x = f 10^ep  (decimal)
+         *      x = f 2^ep  (hexadecimal)
+         * Integer f = <f_1 ... f_n> consists of the n decimal or hexadecimal
+         * digits found in part [lz, tnz) of the input, and f_1 != 0, f_n != 0.
          */
 
         if (!isDec) {  // hexadecimal conversion is performed entirely here
@@ -2065,7 +2049,7 @@ public class FloatingDecimal{
                 }
             }
             if (n > le) {
-                c |= 0b1;
+                c |= 0b1;  // force a sticky bit
                 ep += 4L * (n - le);
             }
 
@@ -2119,10 +2103,6 @@ public class FloatingDecimal{
          * For decimal inputs, we copy an appropriate prefix of the input and
          * rely on another method to do the (sometimes intensive) math conversion.
          *
-         * Let x be the magnitude of the decimal in the input in, so
-         *      x = f 10^ep
-         * where integer f = <f_1 ... f_n> consists of the n digits found
-         * in the portion [lz, tnz) of the input, and f_1 != 0, f_n != 0.
          * Define e' = n + ep, which leads to
          *      x = <0 . f_1 ... f_n> 10^e', 10^(e'-1) <= x < 10^e'
          * If e' <= EP_MIN then x rounds to zero.
@@ -2130,8 +2110,6 @@ public class FloatingDecimal{
          * (See the comments on the fields for their semantics.)
          * We return immediately in these cases.
          * Otherwise, e' fits in an int named e.
-         *
-         * |e'| < 10^14
          */
         int e = Math.clamp(ep + n, EP_MIN[ix], EP_MAX[ix]);
         if (e == EP_MIN[ix]) {  // e' <= E_MIN
@@ -2168,11 +2146,12 @@ public class FloatingDecimal{
          * For these c values, all numbers of the form
          *      (c + 1/2) 2^q
          * also belong to the intervals.
-         * These are the boundaries of the rounding intervals.
+         * These are the boundaries of the rounding intervals and are key for
+         * correct rounding.
          *
          * First assume ql > 0, so q > 0.
          * All rounding boundaries (c + 1/2) 2^q are integers.
-         * Hence, to correctly round x it's enough to retain its integer part,
+         * Hence, to correctly round x, it's enough to retain its integer part,
          * +1 non-zero sticky digit iff the fractional part is non-zero.
          * (Well, the sticky digit is only needed when the integer part
          * coincides with a boundary, but that's hard to detect at this stage.
@@ -2183,11 +2162,14 @@ public class FloatingDecimal{
          * as the fractional part is empty) and the exponent e to the converter.
          *
          * Now assume qh <= 0, so q <= 0.
-         * The boundaries (c + 1/2) 2^q have a fractional part consisting of
-         * 1 - q digits (the rightmost one is always a 5).
+         * The boundaries (c + 1/2) 2^q = (2c + 1) 2^(q-1) have a fractional part
+         * of 1 - q digits: some (or zero) leading zeros, the rightmost is 5.
          * A correct rounding needs to retain the integer part of x (if any),
          * 1 - q digits of the fractional part, +1 non-zero sticky digit iff
-         * the rest (tail) of the fractional part is non-zero.
+         * the rest of the fractional part beyond the 1 - q digits is non-zero.
+         * (Again, the sticky digit is only needed when the digit in f at the
+         * same position as the last 5 of the rounding boundary is 5 as well.
+         * But let's keep it simple for now.)
          * However, q is unknown, so use the conservative ql instead.
          * More precisely, if n > e + 1 - ql we pass the leftmost e + 1 - ql
          * digits of f, sticky 3, and e.
@@ -2270,12 +2252,9 @@ public class FloatingDecimal{
         }
     }
 
-    /*
-     * Arithmetically "appends the digit" ch to v >= 0, up to 10^12.
-     * Returns 10^12 on overflow, and keeps returning it on subsequent invocations.
-     */
+    /* Arithmetically "appends the digit" ch to v >= 0, clamping at 10^10. */
     private static long appendDigit(long v, int ch) {
-        return v < 1_000_000_000_000L / 10 ? 10 * v + (ch - '0') : 1_000_000_000_000L;
+        return v < 10_000_000_000L / 10 ? 10 * v + (ch - '0') : 10_000_000_000L;
     }
 
     /* Whether ch is a digit char '0-9', 'A-F', or 'a-f', depending on isDec. */
@@ -2296,18 +2275,16 @@ public class FloatingDecimal{
      */
     private static int skipWhitespaces(String in, int i) {
         int len = in.length();
-        while (i < len && in.charAt(i) <= ' ') {
-            ++i;
-        }
+        for (; i < len && in.charAt(i) <= ' '; ++i);  // empty body
         return i;
     }
 
     /*
-     * Attempts to scan sub and opt trailing whitespaces, starting at index i.
+     * Attempts to scan sub and optional trailing whitespaces, starting at index i.
      * The optional whitespaces must be at the end of in.
      */
     private static void scanSymbolic(String in, int i, String sub) {
-        int high = i + sub.length();  // might overflow, checked below
+        int high = i + sub.length();  // might overflow, checked in next line
         check(in, i <= high && high <= in.length()
                         && in.indexOf(sub, i, high) == i
                         && skipWhitespaces(in, high) == in.length());
@@ -2326,19 +2303,41 @@ public class FloatingDecimal{
 
     private static final int MAX_OUT = 1_000;
     private static final String OMITTED = " ... ";
+    private static final int L_HALF = (MAX_OUT - OMITTED.length()) / 2;
+    private static final int R_HALF = MAX_OUT - (L_HALF + OMITTED.length());
 
-    private static void check(String in, boolean b) {
-        if (!b) {
+    private static void check(String in, boolean expected) {
+        if (!expected) {
             int len = in.length();
             if (len > MAX_OUT) {  // discard middle chars to achieve a length of MAX_OUT
-                int halfish = (MAX_OUT - OMITTED.length()) / 2;
-                in = in.substring(0, halfish)
-                        + OMITTED
-                        + in.substring(len - (MAX_OUT - OMITTED.length() - halfish));
+                in = in.substring(0, L_HALF) + OMITTED + in.substring(len - R_HALF);
             }
             throw new NumberFormatException("For input string: \"" + in + "\"");
         }
     }
+
+    /*
+     * According to IEEE 754-2019, a finite positive binary floating-point
+     * of precision P is (uniquely) expressed as
+     *      c 2^q
+     * where integers c and q meet
+     *      Q_MIN <= q <= Q_MAX
+     *      either      2^(P-1) <= c < 2^P  (normal)
+     *      or          0 < c < 2^(P-1)  &  q = Q_MIN  (subnormal)
+     *      c = <d_0 d_1 ... d_(P-1)>, d_i in [0, 2)
+     *
+     * Equivalently, the fp value can be (uniquely) expressed as
+     *      m 2^ep
+     * where integer ep and real f meet
+     *      ep = q + P - 1
+     *      m = c 2^(1-P)
+     * Hence,
+     *      E_MIN = Q_MIN + P - 1, E_MAX = Q_MAX + P - 1,
+     *      1 <= m < 2      (normal)
+     *      m < 1           (subnormal)
+     *      m = <d_0 . d_1 ... d_(P-1)>
+     * with a (binary) point between d_0 and d_1
+     */
 
     /*
      * These constants are used to indicate the IEEE binary floating-point format
@@ -2384,15 +2383,6 @@ public class FloatingDecimal{
 //            (1 << 4 + BINARY_256_IX) - P[BINARY_256_IX],
     };
 
-    /* Minimum exponent in the m 2^e representation. */
-    private static final int[] E_MIN = {
-            (-1 << W[BINARY_16_IX] - 1) + 2,
-            (-1 << W[BINARY_32_IX] - 1) + 2,
-            (-1 << W[BINARY_64_IX] - 1) + 2,
-//            (-1 << W[BINARY_128_IX] - 1) + 2,
-//            (-1 << W[BINARY_256_IX] - 1) + 2,
-    };
-
     /* Maximum exponent in the m 2^e representation. */
     private static final int[] E_MAX = {
             (1 << W[BINARY_16_IX] - 1) - 1,
@@ -2402,19 +2392,27 @@ public class FloatingDecimal{
 //            (1 << W[BINARY_256_IX] - 1) - 1,
     };
 
+    /* Minimum exponent in the m 2^e representation. */
+    private static final int[] E_MIN = {
+            1 - E_MAX[BINARY_16_IX],
+            1 - E_MAX[BINARY_32_IX],
+            1 - E_MAX[BINARY_64_IX],
+//            1 - E_MAX[BINARY_128_IX],
+//            1 - E_MAX[BINARY_256_IX],
+    };
+
     /* Minimum exponent in the c 2^q representation. */
     private static final int[] Q_MIN = {
-            E_MIN[BINARY_16_IX] - P[BINARY_16_IX] + 1,
-            E_MIN[BINARY_32_IX] - P[BINARY_32_IX] + 1,
-            E_MIN[BINARY_64_IX] - P[BINARY_64_IX] + 1,
-//            E_MIN[BINARY_128_IX] - P[BINARY_128_IX] + 1,
-//            E_MIN[BINARY_256_IX] - P[BINARY_256_IX] + 1,
+            E_MIN[BINARY_16_IX] - (P[BINARY_16_IX] - 1),
+            E_MIN[BINARY_32_IX] - (P[BINARY_32_IX] - 1),
+            E_MIN[BINARY_64_IX] - (P[BINARY_64_IX] - 1),
+//            E_MIN[BINARY_128_IX] - (P[BINARY_128_IX] - 1),
+//            E_MIN[BINARY_256_IX] - (P[BINARY_256_IX] - 1),
     };
 
     /*
-     * HEX_COUNT = maximum number of hex digits required to host P +1 rounding
-     * bit +1 sticky bit = P + 2 adjacent one bits with arbitrary alignment.
-     * HEX_COUNT = floor(P/4) + 2
+     * The most significant P +1 rounding bit +1 sticky bit = P + 2 bits in a
+     * hexadecimal string need up to HEX_COUNT = floor(P/4) + 2 hex digits.
      */
     private static final int[] HEX_COUNT = {
             P[BINARY_16_IX] / 4 + 2,
