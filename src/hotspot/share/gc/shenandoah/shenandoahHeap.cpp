@@ -386,6 +386,9 @@ jint ShenandoahHeap::initialize() {
 
     if (_collection_set == nullptr) {
       cset_rs = MemoryReserver::reserve(cset_size, cset_align, os::vm_page_size());
+
+      // Maybe Shenandoah wants to check the the memory got reserved here?
+
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
     os::trace_page_sizes_for_requested_size("Collection Set",
