@@ -9,6 +9,8 @@ With the [Compile Framework](../compile_framework/README.md), we can easily comp
 This allows the test writer to specify just one or a few Templates, possibly with some parameter holes and a list of parameter values, or with Template holes for recursive Template instantiation. The Template Framework then takes care of generating code for each parameter value, and for filling in recursive Template instantiations, possibly with random code, code shapes and constant values.
 
 ## How to use the Template Framework
+Please reference the examples found in [examples](../../../testlibrary_tests/template_framework/examples/). Some basic tests can be found in [tests](../../../testlibrary_tests/template_framework/tests/).
+
 TODO
 
 ## Use case: Regression Fest
