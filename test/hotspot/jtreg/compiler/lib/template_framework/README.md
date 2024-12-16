@@ -11,7 +11,28 @@ This allows the test writer to specify just one or a few Templates, possibly wit
 ## How to use the Template Framework
 Please reference the examples found in [examples](../../../testlibrary_tests/template_framework/examples/). Some basic tests can be found in [tests](../../../testlibrary_tests/template_framework/tests/).
 
-TODO
+Here a simple example:
+
+    // Definie a Template with name "my_example" that has two parameter holes
+    // "param1" and "param2", and a recursive call to a "int_con" CodeGenerator
+    // which takes parameters "lo" with value 0 and "hi" with value 100.
+    Template template = new Template("my_example",
+        """
+        package p.xyz;
+
+        public class InnerTest {
+            public static int test() {
+                return #{param1} + #{param2} + #{:int_con(lo=0,hi=100)};
+            }
+        }
+        """
+    );
+
+    // The template is instantiated, and the two parameters are replaced with the
+    // provided values, and the recursive CodeGenerator call replaces the corresponding
+    // Template hole with a random number from 0 to 100. The resulting code is returned
+    // as a String that could be passed on to the Compile Framework.
+    String code = template.where("param1", "42").where("param2", "7").instantiate();
 
 ## Use case: Regression Fest
 TODO
