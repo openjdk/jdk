@@ -631,7 +631,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 address generate_ghash_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "ghash");
-
   address start = __ function_entry();
 
   // Registers for parameters
@@ -661,7 +660,6 @@ address generate_ghash_processBlocks() {
   VectorRegister vConst1 = VR12;
   VectorRegister vConst7 = VR13;
   VectorRegister vConstC2 = VR14;
-  VectorRegister fromPerm = VR15;
   VectorRegister vTmp3 = VR16;
   VectorRegister vTmp5 = VR17;
   VectorRegister vTmp6 = VR18;
@@ -674,8 +672,7 @@ address generate_ghash_processBlocks() {
   VectorRegister vMask = VR24;
   VectorRegister vS = VR25;
   VectorSRegister vXS = VSR33;
-  Label L_end, L_aligned, L_align_2, L_end_2, L_aligned3;
-  Label L_end3, L_aligned4, L_end4;
+  Label L_end, L_aligned;
 
   static const unsigned char perm_pattern[16] __attribute__((aligned(16))) = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
   __ li(temp1, 0xc2);
@@ -684,7 +681,6 @@ address generate_ghash_processBlocks() {
   __ vxor(vConstC2, vConstC2, vConstC2);
   __ mtvrd(vConstC2, temp1);
   __ vxor(vZero, vZero, vZero);
-  //__ stop("ghash");
   // Checking if address is 16 byte aligned and load accordingly.
   __ lxvd2x(vHS, subkeyH);
   __ lxvd2x(vZero_StoredS, state);
@@ -709,14 +705,26 @@ address generate_ghash_processBlocks() {
   __ li(temp1, 0);
   __ load_const_optimized(temp2, (uintptr_t)&perm_pattern);
   __ lvx(loadOrder, temp2);
-  
   Label loop;
   __ bind(loop);
     // Load immediate value 0 into temp
-    __ vxor(vX, vX, vX);
     __ vxor(vZero, vZero, vZero);
     __ li(temp1, 0);
-    __ lxv(vXS, 0, data);
+    __ andi(temp1, data, 15);
+    __ cmpwi(CCR0, temp1, 0);
+    __ beq(CCR0, L_aligned);                      // Check if address is aligned (mask lower 4 bits)
+    __ li(temp1, 0);
+    __ lvx(vHigh, temp1, data);
+    __ lvsl(vPerm, temp1, data);
+    __ addi(data, data, 16);
+    __ lvx(vLow, temp1, data);
+    __ vec_perm(vX, vHigh, vLow, vPerm);
+    __ subi(data, data, 16);
+    __ b(L_end);
+    __ bind(L_aligned);
+    __ li(temp1, 0);
+    __ lvx(vX, temp1, data);
+    __ bind(L_end);
     __ vec_perm(vX, vX, vX, loadOrder);
     __ vxor(vX, vX, vZero_Stored);
       // Perform GCM multiplication
@@ -738,14 +746,10 @@ address generate_ghash_processBlocks() {
     __ addi(data, data, 16);
     __ bdnz(loop);
   __ li(temp4, 0);
-
   __ stxvd2x(vZero->to_vsr(),state);
-
-
   __ blr();                                     // Return from function
 
   return start;
-
 }
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
