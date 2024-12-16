@@ -31,11 +31,9 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,21 +41,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import jdk.internal.module.ModulePath;
-import jdk.tools.jlink.internal.LinkableRuntimeImage;
 
 
 final class JLinkBundlerHelper {
-
-    private static final boolean LINKABLE_RUNTIME = LinkableRuntimeImage.isLinkableRuntime();
 
     static void execute(Map<String, ? super Object> params, Path outputDir)
             throws IOException, PackagerException {
@@ -105,48 +98,13 @@ final class JLinkBundlerHelper {
                  addModules.stream()).collect(Collectors.toSet());
 
         ModuleFinder finder = createModuleFinder(paths);
-        Predicate<ModuleDescriptor> moduleFilter = defaultModulePredicate();
 
         return Configuration.empty()
                 .resolveAndBind(finder, ModuleFinder.of(), roots)
                 .modules()
                 .stream()
-                .map(ResolvedModule::reference)
-                .map(ModuleReference::descriptor)
-                .filter(moduleFilter)
-                .map(ModuleDescriptor::name)
+                .map(ResolvedModule::name)
                 .collect(Collectors.toSet());
-    }
-
-    /*
-     * Returns a predicate suitable for filtering JDK modules. It returns an
-     * allways-include predicate when the default module path, "jmods" folder in
-     * JAVA_HOME exists. Otherwise, it returns a filter that checks for a build
-     * which allows for linking from the run-time image. If so, modules 'jdk.jlink'
-     * and 'jdk.jpackage' - which depends on jdk.jlink - will be filtered by the
-     * predicate.
-     */
-    private static Predicate<ModuleDescriptor> defaultModulePredicate() {
-        Predicate<ModuleDescriptor> defaultModFilter = a -> true;
-        Path defaultJmodsPath = Path.of(System.getProperty("java.home"),
-                                        "jmods");
-        if (Files.notExists(defaultJmodsPath)) {
-            return JLinkBundlerHelper::linkableRuntimeFilter;
-        }
-        return defaultModFilter;
-    }
-
-    /*
-     * Since the jdk.jlink module is not allowed, filter it and modules that
-     * require it when we have a runtime that allows for linking from the run-time
-     * image.
-     */
-    private static boolean linkableRuntimeFilter(ModuleDescriptor desc) {
-        Set<Requires> r = desc.requires();
-        boolean requiresJlink = r.stream()
-                                 .map(Requires::name)
-                                 .anyMatch(a -> "jdk.jlink".equals(a));
-        return !(LINKABLE_RUNTIME && ("jdk.jlink".equals(desc.name()) || requiresJlink));
     }
 
     /*
@@ -163,10 +121,6 @@ final class JLinkBundlerHelper {
                 ModulePath.of(JarFile.runtimeVersion(), true,
                         modulePath.toArray(Path[]::new)),
                 ModuleFinder.ofSystem());
-    }
-
-    static boolean isLinkableRuntime() {
-        return LINKABLE_RUNTIME;
     }
 
     private static Set<String> createModuleList(List<Path> paths,
@@ -196,6 +150,7 @@ final class JLinkBundlerHelper {
         if (phonyModule != null) {
             modules.addAll(phonyModule.get());
         }
+
         return modules;
     }
 
