@@ -426,6 +426,8 @@ public:
   // Helper to call Node::Ideal() and BarrierSetC2::ideal_node().
   virtual Node* apply_ideal(Node* i, bool can_reshape);
 
+  virtual Node* apply_identity(Node* i);
+
 #ifdef ASSERT
   void dump_infinite_loop_info(Node* n, const char* where);
   // Check for a simple dead loop when a data node references itself.
@@ -705,6 +707,8 @@ public:
   PhaseLowering(PhaseIterGVN* igvn) : PhaseIterGVN(igvn) {};
 
   virtual Node* apply_ideal(Node* i, bool can_reshape);
+
+  virtual Node* apply_identity(Node* i);
 
   // Return a lowered version of the input node, or nullptr if no lowering took place.
   Node* lower_node(Node* in);

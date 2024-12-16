@@ -671,6 +671,10 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
   return i;
 }
 
+Node* PhaseGVN::apply_identity(Node* k) {
+  return k->Identity(this);
+}
+
 //------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
@@ -722,7 +726,7 @@ Node* PhaseGVN::transform(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);        // Look for a nearby replacement
+  i = apply_identity(k);        // Look for a nearby replacement
   if (i != k) {                 // Found? Return replacement!
     NOT_PRODUCT(set_progress();)
     return i;
@@ -1262,7 +1266,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   }
 
   // Now check for Identities
-  i = k->Identity(this);      // Look for a nearby replacement
+  i = apply_identity(k);       // Look for a nearby replacement
   if (i != k) {                // Found? Return replacement!
     NOT_PRODUCT(set_progress();)
     add_users_to_worklist(k);
@@ -2295,6 +2299,10 @@ Node* PhaseLowering::apply_ideal(Node* k, bool can_reshape) {
   // that may undo the changes done during lowering.
 
   return k->LoweredIdeal(this);
+}
+
+Node* PhaseLowering::apply_identity(Node* k) {
+  return k;
 }
 
 Node* PhaseLowering::lower_node(Node* n) {
