@@ -296,13 +296,19 @@ void LIRGenerator::cmp_reg_mem(LIR_Condition condition, LIR_Opr reg, LIR_Opr bas
 
 bool LIRGenerator::strength_reduce_multiply(LIR_Opr left, jint c, LIR_Opr result, LIR_Opr tmp) {
   assert(left != result, "should be different registers");
-  if (is_power_of_2(c + 1)) {
-    __ shift_left(left, log2i_exact(c + 1), result);
+  // Using unsigned arithmetics to avoid undefined behavior due to integer overflow.
+  // The involved operations are not sensitive to signedness.
+  juint u_value = (juint)c;
+  if (is_power_of_2(u_value + 1)) {
+    __ shift_left(left, log2i_exact(u_value + 1), result);
     __ sub(result, left, result);
     return true;
-  } else if (is_power_of_2(c - 1)) {
-    __ shift_left(left, log2i_exact(c - 1), result);
+  } else if (is_power_of_2(u_value - 1)) {
+    __ shift_left(left, log2i_exact(u_value - 1), result);
     __ add(result, left, result);
+    return true;
+  } else if (c == -1) {
+    __ negate(left, result);
     return true;
   }
   return false;

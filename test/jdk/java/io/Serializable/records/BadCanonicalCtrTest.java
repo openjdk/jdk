@@ -27,7 +27,6 @@
  * @summary InvalidClassException is thrown when the canonical constructor
  *          cannot be found during deserialization.
  * @library /test/lib
- * @enablePreview
  * @run testng BadCanonicalCtrTest
  */
 
