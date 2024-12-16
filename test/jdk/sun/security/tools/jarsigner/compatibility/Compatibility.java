@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1439,7 +1439,9 @@ public class Compatibility {
         }
 
         String expectedTsaDigestAlg() {
-            return tsaDigestAlgorithm != null ? tsaDigestAlgorithm : "SHA-256";
+            return tsaDigestAlgorithm != null
+                    ? tsaDigestAlgorithm
+                    : jdkInfo.majorVersion < 19 ? "SHA-256" : "SHA-384";
         }
 
         private SignItem tsaIndex(int tsaIndex) {
