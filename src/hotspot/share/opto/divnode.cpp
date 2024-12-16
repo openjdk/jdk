@@ -35,12 +35,31 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "opto/runtime.hpp"
 
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
 
 #include <math.h>
+
+ModDNode::ModDNode(Compile* C, Node* a, Node* b)
+    : CallNode(OptoRuntime::Math_DD_D_Type(), nullptr, TypeRawPtr::BOTTOM) {
+  init_req(TypeFunc::Parms + 0, a);
+  init_req(TypeFunc::Parms + 1, C->top());
+  init_req(TypeFunc::Parms + 2, b);
+  init_req(TypeFunc::Parms + 3, C->top());
+  add_flag(Flag_is_macro);
+  C->add_macro_node(this);
+}
+
+ModFNode::ModFNode(Compile* C, Node* a, Node* b)
+    : CallNode(OptoRuntime::modf_Type(), nullptr, TypeRawPtr::BOTTOM) {
+  init_req(TypeFunc::Parms + 0, a);
+  init_req(TypeFunc::Parms + 1, b);
+  add_flag(Flag_is_macro);
+  C->add_macro_node(this);
+}
 
 //----------------------magic_int_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 32 bit divide
@@ -1380,10 +1399,10 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type* ModFNode::Value(PhaseGVN* phase) const {
+/*const Type* ModFNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
+  const Type *t1 = phase->type(dividend());
+  const Type *t2 = phase->type(divisor());
   if( t1 == Type::TOP ) return Type::TOP;
   if( t2 == Type::TOP ) return Type::TOP;
 
@@ -1419,7 +1438,7 @@ const Type* ModFNode::Value(PhaseGVN* phase) const {
   }
 
   return TypeF::make(jfloat_cast(xr));
-}
+}*/
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------
@@ -1433,36 +1452,41 @@ const Type* UModLNode::Value(PhaseGVN* phase) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-const Type* ModDNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type(dividend());
+  const Type* t2 = phase->type(divisor());
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return nullptr;
+  }
 
   // If either number is not a constant, we know nothing.
   if ((t1->base() != Type::DoubleCon) || (t2->base() != Type::DoubleCon)) {
-    return Type::DOUBLE;        // note: x%x can be either NaN or 0
+    return nullptr; // note: x%x can be either NaN or 0
   }
 
   double f1 = t1->getd();
   double f2 = t2->getd();
-  jlong  x1 = jlong_cast(f1);   // note:  *(long*)&f1, not just (long)f1
-  jlong  x2 = jlong_cast(f2);
+  jlong x1 = jlong_cast(f1); // note:  *(long*)&f1, not just (long)f1
+  jlong x2 = jlong_cast(f2);
 
   // If either is a NaN, return an input NaN
-  if (g_isnan(f1))    return t1;
-  if (g_isnan(f2))    return t2;
+  if (g_isnan(f1)) {
+    return replace_with_con(phase, t1);
+  }
+  if (g_isnan(f2)) {
+    return replace_with_con(phase, t2);
+  }
 
   // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong)
-    return Type::DOUBLE;
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jlong) {
+    return nullptr;
+  }
 
   // We must be modulo'ing 2 double constants.
   // Make sure that the sign of the fmod is equal to the sign of the dividend
@@ -1471,7 +1495,36 @@ const Type* ModDNode::Value(PhaseGVN* phase) const {
     xr ^= min_jlong;
   }
 
-  return TypeD::make(jdouble_cast(xr));
+  return replace_with_con(phase, TypeD::make(jdouble_cast(xr)));
+}
+
+Node* ModDNode::replace_with_con(PhaseGVN* phase, const Type* con) {
+  Compile* C = phase->C;
+  Node* con_node = phase->makecon(con);
+  CallProjections projs;
+  extract_projections(&projs, false, false);
+  C->gvn_replace_by(projs.fallthrough_proj, in(TypeFunc::Control));
+  if (projs.fallthrough_catchproj != nullptr) {
+    C->gvn_replace_by(projs.fallthrough_catchproj, in(TypeFunc::Control));
+  }
+  if (projs.fallthrough_memproj != nullptr) {
+    C->gvn_replace_by(projs.fallthrough_memproj, in(TypeFunc::Memory));
+  }
+  if (projs.catchall_memproj != nullptr) {
+    C->gvn_replace_by(projs.catchall_memproj, C->top());
+  }
+  if (projs.fallthrough_ioproj != nullptr) {
+    C->gvn_replace_by(projs.fallthrough_ioproj, in(TypeFunc::I_O));
+  }
+  assert(projs.catchall_ioproj == nullptr, "no exceptions from floating mod");
+  assert(projs.catchall_catchproj == nullptr, "no exceptions from floating mod");
+  if (projs.resproj != nullptr) {
+    C->gvn_replace_by(projs.resproj, con_node);
+  }
+  C->gvn_replace_by(this, C->top());
+  C->remove_macro_node(this);
+  disconnect_inputs(C);
+  return nullptr;
 }
 
 //=============================================================================

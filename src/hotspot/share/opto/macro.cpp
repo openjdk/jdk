@@ -2221,7 +2221,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   mem_phi->init_req(2, mem);
 
   // Make slow path call
-  CallNode *call = make_slow_call((CallNode *) lock, OptoRuntime::complete_monitor_enter_Type(),
+  CallNode *call = make_slow_call(lock, OptoRuntime::complete_monitor_enter_Type(),
                                   OptoRuntime::complete_monitor_locking_Java(), nullptr, slow_path,
                                   obj, box, nullptr);
 
@@ -2430,6 +2430,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
+               n->Opcode() == Op_ModD ||
+               n->Opcode() == Op_ModF ||
                n->is_OpaqueNotNull()       ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
@@ -2581,7 +2583,33 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       expand_subtypecheck_node(n->as_SubTypeCheck());
       break;
     default:
-      assert(false, "unknown node type in macro list");
+      switch (n->Opcode()) {
+      case Op_ModD: {
+        CallNode* mod_macro = n->as_Call();
+        CallNode* call = new CallLeafNode(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::drem), "drem", TypeRawPtr::BOTTOM);
+        call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
+        call->init_req(TypeFunc::I_O, mod_macro->in(TypeFunc::I_O));
+        call->init_req(TypeFunc::Memory, mod_macro->in(TypeFunc::Memory));
+        call->init_req(TypeFunc::ReturnAdr, mod_macro->in(TypeFunc::ReturnAdr));
+        call->init_req(TypeFunc::FramePtr, mod_macro->in(TypeFunc::FramePtr));
+        for (int i = 0; i < 4; i++) call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
+        call->copy_call_debug_info(&_igvn, call);
+        _igvn.replace_node(mod_macro, call);
+        transform_later(call);
+        break;
+      }
+
+      case Op_ModF: {
+        assert(false, "TODO");
+        /*Node* c = make_runtime_call(RC_LEAF, OptoRuntime::modf_Type(),
+                                    CAST_FROM_FN_PTR(address, SharedRuntime::frem),
+                                    "frem", nullptr, // no memory effects
+                                    f1, f2);
+        Node* res = _igvn.transform(new ProjNode(c, TypeFunc::Parms + 0));*/
+      }
+      default:
+        assert(false, "unknown node type in macro list");
+      }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;

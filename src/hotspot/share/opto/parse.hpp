@@ -530,8 +530,7 @@ class Parse : public GraphKit {
   void  do_instanceof();
 
   // Helper functions for shifting & arithmetic
-  void modf();
-  void modd();
+  Node* floating_point_mod(Node* a, Node* b, bool dbl);
   void l2f();
 
   // implementation of _get* and _put* bytecodes

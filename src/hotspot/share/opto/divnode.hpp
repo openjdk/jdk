@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_DIVNODE_HPP
 #define SHARE_OPTO_DIVNODE_HPP
 
+#include "opto/callnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -141,25 +142,34 @@ public:
 };
 
 //------------------------------ModFNode---------------------------------------
+
 // Float Modulus
-class ModFNode : public Node {
+class ModFNode : public CallNode {
 public:
-  ModFNode( Node *c, Node *in1, Node *in2 ) : Node(c,in1, in2) {}
+  ModFNode(Compile* C, Node* a, Node* b);
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual const Type *bottom_type() const { return Type::FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
+  virtual uint size_of() const { return sizeof(*this); }
+
+private:
+  Node* dividend() const { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const { return in(TypeFunc::Parms + 1); }
 };
 
 //------------------------------ModDNode---------------------------------------
 // Double Modulus
-class ModDNode : public Node {
+class ModDNode : public CallNode {
 public:
-  ModDNode( Node *c, Node *in1, Node *in2 ) : Node(c, in1, in2) {}
+  ModDNode(Compile* C, Node* a, Node* b);
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseGVN* phase) const;
-  virtual const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+private:
+  Node* replace_with_con(PhaseGVN* phase, const Type* con);
+  Node* dividend() const { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const { return in(TypeFunc::Parms + 2); }
 };
 
 //------------------------------UModINode---------------------------------------
