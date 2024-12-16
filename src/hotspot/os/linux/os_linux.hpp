@@ -367,8 +367,8 @@ class os::Linux {
     }
     return false;
   }
-  // Check if bound to only one numa node.
-  // Returns true if bound to a single numa node, otherwise returns false.
+  // Check if memory is bound to only one numa node.
+  // Returns true if memory is bound to a single numa node, otherwise returns false.
   static bool is_bound_to_single_mem_node() {
     int nodes = 0;
     unsigned int node = 0;

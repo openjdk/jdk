@@ -4488,13 +4488,7 @@ void os::Linux::numa_init() {
   // bitmask when externally configured to run on all or fewer nodes.
 
   if (!Linux::libnuma_init()) {
-    if ((UseNUMA && FLAG_IS_CMDLINE(UseNUMA)) ||
-        (UseNUMAInterleaving && FLAG_IS_CMDLINE(UseNUMAInterleaving))) {
-      // Only issue a warning if the user explicitly asked for NUMA support
-      log_warning(os)("NUMA support is disabled as libnuma failed to initialize");
-    }
-    FLAG_SET_ERGO(UseNUMA, false);
-    FLAG_SET_ERGO(UseNUMAInterleaving, false); // Also depends on libnuma.
+    disable_numa("NUMA support is disabled as libnuma failed to initialize");
   } else {
     Linux::set_configured_numa_policy(Linux::identify_numa_policy());
     if (Linux::numa_max_node() < 1) {
