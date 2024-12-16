@@ -83,9 +83,11 @@ void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Address src) 
 // Exactly the number of characters indicated by the return value have been written to dst.
 // If precise is false, a few characters more than indicated by the return value may have been
 // written to the dst array. In any failure case, The result value indexes the first invalid character.
-unsigned int C2_MacroAssembler::string_compress(Register result, Register src, Register dst, Register cnt,
-                                                Register tmp,    bool precise, bool toASCII) {
-  assert_different_registers(Z_R0, Z_R1, result, src, dst, cnt, tmp);
+unsigned int C2_MacroAssembler::string_compress(Register result, Register Rsrc, Register Rdst, Register Rcnt,
+                                                Register tmp, bool precise, bool toASCII, VectorRegister Vtmp1, VectorRegister Vtmp2,
+                                                VectorRegister Vmask, VectorRegister Vzero, VectorRegister Vsrc_first, VectorRegister v21,
+                                                VectorRegister v22, VectorRegister Vsrc_last) {
+  assert_different_registers(Z_R0, Z_R1, result, Rsrc, Rdst, Rcnt, tmp);
 
   unsigned short char_mask = 0xff00;  // all selected bits must be '0' for a char to be valid
   unsigned int   mask_ix_l = 0;       // leftmost one bit pos in mask
@@ -104,10 +106,7 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
   }
   int  block_start = offset();
 
-  Register       Rsrc  = src;
-  Register       Rdst  = dst;
   Register       Rix   = tmp;
-  Register       Rcnt  = cnt;
   Register       Rmask = result;  // holds incompatibility check mask until result value is stored.
   Label          ScalarShortcut, AllDone;
 
@@ -169,7 +168,6 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 #endif
   clear_reg(Z_R0);                         // make sure register is properly initialized.
 
-#if 0
   if (VM_Version::has_VectorFacility()) {
     const int  min_vcnt     = 32;          // Minimum #characters required to use vector instructions.
                                            // Otherwise just do nothing in vector mode.
@@ -177,13 +175,6 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
                                            // and must be a power of 2.
     const int  log_min_vcnt = exact_log2(min_vcnt);
     Label      VectorLoop, VectorDone, VectorBreak;
-
-    VectorRegister Vtmp1      = Z_V16;
-    VectorRegister Vtmp2      = Z_V17;
-    VectorRegister Vmask      = Z_V18;
-    VectorRegister Vzero      = Z_V19;
-    VectorRegister Vsrc_first = Z_V20;
-    VectorRegister Vsrc_last  = Z_V23;
 
     assert((Vsrc_last->encoding() - Vsrc_first->encoding() + 1) == min_vcnt/8, "logic error");
     assert(VM_Version::has_DistinctOpnds(), "Assumption when has_VectorFacility()");
@@ -199,8 +190,8 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
       add2reg(Rsrc, min_vcnt*2);
 
       //---<  check for incompatible character  >---
-      z_vo(Vtmp1, Z_V20, Z_V21);
-      z_vo(Vtmp2, Z_V22, Z_V23);
+      z_vo(Vtmp1, Vsrc_first, v21);
+      z_vo(Vtmp2, v22, Vsrc_last);
       z_vo(Vtmp1, Vtmp1, Vtmp2);
       z_vn(Vtmp1, Vtmp1, Vmask);
       z_vceqhs(Vtmp1, Vtmp1, Vzero);       // all bits selected by mask must be zero for successful compress.
@@ -208,8 +199,8 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
                                            // re-process data from current iteration in break handler.
 
       //---<  pack & store characters  >---
-      z_vpkh(Vtmp1, Z_V20, Z_V21);         // pack (src1, src2) -> tmp1
-      z_vpkh(Vtmp2, Z_V22, Z_V23);         // pack (src3, src4) -> tmp2
+      z_vpkh(Vtmp1, Vsrc_first, v21);      // pack (src1, src2) -> tmp1
+      z_vpkh(Vtmp2, v22, Vsrc_last);       // pack (src3, src4) -> tmp2
       z_vstm(Vtmp1, Vtmp2, 0, Rdst);       // store packed string
       add2reg(Rdst, min_vcnt);
 
@@ -224,7 +215,6 @@ unsigned int C2_MacroAssembler::string_compress(Register result, Register src, R
 
     bind(VectorDone);
   }
-#endif
 
   {
     const int  min_cnt     =  8;           // Minimum #characters required to use unrolled loop.
@@ -419,7 +409,9 @@ unsigned int C2_MacroAssembler::string_inflate_trot(Register src, Register dst, 
 // Note:
 //   cnt is signed int. Do not rely on high word!
 //       counts # characters, not bytes.
-unsigned int C2_MacroAssembler::string_inflate(Register src, Register dst, Register cnt, Register tmp) {
+unsigned int C2_MacroAssembler::string_inflate(Register src, Register dst, Register cnt, Register tmp,
+                                               VectorRegister v20, VectorRegister v21, VectorRegister v22,
+                                               VectorRegister v23, VectorRegister v24, VectorRegister v25) {
   assert_different_registers(Z_R0, Z_R1, src, dst, cnt, tmp);
 
   BLOCK_COMMENT("string_inflate {");
@@ -463,7 +455,6 @@ unsigned int C2_MacroAssembler::string_inflate(Register src, Register dst, Regis
 #endif
   clear_reg(Z_R0);                         // make sure register is properly initialized.
 
-#if 0
   if (VM_Version::has_VectorFacility()) {
     const int  min_vcnt     = 32;          // Minimum #characters required to use vector instructions.
                                            // Otherwise just do nothing in vector mode.
@@ -478,21 +469,20 @@ unsigned int C2_MacroAssembler::string_inflate(Register src, Register dst, Regis
     z_sllg(Z_R0, Rix, log_min_vcnt);       // remember #chars that will be processed by vector loop
 
     bind(VectorLoop);
-      z_vlm(Z_V20, Z_V21, 0, Rsrc);        // get next 32 characters (single-byte)
+      z_vlm(v20, v21, 0, Rsrc);        // get next 32 characters (single-byte)
       add2reg(Rsrc, min_vcnt);
 
-      z_vuplhb(Z_V22, Z_V20);              // V2 <- (expand) V0(high)
-      z_vupllb(Z_V23, Z_V20);              // V3 <- (expand) V0(low)
-      z_vuplhb(Z_V24, Z_V21);              // V4 <- (expand) V1(high)
-      z_vupllb(Z_V25, Z_V21);              // V5 <- (expand) V1(low)
-      z_vstm(Z_V22, Z_V25, 0, Rdst);       // store next 32 bytes
+      z_vuplhb(v22, v20);              // V2 <- (expand) V0(high)
+      z_vupllb(v23, v20);              // V3 <- (expand) V0(low)
+      z_vuplhb(v24, v21);              // V4 <- (expand) V1(high)
+      z_vupllb(v25, v21);              // V5 <- (expand) V1(low)
+      z_vstm(v22, v25, 0, Rdst);       // store next 32 bytes
       add2reg(Rdst, min_vcnt*2);
 
       z_brct(Rix, VectorLoop);
 
     bind(VectorDone);
   }
-#endif
 
   const int  min_cnt     =  8;             // Minimum #characters required to use unrolled scalar loop.
                                            // Otherwise just do nothing in unrolled scalar mode.
@@ -611,7 +601,9 @@ unsigned int C2_MacroAssembler::string_inflate(Register src, Register dst, Regis
 //   Kills:    tmp, Z_R0, Z_R1.
 // Note:
 //   len is signed int. Counts # characters, not bytes.
-unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst, Register tmp, int len) {
+unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst, Register tmp, int len ,
+                                                     VectorRegister v20, VectorRegister v21, VectorRegister v22,
+                                                     VectorRegister v23, VectorRegister v24, VectorRegister v25) {
   assert_different_registers(Z_R0, Z_R1, src, dst, tmp);
 
   BLOCK_COMMENT("string_inflate_const {");
@@ -627,7 +619,6 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
   bool       restore_inputs = false;
   bool       workreg_clear  = false;
 
-#if 0
   if ((len >= 32) && VM_Version::has_VectorFacility()) {
     const int  min_vcnt     = 32;          // Minimum #characters required to use vector instructions.
                                            // Otherwise just do nothing in vector mode.
@@ -638,12 +629,12 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
     Label      VectorLoop;
 
     if (iterations == 1) {
-      z_vlm(Z_V20, Z_V21, 0+src_off, Rsrc);  // get next 32 characters (single-byte)
-      z_vuplhb(Z_V22, Z_V20);                // V2 <- (expand) V0(high)
-      z_vupllb(Z_V23, Z_V20);                // V3 <- (expand) V0(low)
-      z_vuplhb(Z_V24, Z_V21);                // V4 <- (expand) V1(high)
-      z_vupllb(Z_V25, Z_V21);                // V5 <- (expand) V1(low)
-      z_vstm(Z_V22, Z_V25, 0+dst_off, Rdst); // store next 32 bytes
+      z_vlm(v20, v21, 0+src_off, Rsrc);  // get next 32 characters (single-byte)
+      z_vuplhb(v22, v20);                // V2 <- (expand) V0(high)
+      z_vupllb(v23, v20);                // V3 <- (expand) V0(low)
+      z_vuplhb(v24, v21);                // V4 <- (expand) V1(high)
+      z_vupllb(v25, v21);                // V5 <- (expand) V1(low)
+      z_vstm(v22, v25, 0+dst_off, Rdst); // store next 32 bytes
 
       src_off += min_vcnt;
       dst_off += min_vcnt*2;
@@ -652,14 +643,14 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
 
       z_lgfi(Rix, len>>log_min_vcnt);
       bind(VectorLoop);
-        z_vlm(Z_V20, Z_V21, 0, Rsrc);        // get next 32 characters (single-byte)
+        z_vlm(v20, v21, 0, Rsrc);        // get next 32 characters (single-byte)
         add2reg(Rsrc, min_vcnt);
 
-        z_vuplhb(Z_V22, Z_V20);              // V2 <- (expand) V0(high)
-        z_vupllb(Z_V23, Z_V20);              // V3 <- (expand) V0(low)
-        z_vuplhb(Z_V24, Z_V21);              // V4 <- (expand) V1(high)
-        z_vupllb(Z_V25, Z_V21);              // V5 <- (expand) V1(low)
-        z_vstm(Z_V22, Z_V25, 0, Rdst);       // store next 32 bytes
+        z_vuplhb(v22, v20);              // V2 <- (expand) V0(high)
+        z_vupllb(v23, v20);              // V3 <- (expand) V0(low)
+        z_vuplhb(v24, v21);              // V4 <- (expand) V1(high)
+        z_vupllb(v25, v21);              // V5 <- (expand) V1(low)
+        z_vstm(v22, v25, 0, Rdst);       // store next 32 bytes
         add2reg(Rdst, min_vcnt*2);
 
         z_brct(Rix, VectorLoop);
@@ -675,15 +666,14 @@ unsigned int C2_MacroAssembler::string_inflate_const(Register src, Register dst,
     nprocessed             += iterations << log_min_vcnt;
     assert(iterations == 1, "must be!");
 
-    z_vl(Z_V20, 0+src_off, Z_R0, Rsrc);    // get next 16 characters (single-byte)
-    z_vuplhb(Z_V22, Z_V20);                // V2 <- (expand) V0(high)
-    z_vupllb(Z_V23, Z_V20);                // V3 <- (expand) V0(low)
-    z_vstm(Z_V22, Z_V23, 0+dst_off, Rdst); // store next 32 bytes
+    z_vl(v20, 0+src_off, Z_R0, Rsrc);    // get next 16 characters (single-byte)
+    z_vuplhb(v22, v20);                // V2 <- (expand) V0(high)
+    z_vupllb(v23, v20);                // V3 <- (expand) V0(low)
+    z_vstm(v22, v23, 0+dst_off, Rdst); // store next 32 bytes
 
     src_off += min_vcnt;
     dst_off += min_vcnt*2;
   }
-#endif
 
   if ((len-nprocessed) > 8) {
     const int  min_cnt     =  8;           // Minimum #characters required to use unrolled scalar loop.
