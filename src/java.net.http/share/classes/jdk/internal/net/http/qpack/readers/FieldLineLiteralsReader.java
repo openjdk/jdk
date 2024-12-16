@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@ import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.QPACK;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
+import static jdk.internal.net.http.http3.Http3Error.QPACK_DECOMPRESSION_FAILED;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
 public final class FieldLineLiteralsReader extends FieldLineReader {
@@ -48,7 +48,7 @@ public final class FieldLineLiteralsReader extends FieldLineReader {
                                    QPACK.Logger logger) {
         super(maxSectionSize, sectionSizeTracker);
         this.logger = logger;
-        stringReader = new StringReader();
+        stringReader = new StringReader(new ReaderError(QPACK_DECOMPRESSION_FAILED, false));
         name = new StringBuilder(512);
         value = new StringBuilder(1024);
     }
@@ -70,7 +70,7 @@ public final class FieldLineLiteralsReader extends FieldLineReader {
     //            +-------------------------------+
     //
     public boolean read(ByteBuffer input, FieldSectionPrefix prefix,
-                        DecodingCallback action) throws IOException {
+                        DecodingCallback action) {
         if (!completeReading(input))
             return false;
         String n = name.toString();
@@ -80,13 +80,13 @@ public final class FieldLineLiteralsReader extends FieldLineReader {
                     "literal with literal name ('%s', huffman=%b, '%s', huffman=%b)",
                     n, huffmanName, v, huffmanValue));
         }
-        checkSectionSize(DynamicTable.headerSize(n, v), action);
+        checkSectionSize(DynamicTable.headerSize(n, v));
         action.onLiteralWithLiteralName(n, huffmanName, v, huffmanValue, hideIntermediary);
         reset();
         return true;
     }
 
-    private boolean completeReading(ByteBuffer input) throws IOException {
+    private boolean completeReading(ByteBuffer input) {
         if (!firstValueRead) {
             if (!stringReader.read(3, input, name)) {
                 return false;

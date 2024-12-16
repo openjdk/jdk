@@ -75,6 +75,7 @@ import jdk.internal.net.http.http3.streams.Http3Streams;
 import jdk.internal.net.http.qpack.Decoder;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.Encoder;
+import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.HeaderFrameReader;
 import jdk.internal.net.http.qpack.writers.HeaderFrameWriter;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
@@ -360,7 +361,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     @Override
     CompletableFuture<ExchangeImpl<T>> sendHeadersAsync() {
         final MinimalFuture<Void> completable = MinimalFuture.completedFuture(null);
-        return completable.thenApply((unused) -> this.sendHeaders());
+        return completable.thenApply(_ -> this.sendHeaders());
     }
 
     private Http3ExchangeImpl<T> sendHeaders() {
@@ -466,6 +467,13 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                 }
                 sentBytes += toSend;
             }
+        } catch (QPackException qe) {
+            if (qe.isConnectionError()) {
+                // close the connection
+                connection.close(qe.http3Error(), "QPack error", qe.getCause());
+            }
+            // fail the request
+            throw new CompletionException(qe.getCause());
         } catch (IOException io) {
             throw new CompletionException(io);
         } finally {

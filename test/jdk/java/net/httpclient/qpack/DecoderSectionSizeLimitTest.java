@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class DecoderSectionSizeLimitTest {
                 System.err.printf("Decoding error observed during buffer #%d processing: %s throwable: %s%n",
                         bufferIdx, decodingError, decodingCallback.lastThrowable.get());
                 if (decoderErrorExpected) {
-                    Assert.assertEquals(decodingError, Http3Error.H3_MESSAGE_ERROR);
+                    Assert.assertEquals(decodingError, Http3Error.QPACK_DECOMPRESSION_FAILED);
                     return;
                 } else {
                     Assert.fail("No HTTP/3 error was expected");
@@ -226,7 +226,7 @@ public class DecoderSectionSizeLimitTest {
         }
 
         @Override
-        public void onError(Throwable throwable, Http3Error http3Error) {
+        public void onConnectionError(Throwable throwable, Http3Error http3Error) {
             lastHttp3Error.set(http3Error);
             lastThrowable.set(throwable);
         }

@@ -25,7 +25,6 @@
 package jdk.internal.net.http.qpack;
 
 import jdk.internal.net.http.http3.ConnectionSettings;
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.streams.QueuingStreamPair;
 import jdk.internal.net.http.http3.streams.UniStreamPair;
 import jdk.internal.net.http.qpack.QPACK.QPACKErrorHandler;
@@ -75,7 +74,7 @@ public final class Decoder {
     // ID of last acknowledged entry acked by Insert Count Increment
     // or section acknowledgement instruction
     private long acknowledgedInsertsCount;
-    private ReentrantLock ackInsertCountLock = new ReentrantLock();
+    private final ReentrantLock ackInsertCountLock = new ReentrantLock();
     private final AtomicLong blockedStreamsCounter = new AtomicLong();
     private final AtomicLong maxBlockedStreams = new AtomicLong();
     private final QPACKErrorHandler qpackErrorHandler;
@@ -269,9 +268,8 @@ public final class Decoder {
         }
         try {
             encoderInstructionsReader.read(buffer);
-        } catch (IOException ioe) {
-            qpackErrorHandler.closeOnError(ioe, Http3Error.QPACK_ENCODER_STREAM_ERROR);
-            throw new IllegalStateException("Malformed encoder instruction", ioe);
+        } catch (QPackException qPackException) {
+            qpackErrorHandler.closeOnError(qPackException.getCause(), qPackException.http3Error());
         }
     }
 
@@ -281,6 +279,7 @@ public final class Decoder {
             qpackErrorHandler.closeOnError(
                     new IOException("QPACK not enough credit on a decoder stream " +
                             decoderStreamPair.remoteStreamType()), H3_CLOSED_CRITICAL_STREAM);
+            return;
         }
         // All decoder instructions contain only one variable length integer.
         // Which could take up to 9 bytes max.
@@ -295,43 +294,40 @@ public final class Decoder {
 
     private class DecoderTableCallback implements EncoderInstructionsReader.Callback {
 
-        private static IllegalStateException encoderStreamError() {
-            return new IllegalStateException(Http3Error.QPACK_ENCODER_STREAM_ERROR.name());
-        }
-
         private void ensureInstructionsAllowed() {
             // RFC9204 3.2.3. Maximum Dynamic Table Capacity:
             // "When the maximum table capacity is zero, the encoder MUST NOT
             // insert entries into the dynamic table and MUST NOT send any encoder
             // instructions on the encoder stream."
             if (dynamicTable.maxCapacity() == 0) {
-                IllegalStateException ise = encoderStreamError();
-                qpackErrorHandler.closeOnError(ise, Http3Error.QPACK_ENCODER_STREAM_ERROR);
-                throw ise;
+                throw QPackException.decoderStreamError(
+                        new IllegalStateException("Unexpected encoder instruction"));
             }
         }
 
         @Override
         public void onCapacityUpdate(long capacity) {
-            ensureInstructionsAllowed();
-            try {
-                dynamicTable.setCapacity(capacity);
-            } catch (IllegalArgumentException iae) {
-                qpackErrorHandler.closeOnError(iae, Http3Error.QPACK_ENCODER_STREAM_ERROR);
-                throw iae;
-            }
+                ensureInstructionsAllowed();
+                try {
+                    dynamicTable.setCapacity(capacity);
+                } catch (IllegalArgumentException iae) {
+                    throw QPackException.encoderStreamError(iae);
+                }
         }
 
         @Override
         public void onInsert(String name, String value) {
             ensureInstructionsAllowed();
-            if (dynamicTable.insert(name, value) != DynamicTable.ENTRY_NOT_INSERTED) {
-                ackTableInsertions();
-            } else {
-                // Not enough evictable space in dynamic table to insert entry
-                IllegalStateException ise = encoderStreamError();
-                qpackErrorHandler.closeOnError(ise, Http3Error.QPACK_ENCODER_STREAM_ERROR);
-                throw ise;
+            try {
+                if (dynamicTable.insert(name, value) != DynamicTable.ENTRY_NOT_INSERTED) {
+                    ackTableInsertions();
+                } else {
+                    // Not enough evictable space in dynamic table to insert entry
+                    IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
+                    throw QPackException.encoderStreamError(ise);
+                }
+            } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
+                throw QPackException.encoderStreamError(e);
             }
         }
 
@@ -348,12 +344,11 @@ public final class Decoder {
                     ackTableInsertions();
                 } else {
                     // Not enough space in dynamic table to insert entry
-                    IllegalStateException ise = encoderStreamError();
-                    qpackErrorHandler.closeOnError(ise, Http3Error.QPACK_ENCODER_STREAM_ERROR);
+                    IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
+                    throw QPackException.encoderStreamError(ise);
                 }
-            } catch (Throwable thr) {
-                qpackErrorHandler.closeOnError(thr, Http3Error.QPACK_ENCODER_STREAM_ERROR);
-                throw thr;
+            } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
+                throw QPackException.encoderStreamError(e);
             }
         }
 
@@ -372,13 +367,11 @@ public final class Decoder {
                     ackTableInsertions();
                 } else {
                     // Not enough space in dynamic table to duplicate entry
-                    IllegalStateException ise = encoderStreamError();
-                    qpackErrorHandler.closeOnError(ise, Http3Error.QPACK_ENCODER_STREAM_ERROR);
+                    IllegalStateException ise = new IllegalStateException("Not enough space in dynamic table");
+                    throw QPackException.encoderStreamError(ise);
                 }
-            } catch (Throwable thr) {
-                // Unable to decode encoded index
-                qpackErrorHandler.closeOnError(thr, Http3Error.QPACK_ENCODER_STREAM_ERROR);
-                throw thr;
+            } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
+                throw QPackException.encoderStreamError(e);
             }
         }
     }

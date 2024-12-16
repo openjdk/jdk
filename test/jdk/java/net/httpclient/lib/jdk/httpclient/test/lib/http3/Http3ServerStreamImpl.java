@@ -53,6 +53,7 @@ import jdk.internal.net.http.http3.frames.PartialFrame;
 import jdk.internal.net.http.http3.frames.UnknownFrame;
 import jdk.internal.net.http.http3.streams.Http3Streams;
 import jdk.internal.net.http.qpack.DecodingCallback;
+import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.HeaderFrameReader;
 import jdk.internal.net.http.quic.BuffersReader;
 import jdk.internal.net.http.quic.streams.QuicBidiStream;
@@ -68,6 +69,7 @@ final class Http3ServerStreamImpl {
     final QuicStreamReader reader;
     final QuicStreamWriter writer;
     final BuffersReader.ListBuffersReader incoming = BuffersReader.list();
+    final DecodingCallback headersConsumer;
     final HeaderFrameReader headersReader;
     final HttpHeadersBuilder requestHeadersBuilder;
     final ReentrantLock writeLock = new ReentrantLock();
@@ -84,7 +86,8 @@ final class Http3ServerStreamImpl {
         this.debug = Utils.getDebugLogger(this.serverConn::dbgTag);
         this.stream = stream;
         requestHeadersBuilder = new HttpHeadersBuilder();
-        headersReader = http3ServerConnection.newHeaderFrameReader(new HeadersConsumer());
+        headersConsumer = new HeadersConsumer();
+        headersReader = http3ServerConnection.newHeaderFrameReader(headersConsumer);
         writer = stream.connectWriter(writeScheduler);
         reader = stream.connectReader(readScheduler);
         exchangeCF = requestHeadersCF.thenApply(this::startExchange);
@@ -98,6 +101,21 @@ final class Http3ServerStreamImpl {
     }
 
     private void readLoop() {
+        try {
+            readLoop0();
+        } catch (QPackException qe) {
+            boolean isConnectionError = qe.isConnectionError();
+            Http3Error error = qe.http3Error();
+            Throwable cause = qe.getCause();
+            if (isConnectionError) {
+                headersConsumer.onConnectionError(cause, error);
+            } else {
+                headersConsumer.onStreamError(cause, error);
+            }
+        }
+    }
+
+    private void readLoop0() {
         ByteBuffer buffer;
 
         // reader can be null if the readLoop is invoked
@@ -446,8 +464,18 @@ final class Http3ServerStreamImpl {
         }
 
         @Override
-        public void onError(Throwable throwable, Http3Error http3Error) {
-            // TODO: Revisit this error handler during QPACK work
+        public void onConnectionError(Throwable throwable, Http3Error http3Error) {
+            try {
+                stream.reset(http3Error.code());
+                serverConn.connectionError(throwable, http3Error);
+            } catch (IOException ioe) {
+                serverConn.close(http3Error.code(),
+                        ioe.getMessage());
+            }
+        }
+
+        @Override
+        public void onStreamError(Throwable throwable, Http3Error http3Error) {
             try {
                 stream.reset(http3Error.code());
             } catch (IOException ioe) {

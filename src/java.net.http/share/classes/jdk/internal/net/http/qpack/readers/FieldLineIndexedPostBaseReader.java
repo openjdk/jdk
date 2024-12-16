@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,29 +24,32 @@
  */
 package jdk.internal.net.http.qpack.readers;
 
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
+import jdk.internal.net.http.qpack.QPackException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
+import static jdk.internal.net.http.http3.Http3Error.QPACK_DECOMPRESSION_FAILED;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
 public final class FieldLineIndexedPostBaseReader extends FieldLineReader {
     private final DynamicTable dynamicTable;
-    private final IntegerReader integerReader = new IntegerReader();
+    private final IntegerReader integerReader;
     private final QPACK.Logger logger;
 
     public FieldLineIndexedPostBaseReader(DynamicTable dynamicTable, long maxSectionSize,
                                           AtomicLong sectionSizeTracker, QPACK.Logger logger) {
         super(maxSectionSize, sectionSizeTracker);
         this.dynamicTable = dynamicTable;
+        this.integerReader = new IntegerReader(
+                new ReaderError(QPACK_DECOMPRESSION_FAILED, false));
         this.logger = logger;
     }
 
@@ -60,7 +63,7 @@ public final class FieldLineIndexedPostBaseReader extends FieldLineReader {
     //  +---+---+---+---+---------------+
     //
     public boolean read(ByteBuffer input, FieldSectionPrefix prefix,
-                        DecodingCallback action) throws IOException {
+                        DecodingCallback action) {
         if (!integerReader.read(input)) {
             return false;
         }
@@ -70,21 +73,28 @@ public final class FieldLineIndexedPostBaseReader extends FieldLineReader {
             logger.log(NORMAL, () -> format("Post-Base Indexed Field Line: base=%s index=%s[%s]",
                     prefix.base(), relativeIndex, absoluteIndex));
         }
-        HeaderField f = getHeaderFieldAt(absoluteIndex, action);
-        checkSectionSize(DynamicTable.headerSize(f), action);
+        // If the decoder encounters a reference in a field line representation to a dynamic table entry
+        // that has already been evicted or that has an absolute index greater than or equal to the declared
+        // Required Insert Count (Section 4.5.1), it MUST treat this as a connection error of type
+        // QPACK_DECOMPRESSION_FAILED.
+        if (absoluteIndex >= prefix.requiredInsertCount()) {
+            throw QPackException.decompressionFailed(
+                    new IOException("header index is greater than RIC"), true);
+        }
+        HeaderField f = getHeaderFieldAt(absoluteIndex);
+        checkSectionSize(DynamicTable.headerSize(f));
         action.onIndexed(absoluteIndex, f.name(), f.value());
         reset();
         return true;
     }
 
-    private HeaderField getHeaderFieldAt(long index, DecodingCallback callback) throws IOException {
+    private HeaderField getHeaderFieldAt(long index) {
         HeaderField f;
         try {
             f = dynamicTable.get(index);
-        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
-            var ex = new IOException("header fields table index", e);
-            callback.onError(ex, Http3Error.QPACK_DECOMPRESSION_FAILED);
-            throw ex;
+        } catch (IndexOutOfBoundsException | IllegalArgumentException | IllegalStateException e) {
+            throw QPackException.decompressionFailed(
+                    new IOException("header not known", e), true);
         }
         return f;
     }

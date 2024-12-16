@@ -21,19 +21,20 @@
  * questions.
  */
 
+import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.IntegerReader;
 import jdk.internal.net.http.qpack.writers.IntegerWriter;
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.stream.IntStream;
 
 /*
  * @test
  * @modules java.base/jdk.internal.net.quic
+ *          java.net.http/jdk.internal.net.http.http3
  *          java.net.http/jdk.internal.net.http.hpack
  *          java.net.http/jdk.internal.net.http.qpack
  *          java.net.http/jdk.internal.net.http.qpack.readers
@@ -51,7 +52,7 @@ public class IntegerReaderMaxValuesTest {
     }
 
     @Test(dataProvider = "nValues")
-    public void maxIntegerWriteRead(int N) throws Exception {
+    public void maxIntegerWriteRead(int N) {
         IntegerWriter writer = new IntegerWriter();
         writer.configure(IntegerReader.QPACK_MAX_INTEGER_VALUE, N, 0);
         ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -64,8 +65,8 @@ public class IntegerReaderMaxValuesTest {
         Assert.assertEquals(result, IntegerReader.QPACK_MAX_INTEGER_VALUE);
     }
 
-    @Test(dataProvider = "nValues", expectedExceptions = IOException.class)
-    public void overflowInteger(int N) throws IOException {
+    @Test(dataProvider = "nValues", expectedExceptions = QPackException.class)
+    public void overflowInteger(int N) {
         // Construct buffer with overflowed integer
         ByteBuffer overflowBuffer = ByteBuffer.allocate(11);
 

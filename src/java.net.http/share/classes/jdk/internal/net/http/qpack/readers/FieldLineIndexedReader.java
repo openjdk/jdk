@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,13 @@
  */
 package jdk.internal.net.http.qpack.readers;
 
+import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
+import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.StaticTable;
 
 import java.io.IOException;
@@ -41,7 +43,7 @@ import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 public final class FieldLineIndexedReader extends FieldLineReader {
     private boolean fromStaticTable;
     private final DynamicTable dynamicTable;
-    private final IntegerReader integerReader = new IntegerReader();
+    private final IntegerReader integerReader;
     private final QPACK.Logger logger;
 
     public FieldLineIndexedReader(DynamicTable dynamicTable, long maxSectionSize,
@@ -49,6 +51,8 @@ public final class FieldLineIndexedReader extends FieldLineReader {
         super(maxSectionSize, sectionSizeTracker);
         this.dynamicTable = dynamicTable;
         this.logger = logger;
+        integerReader = new IntegerReader(
+                new ReaderError(Http3Error.QPACK_DECOMPRESSION_FAILED, false));
     }
 
     public void configure(int b) {
@@ -62,7 +66,7 @@ public final class FieldLineIndexedReader extends FieldLineReader {
     //            +---+---------------------------+
     //
     public boolean read(ByteBuffer input, FieldSectionPrefix prefix,
-                        DecodingCallback action) throws IOException {
+                        DecodingCallback action) {
         if (!integerReader.read(input)) {
             return false;
         }
@@ -75,13 +79,13 @@ public final class FieldLineIndexedReader extends FieldLineReader {
                        absoluteIndex));
         }
         HeaderField f = getHeaderFieldAt(absoluteIndex);
-        checkSectionSize(DynamicTable.headerSize(f), action);
+        checkSectionSize(DynamicTable.headerSize(f));
         action.onIndexed(absoluteIndex, f.name(), f.value());
         reset();
         return true;
     }
 
-    private HeaderField getHeaderFieldAt(long index) throws IOException {
+    private HeaderField getHeaderFieldAt(long index) {
         HeaderField f;
         try {
             if (fromStaticTable) {
@@ -90,7 +94,8 @@ public final class FieldLineIndexedReader extends FieldLineReader {
                 f = dynamicTable.get(index);
             }
         } catch (IndexOutOfBoundsException e) {
-            throw new IOException("header fields table index", e);
+            throw QPackException.decompressionFailed(
+                    new IOException("header fields table index", e), true);
         }
         return f;
     }

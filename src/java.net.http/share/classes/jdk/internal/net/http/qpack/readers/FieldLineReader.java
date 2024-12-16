@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,10 @@
  */
 package jdk.internal.net.http.qpack.readers;
 
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
+import jdk.internal.net.http.qpack.QPackException;
 
-import java.io.IOException;
 import java.net.ProtocolException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
@@ -47,14 +46,14 @@ public sealed abstract class FieldLineReader permits FieldLineIndexedPostBaseRea
     abstract void reset();
     abstract void configure(int b);
     abstract boolean read(ByteBuffer input, FieldSectionPrefix prefix,
-                          DecodingCallback action) throws IOException;
+                          DecodingCallback action);
 
-    final void checkSectionSize(long fieldSize, DecodingCallback callback) {
+    final void checkSectionSize(long fieldSize) {
         long sectionSize = sectionSizeTracker.addAndGet(fieldSize);
         if (maxSectionSize > 0 &&  sectionSize > maxSectionSize) {
-            callback.onError(new ProtocolException("Size exceeds MAX_FIELD_SECTION_SIZE: %s > %s"
-                            .formatted(sectionSize, maxSectionSize)),
-                             Http3Error.H3_MESSAGE_ERROR);
+            throw QPackException.decompressionFailed(
+                    new ProtocolException("Size exceeds MAX_FIELD_SECTION_SIZE: %s > %s"
+                            .formatted(sectionSize, maxSectionSize)), false);
         }
     }
 }

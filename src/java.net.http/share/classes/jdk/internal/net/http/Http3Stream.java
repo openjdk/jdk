@@ -160,9 +160,9 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
                     //  Malformed requests or responses that are
                     //  detected MUST be treated as a stream error of
                     //  type H3_MESSAGE_ERROR.
-                    onError(uio.getCause(), Http3Error.H3_MESSAGE_ERROR);
+                    onStreamError(uio.getCause(), Http3Error.H3_MESSAGE_ERROR);
                 } else {
-                    onError(throwable, Http3Error.H3_INTERNAL_ERROR);
+                    onConnectionError(throwable, Http3Error.H3_INTERNAL_ERROR);
                 }
             }
         }
@@ -180,19 +180,17 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
         abstract void headersCompleted();
 
         @Override
-        public void onError(Throwable throwable, Http3Error http3Error) {
+        public void onStreamError(Throwable throwable, Http3Error http3Error) {
             hasError = true;
-            // H3_MESSAGE_ERROR can be caused by malformed header
-            // name or values, or if decoded headers section exceeds
-            // the MAX_FIELD_SECTION_SIZE setting value if one specified.
-            // It should be treated as a stream error.
-            if (http3Error == Http3Error.H3_MESSAGE_ERROR) {
-                cancelImpl(throwable, http3Error);
-            } else {
-                // All other errors are QPACK or H3_INTERNAL_ERROR errors
-                // are connection level errors.
-                connectionError(throwable, http3Error);
-            }
+            // Stream error
+            cancelImpl(throwable, http3Error);
+        }
+
+        @Override
+        public void onConnectionError(Throwable throwable, Http3Error http3Error) {
+            hasError = true;
+            // Connection error
+            connectionError(throwable, http3Error);
         }
 
         @Override

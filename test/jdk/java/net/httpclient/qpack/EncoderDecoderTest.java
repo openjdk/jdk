@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,7 +406,7 @@ public class EncoderDecoderTest {
         }
 
         @Override
-        public void onError(Throwable throwable, Http3Error http3Error) {
+        public void onConnectionError(Throwable throwable, Http3Error http3Error) {
             fail("Decoding error: " + http3Error, throwable);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.internal.net.http.qpack.Encoder.SectionReference;
 import jdk.internal.net.http.qpack.QPACK.Logger;
 import jdk.internal.net.http.qpack.writers.EncoderInstructionsWriter;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.Deque;
@@ -44,6 +45,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 
 import static java.lang.String.format;
+import static jdk.internal.net.http.http3.Http3Error.H3_CLOSED_CRITICAL_STREAM;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.EXTRA;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 import static jdk.internal.net.http.qpack.TableEntry.EntryType.NAME;
@@ -1046,6 +1048,11 @@ public final class DynamicTable implements HeadersTable {
     // holding the write-lock.
     private void writeEncoderInstruction(EncoderInstructionsWriter writer, int instructionSize,
                                          QueuingStreamPair encoderStreams) {
+        if (instructionSize > encoderStreams.credit()) {
+            throw new QPackException(H3_CLOSED_CRITICAL_STREAM,
+                    new IOException("QPACK not enough credit on an encoder stream "
+                            + encoderStreams.remoteStreamType()), true);
+        }
         boolean done;
         ByteBuffer buffer;
         do {

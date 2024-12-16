@@ -32,6 +32,7 @@ import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.Encoder;
 import jdk.internal.net.http.qpack.InsertionPolicy;
 import jdk.internal.net.http.qpack.QPACK.QPACKErrorHandler;
+import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.IntegerReader;
 import jdk.internal.net.http.quic.ConnectionTerminator;
 import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
@@ -347,7 +348,7 @@ public class EncoderDecoderConnector {
                     integerReader.configure(8);
                     try {
                         integerReader.read(bb);
-                    } catch (IOException e) {
+                    } catch (QPackException e) {
                         System.err.println("Can't read stream type byte");
                     }
                     Http3Streams.StreamType type = Http3Streams.StreamType.ofCode((int) integerReader.get()).get();

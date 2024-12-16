@@ -25,11 +25,11 @@
 package jdk.internal.net.http.qpack.readers;
 
 import jdk.internal.net.http.common.SequentialScheduler;
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.QPACK;
+import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.quic.streams.QuicStreamReader;
 
 import java.io.IOException;
@@ -40,6 +40,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.net.http.http3.Http3Error.H3_INTERNAL_ERROR;
+import static jdk.internal.net.http.http3.Http3Error.QPACK_DECOMPRESSION_FAILED;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.EXTRA;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
@@ -113,21 +115,35 @@ public class HeaderFrameReader {
     //
     // Maximum allowed value is passed to FieldLineReader's implementations and not stored in
     // HeaderFrameReader instance.
-    private AtomicLong fieldSectionSizeTracker;
+    private final AtomicLong fieldSectionSizeTracker;
 
     private static final AtomicLong HEADER_FRAME_READER_IDS = new AtomicLong();
 
     private void readLoop() {
         try {
             readLoop0();
-        } catch (IOException ioException) {
-            decodingCallback.onError(ioException, Http3Error.QPACK_DECOMPRESSION_FAILED);
+        } catch (QPackException qPackException) {
+            Throwable cause = qPackException.getCause();
+            if (qPackException.isConnectionError()) {
+                decodingCallback.onConnectionError(cause, qPackException.http3Error());
+            } else {
+                decodingCallback.onStreamError(cause, qPackException.http3Error());
+            }
         } catch (Throwable throwable) {
-            decodingCallback.onError(throwable, Http3Error.H3_INTERNAL_ERROR);
+            decodingCallback.onConnectionError(throwable, H3_INTERNAL_ERROR);
+        } finally {
+            // Stop the scheduler, clear the reader's queue and
+            // remove all insert count notification events associated
+            // with current stream.
+            if (decodingCallback.hasError()) {
+                headersScheduler.stop();
+                headersData.clear();
+                dynamicTable.cleanupStreamInsertCountNotifications(decodingCallback.streamId());
+            }
         }
     }
 
-    private void readLoop0() throws IOException {
+    private void readLoop0() {
         ByteBuffer headerBlock;
         OUTER:
         while (!decodingCallback.hasError() && (headerBlock = headersData.peek()) != null) {
@@ -148,7 +164,8 @@ public class HeaderFrameReader {
                         case LITERAL_WITH_LITERAL_NAME -> literalWithLiteralNameReader;
                         case INDEX_WITH_POST_BASE -> indexedPostBaseReader;
                         case LITERAL_WITH_POST_BASE -> literalWithNameRefPostBaseReader;
-                        default -> throw new InternalError("Unexpected decoder state: " + state);
+                        default -> throw QPackException.decompressionFailed(
+                                new InternalError("Unexpected decoder state: " + state), false);
                     };
                     reader.configure(b);
                 } else if (state == State.INITIAL) {
@@ -185,7 +202,7 @@ public class HeaderFrameReader {
                     // Construct field section prefix from the parsed fields
                     sectionPrefix = this.fieldSectionPrefix =
                             FieldSectionPrefix.decode(requiredInsertCount, deltaBase,
-                                    signBit, dynamicTable, decodingCallback);
+                                                      signBit, dynamicTable);
 
                     // Check if decoding of field section is blocked due to not yet received
                     // dynamic table entries
@@ -202,11 +219,12 @@ public class HeaderFrameReader {
                         // only acknowledged entry references is used, therefore this connection setting is not consulted
                         // on encoder side.
                         if (blocked > maxBlockedStreams) {
-                            // TODO: Make the exception message below less verbose
                             var ioException = new IOException(("too many blocked streams: current=%d;  max=%d; " +
                                     "prefixCount=%d; tableCount=%d").formatted(blocked, maxBlockedStreams,
                                     sectionPrefix.requiredInsertCount(), insertCount));
-                            decodingCallback.onError(ioException, Http3Error.QPACK_DECOMPRESSION_FAILED);
+                            //  If a decoder encounters more blocked streams than it promised to support,
+                            //  it MUST treat this as a connection error of type QPACK_DECOMPRESSION_FAILED.
+                            throw QPackException.decompressionFailed(ioException, true);
                         } else {
                             CompletableFuture<Void> future =
                                     dynamicTable.awaitFutureInsertCount(decodingCallback.streamId(),
@@ -237,18 +255,10 @@ public class HeaderFrameReader {
                     decodingCallback.onComplete();
                 } else {
                     logger.log(NORMAL, () -> "unexpected end of representation");
-                    decodingCallback.onError(new IOException("Unexpected end of header block"),
-                            Http3Error.QPACK_DECOMPRESSION_FAILED);
+                    throw QPackException.decompressionFailed(
+                            new IOException("Unexpected end of header block"), true);
                 }
             }
-        }
-        // Stop the scheduler, clear the reader's queue and
-        // remove all insert count notification events associated
-        // with current stream.
-        if (decodingCallback.hasError()) {
-            headersScheduler.stop();
-            headersData.clear();
-            dynamicTable.cleanupStreamInsertCountNotifications(decodingCallback.streamId());
         }
     }
 
@@ -293,7 +303,7 @@ public class HeaderFrameReader {
         literalWithLiteralNameReader = new FieldLineLiteralsReader(
                 maxFieldSectionSize, fieldSectionSizeTracker,
                 this.logger.subLogger("FieldLineLiteralsReader"));
-        integerReader = new IntegerReader();
+        integerReader = new IntegerReader(new ReaderError(QPACK_DECOMPRESSION_FAILED, false));
         resetPrefixVars();
         // Since reader is constructed in Initial state - it means that the
         // "Required Insert Count" will be read first.
@@ -331,7 +341,7 @@ public class HeaderFrameReader {
         headersScheduler.runOrSchedule();
     }
 
-    private State selectHeaderReaderState(int b) throws IOException {
+    private State selectHeaderReaderState(int b) {
         // First non-zero bit in lower 8 bits (see the caller)
         int pos = Integer.numberOfLeadingZeros(b) - 24;
         return switch (pos) {
@@ -382,7 +392,9 @@ public class HeaderFrameReader {
                 if ((b & 0xF0) == 0) {
                     yield State.LITERAL_WITH_POST_BASE;
                 }
-                throw new IOException("Unknown frame reader line prefix: " + b);
+                throw QPackException.decompressionFailed(
+                        new IOException("Unknown frame reader line prefix: " + b),
+                        false);
             }
         };
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
 package jdk.internal.net.http.qpack.readers;
 
 import jdk.internal.net.http.qpack.QPACK;
+import jdk.internal.net.http.qpack.QPackException;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static java.lang.String.format;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.net.http.http3.Http3Error.QPACK_ENCODER_STREAM_ERROR;
 
 /*
  * Reader for encoder instructions defined in RFC9204
@@ -96,20 +97,21 @@ public class EncoderInstructionsReader {
     private int bitT = -1;
     private long nameIndex = -1L;
     private boolean huffmanValue;
-    private StringBuilder valueString = new StringBuilder();
+    private final StringBuilder valueString = new StringBuilder();
 
     private boolean huffmanName;
-    private StringBuilder nameString = new StringBuilder();
+    private final StringBuilder nameString = new StringBuilder();
 
     public EncoderInstructionsReader(Callback dtUpdateCallback, QPACK.Logger logger) {
         this.logger = logger;
         this.updateCallback = dtUpdateCallback;
         this.state = State.INIT;
-        this.integerReader = new IntegerReader();
-        this.stringReader = new StringReader();
+        var errorToReport = new ReaderError(QPACK_ENCODER_STREAM_ERROR, true);
+        this.integerReader = new IntegerReader(errorToReport);
+        this.stringReader = new StringReader(errorToReport);
     }
 
-    public void read(ByteBuffer buffer) throws IOException {
+    public void read(ByteBuffer buffer) {
         requireNonNull(buffer, "buffer");
         while (buffer.hasRemaining()) {
             switch (state) {
@@ -149,8 +151,8 @@ public class EncoderInstructionsReader {
                         // Insert with name reference instruction completely parsed
                         if (logger.isLoggable(TRACE)) {
                             logger.log(TRACE, () -> format("Insert with Literal ('%s','%s'," +
-                                                     " huffmanName='%s', huffmanValue='%s')", nameString.toString(),
-                                    valueString.toString(), huffmanName, huffmanValue));
+                                                     " huffmanName='%s', huffmanValue='%s')", nameString,
+                                    valueString, huffmanName, huffmanValue));
                         }
                         updateCallback.onInsert(nameString.toString(), valueString.toString());
                         reset();
@@ -168,7 +170,7 @@ public class EncoderInstructionsReader {
                         if (logger.isLoggable(TRACE)) {
                             logger.log(TRACE, () -> format("Insert With Name Reference (T=%d, nameIdx=%d," +
                                                     " value='%s', valueHuffman='%s')",
-                                    bitT, nameIndex, valueString.toString(), stringReader.isHuffmanEncoded()));
+                                    bitT, nameIndex, valueString, stringReader.isHuffmanEncoded()));
                         }
                         updateCallback.onInsertIndexedName(bitT == 1, nameIndex, valueString.toString());
                         reset();
@@ -205,7 +207,8 @@ public class EncoderInstructionsReader {
                     integerReader.configure(5);
                     yield State.DUPLICATE;
                 } else {
-                    throw new InternalError("Unexpected EncoderInstructionReader instruction: " + b);
+                    throw QPackException.encoderStreamError(
+                            new InternalError("Unexpected EncoderInstructionReader instruction: " + b));
                 }
             }
         };

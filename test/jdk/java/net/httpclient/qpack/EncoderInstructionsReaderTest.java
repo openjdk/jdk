@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import jdk.internal.net.http.qpack.readers.EncoderInstructionsReader;
 import jdk.internal.net.http.qpack.readers.EncoderInstructionsReader.Callback;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
@@ -54,7 +53,7 @@ public class EncoderInstructionsReaderTest {
     private static final Random RANDOM = RandomFactory.getRandom();
 
     @RepeatedTest(5)
-    public void testCapacity() throws IOException {
+    public void testCapacity() {
 
         //   0   1   2   3   4   5   6   7
         // +---+---+---+---+---+---+---+---+
@@ -90,7 +89,7 @@ public class EncoderInstructionsReaderTest {
     }
 
     @RepeatedTest(10)
-    public void testInsertWithNameReference() throws IOException {
+    public void testInsertWithNameReference() {
 
         //    0   1   2   3   4   5   6   7
         //  +---+---+---+---+---+---+---+---+
@@ -174,7 +173,7 @@ public class EncoderInstructionsReaderTest {
     }
 
     @RepeatedTest(10)
-    public void testInsertWithLiteralName() throws IOException {
+    public void testInsertWithLiteralName() {
 
         //   0   1   2   3   4   5   6   7
         // +---+---+---+---+---+---+---+---+
@@ -261,7 +260,7 @@ public class EncoderInstructionsReaderTest {
     }
 
     @RepeatedTest(5)
-    public void testDuplicate() throws IOException {
+    public void testDuplicate() {
         //
         //   0   1   2   3   4   5   6   7
         // +---+---+---+---+---+---+---+---+

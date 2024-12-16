@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class FieldSectionPrefixTest {
             }
 
             @Override
-            public void onError(Throwable throwable, Http3Error http3Error) {
+            public void onConnectionError(Throwable throwable, Http3Error http3Error) {
                 throw new RuntimeException("Error during Field Line Section Prefix decoding - "
                         + http3Error + ": " + throwable.getMessage());
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@ package jdk.internal.net.http.qpack;
 
 import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.qpack.readers.HeaderFrameReader;
-import jdk.internal.net.http.qpack.writers.HeaderFrameWriter;
-import jdk.internal.net.http.qpack.writers.EncoderInstructionsWriter;
 
 import java.nio.ByteBuffer;
 
@@ -77,7 +75,11 @@ public interface DecodingCallback {
      * @param throwable  a {@code Throwable} instance
      * @param http3Error a HTTP3 error code
      */
-    void onError(Throwable throwable, Http3Error http3Error);
+    void onConnectionError(Throwable throwable, Http3Error http3Error);
+
+    default void onStreamError(Throwable throwable, Http3Error http3Error) {
+        onConnectionError(throwable, http3Error);
+    }
 
     /**
      * Reports if error has been observed during the decoding process

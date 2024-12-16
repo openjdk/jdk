@@ -24,6 +24,8 @@
  */
 package jdk.internal.net.http.qpack.readers;
 
+import jdk.internal.net.http.http3.Http3Error;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -48,6 +50,15 @@ public final class IntegerReader {
     private long value;
     private long r;
     private long b = 1;
+    private final ReaderError readError;
+
+    public IntegerReader(ReaderError readError) {
+        this.readError = readError;
+    }
+
+    public IntegerReader() {
+        this(new ReaderError(Http3Error.H3_INTERNAL_ERROR, true));
+    }
 
     // "QPACK implementations MUST be able to decode integers up to and including 62 bits long."
     //  https://www.rfc-editor.org/rfc/rfc9204.html#name-prefixed-integers
@@ -82,7 +93,7 @@ public final class IntegerReader {
         return this;
     }
 
-    public boolean read(ByteBuffer input) throws IOException {
+    public boolean read(ByteBuffer input) {
         if (state == NEW) {
             throw new IllegalStateException("Configure first");
         }
@@ -124,9 +135,10 @@ public final class IntegerReader {
                         b = Math.multiplyExact(b, 128);
                     }
                     if (r > maxValue - increment) {
-                        throw new IOException(format(
-                                "Integer overflow: maxValue=%,d, value=%,d",
-                                maxValue, r + increment));
+                        throw readError.toQPackException(
+                                new IOException(format(
+                                        "Integer overflow: maxValue=%,d, value=%,d",
+                                        maxValue, r + increment)));
                     }
                     r += increment;
                 } while (continuationFlag);
@@ -136,7 +148,8 @@ public final class IntegerReader {
             } catch (ArithmeticException arithmeticException) {
                 // Sequence of bytes encodes value greater
                 // than QPACK_MAX_INTEGER_VALUE
-                throw new IOException("Integer overflow", arithmeticException);
+                throw readError.toQPackException(new IOException("Integer overflow",
+                                         arithmeticException));
             }
         }
         throw new InternalError(Arrays.toString(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 package jdk.internal.net.http.qpack;
 
 import jdk.internal.net.http.http3.ConnectionSettings;
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.http3.streams.QueuingStreamPair;
 import jdk.internal.net.http.qpack.QPACK.Logger;
 import jdk.internal.net.http.qpack.QPACK.QPACKErrorHandler;
@@ -320,9 +319,8 @@ public class Encoder {
         }
         try {
             decoderInstructionsReader.read(buffer);
-        } catch (IOException e) {
-            qpackErrorHandler.closeOnError(e, Http3Error.QPACK_DECODER_STREAM_ERROR);
-            throw new IllegalStateException("Malformed decoder instruction", e);
+        } catch (QPackException e) {
+            qpackErrorHandler.closeOnError(e.getCause(), e.http3Error());
         }
     }
 
@@ -440,10 +438,10 @@ public class Encoder {
                 // to a stream on which every encoded field section with a non-zero
                 // Required Insert Count has already been acknowledged, this MUST be treated
                 // as a connection error of type QPACK_DECODER_STREAM_ERROR.
-                var thr = new IllegalStateException(
-                        "No unacknowledged sections found for stream id = " + streamId);
-                qpackErrorHandler.closeOnError(thr, Http3Error.QPACK_DECODER_STREAM_ERROR);
-                throw thr;
+                var qPackException = QPackException.decoderStreamError(
+                        new IllegalStateException("No unacknowledged sections found" +
+                                " for stream id = " + streamId));
+                throw qPackException;
             }
             // "2.1.4. Known Received Count":
             // If the Required Insert Count of the acknowledged field section is greater
@@ -465,9 +463,9 @@ public class Encoder {
             // a connection error of type QPACK_DECODER_STREAM_ERROR.
             long insertCount = dynamicTable.insertCount();
             if (increment == 0 || knownReceivedCount > insertCount - increment) {
-                var ise = new IllegalStateException("Invalid increment field value: " + increment);
-                qpackErrorHandler.closeOnError(ise, Http3Error.QPACK_DECODER_STREAM_ERROR);
-                throw ise;
+                var qpackException = QPackException.decoderStreamError(
+                        new IllegalStateException("Invalid increment field value: " + increment));
+                throw qpackException;
             }
             knownReceivedCount += increment;
         } finally {

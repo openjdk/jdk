@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Arrays;
 import jdk.internal.net.http.hpack.ISO_8859_1;
 import jdk.internal.net.http.hpack.Huffman;
 import jdk.internal.net.http.hpack.QuickHuffman;
+import jdk.internal.net.http.http3.Http3Error;
 
 //
 //          0   1   2   3   4   5   6   7
@@ -47,7 +48,8 @@ final class StringReader {
     private static final int LENGTH_READ     = 2;
     private static final int DONE            = 4;
 
-    private final IntegerReader intReader = new IntegerReader();
+    private final ReaderError readError;
+    private final IntegerReader intReader;
     private final Huffman.Reader huffmanReader = new QuickHuffman.Reader();
     private final ISO_8859_1.Reader plainReader = new ISO_8859_1.Reader();
 
@@ -56,11 +58,20 @@ final class StringReader {
     private boolean huffman;
     private int remainingLength;
 
-    boolean read(ByteBuffer input, Appendable output) throws IOException {
+    public StringReader() {
+        this(new ReaderError(Http3Error.H3_INTERNAL_ERROR, true));
+    }
+
+    public StringReader(ReaderError readError) {
+        this.readError = readError;
+        this.intReader = new IntegerReader(readError);
+    }
+
+    boolean read(ByteBuffer input, Appendable output) {
         return read(7, input, output);
     }
 
-    boolean read(int N, ByteBuffer input, Appendable output) throws IOException {
+    boolean read(int N, ByteBuffer input, Appendable output) {
         if (state == DONE) {
             return true;
         }
@@ -86,7 +97,8 @@ final class StringReader {
             }
             long remainingLengthLong = intReader.get();
             if (remainingLengthLong > Integer.MAX_VALUE) {
-                throw new IllegalStateException("String length exceeds Integer.MAX_VALUE");
+                throw readError.toQPackException(new IOException(
+                        "String length exceeds Integer.MAX_VALUE"));
             }
             remainingLength = (int) remainingLengthLong;
             state = LENGTH_READ;
@@ -98,10 +110,14 @@ final class StringReader {
                 input.limit(input.position() + remainingLength);
             }
             remainingLength -= Math.min(input.remaining(), remainingLength);
-            if (huffman) {
-                huffmanReader.read(input, output, isLast);
-            } else {
-                plainReader.read(input, output);
+            try {
+                if (huffman) {
+                    huffmanReader.read(input, output, isLast);
+                } else {
+                    plainReader.read(input, output);
+                }
+            } catch (IOException ioe) {
+                readError.toQPackException(ioe);
             }
             if (isLast) {
                 input.limit(oldLimit);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,14 @@
 package jdk.internal.net.http.qpack.readers;
 
 import jdk.internal.net.http.qpack.QPACK.Logger;
+import jdk.internal.net.http.qpack.QPackException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.net.http.http3.Http3Error.QPACK_DECODER_STREAM_ERROR;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.EXTRA;
 
 /*
@@ -72,13 +74,14 @@ public class DecoderInstructionsReader {
     private final Logger logger;
 
     public DecoderInstructionsReader(Callback callback, Logger logger) {
-        this.integerReader = new IntegerReader();
+        this.integerReader = new IntegerReader(
+                new ReaderError(QPACK_DECODER_STREAM_ERROR, true));
         this.callback = callback;
         this.state = State.INIT;
         this.logger = logger.subLogger("DecoderInstructionsReader");
     }
 
-    public void read(ByteBuffer buffer) throws IOException {
+    public void read(ByteBuffer buffer) {
         requireNonNull(buffer, "buffer");
         while (buffer.hasRemaining()) {
             switch (state) {
@@ -122,7 +125,8 @@ public class DecoderInstructionsReader {
                     integerReader.configure(6);
                     yield State.INSERT_COUNT_INCREMENT;
                 } else {
-                    throw new InternalError("Unexpected decoder instruction: " + b);
+                    throw QPackException.decoderStreamError(
+                            new IOException("Unexpected decoder instruction: " + b));
                 }
             }
         };
@@ -140,7 +144,8 @@ public class DecoderInstructionsReader {
                 callback.onStreamCancel(value);
                 break;
             default:
-                throw new InternalError();
+                throw QPackException.decoderStreamError(
+                        new IOException("Unknown decoder instruction"));
         }
     }
 

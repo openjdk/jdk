@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,16 @@
 
 package jdk.internal.net.http.qpack;
 
-import jdk.internal.net.http.http3.Http3Error;
-
 public record FieldSectionPrefix(long requiredInsertCount, long base) {
 
     public static FieldSectionPrefix decode(long encodedRIC, long deltaBase,
-                                            int baseSign, DynamicTable dynamicTable,
-                                            DecodingCallback callback) {
-        long decodedRIC = decodeRIC(encodedRIC, dynamicTable, callback);
+                                            int baseSign, DynamicTable dynamicTable) {
+        long decodedRIC = decodeRIC(encodedRIC, dynamicTable);
         long decodedBase = decodeBase(decodedRIC, deltaBase, baseSign);
         return new FieldSectionPrefix(decodedRIC, decodedBase);
     }
 
-    private static long decodeRIC(long encodedRIC, DynamicTable dynamicTable, DecodingCallback callback) {
+    private static long decodeRIC(long encodedRIC, DynamicTable dynamicTable) {
         if (encodedRIC == 0) {
             return 0;
         }
@@ -45,20 +42,20 @@ public record FieldSectionPrefix(long requiredInsertCount, long base) {
         long insertCount = dynamicTable.insertCount();
         long fullRange = 2 * maxEntries;
         if (encodedRIC > fullRange) {
-            throw decompressionFailed(callback);
+            throw decompressionFailed();
         }
         long maxValue = insertCount + maxEntries;
         long maxWrapped = (maxValue/fullRange) * fullRange;
         long ric = maxWrapped + encodedRIC - 1;
         if (ric > maxValue) {
             if (ric <= fullRange) {
-                throw decompressionFailed(callback);
+                throw decompressionFailed();
             }
             ric -= fullRange;
         }
 
         if (ric == 0) {
-            throw decompressionFailed(callback);
+            throw decompressionFailed();
         }
         return ric;
     }
@@ -71,9 +68,8 @@ public record FieldSectionPrefix(long requiredInsertCount, long base) {
         }
     }
 
-    private static IllegalStateException decompressionFailed(DecodingCallback callback) {
+    private static QPackException decompressionFailed() {
         var decompressionFailed = new IllegalStateException("QPACK decompression failed");
-        callback.onError(decompressionFailed, Http3Error.QPACK_DECOMPRESSION_FAILED);
-        return decompressionFailed;
+        return QPackException.decompressionFailed(decompressionFailed, true);
     }
 }

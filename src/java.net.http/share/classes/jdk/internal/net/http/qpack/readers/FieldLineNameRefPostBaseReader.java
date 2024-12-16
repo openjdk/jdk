@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,19 @@
  */
 package jdk.internal.net.http.qpack.readers;
 
-import jdk.internal.net.http.http3.Http3Error;
 import jdk.internal.net.http.qpack.DecodingCallback;
 import jdk.internal.net.http.qpack.DynamicTable;
 import jdk.internal.net.http.qpack.FieldSectionPrefix;
 import jdk.internal.net.http.qpack.HeaderField;
 import jdk.internal.net.http.qpack.QPACK;
+import jdk.internal.net.http.qpack.QPackException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static java.lang.String.format;
+import static jdk.internal.net.http.http3.Http3Error.QPACK_DECOMPRESSION_FAILED;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.NORMAL;
 
 public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
@@ -55,8 +56,9 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
         super(maxSectionSize, sectionSizeTracker);
         this.dynamicTable = dynamicTable;
         this.logger = logger;
-        integerReader = new IntegerReader();
-        stringReader = new StringReader();
+        var errorToReport = new ReaderError(QPACK_DECOMPRESSION_FAILED, false);
+        integerReader = new IntegerReader(errorToReport);
+        stringReader = new StringReader(errorToReport);
         value = new StringBuilder(1024);
     }
 
@@ -74,7 +76,7 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
     //            |  Value String (Length bytes)  |
     //            +-------------------------------+
     public boolean read(ByteBuffer input, FieldSectionPrefix prefix,
-                        DecodingCallback action) throws IOException {
+                        DecodingCallback action) {
         if (!completeReading(input))
             return false;
 
@@ -84,15 +86,16 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
                     "literal with post-base name reference (%s, %s, '%s', huffman=%b)",
                     absoluteIndex, prefix.base(), value, huffmanValue));
         }
-        HeaderField f = getHeaderFieldAt(absoluteIndex, action);
+        HeaderField f = getHeaderFieldAt(absoluteIndex);
         String valueStr = value.toString();
-        checkSectionSize(DynamicTable.headerSize(f.name(), valueStr), action);
-        action.onLiteralWithNameReference(absoluteIndex, f.name(), valueStr, huffmanValue, hideIntermediary);
+        checkSectionSize(DynamicTable.headerSize(f.name(), valueStr));
+        action.onLiteralWithNameReference(absoluteIndex,
+                                          f.name(), valueStr, huffmanValue, hideIntermediary);
         reset();
         return true;
     }
 
-    private boolean completeReading(ByteBuffer input) throws IOException {
+    private boolean completeReading(ByteBuffer input) {
         if (!firstValueRead) {
             if (!integerReader.read(input)) {
                 return false;
@@ -113,14 +116,13 @@ public final class FieldLineNameRefPostBaseReader extends FieldLineReader {
         return true;
     }
 
-    private HeaderField getHeaderFieldAt(long index, DecodingCallback callback) throws IOException {
+    private HeaderField getHeaderFieldAt(long index) {
         HeaderField f;
         try {
             f = dynamicTable.get(index);
         } catch (IndexOutOfBoundsException e) {
             var ex = new IOException("header fields table index", e);
-            callback.onError(ex, Http3Error.QPACK_DECOMPRESSION_FAILED);
-            throw ex;
+            throw QPackException.decompressionFailed(ex, true);
         }
         return f;
     }

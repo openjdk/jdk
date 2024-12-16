@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,13 @@
  */
 
 import jdk.internal.net.http.qpack.QPACK;
+import jdk.internal.net.http.qpack.QPackException;
 import jdk.internal.net.http.qpack.readers.DecoderInstructionsReader;
 import jdk.internal.net.http.qpack.readers.IntegerReader;
 import jdk.internal.net.http.qpack.writers.IntegerWriter;
 import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.api.RepeatedTest;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -49,7 +49,7 @@ public class DecoderInstructionsReaderTest {
     private static final Random RANDOM = RandomFactory.getRandom();
 
     @RepeatedTest(10)
-    public void acknowledgementTest() throws IOException {
+    public void acknowledgementTest() {
         //   0   1   2   3   4   5   6   7
         // +---+---+---+---+---+---+---+---+
         // | 1 |      Stream ID (7+)       |
@@ -73,7 +73,7 @@ public class DecoderInstructionsReaderTest {
     }
 
     @RepeatedTest(10)
-    public void cancellationTest() throws IOException {
+    public void cancellationTest() {
         //   0   1   2   3   4   5   6   7
         // +---+---+---+---+---+---+---+---+
         // | 0 | 1 |     Stream ID (6+)    |
@@ -97,7 +97,7 @@ public class DecoderInstructionsReaderTest {
     }
 
     @RepeatedTest(10)
-    public void incrementTest() throws IOException {
+    public void incrementTest() {
         //   0   1   2   3   4   5   6   7
         // +---+---+---+---+---+---+---+---+
         // | 0 | 0 |     Increment (6+)    |
