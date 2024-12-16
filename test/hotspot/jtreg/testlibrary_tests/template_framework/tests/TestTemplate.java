@@ -87,7 +87,7 @@ public class TestTemplate {
 
         codeGenerators.add(new Template("my_generator_3",
             """
-            Universe @{:my_generator_1} {
+            Universe #{:my_generator_1} {
                 #{:my_generator_2(param1=up,param2=down)}
                 #{:my_generator_2(param1=#param1,param2=#param2)}
             }
@@ -104,13 +104,37 @@ public class TestTemplate {
             """
         );
 
-        // TODO instantiate with library and compare???
+        String code = template.with(library).instantiate();
+        String expected =
+            """
+            Universe proton {
+                electron up
+                neutron down
+
+                electron low
+                neutron high
+
+            }
+
+            {
+                Universe proton {
+                    electron up
+                    neutron down
+
+                    electron 42
+                    neutron 24
+
+                }
+
+            }
+            """;
+        checkEQ(code, expected);
     }
 
     public static void checkEQ(String code, String expected) {
         if (!code.equals(expected)) {
-            System.out.println(code);
-            System.out.println(expected);
+            System.out.println("\"" + code + "\"");
+            System.out.println("\"" + expected + "\"");
             throw new RuntimeException("Template instantiation mismatch!");
         }
     }

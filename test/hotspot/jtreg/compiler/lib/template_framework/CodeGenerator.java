@@ -76,10 +76,12 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
         private final CodeGenerator codeGenerator;
         private final Parameters parameters;
         private boolean isUsed;
+        private CodeGeneratorLibrary library;
 
 	Instantiator(CodeGenerator codeGenerator) {
             this.codeGenerator = codeGenerator;
-            parameters = new Parameters();
+            this.parameters = new Parameters();
+            this.library = null;
         }
 
         /**
@@ -106,6 +108,20 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
         }
 
         /**
+         * Set a custom library for the instantiation.
+         *
+         * @param library The custom library.
+         * @return The Instantiator for chaining.
+         */
+        public Instantiator with(CodeGeneratorLibrary library) {
+            if (this.library != null) {
+                throw new TemplateFrameworkException("Cannot set custom library twice.");
+            }
+            this.library = library;
+            return this;
+        }
+
+        /**
          * Instantiate the CodeGenerator to a String, using the prepared parameters.
          * This is useful for the outer-most instantiation, as it directly results in a String.
          *
@@ -116,7 +132,7 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
                 throw new TemplateFrameworkException("Repeated use of Instantiator not allowed.");
             }
             isUsed = true;
-            BaseScope scope = new BaseScope();
+            BaseScope scope = new BaseScope(library);
             codeGenerator.instantiate(scope, parameters);
             scope.close();
             return scope.toString();
@@ -161,6 +177,15 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
         return new Instantiator(this).where(parameterMap);
     }
 
+    /**
+     * Create an {@link Instantiator}, which already has set a custom library.
+     *
+     * @param library The custom library.
+     * @return The Instantiator for chaining.
+     */
+    public Instantiator with(CodeGeneratorLibrary library) {
+        return new Instantiator(this).with(library);
+    }
 
     /**
      * Instantiate the CodeGenerator to a String, using the prepared parameters.

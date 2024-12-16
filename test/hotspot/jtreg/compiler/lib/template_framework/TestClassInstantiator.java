@@ -62,7 +62,7 @@ public final class TestClassInstantiator {
      */
     public TestClassInstantiator(String packageName, String className, CodeGeneratorLibrary codeGeneratorLibrary) {
         // Open the base scope, and open the class.
-        baseScope = new BaseScope(BaseScope.DEFAULT_FUEL, codeGeneratorLibrary);
+        baseScope = new BaseScope(codeGeneratorLibrary);
         baseScope.setDebugContext("for TestClassInstantiator", null);
         new Template("test_class_instantiator_open",
             """

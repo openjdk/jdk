@@ -36,9 +36,9 @@ final class BaseScope extends Scope {
                                                                    : CodeGeneratorLibrary.standard();
     }
 
-    public BaseScope() {
-        this(DEFAULT_FUEL, null);
-    }
+    public BaseScope(CodeGeneratorLibrary codeGeneratorLibrary) {
+        this(DEFAULT_FUEL, codeGeneratorLibrary);
+    };
 
     @Override
     public CodeGeneratorLibrary library() {
