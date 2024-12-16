@@ -42,6 +42,7 @@ import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.parser.Tokens.*;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
@@ -669,8 +670,8 @@ public class JavacParser implements Parser {
             deferredLintHandler.report(lint -> {
                 if (lint.isEnabled(Lint.LintCategory.DANGLING_DOC_COMMENTS) &&
                         !shebang(c, pos)) {
-                    log.warning(Lint.LintCategory.DANGLING_DOC_COMMENTS,
-                            pos, Warnings.DanglingDocComment);
+                    log.warning(
+                            pos, LintWarnings.DanglingDocComment);
                 }
             });
         }
