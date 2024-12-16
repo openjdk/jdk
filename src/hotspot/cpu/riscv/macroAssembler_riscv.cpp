@@ -5856,7 +5856,6 @@ void MacroAssembler::zext(Register dst, Register src, int bits) {
     case 8:
       zext_b(dst, src);
       return;
-      break;
     default:
       break;
   }
