@@ -63,42 +63,38 @@ public:
   bool is_thread_safe() override { return true; }
 };
 
+template <bool FOR_CURRENT_CYCLE, bool UPDATE_REGION_STATE>
 class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahHeap*           _heap;
   ShenandoahMarkingContext* _ctx;
   ShenandoahGeneration*     _generation;
-  bool const                _reset_for_current_cycle;
-  bool const                _reset_update_region_state;
 
 public:
-  ShenandoahResetBitmapClosure(ShenandoahGeneration* generation,
-                               bool const reset_for_current_cycle,
-                               bool const reset_update_region_state) :
+  explicit ShenandoahResetBitmapClosure(ShenandoahGeneration* generation) :
     ShenandoahHeapRegionClosure(),
     _heap(ShenandoahHeap::heap()),
     _ctx(_heap->marking_context()),
-    _generation(generation),
-    _reset_for_current_cycle(reset_for_current_cycle),
-    _reset_update_region_state(reset_update_region_state) {}
+    _generation(generation) {}
 
-  void heap_region_do(ShenandoahHeapRegion* region) {
+  void heap_region_do(ShenandoahHeapRegion* region) override {
     assert(!_heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
-    if (region->need_bitmap_reset()) {
+    if (FOR_CURRENT_CYCLE) {
+      if (region->need_bitmap_reset() && _heap->is_bitmap_slice_committed(region)) {
+        _ctx->clear_bitmap(region);
+      } else {
+        region->set_need_bitmap_reset();
+      }
+    } else {
+      assert(region->need_bitmap_reset(), "The flag must be set to true in concurrent reset phase when current cycle starts");
       if (_heap->is_bitmap_slice_committed(region)) {
         _ctx->clear_bitmap(region);
-        if (!_reset_for_current_cycle) {
-          region->unset_need_bitmap_reset();
-        }
+        region->unset_need_bitmap_reset();
       }
     }
 
-    if (_reset_for_current_cycle) {
-      region->set_need_bitmap_reset();
-    }
-
-    // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
-    if (_reset_update_region_state && region->is_active()) {
+    // Capture Top At Mark Start for this generation (typically young).
+    if (UPDATE_REGION_STATE && region->is_active()) {
       // Reset live data and set TAMS optimistically. We would recheck these under the pause
       // anyway to capture any updates that happened since now.
       _ctx->capture_top_at_mark_start(region);
@@ -106,7 +102,7 @@ public:
     }
   }
 
-  bool is_thread_safe() { return true; }
+  bool is_thread_safe() override { return true; }
 };
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -243,15 +239,20 @@ void ShenandoahGeneration::log_status(const char *msg) const {
                    byte_size_in_proper_unit(v_available),         proper_unit_for_byte_size(v_available));
 }
 
-void ShenandoahGeneration::reset_mark_bitmap(bool const for_current_cycle, bool update_region_state) {
+template <bool FOR_CURRENT_CYCLE, bool UPDATE_REGION_STATE>
+void ShenandoahGeneration::reset_mark_bitmap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
   set_mark_incomplete();
 
-  ShenandoahResetBitmapClosure closure(this, for_current_cycle, update_region_state);
+  ShenandoahResetBitmapClosure<FOR_CURRENT_CYCLE, UPDATE_REGION_STATE> closure(this);
   parallel_heap_region_iterate_free(&closure);
 }
+// Explicit specializations
+template void ShenandoahGeneration::reset_mark_bitmap<true, true>();
+template void ShenandoahGeneration::reset_mark_bitmap<true, false>();
+template void ShenandoahGeneration::reset_mark_bitmap<false, false>();
 
 // The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
 // However, limitations in the implementation of the mutator write-barrier make it difficult to simply change the
@@ -283,7 +284,7 @@ void ShenandoahGeneration::merge_write_table() {
 }
 
 void ShenandoahGeneration::prepare_gc() {
-  reset_mark_bitmap(true, true);
+  reset_mark_bitmap<true, true>();
 }
 
 void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {

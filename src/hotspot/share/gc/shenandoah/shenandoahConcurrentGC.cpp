@@ -1212,10 +1212,10 @@ void ShenandoahConcurrentGC::op_reset_after_collect() {
     if (!_do_old_gc_bootstrap) {
       // Only reset for young generation, bitmap for old generation must be retained,
       // except there is collection(global/old/degen/full) trigged to collect regions in old gen.
-      heap->young_generation()->reset_mark_bitmap(false, false);
+      heap->young_generation()->reset_mark_bitmap<false, false>();
     }
   } else {
-    _generation->reset_mark_bitmap(false, false);
+    _generation->reset_mark_bitmap<false, false>();
   }
 }
 
