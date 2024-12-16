@@ -219,12 +219,12 @@ public class JavaTokenizer extends UnicodeReader {
     }
 
     /**
-     * Report an error at the given position using the provided arguments.
+     * Report a warning at the given position using the provided arguments.
      *
      * @param pos    position in input buffer.
      * @param key    error key to report.
      */
-    protected void lexWarning(int pos, JCDiagnostic.Warning key) {
+    protected void lexWarning(int pos, JCDiagnostic.LintWarning key) {
         DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
         log.warning(dp, key);
     }
