@@ -27,6 +27,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -41,6 +43,7 @@ import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.tools.jlink.internal.LinkableRuntimeImage;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
@@ -56,6 +59,29 @@ import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
  */
 
 public final class BasicTest {
+
+    public static Collection addModulesParams() {
+        List<Object[][]> params = new ArrayList<>();
+        params.add(new Object[][] { new String[] { "ALL-DEFAULT"  } });
+        params.add(new Object[][] { new String[] { "java.desktop" } });
+        params.add(new Object[][] { new String[] { "java.desktop,jdk.jartool" } });
+        params.add(new Object[][] { new String[] { "java.desktop", "jdk.jartool" } });
+        if (isAllModulePathCapable()) {
+            params.add(new Object[][] { new String[] { "ALL-MODULE-PATH" } });
+        }
+        return Collections.unmodifiableList(params);
+    }
+
+    private static boolean isAllModulePathCapable() {
+        Path jmods = Path.of(System.getProperty("java.home"), "jmods");
+        boolean noJmods = Files.notExists(jmods);
+        if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
+           System.out.println("ALL-MODULE-PATH test skipped for linkable run-time image");
+           return false;
+        }
+        return true;
+    }
+
     @Test
     public void testNoArgs() {
         List<String> output =
@@ -307,20 +333,8 @@ public final class BasicTest {
     }
 
     @Test
-    @Parameter("ALL-MODULE-PATH")
-    @Parameter("ALL-DEFAULT")
-    @Parameter("java.desktop")
-    @Parameter("java.desktop,jdk.jartool")
-    @Parameter({ "java.desktop", "jdk.jartool" })
-    public void testAddModules(String... addModulesArg) {
-        if (addModulesArg.length == 1 && addModulesArg[0].equals("ALL-MODULE-PATH")) {
-            Path jmods = Path.of(System.getProperty("java.home"), "jmods");
-            boolean noJmods = Files.notExists(jmods);
-            if (LinkableRuntimeImage.isLinkableRuntime() && noJmods) {
-               System.out.println("ALL-MODULE-PATH test skipped for linkable run-time image");
-               return;
-            }
-        }
+    @ParameterSupplier("addModulesParams")
+    public void testAddModules(String[] addModulesArg) {
         JPackageCommand cmd = JPackageCommand
                 .helloAppImage("goodbye.jar:com.other/com.other.Hello")
                 .ignoreDefaultRuntime(true); // because of --add-modules
