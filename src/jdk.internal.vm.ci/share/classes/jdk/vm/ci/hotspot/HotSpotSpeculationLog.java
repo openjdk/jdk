@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Formatter;
 import java.util.List;
+import java.util.Objects;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.common.JVMCIError;
@@ -42,7 +43,7 @@ import jdk.vm.ci.meta.SpeculationLog;
  * <li>Make speculations during compilation and record them in compiled code. This must only be done
  * on compilation-local {@link HotSpotSpeculationLog} objects.</li>
  * </ul>
- *
+ * <p>
  * The choice of constructor determines whether the native failed speculations list is
  * {@linkplain #managesFailedSpeculations() managed} by a {@link HotSpotSpeculationLog} object.
  */
@@ -66,7 +67,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
      * is, the lifetime of the list is independent of this object.
      *
      * @param failedSpeculationsAddress an address in native memory at which the pointer to the
-     *            externally managed sailed speculation list resides
+     *                                  externally managed sailed speculation list resides
      */
     public HotSpotSpeculationLog(long failedSpeculationsAddress) {
         if (failedSpeculationsAddress == 0) {
@@ -99,7 +100,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
      * Adds {@code speculation} to the native list of failed speculations. To update this object's
      * view of the failed speculations, {@link #collectFailedSpeculations()} must be called after
      * this method returns.
-     *
+     * <p>
      * This method exists primarily for testing purposes. Speculations are normally only added to
      * the list by HotSpot during deoptimization.
      *
@@ -120,19 +121,21 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     public static final class HotSpotSpeculation extends Speculation {
 
         /**
-         * A speculation id is a long encoding a length (low 5 bits) and an index into a
-         * {@code byte[]}. Combined, the index and length denote where the {@linkplain #encoding
+         * A speculation id is a long encoding a length (low 5 bits) and an offset into a
+         * {@code byte[]}. Combined, the offset and length denote where the {@linkplain #encoding
          * encoded speculation} is in a {@linkplain HotSpotSpeculationLog#getFlattenedSpeculations
          * flattened} speculations array.
          */
         private final JavaConstant id;
 
         private final byte[] encoding;
+        private final HotSpotSpeculationLog hotSpotSpeculationLog;
 
-        HotSpotSpeculation(SpeculationReason reason, JavaConstant id, byte[] encoding) {
+        HotSpotSpeculation(SpeculationReason reason, JavaConstant id, byte[] encoding, HotSpotSpeculationLog hotSpotSpeculationLog) {
             super(reason);
             this.id = id;
             this.encoding = encoding;
+            this.hotSpotSpeculationLog = hotSpotSpeculationLog;
         }
 
         public JavaConstant getEncoding() {
@@ -140,11 +143,35 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         }
 
         @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            HotSpotSpeculation that = (HotSpotSpeculation) o;
+            return Objects.equals(id, that.id) && Objects.deepEquals(encoding, that.encoding) && Objects.equals(hotSpotSpeculationLog, that.hotSpotSpeculationLog);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), id, Arrays.hashCode(encoding), hotSpotSpeculationLog);
+        }
+
+        @Override
         public String toString() {
-            long indexAndLength = id.asLong();
-            int index = decodeIndex(indexAndLength);
-            int length = decodeLength(indexAndLength);
-            return String.format("{0x%016x[index: %d, len: %d, hash: 0x%x]: %s}", indexAndLength, index, length, Arrays.hashCode(encoding), getReason());
+            long offsetAndLength = id.asLong();
+            int offset = decodeOffset(offsetAndLength);
+            int length = decodeLength(offsetAndLength);
+            return String.format("{0x%016x[offset: %d, len: %d, hash: 0x%x]: %s (%s@%d)}", offsetAndLength, offset, length, Arrays.hashCode(encoding), getReason(), getHotSpotSpeculationLog().getClass().getSimpleName(), System.identityHashCode(getHotSpotSpeculationLog()));
+        }
+
+        public HotSpotSpeculationLog getHotSpotSpeculationLog() {
+            return hotSpotSpeculationLog;
         }
     }
 
@@ -166,8 +193,7 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     /**
      * Speculations made during the compilation associated with this log.
      */
-    private List<byte[]> speculations;
-    private List<SpeculationReason> speculationReasons;
+    private List<HotSpotSpeculation> speculations;
 
     @Override
     public void collectFailedSpeculations() {
@@ -185,7 +211,8 @@ public class HotSpotSpeculationLog implements SpeculationLog {
             int newFailuresStart = failedSpeculations == null ? 0 : failedSpeculations.length;
             collectFailedSpeculations();
             if (failedSpeculations != null && failedSpeculations.length != newFailuresStart) {
-                for (SpeculationReason reason : speculationReasons) {
+                for (HotSpotSpeculation s : speculations) {
+                    SpeculationReason reason = s.getReason();
                     byte[] encoding = encode(reason);
                     // Only check against new failures
                     if (contains(failedSpeculations, newFailuresStart, encoding)) {
@@ -195,14 +222,14 @@ public class HotSpotSpeculationLog implements SpeculationLog {
             }
         }
         int size = 0;
-        for (byte[] s : speculations) {
-            size += s.length;
+        for (HotSpotSpeculation s : speculations) {
+            size += s.encoding.length;
         }
         byte[] result = new byte[size];
         size = 0;
-        for (byte[] s : speculations) {
-            System.arraycopy(s, 0, result, size, s.length);
-            size += s.length;
+        for (HotSpotSpeculation s : speculations) {
+            System.arraycopy(s.encoding, 0, result, size, s.encoding.length);
+            size += s.encoding.length;
         }
         return result;
     }
@@ -236,52 +263,46 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         return false;
     }
 
-    private static long encodeIndexAndLength(int index, int length) {
+    private static long encodeOffsetAndLength(int offset, int length) {
         if (length > HotSpotSpeculationEncoding.MAX_LENGTH || length < 0) {
             throw new InternalError(String.format("Invalid encoded speculation length: %d (0x%x)", length, length));
         }
-        if (index < 0) {
-            throw new JVMCIError("Encoded speculation index is negative: %d (0x%x)", index, index);
+        if (offset < 0) {
+            throw new JVMCIError("Encoded speculation offset is negative: %d (0x%x)", offset, offset);
         }
-        return (index << HotSpotSpeculationEncoding.LENGTH_BITS) | length;
+        return (offset << HotSpotSpeculationEncoding.LENGTH_BITS) | length;
     }
 
-    private static int decodeIndex(long indexAndLength) {
-        return (int) (indexAndLength >>> HotSpotSpeculationEncoding.LENGTH_BITS);
+    private static int decodeOffset(long offsetAndLength) {
+        return (int) (offsetAndLength >>> HotSpotSpeculationEncoding.LENGTH_BITS);
     }
 
-    private static int decodeLength(long indexAndLength) {
-        return (int) (indexAndLength & HotSpotSpeculationEncoding.LENGTH_MASK);
+    private static int decodeLength(long offsetAndLength) {
+        return (int) (offsetAndLength & HotSpotSpeculationEncoding.LENGTH_MASK);
     }
 
     @Override
     public Speculation speculate(SpeculationReason reason) {
         byte[] encoding = encode(reason);
-        JavaConstant id;
         if (speculations == null) {
             speculations = new ArrayList<>();
-            speculationReasons = new ArrayList<>();
-            id = JavaConstant.forLong(encodeIndexAndLength(0, encoding.length));
-            speculations.add(encoding);
-            speculationReasons.add(reason);
+            JavaConstant id = JavaConstant.forLong(encodeOffsetAndLength(0, encoding.length));
+            HotSpotSpeculation result = new HotSpotSpeculation(reason, id, encoding, this);
+            speculations.add(result);
+            return result;
         } else {
-            id = null;
-            int flattenedIndex = 0;
-            for (byte[] fs : speculations) {
-                if (Arrays.equals(fs, encoding)) {
-                    id = JavaConstant.forLong(encodeIndexAndLength(flattenedIndex, fs.length));
-                    break;
+            int offset = 0;
+            for (HotSpotSpeculation s : speculations) {
+                if (Arrays.equals(s.encoding, encoding)) {
+                    return s;
                 }
-                flattenedIndex += fs.length;
+                offset += s.encoding.length;
             }
-            if (id == null) {
-                id = JavaConstant.forLong(encodeIndexAndLength(flattenedIndex, encoding.length));
-                speculations.add(encoding);
-                speculationReasons.add(reason);
-            }
+            JavaConstant id = JavaConstant.forLong(encodeOffsetAndLength(offset, encoding.length));
+            HotSpotSpeculation result = new HotSpotSpeculation(reason, id, encoding, this);
+            speculations.add(result);
+            return result;
         }
-
-        return new HotSpotSpeculation(reason, id, encoding);
     }
 
     private static byte[] encode(SpeculationReason reason) {
@@ -303,15 +324,10 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         if (constant.isDefaultForKind()) {
             return NO_SPECULATION;
         }
-        int flattenedIndex = decodeIndex(constant.asLong());
-        int index = 0;
-        for (byte[] s : speculations) {
-            if (flattenedIndex == 0) {
-                SpeculationReason reason = speculationReasons.get(index);
-                return new HotSpotSpeculation(reason, constant, s);
+        for (HotSpotSpeculation speculation : speculations) {
+            if (speculation.id.equals(constant)) {
+                return speculation;
             }
-            index++;
-            flattenedIndex -= s.length;
         }
         throw new IllegalArgumentException("Unknown encoded speculation: " + constant);
     }
@@ -319,7 +335,8 @@ public class HotSpotSpeculationLog implements SpeculationLog {
     @Override
     public String toString() {
         Formatter buf = new Formatter();
-        buf.format("{managed:%s, failedSpeculationsAddress:0x%x, failedSpeculations:[", managesFailedSpeculations, failedSpeculationsAddress);
+        buf.format("{%s@0x%x, managed:%s, failedSpeculationsAddress:0x%x, failedSpeculations:[", getClass().getSimpleName(), System.identityHashCode(this),
+                managesFailedSpeculations, failedSpeculationsAddress);
 
         String sep = "";
         if (failedSpeculations != null) {
@@ -335,9 +352,9 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         if (speculations != null) {
             sep = "";
             for (int i = 0; i < speculations.size(); i++) {
-                byte[] s = speculations.get(i);
-                size += s.length;
-                buf.format("%s{len:%d, hash:0x%x, reason:{%s}}", sep, s.length, Arrays.hashCode(s), speculationReasons.get(i));
+                HotSpotSpeculation s = speculations.get(i);
+                size += s.encoding.length;
+                buf.format("%s{len:%d, hash:0x%x, reason:{%s}}", sep, s.encoding.length, Arrays.hashCode(s.encoding), s.getReason());
                 sep = ", ";
             }
         }

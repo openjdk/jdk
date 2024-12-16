@@ -774,15 +774,63 @@ void JVMCINMethodData::copy(JVMCINMethodData* data) {
   initialize(data->_nmethod_mirror_index, data->_nmethod_entry_patch_offset, data->name(), data->_failed_speculations);
 }
 
-void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
-  jlong index = speculation >> JVMCINMethodData::SPECULATION_LENGTH_BITS;
-  guarantee(index >= 0 && index <= max_jint, "Encoded JVMCI speculation index is not a positive Java int: " INTPTR_FORMAT, index);
-  int length = speculation & JVMCINMethodData::SPECULATION_LENGTH_MASK;
-  if (index + length > (uint) nm->speculations_size()) {
-    fatal(INTPTR_FORMAT "[index: " JLONG_FORMAT ", length: %d out of bounds wrt encoded speculations of length %u", speculation, index, length, nm->speculations_size());
+jint SpeculationData::speculation_id(nmethod* nm) {
+  return (offset(nm) << JVMCINMethodData::SPECULATION_LENGTH_BITS) | length();
+}
+
+void SpeculationData::print_on(nmethod* nm, outputStream* st) {
+  st->print_cr("offset: %d length: %d id: %d speculation id: 0x%x", offset(nm), length(), id(), speculation_id(nm));
+}
+
+GrowableArray<const char*>* SpeculationData::_speculation_names;
+
+const char* SpeculationData::get_name(jint id) {
+  if (id >= 0 && id < _speculation_names->length()) {
+    return _speculation_names->at(id);
   }
-  address data = nm->speculations_begin() + index;
-  FailedSpeculation::add_failed_speculation(nm, _failed_speculations, data, length);
+  return nullptr;
+}
+
+bool SpeculationData::register_name(jint id, const char* name) {
+  if (id >= _speculation_names->length()) {
+    _speculation_names->at_put_grow(id, os::strdup(name));
+    return true;
+  } else {
+    const char* current_name = _speculation_names->at(id);
+    return strcmp(name, current_name) == 0;
+  }
+}
+
+void SpeculationData::print_speculations(nmethod* nm, outputStream* st) {
+  SpeculationData* spec = (SpeculationData*) nm->speculations_begin();
+  while (spec != nullptr) {
+    spec->print_on(nm, tty);
+    spec = spec->next(nm);
+  }
+}
+
+SpeculationData* SpeculationData::get(nmethod* nm, jlong speculation) {
+  jlong offset = speculation >> JVMCINMethodData::SPECULATION_LENGTH_BITS;
+  guarantee(offset >= 0 && offset <= max_jint, "Encoded JVMCI speculation offset is not a positive Java int: " INTPTR_FORMAT, offset);
+  int length = speculation & JVMCINMethodData::SPECULATION_LENGTH_MASK;
+  if (offset > (uint) nm->speculations_size()) {
+    fatal(INTPTR_FORMAT "[offset: " JLONG_FORMAT ", length: %d out of bounds wrt encoded speculations of length %u", speculation, offset, length, nm->speculations_size());
+  }
+  if (offset + length > (uint) nm->speculations_size()) {
+    fatal(INTPTR_FORMAT "[offset: " JLONG_FORMAT ", length: %d out of bounds wrt encoded speculations of length %u", speculation, offset, length, nm->speculations_size());
+  }
+  SpeculationData* data = (SpeculationData*) (nm->speculations_begin() + offset);
+  if (data->length() != length) {
+    SpeculationData::print_speculations(nm, tty);
+    fatal(INTPTR_FORMAT "[offset: " JLONG_FORMAT ", length: %d does not match speculation length %d", speculation, offset, length, data->length());
+  }
+  return data;
+}
+
+
+void JVMCINMethodData::add_failed_speculation(nmethod* nm, jlong speculation) {
+  SpeculationData* data = SpeculationData::get(nm, speculation);
+  FailedSpeculation::add_failed_speculation(nm, _failed_speculations, data);
 }
 
 oop JVMCINMethodData::get_nmethod_mirror(nmethod* nm, bool phantom_ref) {

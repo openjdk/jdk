@@ -33,13 +33,13 @@ import jdk.vm.ci.meta.SpeculationLog.SpeculationReason;
  * An implementation of {@link SpeculationReason} based on encoded values.
  */
 public class EncodedSpeculationReason implements SpeculationReason {
-    final int groupId;
+    final byte groupId;
     final String groupName;
     final Object[] context;
     private SpeculationLog.SpeculationReasonEncoding encoding;
 
     public EncodedSpeculationReason(int groupId, String groupName, Object[] context) {
-        this.groupId = groupId;
+        this.groupId = (byte) groupId;
         this.groupName = groupName;
         this.context = context;
     }
@@ -47,11 +47,8 @@ public class EncodedSpeculationReason implements SpeculationReason {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof EncodedSpeculationReason) {
-            if (obj instanceof EncodedSpeculationReason) {
-                EncodedSpeculationReason that = (EncodedSpeculationReason) obj;
-                return this.groupId == that.groupId && Arrays.equals(this.context, that.context);
-            }
-            return false;
+            EncodedSpeculationReason that = (EncodedSpeculationReason) obj;
+            return this.groupId == that.groupId && Arrays.equals(this.context, that.context);
         }
         return false;
     }
@@ -60,8 +57,7 @@ public class EncodedSpeculationReason implements SpeculationReason {
     public SpeculationLog.SpeculationReasonEncoding encode(Supplier<SpeculationLog.SpeculationReasonEncoding> encodingSupplier) {
         if (encoding == null) {
             encoding = encodingSupplier.get();
-            encoding.addInt(groupId);
-            encoding.addInt(groupName.hashCode());
+            encoding.setId(groupId, groupName);
             for (Object o : context) {
                 if (o == null) {
                     encoding.addInt(0);

@@ -40,6 +40,45 @@ class JVMCICompiler;
 class JVMCICompileState;
 class MetadataHandles;
 
+
+class SpeculationData {
+ private:
+  uint8_t _length;
+  uint8_t _id;
+  uint8_t _body[0];
+
+  int offset(nmethod* nm) { return ((address) this) - nm->speculations_begin(); }
+
+  static GrowableArray<const char*>* _speculation_names;
+
+ public:
+  uint8_t length() { return _length; }
+  uint8_t id()     { return _id; }
+
+  jint speculation_id(nmethod* nm);
+
+  static SpeculationData* get(nmethod* nm, jlong speculation);
+
+  static bool register_name(jint id, const char* name);
+
+  static const char* get_name(jint id);
+
+  static void print_speculations(nmethod* nm, outputStream* st);
+
+  SpeculationData* next(nmethod* nm) {
+    address n = ((address) this) + length();
+    if (n >= nm->speculations_end()) {
+      return nullptr;
+    }
+    return (SpeculationData*) n;
+  }
+
+  void print_on(nmethod* nm, outputStream* st);
+
+};
+
+
+
 // Encapsulates the JVMCI metadata for an nmethod.  JVMCINMethodData objects are normally inlined
 // into nmethods at nmethod::_jvmci_data_offset but during construction of the nmethod they are
 // resource allocated so they can be passed into the nmethod constructor.
@@ -62,14 +101,6 @@ class JVMCINMethodData : public ResourceObj {
   // is appended when it causes a deoptimization.
   FailedSpeculation** _failed_speculations;
 
-  // A speculation id is a length (low 5 bits) and an index into
-  // a jbyte array (i.e. 31 bits for a positive Java int).
-  enum {
-    // Keep in sync with HotSpotSpeculationEncoding.
-    SPECULATION_LENGTH_BITS = 5,
-    SPECULATION_LENGTH_MASK = (1 << SPECULATION_LENGTH_BITS) - 1
-  };
-
   // Allocate a temporary data object for use during installation
   void initialize(int nmethod_mirror_index,
                    int nmethod_entry_patch_offset,
@@ -83,6 +114,14 @@ class JVMCINMethodData : public ResourceObj {
   }
 
 public:
+  // A speculation id is a length (low 5 bits) and an index into
+  // a jbyte array (i.e. 31 bits for a positive Java int).
+  enum {
+    // Keep in sync with HotSpotSpeculationEncoding.
+    SPECULATION_LENGTH_BITS = 5,
+    SPECULATION_LENGTH_MASK = (1 << SPECULATION_LENGTH_BITS) - 1
+  };
+
   static JVMCINMethodData* create(int nmethod_mirror_index,
                                   int nmethod_entry_patch_offset,
                                   const char* nmethod_mirror_name,

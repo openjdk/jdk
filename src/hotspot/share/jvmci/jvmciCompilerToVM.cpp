@@ -3061,8 +3061,8 @@ C2V_VMENTRY_NULL(jobjectArray, getFailedSpeculations, (JNIEnv* env, jobject, jlo
     if (result_index < current_length) {
       entry = (JVMCIPrimitiveArray) JVMCIENV->get_object_at(current_array, result_index);
     } else {
-      entry = JVMCIENV->new_byteArray(fs->data_len(), JVMCI_CHECK_NULL);
-      JVMCIENV->copy_bytes_from((jbyte*) fs->data(), entry, 0, fs->data_len());
+      entry = JVMCIENV->new_byteArray(fs->data()->length(), JVMCI_CHECK_NULL);
+      JVMCIENV->copy_bytes_from((jbyte*) fs->data(), entry, 0, fs->data()->length());
     }
     JVMCIENV->put_object_at(result, result_index++, entry);
   }
@@ -3084,7 +3084,7 @@ C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong faile
   int speculation_len = JVMCIENV->get_length(speculation_handle);
   char* speculation = NEW_RESOURCE_ARRAY(char, speculation_len);
   JVMCIENV->copy_bytes_to(speculation_handle, (jbyte*) speculation, 0, speculation_len);
-  return FailedSpeculation::add_failed_speculation(nullptr, (FailedSpeculation**)(address) failed_speculations_address, (address) speculation, speculation_len);
+  return FailedSpeculation::add_failed_speculation(nullptr, (FailedSpeculation**)(address) failed_speculations_address, (SpeculationData*) speculation);
 C2V_END
 
 C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
@@ -3119,6 +3119,15 @@ C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase
 #else
   return -1;
 #endif // !INCLUDE_JFR
+C2V_END
+
+C2V_VMENTRY(void, registerSpeculationName, (JNIEnv* env, jobject, jint id, jstring jspeculation_name))
+  JVMCIObject speculation_name = JVMCIENV->wrap(jspeculation_name);
+  const char *name = JVMCIENV->as_utf8_string(speculation_name);
+  if (!SpeculationData::register_name(id, name)) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+              err_msg("%d is already register to %s not %s", id, SpeculationData::get_name(id), name));
+  }
 C2V_END
 
 C2V_VMENTRY(void, notifyCompilerPhaseEvent, (JNIEnv* env, jobject, jlong startTime, jint phase, jint compileId, jint level))
@@ -3385,6 +3394,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getThreadLocalLong",                           CC "(I)J",                                                                            FN_PTR(getThreadLocalLong)},
   {CC "setThreadLocalLong",                           CC "(IJ)V",                                                                           FN_PTR(setThreadLocalLong)},
   {CC "registerCompilerPhase",                        CC "(" STRING ")I",                                                                   FN_PTR(registerCompilerPhase)},
+  {CC "registerSpeculationName",                      CC "(I" STRING ")V",                                                                  FN_PTR(registerSpeculationName)},
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},

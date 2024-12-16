@@ -1910,16 +1910,13 @@ public:
 // a list that is atomically appended to during deoptimization. Entries are
 // never removed from the list.
 // @see jdk.vm.ci.hotspot.HotSpotSpeculationLog.HotSpotSpeculationEncoding
+class SpeculationData;
 class FailedSpeculation: public CHeapObj<mtCompiler> {
  private:
-  // The length of HotSpotSpeculationEncoding.toByteArray(). The data itself
-  // is an array embedded at the end of this object.
-  int   _data_len;
-
   // Next entry in a linked list.
   FailedSpeculation* _next;
 
-  FailedSpeculation(address data, int data_len);
+  FailedSpeculation(SpeculationData* data);
 
   FailedSpeculation** next_adr() { return &_next; }
 
@@ -1928,13 +1925,12 @@ class FailedSpeculation: public CHeapObj<mtCompiler> {
   void* operator new(size_t size, size_t fs_size) throw();
 
  public:
-  char* data()         { return (char*)(((address) this) + sizeof(FailedSpeculation)); }
-  int data_len() const { return _data_len; }
+  SpeculationData* data()         { return (SpeculationData*)(((address) this) + sizeof(FailedSpeculation)); }
   FailedSpeculation* next() const { return _next; }
 
   // Atomically appends a speculation from nm to the list whose head is at (*failed_speculations_address).
   // Returns false if the FailedSpeculation object could not be allocated.
-  static bool add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len);
+  static bool add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, SpeculationData* data);
 
   // Frees all entries in the linked list whose head is at (*failed_speculations_address).
   static void free_failed_speculations(FailedSpeculation** failed_speculations_address);

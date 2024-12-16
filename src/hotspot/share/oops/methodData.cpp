@@ -31,6 +31,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvmci/jvmciRuntime.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
@@ -804,8 +805,8 @@ void* FailedSpeculation::operator new(size_t size, size_t fs_size) throw() {
   return CHeapObj<mtCompiler>::operator new(fs_size, std::nothrow);
 }
 
-FailedSpeculation::FailedSpeculation(address speculation, int speculation_len) : _data_len(speculation_len), _next(nullptr) {
-  memcpy(data(), speculation, speculation_len);
+FailedSpeculation::FailedSpeculation(SpeculationData* speculation) : _next(nullptr) {
+  memcpy(data(), (address) speculation, speculation->length());
 }
 
 // A heuristic check to detect nmethods that outlive a failed speculations list.
@@ -833,9 +834,9 @@ static void guarantee_failed_speculations_alive(nmethod* nm, FailedSpeculation**
   }
 }
 
-bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, address speculation, int speculation_len) {
+bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** failed_speculations_address, SpeculationData* speculation) {
   assert(failed_speculations_address != nullptr, "must be");
-  size_t fs_size = sizeof(FailedSpeculation) + speculation_len;
+  size_t fs_size = sizeof(FailedSpeculation) + speculation->length();
 
   guarantee_failed_speculations_alive(nm, failed_speculations_address);
 
@@ -845,7 +846,7 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
     if (*cursor == nullptr) {
       if (fs == nullptr) {
         // lazily allocate FailedSpeculation
-        fs = new (fs_size) FailedSpeculation(speculation, speculation_len);
+        fs = new (fs_size) FailedSpeculation(speculation);
         if (fs == nullptr) {
           // no memory -> ignore failed speculation
           return false;
@@ -860,7 +861,7 @@ bool FailedSpeculation::add_failed_speculation(nmethod* nm, FailedSpeculation** 
     }
     guarantee(*cursor != nullptr, "cursor must point to non-null FailedSpeculation");
     // check if the current entry matches this thread's failed speculation
-    if ((*cursor)->data_len() == speculation_len && memcmp(speculation, (*cursor)->data(), speculation_len) == 0) {
+    if ((*cursor)->data()->length() == speculation->length() && memcmp(speculation, (*cursor)->data(), speculation->length()) == 0) {
       if (fs != nullptr) {
         delete fs;
       }
