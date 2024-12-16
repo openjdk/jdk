@@ -23,17 +23,17 @@
 
 /*
  * @test
- * @summary Test Template with no parameter or template hole or variable renaming.
+ * @summary Test some basic Template instantiations.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver template_framework.tests.TestPlaneTemplate
+ * @run driver template_framework.tests.TestTemplate
  */
 
 package template_framework.tests;
 
 import compiler.lib.template_framework.*;
 
-public class TestPlaneTemplate {
+public class TestTemplate {
 
     public static void main(String[] args) {
         test1();
@@ -64,6 +64,10 @@ public class TestPlaneTemplate {
     }
 
     public static void test3() {
+        Template template = new Template("my_template","start #{p1} #{p2} end");
+        checkEQ(template.where("p1", "x").where("p2", "y").instantiate(), "start x y end");
+        checkEQ(template.where("p1", "a").where("p2", "b").instantiate(), "start x y end");
+        checkEQ(template.where("p1", "").where("p2", "").instantiate(), "start   end");
     }
 
     public static void checkEQ(String code, String expected) {
