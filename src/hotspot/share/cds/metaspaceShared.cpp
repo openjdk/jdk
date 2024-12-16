@@ -145,15 +145,16 @@ size_t MetaspaceShared::core_region_alignment() {
 }
 
 static bool shared_base_valid(char* shared_base) {
-  // We check user input for SharedBaseAddress at dump time. We must weed out values
-  // we already know to be invalid later.
+  // We check user input for SharedBaseAddress at dump time.
 
   // At CDS runtime, "shared_base" will be the (attempted) mapping start. It will also
   // be the encoding base, since the the headers of archived base objects (and with Lilliput,
   // the prototype mark words) carry pre-computed narrow Klass IDs that refer to the mapping
   // start as base.
   //
-  // Therefore, "shared_base" must be later usable as encoding base.
+  // On AARCH64, The "shared_base" may not be later usable as encoding base, depending on the
+  // total size of the reserved area and the precomputed_narrow_klass_shift. This is checked
+  // before reserving memory.  Here we weed out values already known to be invalid later.
   return AARCH64_ONLY(is_aligned(shared_base, 4 * G)) NOT_AARCH64(true);
 }
 
@@ -1486,6 +1487,15 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   const size_t total_range_size =
       archive_space_size + gap_size + class_space_size;
 
+  // Test that class space base address plus shift can be decoded by aarch64, when restored.
+  const int precomputed_narrow_klass_shift = ArchiveBuilder::precomputed_narrow_klass_shift();
+  if (!CompressedKlassPointers::check_klass_decode_mode(base_address, precomputed_narrow_klass_shift,
+                                                        total_range_size)) {
+    log_info(cds)("CDS initialization: Cannot use SharedBaseAddress " PTR_FORMAT " with precomputed shift %d.",
+                  p2i(base_address), precomputed_narrow_klass_shift);
+    use_archive_base_addr = false;
+  }
+
   assert(total_range_size > ccs_begin_offset, "must be");
   if (use_windows_memory_mapping() && use_archive_base_addr) {
     if (base_address != nullptr) {
@@ -1525,7 +1535,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     }
 
     // Paranoid checks:
-    assert(base_address == nullptr || (address)total_space_rs.base() == base_address,
+    assert(!use_archive_base_addr || (address)total_space_rs.base() == base_address,
            "Sanity (" PTR_FORMAT " vs " PTR_FORMAT ")", p2i(base_address), p2i(total_space_rs.base()));
     assert(is_aligned(total_space_rs.base(), base_address_alignment), "Sanity");
     assert(total_space_rs.size() == total_range_size, "Sanity");

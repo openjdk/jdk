@@ -152,7 +152,6 @@ public class Main {
      * flag0: no zip compression (store only)
      * Mflag: DO NOT generate a manifest file (just ZIP)
      * iflag: generate jar index
-     * nflag: Perform jar normalization at the end
      * pflag: preserve/don't strip leading slash and .. component from file name
      * dflag: print module descriptor
      * kflag: keep existing file

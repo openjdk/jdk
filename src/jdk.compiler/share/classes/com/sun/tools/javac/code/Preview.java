@@ -30,11 +30,13 @@ import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Warning;
 import com.sun.tools.javac.util.Log;
@@ -175,8 +177,8 @@ public class Preview {
         if (!lint.isSuppressed(LintCategory.PREVIEW)) {
             sourcesWithPreviewFeatures.add(log.currentSourceFile());
             previewHandler.report(pos, feature.isPlural() ?
-                    Warnings.PreviewFeatureUsePlural(feature.nameFragment()) :
-                    Warnings.PreviewFeatureUse(feature.nameFragment()));
+                    LintWarnings.PreviewFeatureUsePlural(feature.nameFragment()) :
+                    LintWarnings.PreviewFeatureUse(feature.nameFragment()));
         }
     }
 
@@ -188,8 +190,8 @@ public class Preview {
     public void warnPreview(JavaFileObject classfile, int majorVersion) {
         Assert.check(isEnabled());
         if (lint.isEnabled(LintCategory.PREVIEW)) {
-            log.mandatoryWarning(LintCategory.PREVIEW, null,
-                    Warnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
+            log.mandatoryWarning(null,
+                    LintWarnings.PreviewFeatureUseClassfile(classfile, majorVersionToSource.get(majorVersion).name));
         }
     }
 
@@ -197,7 +199,7 @@ public class Preview {
         sourcesWithPreviewFeatures.add(log.currentSourceFile());
     }
 
-    public void reportPreviewWarning(DiagnosticPosition pos, Warning warnKey) {
+    public void reportPreviewWarning(DiagnosticPosition pos, LintWarning warnKey) {
         previewHandler.report(pos, warnKey);
     }
 
