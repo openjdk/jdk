@@ -165,10 +165,9 @@ final class Validator {
         fps.values().forEach( fp -> {
             // all versioned entries must be compatible with their release target number
             if (fp.mrversion() < fp.classReleaseVersion()) {
-                String actual = fp.classMajorVersion() + " (Java " + fp.classReleaseVersion() + ")";
                 errorAndInvalid(formatMsg("error.release.value.toohigh.versioned.entry",
                         fp.entryName(), // META-INF/versions/9/com/foo/Bar.class has class file version
-                        actual, // 69 (Java 25), but class file version
+                        fp.classMajorVersion(), // 69, but class file version
                         String.valueOf(fp.mrversion() + 44), // 53 or less is required to target release
                         String.valueOf(fp.mrversion()))); // 9 of the Java Platform
                 return;

@@ -214,7 +214,7 @@ public class Basic extends MRTestBase {
                 "--release", "9", "-C", classes.resolve("v10").toString(), ".")
                 .shouldNotHaveExitValue(SUCCESS)
                 .shouldContain("META-INF/versions/9/version/Version.class")
-                .shouldContain(" has class file version 54 (Java 10),")
+                .shouldContain(" has class file version 54,")
                 .shouldContain(" but class file version 53 or less is required")
                 .shouldContain(" to target release 9 of the Java Platform");
 
