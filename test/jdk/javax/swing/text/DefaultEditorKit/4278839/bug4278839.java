@@ -61,24 +61,53 @@ public class bug4278839 {
 
             clickMouse();
             robo.waitForIdle();
+            robo.delay(250);
 
             area.setCaretPosition(0);
             robo.waitForIdle();
+            robo.delay(250);
 
             passed &= moveCaret(true) == 1;
+            System.out.println("passed1 moveCaret1 " + passed);
+
             passed &= moveCaret(true) == 5;
+            System.out.println("passed2 moveCaret5 " + passed);
+
             passed &= moveCaret(true) == 8;
+            System.out.println("passed3 moveCaret8 " + passed);
+
             passed &= moveCaret(true) == 9;
+            System.out.println("passed4 moveCaret9 " + passed);
+
             passed &= moveCaret(true) == 13;
+            System.out.println("passed5 moveCaret13 " + passed);
+
             passed &= moveCaret(true) == 16;
+            System.out.println("passed6 moveCaret16 " + passed);
+
             passed &= moveCaret(true) == 17;
+            System.out.println("passed7 moveCaret17 " + passed);
+
             passed &= moveCaret(false) == 16;
+            System.out.println("passed8 moveCaret 16 " + passed);
+
             passed &= moveCaret(false) == 13;
+            System.out.println("passed9 moveCaret13 " + passed);
+
             passed &= moveCaret(false) == 9;
+            System.out.println("passed10 moveCaret9 " + passed);
+
             passed &= moveCaret(false) == 8;
+            System.out.println("passed11 moveCaret8 " + passed);
+
             passed &= moveCaret(false) == 5;
+            System.out.println("passed12 moveCaret5 " + passed);
+
             passed &= moveCaret(false) == 1;
+            System.out.println("passed13 moveCaret5 " + passed);
+
             passed &= moveCaret(false) == 0;
+            System.out.println("passed14 moveCaret0 " + passed);
 
         } catch (Exception e) {
             throw new RuntimeException("Test failed because of an exception:",
@@ -98,6 +127,7 @@ public class bug4278839 {
         Util.hitKeys(robo, getCtrlKey(),
                 right ? KeyEvent.VK_RIGHT : KeyEvent.VK_LEFT);
         robo.waitForIdle();
+        robo.delay(250);
 
         final int[] result = new int[1];
 
