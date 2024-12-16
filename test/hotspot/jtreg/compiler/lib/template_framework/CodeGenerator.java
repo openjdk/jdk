@@ -45,13 +45,21 @@ public sealed abstract class CodeGenerator permits Template, ProgrammaticCodeGen
      */
     public final int fuelCost;
 
+    /**
+     * Create a new {@link CodeGenerator}.
+     *
+     * @param name Name of the generator, can be used for lookup in the
+     *             {@link CodeGeneratorLibrary} if the {@link Template}
+     *             is added to a library.
+     * @param fuelCost The {@link fuelCost} for the {@link CodeGenerator}.
+     */
     CodeGenerator(String name, int fuelCost) {
         this.name = name;
         this.fuelCost = fuelCost;
     }
 
     /**
-     * Instantiate a CodeGenerator.
+     * Instantiate the CodeGenerator.
      *
      * @param scope Scope into which the code is generated.
      * @param parameters Provides the parameters for the instantiation, as well as a unique ID for identifier

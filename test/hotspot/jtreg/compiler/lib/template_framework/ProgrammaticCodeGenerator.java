@@ -24,20 +24,51 @@
 package compiler.lib.template_framework;
 
 /**
- * TODO public?
+ * The {@link ProgrammaticCodeGenerator} is to be used when a {@link Template} is not enough powerful, and
+ * one instead needs to programmaticall generate code. The user provided lambda {@link Instantiator}
+ * function gets called during the instantiation, and has direct access to the {@link Scope} and
+ * {@link Parameters}, and has to directly generate code into the {@link CodeStream} of the {@link Scope}.
  */
 public final class ProgrammaticCodeGenerator extends CodeGenerator {
+
+    /**
+     * Interface definition for instantiator lambda functions.
+     */
     public interface Instantiator {
+        /**
+         * The provided lambda function is called during instantiation.
+         *
+         * @param scope Scope into which the code is generated.
+         * @param parameters Provides the parameters for the instantiation, as well as a unique ID for identifier
+         *                   name generation (e.g. variable of method names).
+         */
         public void call(Scope scope, Parameters parameters);
     }
 
     private final Instantiator instantiator;
 
+    /**
+     * Create a new {@link ProgrammaticCodeGenerator}.
+     *
+     * @param generatorName Name of the generator, can be used for lookup in the
+     *                      {@link CodeGeneratorLibrary} if the {@link Template}
+     *                      is added to a library.
+     * @param instantiator Lambda function provided for instantiation.
+     * @param fuelCost The {@link fuelCost} for the {@link CodeGenerator}.
+     */
     public ProgrammaticCodeGenerator(String generatorName, Instantiator instantiator, int fuelCost) {
         super(generatorName, fuelCost);
         this.instantiator = instantiator;
     }
 
+    /**
+     * Instantiate the {@link ProgrammaticCodeGenerator}.
+     *
+     * @param scope Scope into which the code is generated.
+     * @param parameters Provides the parameters for the instantiation, as well as a unique ID for identifier
+     *                   name generation (e.g. variable of method names).
+     */
+    @Override
     public void instantiate(Scope scope, Parameters parameters) {
         scope.setDebugContext(name, parameters);
         instantiator.call(scope, parameters);

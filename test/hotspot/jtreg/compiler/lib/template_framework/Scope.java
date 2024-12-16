@@ -140,8 +140,11 @@ public class Scope {
         }
     }
 
-    public final VariableSet allVariables;
-    public final VariableSet mutableVariables;
+    /**
+     * We have two sets of variables: mutable and immutable (read-only) variables.
+     */
+    private final VariableSet allVariables;
+    private final VariableSet mutableVariables;
 
     /**
      * Helper record, providing debugging information for the scope, which can be printed when
