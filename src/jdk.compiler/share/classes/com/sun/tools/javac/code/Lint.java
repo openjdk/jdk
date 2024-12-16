@@ -86,6 +86,17 @@ public class Lint {
     }
 
     /**
+     * Returns a new Lint that has the given LintCategorys enabled.
+     * @param lc one or more categories to be enabled
+     */
+    public Lint enable(LintCategory... lc) {
+        Lint l = new Lint(this);
+        l.values.addAll(Arrays.asList(lc));
+        l.suppressedValues.removeAll(Arrays.asList(lc));
+        return l;
+    }
+
+    /**
      * Returns a new Lint that has the given LintCategorys suppressed.
      * @param lc one or more categories to be suppressed
      */
