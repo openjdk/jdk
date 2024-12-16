@@ -1124,14 +1124,15 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
 
 void os::print_jvmti_agent_info(outputStream* st) {
 #if INCLUDE_JVMTI
-  // should return all kinds of JVMTI agents, but no xrun agents
-  const JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
-  bool first_agent = true;
+  const JvmtiAgentList::Iterator it = JvmtiAgentList::all();
+  if (it.has_next()) {
+    st->print_cr("JVMTI agents:");
+  } else {
+    st->print_cr("JVMTI agents: none");
+  }
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     if (agent != nullptr) {
-      if (first_agent) st->print_cr("JVMTI agents:");
-      first_agent = false;
       const char* dyninfo = agent->is_dynamic() ? "dynamic" : "";
       const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib" : "";
       const char* loadinfo = agent->is_loaded() ? "loaded" : "not loaded";
@@ -1140,7 +1141,6 @@ void os::print_jvmti_agent_info(outputStream* st) {
       const char* pathinfo = agent->os_lib_path();
       if (optionsinfo == nullptr) optionsinfo = "none";
       if (pathinfo == nullptr) pathinfo = "none";
-      // jplis output too?
       st->print_cr("%s path:%s, %s, %s %s %s options:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
     }
   }
