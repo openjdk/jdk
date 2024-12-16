@@ -10901,6 +10901,16 @@ instruct convF2HFAndS2HF(regF dst, regF src)
   ins_pipe(pipe_slow);
 %}
 
+instruct convHF2SAndHF2F(regF dst, regF src)
+%{
+  match(Set dst (ConvHF2F (ReinterpretHF2S src)));
+  format %{ "convHF2SAndHF2F $dst, $src" %}
+  ins_encode %{
+    __ vcvtph2ps($dst$$XMMRegister, $src$$XMMRegister, Assembler::AVX_128bit);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct reinterpretHF2S(rRegI dst, regF src)
 %{
   match(Set dst (ReinterpretHF2S src));

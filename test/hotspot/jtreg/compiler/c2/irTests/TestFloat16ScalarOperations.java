@@ -43,6 +43,8 @@ public class TestFloat16ScalarOperations {
     private short[] dst;
     private short res;
 
+    private static final Float16 ONE = valueOf(1.0f);
+    private static final Float16 MONE = valueOf(-1.0f);
     private static final Float16 POSITIVE_ZERO = valueOf(0.0f);
     private static final Float16 NEGATIVE_ZERO = valueOf(-0.0f);
     private static final Float16 MIN_NORMAL = valueOf(0x1.0P-14f);
@@ -78,6 +80,19 @@ public class TestFloat16ScalarOperations {
                 String error = "TEST (" + iter + "): " + msg + ": actual(" + actual + ") != expected(" + expected + ")";
                 throw new AssertionError(error);
             }
+        }
+    }
+
+    @Test
+    @IR(counts = {"convHF2SAndHF2F", " >0 "}, phase = {CompilePhase.FINAL_CODE},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testEliminateIntermediateHF2S() {
+        Float16 res = shortBitsToFloat16((short)0);
+        for (int i = 0; i < count; i++) {
+            // Intermediate HF2S + S2HF is eliminated in following transformation
+            // AddHF S2HF(HF2S (AddHF S2HF(src[i]), S2HF(0))), S2HF(src[i]) => AddHF (AddHF S2HF(src[i]), S2HF(0)), S2HF(src[i])
+            res = add(add(res, shortBitsToFloat16(src[i])), shortBitsToFloat16(src[i]));
+            dst[i] = (short)res.floatValue();
         }
     }
 
@@ -133,6 +148,17 @@ public class TestFloat16ScalarOperations {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
             res = Float16.divide(res, shortBitsToFloat16(src[i]));
+            dst[i] = float16ToRawShortBits(res);
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.DIV_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testDivByOne() {
+        Float16 res = shortBitsToFloat16((short)0);
+        for (int i = 0; i < count; i++) {
+            res = Float16.divide(shortBitsToFloat16(src[i]), ONE);
             dst[i] = float16ToRawShortBits(res);
         }
     }
@@ -415,6 +441,24 @@ public class TestFloat16ScalarOperations {
         assertResult(multiply(NEGATIVE_MAX_VALUE, Float16.MAX_VALUE).floatValue(), Float.NEGATIVE_INFINITY, "testMulConstantFolding");
 
         assertResult(multiply(multiply(multiply(valueOf(1.0f), valueOf(2.0f)), valueOf(3.0f)), valueOf(4.0f)).floatValue(), 1.0f * 2.0f * 3.0f * 4.0f, "testMulConstantFolding");
+    }
+
+    @Test
+    @IR(counts = {IRNode.SQRT_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
+        applyIfCPUFeature = {"avx512_fp16", "true"})
+    public void testSqrtConstantFolding() {
+        // If the argument is NaN or less than zero, then the result is NaN.
+        assertResult(sqrt(Float16.NaN).floatValue(), Float.NaN, "testSqrtConstantFolding");
+
+        // If the argument is positive infinity, then the result is positive infinity.
+        assertResult(sqrt(Float16.POSITIVE_INFINITY).floatValue(), Float.POSITIVE_INFINITY, "testSqrtConstantFolding");
+
+        // If the argument is positive zero or negative zero, then the result is the same as the argument.
+        assertResult(sqrt(POSITIVE_ZERO).floatValue(), 0.0f, "testSqrtConstantFolding");
+        assertResult(sqrt(NEGATIVE_ZERO).floatValue(), -0.0f, "testSqrtConstantFolding");
+
+        // Other cases.
+        assertResult(Math.round(sqrt(valueOf(0x1.ffcP+14f)).floatValue()), Math.round(Math.sqrt(0x1.ffcP+14f)), "testSqrtConstantFolding");
     }
 
     @Test
