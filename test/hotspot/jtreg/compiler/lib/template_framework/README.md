@@ -43,15 +43,19 @@ The [TestClassInstantiator](./TestClassInstantiator.java) is a convenient facili
 TODO example with IR framework???
 
 ## Use case: Regression Fest
-Hand-written regression tests are very time consuming, and often fewere tests are written than desired due to time constraints of the developer. With Templates, the developer can simply take the reduced regression test, and turn some constants into Template holes that can then be replaced by random constants, or other interesting code shapes that may trigger special cases of the bug or feature under test. The standard  [CodeGeneratorLibrary](./CodeGeneratorLibrary.java) can be used for recursive CodeGenerator instantiations, for random constant generation, random variable sampling, and inserting specific or random intersting code shapes.
+Hand-written regression tests are very time consuming, and often fewere tests are written than desired due to time constraints of the developer. With Templates, the developer can simply take the reduced regression test, and turn some constants into Template holes that can then be replaced by random constants, or other interesting code shapes that may trigger special cases of the bug or feature under test. The standard [CodeGeneratorLibrary](./CodeGeneratorLibrary.java) can be used for recursive CodeGenerator instantiations, for random constant generation, random variable sampling, and inserting specific or random intersting code shapes.
 
 ## Use case: Extensive feature testing (targetted Fuzzer)
 When working on a new feature, or working on a bigger bug, it may be helpful to generate tests for a vast set of parameters, code shapes, operators, class hierarchies, types, constant values, etc. The difference to a simple regression test is simply in the complexity in combinations of templates, parameters and recursive CodeGenerator instantiations. One might want to extend the `CodeGeneratorLibrary` with more options, or implement custom `ProgrammaticCodeGenerators` (see below) to unlock more powerful features.
 
 ## Use case: General purpose Template based Fuzzer.
-TODO
+The goal is to test code patterns, language features, libraries and the related compiler optimizations not just in isolation, but in combination, to test their correctness under more circumstances. Existing fuzzers are difficult to extend for new features. The Template Framework is the basis for a Template based Fuzzer, which combines many templates through Template nesting.
+
+TODO decide if this is part of this patch, or a remark for future work.
 
 ## The Standard CodeGeneratorLibrary
+The standard library is defined in [CodeGeneratorLibrary](./CodeGeneratorLibrary.java), and contains a number of helpful CodeGenerators.
+
 TODO: list all CodeGenerators
 
 ## Custom CodeGenerator Library
