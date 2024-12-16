@@ -24,7 +24,6 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -51,11 +50,9 @@ public class WriteBarrier {
 
     // For array update tests
     private Object[] theArraySmall;
-    private Object[] realReferencesSmall;
     private int[] indicesSmall;
 
     private Object[] theArrayLarge;
-    private Object[] realReferencesLarge;
     private int[] indicesLarge;
 
     private Object nullRef;
@@ -86,11 +83,9 @@ public class WriteBarrier {
     @Setup
     public void setup() {
         theArraySmall = new Object[NUM_REFERENCES_SMALL];
-        realReferencesSmall = new Object[NUM_REFERENCES_SMALL];
         indicesSmall = new int[NUM_REFERENCES_SMALL];
 
         theArrayLarge = new Object[NUM_REFERENCES_LARGE];
-        realReferencesLarge = new Object[NUM_REFERENCES_LARGE];
         indicesLarge = new int[NUM_REFERENCES_LARGE];
 
         m_w = (int) System.currentTimeMillis();
@@ -99,15 +94,13 @@ public class WriteBarrier {
 
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             indicesSmall[i] = get_random() % (NUM_REFERENCES_SMALL - 1);
-            realReferencesSmall[i] = new Object();
         }
 
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             indicesLarge[i] = get_random() % (NUM_REFERENCES_LARGE - 1);
-            realReferencesLarge[i] = new Object();
         }
 
-        realRef = realReferencesLarge[42];
+        realRef = new Object();
 
         // Build a small linked structure
         this.head = new Referencer();
@@ -127,15 +120,13 @@ public class WriteBarrier {
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
-            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realReferencesSmall[indicesSmall[i]];
+            theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realRef;
         }
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullRef;
@@ -143,23 +134,13 @@ public class WriteBarrier {
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealLarge() {
-        for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
-            theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realReferencesLarge[indicesLarge[i]];
-        }
-    }
-
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public void testArrayWriteBarrierFastPathRealLargeFixed() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realRef;
         }
     }
 
     @Benchmark
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullRef;
