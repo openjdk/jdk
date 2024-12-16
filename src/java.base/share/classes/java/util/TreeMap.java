@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,10 +420,9 @@ public class TreeMap<K,V>
     }
 
     /**
-     * Gets the entry corresponding to the specified key; if no such entry
-     * exists, returns the entry for the least key greater than the specified
-     * key; if no such entry exists (i.e., the greatest key in the Tree is less
-     * than the specified key), returns {@code null}.
+     * Returns the entry for the least key greater than or equal to the specified key;
+     * if no such entry exists (i.e. the specified key is greater than any key in the tree,
+     * or the tree is empty), returns {@code null}.
      */
     final Entry<K,V> getCeilingEntry(K key) {
         Entry<K,V> p = root;
@@ -453,10 +452,9 @@ public class TreeMap<K,V>
     }
 
     /**
-     * Gets the entry corresponding to the specified key; if no such entry
-     * exists, returns the entry for the greatest key less than the specified
-     * key; if no such entry exists (i.e., the least key in the Tree is greater
-     * than the specified key), returns {@code null}.
+     * Returns the entry for the greatest key less than or equal to the specified key;
+     * if no such entry exists (i.e. the specified key is less than any key in the tree,
+     * or the tree is empty), returns {@code null}.
      */
     final Entry<K,V> getFloorEntry(K key) {
         Entry<K,V> p = root;

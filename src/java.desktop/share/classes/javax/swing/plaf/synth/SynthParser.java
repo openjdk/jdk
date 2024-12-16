@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import com.sun.beans.decoder.DocumentHandler;
-import sun.reflect.misc.ReflectUtil;
 
 class SynthParser extends DefaultHandler {
     //
@@ -646,7 +645,7 @@ class SynthParser extends DefaultHandler {
                     }
                     else {
                         try {
-                            typeClass = ReflectUtil.forName(typeName.substring(
+                            typeClass = Class.forName(typeName.substring(
                                                       0, classIndex));
                         } catch (ClassNotFoundException cnfe) {
                             throw new SAXException("Unknown class: " +

@@ -26,9 +26,6 @@ package javax.swing.text;
 
 import com.sun.beans.util.Cache;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 import java.beans.JavaBean;
 import java.beans.BeanProperty;
 import java.beans.Transient;
@@ -1130,7 +1127,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
-    @SuppressWarnings("serial") // Same-version serialization only
     public static class KeyBinding {
 
         /**
@@ -3954,7 +3950,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Maps from class name to Boolean indicating if
      * <code>processInputMethodEvent</code> has been overridden.
      */
-    @SuppressWarnings("removal")
     private static Cache<Class<?>,Boolean> METHOD_OVERRIDDEN
             = new Cache<Class<?>,Boolean>(Cache.Kind.WEAK, Cache.Kind.STRONG) {
         /**
@@ -3969,17 +3964,12 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             if (get(type.getSuperclass())) {
                 return Boolean.TRUE;
             }
-            return AccessController.doPrivileged(
-                    new PrivilegedAction<Boolean>() {
-                        public Boolean run() {
-                            try {
-                                type.getDeclaredMethod("processInputMethodEvent", InputMethodEvent.class);
-                                return Boolean.TRUE;
-                            } catch (NoSuchMethodException exception) {
-                                return Boolean.FALSE;
-                            }
-                        }
-                    });
+            try {
+                type.getDeclaredMethod("processInputMethodEvent", InputMethodEvent.class);
+                return Boolean.TRUE;
+            } catch (NoSuchMethodException exception) {
+                return Boolean.FALSE;
+            }
         }
     };
 

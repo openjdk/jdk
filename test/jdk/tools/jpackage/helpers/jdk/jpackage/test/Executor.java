@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import java.util.regex.Pattern;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Functional.ThrowingSupplier;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 
 public final class Executor extends CommandArguments<Executor> {
 
@@ -53,7 +53,8 @@ public final class Executor extends CommandArguments<Executor> {
 
     public Executor() {
         saveOutputType = new HashSet<>(Set.of(SaveOutputType.NONE));
-        removePath = false;
+        removePathEnvVar = false;
+        winEnglishOutput = false;
     }
 
     public Executor setExecutable(String v) {
@@ -85,8 +86,17 @@ public final class Executor extends CommandArguments<Executor> {
         return setExecutable(v.getPath());
     }
 
-    public Executor setRemovePath(boolean value) {
-        removePath = value;
+    public Executor setRemovePathEnvVar(boolean value) {
+        removePathEnvVar = value;
+        return this;
+    }
+
+    public Executor setWinRunWithEnglishOutput(boolean value) {
+        if (!TKit.isWindows()) {
+            throw new UnsupportedOperationException(
+                    "setWinRunWithEnglishOutput is only valid on Windows platform");
+        }
+        winEnglishOutput = value;
         return this;
     }
 
@@ -207,6 +217,11 @@ public final class Executor extends CommandArguments<Executor> {
                     "Can't change directory when using tool provider");
         }
 
+        if (toolProvider != null && winEnglishOutput) {
+            throw new IllegalArgumentException(
+                    "Can't change locale when using tool provider");
+        }
+
         return ThrowingSupplier.toSupplier(() -> {
             if (toolProvider != null) {
                 return runToolProvider();
@@ -324,8 +339,17 @@ public final class Executor extends CommandArguments<Executor> {
         return executable.toAbsolutePath();
     }
 
+    private List<String> prefixCommandLineArgs() {
+        if (winEnglishOutput) {
+            return List.of("cmd.exe", "/c", "chcp", "437", ">nul", "2>&1", "&&");
+        } else {
+            return List.of();
+        }
+    }
+
     private Result runExecutable() throws IOException, InterruptedException {
         List<String> command = new ArrayList<>();
+        command.addAll(prefixCommandLineArgs());
         command.add(executablePath().toString());
         command.addAll(args);
         ProcessBuilder builder = new ProcessBuilder(command);
@@ -348,7 +372,7 @@ public final class Executor extends CommandArguments<Executor> {
             builder.directory(directory.toFile());
             sb.append(String.format("; in directory [%s]", directory));
         }
-        if (removePath) {
+        if (removePathEnvVar) {
             // run this with cleared Path in Environment
             TKit.trace("Clearing PATH in environment");
             builder.environment().remove("PATH");
@@ -457,15 +481,17 @@ public final class Executor extends CommandArguments<Executor> {
             exec = executablePath().toString();
         }
 
-        return String.format(format, printCommandLine(exec, args),
-                args.size() + 1);
+        var cmdline = Stream.of(prefixCommandLineArgs(), List.of(exec), args).flatMap(
+                List::stream).toList();
+
+        return String.format(format, printCommandLine(cmdline), cmdline.size());
     }
 
-    private static String printCommandLine(String executable, List<String> args) {
+    private static String printCommandLine(List<String> cmdline) {
         // Want command line printed in a way it can be easily copy/pasted
-        // to be executed manally
+        // to be executed manually
         Pattern regex = Pattern.compile("\\s");
-        return Stream.concat(Stream.of(executable), args.stream()).map(
+        return cmdline.stream().map(
                 v -> (v.isEmpty() || regex.matcher(v).find()) ? "\"" + v + "\"" : v).collect(
                         Collectors.joining(" "));
     }
@@ -478,7 +504,8 @@ public final class Executor extends CommandArguments<Executor> {
     private Path executable;
     private Set<SaveOutputType> saveOutputType;
     private Path directory;
-    private boolean removePath;
+    private boolean removePathEnvVar;
+    private boolean winEnglishOutput;
     private String winTmpDir = null;
 
     private static enum SaveOutputType {
