@@ -1472,16 +1472,11 @@ public:
 
   public:
 
-  void ldr_patchable(Register dest, const Address &const_addr, bool fits_in_ldr_range = false) {
-    if (fits_in_ldr_range) {
-      intptr_t offset = pc() - const_addr.target();
-      assert(intptr_t(-1 * M) <= offset && offset < intptr_t(M), "pointer does not fit into pc-relative ldr range");
-      ldr(dest, const_addr);
-    } else {
-      uint64_t offset;
-      adrp(dest, const_addr, offset);
-      ldr(dest, Address(dest, offset));
-    }
+  void ldr_patchable(Register dest, const Address &const_addr) {
+    // Using adrp+ldr for distant addresses (a single PC-relative ldr has a ±1MB limit)
+    uint64_t offset;
+    adrp(dest, const_addr, offset);
+    ldr(dest, Address(dest, offset));
   }
 
   address read_polling_page(Register r, relocInfo::relocType rtype);
