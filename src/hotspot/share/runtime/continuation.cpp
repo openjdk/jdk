@@ -160,6 +160,13 @@ freeze_result Continuation::try_preempt(JavaThread* target, oop continuation) {
   freeze_result res = CAST_TO_FN_PTR(FreezeContFnT, freeze_preempt_entry())(target, target->last_Java_sp());
   log_trace(continuations, preempt)("try_preempt: %d", res);
   JVMTI_ONLY(jubm.set_result(res);)
+
+  if (target->has_pending_exception()) {
+    assert(res == freeze_exception, "");
+    // We don't want to throw exceptions, especially when returning
+    // from monitorenter since the compiler does not expect one.
+    target->clear_pending_exception();
+  }
   return res;
 }
 
