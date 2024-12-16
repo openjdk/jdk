@@ -574,10 +574,10 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
                 // paper width and height
                 dims[i*6] = size->width;
                 dims[(i*6)+1] = size->length;
-                // paper printable area
+                // paper printable area. x and y coordinates of the lower left corner, width and height
                 dims[(i*6)+2] = size->left;
-                dims[(i*6)+3] = size->top;
-                dims[(i*6)+4] = size->right;
+                dims[(i*6)+3] = size->top - size->bottom;
+                dims[(i*6)+4] = size->right - size->left;
                 dims[(i*6)+5] = size->bottom;
             }
         }

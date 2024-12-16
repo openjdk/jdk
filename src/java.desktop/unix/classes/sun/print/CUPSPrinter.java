@@ -236,9 +236,9 @@ public class CUPSPrinter  {
             length = (float)(pageSizes[i*6+1]/PRINTER_DPI);
             // media printable area
             x = (float)(pageSizes[i*6+2]/PRINTER_DPI);
+            h = (float)(pageSizes[i*6+3]/PRINTER_DPI);
+            w = (float)(pageSizes[i*6+4]/PRINTER_DPI);
             y = (float)(pageSizes[i*6+5]/PRINTER_DPI);
-            w = (float)(pageSizes[i*6+4]/PRINTER_DPI) - x;
-            h = (float)(pageSizes[i*6+3]/PRINTER_DPI) - y;
 
             msn = CustomMediaSizeName.create(media[i*2], media[i*2+1],
                                              width, length);
