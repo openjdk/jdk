@@ -1133,15 +1133,15 @@ void os::print_jvmti_agent_info(outputStream* st) {
   while (it.has_next()) {
     const JvmtiAgent* agent = it.next();
     if (agent != nullptr) {
-      const char* dyninfo = agent->is_dynamic() ? "dynamic" : "";
-      const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib" : "";
+      const char* dyninfo = agent->is_dynamic() ? "dynamic " : "";
+      const char* instrumentinfo = agent->is_instrument_lib() ? "instrumentlib " : "";
       const char* loadinfo = agent->is_loaded() ? "loaded" : "not loaded";
       const char* initinfo = agent->is_initialized() ? "initialized" : "not initialized";
       const char* optionsinfo = agent->options();
       const char* pathinfo = agent->os_lib_path();
       if (optionsinfo == nullptr) optionsinfo = "none";
       if (pathinfo == nullptr) pathinfo = "none";
-      st->print_cr("%s path:%s, %s, %s %s %s options:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
+      st->print_cr("%s path:%s, %s, %s, %s%soptions:%s", agent->name(), pathinfo, loadinfo, initinfo, dyninfo, instrumentinfo, optionsinfo);
     }
   }
 #endif
