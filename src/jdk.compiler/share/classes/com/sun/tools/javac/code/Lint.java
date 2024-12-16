@@ -28,6 +28,7 @@ package com.sun.tools.javac.code;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.sun.tools.javac.code.Symbol.*;
@@ -362,8 +363,26 @@ public class Lint
             map.put(option, this);
         }
 
+        /**
+         * Get the {@link LintCategory} having the given command line option, if any.
+         *
+         * @param option lint category option string
+         * @return corresponding {@link LintCategory}, or null if none
+         */
         public static LintCategory get(String option) {
             return map.get(option);
+        }
+
+        /**
+         * Get the {@link LintCategory} having the given command line option.
+         *
+         * @param option lint category option string
+         * @return corresponding {@link LintCategory}
+         * @throws IllegalArgumentException if no such lint category exists
+         */
+        public static LintCategory forOption(String option) {
+            return Optional.ofNullable(get(option))
+              .orElseThrow(() -> new IllegalArgumentException(option));
         }
 
         public final String option;
