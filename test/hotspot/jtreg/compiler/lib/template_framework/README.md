@@ -43,13 +43,40 @@ The [TestClassInstantiator](./TestClassInstantiator.java) is a convenient facili
 TODO example with IR framework???
 
 ## Use case: Regression Fest
-Hand-written regression tests are very time consuming, and often fewere tests are written than desired due to time constraints of the developer. With Templates, the developer can simply take the reduced regression test, and turn some constants into Template holes that can then be replaced by random constants, or other interesting code shapes that may trigger special cases of the bug or feature under test.
+Hand-written regression tests are very time consuming, and often fewere tests are written than desired due to time constraints of the developer. With Templates, the developer can simply take the reduced regression test, and turn some constants into Template holes that can then be replaced by random constants, or other interesting code shapes that may trigger special cases of the bug or feature under test. The standard  [CodeGeneratorLibrary](./CodeGeneratorLibrary.java) can be used for recursive CodeGenerator instantiations, for random constant generation, random variable sampling, and inserting specific or random intersting code shapes.
 
 ## Use case: Extensive feature testing (targetted Fuzzer)
-TODO
+When working on a new feature, or working on a bigger bug, it may be helpful to generate tests for a vast set of parameters, code shapes, operators, class hierarchies, types, constant values, etc. The difference to a simple regression test is simply in the complexity in combinations of templates, parameters and recursive CodeGenerator instantiations. One might want to extend the `CodeGeneratorLibrary` with more options, or implement custom `ProgrammaticCodeGenerators` (see below) to unlock more powerful features.
 
 ## Use case: General purpose Template based Fuzzer.
 TODO
 
 ## The Standard CodeGeneratorLibrary
 TODO: list all CodeGenerators
+
+## Custom CodeGenerator Library
+The standard library can be extended with more functionality. Here a simple example:
+
+    // Create a set of CodeGenerators (e.g. Templates, ProgrammaticCodeGenerators, SelectorCodeGenerators):
+    HashSet<CodeGenerator> set = new HashSet<CodeGenerator>();
+
+    set.add(new Template("my_template_1", ...));
+    set.add(new Template("my_template_2", ...));
+    ...
+
+    // Create an extension library using the set of just defined generators to extend the standard
+    // library.
+    CodeGeneratorLibrary library = new CodeGeneratorLibrary(CodeGeneratorLibrary.standard(), set);
+
+    // This library can now be passed to a TestClassInstantiator, which then has access to the
+    // extended library.
+
+Please refer to the example [TestCustomLibraryForClassFuzzing](../../../testlibrary_tests/template_framework/examples/TestCustomLibraryForClassFuzzing.java).
+
+## Implementing Custom ProgrammaticCodeGenerators
+It is good practice to use Templates where ever possible. But in some cases, it is required to implement more powerful functionality, that can query some custom state during the code generation. For this, one can use the [ProgrammaticCodeGenerator](./ProgrammaticCodeGenerator.java), which allows the user to specify a lambda function that is called during instantiation and has direct access to the internals of the Template Framework, and can generate code or make recursive CodeGenerator instantiations.
+
+Please refer to the example [TestCustomLibraryForClassFuzzing](../../../testlibrary_tests/template_framework/examples/TestCustomLibraryForClassFuzzing.java) and the definition of standard library functions in [CodeGeneratorLibrary](./CodeGeneratorLibrary.java) for further examples.
+
+## Implementing Custom SelectorCodeGenerators
+TODO - first need a better example!
