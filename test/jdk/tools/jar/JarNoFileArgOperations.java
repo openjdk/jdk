@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
@@ -122,6 +123,44 @@ public class JarNoFileArgOperations {
             // verify the file content was extracted
             assertTrue(Files.exists(tmpDestDir.resolve(JAR_ENTRY_NAME)),
                     JAR_ENTRY_NAME + " wasn't extracted to " + tmpDestDir);
+        }
+    }
+
+    /*
+     * Launches "jar --update" and "jar -u" by streaming the JAR file content through
+     * the "jar" tool process' STDIN and expects that the command completes normally.
+     */
+    @Test
+    public void testUpdate() throws Exception {
+        for (String opt : new String[]{"-u", "--update"}) {
+            // the updated JAR will be written out to this file
+            final Path destUpdatedJar = Files.createTempFile(SCRATCH_DIR, "8345506", ".jar");
+            // an arbitrary file that will be added to the JAR file as
+            // part of the update operation
+            final Path fileToAdd = Files.createTempFile(SCRATCH_DIR, "8345506", ".txt");
+            final String expectedNewEntry = fileToAdd.getFileName().toString();
+            final ProcessBuilder pb = new ProcessBuilder()
+                    .command(JAR_TOOL.toString(), opt, expectedNewEntry)
+                    // stream the JAR file content to the jar command through the process' STDIN
+                    .redirectInput(SIMPLE_JAR.toFile())
+                    // redirect the updated JAR to a file so that its contents can be verified
+                    // later
+                    .redirectOutput(destUpdatedJar.toFile());
+            final OutputAnalyzer oa = ProcessTools.executeProcess(pb);
+            oa.shouldHaveExitValue(0);
+            System.out.println("updated JAR file at " + destUpdatedJar.toAbsolutePath());
+            // verify, by listing the updated JAR file contents,
+            // that the JAR file has been updated to include the new file
+            try (final JarFile jar = new JarFile(destUpdatedJar.toFile())) {
+                jar.stream()
+                        .map(ZipEntry::getName)
+                        .filter((name) -> name.equals(expectedNewEntry))
+                        .findFirst()
+                        .orElseThrow(
+                                () -> new AssertionError("missing entry " + expectedNewEntry
+                                        + " in updated JAR file " + destUpdatedJar)
+                        );
+            }
         }
     }
 }
