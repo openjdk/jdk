@@ -77,8 +77,6 @@ import java.util.stream.Collectors;
  * to {@link CodeGenerator}s that wrap this functionality, such as
  * {@code load(type=type_name)} or {@code store(type=type_name)}.
  * <p>
- * TODO maybe rename the variable sampling methods???
- * <p>
  * One can specify the beginning and end of class bodies and method bodies with
  * {@code #open(class)},
  * {@code #close(class)},

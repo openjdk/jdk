@@ -29,12 +29,12 @@ import java.util.List;
 import java.util.HashMap;
 
 /**
- * The {@code TestClassInstantiator} is a utility class, which generates a class, and allows instantiating
- * multiple {@code Template}s, for example in the static block, the main method, or further below in the
+ * The {@link TestClassInstantiator} is a utility class, which generates a class, and allows instantiating
+ * multiple {@link Template}s, for example in the static block, the main method, or further below in the
  * test section.
  *
- * First create a {@code TestClassInstantiator}, then {@code add} one or multiple {@code Template}s to it
- * and finally {@code instantiate} the class which generates a {@code String} from all generated code.
+ * First create a {@link TestClassInstantiator}, then {@link add} one or multiple {@link Template}s to it
+ * and finally {@link instantiate} the class which generates a {@link String} from all generated code.
  */
 public final class TestClassInstantiator {
     private boolean isUsed = false;
@@ -44,7 +44,7 @@ public final class TestClassInstantiator {
     private final Scope mainScope;
 
     /**
-     * Create a new {@code TestClassInstantiator} for a specific class, using the {@code CodeGeneratorLibrary.standard}.
+     * Create a new {@link TestClassInstantiator} for a specific class, using the {@link CodeGeneratorLibrary#standard}.
      *
      * @param packageName Name of the package for the class.
      * @param className Name of the class.
@@ -54,7 +54,7 @@ public final class TestClassInstantiator {
     }
 
     /**
-     * Create a new {@code TestClassInstantiator} for a specific class, using the specified library.
+     * Create a new {@link TestClassInstantiator} for a specific class, using the specified library.
      *
      * @param packageName Name of the package for the class.
      * @param className Name of the class.
@@ -111,8 +111,8 @@ public final class TestClassInstantiator {
         }
 
         /**
-         * Add templates to the static, main and test block of the {@code TestClassInstantiator} class.
-         * One can selectively provide a {@code Template} if one is to be added, or {@code null} if not.
+         * Add templates to the static, main and test block of the {@link TestClassInstantiator} class.
+         * One can selectively provide a {@link Template} if one is to be added, or {@code null} if not.
          *
          * @param staticTemplate Template for static block, or {@code null} if not to be added.
          * @param mainTemplate Template for main block, or {@code null} if not to be added.
@@ -204,7 +204,7 @@ public final class TestClassInstantiator {
 
         /**
          * Add a list of values for a given parameter name, creating an instantiation for every value.
-         * Note: if multiple {@code where} specify a list, then the cross-product of all these parameter
+         * Note: if multiple {@link where} specify a list, then the cross-product of all these parameter
          *       sets is generated, and an instantiation is created for each.
          *
          * @param paramKey The name of the parameter.
@@ -220,7 +220,7 @@ public final class TestClassInstantiator {
         }
 
         /**
-         * Repeat every instantiation {@code repeatCount} times, which is useful to instantiate {@code Template}s
+         * Repeat every instantiation {@code repeatCount} times, which is useful to instantiate {@link Template}s
          * with random components multiple times.
          *
          * @param repeatCount Number of times every instantiation is repeated.
@@ -239,8 +239,8 @@ public final class TestClassInstantiator {
     }
 
     /**
-     * Add templates to the static, main and test block of the {@code TestClassInstantiator} class.
-     * One can selectively provide a {@code Template} if one is to be added, or {@code null} if not.
+     * Add templates to the static, main and test block of the {@link TestClassInstantiator} class.
+     * One can selectively provide a {@link Template} if one is to be added, or {@code null} if not.
      *
      * @param staticTemplate Template for static block, or {@code null} if not to be added.
      * @param mainTemplate Template for main block, or {@code null} if not to be added.
@@ -251,7 +251,7 @@ public final class TestClassInstantiator {
     }
 
     /**
-     * Create an {@code Instantiator}, which already has a first parameter key-value pair.
+     * Create an {@link Instantiator}, which already has a first parameter key-value pair.
      *
      * @param paramKey The name of the parameter.
      * @param paramValue The value to be set.
@@ -262,8 +262,8 @@ public final class TestClassInstantiator {
     }
 
     /**
-     * Create an {@code Instantiator}, which already has a list of values for a parameter name.
-     * Note: if multiple {@code where} specify a list, then the cross-product of all these parameter
+     * Create an {@link Instantiator}, which already has a list of values for a parameter name.
+     * Note: if multiple {@link where} specify a list, then the cross-product of all these parameter
      *       sets is generated, and an instantiation is created for each.
      *
      * @param paramKey The name of the parameter.
@@ -275,7 +275,7 @@ public final class TestClassInstantiator {
     }
 
     /**
-     * Repeat every instantiation {@code repeatCount} times, which is useful to instantiate {@code Template}s
+     * Repeat every instantiation {@code repeatCount} times, which is useful to instantiate {@link Template}s
      * with random components multiple times.
      *
      * @param repeatCount Number of times every instantiation is repeated.
@@ -288,7 +288,7 @@ public final class TestClassInstantiator {
     /**
      * Instantiate the class with all the added templates, and return all the generated code in a String.
      *
-     * @return The {@code String} of generated code.
+     * @return The {@link String} of generated code.
      */
     public String instantiate() {
         if (isUsed) {
