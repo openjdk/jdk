@@ -42,6 +42,8 @@ package compiler.lib.template_framework;
  *
  * General refactoring / simplification?
  *
+ * Documentation: more link!
+ *
  */
 public final class TemplateFramework {
 

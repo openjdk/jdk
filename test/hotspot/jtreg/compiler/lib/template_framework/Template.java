@@ -68,25 +68,57 @@ import java.util.stream.Collectors;
  * value for the parameter "my_param" is passed, and for "#my_replacement" the
  * replacement string for the earlier instantiation with the name "my_replacement"
  * is passed.
+ * <p>
+ * Variables from the {@link Template} can be passed to the recursive instantiations,
+ * by specifying them in a comma separated list:
+ * {@code #{:generator_name:var1,var2,var3}}, where the renamed variables "var1",
+ * "var2" and "var3" are passed to the recursive instantiation scope, where they
+ * can then be sampled via {@link Scope#sampleVariable}, or with recursive calls
+ * to {@link CodeGenerator}s that wrap this functionality, such as
+ * {@code load(type=type_name)} or {@code store(type=type_name)}.
+ * <p>
+ * TODO maybe rename the variable sampling methods???
+ * <p>
+ * One can specify the beginning and end of class bodies and method bodies with
+ * {@code #open(class)},
+ * {@code #close(class)},
+ * {@code #open(method)}, and
+ * {@code #close(method)}.
+ * This is useful for recursive {@link CodeGenerator}s which may want to add
+ * additional class fields or method variables to the respecitive scopes.
  */
 public final class Template extends CodeGenerator {
+
+    /**
+     * The default {@link fuelCost} for a {@link Template}. Fuel cost are used to guide
+     * the choice of recursive {@link CodeGenerator} instantiation, and ensure eventual
+     * termination at a recursive depth where the remaining fuel reaches zero.
+     */
     public static final int DEFAULT_FUEL_COST = 10;
-    // Match local variables:
-    //   $name
+
+    /**
+     * Match local variables:
+     *   $name
+     */
     private static final String VARIABLE_PATTERN = "(\\$\\w+)";
 
-    // Match local variable with type declaration:
-    //   ${name:type}
+    /**
+     * Match local variable with type declaration:
+     *   ${name:type}
+     */
     private static final String VARIABLE_WITH_TYPE_CHARS = "\\w:";
     private static final String VARIABLE_WITH_TYPE_PATTERN = "(\\$\\{[" + VARIABLE_WITH_TYPE_CHARS + "]+\\})";
 
-    // Match replacements:
-    //   #{name}
-    //   #{name:generator}
-    //   #{name:generator(arg1=v1,arg2=v2)}
-    //   #{name:generator(arg1=$var,arg2=v2)}
-    //   #{name:generator(arg1=#param,arg2=v2)}
-    //   #{:generator}
+    /**
+     * Match replacements:
+     *   #{name}
+     *   #{name:generator}
+     *   #{name:generator(arg1=v1,arg2=v2)}
+     *   #{name:generator(arg1=$var,arg2=v2)}
+     *   #{name:generator(arg1=#param,arg2=v2)}
+     *   #{:generator}
+     *   #{:generator:var1,var2,var3}
+     */
     private static final String KEY_VALUE_PATTERN = "\\w+=[\\$#]?[\\w\\|]*";
     private static final String KEY_VALUE_LIST_PATTERN = "(?:" + // open non-capturing group 1
                                                              KEY_VALUE_PATTERN +
@@ -122,17 +154,23 @@ public final class Template extends CodeGenerator {
                                                           "\\}" +
                                                       ")";
 
-    // Match newline + indentation:
+    /**
+     *Match newline + indentation:
+     */
     private static final String NEWLINE_AND_INDENTATION_PATTERN = "(\\n *)";
 
-    // Scopes:
-    //   #open(class)
-    //   #close(class)
-    //   #open(method)
-    //   #close(method)
+    /**
+     * Scopes:
+     *   #open(class)
+     *   #close(class)
+     *   #open(method)
+     *   #close(method)
+     */
     private static final String SCOPE_PATTERN = "(#\\w+\\(\\w+\\))";
 
-    // Match either variable or replacement or newline or scopes.
+    /**
+     * Match either variable or replacement or newline or scopes.
+     */
     private static final String ALL_PATTERNS = "" +
                                                VARIABLE_PATTERN +
                                                "|" +
@@ -146,13 +184,10 @@ public final class Template extends CodeGenerator {
                                                "";
     private static final Pattern PATTERNS = Pattern.compile(ALL_PATTERNS);
 
-    private final String templateName;
     private final String templateString;
-
 
     public Template(String templateName, String templateString, int fuelCost) {
         super(templateName, fuelCost);
-        this.templateName = templateName;
         this.templateString = templateString;
     }
 
