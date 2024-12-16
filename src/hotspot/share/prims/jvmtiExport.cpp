@@ -1969,7 +1969,10 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
         // remove the frame's entry
         {
           MutexLocker mu(JvmtiThreadState_lock);
-          ets->clear_frame_pop(cur_frame_number);
+          // Need to recheck the condition as the JVMTI ClearAllFramePops can do its work at a safepoint.
+          if (ets->is_frame_pop(cur_frame_number)) {
+            ets->clear_frame_pop(cur_frame_number);
+          }
         }
       }
     }
