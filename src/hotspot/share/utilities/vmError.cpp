@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2017, 2024 SAP SE. All rights reserved.
  * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -133,7 +133,7 @@ static const char* env_list[] = {
   // defined on Windows
   "OS", "PROCESSOR_IDENTIFIER", "_ALT_JAVA_HOME_DIR", "TMP", "TEMP",
 
-  (const char *)0
+  nullptr                       // End marker.
 };
 
 // A simple parser for -XX:OnError, usage:

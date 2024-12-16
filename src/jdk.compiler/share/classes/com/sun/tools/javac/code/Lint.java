@@ -33,7 +33,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
+import com.sun.tools.javac.util.JCDiagnostic.LintWarning;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Pair;
 
@@ -359,7 +362,7 @@ public class Lint
             map.put(option, this);
         }
 
-        static LintCategory get(String option) {
+        public static LintCategory get(String option) {
             return map.get(option);
         }
 
@@ -383,6 +386,15 @@ public class Lint
      */
     public boolean isSuppressed(LintCategory lc) {
         return suppressedValues.contains(lc);
+    }
+
+    /**
+     * Helper method. Log a lint warning if its lint category is enabled.
+     */
+    public void logIfEnabled(Log log, DiagnosticPosition pos, LintWarning warning) {
+        if (isEnabled(warning.getLintCategory())) {
+            log.warning(pos, warning);
+        }
     }
 
     protected static class AugmentVisitor implements Attribute.Visitor {
