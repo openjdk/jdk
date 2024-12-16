@@ -1163,7 +1163,7 @@ void frame::oops_do_internal(OopClosure* f, NMethodClosure* cf,
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {
-    char *t = nullptr;
+    volatile char *t = nullptr; // Use volatile modifier to make clang avoid 'dead code' elimination
     *t = 'c';
   }
 #endif
