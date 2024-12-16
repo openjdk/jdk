@@ -30,7 +30,12 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * TODO desc
+ * The {@link SelectorCodeGenerator} randomly selects one {@link CodeGenerator} from
+ * a list, according to the weights assigned to each {@link CodeGenerator}. However,
+ * we first filter the list for {link CodeGenerator}s that have low enough
+ * {@link CodeGenerator#fuelCost} for the remaining {@link Scope#fuel}, and if
+ * none of them have sufficient fuel, the we take the generator with the
+ * {@link defaultGeneratorName}.
  */
 public final class SelectorCodeGenerator extends CodeGenerator {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -38,12 +43,27 @@ public final class SelectorCodeGenerator extends CodeGenerator {
     private HashMap<String,Float> choiceWeights;
     private String defaultGeneratorName;
 
+    /**
+     * Create a new {@link SelectorCodeGenerator}.
+     *
+     * @param selectorName Name of the selector, can be used for lookup in the
+     *                     {@link CodeGeneratorLibrary} if the {@link Template}
+     *                     is added to a library.
+     * @param defaultGeneratorName Name of the default generator if none of the generators
+     *                             in the list have low enough fuel cost.
+     */
     public SelectorCodeGenerator(String selectorName, String defaultGeneratorName) {
         super(selectorName, 0);
         this.defaultGeneratorName = defaultGeneratorName;
         this.choiceWeights = new HashMap<String,Float>();
     }
 
+    /**
+     * Add another {@link CodeGenerator} name to the list.
+     *
+     * @param name Name of the additional {@link CodeGenerator}.
+     * @param weight Weight of the generator, used in random sampling.
+     */
     public void add(String name, float weight) {
         if (!(0.1 < weight && weight < 10_000)) {
             throw new TemplateFrameworkException("Unreasonable weight " + weight + " for " + name);
@@ -54,6 +74,9 @@ public final class SelectorCodeGenerator extends CodeGenerator {
         choiceWeights.put(name, weight);
     }
 
+    /**
+     * Randomly sample one of the generators from the list, according to filter and weight.
+     */
     private String choose(Scope scope) {
         // Total weight of allowed choices
         double total = 0;
@@ -66,6 +89,7 @@ public final class SelectorCodeGenerator extends CodeGenerator {
         }
 
         if (total == 0) {
+            // No generator in the list had low enough cost.
             return defaultGeneratorName;
         }
 
@@ -86,6 +110,14 @@ public final class SelectorCodeGenerator extends CodeGenerator {
         throw new TemplateFrameworkException("Failed to select total=" + total + ", r=" + r);
     }
 
+    /**
+     * Instantiate the {@link SelectorCodeGenerator}, which randomly samples one of the generators
+     * from the list according to remaining fuel cost and weights.
+     *
+     * @param scope Scope into which the code is generated.
+     * @param parameters Provides the parameters for the instantiation.
+     */
+    @Override
     public void instantiate(Scope scope, Parameters parameters) {
         scope.setDebugContext(name, parameters);
         // Sample a generator.

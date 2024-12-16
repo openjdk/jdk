@@ -397,7 +397,7 @@ public final class Template extends CodeGenerator {
      * Instantiate the {@link Template}.
      *
      * @param scope Scope into which the code is generated.
-     * @param parameters Provides the parameters for the instantiation, as well as a unique ID$
+     * @param parameters Provides the parameters for the instantiation, as well as a unique ID
      *                   for identifier name generation (e.g. variable of method names).
      */
     @Override
