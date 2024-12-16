@@ -211,7 +211,7 @@ public class AllModulePath {
 
     /*
      * --add-modules ALL-MODULE-PATH with an existing module path and module
-     * limits applied. This case test a module limit on a dependency, jdk.jfr,
+     * limits applied. This case tests a module limit on a dependency, jdk.jfr,
      * and *doesn't* list the module explicitly in --add-modules. Therefore,
      * expects for the module - on the module path - to be not be present.
      */
@@ -231,7 +231,7 @@ public class AllModulePath {
         JlinkOutput allOut = createImage(targetPath, allArgs, true /* success */);
         assertTrue(allOut.stdout.isEmpty());
         assertTrue(allOut.stderr.isEmpty());
-        List<String> expected = List.of("java.base", "jdk.jfr");
+        Set<String> expected = Set.of("java.base", "jdk.jfr");
         verifyListModules(targetPath, expected);
     }
 
@@ -255,15 +255,14 @@ public class AllModulePath {
     /*
      * Verify linked modules using java --list-modules
      */
-    private void verifyListModules(Path targetPath, List<String> expected) throws Exception {
+    private void verifyListModules(Path targetPath, Set<String> expected) throws Exception {
         Path java = findTool(targetPath, "java");
         List<String> listMods = List.of(java.toString(), "--list-modules");
         OutputAnalyzer out = ProcessTools.executeCommand(listMods.toArray(new String[] {}))
                                          .shouldHaveExitValue(0);
-        List<String> actual = out.asLines().stream()
+        Set<String> actual = out.asLines().stream()
                                  .map(s -> { return s.split("@")[0]; })
-                                 .sorted()
-                                 .toList();
+                                 .collect(Collectors.toSet());
         assertEquals(actual, expected);
     }
 
@@ -286,9 +285,9 @@ public class AllModulePath {
         ByteArrayOutputStream berrOs = new ByteArrayOutputStream();
         PrintWriter err = new PrintWriter(berrOs);
         int rc = JLINK_TOOL.run(out, err, args.toArray(String[]::new));
-        assertEquals(rc == 0, success);
         String stdOut = new String(baos.toByteArray());
         String stdErr = new String(berrOs.toByteArray());
+        assertEquals(rc == 0, success, String.format("Output was: %nstdout: %s%nstderr: %s%n", stdOut, stdErr));
         return new JlinkOutput(stdErr, stdOut);
     }
 

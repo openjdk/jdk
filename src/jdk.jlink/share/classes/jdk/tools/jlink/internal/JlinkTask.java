@@ -438,9 +438,9 @@ public class JlinkTask {
                 // not include JDK modules from the default module path or the
                 // run-time image. Only do this if no --limit-modules has been
                 // specified to begin with.
-                ModuleFinder mf = newLimitedFinder(finder,
-                                                   options.limitMods.isEmpty() ? initialRoots : options.limitMods,
-                                                   Set.of());
+                ModuleFinder mf = limitFinder(finder,
+                                              options.limitMods.isEmpty() ? initialRoots : options.limitMods,
+                                              Set.of());
                 mf.findAll()
                   .stream()
                   .map(ModuleReference::descriptor)
@@ -450,7 +450,7 @@ public class JlinkTask {
                 roots.add(mod);
             }
         }
-        finder = newLimitedFinder(finder, options.limitMods, roots);
+        finder = limitFinder(finder, options.limitMods, roots);
 
         // --keep-packaged-modules doesn't make sense as we are not linking
         // from packaged modules to begin with.
@@ -517,7 +517,7 @@ public class JlinkTask {
      * specified in {@code limitMods} plus other modules specified in the
      * {@code roots} set.
      */
-    public static ModuleFinder newLimitedFinder(ModuleFinder finder,
+    public static ModuleFinder limitFinder(ModuleFinder finder,
                                            Set<String> limitMods,
                                            Set<String> roots) {
         // if limitMods is specified then limit the universe
