@@ -51,9 +51,4 @@ class BaseScope extends Scope {
     public String toString() {
         return stream.toString();
     }
-
-    @Override
-    public void printName() {
-        System.out.println("BaseScope:");
-    }
 }

@@ -31,15 +31,33 @@ import java.util.Random;
 import jdk.test.lib.Utils;
 
 /**
- * TODO public?
+ * The {@link Scope} defines the the relative location within a recursive {@link CodeGenerator}
+ * instantiation, and provides access to the available variables, and the output {@link CodeStream}
+ * for the current scope of code generation.
  */
 public class Scope {
     private static final Random RANDOM = Utils.getRandomInstance();
 
+    /**
+     * Parent {@link Scope}, which transitively gives access to all outer scopes.
+     */
     public final Scope parent;
+
+    /**
+     * Remaining fuel in the current scope for recursive {@link CodeGenerator} instantiations,
+     * used as a guide to limit the recursion depth.
+     */
     public final long fuel;
+
+    /**
+     * Output {@link CodeStream} into which all code of this scope and its nested scopes
+     * are generated into.
+     */
     public final CodeStream stream;
 
+    /**
+     * Helper class to keep track of the local variables defined inside the scope.
+     */
     private class VariableSet {
         public final VariableSet parent;
         public final HashMap<String,ArrayList<String>> variables;
@@ -62,6 +80,9 @@ public class Scope {
             return c;
         }
 
+        /**
+         * Randomly sample a variable from this scope or a parent scope, restricted to the specified type.
+         */
         public String sample(String type) {
             int c = count(type);
             if (c == 0) {
@@ -83,6 +104,9 @@ public class Scope {
             return locals.get(r);
         }
 
+        /**
+         * Add a variable of a specified type to the scope.
+         */
         public void add(String name, String type) {
             // Fetch list of variables - if non-existant create a new one.
             ArrayList<String> variablesWithType = variables.get(type);
@@ -119,6 +143,11 @@ public class Scope {
     public final VariableSet allVariables;
     public final VariableSet mutableVariables;
 
+    /**
+     * Helper record, providing debugging information for the scope, which can be printed when
+     * an error is encountered in the Template Framework, providing a "scope-trace" with helpful
+     * information for users of the framework.
+     */
     record DebugContext(String description, Parameters parameters) {
         public void print() {
             System.out.println("  " + description);
@@ -132,6 +161,12 @@ public class Scope {
 
     DebugContext debugContext;
 
+    /**
+     * Create a new {@link Scope}.
+     *
+     * @param parent Parent scope or null if the new scope is an outermost scope.
+     * @param fuel Remaining fuel for recursive {@link CodeGenerator} instantiations.
+     */
     public Scope(Scope parent, long fuel) {
         this.parent = parent;
         this.fuel = fuel;
@@ -141,6 +176,12 @@ public class Scope {
         this.mutableVariables = new VariableSet(this.parent != null ? this.parent.mutableVariables : null);
     }
 
+    /**
+     * Add debugging information to the scope, when using it in an instantiation.
+     *
+     * @param description Description, which contains information about how this scope is used.
+     * @param parameters The {@link Parameters} used in the instantiantion, or null if not relevant.
+     */
     public void setDebugContext(String description, Parameters parameters) {
         DebugContext newDebugContext = new DebugContext(description, parameters);
         if (this.debugContext != null) {
@@ -153,10 +194,17 @@ public class Scope {
         this.debugContext = newDebugContext;
     }
 
+    /**
+     * Access the {@link CodeGeneratorLibrary} associated with the {@link BaseScope}.
+     */
     public CodeGeneratorLibrary library() {
         return this.parent.library();
     }
 
+    /**
+     * Close the scope, together with its {@link CodeStream}, after which no more code can be generated
+     * into the scope.
+     */
     public void close() {
         if (this.debugContext == null) {
             print();
@@ -165,6 +213,13 @@ public class Scope {
         stream.close();
     }
 
+    /**
+     * Add a variable to the scope.
+     *
+     * @param name Name of the variable.
+     * @param type Type of the variable.
+     * @param mutable Indicates if the variable is to be mutated or used for read-only purposes.
+     */
     public void addVariable(String name, String type, boolean mutable) {
         allVariables.add(name, type);
         if (mutable) {
@@ -172,6 +227,11 @@ public class Scope {
         }
     }
 
+    /**
+     * Sample a random variable from the set of variables defined in the scope or outer scopes.
+     * @param type Type of the variable.
+     * @param mutable Indicates if the variable is to be mutated or used for read-only purposes.
+     */
     public String sampleVariable(String type, boolean mutable) {
         return mutable ? mutableVariables.sample(type) : allVariables.sample(type);
     }
@@ -227,8 +287,11 @@ public class Scope {
         return difference;
     }
 
-    public final void print() {
-        printName();
+    /**
+     * Printing the "scope-trace" for debbuging.
+     */
+    final void print() {
+        System.out.println(this.getClass().getSimpleName() + ":");
         if (debugContext != null) {
             debugContext.print();
         } else {
@@ -241,9 +304,5 @@ public class Scope {
         if (parent != null) {
             parent.print();
         }
-    }
-
-    public void printName() {
-        System.out.println("Scope:");
     }
 }
