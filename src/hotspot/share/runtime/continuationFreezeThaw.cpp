@@ -256,7 +256,9 @@ public:
   using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
   static freeze_result freeze(JavaThread* thread, intptr_t* const sp) {
-    return freeze_internal<SelfT, false>(thread, sp);
+    freeze_result res = freeze_internal<SelfT, false>(thread, sp);
+    JFR_ONLY(assert((res == freeze_ok) || (res == thread->last_freeze_fail_result()), "freeze failure not set"));
+    return res;
   }
 
   static freeze_result freeze_preempt(JavaThread* thread, intptr_t* const sp) {
@@ -1524,7 +1526,6 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size, int argsize_md)
   assert(chunk->flags() == 0, "");
   assert(chunk->is_gc_mode() == false, "");
   assert(chunk->lockstack_size() == 0, "");
-  assert(chunk->object_waiter() == nullptr, "");
 
   // fields are uninitialized
   chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
@@ -1723,6 +1724,9 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
     log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
     verify_continuation(cont.continuation());
     freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    if (!preempt) {
+      JFR_ONLY(current->set_last_freeze_fail_result(res);)
+    }
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
     // Avoid Thread.yield() loops without safepoint polls.
     if (SafepointMechanism::should_process(current) && !preempt) {
@@ -2214,11 +2218,10 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
 
   _preempted_case = chunk->preempted();
   if (_preempted_case) {
-    if (chunk->object_waiter() != nullptr) {
+    ObjectWaiter* waiter = java_lang_VirtualThread::objectWaiter(_thread->vthread());
+    if (waiter != nullptr) {
       // Mounted again after preemption. Resume the pending monitor operation,
       // which will be either a monitorenter or Object.wait() call.
-      assert(chunk->current_pending_monitor() != nullptr || chunk->current_waiting_monitor() != nullptr, "");
-      ObjectWaiter* waiter = chunk->object_waiter();
       ObjectMonitor* mon = waiter->monitor();
       preempt_kind = waiter->is_wait() ? Continuation::freeze_on_wait : Continuation::freeze_on_monitorenter;
 

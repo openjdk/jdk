@@ -40,7 +40,7 @@ import tests.Helper;
  *          jdk.jlink/jdk.tools.jimage
  * @build tests.* jdk.test.lib.process.OutputAnalyzer
  *        jdk.test.lib.process.ProcessTools
- * @run main/othervm -Xmx1g MultiHopTest
+ * @run main/othervm -Xmx1400m MultiHopTest
  */
 public class MultiHopTest extends AbstractLinkableRuntimeTest {
 

@@ -50,6 +50,7 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
+#include "opto/vectornode.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
@@ -712,14 +713,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(3);
   case vmIntrinsics::_VectorFromBitsCoerced:
     return inline_vector_frombits_coerced();
-  case vmIntrinsics::_VectorShuffleIota:
-    return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:
     return inline_vector_mask_operation();
-  case vmIntrinsics::_VectorShuffleToVector:
-    return inline_vector_shuffle_to_vector();
-  case vmIntrinsics::_VectorWrapShuffleIndexes:
-    return inline_vector_wrap_shuffle_indexes();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
   case vmIntrinsics::_VectorLoadMaskedOp:
@@ -3257,7 +3252,10 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   set_all_memory(input_memory_state);
   Node* input_io_state = i_o();
 
-  Node* excluded_mask = _gvn.intcon(32768);
+  // The most significant bit of the u2 is used to denote thread exclusion
+  Node* excluded_shift = _gvn.intcon(15);
+  Node* excluded_mask = _gvn.intcon(1 << 15);
+  // The epoch generation is the range [1-32767]
   Node* epoch_mask = _gvn.intcon(32767);
 
   // TLS
@@ -3411,7 +3409,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   record_for_igvn(vthread_compare_io);
   PhiNode* tid = new PhiNode(vthread_compare_rgn, TypeLong::LONG);
   record_for_igvn(tid);
-  PhiNode* exclusion = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
+  PhiNode* exclusion = new PhiNode(vthread_compare_rgn, TypeInt::CHAR);
   record_for_igvn(exclusion);
   PhiNode* pinVirtualThread = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
   record_for_igvn(pinVirtualThread);
@@ -3476,7 +3474,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   store_to_memory(tid_is_not_equal, event_writer_pin_field, _gvn.transform(pinVirtualThread), T_BOOLEAN, MemNode::unordered);
 
   // Store the exclusion state to the event writer.
-  store_to_memory(tid_is_not_equal, event_writer_excluded_field, _gvn.transform(exclusion), T_BOOLEAN, MemNode::unordered);
+  Node* excluded_bool = _gvn.transform(new URShiftINode(_gvn.transform(exclusion), excluded_shift));
+  store_to_memory(tid_is_not_equal, event_writer_excluded_field, excluded_bool, T_BOOLEAN, MemNode::unordered);
 
   // Store the tid to the event writer.
   store_to_memory(tid_is_not_equal, event_writer_tid_field, tid, T_LONG, MemNode::unordered);
@@ -3543,7 +3542,9 @@ void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   Node* input_memory_state = reset_memory();
   set_all_memory(input_memory_state);
 
-  Node* excluded_mask = _gvn.intcon(32768);
+  // The most significant bit of the u2 is used to denote thread exclusion
+  Node* excluded_mask = _gvn.intcon(1 << 15);
+  // The epoch generation is the range [1-32767]
   Node* epoch_mask = _gvn.intcon(32767);
 
   Node* const carrierThread = generate_current_thread(jt);
@@ -3676,10 +3677,10 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
   access_store_at(nullptr, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
-  // Change the lock_id of the JavaThread
+  // Change the _monitor_owner_id of the JavaThread
   Node* tid = load_field_from_object(arr, "tid", "J");
-  Node* thread_id_offset = basic_plus_adr(thread, in_bytes(JavaThread::lock_id_offset()));
-  Node* tid_memory = store_to_memory(control(), thread_id_offset, tid, T_LONG, MemNode::unordered, true);
+  Node* monitor_owner_id_offset = basic_plus_adr(thread, in_bytes(JavaThread::monitor_owner_id_offset()));
+  store_to_memory(control(), monitor_owner_id_offset, tid, T_LONG, MemNode::unordered, true);
 
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;

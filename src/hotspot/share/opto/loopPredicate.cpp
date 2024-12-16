@@ -283,62 +283,57 @@ IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredic
   return new_predicate_proj;
 }
 
-// Clones Assertion Predicates to both unswitched loops starting at 'old_predicate_proj' by following its control inputs.
-// It also rewires the control edges of data nodes with dependencies in the loop from the old predicates to the new
-// cloned predicates.
+// Clones Template Assertion Predicates to both unswitched loops starting at 'old_predicate_proj' by following its
+// control inputs. It also rewires the control edges of data nodes with dependencies in the loop from the old predicates
+// to the new  cloned predicates.
 void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
-                                                                   Deoptimization::DeoptReason reason,
                                                                    ParsePredicateSuccessProj* old_parse_predicate_proj,
-                                                                   ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
-                                                                   ParsePredicateSuccessProj* slow_loop_parse_predicate_proj) {
-  assert(fast_loop_parse_predicate_proj->in(0)->is_ParsePredicate() &&
-         slow_loop_parse_predicate_proj->in(0)->is_ParsePredicate(), "sanity check");
-  // Only need to clone range check predicates as those can be changed and duplicated by inserting pre/main/post loops
-  // and doing loop unrolling. Push the original predicates on a list to later process them in reverse order to keep the
+                                                                   ParsePredicateNode* true_path_loop_parse_predicate,
+                                                                   ParsePredicateNode* false_path_loop_parse_predicate) {
+  // Push the original Template Assertion Predicates on a list to later process them in reverse order to keep the
   // original predicate order.
   Unique_Node_List list;
-  get_assertion_predicates(old_parse_predicate_proj, list);
+  get_template_assertion_predicates(old_parse_predicate_proj, list);
 
   Node_List to_process;
-  // Process in reverse order such that 'create_new_if_for_predicate' can be used in
-  // 'clone_assertion_predicate_for_unswitched_loops' and the original order is maintained.
   for (int i = list.size() - 1; i >= 0; i--) {
-    Node* predicate = list.at(i);
-    assert(predicate->in(0)->is_If(), "must be If node");
-    IfNode* iff = predicate->in(0)->as_If();
-    assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
-    IfProjNode* predicate_proj = predicate->as_IfProj();
+    IfTrueNode* template_assertion_predicate_success_proj = list.at(i)->as_IfTrue();
+    assert(template_assertion_predicate_success_proj->in(0)->is_If(), "must be If node");
 
-    IfProjNode* fast_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, fast_loop_parse_predicate_proj);
-    assert(assertion_predicate_has_loop_opaque_node(fast_proj->in(0)->as_If()), "must find Assertion Predicate for fast loop");
-    IfProjNode* slow_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, slow_loop_parse_predicate_proj);
-    assert(assertion_predicate_has_loop_opaque_node(slow_proj->in(0)->as_If()), "must find Assertion Predicate for slow loop");
+    IfTrueNode* true_path_loop_proj =
+        clone_assertion_predicate_for_unswitched_loops(template_assertion_predicate_success_proj,
+                                                       true_path_loop_parse_predicate);
+    IfTrueNode* false_path_loop_proj =
+        clone_assertion_predicate_for_unswitched_loops(template_assertion_predicate_success_proj,
+                                                       false_path_loop_parse_predicate);
 
     // Update control dependent data nodes.
-    for (DUIterator j = predicate->outs(); predicate->has_out(j); j++) {
-      Node* fast_node = predicate->out(j);
-      if (loop->is_member(get_loop(ctrl_or_self(fast_node)))) {
-        assert(fast_node->in(0) == predicate, "only control edge");
-        Node* slow_node = old_new[fast_node->_idx];
-        assert(slow_node->in(0) == predicate, "only control edge");
-        _igvn.replace_input_of(fast_node, 0, fast_proj);
-        to_process.push(slow_node);
+    for (DUIterator j = template_assertion_predicate_success_proj->outs();
+         template_assertion_predicate_success_proj->has_out(j);
+         j++) {
+      Node* true_path_loop_node = template_assertion_predicate_success_proj->out(j);
+      if (loop->is_member(get_loop(ctrl_or_self(true_path_loop_node)))) {
+        assert(true_path_loop_node->in(0) == template_assertion_predicate_success_proj, "only control edge");
+        Node* false_path_loop_node = old_new[true_path_loop_node->_idx];
+        assert(false_path_loop_node->in(0) == template_assertion_predicate_success_proj, "only control edge");
+        _igvn.replace_input_of(true_path_loop_node, 0, true_path_loop_proj);
+        to_process.push(false_path_loop_node);
         --j;
       }
     }
-    // Have to delay updates to the slow loop so uses of predicate are not modified while we iterate on them.
+    // Have to delay updates to the false path loop so uses of predicate are not modified while we iterate on them.
     while (to_process.size() > 0) {
       Node* slow_node = to_process.pop();
-      _igvn.replace_input_of(slow_node, 0, slow_proj);
+      _igvn.replace_input_of(slow_node, 0, false_path_loop_proj);
     }
   }
 }
 
-// Put all Assertion Predicate projections on a list, starting at 'predicate' and going up in the tree. If 'get_opaque'
+// Put all Template Assertion Predicate projections on a list, starting at 'predicate' and going up in the tree. If 'get_opaque'
 // is set, then the OpaqueTemplateAssertionPredicateNode nodes of the Assertion Predicates are put on the list instead
 // of the projections.
-void PhaseIdealLoop::get_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list,
-                                              const bool get_opaque) {
+void PhaseIdealLoop::get_template_assertion_predicates(ParsePredicateSuccessProj* parse_predicate_proj, Unique_Node_List& list,
+                                                       const bool get_opaque) {
   Deoptimization::DeoptReason deopt_reason = parse_predicate_proj->in(0)->as_ParsePredicate()->deopt_reason();
   PredicateBlockIterator predicate_iterator(parse_predicate_proj, deopt_reason);
   TemplateAssertionPredicateCollector template_assertion_predicate_collector(list, get_opaque);
@@ -348,39 +343,36 @@ void PhaseIdealLoop::get_assertion_predicates(ParsePredicateSuccessProj* parse_p
 // Clone an Assertion Predicate for an unswitched loop. OpaqueLoopInit and OpaqueLoopStride nodes are cloned and uncommon
 // traps are kept for the predicate (a Halt node is used later when creating pre/main/post loops and copying this cloned
 // predicate again).
-IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate,
-                                                                           IfProjNode* predicate,
-                                                                           Deoptimization::DeoptReason reason,
-                                                                           ParsePredicateSuccessProj* parse_predicate_proj) {
-  TemplateAssertionExpression template_assertion_expression(template_assertion_predicate->in(1)->as_OpaqueTemplateAssertionPredicate());
-  OpaqueTemplateAssertionPredicateNode* cloned_opaque_node = template_assertion_expression.clone(parse_predicate_proj->in(0)->in(0), this);
-  IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason,
-                                                    template_assertion_predicate->Opcode(), false);
-  _igvn.replace_input_of(if_proj->in(0), 1, cloned_opaque_node);
-  _igvn.replace_input_of(parse_predicate_proj->in(0), 0, if_proj);
-  set_idom(parse_predicate_proj->in(0), if_proj, dom_depth(if_proj));
-  return if_proj;
+IfTrueNode*
+PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfTrueNode* template_assertion_predicate_success_proj,
+                                                               ParsePredicateNode* unswitched_loop_parse_predicate) {
+  TemplateAssertionPredicate template_assertion_predicate(template_assertion_predicate_success_proj);
+  IfTrueNode* template_success_proj = template_assertion_predicate.clone(unswitched_loop_parse_predicate->in(0), this);
+  _igvn.replace_input_of(unswitched_loop_parse_predicate, 0, template_success_proj);
+  set_idom(unswitched_loop_parse_predicate, template_success_proj, dom_depth(template_success_proj));
+  return template_success_proj;
 }
 
 // Clone the old Parse Predicates and Assertion Predicates before the unswitch If to the unswitched loops after the
 // unswitch If.
 void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
-                                                                             IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred) {
+                                                                             IfProjNode*& true_path_loop_entry,
+                                                                             IfProjNode*& false_path_loop_entry) {
   LoopNode* head = loop->_head->as_Loop();
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
 
   const Predicates predicates(entry);
   clone_loop_predication_predicates_to_unswitched_loop(loop, old_new, predicates.loop_predicate_block(),
-                                                       Deoptimization::Reason_predicate, iffast_pred, ifslow_pred);
+                                                       Deoptimization::Reason_predicate, true_path_loop_entry, false_path_loop_entry);
   clone_loop_predication_predicates_to_unswitched_loop(loop, old_new, predicates.profiled_loop_predicate_block(),
-                                                       Deoptimization::Reason_profile_predicate, iffast_pred, ifslow_pred);
+                                                       Deoptimization::Reason_profile_predicate, true_path_loop_entry, false_path_loop_entry);
 
   const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
   if (loop_limit_check_predicate_block->has_parse_predicate() && !head->is_CountedLoop()) {
     // Don't clone the Loop Limit Check Parse Predicate if we already have a counted loop (a Loop Limit Check Predicate
     // is only created when converting a LoopNode to a CountedLoopNode).
     clone_parse_predicate_to_unswitched_loops(loop_limit_check_predicate_block, Deoptimization::Reason_loop_limit_check,
-                                              iffast_pred, ifslow_pred);
+                                              true_path_loop_entry, false_path_loop_entry);
   }
 }
 
@@ -388,16 +380,17 @@ void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(Ide
 void PhaseIdealLoop::clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                                           const PredicateBlock* predicate_block,
                                                                           Deoptimization::DeoptReason reason,
-                                                                          IfProjNode*& iffast_pred,
-                                                                          IfProjNode*& ifslow_pred) {
+                                                                          IfProjNode*& true_path_loop_entry,
+                                                                          IfProjNode*& false_path_loop_entry) {
   if (predicate_block->has_parse_predicate()) {
     // We currently only clone Assertion Predicates if there are Parse Predicates. This is not entirely correct and will
     // be changed with the complete fix for Assertion Predicates.
-    clone_parse_predicate_to_unswitched_loops(predicate_block, reason, iffast_pred, ifslow_pred);
-    assert(iffast_pred->in(0)->is_ParsePredicate() && ifslow_pred->in(0)->is_ParsePredicate(),
+    clone_parse_predicate_to_unswitched_loops(predicate_block, reason, true_path_loop_entry, false_path_loop_entry);
+    assert(true_path_loop_entry->in(0)->is_ParsePredicate() && false_path_loop_entry->in(0)->is_ParsePredicate(),
            "must be success projections of the cloned Parse Predicates");
-    clone_assertion_predicates_to_unswitched_loop(loop, old_new, reason, predicate_block->parse_predicate_success_proj(),
-                                                  iffast_pred->as_IfTrue(), ifslow_pred->as_IfTrue());
+    clone_assertion_predicates_to_unswitched_loop(loop, old_new, predicate_block->parse_predicate_success_proj(),
+                                                  true_path_loop_entry->in(0)->as_ParsePredicate(),
+                                                  false_path_loop_entry->in(0)->as_ParsePredicate());
   }
 }
 
@@ -773,8 +766,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
     if ((stride > 0 && (java_subtract(limit_lo, stride) < limit_lo)) ||
         (stride < 0 && (java_subtract(limit_hi, stride) > limit_hi))) {
       // No overflow possible
-      ConINode* con_stride = _igvn.intcon(stride);
-      set_ctrl(con_stride, C->root());
+      ConINode* con_stride = intcon(stride);
       max_idx_expr = new SubINode(limit, con_stride);
       idx_type = TypeInt::make(limit_lo - stride, limit_hi - stride, limit_type->_widen);
     } else {
@@ -782,8 +774,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
       overflow = true;
       limit = new ConvI2LNode(limit);
       register_new_node(limit, ctrl);
-      ConLNode* con_stride = _igvn.longcon(stride);
-      set_ctrl(con_stride, C->root());
+      ConLNode* con_stride = longcon(stride);
       max_idx_expr = new SubLNode(limit, con_stride);
     }
     register_new_node(max_idx_expr, ctrl);
@@ -800,8 +791,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
   }
 
   if (scale != 1) {
-    ConNode* con_scale = _igvn.intcon(scale);
-    set_ctrl(con_scale, C->root());
+    ConNode* con_scale = intcon(scale);
     if (TraceLoopPredicate) {
       predString->print("* %d ", scale);
     }
@@ -818,8 +808,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(Node* ctrl, const int scale, Node* offset
         register_new_node(max_idx_expr, ctrl);
       }
       overflow = true;
-      con_scale = _igvn.longcon(scale);
-      set_ctrl(con_scale, C->root());
+      con_scale = longcon(scale);
       max_idx_expr = new MulLNode(max_idx_expr, con_scale);
     } else {
       // No overflow possible
@@ -1250,9 +1239,9 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
     // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
     // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
-    IfTrueNode* template_assertion_predicate_proj =
-        create_template_assertion_predicate(if_opcode, cl, parse_predicate_proj, upper_bound_proj, scale, offset, range,
-                                            deopt_reason);
+    IfTrueNode* template_assertion_predicate_proj = create_template_assertion_predicate(cl, parse_predicate,
+                                                                                        upper_bound_proj, scale, offset,
+                                                                                        range);
 
     // Eliminate the old range check in the loop body.
     // When a range check is eliminated, data dependent nodes (Load and range check CastII nodes) are now dependent on 2
@@ -1288,15 +1277,16 @@ void PhaseIdealLoop::eliminate_hoisted_range_check(IfTrueNode* hoisted_check_pro
 // Each newly created Hoisted Check Predicate is accompanied by two Template Assertion Predicates. Later, we initialize
 // them by making a copy of them when splitting a loop into sub loops. The Assertion Predicates ensure that dead sub
 // loops are removed properly.
-IfTrueNode* PhaseIdealLoop::create_template_assertion_predicate(const int if_opcode, CountedLoopNode* loop_head,
-                                                                ParsePredicateSuccessProj* parse_predicate_proj,
+IfTrueNode* PhaseIdealLoop::create_template_assertion_predicate(CountedLoopNode* loop_head,
+                                                                ParsePredicateNode* parse_predicate,
                                                                 IfProjNode* new_control, const int scale, Node* offset,
-                                                                Node* range, Deoptimization::DeoptReason deopt_reason) {
+                                                                Node* range) {
 
   TemplateAssertionPredicateCreator template_assertion_predicate_creator(loop_head, scale, offset, range, this);
-  return template_assertion_predicate_creator.create_with_uncommon_trap(new_control, parse_predicate_proj, deopt_reason,
-                                                                        if_opcode);
-
+  IfTrueNode* template_success_proj = template_assertion_predicate_creator.create(new_control);
+  _igvn.replace_input_of(parse_predicate, 0, template_success_proj);
+  set_idom(parse_predicate, template_success_proj, dom_depth(template_success_proj));
+  return template_success_proj;
 }
 
 // Insert Hoisted Check Predicates for null checks and range checks and additional Template Assertion Predicates for
@@ -1348,8 +1338,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
 #endif
     return false;
   }
-  ConNode* zero = _igvn.intcon(0);
-  set_ctrl(zero, C->root());
+  ConNode* zero = intcon(0);
 
   ResourceArea* area = Thread::current()->resource_area();
   Invariance invar(area, loop);

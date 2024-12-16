@@ -206,8 +206,8 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   // Handle existing monitor.
   bind(object_has_monitor);
 
-  // Try to CAS owner (no owner => current thread's _lock_id).
-  ldr(rscratch2, Address(rthread, JavaThread::lock_id_offset()));
+  // Try to CAS owner (no owner => current thread's _monitor_owner_id).
+  ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
   add(tmp, disp_hdr, (in_bytes(ObjectMonitor::owner_offset())-markWord::monitor_value));
   cmpxchg(tmp, zr, rscratch2, Assembler::xword, /*acquire*/ true,
           /*release*/ true, /*weak*/ false, tmp3Reg); // Sets flags for result
@@ -469,8 +469,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     // Compute owner address.
     lea(t2_owner_addr, owner_address);
 
-    // Try to CAS owner (no owner => current thread's _lock_id).
-    ldr(rscratch2, Address(rthread, JavaThread::lock_id_offset()));
+    // Try to CAS owner (no owner => current thread's _monitor_owner_id).
+    ldr(rscratch2, Address(rthread, JavaThread::monitor_owner_id_offset()));
     cmpxchg(t2_owner_addr, zr, rscratch2, Assembler::xword, /*acquire*/ true,
             /*release*/ false, /*weak*/ false, t3_owner);
     br(Assembler::EQ, monitor_locked);
@@ -2689,13 +2689,4 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
     }
   }
   return MacroAssembler::in_scratch_emit_size();
-}
-
-void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Register obj, int disp) {
-  // Note: Don't clobber obj anywhere in that method!
-
-  // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
-  // obj-start, so that we can load from the object's mark-word instead.
-  ldr(dst, Address(obj, disp - oopDesc::klass_offset_in_bytes()));
-  lsr(dst, dst, markWord::klass_shift);
 }

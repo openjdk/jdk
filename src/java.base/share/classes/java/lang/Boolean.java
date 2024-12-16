@@ -275,12 +275,7 @@ public final class Boolean implements java.io.Serializable,
      * @see     java.lang.System#getProperty(java.lang.String, java.lang.String)
      */
     public static boolean getBoolean(String name) {
-        boolean result = false;
-        try {
-            result = parseBoolean(System.getProperty(name));
-        } catch (IllegalArgumentException | NullPointerException e) {
-        }
-        return result;
+        return name != null && !name.isEmpty() && parseBoolean(System.getProperty(name));
     }
 
     /**

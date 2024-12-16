@@ -38,7 +38,6 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.NativeLibraries;
@@ -143,12 +143,6 @@ public interface JavaLangAccess {
      *         the slot is not valid to register.
      */
     void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook);
-
-    /**
-     * Returns a new Thread with the given Runnable and an
-     * inherited AccessControlContext.
-     */
-    Thread newThreadWithAcc(Runnable target, @SuppressWarnings("removal") AccessControlContext acc);
 
     /**
      * Invokes the finalize method of the given object.
@@ -601,6 +595,11 @@ public interface JavaLangAccess {
      * Returns the virtual thread default scheduler.
      */
     Executor virtualThreadDefaultScheduler();
+
+    /**
+     * Returns a stream of the delayed task schedulers used for virtual threads.
+     */
+    Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers();
 
     /**
      * Creates a new StackWalker

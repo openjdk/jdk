@@ -24,15 +24,12 @@
  */
 package java.lang.classfile.constantpool;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * Models an entry in the constant pool of a classfile.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PoolEntry
         permits AnnotationConstantValueEntry, DynamicConstantPoolEntry,
                 LoadableConstantEntry, MemberRefEntry, ModuleEntry, NameAndTypeEntry,
@@ -101,7 +98,7 @@ public sealed interface PoolEntry
      * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_UTF8},
      * describe the possible return values of this method.
      */
-    byte tag();
+    int tag();
 
     /**
      * {@return the index within the constant pool corresponding to this entry}

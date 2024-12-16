@@ -465,10 +465,10 @@ java/awt/event/MouseEvent/FrameMouseEventAbsoluteCoordsTest/FrameMouseEventAbsol
 
 # Several tests which fail sometimes on macos11
 java/awt/Window/MainKeyWindowTest/TestMainKeyWindow.java 8265985 macosx-all
-java/awt/security/WarningWindowDisposeTest/WarningWindowDisposeTest.java 8266059 macosx-all
 java/awt/Robot/Delay/InterruptOfDelay.java 8265986 macosx-all
-java/awt/Robot/InfiniteLoopException.java 8342638 windows-all
+java/awt/Robot/InfiniteLoopException.java 8342638 windows-all,linux-all
 java/awt/MenuBar/TestNoScreenMenuBar.java 8265987 macosx-all
+java/awt/Robot/ScreenCaptureRobotTest.java 8344581 macosx-all
 
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8266283 generic-all
 java/awt/Graphics2D/DrawString/RotTransText.java 8316878 linux-all
@@ -707,7 +707,6 @@ javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
 
 # This test fails on macOS 14
 javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
-javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8316151 macosx-all
 
 ############################################################################
 
@@ -792,6 +791,7 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 javax/swing/JFileChooser/6698013/bug6698013.java 8024419 macosx-all
 javax/swing/JColorChooser/8065098/bug8065098.java 8065647 macosx-all
 javax/swing/JTabbedPane/4666224/bug4666224.java 8144124  macosx-all
+javax/swing/JTabbedPane/TestJTabbedPaneOpaqueColor.java 8345090 windows-all,linux-all
 javax/swing/SwingUtilities/TestTextPosInPrint.java 8227025 windows-all
 
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter_1.java 7131438,8022539 generic-all
@@ -823,8 +823,3 @@ java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
 java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
-java/awt/print/PrinterJob/CheckPrivilege.java 8343219 generic-all
-javax/print/PrintSE/PrintSE.sh 8343219 generic-all
-java/awt/print/PrinterJob/SecurityDialogTest.java 8343219 generic-all
-java/awt/Dialog/PrintToFileTest/PrintToFileGranted.java 8343219 generic-all
-java/awt/Dialog/PrintToFileTest/PrintToFileRevoked.java 8343219 generic-all
