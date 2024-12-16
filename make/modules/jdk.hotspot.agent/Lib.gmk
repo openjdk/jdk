@@ -61,6 +61,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     OPTIMIZATION := HIGH, \
     EXTRA_HEADER_DIRS := java.base:libjvm, \
     DISABLED_WARNINGS_gcc := sign-compare, \
+    DISABLED_WARNINGS_gcc_DwarfParser.cpp := zero-as-null-pointer-constant, \
+    DISABLED_WARNINGS_gcc_LinuxDebuggerLocal.cpp := zero-as-null-pointer-constant, \
     DISABLED_WARNINGS_gcc_ps_core.c := pointer-arith, \
     DISABLED_WARNINGS_clang := sign-compare, \
     DISABLED_WARNINGS_clang_libproc_impl.c := format-nonliteral, \

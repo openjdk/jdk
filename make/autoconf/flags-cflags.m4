@@ -239,7 +239,8 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wsign-compare -Wtrampolines -Wtype-limits -Wundef -Wuninitialized \
           -Wunused-const-variable=1 -Wunused-function -Wunused-result \
           -Wunused-value"
-      WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
+      WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder \
+          -Wzero-as-null-pointer-constant"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
