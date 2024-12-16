@@ -36,7 +36,7 @@ import java.util.Set;
  * The {@link instantiationID} is unique for an instantiation, and allows the variable renaming
  * to avoid variable name collisions when multiple {@link Template}s use the same variable name.
  */
-public class Parameters {
+public final class Parameters {
     private static int instantiationIDCounter = 0;
 
     private HashMap<String,String> parameterMap;

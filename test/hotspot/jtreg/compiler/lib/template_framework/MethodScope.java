@@ -24,9 +24,19 @@
 package compiler.lib.template_framework;
 
 /**
- * TODO public?
+ * The {@link MethodScope} sets the scope of a method body, i.e. after its opening bracked and before its
+ * closing bracket. This allows dispatching {@link CodeGenerator}s to the top of the method body, for
+ * example for variable declarations, see {@link DispatchScope#dispatch}. In {@link Template}s, a
+ * {@link MethodScope} is opened with {@code #open(method)} and closed with {@code #close(method)}.
  */
-public class MethodScope extends DispatchScope {
+final class MethodScope extends DispatchScope {
+
+    /**
+     * Create a new {@link MethodScope}.
+     *
+     * @param parent Parent scope or null if the new scope is an outermost scope.
+     * @param fuel Remaining fuel for recursive {@link CodeGenerator} instantiations.
+     */
     public MethodScope(Scope parent, long fuel) {
         super(parent, fuel);
     }

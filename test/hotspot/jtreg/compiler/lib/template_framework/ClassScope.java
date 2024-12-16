@@ -24,11 +24,19 @@
 package compiler.lib.template_framework;
 
 /**
- * The ClassScope sets the scope of a class body, i.e. after its opening bracked and before its closing
- * bracket. This allows dispatching CodeGenerators to the top of the class body, for example for field
- * declarations.
+ * The {@link ClassScope} sets the scope of a class body, i.e. after its opening bracked and before its
+ * closing bracket. This allows dispatching {@link CodeGenerator}s to the top of the class body, for
+ * example for field declarations, see {@link DispatchScope#dispatch}. In {@link Template}s, a
+ * {@link ClassScope} is opened with {@code #open(class)} and closed with {@code #close(class)}.
  */
-class ClassScope extends DispatchScope {
+final class ClassScope extends DispatchScope {
+
+    /**
+     * Create a new {@link MethodScope}.
+     *
+     * @param parent Parent scope or null if the new scope is an outermost scope.
+     * @param fuel Remaining fuel for recursive {@link CodeGenerator} instantiations.
+     */
     public ClassScope(Scope parent, long fuel) {
         super(parent, fuel);
     }

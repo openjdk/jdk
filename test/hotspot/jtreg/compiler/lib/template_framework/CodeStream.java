@@ -29,7 +29,7 @@ import java.util.ArrayList;
 /**
  * TODO public?
  */
-public class CodeStream {
+public final class CodeStream {
 
     private sealed interface Token permits CodeSegment, Newline, Indent, Outdent, MultiIndent, NestedCodeStream {}
     private record CodeSegment(String code) implements Token {}
@@ -147,7 +147,7 @@ public class CodeStream {
         checkClosed();
     }
 
-    private class State {
+    private final class State {
         private StringBuilder stringBuilder = new StringBuilder();
         private boolean lastWasNewline = false;
         private int indentation = 0;

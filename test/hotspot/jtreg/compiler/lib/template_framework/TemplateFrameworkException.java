@@ -26,7 +26,7 @@ package compiler.lib.template_framework;
 /**
  * Exception thrown in the Template Framework. Most likely, the user is responsible for the failure.
  */
-public class TemplateFrameworkException extends RuntimeException {
+public final class TemplateFrameworkException extends RuntimeException {
 
     /**
      * Exception thrown by the Template Framework.

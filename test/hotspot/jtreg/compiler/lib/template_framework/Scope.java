@@ -35,7 +35,7 @@ import jdk.test.lib.Utils;
  * instantiation, and provides access to the available variables, and the output {@link CodeStream}
  * for the current scope of code generation.
  */
-public class Scope {
+public sealed class Scope permits BaseScope, DispatchScope {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     /**
@@ -58,7 +58,7 @@ public class Scope {
     /**
      * Helper class to keep track of the local variables defined inside the scope.
      */
-    private class VariableSet {
+    private final class VariableSet {
         public final VariableSet parent;
         public final HashMap<String,ArrayList<String>> variables;
 

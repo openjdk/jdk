@@ -34,7 +34,7 @@ import jdk.test.lib.Utils;
 /**
  * TODO
  */
-public class CodeGeneratorLibrary {
+public final class CodeGeneratorLibrary {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     private CodeGeneratorLibrary parent;
@@ -112,11 +112,11 @@ public class CodeGeneratorLibrary {
             switch(scopeKind) {
                 case "class" -> {
                     ClassScope classScope = scope.classScope(" in dispatch for " + generatorName);
-                    classScope.dispatch(scope, generator, parameterMap);
+                    classScope.dispatch(generator, parameterMap);
                 }
                 case "method" -> {
                     MethodScope methodScope = scope.methodScope(" in dispatch for " + generatorName);
-                    methodScope.dispatch(scope, generator, parameterMap);
+                    methodScope.dispatch(generator, parameterMap);
                 }
                 default -> {
                     scope.print();

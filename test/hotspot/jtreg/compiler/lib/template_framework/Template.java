@@ -220,7 +220,7 @@ public final class Template extends CodeGenerator {
      * means that a replacement in an earlier instantiation can be remembered
      * in a later instantiation, see {@link TestClassInstantiator#Instantiator#generate}.
      */
-    static class ReplacementState {
+    static final class ReplacementState {
         private HashMap<String,CodeStream> replacementsMap;
 
         public ReplacementState() {
@@ -261,7 +261,7 @@ public final class Template extends CodeGenerator {
      * {@link ReplacementState}, local variable names with their renamings, and the
      * recursive {@link Scope}s inside the {@link Template}.
      */
-    private class InstantiationState {
+    private final class InstantiationState {
         public final Scope templateScope;
         public Scope currentScope;
         public final Parameters parameters;

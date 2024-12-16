@@ -97,7 +97,7 @@ public final class TestClassInstantiator {
     /**
      * Helper class for adding templates into the static, main or test block.
      */
-    public class Instantiator {
+    public final class Instantiator {
         private boolean isUsed = false;
         private TestClassInstantiator parent;
         private final Template staticTemplate = null;
