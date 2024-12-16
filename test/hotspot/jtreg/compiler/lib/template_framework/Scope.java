@@ -199,6 +199,8 @@ public sealed class Scope permits BaseScope, DispatchScope {
 
     /**
      * Access the {@link CodeGeneratorLibrary} associated with the {@link BaseScope}.
+     *
+     * @return The library associated with the {@link BaseScope}.
      */
     public CodeGeneratorLibrary library() {
         return this.parent.library();
@@ -234,14 +236,18 @@ public sealed class Scope permits BaseScope, DispatchScope {
      * Sample a random variable from the set of variables defined in the scope or outer scopes.
      * @param type Type of the variable.
      * @param mutable Indicates if the variable is to be mutated or used for read-only purposes.
+     * @return Name of the sampled variable.
      */
     public String sampleVariable(String type, boolean mutable) {
         return mutable ? mutableVariables.sample(type) : allVariables.sample(type);
     }
 
-
     /**
-     * Next outer Scope (not this) that is a ClassScope.
+     * Next outer {@link Scope} (not this) that is a {@link ClassScope}.
+     *
+     * @param errorMessage Error message added to the exception if no such {@link ClassScope} is found.
+     * @return The outer {@link ClassScope}.
+     * @throws TemplateFrameworkException If no such outer {@link ClassScope} is found.
      */
     public final ClassScope classScope(String errorMessage) {
         Scope current = this;
@@ -256,7 +262,11 @@ public sealed class Scope permits BaseScope, DispatchScope {
     }
 
     /**
-     * Next outer Scope (not this) that is a MethodScope.
+     * Next outer {@link Scope} (not this) that is a {@link MethodScope}.
+     *
+     * @param errorMessage Error message added to the exception if no such {@link MethodScope} is found.
+     * @return The outer {@link MethodScope}.
+     * @throws TemplateFrameworkException If no such outer {@link MethodScope} is found.
      */
     public final MethodScope methodScope(String errorMessage) {
         Scope current = this;
@@ -271,7 +281,10 @@ public sealed class Scope permits BaseScope, DispatchScope {
     }
 
     /**
-     * Compute the relative indentation to an outer (recursive parent) Scope.
+     * Compute the relative indentation to an outer (recursive parent) scope.
+     *
+     * @param outer Some (recursive parent) outer scope.
+     * @return Indentation relative to some outer scope.
      */
     public final int indentationFrom(Scope outer) {
         int difference = 0;
