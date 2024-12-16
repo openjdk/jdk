@@ -2532,8 +2532,8 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   // C1 and C2 counters are counting both successful and unsuccessful compiles
   _t_total_compilation.add(time);
 
-  // update compilation ticks - used by the implementation of
-  // java.lang.management.CompilationMXBean
+  // Update compilation times. Used by the implementation of JFR CompilerStatistics
+  // and java.lang.management.CompilationMXBean.
   _perf_total_compilation->inc(time.ticks());
   _peak_compilation_time = MAX2(time.milliseconds(), _peak_compilation_time);
 
