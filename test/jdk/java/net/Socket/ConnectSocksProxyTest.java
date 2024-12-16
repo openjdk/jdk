@@ -52,6 +52,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class ConnectSocksProxyTest {
 
+    // Implementation Note: Explicitly binding on the loopback address to avoid potential unstabilities.
+
     private static final int DEAD_SERVER_PORT = 0xDEAD;
 
     private static final InetSocketAddress REFUSING_SOCKET_ADDRESS = Utils.refusingEndpoint();
@@ -79,7 +81,7 @@ class ConnectSocksProxyTest {
 
     @BeforeAll
     static void initProxyServer() throws IOException {
-        PROXY_SERVER = new SocksServer(0);
+        PROXY_SERVER = new SocksServer(getLoopbackAddress(), 0, false);
         PROXY_SERVER.addUser(PROXY_AUTH_USERNAME, PROXY_AUTH_PASSWORD);
         PROXY_SERVER.start();
         InetSocketAddress proxyAddress = new InetSocketAddress(getLoopbackAddress(), PROXY_SERVER.getPort());
@@ -115,7 +117,7 @@ class ConnectSocksProxyTest {
     @Test
     void testBoundSocket() throws IOException {
         try (Socket socket = createProxiedSocket()) {
-            socket.bind(new InetSocketAddress(0));
+            socket.bind(new InetSocketAddress(getLoopbackAddress(), 0));
             assertTrue(socket.isBound());
             assertFalse(socket.isConnected());
             assertThrows(IOException.class, () -> socket.connect(REFUSING_SOCKET_ADDRESS));
@@ -161,7 +163,7 @@ class ConnectSocksProxyTest {
     @Test
     void testBoundSocketWithUnresolvedAddress() throws IOException {
         try (Socket socket = createProxiedSocket()) {
-            socket.bind(new InetSocketAddress(0));
+            socket.bind(new InetSocketAddress(getLoopbackAddress(), 0));
             testUnconnectedSocketWithUnresolvedAddress(true, socket);
         }
     }
@@ -173,8 +175,9 @@ class ConnectSocksProxyTest {
         assertEquals(bound, socket.isBound());
         assertFalse(socket.isConnected());
         try (ServerSocket serverSocket = createEphemeralServerSocket()) {
-            InetSocketAddress unresolvedAddress =
-                    InetSocketAddress.createUnresolved("localhost", serverSocket.getLocalPort());
+            InetSocketAddress unresolvedAddress = InetSocketAddress.createUnresolved(
+                    getLoopbackAddress().getHostAddress(),
+                    serverSocket.getLocalPort());
             socket.connect(unresolvedAddress);
             try (Socket _ = serverSocket.accept()) {
                 assertTrue(socket.isBound());
