@@ -75,6 +75,8 @@ The standard library can be extended with more functionality. Here a simple exam
     // This library can now be passed to a TestClassInstantiator, which then has access to the
     // extended library.
 
+TODO add example with Template and that new test, and "with"
+
 Please refer to the example [TestCustomLibraryForClassFuzzing](../../../testlibrary_tests/template_framework/examples/TestCustomLibraryForClassFuzzing.java).
 
 ## Implementing Custom ProgrammaticCodeGenerators
