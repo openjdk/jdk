@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -70,7 +70,7 @@ import org.xml.sax.SAXParseException;
  *
  * @author Kohsuke Kawaguchi
  *
- * @LastModified: July 2023
+ * @LastModified: Nov 2024
  */
 public final class XMLSchemaFactory extends SchemaFactory {
 
@@ -423,7 +423,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         }
     }
 
-    @SuppressWarnings({"removal","deprecation"})
+    @SuppressWarnings("deprecation")
     public void setFeature(String name, boolean value)
         throws SAXNotRecognizedException, SAXNotSupportedException {
         if (name == null) {
@@ -441,12 +441,6 @@ public final class XMLSchemaFactory extends SchemaFactory {
             }
         }
         if (name.equals(XMLConstants.FEATURE_SECURE_PROCESSING)) {
-            if (System.getSecurityManager() != null && (!value)) {
-                throw new SAXNotSupportedException(
-                        SAXMessageFormatter.formatMessage(null,
-                        "jaxp-secureprocessing-feature", null));
-            }
-
             fSecurityManager.setSecureProcessing(value);
             if (value) {
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
@@ -464,8 +458,7 @@ public final class XMLSchemaFactory extends SchemaFactory {
         }
         else if (name.equals(JdkConstants.ORACLE_FEATURE_SERVICE_MECHANISM)) {
             //in secure mode, let useServicesMechanism be determined by the constructor
-            if (System.getSecurityManager() != null)
-                return;
+            return;
         }
 
         if ((fXmlFeatures != null) &&

@@ -26,7 +26,6 @@
 
 package java.util.logging;
 
-import java.security.*;
 
 /**
  * This class is for logging permissions. Currently there is only one
