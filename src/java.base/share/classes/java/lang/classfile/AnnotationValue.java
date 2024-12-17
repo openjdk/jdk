@@ -456,9 +456,11 @@ public sealed interface AnnotationValue {
      *
      * @apiNote
      * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_INT},
-     * describe the possible return values of this method.
+     * describe the possible return values of this method.  The return type is
+     * {@code int} for consistency with union indicator items in other union
+     * structures in the {@code class} file format.
      */
-    char tag();
+    int tag();
 
     /**
      * {@return an enum value for an element-value pair}

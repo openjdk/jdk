@@ -599,8 +599,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             }
         } catch (IOException ioe) {
             close();
-            if (ioe instanceof InterruptedIOException) {
+            if (ioe instanceof SocketTimeoutException) {
                 throw ioe;
+            } else if (ioe instanceof InterruptedIOException) {
+                assert Thread.currentThread().isVirtual();
+                throw new SocketException("Closed by interrupt");
             } else {
                 throw SocketExceptions.of(ioe, isa);
             }

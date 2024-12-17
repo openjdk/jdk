@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +98,7 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
   assert(phase >= 0 && phase < _num_phases, "Out of bounds");
   switch (phase) {
     case init_evac:
+    case init_scan_rset:
     case finish_mark:
     case purge_weak_par:
     case full_gc_mark:
@@ -108,15 +110,18 @@ bool ShenandoahPhaseTimings::is_worker_phase(Phase phase) {
     case full_gc_weakrefs:
     case full_gc_purge_class_unload:
     case full_gc_purge_weak_par:
+    case degen_gc_coalesce_and_fill:
     case degen_gc_weakrefs:
     case degen_gc_purge_class_unload:
     case degen_gc_purge_weak_par:
     case heap_iteration_roots:
+    case conc_mark:
     case conc_mark_roots:
     case conc_thread_roots:
     case conc_weak_roots_work:
     case conc_weak_refs:
     case conc_strong_roots:
+    case conc_coalesce_and_fill:
       return true;
     default:
       return false;
@@ -312,17 +317,17 @@ void ShenandoahPhaseTimings::print_global_on(outputStream* out) const {
 }
 
 ShenandoahWorkerTimingsTracker::ShenandoahWorkerTimingsTracker(ShenandoahPhaseTimings::Phase phase,
-        ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id) :
+        ShenandoahPhaseTimings::ParPhase par_phase, uint worker_id, bool cumulative) :
         _timings(ShenandoahHeap::heap()->phase_timings()),
         _phase(phase), _par_phase(par_phase), _worker_id(worker_id) {
 
-  assert(_timings->worker_data(_phase, _par_phase)->get(_worker_id) == ShenandoahWorkerData::uninitialized(),
+  assert(_timings->worker_data(_phase, _par_phase)->get(_worker_id) == ShenandoahWorkerData::uninitialized() || cumulative,
          "Should not be set yet: %s", ShenandoahPhaseTimings::phase_name(_timings->worker_par_phase(_phase, _par_phase)));
   _start_time = os::elapsedTime();
 }
 
 ShenandoahWorkerTimingsTracker::~ShenandoahWorkerTimingsTracker() {
-  _timings->worker_data(_phase, _par_phase)->set(_worker_id, os::elapsedTime() - _start_time);
+  _timings->worker_data(_phase, _par_phase)->set_or_add(_worker_id, os::elapsedTime() - _start_time);
 
   if (ShenandoahPhaseTimings::is_root_work_phase(_phase)) {
     ShenandoahPhaseTimings::Phase root_phase = _phase;

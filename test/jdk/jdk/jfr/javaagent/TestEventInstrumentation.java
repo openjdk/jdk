@@ -52,7 +52,6 @@ import static java.lang.constant.ConstantDescs.MTD_void;
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
- * @enablePreview
  * @build jdk.jfr.javaagent.InstrumentationEventCallback
  *        jdk.jfr.javaagent.TestEventInstrumentation
  * @run driver jdk.test.lib.util.JavaAgentBuilder

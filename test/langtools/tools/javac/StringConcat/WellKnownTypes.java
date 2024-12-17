@@ -25,7 +25,6 @@
  * @test
  * @bug     8273914
  * @summary Indy string concat changes order of operations
- * @enablePreview
  *
  * @compile -XDstringConcat=indy              WellKnownTypes.java
  * @run main WellKnownTypes

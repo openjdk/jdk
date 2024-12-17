@@ -39,16 +39,16 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-inline int64_t ObjectMonitor::owner_from(JavaThread* thread) {
-  int64_t tid = thread->lock_id();
-  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
-  return tid;
+inline int64_t ObjectMonitor::owner_id_from(JavaThread* thread) {
+  int64_t id = thread->monitor_owner_id();
+  assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "must be reasonable");
+  return id;
 }
 
-inline int64_t ObjectMonitor::owner_from(oop vthread) {
-  int64_t tid = java_lang_Thread::thread_id(vthread);
-  assert(tid >= ThreadIdentifier::initial() && tid < ThreadIdentifier::current(), "must be reasonable");
-  return tid;
+inline int64_t ObjectMonitor::owner_id_from(oop vthread) {
+  int64_t id = java_lang_Thread::thread_id(vthread);
+  assert(id >= ThreadIdentifier::initial() && id < ThreadIdentifier::current(), "must be reasonable");
+  return id;
 }
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
@@ -153,7 +153,7 @@ inline void ObjectMonitor::set_recursions(size_t recursions) {
 
 // Clear _owner field; current value must match old_value.
 inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
-  int64_t old_value = owner_from(old_owner);
+  int64_t old_value = owner_id_from(old_owner);
 #ifdef ASSERT
   int64_t prev = Atomic::load(&_owner);
   assert(prev == old_value, "unexpected prev owner=" INT64_FORMAT
@@ -182,7 +182,7 @@ inline void ObjectMonitor::set_owner_from_raw(int64_t old_value, int64_t new_val
 }
 
 inline void ObjectMonitor::set_owner_from(int64_t old_value, JavaThread* current) {
-  set_owner_from_raw(old_value, owner_from(current));
+  set_owner_from_raw(old_value, owner_id_from(current));
 }
 
 // Try to set _owner field to new_value if the current value matches
@@ -201,7 +201,7 @@ inline int64_t ObjectMonitor::try_set_owner_from_raw(int64_t old_value, int64_t 
 }
 
 inline int64_t ObjectMonitor::try_set_owner_from(int64_t old_value, JavaThread* current) {
-  return try_set_owner_from_raw(old_value, owner_from(current));
+  return try_set_owner_from_raw(old_value, owner_id_from(current));
 }
 
 inline bool ObjectMonitor::has_successor() const {
@@ -209,11 +209,11 @@ inline bool ObjectMonitor::has_successor() const {
 }
 
 inline bool ObjectMonitor::has_successor(JavaThread* thread) const {
-  return owner_from(thread) == Atomic::load(&_succ);
+  return owner_id_from(thread) == Atomic::load(&_succ);
 }
 
 inline void ObjectMonitor::set_successor(JavaThread* thread) {
-  Atomic::store(&_succ, owner_from(thread));
+  Atomic::store(&_succ, owner_id_from(thread));
 }
 
 inline void ObjectMonitor::set_successor(oop vthread) {
