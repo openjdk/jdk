@@ -26,17 +26,17 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.spi.AsynchronousChannelProvider;
-import sun.nio.ch.Pollset;
-import sun.nio.ch.IOUtil;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.nio.channels.spi.AsynchronousChannelProvider;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.HashSet;
+import java.util.Iterator;
+import sun.nio.ch.IOUtil;
+import sun.nio.ch.Pollset;
 
 /**
  * AsynchronousChannelGroup implementation based on the AIX pollset framework.
@@ -275,23 +275,21 @@ final class AixPollPort
 
     // Process all events currently stored in the control queue.
     private void processControlQueue() {
-        synchronized (controlQueue) {
-            // On Aix it is only possible to set the event
-            // bits on the first call of pollsetCtl. Later
-            // calls only add bits, but cannot remove them.
-            // Therefore, we always remove the file
-            // descriptor ignoring the error and then add it.
-            Iterator<ControlEvent> iter = controlQueue.iterator();
-            while (iter.hasNext()) {
-                ControlEvent ev = iter.next();
-                Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, ev.fd(), 0);
-                if (!ev.removeOnly()) {
-                    ev.setError(Pollset.pollsetCtl(pollset, Pollset.PS_MOD, ev.fd(), ev.events()));
-                }
-                iter.remove();
+        // On Aix it is only possible to set the event
+        // bits on the first call of pollsetCtl. Later
+        // calls only add bits, but cannot remove them.
+        // Therefore, we always remove the file
+        // descriptor ignoring the error and then add it.
+        Iterator<ControlEvent> iter = controlQueue.iterator();
+        while (iter.hasNext()) {
+            ControlEvent ev = iter.next();
+            Pollset.pollsetCtl(pollset, Pollset.PS_DELETE, ev.fd(), 0);
+            if (!ev.removeOnly()) {
+                ev.setError(Pollset.pollsetCtl(pollset, Pollset.PS_MOD, ev.fd(), ev.events()));
             }
-            controlQueue.notifyAll();
+            iter.remove();
         }
+        controlQueue.notifyAll();
     }
 
     /*
@@ -307,9 +305,10 @@ final class AixPollPort
         private Event poll() throws IOException {
             try {
                 for (;;) {
-                    int n, m;
+                    int n;
                     controlLock.lock();
                     try {
+                        int m;
                         m = n = Pollset.pollsetPoll(pollset, address,
                                      MAX_EVENTS_TO_POLL, Pollset.PS_NO_TIMEOUT);
                         while (m-- > 0) {
@@ -358,7 +357,7 @@ final class AixPollPort
                             // wakeup to process control event
                             if (fd == ctlSp[0]) {
                                 synchronized (controlQueue) {
-                                    Pollset.drain(ctlSp[0]);
+                                    IOUtil.drain(ctlSp[0]);
                                     processControlQueue();
                                 }
                                 if (n > 0) {

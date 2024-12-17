@@ -162,23 +162,6 @@ Java_sun_nio_ch_Pollset_drain1(JNIEnv *env, jclass cl, jint fd) {
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_Pollset_drain(JNIEnv *env, jclass cl, jint fd)
-{
-    char buf[16];
-
-    for (;;) {
-        int n = read(fd, buf, sizeof(buf));
-        if ((n < 0) && (errno != EAGAIN && errno != EWOULDBLOCK)) {
-            JNU_ThrowIOExceptionWithLastError(env, "Drain");
-        }
-        if (n != (int)sizeof(buf)) {
-            break;
-        }
-    }
-    return;
-}
-
-JNIEXPORT void JNICALL
 Java_sun_nio_ch_Pollset_close0(JNIEnv *env, jclass c, jint fd) {
     int res;
     RESTARTABLE(close(fd), res);
