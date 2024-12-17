@@ -67,6 +67,7 @@ public class MinMaxVector
             resultIntArray = new int[size];
             resultLongArray = new long[size];
         }
+
         static long[] negate(long[] nums) {
             return LongStream.of(nums).map(l -> -l).toArray();
         }
