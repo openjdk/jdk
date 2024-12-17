@@ -146,33 +146,6 @@ LPTOP_LEVEL_EXCEPTION_FILTER previousUnhandledExceptionFilter = nullptr;
 
 HINSTANCE vm_lib_handle;
 
-BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
-  switch (reason) {
-  case DLL_PROCESS_ATTACH:
-    vm_lib_handle = hinst;
-    if (ForceTimeHighResolution) {
-      timeBeginPeriod(1L);
-    }
-    WindowsDbgHelp::pre_initialize();
-    SymbolEngine::pre_initialize();
-    break;
-  case DLL_PROCESS_DETACH:
-    if (ForceTimeHighResolution) {
-      timeEndPeriod(1L);
-    }
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-    if (topLevelVectoredExceptionHandler != nullptr) {
-      RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
-      topLevelVectoredExceptionHandler = nullptr;
-    }
-#endif
-    break;
-  default:
-    break;
-  }
-  return true;
-}
-
 static inline double fileTimeAsDouble(FILETIME* time) {
   const double high  = (double) ((unsigned int) ~0);
   const double split = 10000000.0;
@@ -4413,8 +4386,38 @@ bool os::message_box(const char* title, const char* message) {
   return result == IDYES;
 }
 
+HMODULE GetHotspotModuleHandle() {
+    HMODULE hModule = NULL;
+    GetModuleHandleEx(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCTSTR) &GetHotspotModuleHandle,
+        &hModule
+    );
+    return hModule;
+}
+
+static void windows_at_exit_callback() {
+    if (ForceTimeHighResolution) {
+      timeEndPeriod(1L);
+    }
+#if defined(USE_VECTORED_EXCEPTION_HANDLING)
+    if (topLevelVectoredExceptionHandler != nullptr) {
+      RemoveVectoredExceptionHandler(topLevelVectoredExceptionHandler);
+      topLevelVectoredExceptionHandler = nullptr;
+    }
+#endif
+}
+
 // This is called _before_ the global arguments have been parsed
 void os::init(void) {
+    vm_lib_handle = GetHotspotModuleHandle();
+    if (ForceTimeHighResolution) {
+      timeBeginPeriod(1L);
+    }
+    WindowsDbgHelp::pre_initialize();
+    SymbolEngine::pre_initialize();
+    atexit(windows_at_exit_callback);
+
   _initial_pid = _getpid();
 
   win32::initialize_windows_version();
