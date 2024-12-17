@@ -31,6 +31,7 @@
 
 package template_framework.tests;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 import compiler.lib.template_framework.*;
@@ -42,6 +43,7 @@ public class TestTemplate {
         test2();
         test3();
         test4();
+        test5();
     }
 
     public static void test1() {
@@ -128,6 +130,72 @@ public class TestTemplate {
 
             }
             """;
+        checkEQ(code, expected);
+    }
+
+    public static void test5() {
+        TestClassInstantiator instantiator = new TestClassInstantiator("p.xyz", "InnerTest");
+
+        Template staticsTemplate = new Template("my_example_statics",
+            """
+            static #{param1} #{param2}
+            """
+        );
+        Template mainTemplate = new Template("my_example_main",
+            """
+            main #{param1} #{param2}
+            """
+        );
+        Template testTemplate = new Template("my_example_test",
+            """
+            test #{param1} #{param2}
+            """
+        );
+
+        instantiator.where("param1", "abc")
+                    .where("param2", "xyz")
+                    .add(staticsTemplate, mainTemplate, testTemplate);
+
+        instantiator.where("param1", Arrays.asList("aaa", "bbb"))
+                    .where("param2", Arrays.asList("xxx", "yyy"))
+                    .add(staticsTemplate, mainTemplate, testTemplate);
+
+        String code = instantiator.instantiate();
+        String expected =
+            """
+            package p.xyz;
+
+            public class InnerTest {
+                static abc xyz
+
+                static aaa xxx
+
+                static aaa yyy
+
+                static bbb xxx
+
+                static bbb yyy
+
+                public static void main(String[] args) {
+                    main abc xyz
+                    main aaa xxx
+                    main aaa yyy
+                    main bbb xxx
+                    main bbb yyy
+
+                }
+
+                test abc xyz
+
+                test aaa xxx
+
+                test aaa yyy
+
+                test bbb xxx
+
+                test bbb yyy
+
+            }""";
         checkEQ(code, expected);
     }
 
