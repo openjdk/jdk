@@ -32,10 +32,10 @@ import compiler.lib.ir_framework.*;
  * @bug 8332268
  * @summary Test that Ideal transformations of UDivINode* are being performed as expected.
  * @library /test/lib /
- * @run driver compiler.c2.irTests.ModDNodeTests
+ * @run driver compiler.c2.irTests.ModFNodeTests
  */
-public class ModDNodeTests {
-    public static final double q = Utils.getRandomInstance().nextDouble() * 100.0d;
+public class ModFNodeTests {
+    public static final float q = Utils.getRandomInstance().nextFloat() * 100.0f;
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -43,75 +43,75 @@ public class ModDNodeTests {
 
     @Run(test = {"constant", "notConstant", "veryNotConstant"})
     public void runMethod() {
-        Asserts.assertEQ(constant(), q % 72.0d % 30.0d);
-        Asserts.assertEQ(alsoConstant(), q % 31.432d);
-        Asserts.assertTrue(Double.isNaN(nanLeftConstant()));
-        Asserts.assertTrue(Double.isNaN(nanRightConstant()));
-        Asserts.assertEQ(notConstant(37.5d), 37.5d % 32.0d);
-        Asserts.assertEQ(veryNotConstant(531.25d, 14.5d), 531.25d % 32.0d % 14.5d);
+        Asserts.assertEQ(constant(), q % 72.0f % 30.0f);
+        Asserts.assertEQ(alsoConstant(), q % 31.432f);
+        Asserts.assertTrue(Float.isNaN(nanLeftConstant()));
+        Asserts.assertTrue(Float.isNaN(nanRightConstant()));
+        Asserts.assertEQ(notConstant(37.5f), 37.5f % 32.0f);
+        Asserts.assertEQ(veryNotConstant(531.25f, 14.5f), 531.25f % 32.0f % 14.5f);
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_D, "1"})
-    public double constant() {
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.CON_F, "1"})
+    public float constant() {
         // All constants available during parsing
-        return q % 72.0d % 30.0d;
+        return q % 72.0f % 30.0f;
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_D, "1"})
-    public double alsoConstant() {
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.CON_F, "1"})
+    public float alsoConstant() {
         // Make sure value is only available after second loop opts round
-        double val = 0;
+        float val = 0;
         for (int i = 0; i < 4; i++) {
             if ((i % 2) == 0) {
                 val = q;
             }
         }
-        return val % 31.432d;
+        return val % 31.432f;
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_D, "1"})
-    public double nanLeftConstant() {
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.CON_F, "1"})
+    public float nanLeftConstant() {
         // Make sure value is only available after second loop opts round
-        double val = 134.18d;
+        float val = 134.18f;
         for (int i = 0; i < 4; i++) {
             if ((i % 2) == 0) {
-                val = Double.NaN;
+                val = Float.NaN;
             }
         }
-        return 56.234d % (val % 31.432d);
+        return 56.234f % (val % 31.432f);
     }
 
     @Test
-    @IR(failOn = {"drem"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_D, "1"})
-    public double nanRightConstant() {
+    @IR(failOn = {"frem"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.CON_F, "1"})
+    public float nanRightConstant() {
         // Make sure value is only available after second loop opts round
-        double val = 134.18d;
+        float val = 134.18f;
         for (int i = 0; i < 4; i++) {
             if ((i % 2) == 0) {
-                val = Double.NaN;
+                val = Float.NaN;
             }
         }
-        return 56.234d % (31.432d % val);
+        return 56.234f % (31.432f % val);
     }
 
     @Test
-    @IR(counts = {"drem", "1"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_D, "1"})
-    public double notConstant(double x) {
-        return x % 32.0d;
+    @IR(counts = {"frem", "1"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.CON_F, "1"})
+    public float notConstant(float x) {
+        return x % 32.0f;
     }
 
     @Test
-    @IR(counts = {"drem", "2"}, phase = CompilePhase.BEFORE_MATCHING)
-    @IR(counts = {IRNode.CON_D, "1"})
-    public double veryNotConstant(double x, double y) {
-        return x % 32.0d % y;
+    @IR(counts = {"frem", "2"}, phase = CompilePhase.BEFORE_MATCHING)
+    @IR(counts = {IRNode.CON_F, "1"})
+    public float veryNotConstant(float x, float y) {
+        return x % 32.0f % y;
     }
 }

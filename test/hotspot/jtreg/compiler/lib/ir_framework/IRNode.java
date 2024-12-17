@@ -553,6 +553,11 @@ public class IRNode {
         beforeMatchingNameRegex(CON_D, "ConD");
     }
 
+    public static final String CON_F = PREFIX + "CON_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_F, "ConF");
+    }
+
     public static final String COUNTED_LOOP = PREFIX + "COUNTED_LOOP" + POSTFIX;
     static {
         String regex = START + "CountedLoop\\b" + MID + END;

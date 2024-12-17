@@ -43,22 +43,21 @@
 
 #include <math.h>
 
-ModDNode::ModDNode(Compile* C, Node* a, Node* b)
-    : CallNode(OptoRuntime::Math_DD_D_Type(), nullptr, TypeRawPtr::BOTTOM) {
-  init_req(TypeFunc::Parms + 0, a);
-  init_req(TypeFunc::Parms + 1, C->top());
-  init_req(TypeFunc::Parms + 2, b);
-  init_req(TypeFunc::Parms + 3, C->top());
+ModFloatingNode::ModFloatingNode(Compile* C, const TypeFunc* tf) : CallNode(tf, nullptr, TypeRawPtr::BOTTOM) {
   add_flag(Flag_is_macro);
   C->add_macro_node(this);
 }
 
-ModFNode::ModFNode(Compile* C, Node* a, Node* b)
-    : CallNode(OptoRuntime::modf_Type(), nullptr, TypeRawPtr::BOTTOM) {
+ModDNode::ModDNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::Math_DD_D_Type()) {
+  init_req(TypeFunc::Parms + 0, a);
+  init_req(TypeFunc::Parms + 1, C->top());
+  init_req(TypeFunc::Parms + 2, b);
+  init_req(TypeFunc::Parms + 3, C->top());
+}
+
+ModFNode::ModFNode(Compile* C, Node* a, Node* b) : ModFloatingNode(C, OptoRuntime::modf_Type()) {
   init_req(TypeFunc::Parms + 0, a);
   init_req(TypeFunc::Parms + 1, b);
-  add_flag(Flag_is_macro);
-  C->add_macro_node(this);
 }
 
 //----------------------magic_int_divide_constants-----------------------------
@@ -1398,49 +1397,6 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
 
 
 //=============================================================================
-//------------------------------Value------------------------------------------
-/*const Type* ModFNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type(dividend());
-  const Type *t2 = phase->type(divisor());
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
-  // If either number is not a constant, we know nothing.
-  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
-    return Type::FLOAT;         // note: x%x can be either NaN or 0
-  }
-
-  float f1 = t1->getf();
-  float f2 = t2->getf();
-  jint  x1 = jint_cast(f1);     // note:  *(int*)&f1, not just (int)f1
-  jint  x2 = jint_cast(f2);
-
-  // If either is a NaN, return an input NaN
-  if (g_isnan(f1))    return t1;
-  if (g_isnan(f2))    return t2;
-
-  // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint)
-    return Type::FLOAT;
-
-  // We must be modulo'ing 2 float constants.
-  // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jint xr = jint_cast(fmod(f1, f2));
-  if ((x1 ^ xr) < 0) {
-    xr ^= min_jint;
-  }
-
-  return TypeF::make(jfloat_cast(xr));
-}*/
-
-//=============================================================================
 //------------------------------Idealize---------------------------------------
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return unsigned_mod_ideal<TypeLong, julong>(phase, can_reshape, this);
@@ -1449,9 +1405,6 @@ Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type* UModLNode::Value(PhaseGVN* phase) const {
   return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
 }
-
-//=============================================================================
-//------------------------------Value------------------------------------------
 
 Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
@@ -1498,7 +1451,7 @@ Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return replace_with_con(phase, TypeD::make(jdouble_cast(xr)));
 }
 
-Node* ModDNode::replace_with_con(PhaseGVN* phase, const Type* con) {
+Node* ModFloatingNode::replace_with_con(PhaseGVN* phase, const Type* con) {
   Compile* C = phase->C;
   Node* con_node = phase->makecon(con);
   CallProjections projs;
@@ -1525,6 +1478,51 @@ Node* ModDNode::replace_with_con(PhaseGVN* phase, const Type* con) {
   C->remove_macro_node(this);
   disconnect_inputs(C);
   return nullptr;
+}
+
+Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type(dividend());
+  const Type* t2 = phase->type(divisor());
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return nullptr;
+  }
+
+  // If either number is not a constant, we know nothing.
+  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
+    return nullptr; // note: x%x can be either NaN or 0
+  }
+
+  float f1 = t1->getf();
+  float f2 = t2->getf();
+  jint x1 = jint_cast(f1); // note:  *(int*)&f1, not just (int)f1
+  jint x2 = jint_cast(f2);
+
+  // If either is a NaN, return an input NaN
+  if (g_isnan(f1)) {
+    return replace_with_con(phase, t1);
+  }
+  if (g_isnan(f2)) {
+    return replace_with_con(phase, t2);
+  }
+
+  // If an operand is infinity or the divisor is +/- zero, punt.
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint) {
+    return nullptr;
+  }
+
+  // We must be modulo'ing 2 float constants.
+  // Make sure that the sign of the fmod is equal to the sign of the dividend
+  jint xr = jint_cast(fmod(f1, f2));
+  if ((x1 ^ xr) < 0) {
+    xr ^= min_jint;
+  }
+
+  return replace_with_con(phase, TypeF::make(jfloat_cast(xr)));
 }
 
 //=============================================================================

@@ -2584,28 +2584,25 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       break;
     default:
       switch (n->Opcode()) {
-      case Op_ModD: {
+      case Op_ModD:
+      case Op_ModF: {
+        bool is_drem = n->Opcode() == Op_ModD;
         CallNode* mod_macro = n->as_Call();
-        CallNode* call = new CallLeafNode(OptoRuntime::Math_DD_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::drem), "drem", TypeRawPtr::BOTTOM);
+        CallNode* call = new CallLeafNode(mod_macro->tf(),
+                                          is_drem ? CAST_FROM_FN_PTR(address, SharedRuntime::drem) : CAST_FROM_FN_PTR(address, SharedRuntime::frem),
+                                          is_drem ? "drem" : "frem", TypeRawPtr::BOTTOM);
         call->init_req(TypeFunc::Control, mod_macro->in(TypeFunc::Control));
         call->init_req(TypeFunc::I_O, mod_macro->in(TypeFunc::I_O));
         call->init_req(TypeFunc::Memory, mod_macro->in(TypeFunc::Memory));
         call->init_req(TypeFunc::ReturnAdr, mod_macro->in(TypeFunc::ReturnAdr));
         call->init_req(TypeFunc::FramePtr, mod_macro->in(TypeFunc::FramePtr));
-        for (int i = 0; i < 4; i++) call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
+        for (unsigned int i = 0; i < mod_macro->tf()->domain()->cnt() - TypeFunc::Parms; i++) {
+          call->init_req(TypeFunc::Parms + i, mod_macro->in(TypeFunc::Parms + i));
+        }
         call->copy_call_debug_info(&_igvn, call);
         _igvn.replace_node(mod_macro, call);
         transform_later(call);
         break;
-      }
-
-      case Op_ModF: {
-        assert(false, "TODO");
-        /*Node* c = make_runtime_call(RC_LEAF, OptoRuntime::modf_Type(),
-                                    CAST_FROM_FN_PTR(address, SharedRuntime::frem),
-                                    "frem", nullptr, // no memory effects
-                                    f1, f2);
-        Node* res = _igvn.transform(new ProjNode(c, TypeFunc::Parms + 0));*/
       }
       default:
         assert(false, "unknown node type in macro list");

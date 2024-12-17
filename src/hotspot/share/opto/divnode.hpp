@@ -141,35 +141,41 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
-//------------------------------ModFNode---------------------------------------
+// Base class for float and double modulus
+class ModFloatingNode : public CallNode {
+protected:
+  Node* replace_with_con(PhaseGVN* phase, const Type* con);
+
+public:
+  ModFloatingNode(Compile* C, const TypeFunc* tf);
+};
 
 // Float Modulus
-class ModFNode : public CallNode {
+class ModFNode : public ModFloatingNode {
+private:
+  Node* dividend() const { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const { return in(TypeFunc::Parms + 1); }
+
 public:
   ModFNode(Compile* C, Node* a, Node* b);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual uint size_of() const { return sizeof(*this); }
-
-private:
-  Node* dividend() const { return in(TypeFunc::Parms + 0); }
-  Node* divisor() const { return in(TypeFunc::Parms + 1); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-//------------------------------ModDNode---------------------------------------
 // Double Modulus
-class ModDNode : public CallNode {
+class ModDNode : public ModFloatingNode {
+private:
+  Node* dividend() const { return in(TypeFunc::Parms + 0); }
+  Node* divisor() const { return in(TypeFunc::Parms + 2); }
+
 public:
   ModDNode(Compile* C, Node* a, Node* b);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegD; }
   virtual uint size_of() const { return sizeof(*this); }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
-
-private:
-  Node* replace_with_con(PhaseGVN* phase, const Type* con);
-  Node* dividend() const { return in(TypeFunc::Parms + 0); }
-  Node* divisor() const { return in(TypeFunc::Parms + 2); }
 };
 
 //------------------------------UModINode---------------------------------------
