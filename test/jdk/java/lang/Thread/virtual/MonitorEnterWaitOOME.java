@@ -27,26 +27,35 @@
  * @summary Test OOM while trying to unmount vthread on monitorenter
  * @requires vm.continuations & vm.gc.G1 & vm.opt.DisableExplicitGC != "true"
  * @library /test/lib
- * @run main/othervm -XX:+UseG1GC -Xmx48M MonitorOOM false
+ * @run main/othervm -XX:+UseG1GC -Xmx48M MonitorEnterWaitOOME false
  */
 
 /*
- * @test id=wait
- * @bug 8345266
+ * @test id=timedwait
  * @summary Test OOM while trying to unmount vthread on Object.wait
  * @requires vm.continuations & vm.gc.G1 & vm.opt.DisableExplicitGC != "true"
  * @library /test/lib
- * @run main/othervm -XX:+UseG1GC -Xmx48M MonitorOOM true
+ * @run main/othervm -XX:+UseG1GC -Xmx48M MonitorEnterWaitOOME true 5
+ */
+
+/*
+ * @test id=untimedwait
+ * @summary Test OOM while trying to unmount vthread on Object.wait
+ * @requires vm.continuations & vm.gc.G1 & vm.opt.DisableExplicitGC != "true"
+ * @library /test/lib
+ * @run main/othervm -XX:+UseG1GC -Xmx48M MonitorEnterWaitOOME true 0
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class MonitorOOM {
+public class MonitorEnterWaitOOME {
     static volatile Object data;
+    static Thread.State dummyState = Thread.State.RUNNABLE; // load java.lang.Thread$State
 
     public static void main(String[] args) throws Throwable {
-        final boolean testWait = args.length == 1 ? Boolean.parseBoolean(args[0]) : false;
+        final boolean testWait = args.length >= 1 ? Boolean.parseBoolean(args[0]) : false;
+        final long timeout = testWait && args.length == 2 ? Long.parseLong(args[1]) : 0L;
 
         Thread vthread;
         var lock = new Object();
@@ -62,7 +71,7 @@ public class MonitorOOM {
                     heapFilled.set(true);
                     synchronized (lock) {
                         if (testWait) {
-                            lock.wait(5);
+                            lock.wait(timeout);
                         }
                     }
                     data = null;
@@ -76,7 +85,13 @@ public class MonitorOOM {
             });
             canFillHeap.set(true);
             awaitTrue(heapFilled);
-            loopMillis(100); // allow vthread to reach synchronized
+            awaitState(vthread, Thread.State.BLOCKED);
+        }
+        if (testWait && timeout == 0) {
+            awaitState(vthread, Thread.State.WAITING);
+            synchronized (lock) {
+                lock.notify();
+            }
         }
         joinVThread(vthread, heapCollected, exRef);
         assert exRef.get() == null;
@@ -106,10 +121,9 @@ public class MonitorOOM {
         while (!ready.get()) {}
     }
 
-    private static void loopMillis(long millis) {
+    private static void awaitState(Thread thread, Thread.State expectedState) {
         // Don't call anything that might allocate from the Java heap.
-        long start = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - start) < millis) {}
+        while (thread.getState() != expectedState) {}
     }
 
     private static void joinVThread(Thread vthread, AtomicBoolean ready, AtomicReference<Throwable> exRef) throws Throwable {
