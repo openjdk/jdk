@@ -24,6 +24,7 @@ package org.openjdk.bench.vm.compiler;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -119,7 +120,13 @@ public abstract class WriteBarrier {
         return Math.abs((m_z << 16) + m_w);  /* 32-bit result */
     }
 
+    // This and the other testArrayWriteBarrierFast benchmarks below should not
+    // be inlined into the JMH-generated harness method. If the methods were
+    // inlined, we might spill in the main loop (on x64) depending on very
+    // subtle conditions (such as whether LinuxPerfAsmProfiler is enabled!),
+    // which could distort the results.
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = realRef;
@@ -127,6 +134,7 @@ public abstract class WriteBarrier {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullSmall() {
         for (int i = 0; i < NUM_REFERENCES_SMALL; i++) {
             theArraySmall[indicesSmall[NUM_REFERENCES_SMALL - i - 1]] = nullRef;
@@ -134,6 +142,7 @@ public abstract class WriteBarrier {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathRealLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = realRef;
@@ -141,6 +150,7 @@ public abstract class WriteBarrier {
     }
 
     @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     public void testArrayWriteBarrierFastPathNullLarge() {
         for (int i = 0; i < NUM_REFERENCES_LARGE; i++) {
             theArrayLarge[indicesLarge[NUM_REFERENCES_LARGE - i - 1]] = nullRef;
