@@ -42,7 +42,8 @@ public class MouseMoveOffScreen {
         robot.delay(500);
 
         Point currLoc = MouseInfo.getPointerInfo().getLocation();
-        if(currLoc == new Point(20000,200)) {
+        System.out.println("Current mouse location: " + currLoc);
+        if(currLoc.equals(new Point(20000,200))) {
             throw new RuntimeException("Test Failed, robot moved mouse off screen.");
         }
     }
