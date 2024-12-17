@@ -75,8 +75,12 @@ public class TestLongMem {
         return a | b;
     }
 
-    public static long testAnd(int a, int b) {
-        return a & b;
+    public static long testAnd2(long x, int i) {
+        return b[i] & x;
+    }
+
+    public static long testAnd1(long x, int i) {
+        return x & b[i];
     }
 
     public static long testCount(int a, int b) {

@@ -71,6 +71,14 @@ public class TestIntReg {
         return a | b;
     }
 
+    public static int testAndImm1(int a, int b) {
+        return a & 7;
+    }
+
+    public static int testAndImm2(int a, int b) {
+        return 5 & b;
+    }
+
     public static int testAnd(int a, int b) {
         return a & b;
     }

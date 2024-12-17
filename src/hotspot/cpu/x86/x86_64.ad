@@ -9775,6 +9775,7 @@ instruct convI2LAndI_reg_immIbitmask(rRegL dst, rRegI src,  immI_Pow2M1 mask, rR
 // And Register with Immediate
 instruct andI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (AndI dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -9786,9 +9787,34 @@ instruct andI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct andI_rReg_rReg_imm(rRegI dst, rRegI src1, immI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AndI src1 src2));
+
+  format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eandl($dst$$Register, $src1$$Register, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct andI_rReg_mem_imm(rRegI dst, memory src1, immI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AndI (LoadI src1) src2));
+
+  format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eandl($dst$$Register, $src1$$Address, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // And Register with Memory
 instruct andI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (AndI dst (LoadI src)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -9797,6 +9823,19 @@ instruct andI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   format %{ "andl    $dst, $src\t# int" %}
   ins_encode %{
     __ andl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct andI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AndI src1 (LoadI src2)));
+
+  ins_cost(150);
+  format %{ "eandl    $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eandl($dst$$Register, $src1$$Register, $src2$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -10250,6 +10289,7 @@ instruct andL_rReg_imm65535(rRegL dst, rRegL src, immL_65535 mask)
 // And Register with Immediate
 instruct andL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (AndL dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10261,9 +10301,34 @@ instruct andL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct andL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AndL src1 src2));
+
+  format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eandq($dst$$Register, $src1$$Register, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct andL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AndL src1 (LoadL src2)));
+
+  format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eandq($dst$$Register, $src1$$Address, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // And Register with Memory
 instruct andL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (AndL dst (LoadL src)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10272,6 +10337,19 @@ instruct andL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   format %{ "andq    $dst, $src\t# long" %}
   ins_encode %{
     __ andq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct andL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AndL src1 (LoadL src2)));
+
+  ins_cost(150);
+  format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eandq($dst$$Register, $src1$$Register, $src2$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
