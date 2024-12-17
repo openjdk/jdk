@@ -102,7 +102,7 @@ public class SimpleHttpServer {
                     try {
                         uri = URI.create("file://" + rootUri.getRawPath() + path).normalize();
                         fPath = Path.of(uri);
-                    } catch (IllegalArgumentException | FileSystemNotFoundException | SecurityException ex) {
+                    } catch (IllegalArgumentException | FileSystemNotFoundException ex) {
                         ex.printStackTrace();
                         notfound(t, path);
                         return;
