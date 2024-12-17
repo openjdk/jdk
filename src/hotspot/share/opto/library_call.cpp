@@ -1943,9 +1943,9 @@ bool LibraryCallKit::inline_notify(vmIntrinsics::ID id) {
 
 //----------------------------inline_min_max-----------------------------------
 bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
-  Node *a = nullptr;
-  Node *b = nullptr;
-  Node *n = nullptr;
+  Node* a = nullptr;
+  Node* b = nullptr;
+  Node* n = nullptr;
   switch (id) {
     case vmIntrinsics::_min:
     case vmIntrinsics::_max:
