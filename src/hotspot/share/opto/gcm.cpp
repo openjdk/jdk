@@ -769,6 +769,30 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     }
   }
   worklist_def_use_mem_states.push(nullptr, initial_mem);
+  Block* initial_mem_block = get_block_for_node(initial_mem);
+  if (load->in(0) && initial_mem_block != nullptr) {
+    // If the load has an explicit control input and initial_mem has a block,
+    // walk up the dominator tree from the early block to the initial memory
+    // block. If we in a block find memory Phi(s) that can alias initial_mem,
+    // these are also potential initial memory states and there may be further
+    // required anti dependences due to them.
+    assert(initial_mem_block->dominates(early), "invariant");
+    Block* b = early;
+    // Stop searching when we run out of dominators (b == nullptr) or when we
+    // step past the initial memory block (b == initial_mem_block->_idom).
+    while (b != nullptr && b != initial_mem_block->_idom) {
+      if (b == initial_mem_block && !initial_mem->is_Phi()) {
+        break;
+      }
+      for (uint i = 0; i < b->number_of_nodes(); ++i) {
+        Node* n = b->get_node(i);
+        if (n->is_memory_phi() && C->can_alias(n->adr_type(), load_alias_idx)) {
+          worklist_def_use_mem_states.push(nullptr, n);
+        }
+      }
+      b = b->_idom;
+    }
+  }
   while (worklist_def_use_mem_states.is_nonempty()) {
     // Examine a nearby store to see if it might interfere with our load.
     Node* def_mem_state = worklist_def_use_mem_states.top_def();
@@ -791,12 +815,10 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     // MergeMems do not directly have anti-deps.
     // Treat them as internal nodes in a forward tree of memory states,
     // the leaves of which are each a 'possible-def'.
-    if (use_mem_state == initial_mem    // root (exclusive) of tree we are searching
-        || op == Op_MergeMem    // internal node of tree we are searching
+    if (def_mem_state == nullptr // root of a tree we are searching
+        || op == Op_MergeMem     // internal node of tree we are searching
         ) {
       def_mem_state = use_mem_state;   // It's not a possibly interfering store.
-      if (use_mem_state == initial_mem)
-        initial_mem = nullptr;  // only process initial memory once
 
       for (DUIterator_Fast imax, i = def_mem_state->fast_outs(imax); i < imax; i++) {
         use_mem_state = def_mem_state->fast_out(i);
@@ -864,9 +886,6 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     assert(store_block != nullptr, "unused killing projections skipped above");
 
     if (use_mem_state->is_Phi()) {
-      // Loop-phis need to raise load before input. (Other phis are treated
-      // as store below.)
-      //
       // 'load' uses memory which is one (or more) of the Phi's inputs.
       // It must be scheduled not before the Phi, but rather before
       // each of the relevant Phi inputs.
