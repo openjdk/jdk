@@ -78,7 +78,12 @@ $(eval $(call SetupCompileProperties, SUN_UTIL, \
     CLASS := sun.util.resources.LocaleNamesBundle, \
 ))
 
-TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL)
+$(eval $(call SetupCompileProperties, SECURITY_RESOURCES, \
+    SRC_DIRS := $(MODULE_SRC)/share/classes/sun/security/util/resources, \
+    CLASS := ListResourceBundle, \
+))
+
+TARGETS += $(LIST_RESOURCE_BUNDLE) $(SUN_UTIL) $(SECURITY_RESOURCES)
 
 # Some resources bundles are already present as java files but still need to be
 # copied to zh_HK locale.

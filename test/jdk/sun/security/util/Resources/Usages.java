@@ -25,6 +25,7 @@
  * @test
  * @bug 8215937
  * @modules java.base/sun.security.util
+ *          java.base/sun.security.util.resources
  *          java.base/sun.security.tools.keytool
  *          jdk.jartool/sun.security.tools.jarsigner
  * @summary Check usages of security-related Resources files
@@ -33,16 +34,11 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.MalformedURLException;
-
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -130,7 +126,7 @@ public class Usages {
                     new Pair("java.base/share/classes/sun/security/tools/KeyStoreUtil.java",
                             List.of(RB_GETSTRING))),
 
-            ResourceBundle.getBundle("sun.security.util.newresources.auth"),
+            new sun.security.util.resources.auth(),
             List.of(
                     new Pair("java.base/share/classes/sun/security/provider/ConfigFile.java",
                             List.of(GETAUTHSTRING, IOEXCEPTION)),
@@ -148,7 +144,7 @@ public class Usages {
                     new Pair("java.base/share/classes/sun/security/tools/KeyStoreUtil.java",
                             List.of(RB_GETSTRING))),
 
-            ResourceBundle.getBundle("sun.security.util.newresources.security"),
+            new sun.security.util.resources.security(),
             List.of(
                     new Pair("jdk.crypto.cryptoki/share/classes/sun/security/pkcs11/SunPKCS11.java",
                             List.of(MGR_GETSTRING)),
