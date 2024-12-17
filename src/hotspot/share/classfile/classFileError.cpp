@@ -45,11 +45,11 @@ void ClassFileParser::classfile_parse_error(const char* msg, TRAPS) const {
                      msg, _class_name->as_C_string());
 }
 
+// The caller is required/expected to have a ResourceMark in this case.
 void ClassFileParser::classfile_parse_error(const char* msg,
                                             int index,
                                             TRAPS) const {
   assert(_class_name != nullptr, "invariant");
-  ResourceMark rm(THREAD);
   Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
                      msg, index, _class_name->as_C_string());
 }

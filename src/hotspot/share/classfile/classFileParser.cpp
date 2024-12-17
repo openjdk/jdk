@@ -4066,6 +4066,7 @@ void ClassFileParser::check_super_class_access(const InstanceKlass* this_klass, 
 
     if (super_ik->is_sealed()) {
       stringStream ss;
+      ResourceMark rm(THREAD);
       if (!super_ik->has_as_permitted_subclass(this_klass, ss)) {
         classfile_icce_error(ss.as_string(), THREAD);
         return;
@@ -4116,6 +4117,7 @@ void ClassFileParser::check_super_interface_access(const InstanceKlass* this_kla
 
     if (k->is_sealed()) {
       stringStream ss;
+      ResourceMark rm(THREAD);
       if (!k->has_as_permitted_subclass(this_klass, ss)) {
         classfile_icce_error(ss.as_string(), THREAD);
         return;
