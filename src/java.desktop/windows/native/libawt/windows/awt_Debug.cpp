@@ -89,6 +89,14 @@ AwtDebugSupport::AwtDebugSupport() {
 }
 
 AwtDebugSupport::~AwtDebugSupport() {
+#ifdef DEBUG
+    // The destructor of a static object is called at process shutdown or dll
+    // unloading. The JVM is not available for the raw monitors at that time,
+    // so we need to stop locking before continuing.
+    DTrace_DisableMutex();
+    DMem_DisableMutex();
+#endif
+
     if (report_leaks) {
         DMem_ReportLeaks();
     }

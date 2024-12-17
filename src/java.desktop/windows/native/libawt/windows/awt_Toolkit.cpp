@@ -102,15 +102,34 @@ extern void DWMResetCompositionEnabled();
    first loaded */
 JavaVM *jvm = NULL;
 
+/* Return a handle to the module containing this method, either a DLL in case
+ * of a dynamic library build, or the .EXE in case of a static build.
+ */
+HMODULE GetAwtModuleHandle() {
+    HMODULE hModule = NULL;
+    GetModuleHandleEx(
+        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+        (LPCTSTR) &GetAwtModuleHandle,
+        &hModule
+    );
+    return hModule;
+}
+
+extern "C" {
+
 JNIEXPORT jint JNICALL
 DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     TRY;
 
+    AwtToolkit::GetInstance().SetModuleHandle(GetAwtModuleHandle());
+
     jvm = vm;
     return JNI_VERSION_1_2;
 
     CATCH_BAD_ALLOC_RET(0);
+}
+
 }
 
 extern "C" JNIEXPORT jboolean JNICALL AWTIsHeadless() {
@@ -244,32 +263,6 @@ BOOL AwtToolkit::activateKeyboardLayout(HKL hkl) {
     }
 
     return (prev != 0);
-}
-
-/************************************************************************
- * Exported functions
- */
-
-extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
-                                 LPVOID)
-{
-    // Don't use the TRY and CATCH_BAD_ALLOC_RET macros if we're detaching
-    // the library. Doing so causes awt.dll to call back into the VM during
-    // shutdown. This crashes the HotSpot VM.
-    switch (ul_reason_for_call) {
-    case DLL_PROCESS_ATTACH:
-        TRY;
-        AwtToolkit::GetInstance().SetModuleHandle((HMODULE)hInstance);
-        CATCH_BAD_ALLOC_RET(FALSE);
-        break;
-    case DLL_PROCESS_DETACH:
-#ifdef DEBUG
-        DTrace_DisableMutex();
-        DMem_DisableMutex();
-#endif // DEBUG
-        break;
-    }
-    return TRUE;
 }
 
 /************************************************************************
