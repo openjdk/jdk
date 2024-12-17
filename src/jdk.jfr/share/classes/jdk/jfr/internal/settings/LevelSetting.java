@@ -33,13 +33,14 @@ import java.util.Set;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
+import jdk.jfr.SettingControl;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 
 @MetadataDefinition
 @Label("Level")
 @Name(Type.SETTINGS_PREFIX + "Level")
-public final class LevelSetting extends JDKSettingControl {
+public final class LevelSetting extends SettingControl {
     private final PlatformEventType eventType;
     private final List<String> levels;
     private String value;

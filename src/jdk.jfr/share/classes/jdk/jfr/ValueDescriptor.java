@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Objects;
 
 import jdk.jfr.internal.AnnotationConstruct;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Utils;
 
@@ -143,7 +142,6 @@ public final class ValueDescriptor {
         Objects.requireNonNull(type, "type");
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(annotations, "annotations");
-        SecuritySupport.checkRegisterPermission();
         if (!allowArray) {
             if (type.isArray()) {
                 throw new IllegalArgumentException("Array types are not allowed");

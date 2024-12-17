@@ -33,7 +33,6 @@ import java.io.RandomAccessFile;
 import java.nio.file.Path;
 
 import jdk.jfr.internal.management.HiddenWait;
-import jdk.jfr.internal.util.Utils;
 
 public final class RecordingInput implements DataInput, AutoCloseable {
 
@@ -68,7 +67,6 @@ public final class RecordingInput implements DataInput, AutoCloseable {
         }
     }
     private final int blockSize;
-    private final FileAccess fileAccess;
     private final HiddenWait threadSleeper = new HiddenWait();
     private long pollCount = 1000;
     private RandomAccessFile file;
@@ -79,26 +77,25 @@ public final class RecordingInput implements DataInput, AutoCloseable {
     private long size = -1; // Fail fast if setSize(...) has not been called
                             // before parsing
 
-    RecordingInput(File f, FileAccess fileAccess, int blockSize) throws IOException {
+    RecordingInput(File f, int blockSize) throws IOException {
         this.blockSize = blockSize;
-        this.fileAccess = fileAccess;
         initialize(f);
     }
 
     private void initialize(File f) throws IOException {
-        this.filename = fileAccess.getAbsolutePath(f);
-        this.file = fileAccess.openRAF(f, "r");
+        this.filename = f.getAbsolutePath();
+        this.file = new RandomAccessFile(f, "r");
         this.position = 0;
         this.size = -1;
         this.currentBlock.reset();
         previousBlock.reset();
-        if (fileAccess.length(f) < 8) {
-            throw new IOException("Not a valid Flight Recorder file. File length is only " + fileAccess.length(f) + " bytes.");
+        if (f.length() < 8) {
+            throw new IOException("Not a valid Flight Recorder file. File length is only " + f.length() + " bytes.");
         }
     }
 
-    public RecordingInput(File f, FileAccess fileAccess) throws IOException {
-        this(f, fileAccess, DEFAULT_BLOCK_SIZE);
+    public RecordingInput(File f) throws IOException {
+        this(f, DEFAULT_BLOCK_SIZE);
     }
 
     void positionPhysical(long position) throws IOException {

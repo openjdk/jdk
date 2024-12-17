@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import jdk.jfr.Description;
+import jdk.jfr.SettingControl;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
@@ -44,7 +45,7 @@ import jdk.jfr.internal.util.ValueParser;
 @Description("Limit running time of event")
 @Name(Type.SETTINGS_PREFIX + "Cutoff")
 @Timespan
-public final class CutoffSetting extends JDKSettingControl {
+public final class CutoffSetting extends SettingControl {
     public static final String DEFAULT_VALUE = ValueParser.INFINITY;
     private String value = DEFAULT_VALUE;
     private final PlatformEventType eventType;

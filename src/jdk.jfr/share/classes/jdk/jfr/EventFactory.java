@@ -37,7 +37,6 @@ import jdk.internal.module.Checks;
 import jdk.jfr.internal.EventClassBuilder;
 import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.MetadataRepository;
-import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.Utils;
 
@@ -98,8 +97,6 @@ public final class EventFactory {
         Objects.requireNonNull(annotationElements, "annotationElements");
         Objects.requireNonNull(fields, "fields");
         JVMSupport.ensureWithInternalError();
-
-        SecuritySupport.checkRegisterPermission();
 
         List<AnnotationElement> sanitizedAnnotation = Utils.sanitizeNullFreeList(annotationElements, AnnotationElement.class);
         List<ValueDescriptor> sanitizedFields = Utils.sanitizeNullFreeList(fields, ValueDescriptor.class);

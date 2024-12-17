@@ -280,7 +280,7 @@ public final class EventControl {
         } catch (Exception e) {
             throw (Error) new InternalError("Could not get constructor for " + settingControlClass.getName()).initCause(e);
         }
-        SecuritySupport.setAccessible(cc);
+        cc.setAccessible(true);
         try {
             return (SettingControl) cc.newInstance();
         } catch (IllegalArgumentException | InvocationTargetException e) {
@@ -373,13 +373,6 @@ public final class EventControl {
         return idName;
     }
 
-    /**
-     * A malicious user must never be able to run a callback in the wrong
-     * context. Methods on SettingControl must therefore never be invoked directly
-     * by JFR, instead use jdk.jfr.internal.Control.
-     *
-     * The returned list is only to be used inside EventConfiguration
-     */
     public List<SettingControl> getSettingControls() {
         return settingControls;
     }

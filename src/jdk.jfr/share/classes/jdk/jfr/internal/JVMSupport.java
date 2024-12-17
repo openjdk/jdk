@@ -56,7 +56,7 @@ public final class JVMSupport {
     private static boolean checkAvailability() {
         // set jfr.unsupported.vm to true to test API on an unsupported VM
         try {
-            if (SecuritySupport.getBooleanProperty("jfr.unsupported.vm")) {
+            if (Boolean.getBoolean("jfr.unsupported.vm")) {
                 return false;
             }
         } catch (NoClassDefFoundError cnfe) {

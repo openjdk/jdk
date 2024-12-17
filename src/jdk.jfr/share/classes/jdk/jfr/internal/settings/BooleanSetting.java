@@ -28,9 +28,10 @@ package jdk.jfr.internal.settings;
 import java.util.Objects;
 import java.util.Set;
 
+import jdk.jfr.SettingControl;
 import jdk.jfr.internal.PlatformEventType;
 
-abstract class BooleanSetting extends JDKSettingControl {
+abstract class BooleanSetting extends SettingControl {
     private final PlatformEventType eventType;
     private final String defaultValue;
     private String value;

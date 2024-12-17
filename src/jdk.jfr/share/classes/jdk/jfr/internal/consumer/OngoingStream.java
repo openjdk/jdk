@@ -26,12 +26,12 @@ package jdk.jfr.internal.consumer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.management.EventByteStream;
 import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.management.ManagementSupport;
@@ -63,7 +63,7 @@ public final class OngoingStream extends EventByteStream {
         this.blockSize = blockSize;
         this.startTimeNanos = startTimeNanos;
         this.endTimeNanos = endTimeNanos;
-        this.repositoryFiles = new RepositoryFiles(SecuritySupport.PRIVILEGED, null, false);
+        this.repositoryFiles = new RepositoryFiles(null, false);
     }
 
     @Override
@@ -206,10 +206,10 @@ public final class OngoingStream extends EventByteStream {
 
     private boolean ensureInput() throws IOException {
         if (input == null) {
-            if (SecuritySupport.getFileSize(new SafePath(path)) < HEADER_SIZE) {
+            if (Files.size(path) < HEADER_SIZE) {
                 return false;
             }
-            input = new RecordingInput(path.toFile(), SecuritySupport.PRIVILEGED);
+            input = new RecordingInput(path.toFile());
             input.setStreamed();
             header = new ChunkHeader(input);
         }

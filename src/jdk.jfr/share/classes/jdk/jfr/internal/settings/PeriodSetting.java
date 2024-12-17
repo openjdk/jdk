@@ -32,6 +32,7 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Name;
+import jdk.jfr.SettingControl;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.util.ValueParser;
@@ -41,7 +42,7 @@ import static jdk.jfr.internal.util.ValueParser.MISSING;
 @Label("Period")
 @Description("Record event at interval")
 @Name(Type.SETTINGS_PREFIX + "Period")
-public final class PeriodSetting extends JDKSettingControl {
+public final class PeriodSetting extends SettingControl {
     private static final long typeId = Type.getTypeId(PeriodSetting.class);
 
     public static final String EVERY_CHUNK = "everyChunk";

@@ -25,7 +25,9 @@
 
 package jdk.jfr.internal.util;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -447,5 +449,14 @@ public final class Utils {
             }
         }
         return null;
+    }
+    
+    public static Path getPathInProperty(String prop, String subPath) {
+        String path = System.getProperty(prop);
+        if (path == null) {
+            return null;
+        }
+        File file = subPath == null ? new File(path) : new File(path, subPath);
+        return file.toPath().toAbsolutePath();
     }
 }

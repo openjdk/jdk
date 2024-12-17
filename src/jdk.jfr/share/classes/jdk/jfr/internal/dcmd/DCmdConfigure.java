@@ -26,6 +26,7 @@
 package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.internal.LogLevel;
@@ -34,7 +35,6 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.Options;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Repository;
-import jdk.jfr.internal.SecuritySupport.SafePath;
 
 /**
  * JFR.configure - invoked from native
@@ -89,7 +89,7 @@ final class DCmdConfigure extends AbstractDCmd {
         boolean updated = false;
         if (repositoryPath != null) {
             try {
-                SafePath s = new SafePath(repositoryPath);
+                Path s = Path.of(repositoryPath);
                 if (FlightRecorder.isInitialized()) {
                     PrivateAccess.getInstance().getPlatformRecorder().migrate(s);
                 } else {
@@ -115,7 +115,7 @@ final class DCmdConfigure extends AbstractDCmd {
 
         if (dumpPath != null)  {
             try {
-                Options.setDumpPath(new SafePath(dumpPath));
+                Options.setDumpPath(Path.of(dumpPath));
             } catch (IOException e) {
                 throw new DCmdException("Could not set " + dumpPath + " to emergency dump path. " + e.getMessage(), e);
             }

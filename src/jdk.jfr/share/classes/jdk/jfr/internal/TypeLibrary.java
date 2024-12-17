@@ -189,7 +189,7 @@ public final class TypeLibrary {
                 Modules.addExports(proxyModule, proxyPackage, jfrModule);
             }
         }
-        SecuritySupport.setAccessible(m);
+        m.setAccessible(true);
         try {
             return m.invoke(annotation, new Object[0]);
         } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
