@@ -49,6 +49,7 @@ public class bug4278839 {
     private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        int caret;
         try {
 
             robo = new Robot();
@@ -67,47 +68,61 @@ public class bug4278839 {
             robo.waitForIdle();
             robo.delay(250);
 
-            passed &= moveCaret(true) == 1;
-            System.out.println("passed1 moveCaret1 " + passed);
+            passed &= (caret = moveCaret(true)) == 1;
+            System.out.println(" passed " + passed +
+                               " Expected position 1 actual position " + caret);
 
-            passed &= moveCaret(true) == 5;
-            System.out.println("passed2 moveCaret5 " + passed);
+            passed &= (caret = moveCaret(true)) == 5;
+            System.out.println(" passed " + passed +
+                               " Expected position 5 actual position " + caret);
 
-            passed &= moveCaret(true) == 8;
-            System.out.println("passed3 moveCaret8 " + passed);
+            passed &= (caret = moveCaret(true)) == 8;
+            System.out.println(" passed " + passed +
+                               " Expected position 8 actual position " + caret);
 
-            passed &= moveCaret(true) == 9;
-            System.out.println("passed4 moveCaret9 " + passed);
+            passed &= (caret = moveCaret(true)) == 9;
+            System.out.println(" passed " + passed +
+                               " Expected position 9 actual position " + caret);
 
-            passed &= moveCaret(true) == 13;
-            System.out.println("passed5 moveCaret13 " + passed);
+            passed &= (caret = moveCaret(true)) == 13;
+            System.out.println(" passed " + passed +
+                               " Expected position 13 actual position " + caret);
 
-            passed &= moveCaret(true) == 16;
-            System.out.println("passed6 moveCaret16 " + passed);
+            passed &= (caret = moveCaret(true)) == 16;
+            System.out.println(" passed " + passed +
+                               " Expected position 16 actual position " + caret);
 
-            passed &= moveCaret(true) == 17;
-            System.out.println("passed7 moveCaret17 " + passed);
+            passed &= (caret = moveCaret(true)) == 17;
+            System.out.println(" passed " + passed +
+                               " Expected position 17 actual position " + caret);
 
-            passed &= moveCaret(false) == 16;
-            System.out.println("passed8 moveCaret 16 " + passed);
+            passed &= (caret = moveCaret(false)) == 16;
+            System.out.println(" passed " + passed +
+                               " Expected position 16 actual position " + caret);
 
-            passed &= moveCaret(false) == 13;
-            System.out.println("passed9 moveCaret13 " + passed);
+            passed &= (caret = moveCaret(false)) == 13;
+            System.out.println(" passed " + passed +
+                               " Expected position 13 actual position " + caret);
 
-            passed &= moveCaret(false) == 9;
-            System.out.println("passed10 moveCaret9 " + passed);
+            passed &= (caret = moveCaret(false)) == 9;
+            System.out.println(" passed " + passed +
+                               " Expected position 9 actual position " + caret);
 
-            passed &= moveCaret(false) == 8;
-            System.out.println("passed11 moveCaret8 " + passed);
+            passed &= (caret = moveCaret(false)) == 8;
+            System.out.println(" passed " + passed +
+                               " Expected position 8 actual position " + caret);
 
-            passed &= moveCaret(false) == 5;
-            System.out.println("passed12 moveCaret5 " + passed);
+            passed &= (caret = moveCaret(false)) == 5;
+            System.out.println(" passed " + passed +
+                               " Expected position 5 actual position " + caret);
 
-            passed &= moveCaret(false) == 1;
-            System.out.println("passed13 moveCaret5 " + passed);
+            passed &= (caret = moveCaret(false)) == 1;
+            System.out.println(" passed " + passed +
+                               " Expected position 1 actual position " + caret);
 
-            passed &= moveCaret(false) == 0;
-            System.out.println("passed14 moveCaret0 " + passed);
+            passed &= (caret = moveCaret(false)) == 0;
+            System.out.println(" passed " + passed +
+                               " Expected position 0 actual position " + caret);
 
         } catch (Exception e) {
             throw new RuntimeException("Test failed because of an exception:",
