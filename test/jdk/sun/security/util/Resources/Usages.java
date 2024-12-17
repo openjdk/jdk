@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8215937
+ * @bug 8215937 8345940
  * @modules java.base/sun.security.util
  *          java.base/sun.security.util.resources
  *          java.base/sun.security.tools.keytool
@@ -105,17 +105,6 @@ public class Usages {
     // ioException in ConfigFile.java
     static Pattern IOEXCEPTION = Pattern.compile(
             "ioException[ \\n]*\\([ \\n]*\"(.*?)\",");
-
-    //    static URL[] PROPERTIES_CLASSPATH;
-    //
-    //    static {
-    //        try {
-    //            PROPERTIES_CLASSPATH = new URL[]{
-    //                    new URL("file://../../../../../../src/java.base/")};
-    //        } catch (MalformedURLException e) {
-    //            throw new RuntimeException(e);
-    //        }
-    //    }
 
     // For each Resources file, where and how the strings are used.
     static Map<ResourceBundle, List<Pair>> MAP = Map.of(
