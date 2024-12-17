@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -423,7 +423,7 @@ void VM_Version::check_virtualizations() {
 
   while (fgets(line, sizeof(line), fp) != nullptr) {
     if (strncmp(line, system_type, strlen(system_type)) == 0) {
-      if (strstr(line, "qemu") != 0) {
+      if (strstr(line, "qemu") != nullptr) {
         Abstract_VM_Version::_detected_virtualization = PowerKVM;
         fclose(fp);
         return;

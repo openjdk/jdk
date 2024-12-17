@@ -36,13 +36,11 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivilegedAction;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
@@ -380,14 +378,7 @@ enum SSLCipher {
 
     static  {
         final long max = 4611686018427387904L; // 2^62
-        @SuppressWarnings("removal")
-        String prop = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-            @Override
-            public String run() {
-                return Security.getProperty("jdk.tls.keyLimits");
-            }
-        });
+        String prop = Security.getProperty("jdk.tls.keyLimits");
 
         if (prop != null) {
             String[] propvalue = prop.split(",");

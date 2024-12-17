@@ -24,19 +24,36 @@
  */
 package java.lang.classfile.instruction;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
 import java.util.List;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 
 /**
- * Models a {@code lookupswitch} instruction in the {@code code} array of a
- * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
- * the elements of a {@link CodeModel}.
+ * Models a {@link Opcode#LOOKUPSWITCH lookupswitch} instruction in the {@code
+ * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
+ * when traversing the elements of a {@link CodeModel}.
+ * <p>
+ * A lookup switch instruction is composite:
+ * {@snippet lang=text :
+ * // @link substring="LookupSwitchInstruction" target="#of" :
+ * LookupSwitchInstruction(
+ *     Label defaultTarget, // @link substring="defaultTarget" target="#defaultTarget"
+ *     List<SwitchCase> cases // @link substring="cases" target="#cases()"
+ * )
+ * }
+ * If elements in {@code cases} are not sorted ascending by their {@link
+ * SwitchCase#caseValue caseValue}, a sorted version of the {@code cases} list
+ * will be written instead.
  *
+ * @see Opcode.Kind#LOOKUP_SWITCH
+ * @see CodeBuilder#lookupswitch CodeBuilder::lookupswitch
+ * @jvms 6.5.lookupswitch <em>lookupswitch</em>
  * @since 24
  */
 public sealed interface LookupSwitchInstruction extends Instruction
