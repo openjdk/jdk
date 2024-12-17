@@ -33,6 +33,7 @@
 #include "gc/parallel/psPromotionManager.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
@@ -69,8 +70,8 @@ jint ParallelScavengeHeap::initialize() {
 
   initialize_reserved_region(heap_rs);
   // Layout the reserved space for the generations.
-  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize);
-  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize);
+  ReservedSpace old_rs   = heap_rs.first_part(MaxOldSize, GenAlignment);
+  ReservedSpace young_rs = heap_rs.last_part(MaxOldSize, GenAlignment);
   assert(young_rs.size() == MaxNewSize, "Didn't reserve all of the heap");
 
   PSCardTable* card_table = new PSCardTable(heap_rs.region());
@@ -128,6 +129,8 @@ jint ParallelScavengeHeap::initialize() {
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_parallel_workers);
 
   ParallelInitLogger::print();
+
+  FullGCForwarding::initialize(heap_rs.region());
 
   return JNI_OK;
 }

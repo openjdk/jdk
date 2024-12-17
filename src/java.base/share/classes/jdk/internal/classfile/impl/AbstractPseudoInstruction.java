@@ -24,17 +24,15 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Optional;
-
-import java.lang.classfile.BufWriter;
+import java.lang.classfile.Label;
+import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.classfile.instruction.CharacterRange;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
-import java.lang.classfile.Label;
-import java.lang.classfile.PseudoInstruction;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 

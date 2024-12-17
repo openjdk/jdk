@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
@@ -390,6 +391,24 @@ public class TestSegments {
             assertTrue(MemorySegment.ofAddress(42).asReadOnly().reinterpret(arena, _ -> counter.incrementAndGet()).isReadOnly());
         }
         assertEquals(counter.get(), 3);
+    }
+
+    @Test
+    void testReinterpretArenaClose() {
+        MemorySegment segment;
+        try (Arena arena = Arena.ofConfined()){
+            try (Arena otherArena = Arena.ofConfined()) {
+                segment = arena.allocate(100);
+                segment = segment.reinterpret(otherArena, null);
+            }
+            final MemorySegment sOther = segment;
+            assertThrows(IllegalStateException.class, () -> sOther.get(JAVA_BYTE, 0));
+            segment = segment.reinterpret(arena, null);
+            final MemorySegment sOriginal = segment;
+            sOriginal.get(JAVA_BYTE, 0);
+        }
+        final MemorySegment closed = segment;
+        assertThrows(IllegalStateException.class, () -> closed.get(JAVA_BYTE, 0));
     }
 
     @Test

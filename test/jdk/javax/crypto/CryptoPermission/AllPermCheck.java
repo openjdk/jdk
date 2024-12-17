@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  * crypto permssion checks failed.
  * @author Valerie Peng
  * @key randomness
+ * @run main AllPermCheck DES
+ * @run main AllPermCheck AES
  */
 
 import java.io.*;
@@ -84,9 +86,10 @@ public class AllPermCheck {
     }
 
     public static void main(String[] args) throws Exception {
-        Provider p = Security.getProvider("SunJCE");
+        Provider p = Security.getProvider(System.getProperty("test.provider.name", "SunJCE"));
         System.out.println("Testing provider " + p.getName() + "...");
-        if (Cipher.getMaxAllowedKeyLength("DES") == Integer.MAX_VALUE) {
+        String transformation = args[0];
+        if (Cipher.getMaxAllowedKeyLength(transformation) == Integer.MAX_VALUE) {
             // skip this test for unlimited jurisdiction policy files
             System.out.println("Skip this test due to unlimited version");
             return;

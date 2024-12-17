@@ -25,36 +25,37 @@
 package java.lang.classfile;
 
 import java.io.IOException;
-import java.lang.constant.ClassDesc;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
+import java.lang.classfile.attribute.CharacterRangeInfo;
+import java.lang.classfile.attribute.LocalVariableInfo;
+import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.classfile.instruction.ExceptionCatch;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import jdk.internal.classfile.impl.ClassFileImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import java.lang.reflect.AccessFlag;
-import java.lang.classfile.attribute.CharacterRangeInfo;
-import java.lang.classfile.attribute.LocalVariableInfo;
-import java.lang.classfile.attribute.LocalVariableTypeInfo;
-import java.lang.classfile.instruction.ExceptionCatch;
-import java.util.List;
+
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.CD_module_info;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Represents a context for parsing, transforming, and generating classfiles.
  * A {@code ClassFile} has a set of options that condition how parsing and
  * generation is done.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFile
         permits ClassFileImpl {
 
@@ -83,9 +84,8 @@ public sealed interface ClassFile
      * An option that affects the parsing and writing of classfiles.
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface Option {
     }
 
@@ -93,9 +93,8 @@ public sealed interface ClassFile
      * Option describing attribute mappers for custom attributes.
      * Default is only to process standard attributes.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface AttributeMapperOption extends Option
             permits ClassFileImpl.AttributeMapperOptionImpl {
 
@@ -118,9 +117,8 @@ public sealed interface ClassFile
      * Option describing the class hierarchy resolver to use when generating
      * stack maps.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface ClassHierarchyResolverOption extends Option
             permits ClassFileImpl.ClassHierarchyResolverOptionImpl {
 
@@ -149,9 +147,8 @@ public sealed interface ClassFile
      * Default is {@code SHARED_POOL} to preserve the original constant
      * pool.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ConstantPoolSharingOption implements Option {
 
         /** Preserves the original constant pool when transforming classfile */
@@ -166,9 +163,8 @@ public sealed interface ClassFile
      * Default is {@code PATCH_DEAD_CODE} to automatically patch out unreachable
      * code with NOPs.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadCodeOption implements Option {
 
         /** Patch unreachable code */
@@ -187,9 +183,8 @@ public sealed interface ClassFile
      * Setting this option to {@code DROP_DEAD_LABELS} filters the above
      * elements instead.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DeadLabelsOption implements Option {
 
         /** Fail on unresolved labels */
@@ -206,9 +201,8 @@ public sealed interface ClassFile
      * reduce the overhead of parsing or transforming classfiles.
      * Default is {@code PASS_DEBUG} to process debug elements.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum DebugElementsOption implements Option {
 
         /** Process debug elements */
@@ -224,9 +218,8 @@ public sealed interface ClassFile
      * classfiles.
      * Default is {@code PASS_LINE_NUMBERS} to process line numbers.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum LineNumbersOption implements Option {
 
         /** Process line numbers */
@@ -239,18 +232,35 @@ public sealed interface ClassFile
     /**
      * Option describing whether to automatically rewrite short jumps to
      * long when necessary.
-     * Default is {@code FIX_SHORT_JUMPS} to automatically rewrite jump
+     * Default is {@link #FIX_SHORT_JUMPS} to automatically rewrite jump
      * instructions.
+     * <p>
+     * Due to physical restrictions, some types of instructions cannot encode
+     * certain jump targets with bci offsets less than -32768 or greater than
+     * 32767, as they use a {@code s2} to encode such an offset.  (The maximum
+     * length of the {@code code} array is 65535.)  These types of instructions
+     * are called "short jumps".
      *
-     * @since 22
+     * @see BranchInstruction
+     * @see DiscontinuedInstruction.JsrInstruction
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum ShortJumpsOption implements Option {
 
-        /** Automatically convert short jumps to long when necessary */
+        /**
+         * Automatically convert short jumps to long when necessary.
+         * <p>
+         * For an invalid instruction model, a {@link CodeBuilder} may generate
+         * another or a few other instructions to accomplish the same effect.
+         */
         FIX_SHORT_JUMPS,
 
-        /** Fail if short jump overflows */
+        /**
+         * Fail with an {@link IllegalArgumentException} if short jump overflows.
+         * <p>
+         * This is useful to ensure the physical accuracy of a generated {@code
+         * class} file.
+         */
         FAIL_ON_SHORT_JUMPS
     }
 
@@ -261,9 +271,8 @@ public sealed interface ClassFile
      * {@link #JAVA_6_VERSION} the stack maps may not be generated.
      * @jvms 4.10.1 Verification by Type Checking
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum StackMapsOption implements Option {
 
         /** Generate stack maps when required */
@@ -283,9 +292,8 @@ public sealed interface ClassFile
      * Default is {@code PASS_ALL_ATTRIBUTES} to process all original attributes.
      * @see AttributeMapper.AttributeStability
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     enum AttributesProcessingOption implements Option {
 
         /** Process all original attributes during transformation */
@@ -647,17 +655,17 @@ public sealed interface ClassFile
     /** The class major version of JAVA_22. */
     int JAVA_22_VERSION = 66;
 
-    /**
-     * The class major version of JAVA_23.
-     * @since 23
-     */
+    /** The class major version of JAVA_23. */
     int JAVA_23_VERSION = 67;
 
-    /**
-     * The class major version of JAVA_24.
-     * @since 24
-     */
+    /** The class major version of JAVA_24. */
     int JAVA_24_VERSION = 68;
+
+    /**
+     * The class major version of JAVA_25.
+     * @since 25
+     */
+    int JAVA_25_VERSION = 69;
 
     /**
      * A minor version number indicating a class uses preview features
@@ -670,7 +678,7 @@ public sealed interface ClassFile
      * {@return the latest major Java version}
      */
     static int latestMajorVersion() {
-        return JAVA_24_VERSION;
+        return JAVA_25_VERSION;
     }
 
     /**

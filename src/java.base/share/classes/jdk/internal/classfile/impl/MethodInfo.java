@@ -24,8 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.MethodTypeDesc;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 

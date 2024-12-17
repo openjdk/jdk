@@ -213,8 +213,6 @@ final class ClientHello {
                 // ignore cookie
                 hos.putBytes16(getEncodedCipherSuites());
                 hos.putBytes8(compressionMethod);
-                extensions.send(hos);       // In TLS 1.3, use of certain
-                                            // extensions is mandatory.
             } catch (IOException ioe) {
                 // unlikely
             }
@@ -1425,6 +1423,9 @@ final class ClientHello {
             // Only need to ServerHello, which may add more responders later.
             shc.handshakeProducers.put(SSLHandshake.SERVER_HELLO.id,
                     SSLHandshake.SERVER_HELLO);
+
+            // Reset the ClientHello non-zero offset fragment allowance
+            shc.acceptCliHelloFragments = false;
 
             //
             // produce

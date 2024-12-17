@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,7 +364,7 @@ Java_sun_awt_CGraphicsDevice_nativeGetDisplayModes
         if (cRef != NULL) {
             jobject oneMode = createJavaDisplayMode(cRef, env);
             (*env)->SetObjectArrayElement(env, jreturnArray, n, oneMode);
-            if ((*env)->ExceptionOccurred(env)) {
+            if ((*env)->ExceptionCheck(env)) {
                 (*env)->ExceptionDescribe(env);
                 (*env)->ExceptionClear(env);
                 continue;

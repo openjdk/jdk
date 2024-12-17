@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -186,16 +186,12 @@ void ArenaStats::print_on(outputStream* st, size_t scale,  bool detailed) const 
 }
 
 #ifdef ASSERT
-
 void ArenaStats::verify() const {
   size_t total_used = 0;
   for (chunklevel_t l = chunklevel::LOWEST_CHUNK_LEVEL; l <= chunklevel::HIGHEST_CHUNK_LEVEL; l++) {
     _stats[l].verify();
     total_used += _stats[l]._used_words;
   }
-  // Deallocated allocations still count as used
-  assert(total_used >= _free_blocks_word_size,
-         "Sanity");
 }
 #endif
 

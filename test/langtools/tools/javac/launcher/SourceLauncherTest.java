@@ -26,11 +26,9 @@
  * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896
  * @summary Test source launcher
  * @library /tools/lib
- * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.launcher
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile.impl
  *          java.base/jdk.internal.module
  * @build toolbox.JavaTask toolbox.JavacTask toolbox.TestRunner toolbox.ToolBox
  * @run main SourceLauncherTest
@@ -238,25 +236,6 @@ public class SourceLauncherTest extends TestRunner {
                 .run(Task.Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDOUT);
         checkEqual("stdout", log.trim(), file.toAbsolutePath().toUri().toURL().toString());
-    }
-
-    @Test
-    public void testSecurityManager(Path base) throws IOException {
-        Path sourceFile = base.resolve("HelloWorld.java");
-        tb.writeJavaFiles(base,
-                "class HelloWorld {\n" +
-                        "    public static void main(String... args) {\n" +
-                        "        System.out.println(\"Hello World!\");\n" +
-                        "    }\n" +
-                        "}");
-
-        String log = new JavaTask(tb)
-                .vmOptions("-Djava.security.manager=default")
-                .className(sourceFile.toString())
-                .run(Task.Expect.FAIL)
-                .getOutput(Task.OutputKind.STDERR);
-        checkContains("stderr", log,
-                "error: cannot use source-code launcher with a security manager enabled");
     }
 
     @Test
@@ -585,7 +564,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: NoMain");
     }
 
-    //@Test temporary disabled as enabled preview allows no-param main
+    @Test
     public void testMainBadParams(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class BadParams { public static void main() { } }");
@@ -593,7 +572,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: BadParams");
     }
 
-    //@Test temporary disabled as enabled preview allows non-public main
+    @Test
     public void testMainNotPublic(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotPublic { static void main(String... args) { } }");
@@ -601,7 +580,7 @@ public class SourceLauncherTest extends TestRunner {
                 "error: can't find main(String[]) method in class: NotPublic");
     }
 
-    //@Test temporary disabled as enabled preview allows non-static main
+    @Test
     public void testMainNotStatic(Path base) throws IOException {
         tb.writeJavaFiles(base,
                 "class NotStatic { public void main(String... args) { } }");

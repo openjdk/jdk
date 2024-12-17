@@ -25,8 +25,6 @@
 #ifndef SHARE_OOPS_KLASS_HPP
 #define SHARE_OOPS_KLASS_HPP
 
-#include "memory/iterator.hpp"
-#include "memory/memRegion.hpp"
 #include "oops/klassFlags.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
@@ -60,11 +58,10 @@ class fieldDescriptor;
 class klassVtable;
 class ModuleEntry;
 class PackageEntry;
-class ParCompactionManager;
-class PSPromotionManager;
 class vtableEntry;
 
 class Klass : public Metadata {
+
   friend class VMStructs;
   friend class JVMCIVMStructs;
  public:
@@ -160,6 +157,11 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
+  // Bitmap and hash code used by hashed secondary supers.
+  uintx    _secondary_supers_bitmap;
+  uint8_t  _hash_slot;
+
+  markWord _prototype_header;   // Used to initialize objects' header
 
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
@@ -170,10 +172,6 @@ class Klass : public Metadata {
                                 // are in _misc_flags below.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
-
-  // Bitmap and hash code used by hashed secondary supers.
-  uintx    _bitmap;
-  uint8_t  _hash_slot;
 
 private:
   // This is an index into FileMapHeader::_shared_path_table[], to
@@ -193,7 +191,12 @@ private:
     _has_archived_enum_objs                = 1 << 4,
     // This class was not loaded from a classfile in the module image
     // or classpath.
-    _is_generated_shared_class             = 1 << 5
+    _is_generated_shared_class             = 1 << 5,
+    // archived mirror already initialized by AOT-cache assembly: no further need to call <clinit>
+    _has_aot_initialized_mirror            = 1 << 6,
+    // If this class has been aot-inititalized, do we need to call its runtimeSetup()
+    // method during the production run?
+    _is_runtime_setup_required             = 1 << 7,
   };
 #endif
 
@@ -239,7 +242,6 @@ protected:
   void set_secondary_super_cache(Klass* k) { _secondary_super_cache = k; }
 
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
-  void set_secondary_supers(Array<Klass*>* k);
   void set_secondary_supers(Array<Klass*>* k, uintx bitmap);
 
   uint8_t hash_slot() const { return _hash_slot; }
@@ -376,6 +378,23 @@ protected:
     NOT_CDS(return false;)
   }
 
+  void set_has_aot_initialized_mirror() {
+    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
+  }
+  bool has_aot_initialized_mirror() const {
+    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_runtime_setup_required() {
+    assert(has_aot_initialized_mirror(), "sanity");
+    CDS_ONLY(_shared_class_flags |= _is_runtime_setup_required;)
+  }
+  bool is_runtime_setup_required() const {
+    CDS_ONLY(return (_shared_class_flags & _is_runtime_setup_required) != 0;)
+    NOT_CDS(return false;)
+  }
+
   bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
     CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
     NOT_CDS(return false;)
@@ -398,6 +417,11 @@ protected:
   static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
   static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
 
+  bool search_secondary_supers(Klass* k) const;
+  bool lookup_secondary_supers_table(Klass *k) const;
+  bool linear_search_secondary_supers(const Klass* k) const;
+  bool fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const;
+
  public:
   // Secondary supers table support
   static Array<Klass*>* pack_secondary_supers(ClassLoaderData* loader_data,
@@ -409,7 +433,7 @@ protected:
   static uintx   compute_secondary_supers_bitmap(Array<Klass*>* secondary_supers);
   static uint8_t compute_home_slot(Klass* k, uintx bitmap);
 
-  static constexpr int SECONDARY_SUPERS_TABLE_SIZE = sizeof(_bitmap) * 8;
+  static constexpr int SECONDARY_SUPERS_TABLE_SIZE = sizeof(_secondary_supers_bitmap) * 8;
   static constexpr int SECONDARY_SUPERS_TABLE_MASK = SECONDARY_SUPERS_TABLE_SIZE - 1;
 
   static constexpr uintx SECONDARY_SUPERS_BITMAP_EMPTY    = 0;
@@ -430,7 +454,9 @@ protected:
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
-  static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
+  static ByteSize secondary_supers_bitmap_offset()
+                                                 { return byte_offset_of(Klass, _secondary_supers_bitmap); }
+  static ByteSize hash_slot_offset()             { return byte_offset_of(Klass, _hash_slot); }
   static ByteSize misc_flags_offset()            { return byte_offset_of(Klass, _misc_flags._flags); }
 
   // Unpacking layout_helper:
@@ -531,22 +557,11 @@ protected:
 
   // subclass check
   bool is_subclass_of(const Klass* k) const;
+
   // subtype check: true if is_subclass_of, or if k is interface and receiver implements it
-  bool is_subtype_of(Klass* k) const {
-    juint    off = k->super_check_offset();
-    Klass* sup = *(Klass**)( (address)this + off );
-    const juint secondary_offset = in_bytes(secondary_super_cache_offset());
-    if (sup == k) {
-      return true;
-    } else if (off != secondary_offset) {
-      return false;
-    } else {
-      return search_secondary_supers(k);
-    }
-  }
+  bool is_subtype_of(Klass* k) const;
 
-  bool search_secondary_supers(Klass* k) const;
-
+public:
   // Find LCA in class hierarchy
   Klass *LCA( Klass *k );
 
@@ -585,6 +600,8 @@ protected:
   oop class_loader() const;
 
   inline oop klass_holder() const;
+
+  inline void keep_alive() const;
 
  protected:
 
@@ -710,6 +727,10 @@ protected:
   bool is_cloneable() const;
   void set_is_cloneable();
 
+  inline markWord prototype_header() const;
+  inline void set_prototype_header(markWord header);
+  static ByteSize prototype_header_offset() { return in_ByteSize(offset_of(Klass, _prototype_header)); }
+
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
@@ -764,6 +785,10 @@ protected:
   static bool is_valid(Klass* k);
 
   static void on_secondary_supers_verification_failure(Klass* super, Klass* sub, bool linear_result, bool table_result, const char* msg);
+
+  // Returns true if this Klass needs to be addressable via narrow Klass ID.
+  inline bool needs_narrow_id() const;
+
 };
 
 #endif // SHARE_OOPS_KLASS_HPP
