@@ -2594,19 +2594,8 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         LogConfiguration::disable_logging();
         ret = true;
       } else if (strncmp(tail, ":async", strlen(":async")) == 0) {
-        ret = true;
         const char* async_tail = tail + strlen(":async");
-         if (*async_tail == '\0') {
-          // Default is to drop.
-          LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
-        } else if (strcmp(async_tail, ":stall") == 0) {
-          LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
-        } else if (strcmp(async_tail, ":drop") == 0) {
-          LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
-        } else {
-          // User provided unknown async option
-          ret = false;
-        }
+        ret = LogConfiguration::parse_async_argument(async_tail);
       } else if (*tail == '\0') {
         ret = LogConfiguration::parse_command_line_arguments();
         assert(ret, "-Xlog without arguments should never fail to parse");

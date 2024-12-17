@@ -722,3 +722,19 @@ void LogConfiguration::notify_update_listeners() {
 }
 
 LogConfiguration::AsyncMode LogConfiguration::_async_mode = AsyncMode::Off;
+
+bool LogConfiguration::parse_async_argument(const char* async_tail) {
+  bool ret = true;
+  if (*async_tail == '\0') {
+    // Default is to drop.
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else if (strcmp(async_tail, ":stall") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Stall);
+  } else if (strcmp(async_tail, ":drop") == 0) {
+    LogConfiguration::set_async_mode(LogConfiguration::AsyncMode::Drop);
+  } else {
+    // User provided unknown async option
+    ret = false;
+  }
+  return ret;
+}

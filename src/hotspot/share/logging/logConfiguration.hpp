@@ -127,6 +127,8 @@ private:
                                   const char* output_options,
                                   outputStream* errstream);
 
+  static bool parse_async_argument(const char* async_tail);
+
   // Prints log configuration to outputStream, used by JCmd/MBean.
   static void describe(outputStream* out);
 
