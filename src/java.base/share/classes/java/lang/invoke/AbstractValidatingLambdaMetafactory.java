@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,9 +107,6 @@ import static sun.invoke.util.Wrapper.isWrapperType;
      *                   implemented by invoking the implementation method
      * @throws LambdaConversionException If any of the meta-factory protocol
      *         invariants are violated
-     * @throws SecurityException If a security manager is present, and it
-     *         <a href="MethodHandles.Lookup.html#secmgr">denies access</a>
-     *         from {@code caller} to the package of {@code implementation}.
      */
     AbstractValidatingLambdaMetafactory(MethodHandles.Lookup caller,
                                         MethodType factoryType,
@@ -138,7 +135,7 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         this.implementation = implementation;
         this.implMethodType = implementation.type();
         try {
-            this.implInfo = caller.revealDirect(implementation); // may throw SecurityException
+            this.implInfo = caller.revealDirect(implementation);
         } catch (IllegalArgumentException e) {
             throw new LambdaConversionException(implementation + " is not direct or cannot be cracked");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -24,7 +24,7 @@ import java.util.ListResourceBundle;
 
 /**
  * @author Morten Jorgensen
- * @LastModified: Jan 2022
+ * @LastModified: Nov 2024
  */
 public class ErrorMessages_de extends ListResourceBundle {
 
@@ -980,8 +980,6 @@ public class ErrorMessages_de extends ListResourceBundle {
         {ErrorMsg.OUTLINE_ERR_METHOD_TOO_BIG,
          "Interner XSLTC-Fehler: Eine Methode im Translet \u00FCberschreitet die Java Virtual Machine-L\u00E4ngeneinschr\u00E4nkung einer Methode von 64 KB. Ursache hierf\u00FCr sind in der Regel sehr gro\u00DFe Vorlagen in einem Stylesheet. Versuchen Sie, das Stylesheet mit kleineren Vorlagen umzustrukturieren."
         },
-
-        {ErrorMsg.DESERIALIZE_TRANSLET_ERR, "Wenn die Java-Sicherheit aktiviert ist, wird die Unterst\u00FCtzung f\u00FCr das Deserialisieren von TemplatesImpl deaktiviert. Dieses Verhalten kann durch Setzen der Systemeigenschaft jdk.xml.enableTemplatesImplDeserialization auf \"true\" au\u00DFer Kraft gesetzt werden."},
 
         {ErrorMsg.XPATH_GROUP_LIMIT,
             "JAXP0801001: Im Compiler ist ein XPath-Ausdruck mit {0} Gruppen aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreitet."},

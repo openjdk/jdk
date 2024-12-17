@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 
 package com.sun.media.sound;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -170,9 +168,7 @@ public final class JDK13Services {
             return null;
         }
         String name = typeClass.getName();
-        @SuppressWarnings("removal")
-        String value = AccessController.doPrivileged(
-                (PrivilegedAction<String>) () -> System.getProperty(name));
+        String value = System.getProperty(name);
         if (value == null) {
             value = getProperties().getProperty(name);
         }

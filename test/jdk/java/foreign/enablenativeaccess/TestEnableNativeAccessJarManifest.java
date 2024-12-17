@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Basic test for Enable-Native-Access attribute in the
  *          manifest of a main application JAR
@@ -78,7 +78,6 @@ public class TestEnableNativeAccessJarManifest extends TestEnableNativeAccessBas
 
         // java -jar test.jar
         List<String> command = new ArrayList<>(List.of(
-            "--enable-preview",
             "-Djava.library.path=" + System.getProperty("java.library.path")
         ));
         command.addAll(vmArgs);

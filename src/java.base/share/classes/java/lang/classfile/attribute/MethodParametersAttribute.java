@@ -31,7 +31,6 @@ import java.util.List;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code MethodParameters} attribute (JVMS {@jvms 4.7.24}), which can
@@ -45,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 8.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodParametersAttribute
         extends Attribute<MethodParametersAttribute>, MethodElement
         permits BoundAttribute.BoundMethodParametersAttribute,

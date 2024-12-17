@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import javax.tools.JavaFileObject.Kind;
 import javax.tools.StandardLocation;
 
 import com.sun.source.tree.ModuleTree.ModuleKind;
-import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.DeferredLintHandler;
 import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
@@ -64,8 +63,11 @@ import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Directive.UsesDirective;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Flags.Flag;
+import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.ModuleFinder;
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol;
@@ -74,6 +76,7 @@ import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleFlags;
+import com.sun.tools.javac.code.Symbol.ModuleResolutionFlags;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -84,6 +87,7 @@ import com.sun.tools.javac.jvm.JNIWriter;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -99,6 +103,7 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -112,14 +117,9 @@ import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
 
-import com.sun.tools.javac.code.Kinds;
-
 import static com.sun.tools.javac.code.Kinds.Kind.ERR;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
-import com.sun.tools.javac.code.Lint;
-
-import com.sun.tools.javac.code.Symbol.ModuleResolutionFlags;
 
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 
@@ -141,6 +141,7 @@ public class Modules extends JCTree.Visitor {
     private final Symtab syms;
     private final Attr attr;
     private final Check chk;
+    private final Preview preview;
     private final DeferredLintHandler deferredLintHandler;
     private final TypeEnvs typeEnvs;
     private final Types types;
@@ -150,6 +151,7 @@ public class Modules extends JCTree.Visitor {
     private final Target target;
     private final boolean allowModules;
     private final boolean allowAccessIntoSystem;
+    private final boolean allowRequiresTransitiveJavaBase;
 
     public final boolean multiModuleMode;
 
@@ -192,6 +194,7 @@ public class Modules extends JCTree.Visitor {
         syms = Symtab.instance(context);
         attr = Attr.instance(context);
         chk = Check.instance(context);
+        preview = Preview.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         moduleFinder = ModuleFinder.instance(context);
@@ -203,6 +206,12 @@ public class Modules extends JCTree.Visitor {
         Options options = Options.instance(context);
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);
+
+        Preview preview = Preview.instance(context);
+
+        allowRequiresTransitiveJavaBase =
+                Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) &&
+                 (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled());
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
@@ -249,7 +258,12 @@ public class Modules extends JCTree.Visitor {
 
     public boolean enter(List<JCCompilationUnit> trees, ClassSymbol c) {
         Assert.check(rootModules != null || inInitModules || !allowModules);
-        return enter(trees, modules -> {}, c);
+        return enter(trees, modules -> {
+            //make sure java.base is completed in all cases before continuing.
+            //the next steps may query if the current module participates in preview,
+            //and that requires a completed java.base:
+            syms.java_base.complete();
+        }, c);
     }
 
     private boolean enter(List<JCCompilationUnit> trees, Consumer<Set<ModuleSymbol>> init, ClassSymbol c) {
@@ -807,11 +821,16 @@ public class Modules extends JCTree.Visitor {
                 allRequires.add(msym);
                 Set<RequiresFlag> flags = EnumSet.noneOf(RequiresFlag.class);
                 if (tree.isTransitive) {
-                    if (msym == syms.java_base && source.compareTo(Source.JDK10) >= 0) {
-                        log.error(tree.pos(), Errors.ModifierNotAllowedHere(names.transitive));
-                    } else {
-                        flags.add(RequiresFlag.TRANSITIVE);
+                    if (msym == syms.java_base &&
+                        !allowRequiresTransitiveJavaBase &&
+                        !preview.participatesInPreview(syms, sym)) {
+                        if (source.compareTo(Source.JDK10) >= 0) {
+                            log.error(DiagnosticFlag.SOURCE_LEVEL,
+                                      tree.pos(),
+                                      Feature.JAVA_BASE_TRANSITIVE.error(source.name));
+                        }
                     }
+                    flags.add(RequiresFlag.TRANSITIVE);
                 }
                 if (tree.isStaticPhase) {
                     if (msym == syms.java_base && source.compareTo(Source.JDK10) >= 0) {
@@ -1004,7 +1023,7 @@ public class Modules extends JCTree.Visitor {
             this.env = env;
         }
 
-        @Override @SuppressWarnings("unchecked")
+        @Override
         public void visitModuleDef(JCModuleDecl tree) {
             msym.directives = List.nil();
             msym.provides = List.nil();
@@ -1256,8 +1275,8 @@ public class Modules extends JCTree.Visitor {
             if (lintOptions) {
                 for (ModuleSymbol msym : limitMods) {
                     if (!observable.contains(msym)) {
-                        log.warning(LintCategory.OPTIONS,
-                                Warnings.ModuleForOptionNotFound(Option.LIMIT_MODULES, msym));
+                        log.warning(
+                                LintWarnings.ModuleForOptionNotFound(Option.LIMIT_MODULES, msym));
                     }
                 }
             }
@@ -1362,7 +1381,7 @@ public class Modules extends JCTree.Visitor {
                     .collect(Collectors.joining(","));
 
             if (!incubatingModules.isEmpty()) {
-                log.warning(Warnings.IncubatingModules(incubatingModules));
+                log.warning(LintWarnings.IncubatingModules(incubatingModules));
             }
         }
 
@@ -1712,8 +1731,8 @@ public class Modules extends JCTree.Visitor {
 
         if (!unknownModules.contains(msym)) {
             if (lintOptions) {
-                log.warning(LintCategory.OPTIONS,
-                        Warnings.ModuleForOptionNotFound(Option.ADD_EXPORTS, msym));
+                log.warning(
+                        LintWarnings.ModuleForOptionNotFound(Option.ADD_EXPORTS, msym));
             }
             unknownModules.add(msym);
         }
@@ -1751,7 +1770,7 @@ public class Modules extends JCTree.Visitor {
             ModuleSymbol msym = syms.enterModule(names.fromString(sourceName));
             if (!allModules.contains(msym)) {
                 if (lintOptions) {
-                    log.warning(Warnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
+                    log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, msym));
                 }
                 continue;
             }
@@ -1771,7 +1790,7 @@ public class Modules extends JCTree.Visitor {
                     targetModule = syms.enterModule(names.fromString(targetName));
                     if (!allModules.contains(targetModule)) {
                         if (lintOptions) {
-                            log.warning(LintCategory.OPTIONS, Warnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule));
+                            log.warning(LintWarnings.ModuleForOptionNotFound(Option.ADD_READS, targetModule));
                         }
                         continue;
                     }
