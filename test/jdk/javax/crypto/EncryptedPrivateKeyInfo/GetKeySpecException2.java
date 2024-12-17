@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
  * with wrong mode with EncryptedPrivateKeyInfo.getKeySpec
  * (Cipher) method.
  * @author Valerie Peng
+ * @run main GetKeySpecException2 PBEWithMD5AndDES
+ * @run main GetKeySpecException2 PBEWithSHA1AndDESede
  */
 import java.security.*;
 import java.util.Arrays;
@@ -38,11 +40,10 @@ import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.*;
 
 public class GetKeySpecException2 {
-    private static final String cipherAlg = "PBEWithMD5AndDES";
     private static final char[] passwd = { 'p','a','s','s','w','d' };
 
-    public static void main(String[] argv) throws Exception {
-
+    public static void main(String[] args) throws Exception {
+        String cipherAlg = args[0];
         // use random data
         byte[] encryptedData = new byte[30];
         encryptedData[20] = (byte) 8;
@@ -54,7 +55,8 @@ public class GetKeySpecException2 {
         // TEST#1: getKeySpec(Cipher) with Cipher in an illegal state,
         // i.e. WRAP_MODE, UNWRAP_MODE.
         System.out.println("Testing getKeySpec(Cipher) with WRAP_MODE...");
-        Cipher c = Cipher.getInstance(cipherAlg, "SunJCE");
+        Cipher c = Cipher.getInstance(cipherAlg,
+                System.getProperty("test.provider.name", "SunJCE"));
         MyPBEKey key = new MyPBEKey(passwd);
         c.init(Cipher.WRAP_MODE, key);
         try {

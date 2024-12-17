@@ -254,16 +254,13 @@ public class LinkTaglet extends BaseTaglet {
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
-                if (htmlWriter instanceof ClassWriter cw) {
-                    containing = cw.getTypeElement();
-                } else if (!utils.isPublic(containing)) {
-                    reportWarning.accept("doclet.link.see.reference_not_accessible",
-                            new Object[] { utils.getFullyQualifiedName(containing)});
-                } else {
-                    if (!config.isDocLintReferenceGroupEnabled()) {
-                        reportWarning.accept("doclet.link.see.reference_not_found",
-                                new Object[] { refSignature });
+                if (utils.configuration.docEnv.isSelected(refMem)) {
+                    if (htmlWriter instanceof ClassWriter cw) {
+                        containing = cw.getTypeElement();
                     }
+                } else {
+                    reportWarning.accept("doclet.link.see.reference_not_accessible",
+                            new Object[]{refMem});
                 }
             }
             String refMemName = refFragment;
@@ -274,7 +271,7 @@ public class LinkTaglet extends BaseTaglet {
             }
             if (utils.isExecutableElement(refMem)) {
                 if (refMemName.indexOf('(') < 0) {
-                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, true);
+                    refMemName += utils.makeSignature((ExecutableElement) refMem, null, false, true);
                 }
                 if (overriddenMethod != null) {
                     // The method to actually link.

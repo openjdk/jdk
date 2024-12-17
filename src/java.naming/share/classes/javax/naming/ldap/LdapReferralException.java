@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,11 +143,11 @@ public abstract class LdapReferralException extends ReferralException {
      * Service provider implementors should read the "Service Provider" section
      * in the {@code LdapContext} class description for implementation details.
      *
-     * @param reqCtls The possibly null request controls to use for the new context.
-     * If null or the empty array means use no request controls.
      * @param env The possibly null environment properties to use when
      * for the new context. If null, the context is initialized with no environment
      * properties.
+     * @param reqCtls The possibly null request controls to use for the new context.
+     * If null or the empty array means use no request controls.
      * @return The non-null context at which to continue the method.
      * @throws NamingException If a naming exception was encountered.
      * Call either {@code retryReferral()} or {@code skipReferral()}

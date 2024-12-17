@@ -25,22 +25,21 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Optional;
 
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedMethodBuilder;
 import jdk.internal.classfile.impl.MethodImpl;
-import jdk.internal.javac.PreviewFeature;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a method.  The contents of the method can be traversed via
  * a streaming view, or via random access (e.g.,
  * {@link #flags()}), or by freely mixing the two.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodModel
         extends CompoundElement<MethodElement>, AttributedElement, ClassElement
         permits BufferedMethodBuilder.Model, MethodImpl {
@@ -59,7 +58,7 @@ public sealed interface MethodModel
 
     /** {@return the method descriptor of this method, as a symbolic descriptor} */
     default MethodTypeDesc methodTypeSymbol() {
-        return MethodTypeDesc.ofDescriptor(methodType().stringValue());
+        return Util.methodTypeSymbol(methodType());
     }
 
     /** {@return the body of this method, if there is one} */

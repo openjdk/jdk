@@ -108,9 +108,9 @@ public class DCmdView extends AbstractDCmd {
         return """
                 Options:
 
-                 cell-height   (Optional) Maximum number of rows in a table cell. (INTEGER, no default value)
+                 cell-height   (Optional) Maximum number of rows in a table cell. (INT, no default value)
 
-                 maxage        (Optional) Length of time for the view to span. (INTEGER followed by
+                 maxage        (Optional) Length of time for the view to span. (INT followed by
                                's' for seconds 'm' for minutes or 'h' for hours, default value is 10m)
 
                  maxsize       (Optional) Maximum size for the view to span in bytes if one of
@@ -127,7 +127,7 @@ public class DCmdView extends AbstractDCmd {
                                See list below for available views. (STRING, no default value)
 
                  width         (Optional) The width of the view in characters
-                               (INTEGER, no default value)""";
+                               (INT, default value is 100)""";
     }
 
     public String getExamples() {
@@ -136,7 +136,7 @@ public class DCmdView extends AbstractDCmd {
 
                  $ jcmd <pid> JFR.view gc
 
-                 $ jcmd <pid< JFR.view width=160 hot-methods
+                 $ jcmd <pid> JFR.view width=160 hot-methods
 
                  $ jcmd <pid> JFR.view verbose=true allocation-by-class
 
@@ -154,7 +154,7 @@ public class DCmdView extends AbstractDCmd {
         return new Argument[] {
             new Argument("cell-height",
                 "Maximum heigth of a table cell",
-                "JULONG", false, true, "1", false),
+                "INT", false, true, "1", false),
             new Argument("maxage",
                 "Maximum duration of data to view, in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit",
                 "NANOTIME", false, true, "10m", false),
@@ -172,7 +172,7 @@ public class DCmdView extends AbstractDCmd {
                 "STRING", true, false, null, false),
             new Argument("width",
                 "Maximum number of horizontal characters",
-                "JULONG", false, true, "100", false)
+                "INT", false, true, "100", false)
         };
    }
 }

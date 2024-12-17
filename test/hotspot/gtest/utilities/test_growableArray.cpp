@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ struct WithEmbeddedArray {
   // Arena allocated data array
   WithEmbeddedArray(Arena* arena, int initial_max) : _a(arena, initial_max, 0, 0) {}
   // CHeap allocated data array
-  WithEmbeddedArray(int initial_max, MEMFLAGS memflags) : _a(initial_max, memflags) {
-    assert(memflags != mtNone, "test requirement");
+  WithEmbeddedArray(int initial_max, MemTag mem_tag) : _a(initial_max, mem_tag) {
+    assert(mem_tag != mtNone, "test requirement");
   }
   WithEmbeddedArray(const GrowableArray<int>& other) : _a(other) {}
 };

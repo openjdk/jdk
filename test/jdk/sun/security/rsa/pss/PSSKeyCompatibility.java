@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,8 @@ public class PSSKeyCompatibility {
 
     private static final String ALGO = "RSASSA-PSS";
     private static final String OID = "1.2.840.113549.1.1.10";
-    private static final String PROVIDER = "SunRsaSign";
+    private static final String PROVIDER =
+                System.getProperty("test.provider.name", "SunRsaSign");
 
     public static void main(String[] args) {
 

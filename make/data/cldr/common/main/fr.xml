@@ -87,6 +87,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">banjar</language>
 			<language type="bkm">kom</language>
 			<language type="bla">siksika</language>
+			<language type="blo">anii</language>
 			<language type="bm">bambara</language>
 			<language type="bn">bengali</language>
 			<language type="bo">tibétain</language>
@@ -226,7 +227,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">moyen haut-allemand</language>
 			<language type="gn">guarani</language>
 			<language type="goh">ancien haut allemand</language>
-			<language type="gom">konkani de Goa</language>
 			<language type="gon">gondi</language>
 			<language type="gor">gorontalo</language>
 			<language type="got">gotique</language>
@@ -337,6 +337,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">cornique</language>
 			<language type="kwk">kwak’wala</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirghize</language>
 			<language type="la">latin</language>
 			<language type="lad">ladino</language>
@@ -366,7 +367,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba-kasaï (ciluba)</language>
 			<language type="lui">luiseño</language>
 			<language type="lun">lunda</language>
-			<language type="luo">luo</language>
 			<language type="lus">lushaï</language>
 			<language type="luy">luyia</language>
 			<language type="lv">letton</language>
@@ -635,6 +635,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="vi">vietnamien</language>
 			<language type="vls">flamand occidental</language>
 			<language type="vmf">franconien du Main</language>
+			<language type="vmw">macua</language>
 			<language type="vo">volapük</language>
 			<language type="vot">vote</language>
 			<language type="vro">võro</language>
@@ -650,6 +651,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">kalmouk</language>
 			<language type="xh">xhosa</language>
 			<language type="xmf">mingrélien</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">soga</language>
 			<language type="yao">yao</language>
 			<language type="yap">yapois</language>
@@ -723,6 +725,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Elba" draft="unconfirmed">elbasan</script>
 			<script type="Elym">élymaïque</script>
 			<script type="Ethi">éthiopique</script>
+			<script type="Gara" draft="provisional">garay</script>
 			<script type="Geok">géorgien khoutsouri</script>
 			<script type="Geor">géorgien</script>
 			<script type="Glag">glagolitique</script>
@@ -732,6 +735,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Gran" draft="unconfirmed">grantha</script>
 			<script type="Grek">grec</script>
 			<script type="Gujr">goudjarâtî</script>
+			<script type="Gukh" draft="provisional">gurung khema</script>
 			<script type="Guru">gourmoukhî</script>
 			<script type="Hanb">han avec bopomofo</script>
 			<script type="Hang">hangûl</script>
@@ -765,6 +769,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Knda">kannara</script>
 			<script type="Kore">coréen</script>
 			<script type="Kpel" draft="unconfirmed">kpelle</script>
+			<script type="Krai" draft="provisional">kirat rai</script>
 			<script type="Kthi">kaithî</script>
 			<script type="Lana">lanna</script>
 			<script type="Laoo">lao</script>
@@ -807,6 +812,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Nshu" draft="unconfirmed">nüshu</script>
 			<script type="Ogam">ogam</script>
 			<script type="Olck">ol-chiki</script>
+			<script type="Onao" draft="provisional">ol onal</script>
 			<script type="Orkh">orkhon</script>
 			<script type="Orya">odia</script>
 			<script type="Osge" draft="unconfirmed">osage</script>
@@ -842,6 +848,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Sora" draft="unconfirmed">sora sompeng</script>
 			<script type="Soyo" draft="unconfirmed">soyombo</script>
 			<script type="Sund">sundanais</script>
+			<script type="Sunu" draft="provisional">sunuwar</script>
 			<script type="Sylo">sylotî nâgrî</script>
 			<script type="Syrc">syriaque</script>
 			<script type="Syre">syriaque estranghélo</script>
@@ -863,7 +870,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Tibt">tibétain</script>
 			<script type="Tirh" draft="unconfirmed">tirhouta</script>
 			<script type="Tnsa" draft="provisional">tangsa</script>
+			<script type="Todr" draft="provisional">todhri</script>
 			<script type="Toto" draft="provisional">toto</script>
+			<script type="Tutg" draft="provisional">tulu-tigalari</script>
 			<script type="Ugar">ougaritique</script>
 			<script type="Vaii">vaï</script>
 			<script type="Visp">parole visible</script>
@@ -1412,12 +1421,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="ethi">chiffres éthiopiens</type>
 			<type key="numbers" type="finance" draft="contributed">Chiffres financiers</type>
 			<type key="numbers" type="fullwide">chiffres pleine chasse</type>
+			<type key="numbers" type="gara" draft="unconfirmed">chiffres garays</type>
 			<type key="numbers" type="geor">chiffres géorgiens</type>
 			<type key="numbers" type="gong" draft="unconfirmed">chiffres gondi gunjala</type>
 			<type key="numbers" type="gonm" draft="unconfirmed">chiffres gondi masaram</type>
 			<type key="numbers" type="grek">chiffres grecs</type>
 			<type key="numbers" type="greklow">chiffres grecs minuscules</type>
 			<type key="numbers" type="gujr">chiffres goudjarâtîs</type>
+			<type key="numbers" type="gukh" draft="unconfirmed">chiffres gurung khemas</type>
 			<type key="numbers" type="guru">chiffres gourmoukhîs</type>
 			<type key="numbers" type="hanidec">nombres décimaux chinois</type>
 			<type key="numbers" type="hans">chiffres en chinois simplifié</type>
@@ -1434,6 +1445,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="kawi" draft="unconfirmed">chiffres kawis</type>
 			<type key="numbers" type="khmr">chiffres khmers</type>
 			<type key="numbers" type="knda">chiffres en kannada</type>
+			<type key="numbers" type="krai" draft="unconfirmed">chiffres kirat rais</type>
 			<type key="numbers" type="lana" draft="unconfirmed">chiffres lannas horas</type>
 			<type key="numbers" type="lanatham" draft="unconfirmed">chiffres lannas thams</type>
 			<type key="numbers" type="laoo">chiffres laotiens</type>
@@ -1451,14 +1463,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="mroo" draft="unconfirmed">chiffres mros</type>
 			<type key="numbers" type="mtei">chiffres meitei-mayeks</type>
 			<type key="numbers" type="mymr">chiffres birmans</type>
+			<type key="numbers" type="mymrepka" draft="unconfirmed">chiffres birmans de pwo karen de l’Est</type>
+			<type key="numbers" type="mymrpao" draft="unconfirmed">chiffres birmans pao</type>
 			<type key="numbers" type="mymrshan" draft="unconfirmed">chiffres birmans shans</type>
 			<type key="numbers" type="mymrtlng" draft="unconfirmed">chiffres birmans tai laings</type>
 			<type key="numbers" type="nagm" draft="unconfirmed">chiffres nag mundaris</type>
 			<type key="numbers" type="native">chiffres natifs</type>
 			<type key="numbers" type="nkoo" draft="unconfirmed">chiffres n’kos</type>
 			<type key="numbers" type="olck">chiffres ol-chikis</type>
+			<type key="numbers" type="onao" draft="unconfirmed">chiffres ol onals</type>
 			<type key="numbers" type="orya">chiffres oriyas</type>
 			<type key="numbers" type="osma" draft="unconfirmed">chiffres osmanyas</type>
+			<type key="numbers" type="outlined" draft="unconfirmed">chiffres entourés</type>
 			<type key="numbers" type="rohg" draft="unconfirmed">chiffres rohingyas hanifis</type>
 			<type key="numbers" type="roman">chiffres romains</type>
 			<type key="numbers" type="romanlow">chiffres romains minuscules</type>
@@ -1468,6 +1484,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="sinh" draft="unconfirmed">chiffres cinghalais liths</type>
 			<type key="numbers" type="sora" draft="unconfirmed">chiffres sora-sompengs</type>
 			<type key="numbers" type="sund" draft="unconfirmed">chiffres soundanais</type>
+			<type key="numbers" type="sunu" draft="unconfirmed">chiffres sunuwars</type>
 			<type key="numbers" type="takr" draft="unconfirmed">chiffres takris</type>
 			<type key="numbers" type="talu" draft="unconfirmed">chiffres néo-taï-luës</type>
 			<type key="numbers" type="taml">chiffres tamouls traditionnels</type>
@@ -1529,7 +1546,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
 			<parseLenient sample="’">['＇’ ՚ ᾽᾿ ʼ ߴ]</parseLenient>
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -3296,6 +3313,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>heure : {0}</regionFormat>
 			<regionFormat type="daylight">{0} (heure d’été)</regionFormat>
 			<regionFormat type="standard">{0} (heure standard)</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic draft="unconfirmed">HT</generic>
+					<standard draft="unconfirmed">HST</standard>
+					<daylight draft="unconfirmed">HDT</daylight>
+				</short>
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>temps universel coordonné</standard>
@@ -3402,9 +3427,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Cap-Vert</exemplarCity>
-			</zone>
-			<zone type="America/Curacao">
-				<exemplarCity>Curaçao</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nicosie</exemplarCity>
@@ -3558,9 +3580,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Oulan-Bator</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Tchoïbalsan</exemplarCity>
-			</zone>
 			<zone type="Europe/Malta">
 				<exemplarCity>Malte</exemplarCity>
 			</zone>
@@ -3611,9 +3630,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Palau">
 				<exemplarCity>Palaos</exemplarCity>
-			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
 			</zone>
 			<zone type="Indian/Reunion">
 				<exemplarCity>La Réunion</exemplarCity>
@@ -3669,9 +3685,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Mogadishu">
 				<exemplarCity>Mogadiscio</exemplarCity>
 			</zone>
-			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity>Damas</exemplarCity>
 			</zone>
@@ -3692,14 +3705,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic draft="unconfirmed">HT</generic>
-					<standard draft="unconfirmed">HST</standard>
-					<daylight draft="unconfirmed">HDT</daylight>
-				</short>
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beulah (Dakota du Nord)</exemplarCity>
@@ -4043,13 +4048,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>heure d’été de Chine</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>heure de Choibalsan</generic>
-					<standard>heure normale de Choibalsan</standard>
-					<daylight>heure d’été de Choibalsan</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>heure de l’île Christmas</standard>
@@ -4331,6 +4329,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>heure de Petropavlovsk-Kamchatski</generic>
 					<standard>heure normale de Petropavlovsk-Kamchatski</standard>
 					<daylight>heure d’été de Petropavlovsk-Kamchatski</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>heure du Kazakhstan</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4916,8 +4919,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 Bn ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -6735,6 +6736,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} carats</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>masculine</gender>
 				<displayName>milligrammes par décilitre</displayName>
 				<unitPattern count="one">{0} milligramme par décilitre</unitPattern>
 				<unitPattern count="other">{0} milligrammes par décilitre</unitPattern>
@@ -7236,6 +7238,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} milles scandinaves</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>masculine</gender>
 				<unitPattern count="one">{0} point typographique</unitPattern>
 				<unitPattern count="other">{0} points typographiques</unitPattern>
 			</unit>
@@ -7396,6 +7399,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} chevaux-vapeur</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>masculine</gender>
 				<displayName>millimètres de mercure</displayName>
 				<unitPattern count="one">{0} millimètre de mercure</unitPattern>
 				<unitPattern count="other">{0} millimètres de mercure</unitPattern>
@@ -7709,6 +7713,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>quarts impériaux</displayName>
 				<unitPattern count="one">{0} quart impérial</unitPattern>
 				<unitPattern count="other">{0} quarts impériaux</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<gender>feminine</gender>
+				<displayName>lumière</displayName>
+				<unitPattern count="one">{0} lumière</unitPattern>
+				<unitPattern count="other">{0} lumière</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>feminine</gender>
+				<displayName>parts par milliard</displayName>
+				<unitPattern count="one">{0} part par milliard</unitPattern>
+				<unitPattern count="other">{0} parts par milliard</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>nuits</displayName>
+				<unitPattern count="one">{0} nuit</unitPattern>
+				<unitPattern count="other">{0} nuits</unitPattern>
+				<perUnitPattern>{0} par nuit</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} est</coordinateUnitPattern>
@@ -8516,6 +8539,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} qt imp.</unitPattern>
 				<unitPattern count="other">{0} qt imp.</unitPattern>
 			</unit>
+			<unit type="speed-light-speed">
+				<displayName>lumière</displayName>
+				<unitPattern count="one">{0} lumière</unitPattern>
+				<unitPattern count="other">{0} lumière</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nuits</displayName>
+				<unitPattern count="one">{0} nuit</unitPattern>
+				<unitPattern count="other">{0} nuits</unitPattern>
+				<perUnitPattern>{0}/nuit</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
 				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
@@ -9191,6 +9225,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-quart-imperial">
 				<unitPattern count="one">{0}qt imp.</unitPattern>
 				<unitPattern count="other">{0}qt imp.</unitPattern>
+			</unit>
+			<unit type="speed-light-speed">
+				<displayName>lumière</displayName>
+				<unitPattern count="one">{0} lumière</unitPattern>
+				<unitPattern count="other">{0} lumière</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<unitPattern count="one">{0}ppb</unitPattern>
+				<unitPattern count="other">{0}ppb</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nuits</displayName>
+				<unitPattern count="one">{0}nuit</unitPattern>
+				<unitPattern count="other">{0}nuits</unitPattern>
+				<perUnitPattern>{0}/nuit</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>

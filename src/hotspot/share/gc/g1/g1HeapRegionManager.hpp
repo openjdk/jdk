@@ -64,8 +64,8 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 //
 // * _num_committed (returned by length()) is the number of currently
 //   committed regions. These may not be contiguous.
-// * _allocated_heapregions_length (not exposed outside this class) is the
-//   number of regions+1 for which we have G1HeapRegions.
+// * _next_highest_used_hrm_index (not exposed outside this class) is the
+//   highest heap region index +1 for which we have G1HeapRegions.
 // * max_length() returns the maximum number of regions the heap may commit.
 // * reserved_length() returns the maximum number of regions the heap has reserved.
 //
@@ -81,8 +81,8 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   // can either be active (ready for use) or inactive (ready for uncommit).
   G1CommittedRegionMap _committed_map;
 
-  // Internal only. The highest heap region +1 we allocated a G1HeapRegion instance for.
-  uint _allocated_heapregions_length;
+  // Internal only. The highest heap region index +1 we allocated a G1HeapRegion instance for.
+  uint _next_highest_used_hrm_index;
 
   HeapWord* heap_bottom() const { return _regions.bottom_address_mapped(); }
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }

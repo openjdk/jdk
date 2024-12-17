@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,7 @@
  * @bug 8246774
  * @summary Verify location of type annotations on records
  * @library /tools/lib
- * @enablePreview
  * @modules
- *      java.base/jdk.internal.classfile.impl
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
  *      jdk.compiler/com.sun.tools.javac.code

@@ -297,6 +297,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get();
   bool inline_reference_refersTo0(bool is_phantom);
+  bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
   bool inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id);
@@ -352,9 +353,6 @@ class LibraryCallKit : public GraphKit {
   // Vector API support
   bool inline_vector_nary_operation(int n);
   bool inline_vector_frombits_coerced();
-  bool inline_vector_shuffle_to_vector();
-  bool inline_vector_shuffle_iota();
-  Node* partially_wrap_indexes(Node* index_vec, int num_elem, BasicType type_bt);
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_mem_masked_operation(bool is_store);
@@ -363,6 +361,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_test();
   bool inline_vector_blend();
   bool inline_vector_rearrange();
+  bool inline_vector_select_from();
   bool inline_vector_compare();
   bool inline_vector_broadcast_int();
   bool inline_vector_convert();
@@ -371,8 +370,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_compress_expand();
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();
+  bool inline_vector_select_from_two_vectors();
 
-  Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
+  Node* gen_call_to_vector_math(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 
   enum VectorMaskUseType {
     VecMaskUseLoad  = 1 << 0,

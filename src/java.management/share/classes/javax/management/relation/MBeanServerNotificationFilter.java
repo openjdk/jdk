@@ -27,13 +27,11 @@ package javax.management.relation;
 
 import static com.sun.jmx.mbeanserver.Util.cast;
 import static com.sun.jmx.defaults.JmxProperties.RELATION_LOGGER;
-import com.sun.jmx.mbeanserver.GetPropertyAction;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamField;
-import java.security.AccessController;
 
 import java.util.List;
 import java.util.Vector;

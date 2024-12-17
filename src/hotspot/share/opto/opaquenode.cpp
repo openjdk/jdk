@@ -82,7 +82,24 @@ IfNode* OpaqueZeroTripGuardNode::if_node() const {
   return iff->as_If();
 }
 
-const Type* Opaque4Node::Value(PhaseGVN* phase) const {
+const Type* OpaqueNotNullNode::Value(PhaseGVN* phase) const {
+  return phase->type(in(1));
+}
+
+Node* OpaqueTemplateAssertionPredicateNode::Identity(PhaseGVN* phase) {
+  if (phase->C->post_loop_opts_phase()) {
+    // Template Assertion Predicates only serve as templates to create Initialized Assertion Predicates when splitting
+    // a loop during loop opts. They are not used anymore once loop opts are over and can then be removed. They feed
+    // into the bool input of an If node and can thus be replaced by true to let the Template Assertion Predicate be
+    // folded away (the success path is always the true path by design).
+    return phase->intcon(1);
+  } else {
+    phase->C->record_for_post_loop_opts_igvn(this);
+  }
+  return this;
+}
+
+const Type* OpaqueTemplateAssertionPredicateNode::Value(PhaseGVN* phase) const {
   return phase->type(in(1));
 }
 

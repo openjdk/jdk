@@ -25,20 +25,18 @@
 
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.Annotation;
-import java.lang.classfile.AnnotationElement;
-import java.lang.classfile.AnnotationValue;
-import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassReader;
-import java.lang.classfile.constantpool.*;
-import java.lang.classfile.TypeAnnotation;
-import static java.lang.classfile.ClassFile.*;
-import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
-
-import java.util.List;
-import java.lang.classfile.Label;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.LongEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.List;
+
 import jdk.internal.access.SharedSecrets;
+
+import static java.lang.classfile.AnnotationValue.*;
+import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
 
 public final class AnnotationReader {
     private AnnotationReader() { }
@@ -59,20 +57,20 @@ public final class AnnotationReader {
         char tag = (char) classReader.readU1(p);
         ++p;
         return switch (tag) {
-            case AEV_BYTE -> new AnnotationImpl.OfByteImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_CHAR -> new AnnotationImpl.OfCharImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl(classReader.readEntry(p, DoubleEntry.class));
-            case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl(classReader.readEntry(p, FloatEntry.class));
-            case AEV_INT -> new AnnotationImpl.OfIntImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_LONG -> new AnnotationImpl.OfLongImpl(classReader.readEntry(p, LongEntry.class));
-            case AEV_SHORT -> new AnnotationImpl.OfShortImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_STRING -> new AnnotationImpl.OfStringImpl(classReader.readEntry(p, Utf8Entry.class));
-            case AEV_ENUM -> new AnnotationImpl.OfEnumImpl(classReader.readEntry(p, Utf8Entry.class),
+            case TAG_BYTE -> new AnnotationImpl.OfByteImpl(classReader.readEntry(p, IntegerEntry.class));
+            case TAG_CHAR -> new AnnotationImpl.OfCharImpl(classReader.readEntry(p, IntegerEntry.class));
+            case TAG_DOUBLE -> new AnnotationImpl.OfDoubleImpl(classReader.readEntry(p, DoubleEntry.class));
+            case TAG_FLOAT -> new AnnotationImpl.OfFloatImpl(classReader.readEntry(p, FloatEntry.class));
+            case TAG_INT -> new AnnotationImpl.OfIntImpl(classReader.readEntry(p, IntegerEntry.class));
+            case TAG_LONG -> new AnnotationImpl.OfLongImpl(classReader.readEntry(p, LongEntry.class));
+            case TAG_SHORT -> new AnnotationImpl.OfShortImpl(classReader.readEntry(p, IntegerEntry.class));
+            case TAG_BOOLEAN -> new AnnotationImpl.OfBooleanImpl(classReader.readEntry(p, IntegerEntry.class));
+            case TAG_STRING -> new AnnotationImpl.OfStringImpl(classReader.readEntry(p, Utf8Entry.class));
+            case TAG_ENUM -> new AnnotationImpl.OfEnumImpl(classReader.readEntry(p, Utf8Entry.class),
                     classReader.readEntry(p + 2, Utf8Entry.class));
-            case AEV_CLASS -> new AnnotationImpl.OfClassImpl(classReader.readEntry(p, Utf8Entry.class));
-            case AEV_ANNOTATION -> new AnnotationImpl.OfAnnotationImpl(readAnnotation(classReader, p));
-            case AEV_ARRAY -> {
+            case TAG_CLASS -> new AnnotationImpl.OfClassImpl(classReader.readEntry(p, Utf8Entry.class));
+            case TAG_ANNOTATION -> new AnnotationImpl.OfAnnotationImpl(readAnnotation(classReader, p));
+            case TAG_ARRAY -> {
                 int numValues = classReader.readU2(p);
                 p += 2;
                 var values = new Object[numValues];
@@ -179,49 +177,49 @@ public final class AnnotationReader {
     private static TypeAnnotation readTypeAnnotation(ClassReader classReader, int p, LabelContext lc) {
         int targetType = classReader.readU1(p++);
         var targetInfo = switch (targetType) {
-            case TAT_CLASS_TYPE_PARAMETER ->
+            case TARGET_CLASS_TYPE_PARAMETER ->
                 ofClassTypeParameter(classReader.readU1(p));
-            case TAT_METHOD_TYPE_PARAMETER ->
+            case TARGET_METHOD_TYPE_PARAMETER ->
                 ofMethodTypeParameter(classReader.readU1(p));
-            case TAT_CLASS_EXTENDS ->
+            case TARGET_CLASS_EXTENDS ->
                 ofClassExtends(classReader.readU2(p));
-            case TAT_CLASS_TYPE_PARAMETER_BOUND ->
+            case TARGET_CLASS_TYPE_PARAMETER_BOUND ->
                 ofClassTypeParameterBound(classReader.readU1(p), classReader.readU1(p + 1));
-            case TAT_METHOD_TYPE_PARAMETER_BOUND ->
+            case TARGET_METHOD_TYPE_PARAMETER_BOUND ->
                 ofMethodTypeParameterBound(classReader.readU1(p), classReader.readU1(p + 1));
-            case TAT_FIELD ->
+            case TARGET_FIELD ->
                 ofField();
-            case TAT_METHOD_RETURN ->
+            case TARGET_METHOD_RETURN ->
                 ofMethodReturn();
-            case TAT_METHOD_RECEIVER ->
+            case TARGET_METHOD_RECEIVER ->
                 ofMethodReceiver();
-            case TAT_METHOD_FORMAL_PARAMETER ->
+            case TARGET_METHOD_FORMAL_PARAMETER ->
                 ofMethodFormalParameter(classReader.readU1(p));
-            case TAT_THROWS ->
+            case TARGET_THROWS ->
                 ofThrows(classReader.readU2(p));
-            case TAT_LOCAL_VARIABLE ->
+            case TARGET_LOCAL_VARIABLE ->
                 ofLocalVariable(readLocalVarEntries(classReader, p, lc, targetType));
-            case TAT_RESOURCE_VARIABLE ->
+            case TARGET_RESOURCE_VARIABLE ->
                 ofResourceVariable(readLocalVarEntries(classReader, p, lc, targetType));
-            case TAT_EXCEPTION_PARAMETER ->
+            case TARGET_EXCEPTION_PARAMETER ->
                 ofExceptionParameter(classReader.readU2(p));
-            case TAT_INSTANCEOF ->
+            case TARGET_INSTANCEOF ->
                 ofInstanceofExpr(getLabel(lc, classReader.readU2(p), targetType, p));
-            case TAT_NEW ->
+            case TARGET_NEW ->
                 ofNewExpr(getLabel(lc, classReader.readU2(p), targetType, p));
-            case TAT_CONSTRUCTOR_REFERENCE ->
+            case TARGET_CONSTRUCTOR_REFERENCE ->
                 ofConstructorReference(getLabel(lc, classReader.readU2(p), targetType, p));
-            case TAT_METHOD_REFERENCE ->
+            case TARGET_METHOD_REFERENCE ->
                 ofMethodReference(getLabel(lc, classReader.readU2(p), targetType, p));
-            case TAT_CAST ->
+            case TARGET_CAST ->
                 ofCastExpr(getLabel(lc, classReader.readU2(p), targetType, p), classReader.readU1(p + 2));
-            case TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT ->
+            case TARGET_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT ->
                 ofConstructorInvocationTypeArgument(getLabel(lc, classReader.readU2(p), targetType, p), classReader.readU1(p + 2));
-            case TAT_METHOD_INVOCATION_TYPE_ARGUMENT ->
+            case TARGET_METHOD_INVOCATION_TYPE_ARGUMENT ->
                 ofMethodInvocationTypeArgument(getLabel(lc, classReader.readU2(p), targetType, p), classReader.readU1(p + 2));
-            case TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT ->
+            case TARGET_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT ->
                 ofConstructorReferenceTypeArgument(getLabel(lc, classReader.readU2(p), targetType, p), classReader.readU1(p + 2));
-            case TAT_METHOD_REFERENCE_TYPE_ARGUMENT ->
+            case TARGET_METHOD_REFERENCE_TYPE_ARGUMENT ->
                 ofMethodReferenceTypeArgument(getLabel(lc, classReader.readU2(p), targetType, p), classReader.readU1(p + 2));
             default ->
                 throw new IllegalArgumentException("Unexpected targetType '%d' in TypeAnnotation, pos = %d".formatted(targetType, p - 1));
@@ -281,9 +279,8 @@ public final class AnnotationReader {
     }
 
     public static void writeAnnotation(BufWriterImpl buf, Annotation annotation) {
-        buf.writeIndex(annotation.className());
         var elements = annotation.elements();
-        buf.writeU2(elements.size());
+        buf.writeU2U2(buf.cpIndex(annotation.className()), elements.size());
         for (var e : elements) {
             buf.writeIndex(e.name());
             AnnotationReader.writeAnnotationValue(buf, e.value());
@@ -314,8 +311,7 @@ public final class AnnotationReader {
             case TypeAnnotation.TypeParameterTarget tpt -> buf.writeU1(tpt.typeParameterIndex());
             case TypeAnnotation.SupertypeTarget st -> buf.writeU2(st.supertypeIndex());
             case TypeAnnotation.TypeParameterBoundTarget tpbt -> {
-                buf.writeU1(tpbt.typeParameterIndex());
-                buf.writeU1(tpbt.boundIndex());
+                buf.writeU1U1(tpbt.typeParameterIndex(), tpbt.boundIndex());
             }
             case TypeAnnotation.EmptyTarget _ -> {
                 // nothing to write
@@ -326,24 +322,21 @@ public final class AnnotationReader {
                 buf.writeU2(lvt.table().size());
                 for (var e : lvt.table()) {
                     int startPc = labelToBci(lr, e.startLabel(), ta);
-                    buf.writeU2(startPc);
-                    buf.writeU2(labelToBci(lr, e.endLabel(), ta) - startPc);
-                    buf.writeU2(e.index());
+                    buf.writeU2U2U2(startPc, labelToBci(lr, e.endLabel(), ta) - startPc, e.index());
                 }
             }
             case TypeAnnotation.CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
             case TypeAnnotation.OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target(), ta));
             case TypeAnnotation.TypeArgumentTarget tat -> {
-                buf.writeU2(labelToBci(lr, tat.target(), ta));
-                buf.writeU1(tat.typeArgumentIndex());
+                buf.writeU2U1(labelToBci(lr, tat.target(), ta),
+                        tat.typeArgumentIndex());
             }
         }
 
         // target_path
         buf.writeU1(ta.targetPath().size());
         for (TypeAnnotation.TypePathComponent component : ta.targetPath()) {
-            buf.writeU1(component.typePathKind().tag());
-            buf.writeU1(component.typeArgumentIndex());
+            buf.writeU1U1(component.typePathKind().tag(), component.typeArgumentIndex());
         }
 
         // annotation data
@@ -361,17 +354,17 @@ public final class AnnotationReader {
     public static void writeAnnotationValue(BufWriterImpl buf, AnnotationValue value) {
         var tag = value.tag();
         buf.writeU1(tag);
-        switch (value.tag()) {
-            case AEV_BOOLEAN, AEV_BYTE, AEV_CHAR, AEV_DOUBLE, AEV_FLOAT, AEV_INT, AEV_LONG, AEV_SHORT, AEV_STRING ->
+        switch (tag) {
+            case TAG_BOOLEAN, TAG_BYTE, TAG_CHAR, TAG_DOUBLE, TAG_FLOAT, TAG_INT, TAG_LONG, TAG_SHORT, TAG_STRING ->
                     buf.writeIndex(((AnnotationValue.OfConstant) value).constant());
-            case AEV_CLASS -> buf.writeIndex(((AnnotationValue.OfClass) value).className());
-            case AEV_ENUM -> {
+            case TAG_CLASS -> buf.writeIndex(((AnnotationValue.OfClass) value).className());
+            case TAG_ENUM -> {
                 var enumValue = (AnnotationValue.OfEnum) value;
                 buf.writeIndex(enumValue.className());
                 buf.writeIndex(enumValue.constantName());
             }
-            case AEV_ANNOTATION -> writeAnnotation(buf, ((AnnotationValue.OfAnnotation) value).annotation());
-            case AEV_ARRAY -> {
+            case TAG_ANNOTATION -> writeAnnotation(buf, ((AnnotationValue.OfAnnotation) value).annotation());
+            case TAG_ARRAY -> {
                 var array = ((AnnotationValue.OfArray) value).values();
                 buf.writeU2(array.size());
                 for (var e : array) {

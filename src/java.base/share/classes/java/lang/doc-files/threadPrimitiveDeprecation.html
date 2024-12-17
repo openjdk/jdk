@@ -71,7 +71,7 @@ the variable indicates that it is to stop running. To ensure prompt
 communication of the stop-request, the variable must be
 <code>volatile</code> (or access to the variable must be
 synchronized).</p>
-<p>For example, suppose your applet contains the following
+<p>For example, suppose your application contains the following
 <code>start</code>, <code>stop</code> and <code>run</code>
 methods:</p>
 <pre>
@@ -92,12 +92,12 @@ methods:</p>
                 Thread.sleep(interval);
             } catch (InterruptedException e){
             }
-            repaint();
+            blink();
         }
     }
 </pre>
 You can avoid the use of <code>Thread.stop</code> by replacing the
-applet's <code>stop</code> and <code>run</code> methods with:
+application's <code>stop</code> and <code>run</code> methods with:
 <pre>
     private volatile Thread blinker;
 
@@ -112,7 +112,7 @@ applet's <code>stop</code> and <code>run</code> methods with:
                 Thread.sleep(interval);
             } catch (InterruptedException e){
             }
-            repaint();
+            blink();
         }
     }
 </pre>

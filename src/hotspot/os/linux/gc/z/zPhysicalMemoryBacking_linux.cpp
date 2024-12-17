@@ -27,6 +27,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zGlobals.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "gc/z/zMountPoint_linux.hpp"
 #include "gc/z/zNUMA.inline.hpp"
@@ -103,14 +104,14 @@
 #define ZFILENAME_HEAP                   "java_heap"
 
 // Preferred tmpfs mount points, ordered by priority
-static const char* z_preferred_tmpfs_mountpoints[] = {
+static const char* ZPreferredTmpfsMountpoints[] = {
   "/dev/shm",
   "/run/shm",
   nullptr
 };
 
 // Preferred hugetlbfs mount points, ordered by priority
-static const char* z_preferred_hugetlbfs_mountpoints[] = {
+static const char* ZPreferredHugetlbfsMountpoints[] = {
   "/dev/hugepages",
   "/hugepages",
   nullptr
@@ -129,6 +130,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
   // Create backing file
   _fd = create_fd(ZFILENAME_HEAP);
   if (_fd == -1) {
+    ZInitialize::error("Failed to create heap backing file");
     return;
   }
 
@@ -136,7 +138,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
   while (ftruncate(_fd, max_capacity) == -1) {
     if (errno != EINTR) {
       ZErrno err;
-      log_error_p(gc)("Failed to truncate backing file (%s)", err.to_string());
+      ZInitialize::error("Failed to truncate backing file (%s)", err.to_string());
       return;
     }
   }
@@ -145,7 +147,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
   struct statfs buf;
   if (fstatfs(_fd, &buf) == -1) {
     ZErrno err;
-    log_error_p(gc)("Failed to determine filesystem type for backing file (%s)", err.to_string());
+    ZInitialize::error("Failed to determine filesystem type for backing file (%s)", err.to_string());
     return;
   }
 
@@ -158,39 +160,39 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
 
   // Make sure the filesystem type matches requested large page type
   if (ZLargePages::is_transparent() && !is_tmpfs()) {
-    log_error_p(gc)("-XX:+UseTransparentHugePages can only be enabled when using a %s filesystem",
-                    ZFILESYSTEM_TMPFS);
+    ZInitialize::error("-XX:+UseTransparentHugePages can only be enabled when using a %s filesystem",
+                       ZFILESYSTEM_TMPFS);
     return;
   }
 
   if (ZLargePages::is_transparent() && !tmpfs_supports_transparent_huge_pages()) {
-    log_error_p(gc)("-XX:+UseTransparentHugePages on a %s filesystem not supported by kernel",
-                    ZFILESYSTEM_TMPFS);
+    ZInitialize::error("-XX:+UseTransparentHugePages on a %s filesystem not supported by kernel",
+                       ZFILESYSTEM_TMPFS);
     return;
   }
 
   if (ZLargePages::is_explicit() && !is_hugetlbfs()) {
-    log_error_p(gc)("-XX:+UseLargePages (without -XX:+UseTransparentHugePages) can only be enabled "
-                    "when using a %s filesystem", ZFILESYSTEM_HUGETLBFS);
+    ZInitialize::error("-XX:+UseLargePages (without -XX:+UseTransparentHugePages) can only be enabled "
+                       "when using a %s filesystem", ZFILESYSTEM_HUGETLBFS);
     return;
   }
 
   if (!ZLargePages::is_explicit() && is_hugetlbfs()) {
-    log_error_p(gc)("-XX:+UseLargePages must be enabled when using a %s filesystem",
-                    ZFILESYSTEM_HUGETLBFS);
+    ZInitialize::error("-XX:+UseLargePages must be enabled when using a %s filesystem",
+                       ZFILESYSTEM_HUGETLBFS);
     return;
   }
 
   // Make sure the filesystem block size is compatible
   if (ZGranuleSize % _block_size != 0) {
-    log_error_p(gc)("Filesystem backing the heap has incompatible block size (" SIZE_FORMAT ")",
-                    _block_size);
+    ZInitialize::error("Filesystem backing the heap has incompatible block size (" SIZE_FORMAT ")",
+                       _block_size);
     return;
   }
 
   if (is_hugetlbfs() && _block_size != ZGranuleSize) {
-    log_error_p(gc)("%s filesystem has unexpected block size " SIZE_FORMAT " (expected " SIZE_FORMAT ")",
-                    ZFILESYSTEM_HUGETLBFS, _block_size, ZGranuleSize);
+    ZInitialize::error("%s filesystem has unexpected block size " SIZE_FORMAT " (expected " SIZE_FORMAT ")",
+                       ZFILESYSTEM_HUGETLBFS, _block_size, ZGranuleSize);
     return;
   }
 
@@ -226,8 +228,8 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
                                  ? ZFILESYSTEM_HUGETLBFS
                                  : ZFILESYSTEM_TMPFS;
   const char** const preferred_mountpoints = ZLargePages::is_explicit()
-                                             ? z_preferred_hugetlbfs_mountpoints
-                                             : z_preferred_tmpfs_mountpoints;
+                                             ? ZPreferredHugetlbfsMountpoints
+                                             : ZPreferredTmpfsMountpoints;
 
   // Find mountpoint
   ZMountPoint mountpoint(filesystem, preferred_mountpoints);

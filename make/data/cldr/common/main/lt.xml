@@ -84,6 +84,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bjn">bandžarų</language>
 			<language type="bkm">komų</language>
 			<language type="bla">siksikų</language>
+			<language type="blo">guanų</language>
 			<language type="bm">bambarų</language>
 			<language type="bn">bengalų</language>
 			<language type="bo">tibetiečių</language>
@@ -179,9 +180,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="enm">Vidurio Anglijos</language>
 			<language type="eo">esperanto</language>
 			<language type="es">ispanų</language>
-			<language type="es_419">Lotynų Amerikos ispanų</language>
-			<language type="es_ES">Europos ispanų</language>
-			<language type="es_MX">Meksikos ispanų</language>
 			<language type="esu">centrinės Aliaskos jupikų</language>
 			<language type="et">estų</language>
 			<language type="eu">baskų</language>
@@ -223,7 +221,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="gmh">Vidurio Aukštosios Vokietijos</language>
 			<language type="gn">gvaranių</language>
 			<language type="goh">senoji Aukštosios Vokietijos</language>
-			<language type="gom">Goa konkanių</language>
 			<language type="gon">gondi</language>
 			<language type="gor">gorontalo</language>
 			<language type="got">gotų</language>
@@ -333,6 +330,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">komi</language>
 			<language type="kw">kornų</language>
 			<language type="kwk">kvakvalų</language>
+			<language type="kxv">kuvi</language>
 			<language type="ky">kirgizų</language>
 			<language type="la">lotynų</language>
 			<language type="lad">ladino</language>
@@ -362,7 +360,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lua">luba lulua</language>
 			<language type="lui">luiseno</language>
 			<language type="lun">Lundos</language>
-			<language type="luo">luo</language>
 			<language type="lus">mizo</language>
 			<language type="luy">luja</language>
 			<language type="lv">latvių</language>
@@ -481,8 +478,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pro">senovės provansalų</language>
 			<language type="ps">puštūnų</language>
 			<language type="pt">portugalų</language>
-			<language type="pt_BR">Brazilijos portugalų</language>
-			<language type="pt_PT">Europos portugalų</language>
 			<language type="qu">kečujų</language>
 			<language type="quc">kičių</language>
 			<language type="qug">Čimboraso aukštumų kečujų</language>
@@ -622,13 +617,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="und">nežinoma kalba</language>
 			<language type="ur">urdų</language>
 			<language type="uz">uzbekų</language>
-			<language type="vai">vai</language>
 			<language type="ve">vendų</language>
 			<language type="vec">venetų</language>
 			<language type="vep">vepsų</language>
 			<language type="vi">vietnamiečių</language>
 			<language type="vls">vakarų flamandų</language>
 			<language type="vmf">pagrindinė frankonų</language>
+			<language type="vmw">makua</language>
 			<language type="vo">volapiuko</language>
 			<language type="vot">Votik</language>
 			<language type="vro">veru</language>
@@ -644,6 +639,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="xal">kalmukų</language>
 			<language type="xh">kosų</language>
 			<language type="xmf">megrelų</language>
+			<language type="xnr">kangri</language>
 			<language type="xog">sogų</language>
 			<language type="yao">jao</language>
 			<language type="yap">japezų</language>
@@ -1224,8 +1220,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">nacionalinis indų kalendorius</type>
 			<type key="calendar" type="islamic">islamo kalendorius</type>
 			<type key="calendar" type="islamic-civil">Islamo kalendorius (lentelinis, pilietinė era)</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">Islamo kalendorius (Saudo Arabija)</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">Islamo kalendorius (lentelinis, astronominė era)</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">Islamo kalendorius (Saudo Arabija)</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">Islamo kalendorius (lentelinis, astronominė era)</type>
 			<type key="calendar" type="islamic-umalqura">Islamo kalendorius (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO 8601 kalendorius</type>
 			<type key="calendar" type="japanese">japonų kalendorius</type>
@@ -1365,7 +1361,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
@@ -2057,21 +2053,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">hh–hh a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hm">
-							<greatestDifference id="a">hh:mm a–hh:mm a</greatestDifference>
-							<greatestDifference id="h">hh:mm–hh:mm a</greatestDifference>
-							<greatestDifference id="m">hh:mm–hh:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">hh:mm a–hh:mm a v</greatestDifference>
-							<greatestDifference id="h">hh:mm–hh:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">hh–hh a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
@@ -2895,6 +2879,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Laikas: {0}</regionFormat>
 			<regionFormat type="daylight">Vasaros laikas: {0}</regionFormat>
 			<regionFormat type="standard">Žiemos laikas: {0}</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>pasaulio suderintasis laikas</standard>
@@ -3581,9 +3568,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan Batoras</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>Čoibalsanas</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>Makao</exemplarCity>
 			</zone>
@@ -3949,9 +3933,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Nome">
 				<exemplarCity>Nomas</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankoridžas</exemplarCity>
@@ -4322,13 +4303,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Kinijos vasaros laikas</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>Čoibalsano laikas</generic>
-					<standard>Čoibalsano žiemos laikas</standard>
-					<daylight>Čoibalsano vasaros laikas</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>Kalėdų Salos laikas</standard>
@@ -4577,6 +4551,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>Kamčiatkos Petropavlovsko laikas</generic>
 					<standard>Kamčiatkos Petropavlovsko žiemos laikas</standard>
 					<daylight>Kamčiatkos Petropavlovsko vasaros laikas</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>Kazachstano laikas</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -5181,10 +5160,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 trln'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="few">{0} {1}</unitPattern>
-			<unitPattern count="many">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -7872,11 +7847,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} karatų</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<gender>masculine</gender>
 				<displayName>miligramai decilitre</displayName>
 				<unitPattern count="one">{0} miligramas decilitre</unitPattern>
+				<unitPattern count="one" case="accusative">{0} miligramą decilitre</unitPattern>
+				<unitPattern count="one" case="dative">{0} miligramui decilitre</unitPattern>
+				<unitPattern count="one" case="genitive">{0} miligramo decilitre</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} miligramu decilitre</unitPattern>
+				<unitPattern count="one" case="locative">{0} miligrame decilitre</unitPattern>
 				<unitPattern count="few">{0} miligramai decilitre</unitPattern>
+				<unitPattern count="few" case="accusative">{0} miligramus decilitre</unitPattern>
+				<unitPattern count="few" case="dative">{0} miligramams decilitre</unitPattern>
+				<unitPattern count="few" case="genitive">{0} miligramų decilitre</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} miligramais decilitre</unitPattern>
+				<unitPattern count="few" case="locative">{0} miligramuose decilitre</unitPattern>
 				<unitPattern count="many">{0} miligramo decilitre</unitPattern>
+				<unitPattern count="many" case="accusative">{0} miligramo decilitre</unitPattern>
+				<unitPattern count="many" case="dative">{0} miligramo decilitre</unitPattern>
+				<unitPattern count="many" case="genitive">{0} miligramo decilitre</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} miligramo decilitre</unitPattern>
+				<unitPattern count="many" case="locative">{0} miligramo decilitre</unitPattern>
 				<unitPattern count="other">{0} miligramų decilitre</unitPattern>
+				<unitPattern count="other" case="accusative">{0} miligramų decilitre</unitPattern>
+				<unitPattern count="other" case="dative">{0} miligramų decilitre</unitPattern>
+				<unitPattern count="other" case="genitive">{0} miligramų decilitre</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} miligramų decilitre</unitPattern>
+				<unitPattern count="other" case="locative">{0} miligramų decilitre</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<gender>masculine</gender>
@@ -8899,11 +8895,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} voltų</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
+				<gender>feminine</gender>
 				<displayName>kilokalorijos</displayName>
 				<unitPattern count="one">{0} kilokalorija</unitPattern>
+				<unitPattern count="one" case="accusative">{0} kilokaloriją</unitPattern>
+				<unitPattern count="one" case="dative">{0} kilokalorijai</unitPattern>
+				<unitPattern count="one" case="genitive">{0} kilokalorijos</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} kilokalorija</unitPattern>
+				<unitPattern count="one" case="locative">{0} kilokalorijoje</unitPattern>
 				<unitPattern count="few">{0} kilokalorijos</unitPattern>
+				<unitPattern count="few" case="accusative">{0} kilokalorijas</unitPattern>
+				<unitPattern count="few" case="dative">{0} kilokalorijoms</unitPattern>
+				<unitPattern count="few" case="genitive">{0} kilokalorijų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} kilokalorijomis</unitPattern>
+				<unitPattern count="few" case="locative">{0} kilokalorijose</unitPattern>
 				<unitPattern count="many">{0} kilokalorijos</unitPattern>
+				<unitPattern count="many" case="accusative">{0} kilokalorijos</unitPattern>
+				<unitPattern count="many" case="dative">{0} kilokalorijos</unitPattern>
+				<unitPattern count="many" case="genitive">{0} kilokalorijos</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} kilokalorijos</unitPattern>
+				<unitPattern count="many" case="locative">{0} kilokalorijos</unitPattern>
 				<unitPattern count="other">{0} kilokalorijų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} kilokalorijų</unitPattern>
+				<unitPattern count="other" case="dative">{0} kilokalorijų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} kilokalorijų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} kilokalorijų</unitPattern>
+				<unitPattern count="other" case="locative">{0} kilokalorijų</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>feminine</gender>
@@ -9673,11 +9690,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} ilgųjų mylių</unitPattern>
 			</unit>
 			<unit type="length-point">
+				<gender>masculine</gender>
 				<displayName>punktai</displayName>
 				<unitPattern count="one">{0} punktas</unitPattern>
+				<unitPattern count="one" case="accusative">{0} punktą</unitPattern>
+				<unitPattern count="one" case="dative">{0} punktui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} punkto</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} punktu</unitPattern>
+				<unitPattern count="one" case="locative">{0} punkte</unitPattern>
 				<unitPattern count="few">{0} punktai</unitPattern>
-				<unitPattern count="many">{0} punktų</unitPattern>
-				<unitPattern count="other">{0} punkto</unitPattern>
+				<unitPattern count="few" case="accusative">{0} punktus</unitPattern>
+				<unitPattern count="few" case="dative">{0} punktams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} punktų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} punktais</unitPattern>
+				<unitPattern count="few" case="locative">{0} punktuose</unitPattern>
+				<unitPattern count="many">{0} punkto</unitPattern>
+				<unitPattern count="many" case="accusative">{0} punkto</unitPattern>
+				<unitPattern count="many" case="dative">{0} punkto</unitPattern>
+				<unitPattern count="many" case="genitive">{0} punkto</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} punkto</unitPattern>
+				<unitPattern count="many" case="locative">{0} punkto</unitPattern>
+				<unitPattern count="other">{0} punktų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} punktų</unitPattern>
+				<unitPattern count="other" case="dative">{0} punktų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} punktų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} punktų</unitPattern>
+				<unitPattern count="other" case="locative">{0} punktų</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>saulės spinduliuotė</displayName>
@@ -10133,11 +10171,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} arklio galių</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
+				<gender>masculine</gender>
 				<displayName>gysidabrio stulpelio milimetrai</displayName>
 				<unitPattern count="one">{0} gysidabrio stulpelio milimetras</unitPattern>
+				<unitPattern count="one" case="accusative">{0} gysidabrio stulpelio milimetrą</unitPattern>
+				<unitPattern count="one" case="dative">{0} gysidabrio stulpelio milimetrui</unitPattern>
+				<unitPattern count="one" case="genitive">{0} gysidabrio stulpelio milimetro</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} gysidabrio stulpelio milimetru</unitPattern>
+				<unitPattern count="one" case="locative">{0} gysidabrio stulpelio milimetre</unitPattern>
 				<unitPattern count="few">{0} gysidabrio stulpelio milimetrai</unitPattern>
+				<unitPattern count="few" case="accusative">{0} gysidabrio stulpelio milimetrus</unitPattern>
+				<unitPattern count="few" case="dative">{0} gysidabrio stulpelio milimetrams</unitPattern>
+				<unitPattern count="few" case="genitive">{0} gysidabrio stulpelio milimetrų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} gysidabrio stulpelio milimetrais</unitPattern>
+				<unitPattern count="few" case="locative">{0} gysidabrio stulpelio milimetruose</unitPattern>
 				<unitPattern count="many">{0} gysidabrio stulpelio milimetro</unitPattern>
+				<unitPattern count="many" case="accusative">{0} gysidabrio stulpelio milimetro</unitPattern>
+				<unitPattern count="many" case="dative">{0} gysidabrio stulpelio milimetro</unitPattern>
+				<unitPattern count="many" case="genitive">{0} gysidabrio stulpelio milimetro</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} gysidabrio stulpelio milimetro</unitPattern>
+				<unitPattern count="many" case="locative">{0} gysidabrio stulpelio milimetro</unitPattern>
 				<unitPattern count="other">{0} gysidabrio stulpelio milimetrų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} gysidabrio stulpelio milimetrų</unitPattern>
+				<unitPattern count="other" case="dative">{0} gysidabrio stulpelio milimetrų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} gysidabrio stulpelio milimetrų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} gysidabrio stulpelio milimetrų</unitPattern>
+				<unitPattern count="other" case="locative">{0} gysidabrio stulpelio milimetrų</unitPattern>
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>svarai kv. colyje</displayName>
@@ -10973,6 +11032,63 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} imp. kvortos</unitPattern>
 				<unitPattern count="other">{0} imp. kvortų</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<gender>feminine</gender>
+				<displayName>milijoninės dalelytės</displayName>
+				<unitPattern count="one">{0} milijoninė dalelytė</unitPattern>
+				<unitPattern count="one" case="accusative">{0} milijoninę dalelytę</unitPattern>
+				<unitPattern count="one" case="dative">{0} milijoninei dalelytei</unitPattern>
+				<unitPattern count="one" case="genitive">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} milijonine dalelyte</unitPattern>
+				<unitPattern count="one" case="locative">{0} milijoninėje dalelytėje</unitPattern>
+				<unitPattern count="few">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="few" case="accusative">{0} milijonines dalelytes</unitPattern>
+				<unitPattern count="few" case="dative">{0} milijoninėms dalelytėms</unitPattern>
+				<unitPattern count="few" case="genitive">{0} milijoninių dalelyčių</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} milijoninėmis dalelytėmis</unitPattern>
+				<unitPattern count="few" case="locative">{0} milijoninėse dalelytėse</unitPattern>
+				<unitPattern count="many">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="many" case="accusative">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="many" case="dative">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="many" case="genitive">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="many" case="locative">{0} milijoninės dalelytės</unitPattern>
+				<unitPattern count="other">{0} milijoninių dalelyčių</unitPattern>
+				<unitPattern count="other" case="accusative">{0} milijoninių dalelyčių</unitPattern>
+				<unitPattern count="other" case="dative">{0} milijoninių dalelyčių</unitPattern>
+				<unitPattern count="other" case="genitive">{0} milijoninių dalelyčių</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} milijoninių dalelyčių</unitPattern>
+				<unitPattern count="other" case="locative">{0} milijoninių dalelyčių</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<gender>feminine</gender>
+				<displayName>naktis</displayName>
+				<unitPattern count="one">{0} naktis</unitPattern>
+				<unitPattern count="one" case="accusative">{0} naktis</unitPattern>
+				<unitPattern count="one" case="dative">{0} nakčiai</unitPattern>
+				<unitPattern count="one" case="genitive">{0} nakties</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} naktimi</unitPattern>
+				<unitPattern count="one" case="locative">{0} naktyje</unitPattern>
+				<unitPattern count="few">{0} naktys</unitPattern>
+				<unitPattern count="few" case="accusative">{0} naktis</unitPattern>
+				<unitPattern count="few" case="dative">{0} naktims</unitPattern>
+				<unitPattern count="few" case="genitive">{0} naktų</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} naktimis</unitPattern>
+				<unitPattern count="few" case="locative">{0} naktyse</unitPattern>
+				<unitPattern count="many">{0} nakties</unitPattern>
+				<unitPattern count="many" case="accusative">{0} nakties</unitPattern>
+				<unitPattern count="many" case="dative">{0} nakties</unitPattern>
+				<unitPattern count="many" case="genitive">{0} nakties</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} nakties</unitPattern>
+				<unitPattern count="many" case="locative">{0} nakties</unitPattern>
+				<unitPattern count="other">{0} naktų</unitPattern>
+				<unitPattern count="other" case="accusative">{0} naktų</unitPattern>
+				<unitPattern count="other" case="dative">{0} naktų</unitPattern>
+				<unitPattern count="other" case="genitive">{0} naktų</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} naktų</unitPattern>
+				<unitPattern count="other" case="locative">{0} naktų</unitPattern>
+				<perUnitPattern>{0}/nakt.</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>pagrindinė kryptis</displayName>
 				<coordinateUnitPattern type="east">{0} rytų</coordinateUnitPattern>
@@ -11577,6 +11693,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} imp. kv.</unitPattern>
 				<unitPattern count="other">{0} imp. kv.</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dalelytė/mln.</displayName>
+				<unitPattern count="one">{0} dalelytė/mln.</unitPattern>
+				<unitPattern count="few">{0} dalelytės/mln.</unitPattern>
+				<unitPattern count="many">{0} dalelytės/mln.</unitPattern>
+				<unitPattern count="other">{0} dalelyčių/mln.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nakt.</displayName>
+				<unitPattern count="one">{0} nakt.</unitPattern>
+				<unitPattern count="few">{0} nakt.</unitPattern>
+				<unitPattern count="many">{0} nakt.</unitPattern>
+				<unitPattern count="other">{0} nakt.</unitPattern>
+				<perUnitPattern>{0}/nakt.</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>kryptis</displayName>
 				<coordinateUnitPattern type="east">{0} R</coordinateUnitPattern>
@@ -11676,6 +11807,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} fl oz</unitPattern>
 				<unitPattern count="many">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>dalelytė/mln.</displayName>
+				<unitPattern count="one">{0} dalelytė/mln.</unitPattern>
+				<unitPattern count="few">{0} dalelytės/mln.</unitPattern>
+				<unitPattern count="many">{0} dalelytės/mln.</unitPattern>
+				<unitPattern count="other">{0} dalelyčių/mln.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>nakt.</displayName>
+				<unitPattern count="one">{0} nakt.</unitPattern>
+				<unitPattern count="few">{0} nakt.</unitPattern>
+				<unitPattern count="many">{0} nakt.</unitPattern>
+				<unitPattern count="other">{0} nakt.</unitPattern>
+				<perUnitPattern>{0}/nakt.</perUnitPattern>
 			</unit>
 		</unitLength>
 		<durationUnit type="hm">

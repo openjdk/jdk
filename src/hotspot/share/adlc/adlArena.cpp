@@ -63,8 +63,6 @@ void AdlChunk::chop() {
   AdlChunk *k = this;
   while( k ) {
     AdlChunk *tmp = k->_next;
-    // clear out this chunk (to detect allocation bugs)
-    memset(k, 0xBE, k->_len);
     free(k);                    // Free chunk (was malloc'd)
     k = tmp;
   }

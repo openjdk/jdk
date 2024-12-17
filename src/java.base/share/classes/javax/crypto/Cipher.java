@@ -164,6 +164,10 @@ import sun.security.util.KnownOIDs;
  * Consult the release documentation for your implementation to see if any
  * other transformations are supported.
  *
+ * @spec https://www.rfc-editor.org/info/rfc5116
+ *      RFC 5116: An Interface and Algorithms for Authenticated Encryption
+ * @spec https://www.rfc-editor.org/info/rfc7539
+ *      RFC 7539: ChaCha20 and Poly1305 for IETF Protocols
  * @author Jan Luehe
  * @see KeyGenerator
  * @see SecretKey

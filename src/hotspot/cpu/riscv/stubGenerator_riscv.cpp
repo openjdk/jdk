@@ -508,7 +508,7 @@ class StubGenerator: public StubCodeGenerator {
     // complete return to VM
     assert(StubRoutines::_call_stub_return_address != nullptr,
            "_call_stub_return_address must have been generated before");
-    __ j(StubRoutines::_call_stub_return_address);
+    __ j(RuntimeAddress(StubRoutines::_call_stub_return_address));
 
     return start;
   }
@@ -946,7 +946,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // The size of copy32_loop body increases significantly with ZGC GC barriers.
     // Need conditional far branches to reach a point beyond the loop in this case.
-    bool is_far = UseZGC && ZGenerational;
+    bool is_far = UseZGC;
 
     __ beqz(count, done, is_far);
     __ slli(cnt, count, exact_log2(granularity));
@@ -2112,7 +2112,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Remaining count is less than 8 bytes. Fill it by a single store.
     // Note that the total length is no less than 8 bytes.
-    if (t == T_BYTE || t == T_SHORT) {
+    if (!AvoidUnalignedAccesses && (t == T_BYTE || t == T_SHORT)) {
       __ beqz(count, L_exit1);
       __ shadd(to, count, to, tmp_reg, shift); // points to the end
       __ sd(value, Address(to, -8)); // overwrite some elements
@@ -2276,6 +2276,174 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
   }
 
+  void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int rounds) {
+    const int step = 16;
+    for (int i = 0; i < rounds; i++) {
+      __ vle32_v(working_vregs[i], key);
+      // The keys are stored in little-endian array, while we need
+      // to operate in big-endian.
+      // So performing an endian-swap here with vrev8.v instruction
+      __ vrev8_v(working_vregs[i], working_vregs[i]);
+      __ addi(key, key, step);
+    }
+  }
+
+  void generate_aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+    assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
+
+    __ vxor_vv(res, res, working_vregs[0]);
+    for (int i = 1; i < rounds - 1; i++) {
+      __ vaesem_vv(res, working_vregs[i]);
+    }
+    __ vaesef_vv(res, working_vregs[rounds - 1]);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //
+  address generate_aescrypt_encryptBlock() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
+
+    Label L_aes128, L_aes192;
+
+    const Register from        = c_rarg0;  // source array address
+    const Register to          = c_rarg1;  // destination array address
+    const Register key         = c_rarg2;  // key array address
+    const Register keylen      = c_rarg3;
+
+    VectorRegister working_vregs[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11,
+      v12, v13, v14, v15, v16, v17, v18
+    };
+    const VectorRegister res   = v19;
+
+    address start = __ pc();
+    __ enter();
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(res, from);
+
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs key += 15*16
+    generate_aes_loadkeys(key, working_vregs, 15);
+    generate_aes_encrypt(res, working_vregs, 15);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes192);
+    // Note: the following function performs key += 13*16
+    generate_aes_loadkeys(key, working_vregs, 13);
+    generate_aes_encrypt(res, working_vregs, 13);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes128);
+    // Note: the following function performs key += 11*16
+    generate_aes_loadkeys(key, working_vregs, 11);
+    generate_aes_encrypt(res, working_vregs, 11);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  void generate_aes_decrypt(const VectorRegister &res, VectorRegister *working_vregs, int rounds) {
+    assert(rounds <= 15, "rounds should be less than or equal to working_vregs size");
+
+    __ vxor_vv(res, res, working_vregs[rounds - 1]);
+    for (int i = rounds - 2; i > 0; i--) {
+      __ vaesdm_vv(res, working_vregs[i]);
+    }
+    __ vaesdf_vv(res, working_vregs[0]);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //
+  address generate_aescrypt_decryptBlock() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
+
+    Label L_aes128, L_aes192;
+
+    const Register from        = c_rarg0;  // source array address
+    const Register to          = c_rarg1;  // destination array address
+    const Register key         = c_rarg2;  // key array address
+    const Register keylen      = c_rarg3;
+
+    VectorRegister working_vregs[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11,
+      v12, v13, v14, v15, v16, v17, v18
+    };
+    const VectorRegister res   = v19;
+
+    address start = __ pc();
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(res, from);
+
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_aes128);
+    __ beq(keylen, t2, L_aes192);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    // Note: the following function performs key += 15*16
+    generate_aes_loadkeys(key, working_vregs, 15);
+    generate_aes_decrypt(res, working_vregs, 15);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes192);
+    // Note: the following function performs key += 13*16
+    generate_aes_loadkeys(key, working_vregs, 13);
+    generate_aes_decrypt(res, working_vregs, 13);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_aes128);
+    // Note: the following function performs key += 11*16
+    generate_aes_loadkeys(key, working_vregs, 11);
+    generate_aes_decrypt(res, working_vregs, 11);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // code for comparing 16 bytes of strings with same encoding
   void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
     const Register result = x10, str1 = x11, cnt1 = x12, str2 = x13, tmp1 = x28, tmp2 = x29, tmp4 = x7, tmp5 = x31;
@@ -2428,6 +2596,14 @@ class StubGenerator: public StubCodeGenerator {
       __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ lwu(t1, t1);
       __ sw(t1, thread_epoch_addr);
+      // There are two ways this can work:
+      // - The writer did system icache shootdown after the instruction stream update.
+      //   Hence do nothing.
+      // - The writer trust us to make sure our icache is in sync before entering.
+      //   Hence use cmodx fence (fence.i, may change).
+      if (UseCtxFencei) {
+        __ cmodx_fence();
+      }
       __ membar(__ LoadLoad);
     }
 
@@ -3774,8 +3950,7 @@ class StubGenerator: public StubCodeGenerator {
     Label thaw_success;
     // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
     __ bnez(t1, thaw_success);
-    __ la(t0, RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
-    __ jr(t0);
+    __ j(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
     __ bind(thaw_success);
 
     // make room for the thawed frames
@@ -3861,6 +4036,36 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
+  }
+
+  address generate_cont_preempt_stub() {
+    if (!Continuations::enabled()) return nullptr;
+    StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+    address start = __ pc();
+
+    __ reset_last_Java_frame(true);
+
+    // Set sp to enterSpecial frame, i.e. remove all frames copied into the heap.
+    __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
+
+    Label preemption_cancelled;
+    __ lbu(t0, Address(xthread, JavaThread::preemption_cancelled_offset()));
+    __ bnez(t0, preemption_cancelled);
+
+    // Remove enterSpecial frame from the stack and return to Continuation.run() to unmount.
+    SharedRuntime::continuation_enter_cleanup(_masm);
+    __ leave();
+    __ ret();
+
+    // We acquired the monitor after freezing the frames so call thaw to continue execution.
+    __ bind(preemption_cancelled);
+    __ sb(zr, Address(xthread, JavaThread::preemption_cancelled_offset()));
+    __ la(fp, Address(sp, checked_cast<int32_t>(ContinuationEntry::size() + 2 * wordSize)));
+    __ la(t1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
+    __ ld(t1, Address(t1));
+    __ jr(t1);
 
     return start;
   }
@@ -4474,7 +4679,7 @@ class StubGenerator: public StubCodeGenerator {
     RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
     RegSet reg_cache_regs;
     reg_cache_regs += reg_cache_saved_regs;
-    reg_cache_regs += RegSet::of(x28, x29, x30, x31); // t3, t4, t5, t6
+    reg_cache_regs += RegSet::of(t3, t4, t5, t6);
     BufRegCache reg_cache(_masm, reg_cache_regs);
 
     RegSet saved_regs;
@@ -5331,7 +5536,7 @@ class StubGenerator: public StubCodeGenerator {
    * NOTE: each field will occupy a single vector register group
    */
   void base64_vector_decode_round(Register src, Register dst, Register codec,
-                    Register size, Register stepSrc, Register stepDst, Register failedIdx, Register minusOne,
+                    Register size, Register stepSrc, Register stepDst, Register failedIdx,
                     VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3, VectorRegister inputV4,
                     VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
                     VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3,
@@ -5358,8 +5563,11 @@ class StubGenerator: public StubCodeGenerator {
     __ vor_vv(outputV1, outputV1, outputV2);
     __ vmseq_vi(v0, outputV1, -1);
     __ vfirst_m(failedIdx, v0);
-    Label NoFailure;
-    __ beq(failedIdx, minusOne, NoFailure);
+    Label NoFailure, FailureAtIdx0;
+    // valid value can only be -1 when < 0
+    __ bltz(failedIdx, NoFailure);
+    // when the first data (at index 0) fails, no need to process data anymore
+    __ beqz(failedIdx, FailureAtIdx0);
     __ vsetvli(x0, failedIdx, Assembler::e8, lmul, Assembler::mu, Assembler::tu);
     __ slli(stepDst, failedIdx, 1);
     __ add(stepDst, failedIdx, stepDst);
@@ -5382,6 +5590,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // dst = dst + register_group_len_bytes * 3
     __ add(dst, dst, stepDst);
+    __ BIND(FailureAtIdx0);
   }
 
   /**
@@ -5450,8 +5659,8 @@ class StubGenerator: public StubCodeGenerator {
     Register isMIME = c_rarg6;
 
     Register codec     = c_rarg7;
-    Register dstBackup = x31;
-    Register length    = x28;     // t3, total length of src data in bytes
+    Register dstBackup = t6;
+    Register length    = t3;     // total length of src data in bytes
 
     Label ProcessData, Exit;
     Label ProcessScalar, ScalarLoop;
@@ -5486,10 +5695,8 @@ class StubGenerator: public StubCodeGenerator {
       Register stepSrcM1 = send;
       Register stepSrcM2 = doff;
       Register stepDst   = isURL;
-      Register size      = x29;   // t4
-      Register minusOne  = x30;   // t5
+      Register size      = t4;
 
-      __ mv(minusOne, -1);
       __ mv(size, MaxVectorSize * 2);
       __ mv(stepSrcM1, MaxVectorSize * 4);
       __ slli(stepSrcM2, stepSrcM1, 1);
@@ -5501,7 +5708,7 @@ class StubGenerator: public StubCodeGenerator {
       // Assembler::m2
       __ BIND(ProcessM2);
       base64_vector_decode_round(src, dst, codec,
-                    size, stepSrcM2, stepDst, failedIdx, minusOne,
+                    size, stepSrcM2, stepDst, failedIdx,
                     v2, v4, v6, v8,      // inputs
                     v10, v12, v14, v16,  // indexes
                     v18, v20, v22,       // outputs
@@ -5509,7 +5716,8 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(length, length, stepSrcM2);
 
       // error check
-      __ bne(failedIdx, minusOne, Exit);
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
 
       __ bge(length, stepSrcM2, ProcessM2);
 
@@ -5521,7 +5729,7 @@ class StubGenerator: public StubCodeGenerator {
       __ srli(size, size, 1);
       __ srli(stepDst, stepDst, 1);
       base64_vector_decode_round(src, dst, codec,
-                    size, stepSrcM1, stepDst, failedIdx, minusOne,
+                    size, stepSrcM1, stepDst, failedIdx,
                     v1, v2, v3, v4,      // inputs
                     v5, v6, v7, v8,      // indexes
                     v9, v10, v11,        // outputs
@@ -5529,7 +5737,8 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(length, length, stepSrcM1);
 
       // error check
-      __ bne(failedIdx, minusOne, Exit);
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
 
       __ BIND(ProcessScalar);
       __ beqz(length, Exit);
@@ -5538,7 +5747,7 @@ class StubGenerator: public StubCodeGenerator {
     // scalar version
     {
       Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
-      Register combined32Bits = x29; // t5
+      Register combined32Bits = t4;
 
       // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
       // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
@@ -5696,10 +5905,10 @@ class StubGenerator: public StubCodeGenerator {
     Register nmax  = c_rarg4;
     Register base  = c_rarg5;
     Register count = c_rarg6;
-    Register temp0 = x28; // t3
-    Register temp1 = x29; // t4
-    Register temp2 = x30; // t5
-    Register temp3 = x31; // t6
+    Register temp0 = t3;
+    Register temp1 = t4;
+    Register temp2 = t5;
+    Register temp3 = t6;
 
     VectorRegister vzero = v31;
     VectorRegister vbytes = v8; // group: v8, v9, v10, v11
@@ -6059,6 +6268,58 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  void generate_vector_math_stubs() {
+    if (!UseRVV) {
+      log_info(library)("vector is not supported, skip loading vector math (sleef) library!");
+      return;
+    }
+
+    // Get native vector math stub routine addresses
+    void* libsleef = nullptr;
+    char ebuf[1024];
+    char dll_name[JVM_MAXPATHLEN];
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "sleef")) {
+      libsleef = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    }
+    if (libsleef == nullptr) {
+      log_info(library)("Failed to load native vector math (sleef) library, %s!", ebuf);
+      return;
+    }
+
+    // Method naming convention
+    //   All the methods are named as <OP><T>_<U><suffix>
+    //
+    //   Where:
+    //     <OP>     is the operation name, e.g. sin, cos
+    //     <T>      is to indicate float/double
+    //              "fx/dx" for vector float/double operation
+    //     <U>      is the precision level
+    //              "u10/u05" represents 1.0/0.5 ULP error bounds
+    //               We use "u10" for all operations by default
+    //               But for those functions do not have u10 support, we use "u05" instead
+    //     <suffix> rvv, indicates riscv vector extension
+    //
+    //   e.g. sinfx_u10rvv is the method for computing vector float sin using rvv instructions
+    //
+    log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "sleef" JNI_LIB_SUFFIX, p2i(libsleef));
+
+    for (int op = 0; op < VectorSupport::NUM_VECTOR_OP_MATH; op++) {
+      int vop = VectorSupport::VECTOR_OP_MATH_START + op;
+      if (vop == VectorSupport::VECTOR_OP_TANH) { // skip tanh because of performance regression
+        continue;
+      }
+
+      // The native library does not support u10 level of "hypot".
+      const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
+
+      snprintf(ebuf, sizeof(ebuf), "%sfx_%srvv", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+
+      snprintf(ebuf, sizeof(ebuf), "%sdx_%srvv", VectorSupport::mathname[op], ulf);
+      StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libsleef, ebuf);
+    }
+  }
+
 #endif // COMPILER2
 
   /**
@@ -6080,26 +6341,17 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     address start = __ pc();
 
+    // input parameters
     const Register crc    = c_rarg0;  // crc
     const Register buf    = c_rarg1;  // source java byte array address
     const Register len    = c_rarg2;  // length
-    const Register table0 = c_rarg3;  // crc_table address
-    const Register table1 = c_rarg4;
-    const Register table2 = c_rarg5;
-    const Register table3 = c_rarg6;
-
-    const Register tmp1 = c_rarg7;
-    const Register tmp2 = t2;
-    const Register tmp3 = x28; // t3
-    const Register tmp4 = x29; // t4
-    const Register tmp5 = x30; // t5
-    const Register tmp6 = x31; // t6
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    __ kernel_crc32(crc, buf, len, table0, table1, table2,
-                    table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+    __ kernel_crc32(crc, buf, len,
+                    c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
+                    c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
@@ -6117,6 +6369,29 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ verify_oop(x10); // return a exception oop in a0
     __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
     __ should_not_reach_here();
+
+    return start;
+  }
+
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // xmethod = Method* result
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, t0, t1);
+      // Load target method from receiver
+    __ load_heap_oop(xmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_LambdaForm::vmentry_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_MemberName::method_offset()), t0, t1);
+    __ access_load_at(T_ADDRESS, IN_HEAP, xmethod,
+                      Address(xmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ ret();
 
     return start;
   }
@@ -6157,6 +6432,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     StubRoutines::_cont_thaw             = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+    StubRoutines::_cont_preempt_stub     = generate_cont_preempt_stub();
   }
 
   void generate_final_stubs() {
@@ -6186,6 +6462,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 #endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::riscv::set_completed();
   }
@@ -6216,11 +6493,16 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_montgomerySquare = g.generate_square();
     }
 
+    if (UseAESIntrinsics) {
+      StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
+      StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+    }
+
     if (UsePoly1305Intrinsics) {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
     }
 
-    if (UseRVVForBigIntegerShiftIntrinsics) {
+    if (UseRVV) {
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
@@ -6263,6 +6545,8 @@ static const int64_t right_3_bits = right_n_bits(3);
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
+
+    generate_vector_math_stubs();
 
 #endif // COMPILER2
   }

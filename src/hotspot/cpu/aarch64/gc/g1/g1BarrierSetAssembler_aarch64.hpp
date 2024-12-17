@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ class LIR_Assembler;
 class StubAssembler;
 class G1PreBarrierStub;
 class G1PostBarrierStub;
+class G1PreBarrierStubC2;
+class G1PostBarrierStubC2;
 
 class G1BarrierSetAssembler: public ModRefBarrierSetAssembler {
 protected:
@@ -67,6 +69,27 @@ public:
 
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
   void generate_c1_post_barrier_runtime_stub(StubAssembler* sasm);
+#endif
+
+#ifdef COMPILER2
+  void g1_write_barrier_pre_c2(MacroAssembler* masm,
+                               Register obj,
+                               Register pre_val,
+                               Register thread,
+                               Register tmp1,
+                               Register tmp2,
+                               G1PreBarrierStubC2* c2_stub);
+  void generate_c2_pre_barrier_stub(MacroAssembler* masm,
+                                    G1PreBarrierStubC2* stub) const;
+  void g1_write_barrier_post_c2(MacroAssembler* masm,
+                                Register store_addr,
+                                Register new_val,
+                                Register thread,
+                                Register tmp1,
+                                Register tmp2,
+                                G1PostBarrierStubC2* c2_stub);
+  void generate_c2_post_barrier_stub(MacroAssembler* masm,
+                                     G1PostBarrierStubC2* stub) const;
 #endif
 
   void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,

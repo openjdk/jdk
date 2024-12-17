@@ -42,6 +42,13 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 // by virtual functions.
 class AddNode : public Node {
   virtual uint hash() const;
+
+  Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
+  static Node* find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Node* find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Node* find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Node* find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
+
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     init_class_id(Class_Add);
@@ -255,8 +262,7 @@ public:
 
 //------------------------------MaxNode----------------------------------------
 // Max (or min) of 2 values.  Included with the ADD nodes because it inherits
-// all the behavior of addition on a ring.  Only new thing is that we allow
-// 2 equal inputs to be equal.
+// all the behavior of addition on a ring.
 class MaxNode : public AddNode {
 private:
   static Node* build_min_max(Node* a, Node* b, bool is_max, bool is_unsigned, const Type* t, PhaseGVN& gvn);
@@ -270,6 +276,8 @@ public:
   virtual int min_opcode() const = 0;
   Node* IdealI(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
+  Node* find_identity_operation(Node* operation, Node* operand);
+  int opposite_opcode() const;
 
   static Node* unsigned_max(Node* a, Node* b, const Type* t, PhaseGVN& gvn) {
     return build_min_max(a, b, true, true, t, gvn);
@@ -314,6 +322,7 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
+  virtual Node* Identity(PhaseGVN* phase);
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
@@ -330,7 +339,8 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
   int max_opcode() const { return Op_MaxI; }
   int min_opcode() const { return Op_MinI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------MaxLNode---------------------------------------

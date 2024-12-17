@@ -29,7 +29,7 @@
  *          when run inside Docker container, such as available CPU and memory.
  *          Also make sure that PIDs are based on value provided by container,
  *          not by the host system.
- * @requires (docker.support & os.maxMemory >= 2g)
+ * @requires (container.support & os.maxMemory >= 2g)
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

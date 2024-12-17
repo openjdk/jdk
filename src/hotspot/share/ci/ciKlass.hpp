@@ -107,6 +107,13 @@ public:
     return false;
   }
 
+  bool is_in_encoding_range() {
+    Klass* k = get_Klass();
+    bool is_in_encoding_range = CompressedKlassPointers::is_encodable(k);
+    assert(is_in_encoding_range || k->is_interface() || k->is_abstract(), "sanity");
+    return is_in_encoding_range;
+  }
+
   // Attempt to get a klass using this ciKlass's loader.
   ciKlass* find_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,
@@ -132,6 +139,9 @@ public:
   void print_name_on(outputStream* st);
 
   const char* external_name() const;
+
+  juint prototype_header_offset();
+  uintptr_t prototype_header();
 };
 
 #endif // SHARE_CI_CIKLASS_HPP
