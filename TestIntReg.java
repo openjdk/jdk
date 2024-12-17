@@ -67,6 +67,14 @@ public class TestIntReg {
         return a ^ b;
     }
 
+    public static int testOrImm1(int a, int b) {
+        return a | 7;
+    }
+
+    public static int testOrImm2(int a, int b) {
+        return 5 | b;
+    }
+
     public static int testOr(int a, int b) {
         return a | b;
     }

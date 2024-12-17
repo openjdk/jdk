@@ -71,8 +71,20 @@ public class TestLongMem {
         return a ^ b;
     }
 
-    public static long testOr(int a, int b) {
-        return a | b;
+    public static long testOrImm1(long x, int i) {
+        return b[i] | 9;
+    }
+
+    public static long testOrImm2(long x, int i) {
+        return 11 | a[i];
+    }
+
+    public static long testOr2(long x, int i) {
+        return b[i] | x;
+    }
+
+    public static long testOr1(long x, int i) {
+        return x | b[i];
     }
 
     public static long testAndImm1(long x, int i) {

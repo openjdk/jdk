@@ -71,8 +71,20 @@ public class TestIntMem {
         return a ^ b;
     }
 
-    public static int testOr(int a, int b) {
-        return a | b;
+    public static int testOrImm1(int x, int i) {
+        return b[i] | 9;
+    }
+
+    public static int testOrImm2(int x, int i) {
+        return 11 | a[i];
+    }
+
+    public static int testOr1(int x, int i) {
+        return b[i] | x;
+    }
+
+    public static int testOr2(int x, int i) {
+        return x | b[i];
     }
 
     public static int testAndImm1(int x, int i) {

@@ -67,6 +67,14 @@ public class TestLongReg {
         return a ^ b;
     }
 
+    public static long testOrImm1(long a, long b) {
+        return a | 9;
+    }
+
+    public static long testOrImm2(long a, long b) {
+        return 11 | b;
+    }
+
     public static long testOr(long a, long b) {
         return a | b;
     }
@@ -75,7 +83,7 @@ public class TestLongReg {
         return a & 9;
     }
 
-    public static long testAndImm2(long x, long b) {
+    public static long testAndImm2(long a, long b) {
         return 11 & b;
     }
 

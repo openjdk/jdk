@@ -10041,6 +10041,7 @@ instruct orI_rReg_ndd(rRegI dst, rRegI src1, rRegI src2)
 // Or Register with Immediate
 instruct orI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (OrI dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10052,9 +10053,46 @@ instruct orI_rReg_imm(rRegI dst, immI src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct orI_rReg_rReg_imm_ndd(rRegI dst, rRegI src1, immI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrI src1 src2));
+
+  format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eorl($dst$$Register, $src1$$Register, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct orI_rReg_imm_rReg_ndd(rRegI dst, immI src1, rRegI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrI src1 src2));
+
+  format %{ "eorl     $dst, $src2, $src1\t# int ndd" %}
+  ins_encode %{
+    __ eorl($dst$$Register, $src2$$Register, $src1$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct orI_rReg_mem_imm_ndd(rRegI dst, memory src1, immI src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrI (LoadI src1) src2));
+
+  format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eorl($dst$$Register, $src1$$Address, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Or Register with Memory
 instruct orI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (OrI dst (LoadI src)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10063,6 +10101,19 @@ instruct orI_rReg_mem(rRegI dst, memory src, rFlagsReg cr)
   format %{ "orl     $dst, $src\t# int" %}
   ins_encode %{
     __ orl($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct orI_rReg_rReg_mem_ndd(rRegI dst, rRegI src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrI src1 (LoadI src2)));
+
+  ins_cost(150);
+  format %{ "eorl     $dst, $src1, $src2\t# int ndd" %}
+  ins_encode %{
+    __ eorl($dst$$Register, $src1$$Register, $src2$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
@@ -10354,6 +10405,19 @@ instruct andL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
   ins_pipe(ialu_reg_mem);
 %}
 
+instruct andL_rReg_mem_rReg_ndd(rRegL dst, memory src1, rRegL src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (AndL (LoadL src1) src2));
+
+  ins_cost(150);
+  format %{ "eandq    $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eandq($dst$$Register, $src1$$Address, $src2$$Register, true);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
 // And Memory with Register
 instruct andL_mem_rReg(memory dst, rRegL src, rFlagsReg cr)
 %{
@@ -10572,6 +10636,7 @@ instruct orL_rReg_castP2X(rRegL dst, any_RegP src, rFlagsReg cr) %{
 // Or Register with Immediate
 instruct orL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (OrL dst src));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10583,9 +10648,47 @@ instruct orL_rReg_imm(rRegL dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct orL_rReg_rReg_imm_ndd(rRegL dst, rRegL src1, immL32 src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrL src1 src2));
+
+  format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eorq($dst$$Register, $src1$$Register, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct orL_rReg_imm_rReg_ndd(rRegL dst, immL32 src1, rRegL src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrL src1 src2));
+
+  format %{ "eorq     $dst, $src2, $src1\t# long ndd" %}
+  ins_encode %{
+    __ eorq($dst$$Register, $src2$$Register, $src1$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Or Memory with Immediate
+instruct orL_rReg_mem_imm_ndd(rRegL dst, memory src1, immL32 src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrL (LoadL src1) src2));
+
+  format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eorq($dst$$Register, $src1$$Address, $src2$$constant, true);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Or Register with Memory
 instruct orL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
 %{
+  predicate(!UseAPX);
   match(Set dst (OrL dst (LoadL src)));
   effect(KILL cr);
   flag(PD::Flag_sets_sign_flag, PD::Flag_sets_zero_flag, PD::Flag_sets_parity_flag, PD::Flag_clears_overflow_flag, PD::Flag_clears_carry_flag);
@@ -10594,6 +10697,19 @@ instruct orL_rReg_mem(rRegL dst, memory src, rFlagsReg cr)
   format %{ "orq     $dst, $src\t# long" %}
   ins_encode %{
     __ orq($dst$$Register, $src$$Address);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct orL_rReg_rReg_mem_ndd(rRegL dst, rRegL src1, memory src2)
+%{
+  predicate(UseAPX);
+  match(Set dst (OrL src1 (LoadL src2)));
+
+  ins_cost(150);
+  format %{ "eorq     $dst, $src1, $src2\t# long ndd" %}
+  ins_encode %{
+    __ eorq($dst$$Register, $src1$$Register, $src2$$Address, true);
   %}
   ins_pipe(ialu_reg_mem);
 %}
