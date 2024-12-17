@@ -69,10 +69,10 @@ public:
   // Number of partial array tasks processed.
   size_t processed() const { return _processed; }
 
-  void inc_split(size_t n = 1) { _split += n; }
-  void inc_pushed(size_t n = 1) { _pushed += n; }
-  void inc_stolen(size_t n = 1) { _stolen += n; }
-  void inc_processed(size_t n = 1) { _processed += n; }
+  void inc_split() { _split += 1; }
+  void inc_pushed(size_t n) { _pushed += n; }
+  void inc_stolen() { _stolen += 1; }
+  void inc_processed() { _processed += 1; }
 
   // Set all counters to zero.
   void reset();
