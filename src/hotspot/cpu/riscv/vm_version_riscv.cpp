@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -152,10 +152,6 @@ void VM_Version::common_initialize() {
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_access.value() != MISALIGNED_FAST);
-  }
-
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 
   // See JDK-8026049
@@ -447,6 +443,10 @@ void VM_Version::c2_initialize() {
   if (UseAESCTRIntrinsics) {
     warning("AES/CTR intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 }
 

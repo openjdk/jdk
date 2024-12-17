@@ -25,13 +25,20 @@
 
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.instruction.*;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 
 /**
- * Models an executable instruction in a method body.
+ * Models an executable instruction in the {@code code} array of the {@link
+ * CodeAttribute Code} attribute of a method.
+ * <p>
+ * The {@link #opcode() opcode} identifies the operation of an instruction.
+ * Each {@linkplain Opcode#kind() kind} of opcode has its own modeling interface
+ * for instructions.
  *
+ * @sealedGraph
  * @since 24
  */
 public sealed interface Instruction extends CodeElement
@@ -46,12 +53,14 @@ public sealed interface Instruction extends CodeElement
                 ThrowInstruction, TypeCheckInstruction, AbstractInstruction {
 
     /**
-     * {@return the opcode of this instruction}
+     * {@return the operation of this instruction}
      */
     Opcode opcode();
 
     /**
      * {@return the size in bytes of this instruction}
+     * This value is equal to {@link Opcode#sizeIfFixed()
+     * opcode().sizeIfFixed()} if it is not {@code -1}.
      */
     int sizeInBytes();
 }

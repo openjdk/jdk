@@ -991,7 +991,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
 }
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {
-  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
+  size_t aligned_expand_bytes = os::align_up_vm_page_size(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
 
   log_debug(gc, ergo, heap)("Expand the heap. requested expansion amount: " SIZE_FORMAT "B expansion amount: " SIZE_FORMAT "B",
@@ -1034,8 +1034,7 @@ bool G1CollectedHeap::expand_single_region(uint node_index) {
 }
 
 void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
-  size_t aligned_shrink_bytes =
-    ReservedSpace::page_align_size_down(shrink_bytes);
+  size_t aligned_shrink_bytes = os::align_down_vm_page_size(shrink_bytes);
   aligned_shrink_bytes = align_down(aligned_shrink_bytes, G1HeapRegion::GrainBytes);
   uint num_regions_to_remove = (uint)(shrink_bytes / G1HeapRegion::GrainBytes);
 

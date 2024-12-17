@@ -3426,7 +3426,7 @@ void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
   z_bru(L_done); // pass whatever result we got from a slow path
 
   bind(L_failure);
-  // TODO: use load immediate on condition and z_bru above will not be required
+
   z_lghi(r_result, 1);
 
   bind(L_done);
@@ -4108,7 +4108,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src) {
   Register current = (src != noreg) ? src : dst; // Klass is in dst if no src provided. (dst == src) also possible.
   address  base    = CompressedKlassPointers::base();
   int      shift   = CompressedKlassPointers::shift();
-  bool     need_zero_extend = base != 0;
+  bool     need_zero_extend = base != nullptr;
   assert(UseCompressedClassPointers, "only for compressed klass ptrs");
 
   BLOCK_COMMENT("cKlass encoder {");

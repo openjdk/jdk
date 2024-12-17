@@ -547,9 +547,9 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8308807 aix-ppc64
-sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8308807 aix-ppc64
-sun/management/jdp/JdpSpecificAddressTest.java                  8308807 aix-ppc64
+sun/management/jdp/JdpDefaultsTest.java                         8308807,8241865 aix-ppc64,macosx-aarch64
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8308807,8241865 aix-ppc64,macosx-aarch64
+sun/management/jdp/JdpSpecificAddressTest.java                  8308807,8241865 aix-ppc64,macosx-aarch64
 sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc64
 
 ############################################################################
