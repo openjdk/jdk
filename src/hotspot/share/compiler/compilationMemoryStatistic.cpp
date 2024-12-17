@@ -255,10 +255,10 @@ void ArenaState::print_peak_state_on(outputStream* st) const {
     _counters_at_global_peak.summarize(sums);
     bool print_comma = false;
     for (int i = 0; i < ArenaTag::max; i++) {
-      if (print_comma) {
-        st->put(',');
-      }
       if (sums[i] > 0) {
+        if (print_comma) {
+          st->print_raw(", ");
+        }
         st->print("%s %zu", Arena::tag_name[i], sums[i]);
         print_comma = true;
       }
