@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,6 @@ public class Resources_de extends java.util.ListResourceBundle {
 
         // javax.security.auth.Subject
         {"NEWLINE", "\n"},
-        {"invalid.null.AccessControlContext.provided",
-                "Ung\u00FCltiger Nullwert f\u00FCr AccessControlContext angegeben"},
         {"invalid.null.action.provided", "Ung\u00FCltige Nullaktion angegeben"},
         {"invalid.null.Class.provided", "Ung\u00FCltige Nullklasse angegeben"},
         {"Subject.", "Subjekt:\n"},
@@ -90,40 +88,9 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"Login.Failure.all.modules.ignored",
                 "Anmeldefehler: Alle Module werden ignoriert"},
 
-        // sun.security.provider.PolicyFile
-
-        {"java.security.policy.error.parsing.policy.message",
-                "java.security.policy: Fehler beim Parsen von {0}:\n\t{1}"},
-        {"java.security.policy.error.adding.Permission.perm.message",
-                "java.security.policy: Fehler beim Hinzuf\u00FCgen von Berechtigung, {0}:\n\t{1}"},
-        {"java.security.policy.error.adding.Entry.message",
-                "java.security.policy: Fehler beim Hinzuf\u00FCgen von Eintrag:\n\t{0}"},
-        {"alias.name.not.provided.pe.name.", "Aliasname nicht angegeben ({0})"},
-        {"unable.to.perform.substitution.on.alias.suffix",
-                "Substitution f\u00FCr Alias {0} kann nicht ausgef\u00FChrt werden"},
-        {"substitution.value.prefix.unsupported",
-                "Substitutionswert {0} nicht unterst\u00FCtzt"},
-        {"SPACE", " "},
-        {"LPARAM", "("},
-        {"RPARAM", ")"},
-        {"type.can.t.be.null","Typ kann nicht null sein"},
-
         // sun.security.provider.PolicyParser
-        {"keystorePasswordURL.can.not.be.specified.without.also.specifying.keystore",
-                "keystorePasswordURL kann nicht ohne Keystore angegeben werden"},
-        {"expected.keystore.type", "Keystore-Typ erwartet"},
-        {"expected.keystore.provider", "Keystore-Provider erwartet"},
-        {"multiple.Codebase.expressions",
-                "mehrere Codebase-Ausdr\u00FCcke"},
-        {"multiple.SignedBy.expressions","mehrere SignedBy-Ausdr\u00FCcke"},
         {"duplicate.keystore.domain.name","Keystore-Domainname doppelt vorhanden: {0}"},
         {"duplicate.keystore.name","Keystore-Name doppelt vorhanden: {0}"},
-        {"SignedBy.has.empty.alias","Leerer Alias in SignedBy"},
-        {"can.not.specify.Principal.with.a.wildcard.class.without.a.wildcard.name",
-                "Principal kann nicht mit einer Platzhalterklasse ohne Platzhalternamen angegeben werden"},
-        {"expected.codeBase.or.SignedBy.or.Principal",
-                "codeBase oder SignedBy oder Principal erwartet"},
-        {"expected.permission.entry", "Berechtigungseintrag erwartet"},
         {"number.", "Nummer "},
         {"expected.expect.read.end.of.file.",
                 "[{0}] erwartet, [Dateiende] gelesen"},
@@ -132,8 +99,6 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"line.number.msg", "Zeile {0}: {1}"},
         {"line.number.expected.expect.found.actual.",
                 "Zeile {0}: [{1}] erwartet, [{2}] gefunden"},
-        {"null.principalClass.or.principalName",
-                "principalClass oder principalName null"},
 
         // sun.security.pkcs11.SunPKCS11
         {"PKCS11.Token.providerName.Password.",
