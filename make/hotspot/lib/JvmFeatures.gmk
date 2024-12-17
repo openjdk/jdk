@@ -173,7 +173,7 @@ ifeq ($(call check-jvm-feature, link-time-opt), true)
     JVM_CFLAGS_FEATURES += -flto=$(JOBS) -fuse-linker-plugin -fno-strict-aliasing \
         -fno-fat-lto-objects
     JVM_LDFLAGS_FEATURES += $(CXX_O_FLAG_HIGHEST_JVM) -flto=$(JOBS) \
-        -fuse-linker-plugin -fno-strict-aliasing -Wno-attribute-warning
+        -fuse-linker-plugin -fno-strict-aliasing -fno-omit-frame-pointer -Wno-attribute-warning
   else ifeq ($(TOOLCHAIN_TYPE), clang)
     JVM_CFLAGS_FEATURES += -flto -fno-strict-aliasing
     ifeq ($(call isTargetOs, aix), true)
