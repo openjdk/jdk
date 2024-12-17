@@ -3171,7 +3171,7 @@ void G1PrintRegionLivenessInfoClosure::do_cset_groups() {
                           G1PPRL_BYTE_FORMAT,
                           young_only_cset_group->group_id(), young_only_cset_group->length(),
                           "-",
-                          0l, young_only_cset_group->card_set()->mem_size());
+                          size_t(0), young_only_cset_group->card_set()->mem_size());
 
   for (G1CSetCandidateGroup* group : g1h->policy()->candidates()->from_marking_groups()) {
     log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
