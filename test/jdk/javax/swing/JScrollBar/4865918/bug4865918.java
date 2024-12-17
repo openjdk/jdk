@@ -37,6 +37,7 @@ import javax.swing.SwingUtilities;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import java.util.Date;
 
@@ -44,10 +45,9 @@ public class bug4865918 {
 
     private static TestScrollBar sbar;
     private static JFrame frame;
-    private static volatile CountDownLatch latch;
+    private static final CountDownLatch mousePressLatch = new CountDownLatch(1);
 
     public static void main(String[] argv) throws Exception {
-        latch = new CountDownLatch(1);
         try {
             Robot robot = new Robot();
             SwingUtilities.invokeAndWait(() -> createAndShowGUI());
@@ -56,7 +56,7 @@ public class bug4865918 {
             robot.delay(1000);
 
             SwingUtilities.invokeAndWait(() -> sbar.pressMouse());
-            latch.await();
+            mousePressLatch.await(2, TimeUnit.SECONDS);
 
             robot.waitForIdle();
             robot.delay(200);
@@ -88,7 +88,7 @@ public class bug4865918 {
         sbar.setBlockIncrement(10);
         sbar.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
-                latch.countDown();
+                mousePressLatch.countDown();
             }
         });
 
