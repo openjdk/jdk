@@ -325,8 +325,7 @@ public final class Float16
     */
     @ForceInline
     public static Float16 valueOf(float f) {
-        short hf = floatToFloat16(f);
-        return new Float16(hf);
+        return new Float16(floatToFloat16(f));
     }
 
    /**
@@ -1200,14 +1199,22 @@ public final class Float16
      * @see Math#sqrt(double)
      */
     public static Float16 sqrt(Float16 radicand) {
-        // Rounding path of sqrt(Float16 -> double) -> Float16 is fine
-        // for preserving the correct final value. The conversion
-        // Float16 -> double preserves the exact numerical value. The
-        // conversion of double -> Float16 also benefits from the
-        // 2p+2 property of IEEE 754 arithmetic.
-        short res = Float16Math.sqrt(float16ToRawShortBits(radicand),
-                      (f16) -> float16ToRawShortBits(valueOf(Math.sqrt(shortBitsToFloat16(f16).doubleValue()))));
-        return shortBitsToFloat16(res);
+        // Explicitly unbox float16 radicand as intrinsic expects
+        // to receive short type arguments holding IEEE 754 binary16
+        // value.
+        short unboxed_radicand = float16ToRawShortBits(radicand);
+        short retval = Float16Math.sqrt(unboxed_radicand,
+            (f16) -> {
+                // Rounding path of sqrt(Float16 -> double) -> Float16 is fine
+                // for preserving the correct final value. The conversion
+                // Float16 -> double preserves the exact numerical value. The
+                // conversion of double -> Float16 also benefits from the
+                // 2p+2 property of IEEE 754 arithmetic.
+               double res = Math.sqrt(float16ToFloat(f16));
+               return float16ToRawShortBits(valueOf(res));
+            }
+        );
+        return shortBitsToFloat16(retval);
     }
 
     /**
@@ -1409,14 +1416,18 @@ public final class Float16
          *   harmless.
          */
 
-        // product is numerically exact in float before the cast to
-        // double; not necessary to widen to double before the
-        // multiply.
-        short fa = float16ToRawShortBits(a);
-        short fb = float16ToRawShortBits(b);
-        short fc = float16ToRawShortBits(c);
-        short res = Float16Math.fma(fa, fb, fc,
+        // Explicitly unbox float16 values as intrinsic expects
+        // to receive short type arguments holding IEEE 754 binary16
+        // values.
+        short unboxed_a = float16ToRawShortBits(a);
+        short unboxed_b = float16ToRawShortBits(b);
+        short unboxed_c = float16ToRawShortBits(c);
+
+        short res = Float16Math.fma(unboxed_a, unboxed_b, unboxed_c,
                 (f16a, f16b, f16c) -> {
+                    // product is numerically exact in float before the cast to
+                    // double; not necessary to widen to double before the
+                    // multiply.
                     double product = (double)(float16ToFloat(f16a) * float16ToFloat(f16b));
                     return float16ToRawShortBits(valueOf(product + float16ToFloat(f16c)));
                 });

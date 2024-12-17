@@ -4196,6 +4196,7 @@ int MatchRule::is_expensive() const {
     if( strcmp(opType,"AtanD")==0 ||
         strcmp(opType,"DivD")==0 ||
         strcmp(opType,"DivF")==0 ||
+        strcmp(opType,"DivHF")==0 ||
         strcmp(opType,"DivI")==0 ||
         strcmp(opType,"Log10D")==0 ||
         strcmp(opType,"ModD")==0 ||
