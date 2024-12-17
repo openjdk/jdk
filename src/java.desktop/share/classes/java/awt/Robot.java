@@ -220,7 +220,6 @@ public class Robot {
      * @param y         Y position
      */
     public synchronized void mouseMove(int x, int y) {
-//        peer.mouseMove(x, y);
         peer.mouseMove(Math.min(Math.max(x, screenBounds.x), screenBounds.x + screenBounds.width),
                 Math.min(Math.max(y, screenBounds.y), screenBounds.y + screenBounds.height));
         afterEvent();
