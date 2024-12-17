@@ -61,6 +61,7 @@ class MemTracker : AllStatic {
     return _tracking_level != NMT_unknown;
   }
 
+  // We need this to avoid attempting to lock NmtVirtualMemory_lock during VM init (before mutexes are ready or current thread has been assigned).
   static inline bool is_done_bootstrap()  {
     return _done_bootstrap;
   }
@@ -275,15 +276,6 @@ class MemTracker : AllStatic {
   // Given an unknown pointer, check if it points into a known region; print region if found
   // and return true; false if not found.
   static bool print_containing_region(const void* p, outputStream* out);
-
-  // Same as MutexLocker but can be used during VM init while single threaded and before mutexes are ready or current thread has been assigned.
-  // Performs no action during VM init.
-  class NmtVirtualMemoryLocker: public ConditionalMutexLocker {
-  public:
-      NmtVirtualMemoryLocker() :
-              ConditionalMutexLocker(NmtVirtualMemory_lock, _done_bootstrap, Mutex::_no_safepoint_check_flag) {
-      }
-  };
 
  private:
   static void report(bool summary_only, outputStream* output, size_t scale);
