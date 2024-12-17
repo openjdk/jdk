@@ -1406,6 +1406,51 @@ const Type* UModLNode::Value(PhaseGVN* phase) const {
   return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
 }
 
+Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!can_reshape) {
+    return nullptr;
+  }
+
+  // Either input is TOP ==> the result is TOP
+  const Type* t1 = phase->type(dividend());
+  const Type* t2 = phase->type(divisor());
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return nullptr;
+  }
+
+  // If either number is not a constant, we know nothing.
+  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
+    return nullptr; // note: x%x can be either NaN or 0
+  }
+
+  float f1 = t1->getf();
+  float f2 = t2->getf();
+  jint x1 = jint_cast(f1); // note:  *(int*)&f1, not just (int)f1
+  jint x2 = jint_cast(f2);
+
+  // If either is a NaN, return an input NaN
+  if (g_isnan(f1)) {
+    return replace_with_con(phase, t1);
+  }
+  if (g_isnan(f2)) {
+    return replace_with_con(phase, t2);
+  }
+
+  // If an operand is infinity or the divisor is +/- zero, punt.
+  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint) {
+    return nullptr;
+  }
+
+  // We must be modulo'ing 2 float constants.
+  // Make sure that the sign of the fmod is equal to the sign of the dividend
+  jint xr = jint_cast(fmod(f1, f2));
+  if ((x1 ^ xr) < 0) {
+    xr ^= min_jint;
+  }
+
+  return replace_with_con(phase, TypeF::make(jfloat_cast(xr)));
+}
+
 Node* ModDNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!can_reshape) {
     return nullptr;
@@ -1478,51 +1523,6 @@ Node* ModFloatingNode::replace_with_con(PhaseGVN* phase, const Type* con) {
   C->remove_macro_node(this);
   disconnect_inputs(C);
   return nullptr;
-}
-
-Node* ModFNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (!can_reshape) {
-    return nullptr;
-  }
-
-  // Either input is TOP ==> the result is TOP
-  const Type* t1 = phase->type(dividend());
-  const Type* t2 = phase->type(divisor());
-  if (t1 == Type::TOP || t2 == Type::TOP) {
-    return nullptr;
-  }
-
-  // If either number is not a constant, we know nothing.
-  if ((t1->base() != Type::FloatCon) || (t2->base() != Type::FloatCon)) {
-    return nullptr; // note: x%x can be either NaN or 0
-  }
-
-  float f1 = t1->getf();
-  float f2 = t2->getf();
-  jint x1 = jint_cast(f1); // note:  *(int*)&f1, not just (int)f1
-  jint x2 = jint_cast(f2);
-
-  // If either is a NaN, return an input NaN
-  if (g_isnan(f1)) {
-    return replace_with_con(phase, t1);
-  }
-  if (g_isnan(f2)) {
-    return replace_with_con(phase, t2);
-  }
-
-  // If an operand is infinity or the divisor is +/- zero, punt.
-  if (!g_isfinite(f1) || !g_isfinite(f2) || x2 == 0 || x2 == min_jint) {
-    return nullptr;
-  }
-
-  // We must be modulo'ing 2 float constants.
-  // Make sure that the sign of the fmod is equal to the sign of the dividend
-  jint xr = jint_cast(fmod(f1, f2));
-  if ((x1 ^ xr) < 0) {
-    xr ^= min_jint;
-  }
-
-  return replace_with_con(phase, TypeF::make(jfloat_cast(xr)));
 }
 
 //=============================================================================
