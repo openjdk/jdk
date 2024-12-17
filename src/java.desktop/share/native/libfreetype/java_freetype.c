@@ -25,4 +25,9 @@
 
 #include "jni_util.h"
 
+/*
+ * This is needed to mark the bundled freetype library as being part of the JDK,
+ * which means that for static builds, no additional dynamic library needs to
+ * be loaded by System.loadLibrary("freetype").
+ */
 DEF_STATIC_JNI_OnLoad
