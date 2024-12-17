@@ -260,6 +260,8 @@ public class TestByteBuffer {
         try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 8L, arena);
             assertTrue(segment.isMapped());
+            assertTrue(segment.toString().contains(", rwm"));
+            assertTrue(segment.asReadOnly().toString().contains(", r-m"));
             arena.close();
             mappedBufferOp.apply(segment);
         }

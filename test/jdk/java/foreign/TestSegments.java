@@ -238,6 +238,10 @@ public class TestSegments {
             assertFalse(s.contains("heapBase: "));
         }
         assertFalse(s.contains("Optional"));
+
+        assertTrue(s.contains(", rw-"));
+        var readOnlySegment = segment.asReadOnly();
+        assertTrue(readOnlySegment.toString().contains(", r--"));
     }
 
     @DataProvider(name = "segmentFactories")

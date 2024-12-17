@@ -490,6 +490,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                 heapBase().map(hb -> "heapBase: " + hb + ", ").orElse("") +
                 "address: " + Utils.toHexString(address()) +
                 ", byteSize: " + length +
+                ", r" + (isReadOnly() ? "-" : "w") + (isMapped() ? "m" : "-") + 
                 " }";
     }
 
